@@ -1,0 +1,115 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ReCeiVe Cover Letter
+% LuaLaTeX Template
+% Version 1.12.0 (10/10/2020)
+%
+% Original authors:
+% Ged Lex (gedlex@hotmail.ch)
+%
+% Important note:
+% This template must be compiled with LuaLaTeX, the below lines will ensure this
+%!TEX TS-program = lualatex
+%!TEX encoding = UTF-8 Unicode
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+\documentclass{ReCeiVe}         % By default, use 'letterpaper' for US letter
+\usepackage[yyyymmdd]{datetime} % Change the date format
+%\geometry{letterpaper, % paper size
+%          left=1.75cm, right=1.75cm, top=1.5cm, bottom=1.5cm, footskip=.6cm, headsep=.5cm, % margins
+%          showframe}                  % show geometry frame
+%          heightrounded}              % avoid underfull vbox warning
+          
+% Color for highlights
+%\definecolor{highlight}{HTML}{EB9534} % Specify your own color
+%\colorlet{highlight}{white}           % Set predefined color
+% Default colors include: darkgray, gray, lightgray, lightblue, orange, red, concrete
+
+% Colors for text - uncomment and modify
+%\definecolor{darktext}{HTML}{414141}
+%\definecolor{text}{HTML}{414141}
+%\definecolor{graytext}{HTML}{414141}
+%\definecolor{lighttext}{HTML}{414141}
+
+%----------------------------------------------------------------------------------------
+%	PERSONAL INFORMATION
+%	Comment any of the lines below if they are not required
+%----------------------------------------------------------------------------------------
+\background{pics/background5.pdf}
+\photo[circle,edge,fill,left]{4.0cm}{pics/Suhay_02.jpg}
+\name{Suhay}{Sevinc}
+\address{Achdorfer Straße 25, 78176 Blumberg, DE}
+\mobile{+49 17691407840}
+\email{suhay.sevinc@gmail.com}
+%\github{gedlex}
+%\linkedin{linkedin}
+%\homepage{www.homepage.com}
+%\twitter{@twit}
+%\xing{xing name}
+%\stackoverflow{SOid}{SOname}
+%\skype{skypeid}
+%\reddit{reddit account}
+%\extrainfo{info}
+
+\position{M. Sc. Computer Science} % Your expertise/fields
+\headwords{Software Developer} % A few headwords to describe yourself
+\quote{"Some men see things as they are, and ask why. I dream of things that never were, and ask why not." - Robert Kennedy} % A quote or statement
+
+%----------------------------------------------------------------------------------------
+%	RECIPIENT/POSITION/LETTER INFORMATION
+%	All of the below lines must be filled out
+%----------------------------------------------------------------------------------------
+\recipient{Doris Johnson}{Initech Inc.}{4120 Freidrich Ln.}{Austin, TX 78744} % The company
+%\letterdate{}                                                                % To change the date
+\lettertitle{Application for the position of Mechanical Engineer}             % The title of the letter
+\letteropening{Sehr geehrte Damen und Herren,}                                             % How the letter is opened
+\letterclosing{Mit freundlichem Gruß,}                                                    % How the letter is closed
+\letterenclosure[Attachment]{Curriculum Vitae}                                % Enclosures
+  
+%----------------------------------------------------------------------------------------
+\begin{document}
+% Print the header
+% Usage: \makecvheader[<position>]
+\makecvheader[L]
+% Print the title
+\makelettertitle[R]
+
+%----------------------------------------------------------------------------------------
+%	LETTER CONTENT
+%----------------------------------------------------------------------------------------
+\begin{cvletter}
+wie ich aus Ihrem Karriereportal erfahren habe, suchen Sie motivierte
+und talentierte Mitarbeiter. TRUMPF GmbH + Co. KG ist für mich als
+zukunftsorientiert und innovativ bekannt. In so einem Arbeitsumfeld
+sehe ich die besten Chancen, mich als einsatzbereiten Mitarbeiter
+einzubringen und weiterzuentwickeln.
+Derzeit befinde ich mich in den letzten Zügen meines Informatik-
+Masterstudiums mit dem Schwerpunkt Software-Engineering an der
+Hochschule Furtwangen. Dabei erstelle ich meine Masterthesis zum
+Thema „Vorhersage der Bauteillageposition durch Machine Learning-
+Algorithmen“ in Kooperation mit TRUMPF Laser GmbH. Dabei
+untersuche ich State-Of-the-Art Deep Learning-Algorithmen auf
+Industrietauglichkeit.
+Meine Begeisterung für Industrie 4.0 und Entwickelung von
+Softwarelösungen für Sensoriken und Lasermarkiersysteme entdeckte
+ich während meiner Bachelorarbeit. Gegenstand der Arbeit war die
+Entwicklung eines Industrie 4.0-Demonstrators für die Lasermesse
+2017. Über eine Cloudverbindung wurden Prozess- und Bauteilquaität
+in einer Mobile-Page dargestellt und den Messebesuchern zugänglich
+gemacht. Dabei hatte ich auch die Chance, LUA-Skripte für VisionLine
+zu entwickeln.
+Aufgrund diesen Erfahrungen und den erworbenen Hochschul-
+Kenntnissen sehe ich meine berufliche Zukunft in den Bereichen:
+Bildverarbeitung, Prozesssensorik und IoT. Da ich mir sicher bin,
+durch mein Engagement und meine Leistungsfähigkeit Ihr
+Unternehmen bereichern zu können, freue ich mich sehr, mich
+persönlich bei Ihnen vorzustellen. \par\bigskip
+\end{cvletter}
+
+%----------------------------------------------------------------------------------------
+\makeletterclosing % Print the signature and enclosures
+% Usage: \makecvfooter(<left>}{<center>}{<right>)
+\makecvfooter{\today}{Ged Lex~~~·~~~Cover Letter}{\LaTeX{}}
+\end{document}

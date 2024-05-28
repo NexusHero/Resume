@@ -187,12 +187,12 @@
 \newcommand*{\footerstyle}[1]{{\fontsize{8pt}{1em}\footerfont\scshape\color{lighttext} #1}}
 
 % Section styles
-\newcommand*{\sectionstyle}[1]{\@titlestyle[1em]{15pt}{#1}}
+\newcommand*{\sectionstyle}[1]{\@titlestyle[1em]{13pt}{#1}}
 
 % For elements of entry
-\newcommand*{\entrytitlestyle}[1]{{\fontsize{10pt}{1em}\bodyfont\bfseries\color{darktext} #1}}
-\newcommand*{\entrypositionstyle}[1]{{\fontsize{8pt}{1em}\bodyfont\scshape\color{graytext} #1}}
-\newcommand*{\entrydatestyle}[1]{{\fontsize{8pt}{1em}\bodyfontlight\slshape\color{graytext} #1}}
+\newcommand*{\entrytitlestyle}[1]{{\fontsize{11pt}{1em}\bodyfont\bfseries\color{darktext} #1}}
+\newcommand*{\entrypositionstyle}[1]{{\fontsize{8pt}{1em}\bodyfont\scshape\color{graytext} #1}} % location
+\newcommand*{\entrydatestyle}[1]{{\fontsize{8pt}{1em}\bodyfontlight\slshape\color{graytext} #1}} % date
 \newcommand*{\entrylocationstyle}[1]{{\fontsize{9pt}{1em}\bodyfontlight\slshape\color{text} #1}}
 \newcommand*{\entryitemstyle}{\fontsize{9pt}{1em}\bodyfontlight\upshape\color{text}}
 
@@ -930,12 +930,12 @@
 	\begin{justify}
 	\entryitemstyle
 	\begin{itemize}[noitemsep]
-		\setlength{\parskip}{0pt}
+		\setlength{\parskip}{3pt}
 	
 }{%
 	\end{itemize}
 	\end{justify}
-	\vspace{-4.0mm}
+	\vspace{-2.0mm}
 }
 
 %-------------------------------------------------------------------------------

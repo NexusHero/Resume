@@ -929,7 +929,7 @@
 	\vspace{-2.0mm}%
 	\begin{justify}
 	\entryitemstyle
-	\begin{itemize}[noitemsep]
+	\begin{itemize}[itemsep=6pt]
 		\setlength{\parskip}{3pt}
 	
 }{%

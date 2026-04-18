@@ -734,9 +734,15 @@
 						\vspace{\acvSectionTopSkip}
 						}{}
 				}
-				\ifthenelse{\isundefined{\@aboutMe}}{%
+				\ifthenelse{\isundefined{\@quote}}{%
 					}{%
 					\vspace{-\acvSectionTopSkip}%
+					\section{\"Uber Mich}%
+					\vspace{\acvSectionContentTopSkip}%
+					{\justify\sidebarstyle{\@quote}\par}%
+				}
+				\ifthenelse{\isundefined{\@aboutMe}}{%
+					}{%
 					\section{\@aboutMetitle}%
 					\vspace{\acvSectionContentTopSkip}%
 					{\justify\sidebarstyle{\@aboutMe}\par}%

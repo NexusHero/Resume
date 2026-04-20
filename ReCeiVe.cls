@@ -515,8 +515,8 @@
 			\begin{tikzpicture}
 			\node [\@photoshape, draw=\@photoborder, fill=\@photofillcolor, line width=0.3mm, minimum height = \@photosize,
 				  minimum width=\@photowidth, rounded corners=\@edgeradius,
-				  path picture ={\node [xshift=0cm, yshift=0cm] at (path picture bounding box.center)
-				  {\includegraphics[height=\@photosize]{\@photo}};
+				  path picture ={\node [xshift=0cm, yshift=-0.4cm] at (path picture bounding box.center)
+				  {\includegraphics[height=1.65\@photosize]{\@photo}};
 				}]{};
 			\end{tikzpicture}
 		}
@@ -734,18 +734,18 @@
 						\vspace{\acvSectionTopSkip}
 						}{}
 				}
-				\ifthenelse{\isundefined{\@quote}}{%
-					}{%
-					\vspace{-\acvSectionTopSkip}%
-					\section{\"Uber Mich}%
-					\vspace{\acvSectionContentTopSkip}%
-					{\justify\sidebarstyle{\@quote}\par}%
-				}
 				\ifthenelse{\isundefined{\@aboutMe}}{%
 					}{%
+					\vspace{-\acvSectionTopSkip}%
 					\section{\@aboutMetitle}%
 					\vspace{\acvSectionContentTopSkip}%
 					{\justify\sidebarstyle{\@aboutMe}\par}%
+				}
+				\ifthenelse{\isundefined{\@quote}}{%
+					}{%
+					\section{\"Uber Mich}%
+					\vspace{\acvSectionContentTopSkip}%
+					{\justify\sidebarstyle{\@quote}\par}%
 				}
 				\ifthenelse{\isundefined{\skills}}%
 					{}{%

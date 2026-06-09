@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -150,8 +150,6 @@
       transform-origin: center 18%;
     }
 
-    /* Initials avatar — sits BEHIND the photo as a fallback / placeholder.
-       Visible while the image loads, or permanently if the image is missing. */
     .profile-initials {
       position: absolute;
       inset: 0;
@@ -672,7 +670,7 @@
     }
 
     /* ============================================================
-       PRINT — keep the dark sidebar, white main, multi-page safe
+       PRINT
        ============================================================ */
     @media print {
       @page { size: A4; margin: 11mm 10mm; }
@@ -685,11 +683,6 @@
         print-color-adjust: exact !important;
       }
 
-      /*  The body gets a left-dark / right-white gradient as a
-          per-page background. This guarantees the dark sidebar
-          column is visible on EVERY printed page, even when the
-          CV spans 2+ pages. The split point (62mm) matches the
-          sidebar grid column width below. */
       body {
         background:
           linear-gradient(
@@ -711,8 +704,6 @@
 
       .layout { grid-template-columns: 62mm 1fr; }
 
-      /* Sidebar stays dark — but transparent so the body gradient
-         shows through and repeats per page. */
       .sidebar {
         background: transparent !important;
         color: #f1f5f9 !important;
@@ -757,7 +748,6 @@
         margin-top: 8px;
       }
 
-      /* Sidebar section titles — light on dark */
       .side-title {
         color: #ffffff !important;
         border-color: rgba(255, 255, 255, 0.15) !important;
@@ -767,7 +757,6 @@
       }
       .side-title .icon { stroke: #ffffff !important; opacity: 0.9; }
 
-      /* Main section titles — dark on white */
       .main-title {
         color: #64748b !important;
         font-size: 8pt;
@@ -782,7 +771,6 @@
         border-bottom-color: #cbd5e1 !important;
       }
 
-      /* Sidebar contact list */
       .contact-list { gap: 6px; }
       .contact-list li {
         color: rgba(241, 245, 249, 0.85) !important;
@@ -798,7 +786,6 @@
       .contact-list a { color: #ffffff !important; text-decoration: none !important; }
       .contact-list .value { padding-top: 3px; }
 
-      /* Sidebar plain lists */
       .side-list {
         gap: 4px;
         color: rgba(241, 245, 249, 0.85) !important;
@@ -807,7 +794,6 @@
       .side-list li strong { color: #ffffff !important; }
       .side-list li::before { background: rgba(241, 245, 249, 0.55) !important; }
 
-      /* Sidebar skill groups */
       .skill-group { margin-bottom: 9px; }
       .skill-group h3 {
         color: #ffffff !important;
@@ -816,7 +802,6 @@
         opacity: 0.95;
       }
 
-      /* Badges — sidebar keeps glass-on-dark, main stays outline */
       .sidebar .badge {
         background: rgba(255, 255, 255, 0.08) !important;
         color: #f1f5f9 !important;
@@ -847,7 +832,6 @@
         border-color: #0f172a !important;
       }
 
-      /* Main column */
       .main {
         padding: 6mm 0 0 6mm;
         background: transparent !important;
@@ -856,7 +840,6 @@
 
       .about-text { font-size: 9.5pt; line-height: 1.5; }
 
-      /* Timeline */
       .timeline { padding-left: 18px; }
       .timeline::before {
         background: #cbd5e1 !important;
@@ -901,7 +884,6 @@
       .job-bullets li { font-size: 8.8pt; margin-bottom: 1.5px; line-height: 1.45; }
       .job-bullets li::marker { color: #0f172a !important; }
 
-      /* Education / Certificate boxes */
       .edu-grid { gap: 10px; }
       .edu-item, .cert-item {
         padding: 10px 12px;
@@ -926,7 +908,6 @@
       .cert-body strong { font-size: 9.5pt; color: #0a0a0a !important; }
       .cert-body p { font-size: 8.5pt; color: #475569 !important; }
 
-      /* Links */
       .sidebar a { color: #ffffff !important; text-decoration: none !important; border-bottom: 0 !important; }
       .main a { color: #0f172a !important; text-decoration: underline; border-bottom: 0 !important; }
 
@@ -1032,16 +1013,16 @@
           <h1>Suhay Sevinc</h1>
           <div class="role">M.Sc. Software Engineer</div>
           <ul class="side-list" style="margin-top: 14px;">
-            <li><span>Design &amp; Entwicklung moderner C++ Echtzeitsysteme</span></li>
-            <li><span>Microservices, Vernetzung &amp; komplexe API-Integration</span></li>
-            <li><span>DevOps-Praktiken, Gitflow &amp; CI/CD</span></li>
+            <li><span>Design &amp; development of modern C++ real-time systems</span></li>
+            <li><span>Microservices, networking &amp; complex API integration</span></li>
+            <li><span>DevOps practices, Gitflow &amp; CI/CD</span></li>
           </ul>
         </div>
 
         <section>
           <h2 class="side-title">
             <svg class="icon"><use href="#i-user"/></svg>
-            Kontakt
+            Contact
           </h2>
           <ul class="contact-list">
             <li>
@@ -1070,35 +1051,35 @@
         <section>
           <h2 class="side-title">
             <svg class="icon"><use href="#i-id"/></svg>
-            Personalien
+            Personal Details
           </h2>
           <ul class="side-list">
-            <li><span><strong>Nationalität:</strong> Deutsch</span></li>
-            <li><span><strong>Geburtsdatum:</strong> 07.05.1991</span></li>
-            <li><span><strong>Bewilligung:</strong> G (Grenzgänger Schweiz)</span></li>
+            <li><span><strong>Nationality:</strong> German</span></li>
+            <li><span><strong>Date of Birth:</strong> 07 May 1991</span></li>
+            <li><span><strong>Work Permit:</strong> G (Cross-border CH)</span></li>
           </ul>
         </section>
 
         <section>
           <h2 class="side-title">
             <svg class="icon"><use href="#i-globe"/></svg>
-            Sprachen
+            Languages
           </h2>
           <ul class="side-list">
-            <li><span><strong>Deutsch</strong> — Muttersprache</span></li>
-            <li><span><strong>Türkisch</strong> — Muttersprache</span></li>
-            <li><span><strong>Englisch</strong> — Verhandlungssicher</span></li>
+            <li><span><strong>German</strong> — Native</span></li>
+            <li><span><strong>Turkish</strong> — Native</span></li>
+            <li><span><strong>English</strong> — Business fluent</span></li>
           </ul>
         </section>
 
         <section>
           <h2 class="side-title">
             <svg class="icon"><use href="#i-code"/></svg>
-            Kompetenzen
+            Skills
           </h2>
 
           <div class="skill-group">
-            <h3>Sprachen</h3>
+            <h3>Languages</h3>
             <div class="badges">
               <span class="badge strong">C++20</span>
               <span class="badge strong">C# / .NET 10</span>
@@ -1107,7 +1088,7 @@
           </div>
 
           <div class="skill-group">
-            <h3>Frameworks &amp; Bibliotheken</h3>
+            <h3>Frameworks &amp; Libraries</h3>
             <div class="badges">
               <span class="badge">Qt / QML 6</span>
               <span class="badge">Boost</span>
@@ -1123,7 +1104,7 @@
           </div>
 
           <div class="skill-group">
-            <h3>Architektur</h3>
+            <h3>Architecture</h3>
             <div class="badges">
               <span class="badge">Microservices</span>
               <span class="badge">Clean Architecture</span>
@@ -1134,7 +1115,7 @@
           </div>
 
           <div class="skill-group">
-            <h3>Protokolle &amp; APIs</h3>
+            <h3>Protocols &amp; APIs</h3>
             <div class="badges">
               <span class="badge">gRPC</span>
               <span class="badge">Protobuf</span>
@@ -1157,7 +1138,7 @@
           </div>
 
           <div class="skill-group">
-            <h3>Testing &amp; Qualität</h3>
+            <h3>Testing &amp; Quality</h3>
             <div class="badges">
               <span class="badge">GTest</span>
               <span class="badge">GMock</span>
@@ -1170,7 +1151,7 @@
           </div>
 
           <div class="skill-group">
-            <h3>Betriebssysteme</h3>
+            <h3>Operating Systems</h3>
             <div class="badges">
               <span class="badge">Linux</span>
               <span class="badge">Windows</span>
@@ -1181,12 +1162,12 @@
         <section>
           <h2 class="side-title">
             <svg class="icon"><use href="#i-heart"/></svg>
-            Interessen
+            Interests
           </h2>
           <div class="badges">
-            <span class="badge">HomeAssistant</span>
+            <span class="badge">Home Assistant</span>
             <span class="badge">Raspberry Pi</span>
-            <span class="badge">MQTT-Sensorik</span>
+            <span class="badge">MQTT Sensing</span>
             <span class="badge">Basketball</span>
           </div>
         </section>
@@ -1201,35 +1182,35 @@
         <section>
           <div class="main-title">
             <svg class="icon"><use href="#i-user"/></svg>
-            Über mich
+            About Me
           </div>
-          <h2 class="main-heading">Profil</h2>
+          <h2 class="main-heading">Profile</h2>
           <p class="about-text">
-            Software Engineer (M.Sc.) mit über 7 Jahren Erfahrung und tiefgehendem Expertenwissen in
-            der hardwarenahen, verteilten und geschäftskritischen Softwareentwicklung (C++ und
-            C#/.NET). Erfahren in der Konzeption komplexer Systemarchitekturen, modernen
-            DevOps-Praktiken (CI/CD) und agilen Methoden. Bewährt in technologisch anspruchsvollen und
-            sicherheitskritischen Branchen wie der Verteidigungsindustrie und der industriellen
-            Lasertechnik.
+            Software Engineer (M.Sc.) with over 7 years of experience and deep expertise in
+            hardware-near, distributed, and business-critical software development (C++ and
+            C#/.NET). Experienced in designing complex system architectures, modern DevOps
+            practices (CI/CD), and agile methodologies. Proven track record in technologically
+            demanding and safety-critical industries, including defence and industrial laser
+            technology.
           </p>
         </section>
 
         <section>
           <div class="main-title">
             <svg class="icon"><use href="#i-briefcase"/></svg>
-            Erfahrung
+            Experience
           </div>
-          <h2 class="main-heading">Berufserfahrung</h2>
+          <h2 class="main-heading">Professional Experience</h2>
 
           <div class="timeline">
 
             <!-- Rheinmetall (current) -->
             <article class="job current">
               <div class="job-head">
-                <h3 class="job-title">Software Engineer · <span class="company">Rheinmetall Air Defence AG, Zürich (CH)</span></h3>
+                <h3 class="job-title">Software Engineer · <span class="company">Rheinmetall Air Defence AG, Zurich (CH)</span></h3>
                 <span class="job-meta" style="background:#eff6ff; border-color:#bfdbfe; color:#3b82f6;">
                   <svg class="icon" style="stroke:#3b82f6;"><use href="#i-calendar"/></svg>
-                  11/2024 — heute
+                  11/2024 — present
                 </span>
               </div>
               <div class="tech-stack">
@@ -1248,12 +1229,12 @@
                 </div>
               </div>
               <ul class="job-bullets">
-                <li>Entwickelte zentrale Steuersoftware der Oerlikon Skynex® Software, welche in Control Nodes und Feuerleitgeräten zum Einsatz kommt</li>
-                <li>Implementierte taktische Kommunikationsprotokolle (TCP, REST, Protobuf) zur Vernetzung von Sensorsystemen, Effektoren und Simulationen</li>
-                <li>Setzte QML-Oberflächen um, die als Kernbedienoberfläche des Systems eingesetzt werden</li>
-                <li>Verantwortete Requirements Engineering in technischen Refinements, inklusive Ausarbeitung von Testkonzepten und Abstimmung mit Stakeholdern</li>
-                <li>Entwickelte Unit- und Integrationstests mit Mocks zur Isolation von Systemabhängigkeiten</li>
-                <li>Führte Gitflow, begleitet von einem modernen Entwicklungsprozess (Code Reviews, automatisierte Tests), für das gesamte Team ein</li>
+                <li>Developed core control software for the Oerlikon Skynex® system, deployed in control nodes and fire control devices</li>
+                <li>Implemented tactical communication protocols (TCP, REST, Protobuf) for networking sensor systems, effectors and simulations</li>
+                <li>Implemented QML interfaces serving as the core operator UI of the system</li>
+                <li>Owned requirements engineering in technical refinements, including elaborating test concepts and aligning with stakeholders</li>
+                <li>Developed unit and integration tests using mocks to isolate system dependencies</li>
+                <li>Introduced Gitflow alongside a modern development process (code reviews, automated testing) for the entire team</li>
               </ul>
             </article>
 
@@ -1263,7 +1244,7 @@
                 <h3 class="job-title">Software Engineer C++ / C# · <span class="company">TRUMPF SE + Co. KG, Schramberg (DE)</span></h3>
                 <span class="job-meta">
                   <svg class="icon"><use href="#i-calendar"/></svg>
-                  03/2019 — 10/2024 · 5 J. 8 M.
+                  03/2019 — 10/2024 · 5 yr 8 mo.
                 </span>
               </div>
               <div class="tech-stack">
@@ -1294,11 +1275,11 @@
                 </div>
               </div>
               <ul class="job-bullets">
-                <li><strong>Visionsystem:</strong> Entwickelte ein C++-Visionsystem (Debian Realtime) weiter, realisierte eine Kameraplattform für OEM-Kunden mit Treibersoftware für Industriekameras und etablierte die CI/CD-Pipeline inkl. Testautomatisierung. Steigerte parallel die Performance der Kameraanbindung durch ein Architektur-Redesign auf Treiberebene von 60 auf 280 FPS</li>
-                <li><strong>Quality Data Store:</strong> Entwickelte ein .NET-basiertes System zur flexiblen Kundendaten-Ablage und implementierte eine Client-Server-Kommunikation via gRPC inklusive vielseitiger Datenbank-Integrationen</li>
-                <li><strong>CAD/CAM-Microservice:</strong> Implementierte einen CAD/CAM-Microservice unter Nutzung einer domänenspezifischen Sprache (LionWeb) mit zugehöriger Infrastruktur in C#</li>
-                <li><strong>Middleware &amp; Sensoranbindung:</strong> Agierte als Scrum Master für ein 5-köpfiges Team, verantwortete die Sprint- sowie Kapazitätsplanung. Dabei entwickelte ich auch Features wie die OPC-UA/gRPC-Integration</li>
-                <li><strong>Qualitätssicherung:</strong> Gewährleistete die durchgängige Softwarequalität über alle Projekte hinweg durch strukturierte Entwicklungsprozesse (Gitflow, Code Reviews), die Einhaltung von Clean-Code-Standards (SOLID), CI/CD-Pipelines (Azure DevOps) und statische Analyse (Sonarcloud)</li>
+                <li><strong>Vision System:</strong> Extended a C++ vision system (Debian Realtime), built a camera platform for OEM customers including driver software for industrial cameras, and established the CI/CD pipeline with test automation. Simultaneously boosted camera interface performance from 60 to 280 FPS through a driver-level architecture redesign</li>
+                <li><strong>Quality Data Store:</strong> Developed a .NET-based system for flexible customer data storage and implemented client-server communication via gRPC including versatile database integrations</li>
+                <li><strong>CAD/CAM Microservice:</strong> Implemented a CAD/CAM microservice leveraging a domain-specific language (LionWeb) with corresponding infrastructure in C#</li>
+                <li><strong>Middleware &amp; Sensor Integration:</strong> Acted as Scrum Master for a 5-person team, responsible for sprint and capacity planning, while also developing features such as the OPC-UA/gRPC integration</li>
+                <li><strong>Quality Assurance:</strong> Maintained consistent software quality across all projects through structured development processes (Gitflow, code reviews), adherence to clean-code standards (SOLID), CI/CD pipelines (Azure DevOps), and static analysis (Sonarcloud)</li>
               </ul>
             </article>
 
@@ -1308,19 +1289,19 @@
         <section>
           <div class="main-title">
             <svg class="icon"><use href="#i-award"/></svg>
-            Nachweise
+            Certifications
           </div>
-          <h2 class="main-heading">Zertifizierungen &amp; Schulungen</h2>
+          <h2 class="main-heading">Certifications &amp; Training</h2>
 
           <div class="edu-grid">
             <div class="cert-item" style="border-color: #3b82f6;">
               <span class="cert-icon" style="background: #3b82f6;"><svg><use href="#i-book"/></svg></span>
               <div class="cert-body">
                 <strong>ISAQB CPSA-Advanced-Level — Certified Professional for Software Architecture (2026)</strong>
-                <p>Vertiefende Zertifizierung in fortgeschrittenen Architekturmethoden und -mustern.<br>Absolviertes Modul: <em>Soft-Skills für Softwarearchitekten (SOFT)</em>.</p>
+                <p>Advanced certification in software architecture methods and patterns.<br>Completed module: <em>Soft-Skills for Software Architects (SOFT)</em>.</p>
                 <div style="display:flex; align-items:center; gap:8px; margin-top:8px;">
-                  <span style="font-size:11px; font-weight:600; color:#3b82f6; background:#eff6ff; border:1px solid #bfdbfe; padding:2px 8px; border-radius:999px;">In Bearbeitung</span>
-                  <span style="font-size:12px; color:#64748b;">1 von 3 Modulen absolviert</span>
+                  <span style="font-size:11px; font-weight:600; color:#3b82f6; background:#eff6ff; border:1px solid #bfdbfe; padding:2px 8px; border-radius:999px;">In Progress</span>
+                  <span style="font-size:12px; color:#64748b;">1 of 3 modules completed</span>
                 </div>
                 <div style="display:flex; gap:6px; margin-top:8px;">
                   <div style="width:36px; height:5px; border-radius:3px; background:#0f172a;"></div>
@@ -1334,7 +1315,7 @@
               <span class="cert-icon"><svg><use href="#i-award"/></svg></span>
               <div class="cert-body">
                 <strong>ISAQB Foundation Level — Certified Professional for Software Architecture (2022)</strong>
-                <p>International anerkannte Zertifizierung für Software-Architektur — Grundlagen, Methodik und Dokumentation komplexer Systemarchitekturen.</p>
+                <p>Internationally recognised certification for software architecture — fundamentals, methodology and documentation of complex system architectures.</p>
               </div>
             </div>
 
@@ -1342,7 +1323,7 @@
               <span class="cert-icon"><svg><use href="#i-award"/></svg></span>
               <div class="cert-body">
                 <strong>Clean Code C++17 (2021)</strong>
-                <p>Best Practices für wartbaren, langlebigen und testbaren C++-Code auf Basis moderner Sprachfeatures.</p>
+                <p>Best practices for maintainable, long-lived and testable C++ code based on modern language features.</p>
               </div>
             </div>
 
@@ -1352,16 +1333,16 @@
         <section>
           <div class="main-title">
             <svg class="icon"><use href="#i-cap"/></svg>
-            Akademisch
+            Academic
           </div>
-          <h2 class="main-heading">Bildungsweg</h2>
+          <h2 class="main-heading">Education</h2>
 
           <div class="edu-grid">
             <div class="edu-item">
               <div class="edu-head">
                 <div>
-                  <h3 class="edu-title">Master of Science — Informatik</h3>
-                  <p class="edu-school">Hochschule Furtwangen, Furtwangen (DE)</p>
+                  <h3 class="edu-title">Master of Science — Computer Science</h3>
+                  <p class="edu-school">Hochschule Furtwangen University, Furtwangen (DE)</p>
                 </div>
                 <span class="job-meta">
                   <svg class="icon"><use href="#i-calendar"/></svg>
@@ -1388,17 +1369,17 @@
                 </div>
               </div>
               <ul class="edu-bullets">
-                <li><strong>Schwerpunkt:</strong> Software-Engineering.</li>
-                <li><strong>Abschlussarbeit:</strong> <em>Vorhersage der Bauteillageposition durch Machine Learning</em> — Entwicklung und Optimierung eines tiefen neuronalen Netzes mit Keras und TensorFlow zur automatisierten industriellen Positionserkennung.</li>
-                <li><strong>Abschlussnote:</strong> 1.9.</li>
+                <li><strong>Focus:</strong> Software Engineering.</li>
+                <li><strong>Thesis:</strong> <em>Predicting component position using Machine Learning</em> — development and optimisation of a deep neural network with Keras and TensorFlow for automated industrial position detection.</li>
+                <li><strong>Grade:</strong> 1.9 (German scale, 1.0 = best)</li>
               </ul>
             </div>
 
             <div class="edu-item">
               <div class="edu-head">
                 <div>
-                  <h3 class="edu-title">Bachelor of Science — Allgemeine Informatik</h3>
-                  <p class="edu-school">Hochschule Furtwangen, Furtwangen (DE)</p>
+                  <h3 class="edu-title">Bachelor of Science — Computer Science</h3>
+                  <p class="edu-school">Hochschule Furtwangen University, Furtwangen (DE)</p>
                 </div>
                 <span class="job-meta">
                   <svg class="icon"><use href="#i-calendar"/></svg>
@@ -1424,8 +1405,8 @@
                 </div>
               </div>
               <ul class="edu-bullets">
-                <li><strong>Abschlussarbeit:</strong> <em>Industry 4.0 demonstrator — cloud based services</em> (Fokus auf IoT-Protokolle, MQTT und Cloud-Integration).</li>
-                <li><strong>Abschlussnote:</strong> 2.2.</li>
+                <li><strong>Thesis:</strong> <em>Industry 4.0 demonstrator — cloud based services</em> (focus on IoT protocols, MQTT and cloud integration).</li>
+                <li><strong>Grade:</strong> 2.2 (German scale, 1.0 = best)</li>
               </ul>
             </div>
           </div>

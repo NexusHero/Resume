@@ -1,0 +1,46 @@
+/* ============================================================
+   TYPOGRAPHY TOKENS
+   Display : Space Grotesk  — names, headings, section labels
+   Body    : Inter          — paragraphs, bullets, lists
+   Mono    : JetBrains Mono — dates, tech tags, kicker labels (the "engineering signature")
+   Fonts are imported from Google Fonts at the top of styles.css.
+   ============================================================ */
+:root {
+  /* ---- Families ---- */
+  --font-display: 'Space Grotesk', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+
+  /* ---- Type scale (px) ---- */
+  --fs-3xs: 10px;
+  --fs-2xs: 11px;
+  --fs-xs:  12px;
+  --fs-sm:  13.5px;
+  --fs-md:  15px;     /* base body */
+  --fs-lg:  16px;
+  --fs-xl:  19px;
+  --fs-2xl: 22px;
+  --fs-3xl: 26px;
+  --fs-4xl: 32px;
+  --fs-5xl: 38px;     /* name on resume */
+
+  /* ---- Weights ---- */
+  --fw-regular: 400;
+  --fw-medium:  500;
+  --fw-semibold: 600;
+  --fw-bold:    700;
+
+  /* ---- Line heights ---- */
+  --lh-tight:   1.08;
+  --lh-snug:    1.35;
+  --lh-normal:  1.6;
+  --lh-relaxed: 1.75;
+
+  /* ---- Letter spacing ---- */
+  --ls-tighter: -0.025em;
+  --ls-tight:   -0.015em;
+  --ls-normal:  0;
+  --ls-wide:    0.08em;
+  --ls-wider:   0.14em;
+  --ls-widest:  0.2em;
+}

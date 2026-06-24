@@ -1,0 +1,145 @@
+/* ============================================================
+   COLORS — base palette + semantic aliases
+   Bewerbungstool design system. Two structural worlds:
+     • INK   — the dark app shell / sidebar / nav
+     • PAPER — the light working surfaces (lists, cards, sheets)
+   Three accents (Blueprint / Signal / Graphite) swap via themes.css.
+   The product default accent is BLUEPRINT (trust, calm, institutional).
+   ============================================================ */
+:root {
+  /* ---- Ink scale (the dark app shell / sidebar / structural dark) ---- */
+  --ink-950: #080b12;
+  --ink-900: #0b1220;
+  --ink-850: #0f1626;
+  --ink-800: #131c2e;
+  --ink-700: #1f2940;
+  --ink-600: #2c3852;
+
+  /* ---- Neutral / paper scale (the light working surfaces) ---- */
+  --paper:        #ffffff;
+  --paper-subtle: #f8fafc;
+  --paper-sunk:   #f1f5f9;
+
+  --neutral-100: #f1f5f9;
+  --neutral-200: #e5e7eb;
+  --neutral-300: #cbd5e1;
+  --neutral-400: #94a3b8;
+  --neutral-500: #64748b;
+  --neutral-600: #475569;
+  --neutral-700: #334155;
+  --neutral-900: #0f172a;
+  --neutral-950: #0a0a0a;
+
+  /* ---- Accent: BLUEPRINT (product default) — steel blue ---- */
+  --blueprint-500: #2563eb;
+  --blueprint-600: #1d4ed8;
+  --blueprint-on-dark: #60a5fa;
+  --blueprint-soft: #eff6ff;
+  --blueprint-border: #bfdbfe;
+
+  /* ---- Accent: SIGNAL — instrument amber (action / attention) ---- */
+  --signal-500: #e8590c;
+  --signal-600: #c2410c;
+  --signal-on-dark: #fb923c;
+  --signal-soft: #fff4ed;
+  --signal-border: #fed7aa;
+
+  /* ---- Accent: GRAPHITE — near-monochrome slate ---- */
+  --graphite-500: #334155;
+  --graphite-600: #1e293b;
+  --graphite-on-dark: #94a3b8;
+  --graphite-soft: #f1f5f9;
+  --graphite-border: #cbd5e1;
+
+  /* ============================================================
+     PIPELINE STATUS — the recruiting funnel.
+     Each stage has: base (for dots/bars), soft (chip bg), border, strong (chip text).
+     Used by StatusBadge and the Kanban columns.
+     ============================================================ */
+  /* Neu / Eingegangen — incoming application */
+  --status-new:        #2563eb;
+  --status-new-soft:   #eff6ff;
+  --status-new-border: #bfdbfe;
+  --status-new-strong: #1d4ed8;
+
+  /* Sichtung — screening / in review */
+  --status-review:        #c2410c;
+  --status-review-soft:   #fff4ed;
+  --status-review-border: #fed7aa;
+  --status-review-strong: #9a3412;
+
+  /* Interview — interviewing */
+  --status-interview:        #7c3aed;
+  --status-interview-soft:   #f5f3ff;
+  --status-interview-border: #ddd6fe;
+  --status-interview-strong: #6d28d9;
+
+  /* Angebot — offer extended */
+  --status-offer:        #0891b2;
+  --status-offer-soft:   #ecfeff;
+  --status-offer-border: #a5f3fc;
+  --status-offer-strong: #0e7490;
+
+  /* Eingestellt — hired */
+  --status-hired:        #1f8a5b;
+  --status-hired-soft:   #ecfdf5;
+  --status-hired-border: #a7f3d0;
+  --status-hired-strong: #15734a;
+
+  /* Absage — rejected / withdrawn */
+  --status-rejected:        #be123c;
+  --status-rejected-soft:   #fff1f2;
+  --status-rejected-border: #fecdd3;
+  --status-rejected-strong: #9f1239;
+
+  /* ---- Status (shared semantic feedback) ---- */
+  --success: #1f8a5b;
+  --warning: #c2410c;
+  --danger:  #be123c;
+  --info:    #2563eb;
+
+  --success-soft: #ecfdf5;
+  --warning-soft: #fff4ed;
+  --danger-soft:  #fff1f2;
+  --info-soft:    #eff6ff;
+
+  /* ============================================================
+     SEMANTIC ALIASES — components reference these, not raw values
+     ============================================================ */
+
+  /* Text (light surfaces) */
+  --text-heading: var(--neutral-950);
+  --text-body:    var(--neutral-900);
+  --text-muted:   var(--neutral-600);
+  --text-soft:    var(--neutral-500);
+
+  /* Surfaces */
+  --surface-page:   #e2e8f0;   /* deepest app background, behind sheets */
+  --surface-app:    #f1f5f9;   /* the working canvas of the app */
+  --surface-card:   var(--paper);
+  --surface-subtle: var(--paper-subtle);
+  --surface-sunk:   var(--paper-sunk);
+
+  /* Borders */
+  --border:        var(--neutral-200);
+  --border-strong: var(--neutral-300);
+
+  /* Sidebar / dark app shell */
+  --sidebar-bg-top:    var(--ink-850);
+  --sidebar-bg-bottom: var(--ink-900);
+  --sidebar-text:       #f1f5f9;
+  --sidebar-muted:      rgba(241, 245, 249, 0.72);
+  --sidebar-soft:       rgba(241, 245, 249, 0.55);
+  --sidebar-border:     rgba(255, 255, 255, 0.10);
+  --sidebar-border-strong: rgba(255, 255, 255, 0.16);
+  --sidebar-glass:      rgba(255, 255, 255, 0.06);
+  --sidebar-glass-strong: rgba(255, 255, 255, 0.12);
+
+  /* Accent — defaults to BLUEPRINT; themes.css remaps to signal/graphite */
+  --accent:          var(--blueprint-500);
+  --accent-strong:   var(--blueprint-600);
+  --accent-on-dark:  var(--blueprint-on-dark);
+  --accent-contrast: #ffffff;     /* text/icon on a filled accent */
+  --accent-soft:     var(--blueprint-soft);
+  --accent-border:   var(--blueprint-border);
+}

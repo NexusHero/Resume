@@ -1,0 +1,32 @@
+/* ============================================================
+   THEME VARIANTS — accent swaps for side-by-side comparison.
+   Apply on any wrapper:  <div data-theme="blueprint"> … </div>
+   The default (no attribute) is SIGNAL, set in colors.css.
+   ============================================================ */
+
+[data-theme="signal"] {
+  --accent:         var(--signal-500);
+  --accent-strong:  var(--signal-600);
+  --accent-on-dark: var(--signal-on-dark);
+  --accent-soft:    var(--signal-soft);
+  --accent-border:  var(--signal-border);
+  --accent-contrast: #ffffff;
+}
+
+[data-theme="blueprint"] {
+  --accent:         var(--blueprint-500);
+  --accent-strong:  var(--blueprint-600);
+  --accent-on-dark: var(--blueprint-on-dark);
+  --accent-soft:    var(--blueprint-soft);
+  --accent-border:  var(--blueprint-border);
+  --accent-contrast: #ffffff;
+}
+
+[data-theme="graphite"] {
+  --accent:         var(--graphite-500);
+  --accent-strong:  var(--graphite-600);
+  --accent-on-dark: var(--graphite-on-dark);
+  --accent-soft:    var(--graphite-soft);
+  --accent-border:  var(--graphite-border);
+  --accent-contrast: #ffffff;
+}

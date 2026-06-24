@@ -1,0 +1,94 @@
+/* ============================================================
+   COLORS — base palette + semantic aliases
+   The default :root accent is the "Signal" theme (warm amber).
+   Theme variants live in themes.css and override the accent group.
+   ============================================================ */
+:root {
+  /* ---- Ink scale (the dark sidebar / structural dark) ---- */
+  --ink-950: #080b12;
+  --ink-900: #0b1220;
+  --ink-850: #0f1626;
+  --ink-800: #131c2e;
+  --ink-700: #1f2940;
+  --ink-600: #2c3852;
+
+  /* ---- Neutral / paper scale (the light main column) ---- */
+  --paper:        #ffffff;
+  --paper-subtle: #f8fafc;
+  --paper-sunk:   #f1f5f9;
+
+  --neutral-100: #f1f5f9;
+  --neutral-200: #e5e7eb;
+  --neutral-300: #cbd5e1;
+  --neutral-400: #94a3b8;
+  --neutral-500: #64748b;
+  --neutral-600: #475569;
+  --neutral-700: #334155;
+  --neutral-900: #0f172a;
+  --neutral-950: #0a0a0a;
+
+  /* ---- Accent: SIGNAL (default) — instrument amber ---- */
+  --signal-500: #e8590c;
+  --signal-600: #c2410c;
+  --signal-on-dark: #fb923c;   /* lighter, for use against ink */
+  --signal-soft: #fff4ed;
+  --signal-border: #fed7aa;
+
+  /* ---- Accent: BLUEPRINT — steel blue ---- */
+  --blueprint-500: #2563eb;
+  --blueprint-600: #1d4ed8;
+  --blueprint-on-dark: #60a5fa;
+  --blueprint-soft: #eff6ff;
+  --blueprint-border: #bfdbfe;
+
+  /* ---- Accent: GRAPHITE — near-monochrome slate ---- */
+  --graphite-500: #334155;
+  --graphite-600: #1e293b;
+  --graphite-on-dark: #94a3b8;
+  --graphite-soft: #f1f5f9;
+  --graphite-border: #cbd5e1;
+
+  /* ---- Status (shared) ---- */
+  --success: #1f8a5b;
+  --warning: #c2410c;
+  --info: #2563eb;
+
+  /* ============================================================
+     SEMANTIC ALIASES — components reference these, not raw values
+     ============================================================ */
+
+  /* Text (light surfaces) */
+  --text-heading: var(--neutral-950);
+  --text-body:    var(--neutral-900);
+  --text-muted:   var(--neutral-600);
+  --text-soft:    var(--neutral-500);
+
+  /* Surfaces */
+  --surface-page:   #e2e8f0;   /* behind the resume page */
+  --surface-card:   var(--paper);
+  --surface-subtle: var(--paper-subtle);
+  --surface-sunk:   var(--paper-sunk);
+
+  /* Borders */
+  --border:        var(--neutral-200);
+  --border-strong: var(--neutral-300);
+
+  /* Sidebar (dark) */
+  --sidebar-bg-top:    var(--ink-850);
+  --sidebar-bg-bottom: var(--ink-900);
+  --sidebar-text:       #f1f5f9;
+  --sidebar-muted:      rgba(241, 245, 249, 0.72);
+  --sidebar-soft:       rgba(241, 245, 249, 0.55);
+  --sidebar-border:     rgba(255, 255, 255, 0.10);
+  --sidebar-border-strong: rgba(255, 255, 255, 0.16);
+  --sidebar-glass:      rgba(255, 255, 255, 0.06);
+  --sidebar-glass-strong: rgba(255, 255, 255, 0.12);
+
+  /* Accent — defaults to BLUEPRINT; themes.css can remap to signal/graphite */
+  --accent:          var(--blueprint-500);
+  --accent-strong:   var(--blueprint-600);
+  --accent-on-dark:  var(--blueprint-on-dark);
+  --accent-contrast: #ffffff;     /* text/icon on a filled accent */
+  --accent-soft:     var(--blueprint-soft);
+  --accent-border:   var(--blueprint-border);
+}

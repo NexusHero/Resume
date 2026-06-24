@@ -1,0 +1,15 @@
+{
+  "name": "sevinc-cv",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Suhay Sevinc — CV & cover letter (self-contained HTML) + PDF export",
+  "scripts": {
+    "pdf": "node generate-pdf.js",
+    "serve": "node tools/server.js",
+    "home": "node tools/build-home.js",
+    "sent": "node tools/log-application.js"
+  },
+  "devDependencies": {
+    "puppeteer": "^24.43.1"
+  }
+}

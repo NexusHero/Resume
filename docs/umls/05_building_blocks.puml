@@ -25,6 +25,7 @@ package "Ports" {
   interface AuditLog
   interface PdfArchive
   interface PdfRenderer
+  interface PdfMerger
   interface Versioner
   interface Clock
   interface IdGenerator
@@ -36,6 +37,7 @@ package "Adapters" {
   [FsAuditLog] as FsAudit
   [FsPdfArchive] as FsArchive
   [PuppeteerPdfRenderer] as Pup
+  [PdfLibMerger] as Merger
   [GitVersioner] as Git
   [SystemClock] as Clk
   [RandomIdGenerator] as Ids
@@ -53,6 +55,7 @@ Service --> ApplicationRepository
 Service --> AuditLog
 Service --> PdfArchive
 Service --> PdfRenderer
+Service --> PdfMerger
 Service --> Versioner
 Service --> Clock
 Service --> IdGenerator
@@ -62,6 +65,7 @@ FsRepo ..|> ApplicationRepository
 FsAudit ..|> AuditLog
 FsArchive ..|> PdfArchive
 Pup ..|> PdfRenderer
+Merger ..|> PdfMerger
 Git ..|> Versioner
 Clk ..|> Clock
 Ids ..|> IdGenerator

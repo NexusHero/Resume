@@ -3,6 +3,7 @@ import type { ApplicationRepository } from '../../src/ports/application-reposito
 import type { AuditLog } from '../../src/ports/audit-log';
 import type { PdfArchive } from '../../src/ports/pdf-archive';
 import type { CoverLetterOptions, PdfRenderer } from '../../src/ports/pdf-renderer';
+import type { PdfMerger } from '../../src/ports/pdf-merger';
 import type { Versioner } from '../../src/ports/versioner';
 import type { Clock } from '../../src/ports/clock';
 import type { IdGenerator } from '../../src/ports/id-generator';
@@ -53,6 +54,9 @@ export class FakePdfRenderer implements PdfRenderer {
     this.lastCoverLetter = options;
     return Buffer.from('letter');
   }
+}
+
+export class FakePdfMerger implements PdfMerger {
   async merge(parts: Buffer[]): Promise<Buffer> {
     return Buffer.concat(parts);
   }

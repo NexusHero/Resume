@@ -10,6 +10,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Changed
 
+- **SOLID cleanup (`core/`)** — split PDF merging out of `PdfRenderer` into its own `PdfMerger`
+  port + `PdfLibMerger` adapter (ISP), and moved `slug()` into `domain/slug.ts` (SRP). Pure
+  refactor, no behaviour change; branch coverage on the service rose to 100%.
 - **English end-to-end** — the launcher and the **myJob** apps (recruiting workspace + applicant
   app) are now fully English (UI labels, sample data and copy). The CV / cover-letter pages keep
   their EN/DE toggle.

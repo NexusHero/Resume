@@ -7,10 +7,12 @@ import {
   composeAddress,
 } from '../domain/application';
 import { NotFoundError } from '../domain/errors';
+import { slug } from '../domain/slug';
 import type { ApplicationRepository } from '../ports/application-repository';
 import type { AuditLog } from '../ports/audit-log';
 import type { PdfArchive } from '../ports/pdf-archive';
 import type { PdfRenderer } from '../ports/pdf-renderer';
+import type { PdfMerger } from '../ports/pdf-merger';
 import type { Versioner } from '../ports/versioner';
 import type { Clock } from '../ports/clock';
 import type { IdGenerator } from '../ports/id-generator';
@@ -21,6 +23,7 @@ export interface ApplicationServiceDeps {
   auditLog: AuditLog;
   pdfArchive: PdfArchive;
   pdfRenderer: PdfRenderer;
+  pdfMerger: PdfMerger;
   versioner: Versioner;
   clock: Clock;
   idGenerator: IdGenerator;
@@ -36,6 +39,7 @@ export class ApplicationService {
   private readonly audit: AuditLog;
   private readonly archive: PdfArchive;
   private readonly renderer: PdfRenderer;
+  private readonly merger: PdfMerger;
   private readonly versioner: Versioner;
   private readonly clock: Clock;
   private readonly ids: IdGenerator;
@@ -46,6 +50,7 @@ export class ApplicationService {
     this.audit = deps.auditLog;
     this.archive = deps.pdfArchive;
     this.renderer = deps.pdfRenderer;
+    this.merger = deps.pdfMerger;
     this.versioner = deps.versioner;
     this.clock = deps.clock;
     this.ids = deps.idGenerator;
@@ -93,7 +98,7 @@ export class ApplicationService {
     });
     const cv = await this.renderer.renderCv({ language: input.language });
     const attachments = input.attachments.map((a) => Buffer.from(a.base64, 'base64'));
-    const merged = await this.renderer.merge([letter, cv, ...attachments], {
+    const merged = await this.merger.merge([letter, cv, ...attachments], {
       title: 'Application — Suhay Sevinc',
     });
 
@@ -192,19 +197,4 @@ export class ApplicationService {
     }
     return application;
   }
-}
-
-/** ASCII-safe slug used for archived PDF filenames. */
-export function slug(value: string): string {
-  return (
-    String(value ?? '')
-      .trim()
-      .toLowerCase()
-      .replace(/ä/g, 'ae')
-      .replace(/ö/g, 'oe')
-      .replace(/ü/g, 'ue')
-      .replace(/ß/g, 'ss')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '') || 'application'
-  );
 }

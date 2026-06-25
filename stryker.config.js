@@ -9,6 +9,7 @@ module.exports = {
     '!core/src/index.ts',
     '!core/src/container.ts',
     '!core/src/adapters/puppeteer-pdf-renderer.ts',
+    '!core/src/adapters/pdf-lib-merger.ts',
     '!core/src/adapters/git-versioner.ts',
     '!core/src/adapters/pino-logger.ts',
   ],

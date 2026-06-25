@@ -3,13 +3,27 @@
   "version": "1.0.0",
   "private": true,
   "description": "Suhay Sevinc — CV & cover letter (self-contained HTML) + PDF export",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "pdf": "node generate-pdf.js",
     "serve": "node tools/server.js",
     "home": "node tools/build-home.js",
-    "sent": "node tools/log-application.js"
+    "sent": "node tools/log-application.js",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "echo '(typecheck runs once the TypeScript core/ lands in PR2)'",
+    "test": "node --test test/*.test.mjs",
+    "package": "bash scripts/build-artifact.sh",
+    "hooks:install": "git config core.hooksPath scripts/hooks && echo 'Git hooks installed (core.hooksPath=scripts/hooks)'"
   },
   "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "eslint": "^9.13.0",
+    "globals": "^15.11.0",
+    "prettier": "^3.3.3",
     "puppeteer": "^24.43.1"
   }
 }

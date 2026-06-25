@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Pre-commit gate: run the same checks CI runs, so the pipeline does not break
+# on something a commit could have caught locally. Fast by design.
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+
+echo "pre-commit: running ./test.sh (format + lint + tests)…"
+./test.sh

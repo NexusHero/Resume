@@ -1,0 +1,24 @@
+# Dependencies & build output
+node_modules
+dist
+coverage
+reports
+package-lock.json
+
+# Vendored / generated / design-system-owned assets (not hand-formatted here;
+# the backend comes under full formatting with the TypeScript rewrite in core/)
+vendor
+**/_ds_bundle.js
+_ds_manifest.json
+assets
+*.pdf
+index.html
+styles.css
+tokens
+ui_kits
+components
+myjob
+
+# Legacy JS backend — replaced by core/ (TypeScript) in PR2
+tools
+generate-pdf.js

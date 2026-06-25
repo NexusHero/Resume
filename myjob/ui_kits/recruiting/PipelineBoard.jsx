@@ -24,7 +24,7 @@ function KanbanCard({ app, talent, onOpen }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '7px', minWidth: 0 }}>
           <PB.Avatar name={talent.name} src={talent.src} size="xs" />
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{talent.me ? 'Ich' : talent.name.split(' ')[0]}</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{talent.me ? 'Me' : talent.name.split(' ')[0]}</span>
         </div>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600, color: app.score >= 80 ? 'var(--success)' : 'var(--text-muted)' }}>{app.score}%</span>
       </div>
@@ -50,7 +50,7 @@ function PipelineBoard({ apps, talents, onOpen }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {list.map((a) => <KanbanCard key={a.id} app={a} talent={byId[a.talentId]} onOpen={onOpen} />)}
               {list.length === 0 && (
-                <div style={{ border: '1.5px dashed var(--border-strong)', borderRadius: 'var(--radius-md)', padding: '16px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>leer</div>
+                <div style={{ border: '1.5px dashed var(--border-strong)', borderRadius: 'var(--radius-md)', padding: '16px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>empty</div>
               )}
             </div>
           </div>

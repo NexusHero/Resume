@@ -90,7 +90,11 @@ audits and versions; an update with no effective change is a no-op (no version i
 
 ## 7. Deployment View
 
-_TODO (PR4): local run, and the tag-triggered release pipeline producing per-OS artifacts._
+- **Local:** `npm run serve` runs the TypeScript server via `tsx`; `npm start` runs the compiled
+  `core/dist`. The server serves both the REST API (`/api/v1`) and the static web UIs.
+- **Release:** pushing a `v*` tag triggers `release.yml`, which builds a downloadable, runnable
+  artifact per OS (compiled `core/dist` + the static app) and attaches it to a GitHub Release.
+  Consumers run `npm ci --omit=dev && npm start`. A single-binary build (pkg) is a future step.
 
 ## 8. Cross-cutting Concepts
 
@@ -109,8 +113,13 @@ _TODO (PR4): local run, and the tag-triggered release pipeline producing per-OS 
 
 ## 10. Quality Requirements
 
-Quality tree and concrete scenarios — _TODO (PR4)_. Headline target: **≥ 90 %** coverage,
-mutation testing as a quality guard.
+| Quality          | Scenario                                                                | Verified by                                   |
+| ---------------- | ----------------------------------------------------------------------- | --------------------------------------------- |
+| Maintainability  | `core/` business logic stays ≥ 90 % covered                             | Jest coverage gate (CI)                       |
+| Test quality     | Surviving mutants stay below threshold                                  | Stryker (`npm run mutation`)                  |
+| Interoperability | The API matches the OpenAPI contract and returns problem+json on errors | acceptance (supertest) tests                  |
+| Usability        | The web UIs render and read in English                                  | Playwright UI acceptance (`npm run test:e2e`) |
+| Consistency      | Every commit is a Conventional Commit; format/lint clean                | CI + git hooks                                |
 
 ## 11. Risks and Technical Debt
 

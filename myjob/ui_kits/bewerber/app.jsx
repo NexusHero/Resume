@@ -9,9 +9,9 @@ function Header({ tab, setTab }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
         <img src="../../assets/logo/myjob-mark.svg" width="34" height="34" alt="" />
         <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '18px', letterSpacing: '-0.02em' }}><span style={{ color: 'var(--accent-on-dark)' }}>my</span>Job</div>
-        <B.Badge variant="glass" size="sm">für Bewerber:innen</B.Badge>
+        <B.Badge variant="glass" size="sm">for applicants</B.Badge>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <B.IconButton icon="bell" label="Benachrichtigungen" variant="glass" />
+          <B.IconButton icon="bell" label="Notifications" variant="glass" />
           <B.Avatar name={window.ME.name} src={window.ME.src} size="sm" />
         </div>
       </div>
@@ -23,7 +23,7 @@ function Header({ tab, setTab }) {
         </div>
       </div>
       <div style={{ display: 'flex', gap: '4px' }}>
-        {[['mappe', 'Meine Bewerbungen'], ['neu', 'Neue Mappe erstellen']].map(([id, lbl]) => (
+        {[['mappe', 'My applications'], ['neu', 'Create new dossier']].map(([id, lbl]) => (
           <button key={id} onClick={() => setTab(id)} style={{
             appearance: 'none', background: 'transparent', border: 'none', cursor: 'pointer',
             padding: '11px 16px', marginBottom: '-1px', fontFamily: 'var(--font-body)', fontSize: '14px', fontWeight: 600,
@@ -42,8 +42,8 @@ function ApplicationsView() {
   return (
     <div style={{ maxWidth: '880px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '18px' }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
-        <B.StatCard label="Aktive Bewerbungen" value={String(active)} icon="send" />
-        <B.StatCard label="Im Gespräch" value={String(apps.filter((a) => a.status === 'interview').length)} icon="message" />
+        <B.StatCard label="Active applications" value={String(active)} icon="send" />
+        <B.StatCard label="Interviewing" value={String(apps.filter((a) => a.status === 'interview').length)} icon="message" />
         <B.StatCard label="Angebote" value={String(apps.filter((a) => a.status === 'offer').length)} delta="+1" dir="up" icon="award" />
       </div>
 
@@ -81,14 +81,14 @@ function ComposerView() {
   const remove = (id) => setDocs((d) => d.filter((x) => x.id !== id));
   return (
     <div style={{ maxWidth: '880px', margin: '0 auto', display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: '18px', alignItems: 'start' }}>
-      <B.Card title="Empfänger" subtitle="An wen geht die Mappe?">
+      <B.Card title="Recipient" subtitle="An wen geht die Mappe?">
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '13px' }}>
-          <B.Input label="Firma" icon="building" defaultValue="Aurora Systems GmbH" />
-          <B.Input label="Stelle" icon="briefcase" defaultValue="Senior C++ Engineer" />
-          <B.Input label="Ansprechpartner:in" icon="user" defaultValue="Personalabteilung" />
+          <B.Input label="Company" icon="building" defaultValue="Aurora Systems GmbH" />
+          <B.Input label="Position" icon="briefcase" defaultValue="Senior C++ Engineer" />
+          <B.Input label="Contact person" icon="user" defaultValue="Personalabteilung" />
           <B.Input label="Referenz" defaultValue="REF-2026-481" />
-          <B.Input label="Straße & Nr." icon="pin" defaultValue="Lichtstraße 12" />
-          <B.Input label="PLZ & Ort" defaultValue="10115 Berlin" />
+          <B.Input label="Street & no." icon="pin" defaultValue="Lichtstrasse 12" />
+          <B.Input label="ZIP & city" defaultValue="10115 Berlin" />
         </div>
       </B.Card>
 
@@ -102,20 +102,20 @@ function ComposerView() {
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>{d.sub}</div>
               </div>
               <div style={{ display: 'flex', gap: '3px' }}>
-                <B.IconButton icon="chevronUp" label="Hoch" variant="ghost" size="sm" onClick={() => move(i, -1)} disabled={i === 0} />
+                <B.IconButton icon="chevronUp" label="High" variant="ghost" size="sm" onClick={() => move(i, -1)} disabled={i === 0} />
                 <B.IconButton icon="chevronDown" label="Runter" variant="ghost" size="sm" onClick={() => move(i, 1)} disabled={i === docs.length - 1} />
-                <B.IconButton icon="trash" label="Entfernen" variant="ghost" size="sm" onClick={() => remove(d.id)} disabled={d.pinned} />
+                <B.IconButton icon="trash" label="Remove" variant="ghost" size="sm" onClick={() => remove(d.id)} disabled={d.pinned} />
               </div>
             </div>
           ))}
         </div>
         <div style={{ marginTop: '12px', border: '2px dashed var(--border-strong)', borderRadius: 'var(--radius-md)', padding: '18px', textAlign: 'center' }}>
-          <B.Button variant="ink" size="sm" iconLeft={<B.Icon name="upload" size={14} />}>PDF hinzufügen</B.Button>
+          <B.Button variant="ink" size="sm" iconLeft={<B.Icon name="upload" size={14} />}>Add PDF</B.Button>
           <div style={{ fontSize: '12px', color: 'var(--text-soft)', marginTop: '8px' }}>oder Dateien hierher ziehen</div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '16px' }}>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)' }}>{docs.length} Dokumente</span>
-          <B.Button variant="primary" iconRight={<B.Icon name="arrowRight" size={15} />}>Mappe erstellen</B.Button>
+          <B.Button variant="primary" iconRight={<B.Icon name="arrowRight" size={15} />}>Create dossier</B.Button>
         </div>
       </B.Card>
     </div>

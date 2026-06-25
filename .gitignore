@@ -11,6 +11,8 @@ core/dist/
 coverage/
 reports/
 .stryker-tmp/
+playwright-report/
+test-results/
 *.tsbuildinfo
 
 # Secrets / local env

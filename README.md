@@ -38,12 +38,12 @@ generate-pdf.js            ← npm run pdf entry point
 
 ## npm scripts
 
-| Script | What it does |
-|---|---|
-| `npm run pdf` | Renders `Lebenslauf-DE.pdf`, `Lebenslauf-EN.pdf`, `Anschreiben.pdf` (Puppeteer, A4, vector text), then rebuilds the Bewerbungsmappe builder (with CV + cover letter pre-loaded) and the home page. |
-| `npm run serve` | Local REST API + static server on `http://localhost:4178`. Serves all apps over http (so Safari/`file://` limits don't apply) and exposes the applications API. |
-| `npm run sent -- "Firma" "Stelle" [pfad.pdf]` | Records a sent application: archives the PDF into `bewerbungen/`, appends to `log.json` + `history.jsonl`, commits to git, and refreshes the home list. |
-| `npm run home` | Regenerates `index.html` only. |
+| Script                                        | What it does                                                                                                                                                                                       |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run pdf`                                 | Renders `Lebenslauf-DE.pdf`, `Lebenslauf-EN.pdf`, `Anschreiben.pdf` (Puppeteer, A4, vector text), then rebuilds the Bewerbungsmappe builder (with CV + cover letter pre-loaded) and the home page. |
+| `npm run serve`                               | Local REST API + static server on `http://localhost:4178`. Serves all apps over http (so Safari/`file://` limits don't apply) and exposes the applications API.                                    |
+| `npm run sent -- "Firma" "Stelle" [pfad.pdf]` | Records a sent application: archives the PDF into `bewerbungen/`, appends to `log.json` + `history.jsonl`, commits to git, and refreshes the home list.                                            |
+| `npm run home`                                | Regenerates `index.html` only.                                                                                                                                                                     |
 
 ## REST API (`npm run serve`)
 

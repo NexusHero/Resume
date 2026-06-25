@@ -30,9 +30,9 @@ jobs:
     # Requires the repository Dependency Graph to be enabled
     # (Settings → Code security → Dependency graph). Informational until then.
     if: github.event_name == 'pull_request'
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v5
       - uses: actions/dependency-review-action@v4
+        continue-on-error: true
         with:
           fail-on-severity: high

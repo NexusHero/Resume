@@ -1,0 +1,75 @@
+@startuml 05_building_blocks
+title core/ -- Building Block View (UML)
+
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+
+package "HTTP" {
+  [create-app] as App
+  [ApplicationController] as Ctrl
+  [problem mapper] as Problem
+}
+
+package "Application" {
+  [ApplicationService] as Service
+}
+
+package "Domain" {
+  [application model and zod] as DomainModel
+  [errors] as DomainErrors
+}
+
+package "Ports" {
+  interface ApplicationRepository
+  interface AuditLog
+  interface PdfArchive
+  interface PdfRenderer
+  interface Versioner
+  interface Clock
+  interface IdGenerator
+  interface Logger
+}
+
+package "Adapters" {
+  [FsApplicationRepository] as FsRepo
+  [FsAuditLog] as FsAudit
+  [FsPdfArchive] as FsArchive
+  [PuppeteerPdfRenderer] as Pup
+  [GitVersioner] as Git
+  [SystemClock] as Clk
+  [RandomIdGenerator] as Ids
+  [PinoLogger] as Pino
+}
+
+[container -- Awilix composition root] as Container
+
+App --> Ctrl
+Ctrl --> Service
+Ctrl ..> Problem
+Service --> DomainModel
+Service ..> DomainErrors
+Service --> ApplicationRepository
+Service --> AuditLog
+Service --> PdfArchive
+Service --> PdfRenderer
+Service --> Versioner
+Service --> Clock
+Service --> IdGenerator
+Service --> Logger
+
+FsRepo ..|> ApplicationRepository
+FsAudit ..|> AuditLog
+FsArchive ..|> PdfArchive
+Pup ..|> PdfRenderer
+Git ..|> Versioner
+Clk ..|> Clock
+Ids ..|> IdGenerator
+Pino ..|> Logger
+
+Container ..> FsRepo
+Container ..> Pup
+Container ..> Git
+Container ..> App
+
+@enduml

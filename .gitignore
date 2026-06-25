@@ -7,8 +7,10 @@ node_modules/
 
 # Build & tooling output
 dist/
+core/dist/
 coverage/
 reports/
+.stryker-tmp/
 *.tsbuildinfo
 
 # Secrets / local env

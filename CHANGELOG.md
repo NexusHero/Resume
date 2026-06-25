@@ -10,6 +10,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Added
 
+- **TypeScript backend (`core/`)** — a layered, SOLID rewrite of the REST API: controller →
+  service → repository, **Awilix** dependency injection (no decorators), **pino** structured
+  logging, **zod** request validation, **RFC 9457 problem+json** errors, versioned routes under
+  **`/api/v1`** (plus `/api/v1/health`), and an **OpenAPI 3** contract (`core/openapi.yaml`).
+- Test suite: Jest unit + integration + **acceptance (supertest)** with **≥ 90 % coverage**
+  (currently 100 % lines/functions, ~96 % branches) and **Stryker** mutation testing configured.
+- arc42 building-block + runtime documentation and a building-block UML diagram.
 - Project governance: GitHub Actions CI (format, lint, tests, conventional-commit check),
   CodeQL, security (npm audit + dependency review), docs (PlantUML render check) and a
   tag-triggered release pipeline that publishes a downloadable, runnable artifact.

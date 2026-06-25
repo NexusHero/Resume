@@ -1,0 +1,194 @@
+openapi: 3.1.0
+info:
+  title: Résumé / myJob Application API
+  version: 1.0.0
+  description: >
+    Records job applications, keeps an append-only audit trail, and builds
+    print-quality application PDFs (CV + cover letter + attachments).
+    Unauthenticated by design — intended for a trusted personal domain.
+  license:
+    name: MIT
+servers:
+  - url: /api/v1
+paths:
+  /health:
+    get:
+      summary: Liveness probe
+      responses:
+        '200':
+          description: Service is up
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+  /applications:
+    get:
+      summary: List all applications
+      responses:
+        '200':
+          description: The application list
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Application' }
+    post:
+      summary: Record an application (optionally with a finished PDF)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateApplication' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  application: { $ref: '#/components/schemas/Application' }
+        '400': { $ref: '#/components/responses/Problem' }
+  /applications/build:
+    post:
+      summary: Render CV + cover letter, merge attachments, archive and record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BuildApplication' }
+      responses:
+        '201':
+          description: Built and recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  application: { $ref: '#/components/schemas/Application' }
+                  pdfBase64: { type: string }
+        '400': { $ref: '#/components/responses/Problem' }
+  /applications/{id}:
+    patch:
+      summary: Update mutable fields of an application
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateApplication' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  application: { $ref: '#/components/schemas/Application' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /history:
+    get:
+      summary: Read the append-only audit trail
+      responses:
+        '200':
+          description: Audit events
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/AuditEvent' }
+components:
+  responses:
+    Problem:
+      description: RFC 9457 problem document
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+  schemas:
+    ApplicationStatus:
+      type: string
+      enum: [sent, screening, interview, offer, hired, rejected]
+    Application:
+      type: object
+      required:
+        [id, date, company, position, address, reference, status, pdfPath, source, createdAt]
+      properties:
+        id: { type: string }
+        date: { type: string, example: '2026-06-25' }
+        company: { type: string }
+        position: { type: string }
+        address: { type: string }
+        reference: { type: string }
+        status: { $ref: '#/components/schemas/ApplicationStatus' }
+        pdfPath: { type: [string, 'null'] }
+        source: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        commit: { type: string }
+    CreateApplication:
+      type: object
+      required: [company]
+      properties:
+        company: { type: string }
+        position: { type: string }
+        address: { type: string }
+        contactName: { type: string }
+        street: { type: string }
+        postalCodeCity: { type: string }
+        reference: { type: string }
+        status: { $ref: '#/components/schemas/ApplicationStatus' }
+        source: { type: string }
+        pdfBase64: { type: string }
+    UpdateApplication:
+      type: object
+      properties:
+        company: { type: string }
+        position: { type: string }
+        address: { type: string }
+        reference: { type: string }
+        status: { $ref: '#/components/schemas/ApplicationStatus' }
+        source: { type: string }
+    BuildApplication:
+      type: object
+      required: [company]
+      properties:
+        company: { type: string }
+        contactName: { type: string }
+        street: { type: string }
+        postalCodeCity: { type: string }
+        position: { type: string }
+        reference: { type: string }
+        location: { type: string }
+        date: { type: string }
+        language: { type: string, enum: [de, en] }
+        status: { $ref: '#/components/schemas/ApplicationStatus' }
+        attachments:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              base64: { type: string }
+    AuditEvent:
+      type: object
+      properties:
+        ts: { type: string, format: date-time }
+        action: { type: string, enum: [create, update, commit] }
+        id: { type: string }
+        by: { type: string }
+        commit: { type: string }
+    Problem:
+      type: object
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        errors: {}

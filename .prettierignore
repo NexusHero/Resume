@@ -1,8 +1,10 @@
 # Dependencies & build output
 node_modules
 dist
+core/dist
 coverage
 reports
+.stryker-tmp
 package-lock.json
 
 # Vendored / generated / design-system-owned assets (not hand-formatted here;

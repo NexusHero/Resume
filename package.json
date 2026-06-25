@@ -2,28 +2,52 @@
   "name": "sevinc-cv",
   "version": "1.0.0",
   "private": true,
-  "description": "Suhay Sevinc — CV & cover letter (self-contained HTML) + PDF export",
+  "description": "Suhay Sevinc — CV & cover letter (self-contained HTML) + PDF export + REST API",
   "engines": {
     "node": ">=24"
   },
   "scripts": {
+    "serve": "tsx core/src/index.ts",
+    "start": "node core/dist/index.js",
+    "build": "tsc -p tsconfig.json",
     "pdf": "node generate-pdf.js",
-    "serve": "node tools/server.js",
     "home": "node tools/build-home.js",
     "sent": "node tools/log-application.js",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "echo '(typecheck runs once the TypeScript core/ lands in PR2)'",
-    "test": "node --test test/*.test.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "jest --coverage",
+    "test:watch": "jest --watch",
+    "mutation": "stryker run",
     "package": "bash scripts/build-artifact.sh",
     "hooks:install": "git config core.hooksPath scripts/hooks && echo 'Git hooks installed (core.hooksPath=scripts/hooks)'"
   },
+  "dependencies": {
+    "awilix": "^12.0.4",
+    "express": "^4.21.2",
+    "pdf-lib": "^1.17.1",
+    "pino": "^9.5.0",
+    "pino-http": "^10.3.0",
+    "puppeteer": "^24.43.1",
+    "zod": "^3.23.8"
+  },
   "devDependencies": {
     "@eslint/js": "^9.13.0",
+    "@stryker-mutator/core": "^8.6.0",
+    "@stryker-mutator/jest-runner": "^8.6.0",
+    "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.13",
+    "@types/node": "^22.7.0",
+    "@types/supertest": "^6.0.2",
     "eslint": "^9.13.0",
     "globals": "^15.11.0",
+    "jest": "^29.7.0",
     "prettier": "^3.3.3",
-    "puppeteer": "^24.43.1"
+    "supertest": "^7.0.0",
+    "ts-jest": "^29.2.5",
+    "tsx": "^4.19.1",
+    "typescript": "~5.6.3",
+    "typescript-eslint": "^8.12.0"
   }
 }

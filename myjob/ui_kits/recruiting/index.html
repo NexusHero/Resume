@@ -1,16 +1,17 @@
-<!-- @dsCard group="Recruiting" viewport="1320x840" name="myJob — Recruiting Workspace" subtitle="Two role workflows: HR (pipeline) & Vermittler (mandates, pool, placements)" -->
+<!-- @dsCard group="myJob App" viewport="1320x860" name="myJob — Vermittler-Plattform" subtitle="Mandate, Talent-Pool, Bewerbungen-Pipeline, Platzierungen, Berichte — mit Ich als Talent #1 (Lebenslauf/Anschreiben-Editor)" -->
+<!-- @startingPoint section="myJob" subtitle="Vermittler-Plattform — Mandate, Pool, Platzierungen + eigener Lebenslauf/Anschreiben-Editor" viewport="1320x860" -->
 <!DOCTYPE html>
 <html lang="de" data-theme="blueprint">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>myJob — Recruiting Workspace</title>
+<title>myJob — Bewerbungstool</title>
 <link rel="stylesheet" href="../../styles.css" />
 <style>
   html, body { height: 100%; margin: 0; }
   #root { height: 100vh; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  @keyframes slideIn { from { transform: translateX(24px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  @keyframes popIn { from { transform: translate(-50%, -50%) scale(0.96); opacity: 0; } to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
   *::-webkit-scrollbar { width: 10px; height: 10px; }
   *::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; border: 3px solid var(--surface-app); }
 </style>
@@ -21,13 +22,17 @@
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
   <script src="../../_ds_bundle.js"></script>
-  <script>window.__MYJOB_KIT_READY = true;</script>
   <script type="text/babel" src="data.js"></script>
   <script type="text/babel" src="AppShell.jsx"></script>
   <script type="text/babel" src="PipelineBoard.jsx"></script>
-  <script type="text/babel" src="CandidateDetail.jsx"></script>
-  <script type="text/babel" src="Views.jsx"></script>
+  <script type="text/babel" src="Workspace.jsx"></script>
   <script type="text/babel" src="VermittlerViews.jsx"></script>
+  <script type="text/babel" src="TalentProfile.jsx"></script>
+  <script type="text/babel" src="Editor.jsx"></script>
+  <script type="text/babel" src="MappeModal.jsx"></script>
   <script type="text/babel" src="app.jsx"></script>
+  <script type="text/babel" data-presets="react">
+    ReactDOM.createRoot(document.getElementById('root')).render(<window.App />);
+  </script>
 </body>
 </html>

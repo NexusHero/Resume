@@ -1,0 +1,28 @@
+@startuml 03_system_context
+title Résumé / myJob Suite — System Context (UML)
+
+skinparam shadowing false
+skinparam defaultTextAlignment center
+left to right direction
+
+actor "Applicant\n(owner)" as Owner
+actor "External app" as Ext
+
+rectangle "Résumé / myJob Suite" as System {
+  component "REST API\n/api/v1" as API
+  component "Web UIs\n(CV, cover letter, myJob)" as UI
+}
+
+node "Headless Chromium\n(Puppeteer)" as Chromium
+database "Filesystem\nbewerbungen/" as FS
+node "git" as Git
+
+Owner --> UI : uses (browser)
+Owner --> API : records / builds applications
+Ext --> API : integrates (HTTP/JSON)
+
+API --> Chromium : render HTML -> PDF
+API --> FS : read/write store + archived PDFs
+API --> Git : version every change
+
+@enduml

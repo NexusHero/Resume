@@ -1,0 +1,34 @@
+name: Docs
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'docs/**'
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'docs/**'
+
+permissions:
+  contents: read
+
+jobs:
+  uml:
+    name: Render PlantUML diagrams
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Render *.puml to *.svg
+        uses: docker://plantuml/plantuml:latest
+        with:
+          args: -tsvg -nometadata docs/umls
+
+      - name: Fail if rendered SVGs are out of date
+        run: |
+          if [ -n "$(git status --porcelain docs/umls)" ]; then
+            echo "::error::docs/umls/*.svg are out of date — run PlantUML locally and commit the rendered SVGs."
+            git --no-pager diff --stat docs/umls
+            exit 1
+          fi

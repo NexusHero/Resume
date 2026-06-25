@@ -1,13 +1,24 @@
-*.pdf
 *.aux
 *.out
 *.synctex.gz
-*.txt
 *.log
-*.aux
 *.cls
 node_modules/
 
-# Bewerbungs-Archiv soll erhalten bleiben
+# Build & tooling output
+dist/
+coverage/
+reports/
+*.tsbuildinfo
+
+# Secrets / local env
+.env
+.env.*
+!.env.example
+
+# Generated résumé PDFs at repo root (the application archive is kept, see below)
+/*.pdf
+
+# Keep the application archive
 !bewerbungen/
 !bewerbungen/*.pdf

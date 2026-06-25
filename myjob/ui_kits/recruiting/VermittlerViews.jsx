@@ -2,9 +2,9 @@
 const VV = window.BewerbungstoolDesignSystem_a75119;
 
 const PRIORITY = {
-  hoch:    { label: 'High', bg: 'var(--status-rejected-soft)', bd: 'var(--status-rejected-border)', fg: 'var(--status-rejected-strong)', dot: 'var(--status-rejected)' },
-  mittel:  { label: 'Medium', bg: 'var(--status-review-soft)', bd: 'var(--status-review-border)', fg: 'var(--status-review-strong)', dot: 'var(--status-review)' },
-  niedrig: { label: 'Low', bg: 'var(--surface-sunk)', bd: 'var(--border)', fg: 'var(--text-soft)', dot: 'var(--neutral-400)' },
+  high:   { label: 'High', bg: 'var(--status-rejected-soft)', bd: 'var(--status-rejected-border)', fg: 'var(--status-rejected-strong)', dot: 'var(--status-rejected)' },
+  medium: { label: 'Medium', bg: 'var(--status-review-soft)', bd: 'var(--status-review-border)', fg: 'var(--status-review-strong)', dot: 'var(--status-review)' },
+  low:    { label: 'Low', bg: 'var(--surface-sunk)', bd: 'var(--border)', fg: 'var(--text-soft)', dot: 'var(--neutral-400)' },
 };
 function PrioPill({ p }) {
   return (
@@ -14,7 +14,7 @@ function PrioPill({ p }) {
   );
 }
 
-const PLACEMENT_TONE = { 'Bezahlt': 'hired', 'In Rechnung': 'offer', 'Probezeit': 'interview' };
+const PLACEMENT_TONE = { 'Paid': 'hired', 'Invoiced': 'offer', 'Probation': 'interview' };
 
 /* ---------- Mandate: client search assignments ---------- */
 function MandateView({ clients, mandates }) {
@@ -29,9 +29,9 @@ function MandateView({ clients, mandates }) {
               <span style={{ width: '40px', height: '40px', borderRadius: 'var(--radius-md)', background: 'var(--ink-900)', color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><VV.Icon name="building" size={19} /></span>
               <div style={{ flex: 1 }}>
                 <div style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 700, color: 'var(--text-heading)', letterSpacing: '-0.01em' }}>{k.name}</div>
-                <div style={{ fontSize: '12px', color: 'var(--text-soft)', marginTop: '1px' }}>{k.industry} · {k.location} · Kunde seit {k.since}</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-soft)', marginTop: '1px' }}>{k.industry} · {k.location} · Client since {k.since}</div>
               </div>
-              <VV.Badge variant="subtle" size="sm">{ms.length} Mandate</VV.Badge>
+              <VV.Badge variant="subtle" size="sm">{ms.length} mandates</VV.Badge>
             </header>
             {ms.map((m) => (
               <div key={m.id} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.5fr) 96px 104px 116px 116px', alignItems: 'center', gap: '14px', padding: '13px 18px', borderBottom: '1px solid var(--border)' }}>
@@ -69,7 +69,7 @@ function PlatzierungenView({ placements, kpis }) {
       </div>
       <VV.Card pad={false} title="Placements" subtitle="Successful placements and fees">
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.4fr) minmax(0,1.2fr) 110px 110px 110px', gap: '14px', padding: '11px 18px', fontFamily: 'var(--font-mono)', fontSize: '9.5px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-soft)', borderBottom: '1px solid var(--border)', background: 'var(--surface-subtle)' }}>
-          <span>Talent</span><span>Kunde · Rolle</span><span>Start</span><span>Provision</span><span style={{ textAlign: 'right' }}>Status</span>
+          <span>Talent</span><span>Client · Role</span><span>Start</span><span>Fee</span><span style={{ textAlign: 'right' }}>Status</span>
         </div>
         {placements.map((p) => (
           <div key={p.id} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.4fr) minmax(0,1.2fr) 110px 110px 110px', gap: '14px', alignItems: 'center', padding: '13px 18px', borderBottom: '1px solid var(--border)' }}>

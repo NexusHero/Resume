@@ -115,9 +115,9 @@ const MANDATES = [
 ];
 
 const PLACEMENTS = [
-  { id: 'pl1', candName: 'Mara Vogel', candRole: 'Engineering Manager', client: 'Aurora Systems GmbH', start: '01.07.2026', fee: '19.000 €', status: 'In Rechnung' },
-  { id: 'pl2', candName: 'Lena Brandt', candRole: 'Brand Designer', client: 'Nordlicht Software', start: '15.06.2026', fee: '12.600 €', status: 'Bezahlt' },
-  { id: 'pl3', candName: 'Aylin Demir', candRole: 'UX Researcher', client: 'Meridian Labs', start: '01.08.2026', fee: '17.000 €', status: 'Probezeit' },
+  { id: 'pl1', candName: 'Mara Vogel', candRole: 'Engineering Manager', client: 'Aurora Systems GmbH', start: '01.07.2026', fee: '19.000 €', status: 'Invoiced' },
+  { id: 'pl2', candName: 'Lena Brandt', candRole: 'Brand Designer', client: 'Nordlicht Software', start: '15.06.2026', fee: '12.600 €', status: 'Paid' },
+  { id: 'pl3', candName: 'Aylin Demir', candRole: 'UX Researcher', client: 'Meridian Labs', start: '01.08.2026', fee: '17.000 €', status: 'Probation' },
 ];
 
 const VERMITTLER_KPIS = [

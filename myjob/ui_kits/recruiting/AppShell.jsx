@@ -2,13 +2,13 @@
 const { Icon, IconButton, Avatar, Badge } = window.BewerbungstoolDesignSystem_a75119;
 
 const NAV = [
-  { id: 'uebersicht', label: 'Übersicht', icon: 'home' },
-  { id: 'mandate', label: 'Mandate', icon: 'briefcase' },
-  { id: 'pool', label: 'Talent-Pool', icon: 'users' },
-  { id: 'bewerbungen', label: 'Bewerbungen', icon: 'columns' },
-  { id: 'platzierungen', label: 'Platzierungen', icon: 'award' },
-  { id: 'berichte', label: 'Berichte', icon: 'trend' },
-  { id: 'postfach', label: 'Postfach', icon: 'inbox' },
+  { id: 'uebersicht', label: 'Overview', icon: 'home' },
+  { id: 'mandate', label: 'Mandates', icon: 'briefcase' },
+  { id: 'pool', label: 'Talent Pool', icon: 'users' },
+  { id: 'bewerbungen', label: 'Applications', icon: 'columns' },
+  { id: 'platzierungen', label: 'Placements', icon: 'award' },
+  { id: 'berichte', label: 'Reports', icon: 'trend' },
+  { id: 'postfach', label: 'Inbox', icon: 'inbox' },
 ];
 
 function NavItem({ item, active, onClick, badge }) {
@@ -48,7 +48,7 @@ function AppShell({ active, onNav, me, talentCount, search, onSearch, title, sub
           <img src="../../assets/logo/myjob-mark.svg" width="34" height="34" alt="" />
           <div>
             <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '18px', color: '#fff', letterSpacing: '-0.02em', lineHeight: 1 }}><span style={{ color: 'var(--accent-on-dark)' }}>my</span>Job</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--sidebar-soft)', marginTop: '3px' }}>Bewerbungstool</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--sidebar-soft)', marginTop: '3px' }}>Application Suite</div>
           </div>
         </div>
 
@@ -64,7 +64,7 @@ function AppShell({ active, onNav, me, talentCount, search, onSearch, title, sub
           <Avatar name={me.name} src={me.src} size="sm" ring />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{me.name}</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--sidebar-soft)' }}>Ich · +{talentCount - 1} Talente</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--sidebar-soft)' }}>Me · +{talentCount - 1} talents</div>
           </div>
           <Icon name="chevronRight" size={14} style={{ color: 'var(--sidebar-soft)' }} />
         </button>
@@ -84,10 +84,10 @@ function AppShell({ active, onNav, me, talentCount, search, onSearch, title, sub
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface-card)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', padding: '0 11px', width: '220px' }}>
               <Icon name="search" size={15} style={{ color: 'var(--text-soft)' }} />
-              <input value={search} onChange={(e) => onSearch(e.target.value)} placeholder="Talente, Firmen, Stellen …" style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-heading)', padding: '8px 0' }} />
+              <input value={search} onChange={(e) => onSearch(e.target.value)} placeholder="Talents, companies, roles …" style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-heading)', padding: '8px 0' }} />
             </label>
             <div style={{ position: 'relative' }}>
-              <IconButton icon="bell" label="Benachrichtigungen" variant="outline" />
+              <IconButton icon="bell" label="Notifications" variant="outline" />
               <span style={{ position: 'absolute', top: '-3px', right: '-3px', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--signal-500)', border: '2px solid var(--paper)' }} />
             </div>
             {actions}

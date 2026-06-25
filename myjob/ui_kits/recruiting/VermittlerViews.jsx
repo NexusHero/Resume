@@ -2,9 +2,9 @@
 const VV = window.BewerbungstoolDesignSystem_a75119;
 
 const PRIORITY = {
-  hoch:    { label: 'Hoch', bg: 'var(--status-rejected-soft)', bd: 'var(--status-rejected-border)', fg: 'var(--status-rejected-strong)', dot: 'var(--status-rejected)' },
-  mittel:  { label: 'Mittel', bg: 'var(--status-review-soft)', bd: 'var(--status-review-border)', fg: 'var(--status-review-strong)', dot: 'var(--status-review)' },
-  niedrig: { label: 'Niedrig', bg: 'var(--surface-sunk)', bd: 'var(--border)', fg: 'var(--text-soft)', dot: 'var(--neutral-400)' },
+  hoch:    { label: 'High', bg: 'var(--status-rejected-soft)', bd: 'var(--status-rejected-border)', fg: 'var(--status-rejected-strong)', dot: 'var(--status-rejected)' },
+  mittel:  { label: 'Medium', bg: 'var(--status-review-soft)', bd: 'var(--status-review-border)', fg: 'var(--status-review-strong)', dot: 'var(--status-review)' },
+  niedrig: { label: 'Low', bg: 'var(--surface-sunk)', bd: 'var(--border)', fg: 'var(--text-soft)', dot: 'var(--neutral-400)' },
 };
 function PrioPill({ p }) {
   return (
@@ -48,7 +48,7 @@ function MandateView({ clients, mandates }) {
                   <VV.Icon name="users" size={12} style={{ display: 'inline', verticalAlign: '-2px', marginRight: '4px' }} />{m.submitted} · {m.interviews} Int.
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end' }}>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: m.status === 'aktiv' ? 'var(--success)' : 'var(--text-soft)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{m.status}</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: m.status === 'active' ? 'var(--success)' : 'var(--text-soft)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{m.status}</span>
                   <VV.Icon name="chevronRight" size={15} style={{ color: 'var(--text-soft)' }} />
                 </div>
               </div>
@@ -67,7 +67,7 @@ function PlatzierungenView({ placements, kpis }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px' }}>
         {kpis.map((k, i) => <VV.StatCard key={i} {...k} />)}
       </div>
-      <VV.Card pad={false} title="Platzierungen" subtitle="Erfolgreiche Vermittlungen und Provision">
+      <VV.Card pad={false} title="Placements" subtitle="Successful placements and fees">
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.4fr) minmax(0,1.2fr) 110px 110px 110px', gap: '14px', padding: '11px 18px', fontFamily: 'var(--font-mono)', fontSize: '9.5px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-soft)', borderBottom: '1px solid var(--border)', background: 'var(--surface-subtle)' }}>
           <span>Talent</span><span>Kunde · Rolle</span><span>Start</span><span>Provision</span><span style={{ textAlign: 'right' }}>Status</span>
         </div>
@@ -99,7 +99,7 @@ function ReportsView({ clients, mandates, placements, apps, kpis }) {
     sum: placements.filter((p) => p.client === k.name).reduce((a, p) => a + feeNum(p.fee), 0),
   })).filter((x) => x.sum > 0).sort((a, b) => b.sum - a.sum);
   const maxFee = Math.max(...perClient.map((x) => x.sum), 1);
-  const active = mandates.filter((m) => m.status === 'aktiv').length;
+  const active = mandates.filter((m) => m.status === 'active').length;
   const fmt = (n) => n.toLocaleString('de-DE');
   const order = window.STAGES_ORDER;
   const maxStage = Math.max(...order.map((s) => apps.filter((a) => a.status === s).length), 1);
@@ -109,7 +109,7 @@ function ReportsView({ clients, mandates, placements, apps, kpis }) {
         {kpis.map((k, i) => <VV.StatCard key={i} {...k} />)}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '16px' }}>
-        <VV.Card title="Provision je Kunde" subtitle="Gebuchte Vermittlungen Q2">
+        <VV.Card title="Fees per client" subtitle="Booked placements Q2">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '13px' }}>
             {perClient.map((x) => (
               <div key={x.name}>
@@ -124,7 +124,7 @@ function ReportsView({ clients, mandates, placements, apps, kpis }) {
             ))}
           </div>
         </VV.Card>
-        <VV.Card title="Bewerbungs-Funnel" subtitle="Kandidat:innen je Phase">
+        <VV.Card title="Application funnel" subtitle="Candidates per stage">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {order.map((s) => {
               const n = apps.filter((a) => a.status === s).length;

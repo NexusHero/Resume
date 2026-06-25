@@ -2,13 +2,13 @@
 const A = window.BewerbungstoolDesignSystem_a75119;
 
 const TITLES = {
-  uebersicht: ['Übersicht', 'Vermittlung & eigene Bewerbungen auf einen Blick'],
-  mandate: ['Mandate', 'Suchaufträge je Kunde mit Provision und Frist'],
-  pool: ['Talent-Pool', 'Wen du vertrittst — Ich zuerst'],
-  bewerbungen: ['Bewerbungen', 'Pipeline aller Vorschläge und eigenen Mappen'],
-  platzierungen: ['Platzierungen', 'Gebuchte Vermittlungen und Provision'],
-  berichte: ['Berichte', 'Provision, Funnel und Auslastung'],
-  postfach: ['Postfach', 'Nachrichten von Kunden und Firmen'],
+  uebersicht: ['Overview', 'Placements & your own applications at a glance'],
+  mandate: ['Mandates', 'Search mandates per client with fee and deadline'],
+  pool: ['Talent Pool', 'Who you represent — me first'],
+  bewerbungen: ['Applications', 'Pipeline of all submissions and your own dossiers'],
+  platzierungen: ['Placements', 'Booked placements and fees'],
+  berichte: ['Reports', 'Fees, funnel and utilization'],
+  postfach: ['Inbox', 'Messages from clients and companies'],
 };
 
 function App() {
@@ -35,7 +35,7 @@ function App() {
   // editor takes over the whole canvas
   if (editTalent) {
     return (
-      <window.AppShell active="pool" onNav={(n) => { setEditing(null); setOpenTalent(null); setNav(n); }} me={me} talentCount={talents.length} search={search} onSearch={setSearch} title={editTalent.me ? 'Meine Dokumente' : editTalent.name} subtitle="Lebenslauf & Anschreiben bearbeiten" badges={badges}>
+      <window.AppShell active="pool" onNav={(n) => { setEditing(null); setOpenTalent(null); setNav(n); }} me={me} talentCount={talents.length} search={search} onSearch={setSearch} title={editTalent.me ? 'My documents' : editTalent.name} subtitle="Edit resume & cover letter" badges={badges}>
         <window.Editor talent={editTalent} onClose={() => setEditing(null)} onCreateMappe={() => { setMappeFor(editTalent); }} />
         {mappeFor && <window.MappeModal talent={mappeFor} onClose={() => setMappeFor(null)} />}
       </window.AppShell>
@@ -45,8 +45,8 @@ function App() {
   // a talent profile takes over the whole canvas regardless of nav
   let title, subtitle, body;
   if (talent) {
-    title = talent.me ? 'Mein Profil' : talent.name;
-    subtitle = 'Lebenslauf, Anhänge und Bewerbungen';
+    title = talent.me ? 'My profile' : talent.name;
+    subtitle = 'Resume, attachments and applications';
     body = <window.TalentProfile talent={talent} apps={talentApps(talent.id)} onBack={back} onEdit={() => setEditing(talent.id)} onCreateMappe={() => setMappeFor(talent)} />;
   } else {
     [title, subtitle] = TITLES[nav];
@@ -64,9 +64,9 @@ function App() {
   }
 
   const actions = (!talent && (nav === 'bewerbungen' || nav === 'uebersicht'))
-    ? <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="plus" size={15} />} onClick={() => setMappeFor(me)}>Bewerbung einpflegen</A.Button>
+    ? <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="plus" size={15} />} onClick={() => setMappeFor(me)}>Add application</A.Button>
     : (!talent && nav === 'mandate')
-    ? <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="plus" size={15} />}>Mandat anlegen</A.Button>
+    ? <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="plus" size={15} />}>New mandate</A.Button>
     : null;
 
   return (

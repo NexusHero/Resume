@@ -28,7 +28,7 @@ module.exports = tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ['core/**/*.ts'],
+    files: ['core/**/*.ts', 'e2e/**/*.ts', 'playwright.config.ts'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',

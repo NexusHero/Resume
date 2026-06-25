@@ -60,7 +60,7 @@ function buildHome() {
 
   const log = readLog().slice().sort((a, b) => String(b.date).localeCompare(String(a.date)));
   const rows = log.map((e) => {
-    const pdf = e.pdf ? `<a class="ap-pdf" href="${esc(e.pdf)}" title="PDF öffnen">PDF ↗</a>` : '';
+    const pdf = e.pdf ? `<a class="ap-pdf" href="${esc(e.pdf)}" title="Open PDF">PDF ↗</a>` : '';
     const status = e.status ? `<span class="ap-status">${esc(e.status)}</span>` : '';
     return `
         <li class="ap">
@@ -73,21 +73,21 @@ function buildHome() {
   const appsSection = `
     <div class="apps">
       <div class="apps-head">
-        <p class="kicker" style="margin:0;">Gesendete Bewerbungen${log.length ? ` · ${log.length}` : ''}</p>
+        <p class="kicker" style="margin:0;">Sent applications${log.length ? ` · ${log.length}` : ''}</p>
       </div>
       ${log.length
         ? `<ul class="ap-list">${rows}</ul>`
-        : `<p class="ap-empty">Noch keine erfasst. Nach dem Erstellen einer Mappe:&nbsp; <b>npm run sent -- "Firma" "Stelle"</b></p>`}
+        : `<p class="ap-empty">None recorded yet. After creating a dossier:&nbsp; <b>npm run sent -- "Company" "Position"</b></p>`}
     </div>`;
 
-  const updated = new Date().toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const updated = new Date().toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
   const html = `<!DOCTYPE html>
-<html lang="de" data-theme="blueprint">
+<html lang="en" data-theme="blueprint">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Bewerbung — Suhay Sevinc</title>
+<title>Application — Suhay Sevinc</title>
 <style>
 ${css}
 * { box-sizing: border-box; }
@@ -141,19 +141,19 @@ body { margin: 0; min-height: 100vh; font-family: var(--font-body); color: var(-
         <span class="role">M.Sc. Software Engineer</span>
       </div>
     </div>
-    <p class="updated">Zuletzt aktualisiert: <b>${updated}</b></p>
+    <p class="updated">Last updated: <b>${updated}</b></p>
 
-    <p class="kicker">Bewerbungs-Suite</p>
+    <p class="kicker">Application Suite</p>
     <div class="tiles">
-${card('ui_kits/cv/index.html', 'var(--accent)', ICONS.cv, 'Lebenslauf', 'Interaktiver CV — EN/DE umschaltbar, Akzent-Themes, PDF-Export.')}
-${card('ui_kits/cover-letter/index.html', '#7c3aed', ICONS.letter, 'Anschreiben', 'Anschreiben mit Theme-Wahl und PDF-Export.')}
-${card('ui_kits/bewerbung/index.html', '#0891b2', ICONS.bundle, 'Bewerbungsmappe', 'Anschreiben + Lebenslauf + Zeugnisse zu einer PDF zusammenführen.')}
+${card('ui_kits/cv/index.html', 'var(--accent)', ICONS.cv, 'Resume', 'Interactive CV — EN/DE toggle, accent themes, PDF export.')}
+${card('ui_kits/cover-letter/index.html', '#7c3aed', ICONS.letter, 'Cover letter', 'Cover letter with theme choice and PDF export.')}
+${card('ui_kits/bewerbung/index.html', '#0891b2', ICONS.bundle, 'Application dossier', 'Merge cover letter + résumé + references into one PDF.')}
     </div>
 
-    <p class="kicker" style="margin-top:34px;">myJob — Bewerbungstool <span style="text-transform:none;letter-spacing:0;color:var(--sidebar-soft);font-weight:400;">· benötigt <b style="color:var(--sidebar-muted);">npm run serve</b></span></p>
+    <p class="kicker" style="margin-top:34px;">myJob — Application tool <span style="text-transform:none;letter-spacing:0;color:var(--sidebar-soft);font-weight:400;">· requires <b style="color:var(--sidebar-muted);">npm run serve</b></span></p>
     <div class="tiles">
-${card('myjob/ui_kits/recruiting/index.html', '#1d4ed8', ICONS.recruiting, 'myJob Workspace', 'ATS für HR & Vermittler — Pipeline, Talente, Mandate, Platzierungen.')}
-${card('myjob/ui_kits/bewerber/index.html', '#0d9488', ICONS.bewerber, 'myJob für Bewerber:innen', 'Bewerbungen verfolgen und Bewerbungsmappe zusammenstellen.')}
+${card('myjob/ui_kits/recruiting/index.html', '#1d4ed8', ICONS.recruiting, 'myJob Workspace', 'ATS for HR & agencies — pipeline, talents, mandates, placements.')}
+${card('myjob/ui_kits/bewerber/index.html', '#0d9488', ICONS.bewerber, 'myJob for applicants', 'Track applications and assemble your dossier.')}
     </div>
 ${appsSection}
   </div>

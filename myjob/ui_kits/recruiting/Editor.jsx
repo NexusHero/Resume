@@ -34,7 +34,7 @@ function ResumeDoc({ contact, resume }) {
           ))}
         </div>
 
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--sidebar-soft)', margin: '26px 0 13px' }}>Kompetenzen</div>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--sidebar-soft)', margin: '26px 0 13px' }}>Skills</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '13px' }}>
           {resume.skillGroups.map((g, i) => (
             <div key={i}>
@@ -50,12 +50,12 @@ function ResumeDoc({ contact, resume }) {
       {/* light main */}
       <main style={{ flex: 1, padding: '34px 30px' }}>
         <section style={{ marginBottom: '26px' }}>
-          <SectionHead>Profil</SectionHead>
+          <SectionHead>Profile</SectionHead>
           <p style={{ fontSize: '13px', lineHeight: 1.65, color: 'var(--text-body)', margin: 0 }}>{resume.summary}</p>
         </section>
 
         <section style={{ marginBottom: '26px' }}>
-          <SectionHead>Berufserfahrung</SectionHead>
+          <SectionHead>Experience</SectionHead>
           <div style={{ position: 'relative', paddingLeft: '20px' }}>
             <span style={{ position: 'absolute', left: '4px', top: '5px', bottom: '5px', width: '1.5px', background: 'var(--border-strong)' }} />
             {resume.experience.map((e, i) => (
@@ -75,7 +75,7 @@ function ResumeDoc({ contact, resume }) {
         </section>
 
         <section>
-          <SectionHead>Ausbildung</SectionHead>
+          <SectionHead>Education</SectionHead>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '11px' }}>
             {resume.education.map((e, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
@@ -138,7 +138,7 @@ function FormGroup({ title, children, onAdd }) {
     <div style={{ marginBottom: '22px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '11px' }}>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>{title}</span>
-        {onAdd && <ED.IconButton icon="plus" label="Hinzufügen" variant="ghost" size="sm" onClick={onAdd} />}
+        {onAdd && <ED.IconButton icon="plus" label="Add" variant="ghost" size="sm" onClick={onAdd} />}
       </div>
       {children}
     </div>
@@ -158,7 +158,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
   }, []);
   const [contact, setContact] = React.useState({ name: talent.name, role: talent.role, email: talent.email, phone: talent.phone, location: talent.location, linkedin: talent.linkedin || '', src: talent.src });
   const [resume, setResume] = React.useState(() => JSON.parse(JSON.stringify(talent.resume || { summary: '', experience: [], education: [], skillGroups: [] })));
-  const [letter, setLetter] = React.useState(() => JSON.parse(JSON.stringify(talent.letter || { firma: '', ansprechpartner: '', strasse: '', plzOrt: '', betreff: '', anrede: 'Sehr geehrte Damen und Herren,', absaetze: [''], gruss: 'Mit freundlichen Grüßen' })));
+  const [letter, setLetter] = React.useState(() => JSON.parse(JSON.stringify(talent.letter || { firma: '', ansprechpartner: '', strasse: '', plzOrt: '', betreff: '', anrede: 'Sehr geehrte Damen und Herren,', absaetze: [''], gruss: 'Kind regards' })));
 
   const setC = (k, v) => setContact((s) => ({ ...s, [k]: v }));
   const setExp = (i, k, v) => setResume((s) => { const e = [...s.experience]; e[i] = { ...e[i], [k]: v }; return { ...s, experience: e }; });
@@ -175,19 +175,19 @@ function Editor({ talent, onClose, onCreateMappe }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '14px' }}>
       <button onClick={onClose} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', alignSelf: 'flex-start', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)', padding: 0 }}>
-        <ED.Icon name="arrowLeft" size={14} /> Zurück zum Profil
+        <ED.Icon name="arrowLeft" size={14} /> Back to profile
       </button>
 
       <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: '20px', flex: 1, minHeight: 0, minWidth: 0 }}>
         {/* LEFT — form */}
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0 }}>
           <div style={{ display: 'flex', gap: '4px', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-md)', padding: '4px', marginBottom: '16px' }}>
-            {seg('lebenslauf', 'Lebenslauf')}{seg('anschreiben', 'Anschreiben')}
+            {seg('lebenslauf', 'Resume')}{seg('anschreiben', 'Cover letter')}
           </div>
 
           <div style={{ flex: 1, overflowY: 'auto', paddingRight: '8px' }}>
             {/* shared contact */}
-            <FormGroup title="Kontakt / Header">
+            <FormGroup title="Contact / header">
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <ED.Input label="Name" value={contact.name} onChange={(e) => setC('name', e.target.value)} wrapStyle={{ gridColumn: '1 / -1' }} />
                 <ED.Input label="Rolle" value={contact.role} onChange={(e) => setC('role', e.target.value)} wrapStyle={{ gridColumn: '1 / -1' }} />
@@ -200,29 +200,29 @@ function Editor({ talent, onClose, onCreateMappe }) {
 
             {doc === 'lebenslauf' ? (
               <>
-                <FormGroup title="Profil">
+                <FormGroup title="Profile">
                   <ED.Textarea rows={4} value={resume.summary} onChange={(e) => setResume((s) => ({ ...s, summary: e.target.value }))} />
                 </FormGroup>
 
-                <FormGroup title="Berufserfahrung" onAdd={addExp}>
+                <FormGroup title="Experience" onAdd={addExp}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {resume.experience.map((e, i) => (
                       <div key={i} style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '12px', background: 'var(--surface-subtle)', display: 'flex', flexDirection: 'column', gap: '9px' }}>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '-4px' }}>
-                          <ED.IconButton icon="trash" label="Entfernen" variant="ghost" size="sm" onClick={() => delExp(i)} />
+                          <ED.IconButton icon="trash" label="Remove" variant="ghost" size="sm" onClick={() => delExp(i)} />
                         </div>
                         <ED.Input label="Position" value={e.role} onChange={(ev) => setExp(i, 'role', ev.target.value)} />
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '9px' }}>
-                          <ED.Input label="Firma" value={e.company} onChange={(ev) => setExp(i, 'company', ev.target.value)} />
+                          <ED.Input label="Company" value={e.company} onChange={(ev) => setExp(i, 'company', ev.target.value)} />
                           <ED.Input label="Zeitraum" value={e.period} onChange={(ev) => setExp(i, 'period', ev.target.value)} />
                         </div>
-                        <ED.Textarea label="Aufgaben (eine pro Zeile)" rows={3} value={e.bullets.join('\n')} onChange={(ev) => setExp(i, 'bullets', ev.target.value.split('\n'))} />
+                        <ED.Textarea label="Responsibilities (one per line)" rows={3} value={e.bullets.join('\n')} onChange={(ev) => setExp(i, 'bullets', ev.target.value.split('\n'))} />
                       </div>
                     ))}
                   </div>
                 </FormGroup>
 
-                <FormGroup title="Ausbildung">
+                <FormGroup title="Education">
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {resume.education.map((e, i) => (
                       <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '9px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '12px', background: 'var(--surface-subtle)' }}>
@@ -236,21 +236,21 @@ function Editor({ talent, onClose, onCreateMappe }) {
               </>
             ) : (
               <>
-                <FormGroup title="Empfänger">
+                <FormGroup title="Recipient">
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                    <ED.Input label="Firma" value={letter.firma} onChange={(e) => setLetter((s) => ({ ...s, firma: e.target.value }))} wrapStyle={{ gridColumn: '1 / -1' }} />
-                    <ED.Input label="Ansprechpartner:in" value={letter.ansprechpartner} onChange={(e) => setLetter((s) => ({ ...s, ansprechpartner: e.target.value }))} wrapStyle={{ gridColumn: '1 / -1' }} />
-                    <ED.Input label="Straße" value={letter.strasse} onChange={(e) => setLetter((s) => ({ ...s, strasse: e.target.value }))} />
-                    <ED.Input label="PLZ & Ort" value={letter.plzOrt} onChange={(e) => setLetter((s) => ({ ...s, plzOrt: e.target.value }))} />
+                    <ED.Input label="Company" value={letter.firma} onChange={(e) => setLetter((s) => ({ ...s, firma: e.target.value }))} wrapStyle={{ gridColumn: '1 / -1' }} />
+                    <ED.Input label="Contact person" value={letter.ansprechpartner} onChange={(e) => setLetter((s) => ({ ...s, ansprechpartner: e.target.value }))} wrapStyle={{ gridColumn: '1 / -1' }} />
+                    <ED.Input label="Street" value={letter.strasse} onChange={(e) => setLetter((s) => ({ ...s, strasse: e.target.value }))} />
+                    <ED.Input label="ZIP & city" value={letter.plzOrt} onChange={(e) => setLetter((s) => ({ ...s, plzOrt: e.target.value }))} />
                   </div>
                 </FormGroup>
                 <FormGroup title="Inhalt">
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <ED.Input label="Betreff" value={letter.betreff} onChange={(e) => setLetter((s) => ({ ...s, betreff: e.target.value }))} />
-                    <ED.Input label="Anrede" value={letter.anrede} onChange={(e) => setLetter((s) => ({ ...s, anrede: e.target.value }))} />
+                    <ED.Input label="Subject" value={letter.betreff} onChange={(e) => setLetter((s) => ({ ...s, betreff: e.target.value }))} />
+                    <ED.Input label="Salutation" value={letter.anrede} onChange={(e) => setLetter((s) => ({ ...s, anrede: e.target.value }))} />
                   </div>
                 </FormGroup>
-                <FormGroup title="Absätze" onAdd={addPara}>
+                <FormGroup title="Paragraphs" onAdd={addPara}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
                     {letter.absaetze.map((p, i) => <ED.Textarea key={i} rows={3} value={p} onChange={(e) => setPara(i, e.target.value)} />)}
                   </div>
@@ -264,11 +264,11 @@ function Editor({ talent, onClose, onCreateMappe }) {
         <div style={{ background: 'var(--surface-page)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>
-              <ED.Icon name="eye" size={14} /> Live-Vorschau · {doc === 'lebenslauf' ? 'Lebenslauf' : 'Anschreiben'}
+              <ED.Icon name="eye" size={14} /> Live-Vorschau · {doc === 'lebenslauf' ? 'Resume' : 'Cover letter'}
             </span>
             <div style={{ display: 'flex', gap: '8px' }}>
               <ED.Button size="sm" variant="outline" iconLeft={<ED.Icon name="download" size={14} />}>PDF</ED.Button>
-              <ED.Button size="sm" variant="primary" iconRight={<ED.Icon name="arrowRight" size={14} />} onClick={onCreateMappe}>Zur Mappe</ED.Button>
+              <ED.Button size="sm" variant="primary" iconRight={<ED.Icon name="arrowRight" size={14} />} onClick={onCreateMappe}>To dossier</ED.Button>
             </div>
           </div>
           <div ref={previewRef} style={{ flex: 1, overflowY: 'auto', padding: '28px', display: 'flex', justifyContent: 'center' }}>

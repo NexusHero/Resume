@@ -40,6 +40,28 @@ jobs:
       - name: Test
         run: npm test
 
+  # ── UI acceptance tests (Playwright) ────────────────────────────────────
+  e2e:
+    name: e2e — Playwright
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run UI acceptance tests
+        run: npm run test:e2e
+
   # ── Conventional Commits on the PR ──────────────────────────────────────
   commitlint:
     name: commit messages

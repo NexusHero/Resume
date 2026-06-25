@@ -59,13 +59,34 @@ See [`docs/umls/03_system_context.puml`](umls/03_system_context.puml).
 
 ## 5. Building Block View
 
-_TODO (PR2): document `core/` building blocks (HTTP layer, application service, PDF renderer,
-application repository, git versioner) with a level-1 white-box diagram._
+The backend lives in `core/` and is strictly layered (dependencies point inward only):
+
+![Building blocks](umls/05_building_blocks.svg)
+
+| Layer       | Building block                                                                                                  | Responsibility                                                                                                        |
+| ----------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| HTTP        | `create-app`, `ApplicationController`, `problem`, `async-handler`                                               | Express routing, zod validation at the boundary, RFC 9457 problem+json errors.                                        |
+| Application | `ApplicationService`                                                                                            | The only place business rules live: record / build / update, audit, version. Depends on **ports**, never on adapters. |
+| Domain      | `application` (types + zod), `errors`                                                                           | The model and its invariants. No I/O.                                                                                 |
+| Ports       | `ApplicationRepository`, `AuditLog`, `PdfArchive`, `PdfRenderer`, `Versioner`, `Clock`, `IdGenerator`, `Logger` | Interfaces the service depends on.                                                                                    |
+| Adapters    | `Fs*`, `GitVersioner`, `PuppeteerPdfRenderer`, `SystemClock`, `RandomIdGenerator`, `pino`                       | Concrete I/O implementations, wired in `container.ts` (Awilix).                                                       |
+
+The composition root (`container.ts`) is the single place that knows which adapter
+implements each port — so tests substitute in-memory fakes and never touch git or Chromium.
 
 ## 6. Runtime View
 
-_TODO (PR2): sequence diagrams for `POST /api/v1/build` (render CV + letter, merge, archive,
-commit) and `PATCH /api/v1/applications/:id`._
+`POST /api/v1/applications/build`:
+
+1. `ApplicationController.build` validates the body with `buildApplicationSchema` (zod).
+2. `ApplicationService.build` calls `PdfRenderer` to render the cover letter + CV and merge
+   them with the attachments.
+3. The merged PDF is written via `PdfArchive`; the record is added through `ApplicationRepository`.
+4. A `create` event is appended to the `AuditLog`; `Versioner.commit` versions the change.
+5. The controller responds `201` with `{ application, pdfBase64 }`.
+
+`PATCH /api/v1/applications/:id` loads the record, applies the changed mutable fields only,
+audits and versions; an update with no effective change is a no-op (no version is written).
 
 ## 7. Deployment View
 
@@ -93,8 +114,12 @@ mutation testing as a quality guard.
 
 ## 11. Risks and Technical Debt
 
-- Legacy `tools/*.js` backend is untyped and hard to test → being replaced by `core/` (PR2).
-- `store.js` currently mixes persistence + git + history + HTML build (SRP violation) → split in PR2.
+- ✅ The REST API has been rewritten into the layered `core/` (TypeScript, SOLID); the legacy
+  `tools/server.js` is removed.
+- The CLI scripts (`npm run sent` / `home` / `pdf`) still use the old `tools/*.js` persistence,
+  duplicating `core/`'s repository against the same files. Converging the CLI onto `core/` is a
+  follow-up.
+- The web UIs are still German; the English rewrite is PR3.
 
 ## 12. Glossary
 

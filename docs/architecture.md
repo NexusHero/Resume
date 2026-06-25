@@ -63,13 +63,13 @@ The backend lives in `core/` and is strictly layered (dependencies point inward 
 
 ![Building blocks](umls/05_building_blocks.svg)
 
-| Layer       | Building block                                                                                                  | Responsibility                                                                                                        |
-| ----------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| HTTP        | `create-app`, `ApplicationController`, `problem`, `async-handler`                                               | Express routing, zod validation at the boundary, RFC 9457 problem+json errors.                                        |
-| Application | `ApplicationService`                                                                                            | The only place business rules live: record / build / update, audit, version. Depends on **ports**, never on adapters. |
-| Domain      | `application` (types + zod), `errors`                                                                           | The model and its invariants. No I/O.                                                                                 |
-| Ports       | `ApplicationRepository`, `AuditLog`, `PdfArchive`, `PdfRenderer`, `Versioner`, `Clock`, `IdGenerator`, `Logger` | Interfaces the service depends on.                                                                                    |
-| Adapters    | `Fs*`, `GitVersioner`, `PuppeteerPdfRenderer`, `SystemClock`, `RandomIdGenerator`, `pino`                       | Concrete I/O implementations, wired in `container.ts` (Awilix).                                                       |
+| Layer       | Building block                                                                                                               | Responsibility                                                                                                        |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| HTTP        | `create-app`, `ApplicationController`, `problem`, `async-handler`                                                            | Express routing, zod validation at the boundary, RFC 9457 problem+json errors.                                        |
+| Application | `ApplicationService`                                                                                                         | The only place business rules live: record / build / update, audit, version. Depends on **ports**, never on adapters. |
+| Domain      | `application` (types + zod), `errors`                                                                                        | The model and its invariants. No I/O.                                                                                 |
+| Ports       | `ApplicationRepository`, `AuditLog`, `PdfArchive`, `PdfRenderer`, `PdfMerger`, `Versioner`, `Clock`, `IdGenerator`, `Logger` | Interfaces the service depends on (rendering and merging are separate ports — ISP).                                   |
+| Adapters    | `Fs*`, `GitVersioner`, `PuppeteerPdfRenderer`, `PdfLibMerger`, `SystemClock`, `RandomIdGenerator`, `pino`                    | Concrete I/O implementations, wired in `container.ts` (Awilix).                                                       |
 
 The composition root (`container.ts`) is the single place that knows which adapter
 implements each port — so tests substitute in-memory fakes and never touch git or Chromium.

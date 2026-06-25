@@ -15,6 +15,7 @@ import { FsAuditLog } from './adapters/fs-audit-log';
 import { FsPdfArchive } from './adapters/fs-pdf-archive';
 import { GitVersioner } from './adapters/git-versioner';
 import { PuppeteerPdfRenderer } from './adapters/puppeteer-pdf-renderer';
+import { PdfLibMerger } from './adapters/pdf-lib-merger';
 import { ApplicationService } from './services/application-service';
 import { ApplicationController } from './http/application-controller';
 
@@ -31,6 +32,7 @@ export function buildContainer(config: AppConfig = loadConfig()): AwilixContaine
     pdfArchive: asClass(FsPdfArchive).singleton(),
     versioner: asClass(GitVersioner).singleton(),
     pdfRenderer: asClass(PuppeteerPdfRenderer).singleton(),
+    pdfMerger: asClass(PdfLibMerger).singleton(),
     applicationService: asClass(ApplicationService).singleton(),
     applicationController: asClass(ApplicationController).singleton(),
   });

@@ -1,4 +1,5 @@
-import { ApplicationService, slug } from '../../src/services/application-service';
+import { ApplicationService } from '../../src/services/application-service';
+import { slug } from '../../src/domain/slug';
 import {
   createApplicationSchema,
   updateApplicationSchema,
@@ -10,6 +11,7 @@ import {
   InMemoryAuditLog,
   InMemoryPdfArchive,
   FakePdfRenderer,
+  FakePdfMerger,
   FakeVersioner,
   FixedClock,
   SequenceIdGenerator,
@@ -26,6 +28,7 @@ function makeService(versioner: FakeVersioner = new FakeVersioner('abc1234')) {
     auditLog: audit,
     pdfArchive: archive,
     pdfRenderer: renderer,
+    pdfMerger: new FakePdfMerger(),
     versioner,
     clock: new FixedClock(),
     idGenerator: new SequenceIdGenerator(),

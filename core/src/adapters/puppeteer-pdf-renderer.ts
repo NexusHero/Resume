@@ -1,6 +1,5 @@
 import path from 'node:path';
 import puppeteer, { type Browser, type Page } from 'puppeteer';
-import { PDFDocument } from 'pdf-lib';
 import type { AppConfig } from '../config';
 import type { Logger } from '../ports/logger';
 import type { CoverLetterOptions, PdfRenderer } from '../ports/pdf-renderer';
@@ -114,17 +113,6 @@ export class PuppeteerPdfRenderer implements PdfRenderer {
     } finally {
       await page.close();
     }
-  }
-
-  async merge(parts: Buffer[], options: { title?: string } = {}): Promise<Buffer> {
-    const out = await PDFDocument.create();
-    if (options.title) out.setTitle(options.title);
-    for (const part of parts) {
-      const src = await PDFDocument.load(part, { ignoreEncryption: true });
-      const pages = await out.copyPages(src, src.getPageIndices());
-      pages.forEach((p) => out.addPage(p));
-    }
-    return Buffer.from(await out.save());
   }
 
   async close(): Promise<void> {

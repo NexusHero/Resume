@@ -1,111 +1,80 @@
-/* __kit_guard__ */
-(function(){ var __s=document.currentScript; if (__s && /_ds_bundle\.js/.test(__s.src||'')) return;
-/* app.jsx — orchestrates the myJob recruiting workspace for two roles. */
+/* app.jsx — orchestrates the unified myJob workspace. Define-only; render is in index.html. */
 const A = window.BewerbungstoolDesignSystem_a75119;
 
-const VERMITTLER_NAV = [
-  { id: 'mandate', label: 'Mandate', icon: 'briefcase' },
-  { id: 'pool', label: 'Talent-Pool', icon: 'users' },
-  { id: 'platzierungen', label: 'Platzierungen', icon: 'award' },
-  { id: 'berichte', label: 'Berichte', icon: 'trend' },
-  { id: 'postfach', label: 'Postfach', icon: 'inbox' },
-];
-
 const TITLES = {
-  hr: {
-    pipeline: ['Pipeline', 'Alle Kandidat:innen über die Phasen ziehen'],
-    talente: ['Talente', 'Durchsuchbare Liste aller Bewerbungen'],
-    stellen: ['Stellen', 'Offene Positionen und ihre Pipelines'],
-    berichte: ['Berichte', 'Funnel, Quellen und Kennzahlen'],
-    postfach: ['Postfach', 'Nachrichten von Kandidat:innen'],
-  },
-  vermittler: {
-    mandate: ['Mandate', 'Suchaufträge je Kunde mit Provision und Frist'],
-    pool: ['Talent-Pool', 'Eigener Kandidaten-Pool und Verfügbarkeit'],
-    platzierungen: ['Platzierungen', 'Gebuchte Vermittlungen und Provision'],
-    berichte: ['Berichte', 'Provision, Mandate und Auslastung'],
-    postfach: ['Postfach', 'Nachrichten von Kandidat:innen'],
-  },
+  uebersicht: ['Übersicht', 'Vermittlung & eigene Bewerbungen auf einen Blick'],
+  mandate: ['Mandate', 'Suchaufträge je Kunde mit Provision und Frist'],
+  pool: ['Talent-Pool', 'Wen du vertrittst — Ich zuerst'],
+  bewerbungen: ['Bewerbungen', 'Pipeline aller Vorschläge und eigenen Mappen'],
+  platzierungen: ['Platzierungen', 'Gebuchte Vermittlungen und Provision'],
+  berichte: ['Berichte', 'Provision, Funnel und Auslastung'],
+  postfach: ['Postfach', 'Nachrichten von Kunden und Firmen'],
 };
 
 function App() {
-  const [role, setRole] = React.useState('hr');
-  const [nav, setNav] = React.useState('pipeline');
+  const [nav, setNav] = React.useState('uebersicht');
   const [search, setSearch] = React.useState('');
-  const [selected, setSelected] = React.useState(null);
-  const [candidates, setCandidates] = React.useState(window.CANDIDATES);
+  const [openTalent, setOpenTalent] = React.useState(null);
+  const [mappeFor, setMappeFor] = React.useState(null);
+  const [editing, setEditing] = React.useState(null);
 
-  const navItems = role === 'hr' ? window.HR_NAV : VERMITTLER_NAV;
+  const talents = window.TALENTS;
+  const apps = window.APPLICATIONS;
+  const me = talents.find((t) => t.me);
 
-  const switchRole = (r) => {
-    setRole(r);
-    setNav(r === 'hr' ? 'pipeline' : 'mandate');
-    setSelected(null);
-  };
+  const unread = window.MESSAGES.filter((m) => m.unread).length;
+  const badges = { bewerbungen: apps.filter((a) => a.status !== 'rejected' && a.status !== 'hired').length, postfach: unread || undefined };
 
-  const visible = React.useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return candidates;
-    return candidates.filter((c) => (c.name + ' ' + c.role + ' ' + c.position).toLowerCase().includes(q));
-  }, [candidates, search]);
+  const goTalent = (id) => setOpenTalent(id);
+  const back = () => setOpenTalent(null);
 
-  const open = (id) => setSelected(id);
-  const close = () => setSelected(null);
-  const advance = (id) => {
-    setCandidates((cs) => cs.map((c) => {
-      if (c.id !== id) return c;
-      const i = window.STAGES_ORDER.indexOf(c.status);
-      const next = window.STAGES_ORDER[Math.min(i + 1, window.STAGES_ORDER.length - 1)];
-      return { ...c, status: next };
-    }));
-  };
-  const reject = (id) => {
-    setCandidates((cs) => cs.map((c) => c.id === id ? { ...c, status: 'rejected' } : c));
-    close();
-  };
+  const talent = openTalent && talents.find((t) => t.id === openTalent);
+  const talentApps = (id) => apps.filter((a) => a.talentId === id);
+  const editTalent = editing && talents.find((t) => t.id === editing);
 
-  const cand = candidates.find((c) => c.id === selected);
-  const [title, subtitle] = TITLES[role][nav] || ['', ''];
+  // editor takes over the whole canvas
+  if (editTalent) {
+    return (
+      <window.AppShell active="pool" onNav={(n) => { setEditing(null); setOpenTalent(null); setNav(n); }} me={me} talentCount={talents.length} search={search} onSearch={setSearch} title={editTalent.me ? 'Meine Dokumente' : editTalent.name} subtitle="Lebenslauf & Anschreiben bearbeiten" badges={badges}>
+        <window.Editor talent={editTalent} onClose={() => setEditing(null)} onCreateMappe={() => { setMappeFor(editTalent); }} />
+        {mappeFor && <window.MappeModal talent={mappeFor} onClose={() => setMappeFor(null)} />}
+      </window.AppShell>
+    );
+  }
 
-  const ACTION_LABEL = {
-    pipeline: 'Kandidat:in', stellen: 'Stelle anlegen',
-    mandate: 'Mandat anlegen', pool: 'Talent hinzufügen', platzierungen: 'Platzierung buchen',
-  };
-  const actions = ACTION_LABEL[nav]
-    ? <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="plus" size={15} />}>{ACTION_LABEL[nav]}</A.Button>
+  // a talent profile takes over the whole canvas regardless of nav
+  let title, subtitle, body;
+  if (talent) {
+    title = talent.me ? 'Mein Profil' : talent.name;
+    subtitle = 'Lebenslauf, Anhänge und Bewerbungen';
+    body = <window.TalentProfile talent={talent} apps={talentApps(talent.id)} onBack={back} onEdit={() => setEditing(talent.id)} onCreateMappe={() => setMappeFor(talent)} />;
+  } else {
+    [title, subtitle] = TITLES[nav];
+    if (nav === 'uebersicht') body = <window.Dashboard me={me} apps={apps} vkpis={window.VERMITTLER_KPIS} clients={window.CLIENTS} mandates={window.MANDATES} onOpenTalent={goTalent} onOpenPipeline={() => setNav('bewerbungen')} onOpenMandate={() => setNav('mandate')} />;
+    else if (nav === 'mandate') body = <window.MandateView clients={window.CLIENTS} mandates={window.MANDATES} />;
+    else if (nav === 'pool') body = <window.TalentGrid talents={talents} apps={apps} onOpen={goTalent} />;
+    else if (nav === 'bewerbungen') body = (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '100%' }}>
+        <window.PipelineBoard apps={apps} talents={talents} onOpen={goTalent} />
+      </div>
+    );
+    else if (nav === 'platzierungen') body = <window.PlatzierungenView placements={window.PLACEMENTS} kpis={window.VERMITTLER_KPIS} />;
+    else if (nav === 'berichte') body = <window.ReportsView clients={window.CLIENTS} mandates={window.MANDATES} placements={window.PLACEMENTS} apps={apps} kpis={window.VERMITTLER_KPIS} />;
+    else if (nav === 'postfach') body = <window.Inbox messages={window.MESSAGES} apps={apps} talents={talents} onOpenTalent={goTalent} />;
+  }
+
+  const actions = (!talent && (nav === 'bewerbungen' || nav === 'uebersicht'))
+    ? <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="plus" size={15} />} onClick={() => setMappeFor(me)}>Bewerbung einpflegen</A.Button>
+    : (!talent && nav === 'mandate')
+    ? <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="plus" size={15} />}>Mandat anlegen</A.Button>
     : null;
 
   return (
-    <window.AppShell active={nav} onNav={setNav} navItems={navItems} role={role} onRole={switchRole} search={search} onSearch={setSearch} title={title} subtitle={subtitle} actions={actions}>
-      {/* HR workflow */}
-      {role === 'hr' && nav === 'pipeline' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', height: '100%' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', flexShrink: 0 }}>
-            {window.KPIS.map((k, i) => <A.StatCard key={i} {...k} />)}
-          </div>
-          <div style={{ flex: 1, minHeight: 0 }}>
-            <window.PipelineBoard candidates={visible} onOpen={open} />
-          </div>
-        </div>
-      )}
-      {role === 'hr' && nav === 'talente' && <window.CandidateList candidates={visible} onOpen={open} />}
-      {role === 'hr' && nav === 'stellen' && <window.JobsView jobs={window.JOBS} candidates={candidates} onOpen={open} />}
-      {role === 'hr' && nav === 'berichte' && <window.ReportsView candidates={candidates} kpis={window.KPIS} />}
-
-      {/* Vermittler workflow */}
-      {role === 'vermittler' && nav === 'mandate' && <window.MandateView clients={window.CLIENTS} mandates={window.MANDATES} />}
-      {role === 'vermittler' && nav === 'pool' && <window.PoolView pool={window.POOL} candidates={candidates} onOpen={open} />}
-      {role === 'vermittler' && nav === 'platzierungen' && <window.PlatzierungenView placements={window.PLACEMENTS} candidates={candidates} kpis={window.VERMITTLER_KPIS} />}
-      {role === 'vermittler' && nav === 'berichte' && <window.VermittlerReports clients={window.CLIENTS} mandates={window.MANDATES} placements={window.PLACEMENTS} kpis={window.VERMITTLER_KPIS} />}
-
-      {/* shared */}
-      {nav === 'postfach' && <window.Inbox candidates={candidates} onOpen={open} />}
-
-      {cand && <window.CandidateDetail c={cand} onClose={close} onAdvance={advance} onReject={reject} />}
+    <window.AppShell active={talent ? 'pool' : nav} onNav={(n) => { setOpenTalent(null); setNav(n); }} me={me} talentCount={talents.length} search={search} onSearch={setSearch} title={title} subtitle={subtitle} badges={badges} actions={actions}>
+      {body}
+      {mappeFor && <window.MappeModal talent={mappeFor} onClose={() => setMappeFor(null)} />}
     </window.AppShell>
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-
-})();
+Object.assign(window, { App });

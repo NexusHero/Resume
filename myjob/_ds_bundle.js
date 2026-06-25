@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":3,"namespace":"BewerbungstoolDesignSystem_a75119","components":[{"name":"Avatar","sourcePath":"components/core/Avatar.jsx"},{"name":"Badge","sourcePath":"components/core/Badge.jsx"},{"name":"Button","sourcePath":"components/core/Button.jsx"},{"name":"Icon","sourcePath":"components/core/Icon.jsx"},{"name":"ICON_NAMES","sourcePath":"components/core/Icon.jsx"},{"name":"IconButton","sourcePath":"components/core/IconButton.jsx"},{"name":"MetaPill","sourcePath":"components/core/MetaPill.jsx"},{"name":"CandidateRow","sourcePath":"components/data/CandidateRow.jsx"},{"name":"Card","sourcePath":"components/data/Card.jsx"},{"name":"ProgressBar","sourcePath":"components/data/ProgressBar.jsx"},{"name":"StatCard","sourcePath":"components/data/StatCard.jsx"},{"name":"STAGES","sourcePath":"components/data/StatusBadge.jsx"},{"name":"StatusBadge","sourcePath":"components/data/StatusBadge.jsx"},{"name":"Tabs","sourcePath":"components/data/Tabs.jsx"},{"name":"Checkbox","sourcePath":"components/forms/Checkbox.jsx"},{"name":"Input","sourcePath":"components/forms/Input.jsx"},{"name":"Select","sourcePath":"components/forms/Select.jsx"},{"name":"Switch","sourcePath":"components/forms/Switch.jsx"},{"name":"Textarea","sourcePath":"components/forms/Textarea.jsx"}],"sourceHashes":{"components/core/Avatar.jsx":"be544725a790","components/core/Badge.jsx":"587e11e83ce2","components/core/Button.jsx":"c599138c513c","components/core/Icon.jsx":"e0a5eb759f8c","components/core/IconButton.jsx":"bddaf1dfefaa","components/core/MetaPill.jsx":"b99f31f6e87c","components/data/CandidateRow.jsx":"636370c8d577","components/data/Card.jsx":"d9336b6dae72","components/data/ProgressBar.jsx":"cb537e860275","components/data/StatCard.jsx":"3f5fee7e6433","components/data/StatusBadge.jsx":"a90276d82a1c","components/data/Tabs.jsx":"d7895fd812a5","components/forms/Checkbox.jsx":"3ff388154f50","components/forms/Input.jsx":"7bf1885f9285","components/forms/Select.jsx":"4e2274926081","components/forms/Switch.jsx":"798cb097d1f9","components/forms/Textarea.jsx":"a49a73a5a3fb","ui_kits/bewerber/app.jsx":"388a47ffb23d","ui_kits/bewerber/data.js":"91427a20b9be","ui_kits/recruiting/AppShell.jsx":"b02a5e503073","ui_kits/recruiting/CandidateDetail.jsx":"89b36d0aa79d","ui_kits/recruiting/PipelineBoard.jsx":"ced88b2c9dc9","ui_kits/recruiting/VermittlerViews.jsx":"e576ca88a864","ui_kits/recruiting/Views.jsx":"21261edd2eb9","ui_kits/recruiting/app.jsx":"1f13a0e0eb29","ui_kits/recruiting/data.js":"40e92a2972c5"},"inlinedExternals":[],"unexposedExports":[]} */
+/* @ds-bundle: {"format":3,"namespace":"BewerbungstoolDesignSystem_a75119","components":[{"name":"Avatar","sourcePath":"components/core/Avatar.jsx"},{"name":"Badge","sourcePath":"components/core/Badge.jsx"},{"name":"Button","sourcePath":"components/core/Button.jsx"},{"name":"Icon","sourcePath":"components/core/Icon.jsx"},{"name":"ICON_NAMES","sourcePath":"components/core/Icon.jsx"},{"name":"IconButton","sourcePath":"components/core/IconButton.jsx"},{"name":"MetaPill","sourcePath":"components/core/MetaPill.jsx"},{"name":"CandidateRow","sourcePath":"components/data/CandidateRow.jsx"},{"name":"Card","sourcePath":"components/data/Card.jsx"},{"name":"ProgressBar","sourcePath":"components/data/ProgressBar.jsx"},{"name":"StatCard","sourcePath":"components/data/StatCard.jsx"},{"name":"STAGES","sourcePath":"components/data/StatusBadge.jsx"},{"name":"StatusBadge","sourcePath":"components/data/StatusBadge.jsx"},{"name":"Tabs","sourcePath":"components/data/Tabs.jsx"},{"name":"Checkbox","sourcePath":"components/forms/Checkbox.jsx"},{"name":"Input","sourcePath":"components/forms/Input.jsx"},{"name":"Select","sourcePath":"components/forms/Select.jsx"},{"name":"Switch","sourcePath":"components/forms/Switch.jsx"},{"name":"Textarea","sourcePath":"components/forms/Textarea.jsx"}],"sourceHashes":{"components/core/Avatar.jsx":"be544725a790","components/core/Badge.jsx":"587e11e83ce2","components/core/Button.jsx":"c599138c513c","components/core/Icon.jsx":"e0a5eb759f8c","components/core/IconButton.jsx":"bddaf1dfefaa","components/core/MetaPill.jsx":"b99f31f6e87c","components/data/CandidateRow.jsx":"636370c8d577","components/data/Card.jsx":"d9336b6dae72","components/data/ProgressBar.jsx":"cb537e860275","components/data/StatCard.jsx":"3f5fee7e6433","components/data/StatusBadge.jsx":"a90276d82a1c","components/data/Tabs.jsx":"d7895fd812a5","components/forms/Checkbox.jsx":"3ff388154f50","components/forms/Input.jsx":"7bf1885f9285","components/forms/Select.jsx":"4e2274926081","components/forms/Switch.jsx":"798cb097d1f9","components/forms/Textarea.jsx":"a49a73a5a3fb","ui_kits/recruiting/AppShell.jsx":"da025417f654","ui_kits/recruiting/Editor.jsx":"957a7f4715f6","ui_kits/recruiting/MappeModal.jsx":"c05e833e6402","ui_kits/recruiting/PipelineBoard.jsx":"7a4cfbb0e9a4","ui_kits/recruiting/TalentProfile.jsx":"59a4fed83883","ui_kits/recruiting/VermittlerViews.jsx":"9aaeb1ae5f3f","ui_kits/recruiting/Workspace.jsx":"a8a10519694a","ui_kits/recruiting/app.jsx":"240cb64ea42c","ui_kits/recruiting/data.js":"434436425a0d"},"inlinedExternals":[],"unexposedExports":[]} */
 
 (() => {
 
@@ -1909,3089 +1909,4214 @@ function Textarea({
 Object.assign(__ds_scope, { Textarea });
 })(); } catch (e) { __ds_ns.__errors.push({ path: "components/forms/Textarea.jsx", error: String((e && e.message) || e) }); }
 
-// ui_kits/bewerber/app.jsx
-try { (() => {
-/* __kit_guard__ */
-(function () {
-  var __s = document.currentScript;
-  if (__s && /_ds_bundle\.js/.test(__s.src || '')) return;
-  /* Bewerber app — applicant home (applications) + Bewerbungsmappe composer. */
-  const B = window.BewerbungstoolDesignSystem_a75119;
-  function Header({
-    tab,
-    setTab
-  }) {
-    return /*#__PURE__*/React.createElement("header", {
-      style: {
-        background: 'linear-gradient(165deg, var(--ink-850), var(--ink-900))',
-        color: '#fff',
-        padding: '22px 36px 0'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '14px'
-      }
-    }, /*#__PURE__*/React.createElement("img", {
-      src: "../../assets/logo/myjob-mark.svg",
-      width: "34",
-      height: "34",
-      alt: ""
-    }), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontFamily: 'var(--font-display)',
-        fontWeight: 700,
-        fontSize: '18px',
-        letterSpacing: '-0.02em'
-      }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        color: 'var(--accent-on-dark)'
-      }
-    }, "my"), "Job"), /*#__PURE__*/React.createElement(B.Badge, {
-      variant: "glass",
-      size: "sm"
-    }, "f\xFCr Bewerber:innen"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        marginLeft: 'auto',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px'
-      }
-    }, /*#__PURE__*/React.createElement(B.IconButton, {
-      icon: "bell",
-      label: "Benachrichtigungen",
-      variant: "glass"
-    }), /*#__PURE__*/React.createElement(B.Avatar, {
-      name: window.ME.name,
-      src: window.ME.src,
-      size: "sm"
-    }))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '17px',
-        margin: '22px 0 18px'
-      }
-    }, /*#__PURE__*/React.createElement(B.Avatar, {
-      name: window.ME.name,
-      src: window.ME.src,
-      size: 58,
-      radius: "var(--radius-lg)"
-    }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontFamily: 'var(--font-display)',
-        fontSize: '26px',
-        fontWeight: 700,
-        letterSpacing: '-0.025em'
-      }
-    }, window.ME.name), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: '13.5px',
-        color: 'var(--sidebar-muted)',
-        marginTop: '2px'
-      }
-    }, window.ME.role, " \xB7 ", window.ME.location))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        gap: '4px'
-      }
-    }, [['mappe', 'Meine Bewerbungen'], ['neu', 'Neue Mappe erstellen']].map(([id, lbl]) => /*#__PURE__*/React.createElement("button", {
-      key: id,
-      onClick: () => setTab(id),
-      style: {
-        appearance: 'none',
-        background: 'transparent',
-        border: 'none',
-        cursor: 'pointer',
-        padding: '11px 16px',
-        marginBottom: '-1px',
-        fontFamily: 'var(--font-body)',
-        fontSize: '14px',
-        fontWeight: 600,
-        color: tab === id ? '#fff' : 'var(--sidebar-soft)',
-        borderBottom: `2px solid ${tab === id ? 'var(--accent-on-dark)' : 'transparent'}`
-      }
-    }, lbl))));
-  }
-
-  /* ---------- Applications list ---------- */
-  function ApplicationsView() {
-    const apps = window.APPLICATIONS;
-    const active = apps.filter(a => a.status !== 'rejected' && a.status !== 'hired').length;
-    return /*#__PURE__*/React.createElement("div", {
-      style: {
-        maxWidth: '880px',
-        margin: '0 auto',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '18px'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: '14px'
-      }
-    }, /*#__PURE__*/React.createElement(B.StatCard, {
-      label: "Aktive Bewerbungen",
-      value: String(active),
-      icon: "send"
-    }), /*#__PURE__*/React.createElement(B.StatCard, {
-      label: "Im Gespr\xE4ch",
-      value: String(apps.filter(a => a.status === 'interview').length),
-      icon: "message"
-    }), /*#__PURE__*/React.createElement(B.StatCard, {
-      label: "Angebote",
-      value: String(apps.filter(a => a.status === 'offer').length),
-      delta: "+1",
-      dir: "up",
-      icon: "award"
-    })), /*#__PURE__*/React.createElement(B.Card, {
-      pad: false,
-      title: "Verlauf",
-      action: /*#__PURE__*/React.createElement(B.Button, {
-        size: "sm",
-        variant: "outline",
-        iconLeft: /*#__PURE__*/React.createElement(B.Icon, {
-          name: "download",
-          size: 14
-        })
-      }, "Export")
-    }, apps.map(a => /*#__PURE__*/React.createElement("div", {
-      key: a.id,
-      style: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '15px',
-        padding: '15px 18px',
-        borderBottom: '1px solid var(--border)'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        width: '42px',
-        height: '42px',
-        flexShrink: 0,
-        borderRadius: 'var(--radius-md)',
-        background: 'var(--surface-sunk)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'var(--text-muted)'
-      }
-    }, /*#__PURE__*/React.createElement(B.Icon, {
-      name: "building",
-      size: 20
-    })), /*#__PURE__*/React.createElement("div", {
-      style: {
-        flex: 1,
-        minWidth: 0
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontFamily: 'var(--font-display)',
-        fontSize: '15px',
-        fontWeight: 700,
-        color: 'var(--text-heading)'
-      }
-    }, a.firma), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: '12.5px',
-        color: 'var(--text-muted)',
-        marginTop: '1px'
-      }
-    }, a.stelle, " \xB7 ", a.ort)), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'flex-end',
-        gap: '6px'
-      }
-    }, /*#__PURE__*/React.createElement(B.StatusBadge, {
-      status: a.status,
-      size: "sm"
-    }), /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontFamily: 'var(--font-mono)',
-        fontSize: '11px',
-        color: 'var(--text-soft)'
-      }
-    }, a.next))))));
-  }
-
-  /* ---------- Bewerbungsmappe composer ---------- */
-  function ComposerView() {
-    const [docs, setDocs] = React.useState(window.DOCS);
-    const move = (i, dir) => {
-      setDocs(d => {
-        const n = [...d];
-        const j = i + dir;
-        if (j < 0 || j >= n.length) return n;
-        [n[i], n[j]] = [n[j], n[i]];
-        return n;
-      });
-    };
-    const remove = id => setDocs(d => d.filter(x => x.id !== id));
-    return /*#__PURE__*/React.createElement("div", {
-      style: {
-        maxWidth: '880px',
-        margin: '0 auto',
-        display: 'grid',
-        gridTemplateColumns: '1.3fr 1fr',
-        gap: '18px',
-        alignItems: 'start'
-      }
-    }, /*#__PURE__*/React.createElement(B.Card, {
-      title: "Empf\xE4nger",
-      subtitle: "An wen geht die Mappe?"
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: '13px'
-      }
-    }, /*#__PURE__*/React.createElement(B.Input, {
-      label: "Firma",
-      icon: "building",
-      defaultValue: "Aurora Systems GmbH"
-    }), /*#__PURE__*/React.createElement(B.Input, {
-      label: "Stelle",
-      icon: "briefcase",
-      defaultValue: "Senior C++ Engineer"
-    }), /*#__PURE__*/React.createElement(B.Input, {
-      label: "Ansprechpartner:in",
-      icon: "user",
-      defaultValue: "Personalabteilung"
-    }), /*#__PURE__*/React.createElement(B.Input, {
-      label: "Referenz",
-      defaultValue: "REF-2026-481"
-    }), /*#__PURE__*/React.createElement(B.Input, {
-      label: "Stra\xDFe & Nr.",
-      icon: "pin",
-      defaultValue: "Lichtstra\xDFe 12"
-    }), /*#__PURE__*/React.createElement(B.Input, {
-      label: "PLZ & Ort",
-      defaultValue: "10115 Berlin"
-    }))), /*#__PURE__*/React.createElement(B.Card, {
-      title: "Dokumente",
-      subtitle: "Reihenfolge der finalen PDF"
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '8px'
-      }
-    }, docs.map((d, i) => /*#__PURE__*/React.createElement("div", {
-      key: d.id,
-      style: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '11px',
-        padding: '10px 12px',
-        border: `1px solid ${d.pinned ? 'var(--accent-border)' : 'var(--border)'}`,
-        borderRadius: 'var(--radius-md)',
-        background: d.pinned ? 'var(--accent-soft)' : 'var(--surface-card)'
-      }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontFamily: 'var(--font-mono)',
-        fontSize: '11px',
-        fontWeight: 600,
-        color: '#fff',
-        background: 'var(--ink-900)',
-        width: '20px',
-        height: '20px',
-        borderRadius: '50%',
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0
-      }
-    }, i + 1), /*#__PURE__*/React.createElement("div", {
-      style: {
-        flex: 1,
-        minWidth: 0
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: '13px',
-        fontWeight: 600,
-        color: 'var(--text-heading)'
-      }
-    }, d.name, /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontFamily: 'var(--font-mono)',
-        fontSize: '10px',
-        color: 'var(--accent-strong)',
-        marginLeft: '7px'
-      }
-    }, d.tag)), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontFamily: 'var(--font-mono)',
-        fontSize: '11px',
-        color: 'var(--text-soft)'
-      }
-    }, d.sub)), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        gap: '3px'
-      }
-    }, /*#__PURE__*/React.createElement(B.IconButton, {
-      icon: "chevronUp",
-      label: "Hoch",
-      variant: "ghost",
-      size: "sm",
-      onClick: () => move(i, -1),
-      disabled: i === 0
-    }), /*#__PURE__*/React.createElement(B.IconButton, {
-      icon: "chevronDown",
-      label: "Runter",
-      variant: "ghost",
-      size: "sm",
-      onClick: () => move(i, 1),
-      disabled: i === docs.length - 1
-    }), /*#__PURE__*/React.createElement(B.IconButton, {
-      icon: "trash",
-      label: "Entfernen",
-      variant: "ghost",
-      size: "sm",
-      onClick: () => remove(d.id),
-      disabled: d.pinned
-    }))))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        marginTop: '12px',
-        border: '2px dashed var(--border-strong)',
-        borderRadius: 'var(--radius-md)',
-        padding: '18px',
-        textAlign: 'center'
-      }
-    }, /*#__PURE__*/React.createElement(B.Button, {
-      variant: "ink",
-      size: "sm",
-      iconLeft: /*#__PURE__*/React.createElement(B.Icon, {
-        name: "upload",
-        size: 14
-      })
-    }, "PDF hinzuf\xFCgen"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: '12px',
-        color: 'var(--text-soft)',
-        marginTop: '8px'
-      }
-    }, "oder Dateien hierher ziehen")), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginTop: '16px'
-      }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontFamily: 'var(--font-mono)',
-        fontSize: '12px',
-        color: 'var(--text-muted)'
-      }
-    }, docs.length, " Dokumente"), /*#__PURE__*/React.createElement(B.Button, {
-      variant: "primary",
-      iconRight: /*#__PURE__*/React.createElement(B.Icon, {
-        name: "arrowRight",
-        size: 15
-      })
-    }, "Mappe erstellen"))));
-  }
-  function BewerberApp() {
-    const [tab, setTab] = React.useState('mappe');
-    return /*#__PURE__*/React.createElement("div", {
-      style: {
-        minHeight: '100vh',
-        background: 'var(--surface-app)'
-      }
-    }, /*#__PURE__*/React.createElement(Header, {
-      tab: tab,
-      setTab: setTab
-    }), /*#__PURE__*/React.createElement("main", {
-      style: {
-        padding: '28px 36px 60px'
-      }
-    }, tab === 'mappe' ? /*#__PURE__*/React.createElement(ApplicationsView, null) : /*#__PURE__*/React.createElement(ComposerView, null)));
-  }
-  ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(BewerberApp, null));
-})();
-})(); } catch (e) { __ds_ns.__errors.push({ path: "ui_kits/bewerber/app.jsx", error: String((e && e.message) || e) }); }
-
-// ui_kits/bewerber/data.js
-try { (() => {
-/* __kit_guard__ */
-(function () {
-  var __s = document.currentScript;
-  if (__s && /_ds_bundle\.js/.test(__s.src || '')) return;
-  /* Bewerber-side sample data — the applicant's own applications (myJob für Bewerber). */
-  const ME = {
-    name: 'Suhay Sevinc',
-    role: 'M.Sc. Software Engineer',
-    src: '../../assets/img/candidate-portrait-sm.jpg',
-    location: 'Berlin'
-  };
-
-  /* status reuses the pipeline keys so StatusBadge labels match */
-  const APPLICATIONS = [{
-    id: 'a1',
-    firma: 'Aurora Systems GmbH',
-    stelle: 'Senior C++ Engineer',
-    ort: 'Berlin',
-    date: '12.06.2026',
-    status: 'interview',
-    next: 'Tech-Interview · 24.06.',
-    docs: 3
-  }, {
-    id: 'a2',
-    firma: 'Nordlicht Software',
-    stelle: 'Backend Engineer',
-    ort: 'Hamburg',
-    date: '09.06.2026',
-    status: 'review',
-    next: 'In Sichtung',
-    docs: 3
-  }, {
-    id: 'a3',
-    firma: 'Falk & Partner',
-    stelle: 'Plattform-Engineer',
-    ort: 'München',
-    date: '05.06.2026',
-    status: 'offer',
-    next: 'Angebot erhalten',
-    docs: 4
-  }, {
-    id: 'a4',
-    firma: 'Meridian Labs',
-    stelle: 'Distributed Systems Eng.',
-    ort: 'Remote',
-    date: '02.06.2026',
-    status: 'new',
-    next: 'Eingereicht',
-    docs: 3
-  }, {
-    id: 'a5',
-    firma: 'Hansa Digital',
-    stelle: 'C++ Tech Lead',
-    ort: 'Bremen',
-    date: '28.05.2026',
-    status: 'rejected',
-    next: 'Leider abgesagt',
-    docs: 3
-  }];
-  const DOCS = [{
-    id: 'd1',
-    name: 'Lebenslauf',
-    tag: 'CV',
-    sub: 'Aktualisiert · 1 Seite',
-    pinned: true
-  }, {
-    id: 'd2',
-    name: 'Anschreiben',
-    tag: 'Letter',
-    sub: 'Pro Stelle angepasst',
-    pinned: true
-  }, {
-    id: 'd3',
-    name: 'Arbeitszeugnis — Aurora',
-    tag: 'PDF',
-    sub: '2 Seiten'
-  }, {
-    id: 'd4',
-    name: 'M.Sc. Zeugnis',
-    tag: 'PDF',
-    sub: '1 Seite'
-  }, {
-    id: 'd5',
-    name: 'Zertifikat — Kubernetes',
-    tag: 'PDF',
-    sub: '1 Seite'
-  }];
-  Object.assign(window, {
-    ME,
-    APPLICATIONS,
-    DOCS
-  });
-})();
-})(); } catch (e) { __ds_ns.__errors.push({ path: "ui_kits/bewerber/data.js", error: String((e && e.message) || e) }); }
-
 // ui_kits/recruiting/AppShell.jsx
 try { (() => {
-/* __kit_guard__ */
-(function () {
-  var __s = document.currentScript;
-  if (__s && /_ds_bundle\.js/.test(__s.src || '')) return;
-  /* AppShell — the dark navigation rail + sticky topbar that wraps every screen. */
-  const {
-    Icon,
-    IconButton,
-    Avatar,
-    Badge
-  } = window.BewerbungstoolDesignSystem_a75119;
-  const HR_NAV = [{
-    id: 'pipeline',
-    label: 'Pipeline',
-    icon: 'columns'
-  }, {
-    id: 'stellen',
-    label: 'Stellen',
-    icon: 'briefcase'
-  }, {
-    id: 'talente',
-    label: 'Talente',
-    icon: 'users'
-  }, {
-    id: 'berichte',
-    label: 'Berichte',
-    icon: 'trend'
-  }, {
-    id: 'postfach',
-    label: 'Postfach',
-    icon: 'inbox'
-  }];
-  function NavItem({
-    item,
-    active,
-    onClick
-  }) {
-    const [hover, setHover] = React.useState(false);
-    return /*#__PURE__*/React.createElement("button", {
-      onClick: onClick,
-      onMouseEnter: () => setHover(true),
-      onMouseLeave: () => setHover(false),
-      style: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '11px',
-        width: '100%',
-        padding: '9px 11px',
-        borderRadius: 'var(--radius-md)',
-        border: 'none',
-        cursor: 'pointer',
-        fontFamily: 'var(--font-body)',
-        fontSize: '13.5px',
-        fontWeight: active ? 600 : 500,
-        color: active ? '#fff' : 'var(--sidebar-muted)',
-        background: active ? 'var(--sidebar-glass-strong)' : hover ? 'var(--sidebar-glass)' : 'transparent',
-        textAlign: 'left',
-        transition: 'background var(--dur-fast), color var(--dur-fast)'
-      }
-    }, /*#__PURE__*/React.createElement(Icon, {
-      name: item.icon,
-      size: 17,
-      style: {
-        color: active ? 'var(--accent-on-dark)' : 'currentColor'
-      }
-    }), item.label);
-  }
-  function AppShell({
-    active,
-    onNav,
-    navItems = HR_NAV,
-    role,
-    onRole,
-    search,
-    onSearch,
-    title,
-    subtitle,
-    actions,
-    children
-  }) {
-    return /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        height: '100vh',
-        overflow: 'hidden',
-        background: 'var(--surface-app)'
-      }
-    }, /*#__PURE__*/React.createElement("aside", {
-      style: {
-        width: 'var(--app-nav-width)',
-        flexShrink: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        background: 'linear-gradient(165deg, var(--ink-850) 0%, var(--ink-900) 100%)',
-        borderRight: '1px solid var(--sidebar-border)'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        padding: '20px 18px 16px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '11px'
-      }
-    }, /*#__PURE__*/React.createElement("img", {
-      src: "../../assets/logo/myjob-mark.svg",
-      width: "34",
-      height: "34",
-      alt: ""
-    }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontFamily: 'var(--font-display)',
-        fontWeight: 700,
-        fontSize: '18px',
-        color: '#fff',
-        letterSpacing: '-0.02em',
-        lineHeight: 1
-      }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        color: 'var(--accent-on-dark)'
-      }
-    }, "my"), "Job"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontFamily: 'var(--font-mono)',
-        fontSize: '9px',
-        letterSpacing: '0.14em',
-        textTransform: 'uppercase',
-        color: 'var(--sidebar-soft)',
-        marginTop: '3px'
-      }
-    }, "Bewerbungstool"))), /*#__PURE__*/React.createElement("nav", {
-      style: {
-        padding: '8px 12px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '3px',
-        flex: 1
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontFamily: 'var(--font-mono)',
-        fontSize: '9px',
-        letterSpacing: '0.14em',
-        textTransform: 'uppercase',
-        color: 'var(--sidebar-soft)',
-        padding: '8px 11px 6px'
-      }
-    }, role === 'hr' ? 'Arbeitsbereich' : 'Agentur'), navItems.map(n => /*#__PURE__*/React.createElement(NavItem, {
-      key: n.id,
-      item: n,
-      active: active === n.id,
-      onClick: () => onNav(n.id)
-    }))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        padding: '14px 14px 10px',
-        borderTop: '1px solid var(--sidebar-border)'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontFamily: 'var(--font-mono)',
-        fontSize: '9px',
-        letterSpacing: '0.14em',
-        textTransform: 'uppercase',
-        color: 'var(--sidebar-soft)',
-        marginBottom: '8px'
-      }
-    }, "Ansicht"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        background: 'var(--sidebar-glass)',
-        borderRadius: 'var(--radius-md)',
-        padding: '3px',
-        border: '1px solid var(--sidebar-border)'
-      }
-    }, [['hr', 'HR'], ['vermittler', 'Vermittler']].map(([id, lbl]) => /*#__PURE__*/React.createElement("button", {
-      key: id,
-      onClick: () => onRole(id),
-      style: {
-        flex: 1,
-        padding: '6px 8px',
-        border: 'none',
-        cursor: 'pointer',
-        borderRadius: 'var(--radius-sm)',
-        fontFamily: 'var(--font-mono)',
-        fontSize: '11px',
-        fontWeight: 600,
-        background: role === id ? 'var(--accent)' : 'transparent',
-        color: role === id ? '#fff' : 'var(--sidebar-muted)',
-        transition: 'background var(--dur-fast)'
-      }
-    }, lbl)))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        padding: '10px 14px 16px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px'
-      }
-    }, /*#__PURE__*/React.createElement(Avatar, {
-      name: role === 'hr' ? 'Petra Voss' : 'Karl Mertens',
-      size: "sm"
-    }), /*#__PURE__*/React.createElement("div", {
-      style: {
-        flex: 1,
-        minWidth: 0
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: '12.5px',
-        fontWeight: 600,
-        color: '#fff',
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis'
-      }
-    }, role === 'hr' ? 'Petra Voss' : 'Karl Mertens'), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontFamily: 'var(--font-mono)',
-        fontSize: '10px',
-        color: 'var(--sidebar-soft)'
-      }
-    }, role === 'hr' ? 'Recruiting · Acme' : 'Vermittler · TalentBridge')), /*#__PURE__*/React.createElement(Icon, {
-      name: "logout",
-      size: 15,
-      style: {
-        color: 'var(--sidebar-soft)'
-      }
-    }))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        minWidth: 0
-      }
-    }, /*#__PURE__*/React.createElement("header", {
-      style: {
-        height: 'var(--app-topbar-h)',
-        flexShrink: 0,
-        display: 'flex',
-        alignItems: 'center',
-        gap: '16px',
-        padding: '0 28px',
-        background: 'color-mix(in oklch, var(--paper) 88%, transparent)',
-        backdropFilter: 'blur(10px)',
-        WebkitBackdropFilter: 'blur(10px)',
-        borderBottom: '1px solid var(--border)',
-        position: 'sticky',
-        top: 0,
-        zIndex: 5
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        minWidth: 0
-      }
-    }, /*#__PURE__*/React.createElement("h1", {
-      style: {
-        fontFamily: 'var(--font-display)',
-        fontSize: '18px',
-        fontWeight: 700,
-        color: 'var(--text-heading)',
-        margin: 0,
-        letterSpacing: '-0.015em'
-      }
-    }, title), subtitle && /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: '11.5px',
-        color: 'var(--text-soft)',
-        marginTop: '1px'
-      }
-    }, subtitle)), /*#__PURE__*/React.createElement("div", {
-      style: {
-        marginLeft: 'auto',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px'
-      }
-    }, /*#__PURE__*/React.createElement("label", {
-      style: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        background: 'var(--surface-card)',
-        border: '1px solid var(--border-strong)',
-        borderRadius: 'var(--radius-md)',
-        padding: '0 11px',
-        width: '220px'
-      }
-    }, /*#__PURE__*/React.createElement(Icon, {
-      name: "search",
-      size: 15,
-      style: {
-        color: 'var(--text-soft)'
-      }
-    }), /*#__PURE__*/React.createElement("input", {
-      value: search,
-      onChange: e => onSearch(e.target.value),
-      placeholder: "Suchen \u2026",
-      style: {
-        flex: 1,
-        minWidth: 0,
-        border: 'none',
-        outline: 'none',
-        background: 'transparent',
-        fontFamily: 'var(--font-body)',
-        fontSize: '13px',
-        color: 'var(--text-heading)',
-        padding: '8px 0'
-      }
-    })), /*#__PURE__*/React.createElement("div", {
-      style: {
-        position: 'relative'
-      }
-    }, /*#__PURE__*/React.createElement(IconButton, {
-      icon: "bell",
-      label: "Benachrichtigungen",
-      variant: "outline"
-    }), /*#__PURE__*/React.createElement("span", {
-      style: {
-        position: 'absolute',
-        top: '-3px',
-        right: '-3px',
-        width: '8px',
-        height: '8px',
-        borderRadius: '50%',
-        background: 'var(--signal-500)',
-        border: '2px solid var(--paper)'
-      }
-    })), actions)), /*#__PURE__*/React.createElement("main", {
-      style: {
-        flex: 1,
-        overflowY: 'auto',
-        padding: 'var(--pad-app)'
-      }
-    }, children)));
-  }
-  Object.assign(window, {
-    AppShell,
-    HR_NAV
-  });
-})();
+/* AppShell — dark nav rail + sticky topbar. One coherent product, no role toggle. */
+const {
+  Icon,
+  IconButton,
+  Avatar,
+  Badge
+} = window.BewerbungstoolDesignSystem_a75119;
+const NAV = [{
+  id: 'uebersicht',
+  label: 'Übersicht',
+  icon: 'home'
+}, {
+  id: 'mandate',
+  label: 'Mandate',
+  icon: 'briefcase'
+}, {
+  id: 'pool',
+  label: 'Talent-Pool',
+  icon: 'users'
+}, {
+  id: 'bewerbungen',
+  label: 'Bewerbungen',
+  icon: 'columns'
+}, {
+  id: 'platzierungen',
+  label: 'Platzierungen',
+  icon: 'award'
+}, {
+  id: 'berichte',
+  label: 'Berichte',
+  icon: 'trend'
+}, {
+  id: 'postfach',
+  label: 'Postfach',
+  icon: 'inbox'
+}];
+function NavItem({
+  item,
+  active,
+  onClick,
+  badge
+}) {
+  const [hover, setHover] = React.useState(false);
+  return /*#__PURE__*/React.createElement("button", {
+    onClick: onClick,
+    onMouseEnter: () => setHover(true),
+    onMouseLeave: () => setHover(false),
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '11px',
+      width: '100%',
+      padding: '9px 11px',
+      borderRadius: 'var(--radius-md)',
+      border: 'none',
+      cursor: 'pointer',
+      fontFamily: 'var(--font-body)',
+      fontSize: '13.5px',
+      fontWeight: active ? 600 : 500,
+      color: active ? '#fff' : 'var(--sidebar-muted)',
+      background: active ? 'var(--sidebar-glass-strong)' : hover ? 'var(--sidebar-glass)' : 'transparent',
+      textAlign: 'left',
+      transition: 'background var(--dur-fast), color var(--dur-fast)'
+    }
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: item.icon,
+    size: 17,
+    style: {
+      color: active ? 'var(--accent-on-dark)' : 'currentColor'
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      flex: 1
+    }
+  }, item.label), badge != null && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '10px',
+      fontWeight: 600,
+      color: active ? '#fff' : 'var(--sidebar-soft)',
+      background: active ? 'var(--accent)' : 'var(--sidebar-glass)',
+      borderRadius: 'var(--radius-pill)',
+      padding: '1px 7px',
+      minWidth: '18px',
+      textAlign: 'center'
+    }
+  }, badge));
+}
+function AppShell({
+  active,
+  onNav,
+  me,
+  talentCount,
+  search,
+  onSearch,
+  title,
+  subtitle,
+  badges = {},
+  actions,
+  children
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      height: '100vh',
+      overflow: 'hidden',
+      background: 'var(--surface-app)'
+    }
+  }, /*#__PURE__*/React.createElement("aside", {
+    style: {
+      width: 'var(--app-nav-width)',
+      flexShrink: 0,
+      display: 'flex',
+      flexDirection: 'column',
+      background: 'linear-gradient(165deg, var(--ink-850) 0%, var(--ink-900) 100%)',
+      borderRight: '1px solid var(--sidebar-border)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '20px 18px 16px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '11px'
+    }
+  }, /*#__PURE__*/React.createElement("img", {
+    src: "../../assets/logo/myjob-mark.svg",
+    width: "34",
+    height: "34",
+    alt: ""
+  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-display)',
+      fontWeight: 700,
+      fontSize: '18px',
+      color: '#fff',
+      letterSpacing: '-0.02em',
+      lineHeight: 1
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: 'var(--accent-on-dark)'
+    }
+  }, "my"), "Job"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '9px',
+      letterSpacing: '0.14em',
+      textTransform: 'uppercase',
+      color: 'var(--sidebar-soft)',
+      marginTop: '3px'
+    }
+  }, "Bewerbungstool"))), /*#__PURE__*/React.createElement("nav", {
+    style: {
+      padding: '8px 12px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '3px',
+      flex: 1
+    }
+  }, NAV.map(n => /*#__PURE__*/React.createElement(NavItem, {
+    key: n.id,
+    item: n,
+    active: active === n.id,
+    onClick: () => onNav(n.id),
+    badge: badges[n.id]
+  }))), /*#__PURE__*/React.createElement("button", {
+    onClick: () => onNav('talente'),
+    style: {
+      margin: '0 14px 10px',
+      padding: '11px 13px',
+      borderRadius: 'var(--radius-md)',
+      cursor: 'pointer',
+      textAlign: 'left',
+      background: 'var(--sidebar-glass)',
+      border: '1px solid var(--sidebar-border)',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px'
+    }
+  }, /*#__PURE__*/React.createElement(Avatar, {
+    name: me.name,
+    src: me.src,
+    size: "sm",
+    ring: true
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '12.5px',
+      fontWeight: 600,
+      color: '#fff',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis'
+    }
+  }, me.name), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '10px',
+      color: 'var(--sidebar-soft)'
+    }
+  }, "Ich \xB7 +", talentCount - 1, " Talente")), /*#__PURE__*/React.createElement(Icon, {
+    name: "chevronRight",
+    size: 14,
+    style: {
+      color: 'var(--sidebar-soft)'
+    }
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      display: 'flex',
+      flexDirection: 'column',
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("header", {
+    style: {
+      height: 'var(--app-topbar-h)',
+      flexShrink: 0,
+      display: 'flex',
+      alignItems: 'center',
+      gap: '16px',
+      padding: '0 28px',
+      background: 'color-mix(in oklch, var(--paper) 88%, transparent)',
+      backdropFilter: 'blur(10px)',
+      WebkitBackdropFilter: 'blur(10px)',
+      borderBottom: '1px solid var(--border)',
+      position: 'sticky',
+      top: 0,
+      zIndex: 5
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("h1", {
+    style: {
+      fontFamily: 'var(--font-display)',
+      fontSize: '18px',
+      fontWeight: 700,
+      color: 'var(--text-heading)',
+      margin: 0,
+      letterSpacing: '-0.015em'
+    }
+  }, title), subtitle && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '11.5px',
+      color: 'var(--text-soft)',
+      marginTop: '1px'
+    }
+  }, subtitle)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginLeft: 'auto',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px'
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      background: 'var(--surface-card)',
+      border: '1px solid var(--border-strong)',
+      borderRadius: 'var(--radius-md)',
+      padding: '0 11px',
+      width: '220px'
+    }
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "search",
+    size: 15,
+    style: {
+      color: 'var(--text-soft)'
+    }
+  }), /*#__PURE__*/React.createElement("input", {
+    value: search,
+    onChange: e => onSearch(e.target.value),
+    placeholder: "Talente, Firmen, Stellen \u2026",
+    style: {
+      flex: 1,
+      minWidth: 0,
+      border: 'none',
+      outline: 'none',
+      background: 'transparent',
+      fontFamily: 'var(--font-body)',
+      fontSize: '13px',
+      color: 'var(--text-heading)',
+      padding: '8px 0'
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'relative'
+    }
+  }, /*#__PURE__*/React.createElement(IconButton, {
+    icon: "bell",
+    label: "Benachrichtigungen",
+    variant: "outline"
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: 'absolute',
+      top: '-3px',
+      right: '-3px',
+      width: '8px',
+      height: '8px',
+      borderRadius: '50%',
+      background: 'var(--signal-500)',
+      border: '2px solid var(--paper)'
+    }
+  })), actions)), /*#__PURE__*/React.createElement("main", {
+    style: {
+      flex: 1,
+      overflowY: 'auto',
+      padding: 'var(--pad-app)'
+    }
+  }, children)));
+}
+Object.assign(window, {
+  AppShell
+});
 })(); } catch (e) { __ds_ns.__errors.push({ path: "ui_kits/recruiting/AppShell.jsx", error: String((e && e.message) || e) }); }
 
-// ui_kits/recruiting/CandidateDetail.jsx
+// ui_kits/recruiting/Editor.jsx
 try { (() => {
-/* __kit_guard__ */
-(function () {
-  var __s = document.currentScript;
-  if (__s && /_ds_bundle\.js/.test(__s.src || '')) return;
-  /* CandidateDetail — slide-in panel with full candidate profile + stage actions. */
-  const D = window.BewerbungstoolDesignSystem_a75119;
-  function Field({
-    icon,
-    label,
-    value
-  }) {
-    return /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px'
-      }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        width: '30px',
-        height: '30px',
-        flexShrink: 0,
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: 'var(--radius-md)',
-        background: 'var(--surface-sunk)',
-        color: 'var(--text-soft)'
-      }
-    }, /*#__PURE__*/React.createElement(D.Icon, {
-      name: icon,
-      size: 15
-    })), /*#__PURE__*/React.createElement("div", {
-      style: {
-        minWidth: 0
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontFamily: 'var(--font-mono)',
-        fontSize: '9.5px',
-        letterSpacing: '0.1em',
-        textTransform: 'uppercase',
-        color: 'var(--text-soft)'
-      }
-    }, label), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: '13px',
-        color: 'var(--text-heading)',
-        fontWeight: 500,
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis'
-      }
-    }, value)));
-  }
-  function SectionLabel({
-    icon,
-    children
-  }) {
-    return /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        fontFamily: 'var(--font-mono)',
-        fontSize: '10px',
-        fontWeight: 600,
-        letterSpacing: '0.14em',
-        textTransform: 'uppercase',
-        color: 'var(--text-soft)',
-        margin: '22px 0 12px'
-      }
-    }, /*#__PURE__*/React.createElement(D.Icon, {
-      name: icon,
-      size: 13
-    }), children);
-  }
-  function CandidateDetail({
-    c,
-    onClose,
-    onAdvance,
-    onReject
-  }) {
-    if (!c) return null;
-    const stageOrder = window.STAGES_ORDER;
-    const idx = stageOrder.indexOf(c.status);
-    const nextStage = idx >= 0 && idx < stageOrder.length - 1 ? D.STAGES[stageOrder[idx + 1]] : null;
-    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-      onClick: onClose,
-      style: {
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(8,11,18,0.42)',
-        backdropFilter: 'blur(2px)',
-        zIndex: 40,
-        animation: 'fadeIn .2s ease'
-      }
-    }), /*#__PURE__*/React.createElement("aside", {
-      style: {
-        position: 'fixed',
-        top: 0,
-        right: 0,
-        bottom: 0,
-        width: 'min(480px, 92vw)',
-        zIndex: 41,
-        background: 'var(--surface-card)',
-        boxShadow: 'var(--shadow-lg)',
-        display: 'flex',
-        flexDirection: 'column',
-        animation: 'slideIn .26s cubic-bezier(0.16,1,0.3,1)'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        padding: '20px 22px',
-        borderBottom: '1px solid var(--border)',
-        background: 'linear-gradient(165deg, var(--ink-850), var(--ink-900))',
-        color: '#fff'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        justifyContent: 'flex-end',
-        marginBottom: '6px'
-      }
-    }, /*#__PURE__*/React.createElement(D.IconButton, {
-      icon: "x",
-      label: "Schlie\xDFen",
-      variant: "glass",
-      size: "sm",
-      onClick: onClose
-    })), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        gap: '15px',
-        alignItems: 'center'
-      }
-    }, /*#__PURE__*/React.createElement(D.Avatar, {
-      name: c.name,
-      src: c.src,
-      size: 64,
-      radius: "var(--radius-lg)"
-    }), /*#__PURE__*/React.createElement("div", {
-      style: {
-        minWidth: 0
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontFamily: 'var(--font-display)',
-        fontSize: '22px',
-        fontWeight: 700,
-        letterSpacing: '-0.02em'
-      }
-    }, c.name), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: '13px',
-        color: 'var(--sidebar-muted)',
-        marginTop: '2px'
-      }
-    }, c.role), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        gap: '8px',
-        marginTop: '10px',
-        alignItems: 'center'
-      }
-    }, /*#__PURE__*/React.createElement(D.StatusBadge, {
-      status: c.status
-    }), /*#__PURE__*/React.createElement(D.Badge, {
-      variant: "glass",
-      size: "sm",
-      icon: /*#__PURE__*/React.createElement(D.Icon, {
-        name: "trend",
-        size: 11
-      })
-    }, c.score, "% Match"))))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        flex: 1,
-        overflowY: 'auto',
-        padding: '20px 22px'
-      }
-    }, /*#__PURE__*/React.createElement("p", {
-      style: {
-        fontSize: '13.5px',
-        lineHeight: 1.6,
-        color: 'var(--text-body)',
-        margin: 0
-      }
-    }, c.summary), /*#__PURE__*/React.createElement(SectionLabel, {
-      icon: "id"
-    }, "Kontakt & Eckdaten"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: '14px'
-      }
-    }, /*#__PURE__*/React.createElement(Field, {
-      icon: "mail",
-      label: "E-Mail",
-      value: c.email
-    }), /*#__PURE__*/React.createElement(Field, {
-      icon: "phone",
-      label: "Telefon",
-      value: c.phone
-    }), /*#__PURE__*/React.createElement(Field, {
-      icon: "pin",
-      label: "Standort",
-      value: c.location
-    }), /*#__PURE__*/React.createElement(Field, {
-      icon: "briefcase",
-      label: "Beworben auf",
-      value: c.position
-    }), /*#__PURE__*/React.createElement(Field, {
-      icon: "trend",
-      label: "Gehaltswunsch",
-      value: c.salary
-    }), /*#__PURE__*/React.createElement(Field, {
-      icon: "clock",
-      label: "K\xFCndigungsfrist",
-      value: c.notice
-    })), /*#__PURE__*/React.createElement(SectionLabel, {
-      icon: "zap"
-    }, "Skills"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '6px'
-      }
-    }, c.skills.map((s, i) => /*#__PURE__*/React.createElement(D.Badge, {
-      key: i,
-      variant: i === 0 ? 'soft' : 'outline',
-      size: "sm"
-    }, s))), /*#__PURE__*/React.createElement(SectionLabel, {
-      icon: "fileText"
-    }, "Dokumente"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '8px'
-      }
-    }, ['Lebenslauf.pdf', 'Anschreiben.pdf', 'Zeugnisse.pdf'].map((f, i) => /*#__PURE__*/React.createElement("div", {
-      key: i,
+/* Editor — the document workbench: form on the left, live document preview on the
+   right. Two documents per talent: Lebenslauf (dark-header resume) and Anschreiben.
+   This is the "richtig bearbeiten, wie vorher, mit dem Header" experience. */
+const ED = window.BewerbungstoolDesignSystem_a75119;
+
+/* ---------------- live preview: Lebenslauf ---------------- */
+function SectionHead({
+  children
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px',
+      margin: '0 0 12px'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: '14px',
+      height: '2px',
+      background: 'var(--accent)',
+      borderRadius: '2px'
+    }
+  }), /*#__PURE__*/React.createElement("h4", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '10.5px',
+      fontWeight: 600,
+      letterSpacing: '0.16em',
+      textTransform: 'uppercase',
+      color: 'var(--accent-strong)',
+      margin: 0
+    }
+  }, children));
+}
+function ResumeDoc({
+  contact,
+  resume
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: '720px',
+      background: '#fff',
+      borderRadius: 'var(--radius-md)',
+      overflow: 'hidden',
+      boxShadow: 'var(--shadow-page)',
+      display: 'flex',
+      minHeight: '940px'
+    }
+  }, /*#__PURE__*/React.createElement("aside", {
+    style: {
+      width: '38%',
+      background: 'linear-gradient(168deg, var(--ink-800) 0%, var(--ink-950) 100%)',
+      color: '#fff',
+      padding: '34px 26px'
+    }
+  }, /*#__PURE__*/React.createElement(ED.Avatar, {
+    name: contact.name,
+    src: contact.src,
+    size: 104,
+    radius: "var(--radius-lg)"
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-display)',
+      fontSize: '25px',
+      fontWeight: 700,
+      letterSpacing: '-0.02em',
+      lineHeight: 1.1,
+      marginTop: '18px'
+    }
+  }, contact.name), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '13px',
+      color: 'var(--accent-on-dark)',
+      fontWeight: 600,
+      marginTop: '5px'
+    }
+  }, contact.role), /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: '1px',
+      background: 'var(--sidebar-border)',
+      margin: '24px 0'
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '10px',
+      letterSpacing: '0.16em',
+      textTransform: 'uppercase',
+      color: 'var(--sidebar-soft)',
+      marginBottom: '13px'
+    }
+  }, "Kontakt"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '11px'
+    }
+  }, [['mail', contact.email], ['phone', contact.phone], ['pin', contact.location], ['linkedin', contact.linkedin]].filter(([, v]) => v).map(([ic, v]) => /*#__PURE__*/React.createElement("div", {
+    key: ic,
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: '26px',
+      height: '26px',
+      flexShrink: 0,
+      borderRadius: 'var(--radius-sm)',
+      background: 'var(--sidebar-glass)',
+      border: '1px solid var(--sidebar-border)',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: 'var(--accent-on-dark)'
+    }
+  }, /*#__PURE__*/React.createElement(ED.Icon, {
+    name: ic,
+    size: 13
+  })), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: '11.5px',
+      color: 'var(--sidebar-muted)',
+      wordBreak: 'break-word'
+    }
+  }, v)))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '10px',
+      letterSpacing: '0.16em',
+      textTransform: 'uppercase',
+      color: 'var(--sidebar-soft)',
+      margin: '26px 0 13px'
+    }
+  }, "Kompetenzen"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '13px'
+    }
+  }, resume.skillGroups.map((g, i) => /*#__PURE__*/React.createElement("div", {
+    key: i
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '11px',
+      color: 'var(--sidebar-soft)',
+      marginBottom: '6px'
+    }
+  }, g.label), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '5px'
+    }
+  }, g.items.map((s, j) => /*#__PURE__*/React.createElement("span", {
+    key: j,
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '10.5px',
+      color: '#fff',
+      background: 'var(--sidebar-glass)',
+      border: '1px solid var(--sidebar-border-strong)',
+      borderRadius: 'var(--radius-sm)',
+      padding: '3px 7px'
+    }
+  }, s))))))), /*#__PURE__*/React.createElement("main", {
+    style: {
+      flex: 1,
+      padding: '34px 30px'
+    }
+  }, /*#__PURE__*/React.createElement("section", {
+    style: {
+      marginBottom: '26px'
+    }
+  }, /*#__PURE__*/React.createElement(SectionHead, null, "Profil"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: '13px',
+      lineHeight: 1.65,
+      color: 'var(--text-body)',
+      margin: 0
+    }
+  }, resume.summary)), /*#__PURE__*/React.createElement("section", {
+    style: {
+      marginBottom: '26px'
+    }
+  }, /*#__PURE__*/React.createElement(SectionHead, null, "Berufserfahrung"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'relative',
+      paddingLeft: '20px'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: 'absolute',
+      left: '4px',
+      top: '5px',
+      bottom: '5px',
+      width: '1.5px',
+      background: 'var(--border-strong)'
+    }
+  }), resume.experience.map((e, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      position: 'relative',
+      marginBottom: i === resume.experience.length - 1 ? 0 : '18px'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: 'absolute',
+      left: '-20px',
+      top: '4px',
+      width: '9px',
+      height: '9px',
+      borderRadius: '50%',
+      background: i === 0 ? 'var(--accent)' : '#fff',
+      border: `2px solid ${i === 0 ? 'var(--accent)' : 'var(--border-strong)'}`
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'baseline',
+      gap: '10px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-display)',
+      fontSize: '14.5px',
+      fontWeight: 700,
+      color: 'var(--text-heading)'
+    }
+  }, e.role), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '10.5px',
+      color: 'var(--text-soft)',
+      whiteSpace: 'nowrap'
+    }
+  }, e.period)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '12.5px',
+      color: 'var(--accent-strong)',
+      fontWeight: 600,
+      margin: '2px 0 7px'
+    }
+  }, e.company, e.location ? ' · ' + e.location : ''), /*#__PURE__*/React.createElement("ul", {
+    style: {
+      margin: 0,
+      paddingLeft: '16px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '3px'
+    }
+  }, e.bullets.filter(Boolean).map((b, j) => /*#__PURE__*/React.createElement("li", {
+    key: j,
+    style: {
+      fontSize: '12.5px',
+      lineHeight: 1.5,
+      color: 'var(--text-body)'
+    }
+  }, b))))))), /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement(SectionHead, null, "Ausbildung"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '11px'
+    }
+  }, resume.education.map((e, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      gap: '12px'
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '13.5px',
+      fontWeight: 700,
+      color: 'var(--text-heading)'
+    }
+  }, e.degree), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '12px',
+      color: 'var(--text-muted)',
+      marginTop: '1px'
+    }
+  }, e.school, e.note ? ' · ' + e.note : '')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '10.5px',
+      color: 'var(--text-soft)',
+      whiteSpace: 'nowrap'
+    }
+  }, e.period)))))));
+}
+
+/* ---------------- live preview: Anschreiben ---------------- */
+function LetterDoc({
+  contact,
+  letter
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: '720px',
+      background: '#fff',
+      borderRadius: 'var(--radius-md)',
+      overflow: 'hidden',
+      boxShadow: 'var(--shadow-page)',
+      minHeight: '940px',
+      display: 'flex',
+      flexDirection: 'column'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: 'linear-gradient(168deg, var(--ink-800), var(--ink-950))',
+      color: '#fff',
+      padding: '28px 44px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between'
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-display)',
+      fontSize: '24px',
+      fontWeight: 700,
+      letterSpacing: '-0.02em'
+    }
+  }, contact.name), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '12.5px',
+      color: 'var(--accent-on-dark)',
+      fontWeight: 600,
+      marginTop: '3px'
+    }
+  }, contact.role)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: 'right',
+      fontFamily: 'var(--font-mono)',
+      fontSize: '10.5px',
+      color: 'var(--sidebar-muted)',
+      lineHeight: 1.7
+    }
+  }, /*#__PURE__*/React.createElement("div", null, contact.email), /*#__PURE__*/React.createElement("div", null, contact.phone), /*#__PURE__*/React.createElement("div", null, contact.location))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      padding: '38px 44px',
+      fontFamily: 'var(--font-body)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      gap: '20px',
+      marginBottom: '34px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '13px',
+      lineHeight: 1.6,
+      color: 'var(--text-body)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 600,
+      color: 'var(--text-heading)'
+    }
+  }, letter.firma), /*#__PURE__*/React.createElement("div", null, letter.ansprechpartner), /*#__PURE__*/React.createElement("div", null, letter.strasse), /*#__PURE__*/React.createElement("div", null, letter.plzOrt)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '11.5px',
+      color: 'var(--text-muted)',
+      whiteSpace: 'nowrap'
+    }
+  }, contact.location, ", ", new Date().toLocaleDateString('de-DE'))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '14px',
+      fontWeight: 700,
+      color: 'var(--text-heading)',
+      marginBottom: '20px'
+    }
+  }, letter.betreff), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '13px',
+      color: 'var(--text-body)',
+      marginBottom: '14px'
+    }
+  }, letter.anrede), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '13px'
+    }
+  }, letter.absaetze.filter(Boolean).map((p, i) => /*#__PURE__*/React.createElement("p", {
+    key: i,
+    style: {
+      fontSize: '13px',
+      lineHeight: 1.7,
+      color: 'var(--text-body)',
+      margin: 0
+    }
+  }, p))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: '26px',
+      fontSize: '13px',
+      color: 'var(--text-body)'
+    }
+  }, letter.gruss), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-display)',
+      fontSize: '20px',
+      fontWeight: 700,
+      color: 'var(--text-heading)',
+      marginTop: '8px',
+      letterSpacing: '-0.01em'
+    }
+  }, contact.name)));
+}
+
+/* ---------------- left form ---------------- */
+function FormGroup({
+  title,
+  children,
+  onAdd
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: '22px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: '11px'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '10px',
+      letterSpacing: '0.14em',
+      textTransform: 'uppercase',
+      color: 'var(--text-muted)'
+    }
+  }, title), onAdd && /*#__PURE__*/React.createElement(ED.IconButton, {
+    icon: "plus",
+    label: "Hinzuf\xFCgen",
+    variant: "ghost",
+    size: "sm",
+    onClick: onAdd
+  })), children);
+}
+function Editor({
+  talent,
+  onClose,
+  onCreateMappe
+}) {
+  const [doc, setDoc] = React.useState('lebenslauf');
+  const previewRef = React.useRef(null);
+  const [scale, setScale] = React.useState(1);
+  React.useEffect(() => {
+    const el = previewRef.current;
+    if (!el) return;
+    const fit = () => {
+      const w = el.clientWidth - 56;
+      setScale(Math.min(1, w / 720));
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const [contact, setContact] = React.useState({
+    name: talent.name,
+    role: talent.role,
+    email: talent.email,
+    phone: talent.phone,
+    location: talent.location,
+    linkedin: talent.linkedin || '',
+    src: talent.src
+  });
+  const [resume, setResume] = React.useState(() => JSON.parse(JSON.stringify(talent.resume || {
+    summary: '',
+    experience: [],
+    education: [],
+    skillGroups: []
+  })));
+  const [letter, setLetter] = React.useState(() => JSON.parse(JSON.stringify(talent.letter || {
+    firma: '',
+    ansprechpartner: '',
+    strasse: '',
+    plzOrt: '',
+    betreff: '',
+    anrede: 'Sehr geehrte Damen und Herren,',
+    absaetze: [''],
+    gruss: 'Mit freundlichen Grüßen'
+  })));
+  const setC = (k, v) => setContact(s => ({
+    ...s,
+    [k]: v
+  }));
+  const setExp = (i, k, v) => setResume(s => {
+    const e = [...s.experience];
+    e[i] = {
+      ...e[i],
+      [k]: v
+    };
+    return {
+      ...s,
+      experience: e
+    };
+  });
+  const setEdu = (i, k, v) => setResume(s => {
+    const e = [...s.education];
+    e[i] = {
+      ...e[i],
+      [k]: v
+    };
+    return {
+      ...s,
+      education: e
+    };
+  });
+  const addExp = () => setResume(s => ({
+    ...s,
+    experience: [{
+      role: 'Neue Position',
+      company: '',
+      period: '',
+      location: '',
+      bullets: [''],
+      skills: []
+    }, ...s.experience]
+  }));
+  const delExp = i => setResume(s => ({
+    ...s,
+    experience: s.experience.filter((_, j) => j !== i)
+  }));
+  const setPara = (i, v) => setLetter(s => {
+    const a = [...s.absaetze];
+    a[i] = v;
+    return {
+      ...s,
+      absaetze: a
+    };
+  });
+  const addPara = () => setLetter(s => ({
+    ...s,
+    absaetze: [...s.absaetze, '']
+  }));
+  const seg = (id, label) => /*#__PURE__*/React.createElement("button", {
+    onClick: () => setDoc(id),
+    style: {
+      flex: 1,
+      padding: '8px 10px',
+      border: 'none',
+      cursor: 'pointer',
+      borderRadius: 'var(--radius-sm)',
+      fontFamily: 'var(--font-mono)',
+      fontSize: '12px',
+      fontWeight: 600,
+      background: doc === id ? 'var(--surface-card)' : 'transparent',
+      color: doc === id ? 'var(--text-heading)' : 'var(--text-soft)',
+      boxShadow: doc === id ? 'var(--shadow-xs)' : 'none'
+    }
+  }, label);
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%',
+      gap: '14px'
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: onClose,
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '7px',
+      alignSelf: 'flex-start',
+      background: 'none',
+      border: 'none',
+      cursor: 'pointer',
+      fontFamily: 'var(--font-mono)',
+      fontSize: '12px',
+      color: 'var(--text-muted)',
+      padding: 0
+    }
+  }, /*#__PURE__*/React.createElement(ED.Icon, {
+    name: "arrowLeft",
+    size: 14
+  }), " Zur\xFCck zum Profil"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: '380px 1fr',
+      gap: '20px',
+      flex: 1,
+      minHeight: 0,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      minHeight: 0,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: '4px',
+      background: 'var(--surface-sunk)',
+      borderRadius: 'var(--radius-md)',
+      padding: '4px',
+      marginBottom: '16px'
+    }
+  }, seg('lebenslauf', 'Lebenslauf'), seg('anschreiben', 'Anschreiben')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      overflowY: 'auto',
+      paddingRight: '8px'
+    }
+  }, /*#__PURE__*/React.createElement(FormGroup, {
+    title: "Kontakt / Header"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: '10px'
+    }
+  }, /*#__PURE__*/React.createElement(ED.Input, {
+    label: "Name",
+    value: contact.name,
+    onChange: e => setC('name', e.target.value),
+    wrapStyle: {
+      gridColumn: '1 / -1'
+    }
+  }), /*#__PURE__*/React.createElement(ED.Input, {
+    label: "Rolle",
+    value: contact.role,
+    onChange: e => setC('role', e.target.value),
+    wrapStyle: {
+      gridColumn: '1 / -1'
+    }
+  }), /*#__PURE__*/React.createElement(ED.Input, {
+    label: "E-Mail",
+    value: contact.email,
+    onChange: e => setC('email', e.target.value)
+  }), /*#__PURE__*/React.createElement(ED.Input, {
+    label: "Telefon",
+    value: contact.phone,
+    onChange: e => setC('phone', e.target.value)
+  }), /*#__PURE__*/React.createElement(ED.Input, {
+    label: "Ort",
+    value: contact.location,
+    onChange: e => setC('location', e.target.value)
+  }), /*#__PURE__*/React.createElement(ED.Input, {
+    label: "LinkedIn",
+    value: contact.linkedin,
+    onChange: e => setC('linkedin', e.target.value)
+  }))), doc === 'lebenslauf' ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(FormGroup, {
+    title: "Profil"
+  }, /*#__PURE__*/React.createElement(ED.Textarea, {
+    rows: 4,
+    value: resume.summary,
+    onChange: e => setResume(s => ({
+      ...s,
+      summary: e.target.value
+    }))
+  })), /*#__PURE__*/React.createElement(FormGroup, {
+    title: "Berufserfahrung",
+    onAdd: addExp
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '12px'
+    }
+  }, resume.experience.map((e, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--radius-md)',
+      padding: '12px',
+      background: 'var(--surface-subtle)',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '9px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      justifyContent: 'flex-end',
+      marginBottom: '-4px'
+    }
+  }, /*#__PURE__*/React.createElement(ED.IconButton, {
+    icon: "trash",
+    label: "Entfernen",
+    variant: "ghost",
+    size: "sm",
+    onClick: () => delExp(i)
+  })), /*#__PURE__*/React.createElement(ED.Input, {
+    label: "Position",
+    value: e.role,
+    onChange: ev => setExp(i, 'role', ev.target.value)
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: '9px'
+    }
+  }, /*#__PURE__*/React.createElement(ED.Input, {
+    label: "Firma",
+    value: e.company,
+    onChange: ev => setExp(i, 'company', ev.target.value)
+  }), /*#__PURE__*/React.createElement(ED.Input, {
+    label: "Zeitraum",
+    value: e.period,
+    onChange: ev => setExp(i, 'period', ev.target.value)
+  })), /*#__PURE__*/React.createElement(ED.Textarea, {
+    label: "Aufgaben (eine pro Zeile)",
+    rows: 3,
+    value: e.bullets.join('\n'),
+    onChange: ev => setExp(i, 'bullets', ev.target.value.split('\n'))
+  }))))), /*#__PURE__*/React.createElement(FormGroup, {
+    title: "Ausbildung"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '10px'
+    }
+  }, resume.education.map((e, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: '9px',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--radius-md)',
+      padding: '12px',
+      background: 'var(--surface-subtle)'
+    }
+  }, /*#__PURE__*/React.createElement(ED.Input, {
+    label: "Abschluss",
+    value: e.degree,
+    onChange: ev => setEdu(i, 'degree', ev.target.value),
+    wrapStyle: {
+      gridColumn: '1 / -1'
+    }
+  }), /*#__PURE__*/React.createElement(ED.Input, {
+    label: "Institution",
+    value: e.school,
+    onChange: ev => setEdu(i, 'school', ev.target.value)
+  }), /*#__PURE__*/React.createElement(ED.Input, {
+    label: "Zeitraum",
+    value: e.period,
+    onChange: ev => setEdu(i, 'period', ev.target.value)
+  })))))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(FormGroup, {
+    title: "Empf\xE4nger"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: '10px'
+    }
+  }, /*#__PURE__*/React.createElement(ED.Input, {
+    label: "Firma",
+    value: letter.firma,
+    onChange: e => setLetter(s => ({
+      ...s,
+      firma: e.target.value
+    })),
+    wrapStyle: {
+      gridColumn: '1 / -1'
+    }
+  }), /*#__PURE__*/React.createElement(ED.Input, {
+    label: "Ansprechpartner:in",
+    value: letter.ansprechpartner,
+    onChange: e => setLetter(s => ({
+      ...s,
+      ansprechpartner: e.target.value
+    })),
+    wrapStyle: {
+      gridColumn: '1 / -1'
+    }
+  }), /*#__PURE__*/React.createElement(ED.Input, {
+    label: "Stra\xDFe",
+    value: letter.strasse,
+    onChange: e => setLetter(s => ({
+      ...s,
+      strasse: e.target.value
+    }))
+  }), /*#__PURE__*/React.createElement(ED.Input, {
+    label: "PLZ & Ort",
+    value: letter.plzOrt,
+    onChange: e => setLetter(s => ({
+      ...s,
+      plzOrt: e.target.value
+    }))
+  }))), /*#__PURE__*/React.createElement(FormGroup, {
+    title: "Inhalt"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '10px'
+    }
+  }, /*#__PURE__*/React.createElement(ED.Input, {
+    label: "Betreff",
+    value: letter.betreff,
+    onChange: e => setLetter(s => ({
+      ...s,
+      betreff: e.target.value
+    }))
+  }), /*#__PURE__*/React.createElement(ED.Input, {
+    label: "Anrede",
+    value: letter.anrede,
+    onChange: e => setLetter(s => ({
+      ...s,
+      anrede: e.target.value
+    }))
+  }))), /*#__PURE__*/React.createElement(FormGroup, {
+    title: "Abs\xE4tze",
+    onAdd: addPara
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '9px'
+    }
+  }, letter.absaetze.map((p, i) => /*#__PURE__*/React.createElement(ED.Textarea, {
+    key: i,
+    rows: 3,
+    value: p,
+    onChange: e => setPara(i, e.target.value)
+  }))))))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: 'var(--surface-page)',
+      borderRadius: 'var(--radius-lg)',
+      border: '1px solid var(--border)',
+      display: 'flex',
+      flexDirection: 'column',
+      minHeight: 0,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '12px 16px',
+      borderBottom: '1px solid var(--border)',
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '8px',
+      fontFamily: 'var(--font-mono)',
+      fontSize: '11px',
+      color: 'var(--text-muted)'
+    }
+  }, /*#__PURE__*/React.createElement(ED.Icon, {
+    name: "eye",
+    size: 14
+  }), " Live-Vorschau \xB7 ", doc === 'lebenslauf' ? 'Lebenslauf' : 'Anschreiben'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: '8px'
+    }
+  }, /*#__PURE__*/React.createElement(ED.Button, {
+    size: "sm",
+    variant: "outline",
+    iconLeft: /*#__PURE__*/React.createElement(ED.Icon, {
+      name: "download",
+      size: 14
+    })
+  }, "PDF"), /*#__PURE__*/React.createElement(ED.Button, {
+    size: "sm",
+    variant: "primary",
+    iconRight: /*#__PURE__*/React.createElement(ED.Icon, {
+      name: "arrowRight",
+      size: 14
+    }),
+    onClick: onCreateMappe
+  }, "Zur Mappe"))), /*#__PURE__*/React.createElement("div", {
+    ref: previewRef,
+    style: {
+      flex: 1,
+      overflowY: 'auto',
+      padding: '28px',
+      display: 'flex',
+      justifyContent: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      zoom: scale
+    }
+  }, doc === 'lebenslauf' ? /*#__PURE__*/React.createElement(ResumeDoc, {
+    contact: contact,
+    resume: resume
+  }) : /*#__PURE__*/React.createElement(LetterDoc, {
+    contact: contact,
+    letter: letter
+  }))))));
+}
+Object.assign(window, {
+  Editor
+});
+})(); } catch (e) { __ds_ns.__errors.push({ path: "ui_kits/recruiting/Editor.jsx", error: String((e && e.message) || e) }); }
+
+// ui_kits/recruiting/MappeModal.jsx
+try { (() => {
+/* MappeModal — assemble a Bewerbungsmappe: recipient + Lebenslauf + Anhänge + Anschreiben.
+   This is the flow the old "3 Kacheln" should have been. */
+const MM = window.BewerbungstoolDesignSystem_a75119;
+function MappeModal({
+  talent,
+  onClose
+}) {
+  const [picked, setPicked] = React.useState(() => new Set(talent.attachments.map(a => a.id)));
+  const [letter, setLetter] = React.useState(true);
+  const toggle = id => setPicked(s => {
+    const n = new Set(s);
+    n.has(id) ? n.delete(id) : n.add(id);
+    return n;
+  });
+  const count = (talent.resume ? 1 : 0) + (letter ? 1 : 0) + picked.size;
+  return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    onClick: onClose,
+    style: {
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(8,11,18,0.45)',
+      backdropFilter: 'blur(2px)',
+      zIndex: 50,
+      animation: 'fadeIn .2s ease'
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'fixed',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      zIndex: 51,
+      width: 'min(880px, 94vw)',
+      maxHeight: '90vh',
+      display: 'flex',
+      flexDirection: 'column',
+      background: 'var(--surface-card)',
+      borderRadius: 'var(--radius-xl)',
+      boxShadow: 'var(--shadow-lg)',
+      overflow: 'hidden',
+      animation: 'popIn .24s cubic-bezier(0.16,1,0.3,1)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '13px',
+      padding: '18px 22px',
+      borderBottom: '1px solid var(--border)'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: '38px',
+      height: '38px',
+      borderRadius: 'var(--radius-md)',
+      background: 'var(--accent)',
+      color: '#fff',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
+  }, /*#__PURE__*/React.createElement(MM.Icon, {
+    name: "send",
+    size: 18
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-display)',
+      fontSize: '17px',
+      fontWeight: 700,
+      color: 'var(--text-heading)'
+    }
+  }, "Bewerbungsmappe erstellen"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '12.5px',
+      color: 'var(--text-soft)'
+    }
+  }, "f\xFCr ", talent.name)), /*#__PURE__*/React.createElement(MM.IconButton, {
+    icon: "x",
+    label: "Schlie\xDFen",
+    variant: "ghost",
+    onClick: onClose
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      overflowY: 'auto',
+      padding: '20px 22px',
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: '20px',
+      alignItems: 'start'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '13px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '10px',
+      letterSpacing: '0.12em',
+      textTransform: 'uppercase',
+      color: 'var(--text-soft)'
+    }
+  }, "Empf\xE4nger"), /*#__PURE__*/React.createElement(MM.Input, {
+    label: "Firma",
+    icon: "building",
+    defaultValue: "Aurora Systems GmbH"
+  }), /*#__PURE__*/React.createElement(MM.Input, {
+    label: "Stelle",
+    icon: "briefcase",
+    defaultValue: "Senior C++ Engineer"
+  }), /*#__PURE__*/React.createElement(MM.Input, {
+    label: "Ansprechpartner:in",
+    icon: "user",
+    defaultValue: "Personalabteilung"
+  }), /*#__PURE__*/React.createElement(MM.Input, {
+    label: "PLZ & Ort",
+    icon: "pin",
+    defaultValue: "10115 Berlin"
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '13px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '10px',
+      letterSpacing: '0.12em',
+      textTransform: 'uppercase',
+      color: 'var(--text-soft)'
+    }
+  }, "Inhalt der Mappe"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '11px',
+      padding: '11px 13px',
+      border: '1px solid var(--accent-border)',
+      borderRadius: 'var(--radius-md)',
+      background: 'var(--accent-soft)'
+    }
+  }, /*#__PURE__*/React.createElement(MM.Icon, {
+    name: "fileText",
+    size: 17,
+    style: {
+      color: 'var(--accent-strong)'
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '13px',
+      fontWeight: 600,
+      color: 'var(--text-heading)'
+    }
+  }, "Lebenslauf"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '10.5px',
+      color: 'var(--accent-strong)'
+    }
+  }, "immer enthalten")), /*#__PURE__*/React.createElement(MM.Icon, {
+    name: "check",
+    size: 16,
+    strokeWidth: 2.6,
+    style: {
+      color: 'var(--accent-strong)'
+    }
+  })), /*#__PURE__*/React.createElement("label", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '11px',
+      padding: '11px 13px',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--radius-md)',
+      cursor: 'pointer'
+    }
+  }, /*#__PURE__*/React.createElement(MM.Icon, {
+    name: "edit",
+    size: 17,
+    style: {
+      color: 'var(--text-muted)'
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '13px',
+      fontWeight: 600,
+      color: 'var(--text-heading)'
+    }
+  }, "Anschreiben"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '10.5px',
+      color: 'var(--text-soft)'
+    }
+  }, "auf die Stelle zugeschnitten")), /*#__PURE__*/React.createElement(MM.Switch, {
+    checked: letter,
+    onChange: setLetter
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '10px',
+      letterSpacing: '0.1em',
+      textTransform: 'uppercase',
+      color: 'var(--text-soft)',
+      marginTop: '2px'
+    }
+  }, "Anh\xE4nge verkn\xFCpfen"), talent.attachments.map(a => {
+    const on = picked.has(a.id);
+    return /*#__PURE__*/React.createElement("label", {
+      key: a.id,
       style: {
         display: 'flex',
         alignItems: 'center',
         gap: '11px',
         padding: '10px 13px',
-        border: '1px solid var(--border)',
+        border: `1px solid ${on ? 'var(--accent-border)' : 'var(--border)'}`,
         borderRadius: 'var(--radius-md)',
-        background: 'var(--surface-subtle)'
+        background: on ? 'var(--accent-soft)' : 'var(--surface-card)',
+        cursor: 'pointer'
       }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        width: '30px',
-        height: '30px',
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: 'var(--radius-sm)',
-        background: 'var(--accent-soft)',
-        color: 'var(--accent-strong)'
-      }
-    }, /*#__PURE__*/React.createElement(D.Icon, {
-      name: "fileText",
-      size: 15
-    })), /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/React.createElement(MM.Checkbox, {
+      checked: on,
+      onChange: () => toggle(a.id)
+    }), /*#__PURE__*/React.createElement("div", {
       style: {
         flex: 1,
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
         fontSize: '13px',
         fontWeight: 500,
-        color: 'var(--text-heading)'
+        color: 'var(--text-heading)',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis'
       }
-    }, f), /*#__PURE__*/React.createElement(D.IconButton, {
-      icon: "download",
-      label: "Herunterladen",
-      variant: "ghost",
-      size: "sm"
-    })))), c.timeline && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(SectionLabel, {
-      icon: "clock"
-    }, "Verlauf"), /*#__PURE__*/React.createElement("div", {
+    }, a.name), /*#__PURE__*/React.createElement("div", {
       style: {
-        position: 'relative',
-        paddingLeft: '20px'
+        fontFamily: 'var(--font-mono)',
+        fontSize: '10.5px',
+        color: 'var(--text-soft)'
+      }
+    }, a.tag)));
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '14px 22px',
+      borderTop: '1px solid var(--border)',
+      background: 'var(--surface-subtle)'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '12px',
+      color: 'var(--text-muted)'
+    }
+  }, count, " Dokumente \xB7 1 PDF"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: '10px'
+    }
+  }, /*#__PURE__*/React.createElement(MM.Button, {
+    variant: "ghost",
+    onClick: onClose
+  }, "Abbrechen"), /*#__PURE__*/React.createElement(MM.Button, {
+    variant: "primary",
+    iconRight: /*#__PURE__*/React.createElement(MM.Icon, {
+      name: "arrowRight",
+      size: 15
+    }),
+    onClick: onClose
+  }, "Mappe senden")))));
+}
+Object.assign(window, {
+  MappeModal
+});
+})(); } catch (e) { __ds_ns.__errors.push({ path: "ui_kits/recruiting/MappeModal.jsx", error: String((e && e.message) || e) }); }
+
+// ui_kits/recruiting/PipelineBoard.jsx
+try { (() => {
+/* PipelineBoard — Kanban of BEWERBUNGEN (applications) by stage. */
+const PB = window.BewerbungstoolDesignSystem_a75119;
+function KanbanCard({
+  app,
+  talent,
+  onOpen
+}) {
+  const [hover, setHover] = React.useState(false);
+  return /*#__PURE__*/React.createElement("div", {
+    onClick: () => onOpen(talent.id),
+    onMouseEnter: () => setHover(true),
+    onMouseLeave: () => setHover(false),
+    style: {
+      background: 'var(--surface-card)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--radius-md)',
+      padding: '12px 13px',
+      cursor: 'pointer',
+      boxShadow: hover ? 'var(--shadow-md)' : 'var(--shadow-xs)',
+      transform: hover ? 'translateY(-2px)' : 'none',
+      transition: 'box-shadow var(--dur-fast), transform var(--dur-fast)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      marginBottom: '9px'
+    }
+  }, /*#__PURE__*/React.createElement(PB.Icon, {
+    name: "building",
+    size: 14,
+    style: {
+      color: 'var(--text-soft)'
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: 'var(--font-display)',
+      fontSize: '13.5px',
+      fontWeight: 700,
+      color: 'var(--text-heading)',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis'
+    }
+  }, app.company)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '12px',
+      color: 'var(--text-muted)',
+      marginBottom: '11px',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis'
+    }
+  }, app.role), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '7px',
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement(PB.Avatar, {
+    name: talent.name,
+    src: talent.src,
+    size: "xs"
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '11px',
+      color: 'var(--text-soft)',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis'
+    }
+  }, talent.me ? 'Ich' : talent.name.split(' ')[0])), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '12px',
+      fontWeight: 600,
+      color: app.score >= 80 ? 'var(--success)' : 'var(--text-muted)'
+    }
+  }, app.score, "%")));
+}
+function PipelineBoard({
+  apps,
+  talents,
+  onOpen
+}) {
+  const order = window.STAGES_ORDER;
+  const byId = Object.fromEntries(talents.map(t => [t.id, t]));
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: `repeat(${order.length}, minmax(210px, 1fr))`,
+      gap: '14px',
+      alignItems: 'start',
+      height: '100%'
+    }
+  }, order.map(stage => {
+    const list = apps.filter(a => a.status === stage);
+    const meta = PB.STAGES[stage];
+    return /*#__PURE__*/React.createElement("div", {
+      key: stage,
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '11px',
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '4px 2px'
       }
     }, /*#__PURE__*/React.createElement("span", {
       style: {
-        position: 'absolute',
-        left: '5px',
-        top: '6px',
-        bottom: '6px',
-        width: '1.5px',
-        background: 'var(--border-strong)'
-      }
-    }), c.timeline.map((e, i) => /*#__PURE__*/React.createElement("div", {
-      key: i,
-      style: {
-        position: 'relative',
-        marginBottom: '14px'
-      }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        position: 'absolute',
-        left: '-19px',
-        top: '3px',
-        width: '10px',
-        height: '10px',
+        width: '8px',
+        height: '8px',
         borderRadius: '50%',
-        background: i === c.timeline.length - 1 ? 'var(--accent)' : '#fff',
-        border: `2px solid ${i === c.timeline.length - 1 ? 'var(--accent)' : 'var(--border-strong)'}`
+        background: meta.color
+      }
+    }), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: 'var(--font-mono)',
+        fontSize: '11px',
+        fontWeight: 600,
+        letterSpacing: '0.06em',
+        textTransform: 'uppercase',
+        color: 'var(--text-muted)'
+      }
+    }, window.STAGE_LABELS[stage]), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: 'var(--font-mono)',
+        fontSize: '11px',
+        fontWeight: 600,
+        color: 'var(--text-soft)',
+        background: 'var(--surface-sunk)',
+        borderRadius: 'var(--radius-pill)',
+        padding: '1px 8px',
+        marginLeft: 'auto'
+      }
+    }, list.length)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '10px'
+      }
+    }, list.map(a => /*#__PURE__*/React.createElement(KanbanCard, {
+      key: a.id,
+      app: a,
+      talent: byId[a.talentId],
+      onOpen: onOpen
+    })), list.length === 0 && /*#__PURE__*/React.createElement("div", {
+      style: {
+        border: '1.5px dashed var(--border-strong)',
+        borderRadius: 'var(--radius-md)',
+        padding: '16px',
+        textAlign: 'center',
+        fontFamily: 'var(--font-mono)',
+        fontSize: '11px',
+        color: 'var(--text-soft)'
+      }
+    }, "leer")));
+  }));
+}
+Object.assign(window, {
+  PipelineBoard
+});
+})(); } catch (e) { __ds_ns.__errors.push({ path: "ui_kits/recruiting/PipelineBoard.jsx", error: String((e && e.message) || e) }); }
+
+// ui_kits/recruiting/TalentProfile.jsx
+try { (() => {
+/* TalentProfile — the core screen. A talent (Ich first) with three tabs:
+   Lebenslauf (editable CV) · Anhänge (linkable docs) · Bewerbungen. */
+const TP = window.BewerbungstoolDesignSystem_a75119;
+function EditableSection({
+  icon,
+  title,
+  onEdit,
+  children
+}) {
+  const [hover, setHover] = React.useState(false);
+  return /*#__PURE__*/React.createElement("section", {
+    onMouseEnter: () => setHover(true),
+    onMouseLeave: () => setHover(false),
+    style: {
+      marginBottom: '26px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '9px',
+      marginBottom: '14px'
+    }
+  }, /*#__PURE__*/React.createElement(TP.Icon, {
+    name: icon,
+    size: 15,
+    style: {
+      color: 'var(--accent)'
+    }
+  }), /*#__PURE__*/React.createElement("h3", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '11px',
+      fontWeight: 600,
+      letterSpacing: '0.14em',
+      textTransform: 'uppercase',
+      color: 'var(--text-muted)',
+      margin: 0
+    }
+  }, title), /*#__PURE__*/React.createElement("span", {
+    style: {
+      flex: 1,
+      height: '1px',
+      background: 'var(--border)'
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      opacity: hover ? 1 : 0,
+      transition: 'opacity var(--dur-fast)'
+    }
+  }, /*#__PURE__*/React.createElement(TP.IconButton, {
+    icon: "edit",
+    label: "Bearbeiten",
+    variant: "ghost",
+    size: "sm",
+    onClick: onEdit
+  }))), children);
+}
+
+/* ---- Lebenslauf tab ---- */
+function ResumeTab({
+  talent,
+  onEdit,
+  onCreateMappe
+}) {
+  const r = talent.resume;
+  if (!r) {
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        textAlign: 'center',
+        padding: '60px 20px',
+        color: 'var(--text-soft)'
+      }
+    }, /*#__PURE__*/React.createElement(TP.Icon, {
+      name: "fileText",
+      size: 28,
+      style: {
+        color: 'var(--border-strong)',
+        margin: '0 auto 12px'
       }
     }), /*#__PURE__*/React.createElement("div", {
       style: {
+        fontSize: '14px',
+        fontWeight: 600,
+        color: 'var(--text-muted)'
+      }
+    }, "Noch kein Lebenslauf hinterlegt"), /*#__PURE__*/React.createElement("div", {
+      style: {
         fontSize: '13px',
+        marginTop: '4px',
+        marginBottom: '16px'
+      }
+    }, "Lege f\xFCr ", talent.name.split(' ')[0], " einen Lebenslauf an."), /*#__PURE__*/React.createElement(TP.Button, {
+      variant: "primary",
+      size: "sm",
+      iconLeft: /*#__PURE__*/React.createElement(TP.Icon, {
+        name: "plus",
+        size: 15
+      }),
+      onClick: onEdit
+    }, "Lebenslauf anlegen"));
+  }
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 300px',
+      gap: '24px',
+      alignItems: 'start'
+    }
+  }, /*#__PURE__*/React.createElement(TP.Card, {
+    style: {
+      padding: '32px 34px'
+    },
+    bodyStyle: {
+      padding: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '32px 34px'
+    }
+  }, /*#__PURE__*/React.createElement(EditableSection, {
+    icon: "user",
+    title: "Profil",
+    onEdit: onEdit
+  }, /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: '14.5px',
+      lineHeight: 1.65,
+      color: 'var(--text-body)',
+      margin: 0
+    }
+  }, r.summary)), /*#__PURE__*/React.createElement(EditableSection, {
+    icon: "briefcase",
+    title: "Berufserfahrung",
+    onEdit: onEdit
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'relative',
+      paddingLeft: '22px'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: 'absolute',
+      left: '5px',
+      top: '6px',
+      bottom: '6px',
+      width: '1.5px',
+      background: 'var(--border-strong)'
+    }
+  }), r.experience.map((e, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      position: 'relative',
+      marginBottom: i === r.experience.length - 1 ? 0 : '20px'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: 'absolute',
+      left: '-21px',
+      top: '4px',
+      width: '10px',
+      height: '10px',
+      borderRadius: '50%',
+      background: i === 0 ? 'var(--accent)' : '#fff',
+      border: `2px solid ${i === 0 ? 'var(--accent)' : 'var(--border-strong)'}`
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'baseline',
+      gap: '10px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-display)',
+      fontSize: '15.5px',
+      fontWeight: 700,
+      color: 'var(--text-heading)'
+    }
+  }, e.role), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '11px',
+      color: 'var(--text-soft)',
+      whiteSpace: 'nowrap'
+    }
+  }, e.period)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '13px',
+      color: 'var(--accent-strong)',
+      fontWeight: 600,
+      margin: '2px 0 8px'
+    }
+  }, e.company, " \xB7 ", e.location), /*#__PURE__*/React.createElement("ul", {
+    style: {
+      margin: '0 0 9px',
+      paddingLeft: '17px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '4px'
+    }
+  }, e.bullets.map((b, j) => /*#__PURE__*/React.createElement("li", {
+    key: j,
+    style: {
+      fontSize: '13.5px',
+      lineHeight: 1.55,
+      color: 'var(--text-body)'
+    }
+  }, b))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: '6px',
+      flexWrap: 'wrap'
+    }
+  }, e.skills.map((s, j) => /*#__PURE__*/React.createElement(TP.Badge, {
+    key: j,
+    variant: "subtle",
+    size: "sm"
+  }, s))))))), /*#__PURE__*/React.createElement(EditableSection, {
+    icon: "cap",
+    title: "Ausbildung",
+    onEdit: onEdit
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '12px'
+    }
+  }, r.education.map((e, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      gap: '12px'
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '14px',
+      fontWeight: 700,
+      color: 'var(--text-heading)'
+    }
+  }, e.degree), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '12.5px',
+      color: 'var(--text-muted)',
+      marginTop: '1px'
+    }
+  }, e.school, " \xB7 ", e.note)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '11px',
+      color: 'var(--text-soft)',
+      whiteSpace: 'nowrap'
+    }
+  }, e.period))))), /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '9px',
+      marginBottom: '14px'
+    }
+  }, /*#__PURE__*/React.createElement(TP.Icon, {
+    name: "zap",
+    size: 15,
+    style: {
+      color: 'var(--accent)'
+    }
+  }), /*#__PURE__*/React.createElement("h3", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '11px',
+      fontWeight: 600,
+      letterSpacing: '0.14em',
+      textTransform: 'uppercase',
+      color: 'var(--text-muted)',
+      margin: 0
+    }
+  }, "Kompetenzen"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      flex: 1,
+      height: '1px',
+      background: 'var(--border)'
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '12px'
+    }
+  }, r.skillGroups.map((g, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      display: 'flex',
+      gap: '12px',
+      alignItems: 'baseline'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: '78px',
+      flexShrink: 0,
+      fontFamily: 'var(--font-mono)',
+      fontSize: '11px',
+      color: 'var(--text-soft)'
+    }
+  }, g.label), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: '6px',
+      flexWrap: 'wrap'
+    }
+  }, g.items.map((s, j) => /*#__PURE__*/React.createElement(TP.Badge, {
+    key: j,
+    variant: j === 0 ? 'soft' : 'outline',
+    size: "sm"
+  }, s))))))))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '14px',
+      position: 'sticky',
+      top: 0
+    }
+  }, /*#__PURE__*/React.createElement(TP.Card, null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '10px',
+      letterSpacing: '0.12em',
+      textTransform: 'uppercase',
+      color: 'var(--text-soft)',
+      marginBottom: '10px'
+    }
+  }, "Lebenslauf"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '8px'
+    }
+  }, /*#__PURE__*/React.createElement(TP.Button, {
+    variant: "primary",
+    block: true,
+    iconLeft: /*#__PURE__*/React.createElement(TP.Icon, {
+      name: "send",
+      size: 15
+    }),
+    onClick: onCreateMappe
+  }, "Bewerbungsmappe erstellen"), /*#__PURE__*/React.createElement(TP.Button, {
+    variant: "outline",
+    block: true,
+    iconLeft: /*#__PURE__*/React.createElement(TP.Icon, {
+      name: "edit",
+      size: 15
+    }),
+    onClick: onEdit
+  }, "Lebenslauf bearbeiten"), /*#__PURE__*/React.createElement(TP.Button, {
+    variant: "ghost",
+    block: true,
+    iconLeft: /*#__PURE__*/React.createElement(TP.Icon, {
+      name: "download",
+      size: 15
+    })
+  }, "Als PDF exportieren"))), /*#__PURE__*/React.createElement(TP.Card, null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: '10px'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '10px',
+      letterSpacing: '0.12em',
+      textTransform: 'uppercase',
+      color: 'var(--text-soft)'
+    }
+  }, "Verkn\xFCpfte Anh\xE4nge"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '11px',
+      color: 'var(--text-soft)'
+    }
+  }, talent.attachments.length)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '7px'
+    }
+  }, talent.attachments.map(a => /*#__PURE__*/React.createElement("div", {
+    key: a.id,
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '9px',
+      padding: '8px 10px',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--radius-md)',
+      background: 'var(--surface-subtle)'
+    }
+  }, /*#__PURE__*/React.createElement(TP.Icon, {
+    name: "paperclip",
+    size: 14,
+    style: {
+      color: 'var(--accent)'
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      flex: 1,
+      fontSize: '12px',
+      fontWeight: 500,
+      color: 'var(--text-heading)',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis'
+    }
+  }, a.name)))))));
+}
+
+/* ---- Anhänge tab — documents that link to applications ---- */
+function AttachmentsTab({
+  talent,
+  apps
+}) {
+  const usage = atId => apps.filter(a => (a.attachments || []).includes(atId));
+  return /*#__PURE__*/React.createElement(TP.Card, {
+    pad: false
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '14px 18px',
+      borderBottom: '1px solid var(--border)'
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-display)',
+      fontSize: '15px',
+      fontWeight: 700,
+      color: 'var(--text-heading)'
+    }
+  }, "Dokumente & Anh\xE4nge"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '12px',
+      color: 'var(--text-soft)',
+      marginTop: '1px'
+    }
+  }, "Einmal hochladen, mit beliebigen Bewerbungen verkn\xFCpfen")), /*#__PURE__*/React.createElement(TP.Button, {
+    variant: "ink",
+    size: "sm",
+    iconLeft: /*#__PURE__*/React.createElement(TP.Icon, {
+      name: "upload",
+      size: 14
+    })
+  }, "Hochladen")), talent.attachments.length === 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '40px',
+      textAlign: 'center',
+      fontSize: '13px',
+      color: 'var(--text-soft)'
+    }
+  }, "Noch keine Anh\xE4nge."), talent.attachments.map(a => {
+    const used = usage(a.id);
+    return /*#__PURE__*/React.createElement("div", {
+      key: a.id,
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '14px',
+        padding: '14px 18px',
+        borderBottom: '1px solid var(--border)'
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        width: '38px',
+        height: '38px',
+        flexShrink: 0,
+        borderRadius: 'var(--radius-md)',
+        background: 'var(--accent-soft)',
+        color: 'var(--accent-strong)',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }
+    }, /*#__PURE__*/React.createElement(TP.Icon, {
+      name: "fileText",
+      size: 18
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: '14px',
         fontWeight: 600,
         color: 'var(--text-heading)'
       }
-    }, e.t), /*#__PURE__*/React.createElement("div", {
+    }, a.name, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: 'var(--font-mono)',
+        fontSize: '10px',
+        color: 'var(--accent-strong)',
+        marginLeft: '8px'
+      }
+    }, a.tag)), /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: 'var(--font-mono)',
         fontSize: '11px',
         color: 'var(--text-soft)',
         marginTop: '1px'
       }
-    }, e.d, " \xB7 ", e.who)))))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        padding: '14px 22px',
-        borderTop: '1px solid var(--border)',
-        display: 'flex',
-        gap: '10px',
-        background: 'var(--surface-subtle)'
-      }
-    }, /*#__PURE__*/React.createElement(D.Button, {
-      variant: "outline",
-      iconLeft: /*#__PURE__*/React.createElement(D.Icon, {
-        name: "x",
-        size: 15
-      }),
-      onClick: () => onReject(c.id)
-    }, "Absagen"), nextStage ? /*#__PURE__*/React.createElement(D.Button, {
-      variant: "primary",
-      block: true,
-      iconRight: /*#__PURE__*/React.createElement(D.Icon, {
-        name: "arrowRight",
-        size: 15
-      }),
-      onClick: () => onAdvance(c.id)
-    }, "Weiter zu ", nextStage.label) : /*#__PURE__*/React.createElement(D.Button, {
-      variant: "primary",
-      block: true,
-      iconLeft: /*#__PURE__*/React.createElement(D.Icon, {
-        name: "check",
-        size: 15
-      }),
-      disabled: true
-    }, "Eingestellt"))));
-  }
-  Object.assign(window, {
-    CandidateDetail
-  });
-})();
-})(); } catch (e) { __ds_ns.__errors.push({ path: "ui_kits/recruiting/CandidateDetail.jsx", error: String((e && e.message) || e) }); }
-
-// ui_kits/recruiting/PipelineBoard.jsx
-try { (() => {
-/* __kit_guard__ */
-(function () {
-  var __s = document.currentScript;
-  if (__s && /_ds_bundle\.js/.test(__s.src || '')) return;
-  /* PipelineBoard — Kanban columns by pipeline stage. */
-  const {
-    Icon: PIcon,
-    Avatar: PAvatar,
-    Badge: PBadge,
-    STAGES
-  } = window.BewerbungstoolDesignSystem_a75119;
-  function KanbanCard({
-    c,
-    onOpen
-  }) {
-    const [hover, setHover] = React.useState(false);
-    return /*#__PURE__*/React.createElement("div", {
-      onClick: () => onOpen(c.id),
-      onMouseEnter: () => setHover(true),
-      onMouseLeave: () => setHover(false),
-      style: {
-        background: 'var(--surface-card)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-md)',
-        padding: '12px 13px',
-        cursor: 'pointer',
-        boxShadow: hover ? 'var(--shadow-md)' : 'var(--shadow-xs)',
-        transform: hover ? 'translateY(-2px)' : 'none',
-        transition: 'box-shadow var(--dur-fast), transform var(--dur-fast)'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, a.sub)), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         alignItems: 'center',
-        gap: '10px',
-        marginBottom: '10px'
+        gap: '6px',
+        minWidth: 0
       }
-    }, /*#__PURE__*/React.createElement(PAvatar, {
-      name: c.name,
-      src: c.src,
-      size: "sm"
-    }), /*#__PURE__*/React.createElement("div", {
+    }, used.length === 0 ? /*#__PURE__*/React.createElement("span", {
       style: {
-        minWidth: 0,
+        fontFamily: 'var(--font-mono)',
+        fontSize: '11px',
+        color: 'var(--text-soft)'
+      }
+    }, "nicht verkn\xFCpft") : used.map(u => /*#__PURE__*/React.createElement(TP.Badge, {
+      key: u.id,
+      variant: "subtle",
+      size: "sm",
+      icon: /*#__PURE__*/React.createElement(TP.Icon, {
+        name: "paperclip",
+        size: 10
+      })
+    }, u.company.split(' ')[0]))), /*#__PURE__*/React.createElement(TP.IconButton, {
+      icon: "more",
+      label: "Mehr",
+      variant: "ghost",
+      size: "sm"
+    }));
+  }));
+}
+
+/* ---- Bewerbungen tab ---- */
+function TalentApplications({
+  apps,
+  onCreateMappe
+}) {
+  return /*#__PURE__*/React.createElement(TP.Card, {
+    pad: false,
+    title: "Bewerbungen",
+    subtitle: "Alle Mappen dieses Talents",
+    action: /*#__PURE__*/React.createElement(TP.Button, {
+      size: "sm",
+      variant: "primary",
+      iconLeft: /*#__PURE__*/React.createElement(TP.Icon, {
+        name: "plus",
+        size: 14
+      }),
+      onClick: onCreateMappe
+    }, "Neue Mappe")
+  }, apps.length === 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '40px',
+      textAlign: 'center',
+      fontSize: '13px',
+      color: 'var(--text-soft)'
+    }
+  }, "Noch keine Bewerbungen."), apps.map(a => /*#__PURE__*/React.createElement("div", {
+    key: a.id,
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '14px',
+      padding: '14px 18px',
+      borderBottom: '1px solid var(--border)'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: '38px',
+      height: '38px',
+      flexShrink: 0,
+      borderRadius: 'var(--radius-md)',
+      background: 'var(--surface-sunk)',
+      color: 'var(--text-muted)',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
+  }, /*#__PURE__*/React.createElement(TP.Icon, {
+    name: "building",
+    size: 18
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-display)',
+      fontSize: '14.5px',
+      fontWeight: 700,
+      color: 'var(--text-heading)'
+    }
+  }, a.company), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '12.5px',
+      color: 'var(--text-muted)',
+      marginTop: '1px'
+    }
+  }, a.role, " \xB7 ", a.location)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px'
+    }
+  }, a.anschreiben && /*#__PURE__*/React.createElement(TP.Badge, {
+    variant: "subtle",
+    size: "sm",
+    icon: /*#__PURE__*/React.createElement(TP.Icon, {
+      name: "fileText",
+      size: 10
+    })
+  }, "Anschreiben"), /*#__PURE__*/React.createElement(TP.Badge, {
+    variant: "subtle",
+    size: "sm",
+    icon: /*#__PURE__*/React.createElement(TP.Icon, {
+      name: "paperclip",
+      size: 10
+    })
+  }, (a.attachments || []).length)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'flex-end',
+      gap: '5px',
+      width: '150px'
+    }
+  }, /*#__PURE__*/React.createElement(TP.StatusBadge, {
+    status: a.status,
+    size: "sm"
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '11px',
+      color: 'var(--text-soft)'
+    }
+  }, a.next)))));
+}
+function TalentProfile({
+  talent,
+  apps,
+  onBack,
+  onEdit,
+  onCreateMappe
+}) {
+  const [tab, setTab] = React.useState('lebenslauf');
+  const tabs = [{
+    id: 'lebenslauf',
+    label: 'Lebenslauf'
+  }, {
+    id: 'anhaenge',
+    label: 'Anhänge',
+    count: talent.attachments.length
+  }, {
+    id: 'bewerbungen',
+    label: 'Bewerbungen',
+    count: apps.length
+  }];
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '18px'
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: onBack,
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '7px',
+      alignSelf: 'flex-start',
+      background: 'none',
+      border: 'none',
+      cursor: 'pointer',
+      fontFamily: 'var(--font-mono)',
+      fontSize: '12px',
+      color: 'var(--text-muted)',
+      padding: 0
+    }
+  }, /*#__PURE__*/React.createElement(TP.Icon, {
+    name: "arrowLeft",
+    size: 14
+  }), " Talente"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '18px',
+      padding: '22px 26px',
+      borderRadius: 'var(--radius-lg)',
+      background: 'linear-gradient(160deg, var(--ink-850), var(--ink-900))',
+      color: '#fff'
+    }
+  }, /*#__PURE__*/React.createElement(TP.Avatar, {
+    name: talent.name,
+    src: talent.src,
+    size: 72,
+    radius: "var(--radius-lg)",
+    ring: talent.me
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px'
+    }
+  }, /*#__PURE__*/React.createElement("h2", {
+    style: {
+      fontFamily: 'var(--font-display)',
+      fontSize: '26px',
+      fontWeight: 700,
+      letterSpacing: '-0.025em',
+      margin: 0
+    }
+  }, talent.name), talent.me && /*#__PURE__*/React.createElement(TP.Badge, {
+    variant: "light",
+    size: "sm"
+  }, "Ich")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '14px',
+      color: 'var(--sidebar-muted)',
+      marginTop: '3px'
+    }
+  }, talent.role, " \xB7 ", talent.headline), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: '8px',
+      marginTop: '12px',
+      flexWrap: 'wrap'
+    }
+  }, /*#__PURE__*/React.createElement(TP.Badge, {
+    variant: "glass",
+    size: "sm",
+    icon: /*#__PURE__*/React.createElement(TP.Icon, {
+      name: "pin",
+      size: 11
+    })
+  }, talent.location), /*#__PURE__*/React.createElement(TP.Badge, {
+    variant: "glass",
+    size: "sm",
+    icon: /*#__PURE__*/React.createElement(TP.Icon, {
+      name: "clock",
+      size: 11
+    })
+  }, talent.availability), /*#__PURE__*/React.createElement(TP.Badge, {
+    variant: "glass",
+    size: "sm",
+    icon: /*#__PURE__*/React.createElement(TP.Icon, {
+      name: "mail",
+      size: 11
+    })
+  }, talent.email))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: 'right',
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-display)',
+      fontSize: '30px',
+      fontWeight: 700,
+      color: 'var(--accent-on-dark)',
+      lineHeight: 1
+    }
+  }, talent.score, "%"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '10px',
+      letterSpacing: '0.1em',
+      textTransform: 'uppercase',
+      color: 'var(--sidebar-soft)',
+      marginTop: '4px'
+    }
+  }, "Profil-St\xE4rke"))), /*#__PURE__*/React.createElement(TP.Tabs, {
+    value: tab,
+    onChange: setTab,
+    tabs: tabs
+  }), tab === 'lebenslauf' && /*#__PURE__*/React.createElement(ResumeTab, {
+    talent: talent,
+    onEdit: onEdit,
+    onCreateMappe: onCreateMappe
+  }), tab === 'anhaenge' && /*#__PURE__*/React.createElement(AttachmentsTab, {
+    talent: talent,
+    apps: apps
+  }), tab === 'bewerbungen' && /*#__PURE__*/React.createElement(TalentApplications, {
+    apps: apps,
+    onCreateMappe: onCreateMappe
+  }));
+}
+Object.assign(window, {
+  TalentProfile
+});
+})(); } catch (e) { __ds_ns.__errors.push({ path: "ui_kits/recruiting/TalentProfile.jsx", error: String((e && e.message) || e) }); }
+
+// ui_kits/recruiting/VermittlerViews.jsx
+try { (() => {
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+/* VermittlerViews — the agency backbone: Mandate, Platzierungen, Berichte. */
+const VV = window.BewerbungstoolDesignSystem_a75119;
+const PRIORITY = {
+  hoch: {
+    label: 'Hoch',
+    bg: 'var(--status-rejected-soft)',
+    bd: 'var(--status-rejected-border)',
+    fg: 'var(--status-rejected-strong)',
+    dot: 'var(--status-rejected)'
+  },
+  mittel: {
+    label: 'Mittel',
+    bg: 'var(--status-review-soft)',
+    bd: 'var(--status-review-border)',
+    fg: 'var(--status-review-strong)',
+    dot: 'var(--status-review)'
+  },
+  niedrig: {
+    label: 'Niedrig',
+    bg: 'var(--surface-sunk)',
+    bd: 'var(--border)',
+    fg: 'var(--text-soft)',
+    dot: 'var(--neutral-400)'
+  }
+};
+function PrioPill({
+  p
+}) {
+  return /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '5px',
+      fontFamily: 'var(--font-mono)',
+      fontSize: '10.5px',
+      fontWeight: 600,
+      padding: '2px 8px',
+      borderRadius: 'var(--radius-pill)',
+      background: p.bg,
+      color: p.fg,
+      border: `1px solid ${p.bd}`
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: '6px',
+      height: '6px',
+      borderRadius: '50%',
+      background: p.dot
+    }
+  }), p.label);
+}
+const PLACEMENT_TONE = {
+  'Bezahlt': 'hired',
+  'In Rechnung': 'offer',
+  'Probezeit': 'interview'
+};
+
+/* ---------- Mandate: client search assignments ---------- */
+function MandateView({
+  clients,
+  mandates
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '16px'
+    }
+  }, clients.map(k => {
+    const ms = mandates.filter(m => m.clientId === k.id);
+    if (ms.length === 0) return null;
+    return /*#__PURE__*/React.createElement(VV.Card, {
+      key: k.id,
+      pad: false
+    }, /*#__PURE__*/React.createElement("header", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '13px',
+        padding: '15px 18px',
+        borderBottom: '1px solid var(--border)'
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        width: '40px',
+        height: '40px',
+        borderRadius: 'var(--radius-md)',
+        background: 'var(--ink-900)',
+        color: '#fff',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }
+    }, /*#__PURE__*/React.createElement(VV.Icon, {
+      name: "building",
+      size: 19
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
         flex: 1
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: 'var(--font-display)',
-        fontSize: '13px',
+        fontSize: '16px',
         fontWeight: 700,
         color: 'var(--text-heading)',
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis'
+        letterSpacing: '-0.01em'
       }
-    }, c.name), /*#__PURE__*/React.createElement("div", {
+    }, k.name), /*#__PURE__*/React.createElement("div", {
       style: {
-        fontSize: '11.5px',
-        color: 'var(--text-soft)',
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis'
-      }
-    }, c.role))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '7px',
-        fontFamily: 'var(--font-mono)',
-        fontSize: '11px',
-        color: 'var(--text-muted)',
-        marginBottom: '10px'
-      }
-    }, /*#__PURE__*/React.createElement(PIcon, {
-      name: "briefcase",
-      size: 12,
-      style: {
-        color: 'var(--text-soft)'
-      }
-    }), /*#__PURE__*/React.createElement("span", {
-      style: {
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis'
-      }
-    }, c.position)), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }
-    }, /*#__PURE__*/React.createElement(PBadge, {
-      variant: "subtle",
-      size: "sm",
-      icon: /*#__PURE__*/React.createElement(PIcon, {
-        name: "tag",
-        size: 10
-      })
-    }, c.source), /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontFamily: 'var(--font-mono)',
         fontSize: '12px',
-        fontWeight: 600,
-        color: c.score >= 80 ? 'var(--success)' : 'var(--text-muted)',
-        fontVariantNumeric: 'tabular-nums'
+        color: 'var(--text-soft)',
+        marginTop: '1px'
       }
-    }, c.score, "%")));
-  }
-  function PipelineBoard({
-    candidates,
-    onOpen
-  }) {
-    const order = window.STAGES_ORDER;
-    return /*#__PURE__*/React.createElement("div", {
+    }, k.industry, " \xB7 ", k.location, " \xB7 Kunde seit ", k.since)), /*#__PURE__*/React.createElement(VV.Badge, {
+      variant: "subtle",
+      size: "sm"
+    }, ms.length, " Mandate")), ms.map(m => /*#__PURE__*/React.createElement("div", {
+      key: m.id,
       style: {
         display: 'grid',
-        gridTemplateColumns: `repeat(${order.length}, minmax(220px, 1fr))`,
+        gridTemplateColumns: 'minmax(0,1.5fr) 96px 104px 116px 116px',
+        alignItems: 'center',
         gap: '14px',
-        alignItems: 'start',
-        height: '100%'
+        padding: '13px 18px',
+        borderBottom: '1px solid var(--border)'
       }
-    }, order.map(stage => {
-      const list = candidates.filter(c => c.status === stage);
-      const meta = STAGES[stage];
-      return /*#__PURE__*/React.createElement("div", {
-        key: stage,
-        style: {
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '11px',
-          minWidth: 0
-        }
-      }, /*#__PURE__*/React.createElement("div", {
-        style: {
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '4px 2px'
-        }
-      }, /*#__PURE__*/React.createElement("span", {
-        style: {
-          width: '8px',
-          height: '8px',
-          borderRadius: '50%',
-          background: meta.color
-        }
-      }), /*#__PURE__*/React.createElement("span", {
-        style: {
-          fontFamily: 'var(--font-mono)',
-          fontSize: '11px',
-          fontWeight: 600,
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-          color: 'var(--text-muted)'
-        }
-      }, meta.label), /*#__PURE__*/React.createElement("span", {
-        style: {
-          fontFamily: 'var(--font-mono)',
-          fontSize: '11px',
-          fontWeight: 600,
-          color: 'var(--text-soft)',
-          background: 'var(--surface-sunk)',
-          borderRadius: 'var(--radius-pill)',
-          padding: '1px 8px',
-          marginLeft: 'auto'
-        }
-      }, list.length)), /*#__PURE__*/React.createElement("div", {
-        style: {
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px',
-          background: 'var(--surface-app)',
-          borderRadius: 'var(--radius-md)'
-        }
-      }, list.map(c => /*#__PURE__*/React.createElement(KanbanCard, {
-        key: c.id,
-        c: c,
-        onOpen: onOpen
-      })), list.length === 0 && /*#__PURE__*/React.createElement("div", {
-        style: {
-          border: '1.5px dashed var(--border-strong)',
-          borderRadius: 'var(--radius-md)',
-          padding: '18px',
-          textAlign: 'center',
-          fontFamily: 'var(--font-mono)',
-          fontSize: '11px',
-          color: 'var(--text-soft)'
-        }
-      }, "leer")));
-    }));
-  }
-  Object.assign(window, {
-    PipelineBoard
-  });
-})();
-})(); } catch (e) { __ds_ns.__errors.push({ path: "ui_kits/recruiting/PipelineBoard.jsx", error: String((e && e.message) || e) }); }
-
-// ui_kits/recruiting/VermittlerViews.jsx
-try { (() => {
-function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
-/* __kit_guard__ */
-(function () {
-  var __s = document.currentScript;
-  if (__s && /_ds_bundle\.js/.test(__s.src || '')) return;
-  /* VermittlerViews — the agency workflow: Mandate, Talent-Pool, Platzierungen, Berichte. */
-  const W = window.BewerbungstoolDesignSystem_a75119;
-  const PRIORITY = {
-    hoch: {
-      label: 'Hoch',
-      bg: 'var(--status-rejected-soft)',
-      bd: 'var(--status-rejected-border)',
-      fg: 'var(--status-rejected-strong)',
-      dot: 'var(--status-rejected)'
-    },
-    mittel: {
-      label: 'Mittel',
-      bg: 'var(--status-review-soft)',
-      bd: 'var(--status-review-border)',
-      fg: 'var(--status-review-strong)',
-      dot: 'var(--status-review)'
-    },
-    niedrig: {
-      label: 'Niedrig',
-      bg: 'var(--surface-sunk)',
-      bd: 'var(--border)',
-      fg: 'var(--text-soft)',
-      dot: 'var(--neutral-400)'
-    }
-  };
-  function Pill({
-    p
-  }) {
-    return /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
-        display: 'inline-flex',
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: '14px',
+        fontWeight: 600,
+        color: 'var(--text-heading)'
+      }
+    }, m.role), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
         alignItems: 'center',
         gap: '5px',
         fontFamily: 'var(--font-mono)',
-        fontSize: '10.5px',
+        fontSize: '11px',
+        color: 'var(--text-soft)',
+        marginTop: '2px'
+      }
+    }, /*#__PURE__*/React.createElement(VV.Icon, {
+      name: "pin",
+      size: 11
+    }), m.location)), /*#__PURE__*/React.createElement(PrioPill, {
+      p: PRIORITY[m.priority]
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        flexDirection: 'column'
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: 'var(--font-mono)',
+        fontSize: '14px',
         fontWeight: 600,
-        padding: '2px 8px',
-        borderRadius: 'var(--radius-pill)',
-        background: p.bg,
-        color: p.fg,
-        border: `1px solid ${p.bd}`
-      }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        width: '6px',
-        height: '6px',
-        borderRadius: '50%',
-        background: p.dot
-      }
-    }), p.label);
-  }
-  const PLACEMENT_STATUS = {
-    'Bezahlt': {
-      tone: 'hired'
-    },
-    'In Rechnung': {
-      tone: 'offer'
-    },
-    'Probezeit': {
-      tone: 'interview'
-    }
-  };
-
-  /* ---------- Mandate: client mandates grouped by Kunde ---------- */
-  function MandateView({
-    clients,
-    mandates,
-    onOpen
-  }) {
-    return /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '16px'
-      }
-    }, clients.map(k => {
-      const ms = mandates.filter(m => m.clientId === k.id);
-      if (ms.length === 0) return null;
-      return /*#__PURE__*/React.createElement(W.Card, {
-        key: k.id,
-        pad: false
-      }, /*#__PURE__*/React.createElement("header", {
-        style: {
-          display: 'flex',
-          alignItems: 'center',
-          gap: '13px',
-          padding: '15px 18px',
-          borderBottom: '1px solid var(--border)'
-        }
-      }, /*#__PURE__*/React.createElement("span", {
-        style: {
-          width: '40px',
-          height: '40px',
-          borderRadius: 'var(--radius-md)',
-          background: 'var(--ink-900)',
-          color: '#fff',
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }
-      }, /*#__PURE__*/React.createElement(W.Icon, {
-        name: "building",
-        size: 19
-      })), /*#__PURE__*/React.createElement("div", {
-        style: {
-          flex: 1
-        }
-      }, /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontFamily: 'var(--font-display)',
-          fontSize: '16px',
-          fontWeight: 700,
-          color: 'var(--text-heading)',
-          letterSpacing: '-0.01em'
-        }
-      }, k.name), /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontSize: '12px',
-          color: 'var(--text-soft)',
-          marginTop: '1px'
-        }
-      }, k.industry, " \xB7 ", k.location, " \xB7 Kunde seit ", k.since)), /*#__PURE__*/React.createElement(W.Badge, {
-        variant: "subtle",
-        size: "sm"
-      }, ms.length, " Mandate")), ms.map(m => /*#__PURE__*/React.createElement("div", {
-        key: m.id,
-        onClick: () => onOpen && onOpen(m),
-        style: {
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0,1.5fr) 96px 100px 120px 120px',
-          alignItems: 'center',
-          gap: '14px',
-          padding: '13px 18px',
-          borderBottom: '1px solid var(--border)',
-          cursor: onOpen ? 'pointer' : 'default'
-        }
-      }, /*#__PURE__*/React.createElement("div", {
-        style: {
-          minWidth: 0
-        }
-      }, /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontSize: '14px',
-          fontWeight: 600,
-          color: 'var(--text-heading)'
-        }
-      }, m.role), /*#__PURE__*/React.createElement("div", {
-        style: {
-          display: 'flex',
-          alignItems: 'center',
-          gap: '5px',
-          fontFamily: 'var(--font-mono)',
-          fontSize: '11px',
-          color: 'var(--text-soft)',
-          marginTop: '2px'
-        }
-      }, /*#__PURE__*/React.createElement(W.Icon, {
-        name: "pin",
-        size: 11
-      }), m.location)), /*#__PURE__*/React.createElement(Pill, {
-        p: PRIORITY[m.priority]
-      }), /*#__PURE__*/React.createElement("div", {
-        style: {
-          display: 'flex',
-          flexDirection: 'column'
-        }
-      }, /*#__PURE__*/React.createElement("span", {
-        style: {
-          fontFamily: 'var(--font-mono)',
-          fontSize: '14px',
-          fontWeight: 600,
-          color: 'var(--accent-strong)',
-          fontVariantNumeric: 'tabular-nums'
-        }
-      }, m.fee), /*#__PURE__*/React.createElement("span", {
-        style: {
-          fontFamily: 'var(--font-mono)',
-          fontSize: '10.5px',
-          color: 'var(--text-soft)'
-        }
-      }, m.feeValue)), /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontFamily: 'var(--font-mono)',
-          fontSize: '12px',
-          color: 'var(--text-muted)'
-        }
-      }, /*#__PURE__*/React.createElement(W.Icon, {
-        name: "users",
-        size: 12,
-        style: {
-          display: 'inline',
-          verticalAlign: '-2px',
-          marginRight: '4px'
-        }
-      }), m.submitted, " \xB7 ", m.interviews, " Int."), /*#__PURE__*/React.createElement("div", {
-        style: {
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          justifyContent: 'flex-end'
-        }
-      }, /*#__PURE__*/React.createElement("span", {
-        style: {
-          fontFamily: 'var(--font-mono)',
-          fontSize: '11px',
-          color: m.status === 'aktiv' ? 'var(--success)' : 'var(--text-soft)',
-          fontWeight: 600,
-          textTransform: 'uppercase',
-          letterSpacing: '0.06em'
-        }
-      }, m.status), /*#__PURE__*/React.createElement(W.Icon, {
-        name: "chevronRight",
-        size: 15,
-        style: {
-          color: 'var(--text-soft)'
-        }
-      })))));
-    }));
-  }
-
-  /* ---------- Talent-Pool: the agency roster ---------- */
-  function PoolView({
-    pool,
-    candidates,
-    onOpen
-  }) {
-    const byId = Object.fromEntries(candidates.map(c => [c.id, c]));
-    return /*#__PURE__*/React.createElement(W.Card, {
-      pad: false,
-      title: "Talent-Pool",
-      subtitle: "Kandidat:innen der Agentur und ihre Verf\xFCgbarkeit"
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'grid',
-        gridTemplateColumns: 'minmax(0,1.5fr) 110px minmax(0,1.3fr) 70px 90px',
-        gap: '14px',
-        padding: '11px 18px',
-        fontFamily: 'var(--font-mono)',
-        fontSize: '9.5px',
-        letterSpacing: '0.12em',
-        textTransform: 'uppercase',
-        color: 'var(--text-soft)',
-        borderBottom: '1px solid var(--border)',
-        background: 'var(--surface-subtle)'
-      }
-    }, /*#__PURE__*/React.createElement("span", null, "Talent"), /*#__PURE__*/React.createElement("span", null, "Verf\xFCgbar"), /*#__PURE__*/React.createElement("span", null, "Vorgeschlagen bei"), /*#__PURE__*/React.createElement("span", null, "Match"), /*#__PURE__*/React.createElement("span", {
-      style: {
-        textAlign: 'right'
-      }
-    }, "Phase")), pool.map(p => {
-      const c = byId[p.id];
-      if (!c) return null;
-      return /*#__PURE__*/React.createElement("div", {
-        key: p.id,
-        onClick: () => onOpen(c.id),
-        style: {
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0,1.5fr) 110px minmax(0,1.3fr) 70px 90px',
-          gap: '14px',
-          alignItems: 'center',
-          padding: '11px 18px',
-          borderBottom: '1px solid var(--border)',
-          cursor: 'pointer'
-        }
-      }, /*#__PURE__*/React.createElement("div", {
-        style: {
-          display: 'flex',
-          alignItems: 'center',
-          gap: '11px',
-          minWidth: 0
-        }
-      }, /*#__PURE__*/React.createElement(W.Avatar, {
-        name: c.name,
-        src: c.src,
-        size: "md"
-      }), /*#__PURE__*/React.createElement("div", {
-        style: {
-          minWidth: 0
-        }
-      }, /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontFamily: 'var(--font-display)',
-          fontSize: '13.5px',
-          fontWeight: 700,
-          color: 'var(--text-heading)',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis'
-        }
-      }, c.name), /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontSize: '12px',
-          color: 'var(--text-soft)',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis'
-        }
-      }, c.role))), /*#__PURE__*/React.createElement("span", {
-        style: {
-          fontFamily: 'var(--font-mono)',
-          fontSize: '11.5px',
-          fontWeight: 600,
-          color: p.availability === 'sofort' ? 'var(--success)' : 'var(--text-muted)'
-        }
-      }, p.availability), /*#__PURE__*/React.createElement("div", {
-        style: {
-          display: 'flex',
-          gap: '5px',
-          flexWrap: 'wrap'
-        }
-      }, p.submittedTo.map((s, i) => /*#__PURE__*/React.createElement(W.Badge, {
-        key: i,
-        variant: "subtle",
-        size: "sm"
-      }, s))), /*#__PURE__*/React.createElement("span", {
-        style: {
-          fontFamily: 'var(--font-mono)',
-          fontSize: '13px',
-          fontWeight: 600,
-          color: c.score >= 80 ? 'var(--success)' : 'var(--text-muted)',
-          fontVariantNumeric: 'tabular-nums'
-        }
-      }, c.score, "%"), /*#__PURE__*/React.createElement("div", {
-        style: {
-          display: 'flex',
-          justifyContent: 'flex-end'
-        }
-      }, /*#__PURE__*/React.createElement(W.StatusBadge, {
-        status: c.status,
-        size: "sm"
-      })));
-    }));
-  }
-
-  /* ---------- Platzierungen: booked placements + fees ---------- */
-  function PlatzierungenView({
-    placements,
-    candidates,
-    kpis
-  }) {
-    const byId = Object.fromEntries(candidates.map(c => [c.id, c]));
-    return /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '18px'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: '14px'
-      }
-    }, kpis.map((k, i) => /*#__PURE__*/React.createElement(W.StatCard, _extends({
-      key: i
-    }, k)))), /*#__PURE__*/React.createElement(W.Card, {
-      pad: false,
-      title: "Platzierungen",
-      subtitle: "Erfolgreiche Vermittlungen und Provision"
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'grid',
-        gridTemplateColumns: 'minmax(0,1.4fr) minmax(0,1.2fr) 110px 110px 110px',
-        gap: '14px',
-        padding: '11px 18px',
-        fontFamily: 'var(--font-mono)',
-        fontSize: '9.5px',
-        letterSpacing: '0.12em',
-        textTransform: 'uppercase',
-        color: 'var(--text-soft)',
-        borderBottom: '1px solid var(--border)',
-        background: 'var(--surface-subtle)'
-      }
-    }, /*#__PURE__*/React.createElement("span", null, "Talent"), /*#__PURE__*/React.createElement("span", null, "Kunde \xB7 Rolle"), /*#__PURE__*/React.createElement("span", null, "Start"), /*#__PURE__*/React.createElement("span", null, "Provision"), /*#__PURE__*/React.createElement("span", {
-      style: {
-        textAlign: 'right'
-      }
-    }, "Status")), placements.map(p => {
-      const c = byId[p.candId];
-      return /*#__PURE__*/React.createElement("div", {
-        key: p.id,
-        style: {
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0,1.4fr) minmax(0,1.2fr) 110px 110px 110px',
-          gap: '14px',
-          alignItems: 'center',
-          padding: '13px 18px',
-          borderBottom: '1px solid var(--border)'
-        }
-      }, /*#__PURE__*/React.createElement("div", {
-        style: {
-          display: 'flex',
-          alignItems: 'center',
-          gap: '11px',
-          minWidth: 0
-        }
-      }, /*#__PURE__*/React.createElement(W.Avatar, {
-        name: c ? c.name : '?',
-        src: c && c.src,
-        size: "sm"
-      }), /*#__PURE__*/React.createElement("span", {
-        style: {
-          fontFamily: 'var(--font-display)',
-          fontSize: '13.5px',
-          fontWeight: 700,
-          color: 'var(--text-heading)'
-        }
-      }, c ? c.name : '—')), /*#__PURE__*/React.createElement("div", {
-        style: {
-          minWidth: 0
-        }
-      }, /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontSize: '13px',
-          fontWeight: 600,
-          color: 'var(--text-heading)',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis'
-        }
-      }, p.client), /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontSize: '11.5px',
-          color: 'var(--text-soft)'
-        }
-      }, p.role)), /*#__PURE__*/React.createElement("span", {
-        style: {
-          fontFamily: 'var(--font-mono)',
-          fontSize: '12px',
-          color: 'var(--text-muted)'
-        }
-      }, p.start), /*#__PURE__*/React.createElement("span", {
-        style: {
-          fontFamily: 'var(--font-mono)',
-          fontSize: '14px',
-          fontWeight: 600,
-          color: 'var(--accent-strong)',
-          fontVariantNumeric: 'tabular-nums'
-        }
-      }, p.fee), /*#__PURE__*/React.createElement("div", {
-        style: {
-          display: 'flex',
-          justifyContent: 'flex-end'
-        }
-      }, /*#__PURE__*/React.createElement(W.StatusBadge, {
-        status: PLACEMENT_STATUS[p.status].tone,
-        label: p.status,
-        size: "sm"
-      })));
-    })));
-  }
-
-  /* ---------- Berichte (agency): provision per client + mandate health ---------- */
-  function VermittlerReports({
-    clients,
-    mandates,
-    placements,
-    kpis
-  }) {
-    const feeNum = s => parseInt(String(s).replace(/[^0-9]/g, ''), 10) || 0;
-    const perClient = clients.map(k => ({
-      name: k.name,
-      sum: placements.filter(p => p.client === k.name).reduce((a, p) => a + feeNum(p.fee), 0)
-    })).filter(x => x.sum > 0).sort((a, b) => b.sum - a.sum);
-    const maxFee = Math.max(...perClient.map(x => x.sum), 1);
-    const active = mandates.filter(m => m.status === 'aktiv').length;
-    const fmt = n => n.toLocaleString('de-DE');
-    return /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '18px'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: '14px'
-      }
-    }, kpis.map((k, i) => /*#__PURE__*/React.createElement(W.StatCard, _extends({
-      key: i
-    }, k)))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'grid',
-        gridTemplateColumns: '1.4fr 1fr',
-        gap: '16px'
-      }
-    }, /*#__PURE__*/React.createElement(W.Card, {
-      title: "Provision je Kunde",
-      subtitle: "Gebuchte Vermittlungen"
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '13px'
-      }
-    }, perClient.map(x => /*#__PURE__*/React.createElement("div", {
-      key: x.name
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        fontSize: '12.5px',
-        marginBottom: '5px'
-      }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        color: 'var(--text-body)',
-        fontWeight: 500
-      }
-    }, x.name), /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontFamily: 'var(--font-mono)',
         color: 'var(--accent-strong)',
-        fontWeight: 600
+        fontVariantNumeric: 'tabular-nums'
       }
-    }, fmt(x.sum), " \u20AC")), /*#__PURE__*/React.createElement("div", {
+    }, m.fee), /*#__PURE__*/React.createElement("span", {
       style: {
-        height: '8px',
+        fontFamily: 'var(--font-mono)',
+        fontSize: '10.5px',
+        color: 'var(--text-soft)'
+      }
+    }, m.feeValue)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: 'var(--font-mono)',
+        fontSize: '12px',
+        color: 'var(--text-muted)'
+      }
+    }, /*#__PURE__*/React.createElement(VV.Icon, {
+      name: "users",
+      size: 12,
+      style: {
+        display: 'inline',
+        verticalAlign: '-2px',
+        marginRight: '4px'
+      }
+    }), m.submitted, " \xB7 ", m.interviews, " Int."), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        justifyContent: 'flex-end'
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: 'var(--font-mono)',
+        fontSize: '11px',
+        color: m.status === 'aktiv' ? 'var(--success)' : 'var(--text-soft)',
+        fontWeight: 600,
+        textTransform: 'uppercase',
+        letterSpacing: '0.06em'
+      }
+    }, m.status), /*#__PURE__*/React.createElement(VV.Icon, {
+      name: "chevronRight",
+      size: 15,
+      style: {
+        color: 'var(--text-soft)'
+      }
+    })))));
+  }));
+}
+
+/* ---------- Platzierungen: booked placements + fees ---------- */
+function PlatzierungenView({
+  placements,
+  kpis
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '18px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(4, 1fr)',
+      gap: '14px'
+    }
+  }, kpis.map((k, i) => /*#__PURE__*/React.createElement(VV.StatCard, _extends({
+    key: i
+  }, k)))), /*#__PURE__*/React.createElement(VV.Card, {
+    pad: false,
+    title: "Platzierungen",
+    subtitle: "Erfolgreiche Vermittlungen und Provision"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: 'minmax(0,1.4fr) minmax(0,1.2fr) 110px 110px 110px',
+      gap: '14px',
+      padding: '11px 18px',
+      fontFamily: 'var(--font-mono)',
+      fontSize: '9.5px',
+      letterSpacing: '0.12em',
+      textTransform: 'uppercase',
+      color: 'var(--text-soft)',
+      borderBottom: '1px solid var(--border)',
+      background: 'var(--surface-subtle)'
+    }
+  }, /*#__PURE__*/React.createElement("span", null, "Talent"), /*#__PURE__*/React.createElement("span", null, "Kunde \xB7 Rolle"), /*#__PURE__*/React.createElement("span", null, "Start"), /*#__PURE__*/React.createElement("span", null, "Provision"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      textAlign: 'right'
+    }
+  }, "Status")), placements.map(p => /*#__PURE__*/React.createElement("div", {
+    key: p.id,
+    style: {
+      display: 'grid',
+      gridTemplateColumns: 'minmax(0,1.4fr) minmax(0,1.2fr) 110px 110px 110px',
+      gap: '14px',
+      alignItems: 'center',
+      padding: '13px 18px',
+      borderBottom: '1px solid var(--border)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '11px',
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement(VV.Avatar, {
+    name: p.candName,
+    size: "sm"
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: 'var(--font-display)',
+      fontSize: '13.5px',
+      fontWeight: 700,
+      color: 'var(--text-heading)'
+    }
+  }, p.candName)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '13px',
+      fontWeight: 600,
+      color: 'var(--text-heading)',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis'
+    }
+  }, p.client), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '11.5px',
+      color: 'var(--text-soft)'
+    }
+  }, p.candRole)), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '12px',
+      color: 'var(--text-muted)'
+    }
+  }, p.start), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '14px',
+      fontWeight: 600,
+      color: 'var(--accent-strong)',
+      fontVariantNumeric: 'tabular-nums'
+    }
+  }, p.fee), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      justifyContent: 'flex-end'
+    }
+  }, /*#__PURE__*/React.createElement(VV.StatusBadge, {
+    status: PLACEMENT_TONE[p.status],
+    label: p.status,
+    size: "sm"
+  }))))));
+}
+
+/* ---------- Berichte: provision per client + mandate health + funnel ---------- */
+function ReportsView({
+  clients,
+  mandates,
+  placements,
+  apps,
+  kpis
+}) {
+  const feeNum = s => parseInt(String(s).replace(/[^0-9]/g, ''), 10) || 0;
+  const perClient = clients.map(k => ({
+    name: k.name,
+    sum: placements.filter(p => p.client === k.name).reduce((a, p) => a + feeNum(p.fee), 0)
+  })).filter(x => x.sum > 0).sort((a, b) => b.sum - a.sum);
+  const maxFee = Math.max(...perClient.map(x => x.sum), 1);
+  const active = mandates.filter(m => m.status === 'aktiv').length;
+  const fmt = n => n.toLocaleString('de-DE');
+  const order = window.STAGES_ORDER;
+  const maxStage = Math.max(...order.map(s => apps.filter(a => a.status === s).length), 1);
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '18px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(4, 1fr)',
+      gap: '14px'
+    }
+  }, kpis.map((k, i) => /*#__PURE__*/React.createElement(VV.StatCard, _extends({
+    key: i
+  }, k)))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: '1.4fr 1fr',
+      gap: '16px'
+    }
+  }, /*#__PURE__*/React.createElement(VV.Card, {
+    title: "Provision je Kunde",
+    subtitle: "Gebuchte Vermittlungen Q2"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '13px'
+    }
+  }, perClient.map(x => /*#__PURE__*/React.createElement("div", {
+    key: x.name
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      fontSize: '12.5px',
+      marginBottom: '5px'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: 'var(--text-body)',
+      fontWeight: 500
+    }
+  }, x.name), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      color: 'var(--accent-strong)',
+      fontWeight: 600
+    }
+  }, fmt(x.sum), " \u20AC")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: '8px',
+      background: 'var(--surface-sunk)',
+      borderRadius: 'var(--radius-pill)',
+      overflow: 'hidden'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: `${x.sum / maxFee * 100}%`,
+      height: '100%',
+      background: 'var(--accent)',
+      borderRadius: 'var(--radius-pill)'
+    }
+  })))))), /*#__PURE__*/React.createElement(VV.Card, {
+    title: "Bewerbungs-Funnel",
+    subtitle: "Kandidat:innen je Phase"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '10px'
+    }
+  }, order.map(s => {
+    const n = apps.filter(a => a.status === s).length;
+    const meta = VV.STAGES[s];
+    return /*#__PURE__*/React.createElement("div", {
+      key: s,
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px'
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        width: '74px',
+        fontFamily: 'var(--font-mono)',
+        fontSize: '10.5px',
+        color: 'var(--text-muted)',
+        flexShrink: 0
+      }
+    }, window.STAGE_LABELS[s]), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        height: '20px',
         background: 'var(--surface-sunk)',
-        borderRadius: 'var(--radius-pill)',
+        borderRadius: 'var(--radius-sm)',
         overflow: 'hidden'
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
-        width: `${x.sum / maxFee * 100}%`,
+        width: `${n / maxStage * 100}%`,
         height: '100%',
-        background: 'var(--accent)',
-        borderRadius: 'var(--radius-pill)'
+        background: meta.color,
+        borderRadius: 'var(--radius-sm)',
+        minWidth: '6px'
       }
-    })))))), /*#__PURE__*/React.createElement(W.Card, {
-      title: "Mandate",
-      subtitle: "Status der Suchauftr\xE4ge"
+    })), /*#__PURE__*/React.createElement("span", {
+      style: {
+        width: '20px',
+        fontFamily: 'var(--font-mono)',
+        fontSize: '12px',
+        fontWeight: 600,
+        color: 'var(--text-heading)',
+        textAlign: 'right'
+      }
+    }, n));
+  })))));
+}
+Object.assign(window, {
+  MandateView,
+  PlatzierungenView,
+  ReportsView
+});
+})(); } catch (e) { __ds_ns.__errors.push({ path: "ui_kits/recruiting/VermittlerViews.jsx", error: String((e && e.message) || e) }); }
+
+// ui_kits/recruiting/Workspace.jsx
+try { (() => {
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+/* Workspace — Übersicht (dashboard), Talente grid, Stellen, Postfach. */
+const WS = window.BewerbungstoolDesignSystem_a75119;
+
+/* ---------- Übersicht — agency-led, but my own applications stay front of mind ---------- */
+function Dashboard({
+  me,
+  apps,
+  vkpis,
+  clients,
+  mandates,
+  onOpenTalent,
+  onOpenPipeline,
+  onOpenMandate
+}) {
+  const mine = apps.filter(a => a.talentId === 'me');
+  const nextSteps = mine.filter(a => a.status === 'interview' || a.status === 'offer');
+  const clientName = id => (clients.find(c => c.id === id) || {}).name || '';
+  const topMandates = mandates.filter(m => m.status === 'aktiv').slice(0, 4);
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '18px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '16px',
+      padding: '20px 24px',
+      borderRadius: 'var(--radius-lg)',
+      background: 'linear-gradient(160deg, var(--ink-850), var(--ink-900))',
+      color: '#fff'
+    }
+  }, /*#__PURE__*/React.createElement(WS.Avatar, {
+    name: me.name,
+    src: me.src,
+    size: 52,
+    radius: "var(--radius-md)",
+    ring: true
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-display)',
+      fontSize: '20px',
+      fontWeight: 700,
+      letterSpacing: '-0.02em'
+    }
+  }, "Guten Tag, ", me.name.split(' ')[0], "."), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '13px',
+      color: 'var(--sidebar-muted)',
+      marginTop: '2px'
+    }
+  }, mandates.filter(m => m.status === 'aktiv').length, " aktive Mandate \xB7 ", nextSteps.length, " eigene Bewerbungen in Bewegung.")), /*#__PURE__*/React.createElement(WS.Button, {
+    variant: "primary",
+    iconLeft: /*#__PURE__*/React.createElement(WS.Icon, {
+      name: "user",
+      size: 15
+    }),
+    onClick: () => onOpenTalent('me')
+  }, "Mein Profil")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(4, 1fr)',
+      gap: '14px'
+    }
+  }, vkpis.map((k, i) => /*#__PURE__*/React.createElement(WS.StatCard, _extends({
+    key: i
+  }, k)))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: '16px',
+      alignItems: 'start'
+    }
+  }, /*#__PURE__*/React.createElement(WS.Card, {
+    title: "Aktive Mandate",
+    subtitle: "Suchauftr\xE4ge mit Frist",
+    action: /*#__PURE__*/React.createElement(WS.Button, {
+      size: "sm",
+      variant: "ghost",
+      iconRight: /*#__PURE__*/React.createElement(WS.Icon, {
+        name: "arrowRight",
+        size: 14
+      }),
+      onClick: onOpenMandate
+    }, "Alle"),
+    pad: false
+  }, topMandates.map(m => /*#__PURE__*/React.createElement("div", {
+    key: m.id,
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '13px',
+      padding: '13px 18px',
+      borderBottom: '1px solid var(--border)'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: '36px',
+      height: '36px',
+      borderRadius: 'var(--radius-md)',
+      background: 'var(--ink-900)',
+      color: '#fff',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement(WS.Icon, {
+    name: "briefcase",
+    size: 16
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '13.5px',
+      fontWeight: 700,
+      color: 'var(--text-heading)',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis'
+    }
+  }, m.role), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '11.5px',
+      color: 'var(--text-soft)',
+      marginTop: '1px'
+    }
+  }, clientName(m.clientId), " \xB7 ", m.submitted, " vorgeschlagen")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: 'right'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '13px',
+      fontWeight: 600,
+      color: 'var(--accent-strong)'
+    }
+  }, m.fee), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '10.5px',
+      color: 'var(--text-soft)'
+    }
+  }, "bis ", m.deadline))))), /*#__PURE__*/React.createElement(WS.Card, {
+    title: "Meine n\xE4chsten Schritte",
+    subtitle: "Eigene Bewerbungen (Ich)",
+    action: /*#__PURE__*/React.createElement(WS.Button, {
+      size: "sm",
+      variant: "ghost",
+      iconRight: /*#__PURE__*/React.createElement(WS.Icon, {
+        name: "arrowRight",
+        size: 14
+      }),
+      onClick: onOpenPipeline
+    }, "Pipeline"),
+    pad: false
+  }, nextSteps.map(a => /*#__PURE__*/React.createElement("div", {
+    key: a.id,
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '13px',
+      padding: '13px 18px',
+      borderBottom: '1px solid var(--border)'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: '36px',
+      height: '36px',
+      borderRadius: 'var(--radius-md)',
+      background: 'var(--surface-sunk)',
+      color: 'var(--text-muted)',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement(WS.Icon, {
+    name: "building",
+    size: 17
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '14px',
+      fontWeight: 700,
+      color: 'var(--text-heading)'
+    }
+  }, a.company), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '11px',
+      color: 'var(--accent-strong)',
+      marginTop: '1px'
+    }
+  }, a.next)), /*#__PURE__*/React.createElement(WS.StatusBadge, {
+    status: a.status,
+    size: "sm"
+  }))), nextSteps.length === 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '30px',
+      textAlign: 'center',
+      fontSize: '13px',
+      color: 'var(--text-soft)'
+    }
+  }, "Keine offenen Schritte."))));
+}
+
+/* ---------- Talente grid ---------- */
+function TalentGrid({
+  talents,
+  apps,
+  onOpen
+}) {
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px',
+      marginBottom: '14px'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '11px',
+      letterSpacing: '0.1em',
+      textTransform: 'uppercase',
+      color: 'var(--text-soft)'
+    }
+  }, talents.length, " Talente"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      flex: 1
+    }
+  }), /*#__PURE__*/React.createElement(WS.Button, {
+    size: "sm",
+    variant: "outline",
+    iconLeft: /*#__PURE__*/React.createElement(WS.Icon, {
+      name: "plus",
+      size: 14
+    })
+  }, "Talent hinzuf\xFCgen")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+      gap: '14px'
+    }
+  }, talents.map(t => {
+    const n = apps.filter(a => a.talentId === t.id).length;
+    return /*#__PURE__*/React.createElement(WS.Card, {
+      key: t.id,
+      style: {
+        cursor: 'pointer',
+        border: t.me ? '1px solid var(--accent-border)' : '1px solid var(--border)'
+      },
+      onClick: () => onOpen(t.id)
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
-        flexDirection: 'column',
-        gap: '14px'
+        alignItems: 'center',
+        gap: '13px'
+      }
+    }, /*#__PURE__*/React.createElement(WS.Avatar, {
+      name: t.name,
+      src: t.src,
+      size: "lg",
+      ring: t.me
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
-        alignItems: 'baseline',
-        gap: '10px'
+        alignItems: 'center',
+        gap: '7px'
       }
     }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: 'var(--font-display)',
-        fontSize: '34px',
+        fontSize: '16px',
         fontWeight: 700,
         color: 'var(--text-heading)'
       }
-    }, active), /*#__PURE__*/React.createElement("span", {
+    }, t.name), t.me && /*#__PURE__*/React.createElement(WS.Badge, {
+      variant: "soft",
+      size: "sm"
+    }, "Ich")), /*#__PURE__*/React.createElement("div", {
       style: {
-        fontSize: '13px',
-        color: 'var(--text-muted)'
+        fontSize: '12.5px',
+        color: 'var(--text-muted)',
+        marginTop: '1px',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis'
       }
-    }, "aktive Mandate")), /*#__PURE__*/React.createElement(W.ProgressBar, {
-      value: Math.round(active / mandates.length * 100),
-      tone: "interview",
-      showValue: true,
-      label: "Auslastung"
-    }), /*#__PURE__*/React.createElement("div", {
+    }, t.role))), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
-        flexDirection: 'column',
-        gap: '8px',
-        marginTop: '4px'
+        gap: '6px',
+        flexWrap: 'wrap',
+        margin: '13px 0'
       }
-    }, mandates.map(m => /*#__PURE__*/React.createElement("div", {
-      key: m.id,
+    }, t.skills.slice(0, 3).map((s, i) => /*#__PURE__*/React.createElement(WS.Badge, {
+      key: i,
+      variant: "outline",
+      size: "sm"
+    }, s)), t.skills.length > 3 && /*#__PURE__*/React.createElement(WS.Badge, {
+      variant: "subtle",
+      size: "sm"
+    }, "+", t.skills.length - 3)), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        fontSize: '12.5px'
+        paddingTop: '12px',
+        borderTop: '1px solid var(--border)'
       }
     }, /*#__PURE__*/React.createElement("span", {
       style: {
-        color: 'var(--text-body)',
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        marginRight: '8px'
-      }
-    }, m.role), /*#__PURE__*/React.createElement(Pill, {
-      p: PRIORITY[m.priority]
-    }))))))));
-  }
-  Object.assign(window, {
-    MandateView,
-    PoolView,
-    PlatzierungenView,
-    VermittlerReports
-  });
-})();
-})(); } catch (e) { __ds_ns.__errors.push({ path: "ui_kits/recruiting/VermittlerViews.jsx", error: String((e && e.message) || e) }); }
-
-// ui_kits/recruiting/Views.jsx
-try { (() => {
-function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
-/* __kit_guard__ */
-(function () {
-  var __s = document.currentScript;
-  if (__s && /_ds_bundle\.js/.test(__s.src || '')) return;
-  /* Views — Talente list, Stellen, Berichte, Postfach. */
-  const V = window.BewerbungstoolDesignSystem_a75119;
-
-  /* ---------- Talente: candidate list ---------- */
-  function CandidateList({
-    candidates,
-    onOpen
-  }) {
-    const [tab, setTab] = React.useState('alle');
-    const counts = s => candidates.filter(c => s === 'alle' ? true : c.status === s).length;
-    const tabs = [{
-      id: 'alle',
-      label: 'Alle',
-      count: counts('alle')
-    }, {
-      id: 'new',
-      label: 'Neu',
-      count: counts('new')
-    }, {
-      id: 'review',
-      label: 'Sichtung',
-      count: counts('review')
-    }, {
-      id: 'interview',
-      label: 'Interview',
-      count: counts('interview')
-    }, {
-      id: 'offer',
-      label: 'Angebot',
-      count: counts('offer')
-    }];
-    const rows = candidates.filter(c => tab === 'alle' ? true : c.status === tab);
-    return /*#__PURE__*/React.createElement(V.Card, {
-      pad: false
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        padding: '6px 16px 0'
-      }
-    }, /*#__PURE__*/React.createElement(V.Tabs, {
-      value: tab,
-      onChange: setTab,
-      tabs: tabs
-    })), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'grid',
-        gridTemplateColumns: 'minmax(0,1.6fr) minmax(0,1.2fr) 78px 116px 96px',
-        gap: '14px',
-        padding: '11px 16px',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '6px',
         fontFamily: 'var(--font-mono)',
-        fontSize: '9.5px',
-        letterSpacing: '0.12em',
-        textTransform: 'uppercase',
-        color: 'var(--text-soft)',
-        borderBottom: '1px solid var(--border)',
-        background: 'var(--surface-subtle)'
-      }
-    }, /*#__PURE__*/React.createElement("span", null, "Kandidat:in"), /*#__PURE__*/React.createElement("span", null, "Stelle"), /*#__PURE__*/React.createElement("span", null, "Match"), /*#__PURE__*/React.createElement("span", null, "Phase"), /*#__PURE__*/React.createElement("span", {
-      style: {
-        textAlign: 'right'
-      }
-    }, "Aktiv.")), rows.map(c => /*#__PURE__*/React.createElement(V.CandidateRow, {
-      key: c.id,
-      name: c.name,
-      role: c.role,
-      position: c.position,
-      src: c.src,
-      status: c.status,
-      score: c.score,
-      when: c.when,
-      onClick: () => onOpen(c.id)
-    })));
-  }
-
-  /* ---------- Stellen: job openings ---------- */
-  function JobsView({
-    jobs,
-    candidates,
-    onOpen
-  }) {
-    return /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-        gap: '16px'
-      }
-    }, jobs.map(j => {
-      const apps = candidates.filter(c => c.jobId === j.id);
-      const interview = apps.filter(c => c.status === 'interview' || c.status === 'offer').length;
-      return /*#__PURE__*/React.createElement(V.Card, {
-        key: j.id,
-        style: {
-          cursor: 'pointer'
-        },
-        onClick: () => apps[0] && onOpen(apps[0].id)
-      }, /*#__PURE__*/React.createElement("div", {
-        style: {
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          gap: '10px'
-        }
-      }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
-        style: {
-          fontFamily: 'var(--font-display)',
-          fontSize: '17px',
-          fontWeight: 700,
-          color: 'var(--text-heading)',
-          margin: 0,
-          letterSpacing: '-0.01em'
-        }
-      }, j.title), /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontSize: '12.5px',
-          color: 'var(--text-muted)',
-          marginTop: '3px'
-        }
-      }, j.team)), /*#__PURE__*/React.createElement(V.Badge, {
-        variant: "soft",
-        size: "sm"
-      }, j.type)), /*#__PURE__*/React.createElement("div", {
-        style: {
-          display: 'flex',
-          gap: '8px',
-          margin: '14px 0',
-          flexWrap: 'wrap'
-        }
-      }, /*#__PURE__*/React.createElement(V.MetaPill, {
-        icon: "pin"
-      }, j.location), /*#__PURE__*/React.createElement(V.MetaPill, {
-        icon: "users",
-        tone: "accent"
-      }, apps.length, " Bewerbungen")), /*#__PURE__*/React.createElement(V.ProgressBar, {
-        value: Math.round(interview / Math.max(apps.length, 1) * 100),
-        tone: "interview"
-      }), /*#__PURE__*/React.createElement("div", {
-        style: {
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginTop: '12px'
-        }
-      }, /*#__PURE__*/React.createElement("div", {
-        style: {
-          display: 'flex'
-        }
-      }, apps.slice(0, 4).map((c, i) => /*#__PURE__*/React.createElement("div", {
-        key: c.id,
-        style: {
-          marginLeft: i === 0 ? 0 : '-9px',
-          border: '2px solid var(--surface-card)',
-          borderRadius: '50%'
-        }
-      }, /*#__PURE__*/React.createElement(V.Avatar, {
-        name: c.name,
-        src: c.src,
-        size: "xs"
-      })))), /*#__PURE__*/React.createElement("span", {
-        style: {
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '5px',
-          fontFamily: 'var(--font-mono)',
-          fontSize: '11px',
-          color: 'var(--accent-strong)',
-          fontWeight: 600
-        }
-      }, "Pipeline ", /*#__PURE__*/React.createElement(V.Icon, {
-        name: "arrowRight",
-        size: 13
-      }))));
-    }));
-  }
-
-  /* ---------- Berichte: funnel + sources ---------- */
-  function ReportsView({
-    candidates,
-    kpis
-  }) {
-    const order = window.STAGES_ORDER;
-    const max = Math.max(...order.map(s => candidates.filter(c => c.status === s).length), 1);
-    const sources = {};
-    candidates.forEach(c => {
-      sources[c.source] = (sources[c.source] || 0) + 1;
-    });
-    return /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '18px'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: '14px'
-      }
-    }, kpis.map((k, i) => /*#__PURE__*/React.createElement(V.StatCard, _extends({
-      key: i
-    }, k)))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'grid',
-        gridTemplateColumns: '1.5fr 1fr',
-        gap: '16px'
-      }
-    }, /*#__PURE__*/React.createElement(V.Card, {
-      title: "Funnel",
-      subtitle: "Kandidat:innen je Phase"
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px'
-      }
-    }, order.map(s => {
-      const n = candidates.filter(c => c.status === s).length;
-      const meta = V.STAGES[s];
-      return /*#__PURE__*/React.createElement("div", {
-        key: s,
-        style: {
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px'
-        }
-      }, /*#__PURE__*/React.createElement("span", {
-        style: {
-          width: '88px',
-          fontFamily: 'var(--font-mono)',
-          fontSize: '11px',
-          color: 'var(--text-muted)',
-          flexShrink: 0
-        }
-      }, meta.label), /*#__PURE__*/React.createElement("div", {
-        style: {
-          flex: 1,
-          height: '24px',
-          background: 'var(--surface-sunk)',
-          borderRadius: 'var(--radius-sm)',
-          overflow: 'hidden'
-        }
-      }, /*#__PURE__*/React.createElement("div", {
-        style: {
-          width: `${n / max * 100}%`,
-          height: '100%',
-          background: meta.color,
-          borderRadius: 'var(--radius-sm)',
-          minWidth: '6px',
-          transition: 'width var(--dur-med)'
-        }
-      })), /*#__PURE__*/React.createElement("span", {
-        style: {
-          width: '22px',
-          fontFamily: 'var(--font-mono)',
-          fontSize: '13px',
-          fontWeight: 600,
-          color: 'var(--text-heading)',
-          textAlign: 'right',
-          fontVariantNumeric: 'tabular-nums'
-        }
-      }, n));
-    }))), /*#__PURE__*/React.createElement(V.Card, {
-      title: "Quellen",
-      subtitle: "Woher kommen Bewerbungen"
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '13px'
-      }
-    }, Object.entries(sources).sort((a, b) => b[1] - a[1]).map(([src, n]) => /*#__PURE__*/React.createElement("div", {
-      key: src
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        fontSize: '12.5px',
-        marginBottom: '5px'
-      }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        color: 'var(--text-body)',
-        fontWeight: 500
-      }
-    }, src), /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontFamily: 'var(--font-mono)',
+        fontSize: '11px',
         color: 'var(--text-soft)'
       }
-    }, n)), /*#__PURE__*/React.createElement(V.ProgressBar, {
-      value: n / candidates.length * 100,
-      tone: "accent",
-      height: 5
-    })))))));
-  }
+    }, /*#__PURE__*/React.createElement(WS.Icon, {
+      name: "send",
+      size: 12
+    }), n, " Bewerbungen"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: 'var(--font-mono)',
+        fontSize: '13px',
+        fontWeight: 600,
+        color: t.score >= 80 ? 'var(--success)' : 'var(--text-muted)'
+      }
+    }, t.score, "%")));
+  })));
+}
 
-  /* ---------- Postfach: inbox ---------- */
-  function Inbox({
-    candidates,
-    onOpen
-  }) {
-    const msgs = [{
-      id: 'c1',
-      text: 'Vielen Dank für die Einladung — der Termin am 24.06. passt mir gut.',
-      when: 'vor 2 Std.',
-      unread: true
-    }, {
-      id: 'c6',
-      text: 'Anbei wie besprochen meine Arbeitsproben zur Research-Methodik.',
-      when: 'vor 5 Std.',
-      unread: true
-    }, {
-      id: 'c7',
-      text: 'Ich habe das Angebot erhalten und melde mich bis Freitag zurück.',
-      when: 'gestern',
-      unread: false
-    }, {
-      id: 'c5',
-      text: 'Gerne stehe ich für ein weiteres Gespräch zur Verfügung.',
-      when: 'vor 2 Tagen',
-      unread: false
-    }];
-    const byId = Object.fromEntries(candidates.map(c => [c.id, c]));
-    return /*#__PURE__*/React.createElement(V.Card, {
-      pad: false
-    }, msgs.map(m => {
-      const c = byId[m.id];
-      if (!c) return null;
-      return /*#__PURE__*/React.createElement("div", {
-        key: m.id,
-        onClick: () => onOpen(c.id),
-        style: {
-          display: 'flex',
-          alignItems: 'center',
-          gap: '13px',
-          padding: '14px 18px',
-          borderBottom: '1px solid var(--border)',
-          cursor: 'pointer',
-          background: m.unread ? 'var(--accent-soft)' : 'transparent'
-        }
-      }, /*#__PURE__*/React.createElement(V.Avatar, {
-        name: c.name,
-        src: c.src,
-        size: "md"
-      }), /*#__PURE__*/React.createElement("div", {
-        style: {
-          flex: 1,
-          minWidth: 0
-        }
-      }, /*#__PURE__*/React.createElement("div", {
-        style: {
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }
-      }, /*#__PURE__*/React.createElement("span", {
-        style: {
-          fontFamily: 'var(--font-display)',
-          fontSize: '14px',
-          fontWeight: 700,
-          color: 'var(--text-heading)'
-        }
-      }, c.name), m.unread && /*#__PURE__*/React.createElement("span", {
-        style: {
-          width: '7px',
-          height: '7px',
-          borderRadius: '50%',
-          background: 'var(--accent)'
-        }
-      }), /*#__PURE__*/React.createElement(V.StatusBadge, {
-        status: c.status,
-        size: "sm"
-      })), /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontSize: '13px',
-          color: 'var(--text-muted)',
-          marginTop: '2px',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis'
-        }
-      }, m.text)), /*#__PURE__*/React.createElement("span", {
-        style: {
-          fontFamily: 'var(--font-mono)',
-          fontSize: '11px',
-          color: 'var(--text-soft)',
-          flexShrink: 0
-        }
-      }, m.when));
-    }));
-  }
-  Object.assign(window, {
-    CandidateList,
-    JobsView,
-    ReportsView,
-    Inbox
-  });
-})();
-})(); } catch (e) { __ds_ns.__errors.push({ path: "ui_kits/recruiting/Views.jsx", error: String((e && e.message) || e) }); }
+/* ---------- Stellen ---------- */
+function JobsView({
+  jobs
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+      gap: '16px'
+    }
+  }, jobs.map(j => /*#__PURE__*/React.createElement(WS.Card, {
+    key: j.id
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
+      gap: '10px'
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
+    style: {
+      fontFamily: 'var(--font-display)',
+      fontSize: '16px',
+      fontWeight: 700,
+      color: 'var(--text-heading)',
+      margin: 0,
+      letterSpacing: '-0.01em'
+    }
+  }, j.title), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '12.5px',
+      color: 'var(--text-muted)',
+      marginTop: '3px'
+    }
+  }, j.company)), /*#__PURE__*/React.createElement(WS.IconButton, {
+    icon: "bookmark",
+    label: "Merken",
+    variant: j.saved ? 'accent' : 'ghost',
+    size: "sm"
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: '8px',
+      margin: '14px 0',
+      flexWrap: 'wrap'
+    }
+  }, /*#__PURE__*/React.createElement(WS.MetaPill, {
+    icon: "pin"
+  }, j.location), /*#__PURE__*/React.createElement(WS.MetaPill, {
+    icon: "trend",
+    tone: "accent"
+  }, j.salary)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingTop: '12px',
+      borderTop: '1px solid var(--border)'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '6px',
+      fontFamily: 'var(--font-mono)',
+      fontSize: '12px',
+      color: j.match >= 85 ? 'var(--success)' : 'var(--text-muted)',
+      fontWeight: 600
+    }
+  }, /*#__PURE__*/React.createElement(WS.Icon, {
+    name: "zap",
+    size: 13
+  }), j.match, "% Match"), /*#__PURE__*/React.createElement(WS.Button, {
+    size: "sm",
+    variant: "primary",
+    iconRight: /*#__PURE__*/React.createElement(WS.Icon, {
+      name: "arrowRight",
+      size: 14
+    })
+  }, "Bewerben")))));
+}
+
+/* ---------- Postfach ---------- */
+function Inbox({
+  messages,
+  apps,
+  talents,
+  onOpenTalent
+}) {
+  const appById = Object.fromEntries(apps.map(a => [a.id, a]));
+  const talById = Object.fromEntries(talents.map(t => [t.id, t]));
+  return /*#__PURE__*/React.createElement(WS.Card, {
+    pad: false
+  }, messages.map(m => {
+    const app = appById[m.appId];
+    const tal = app && talById[app.talentId];
+    return /*#__PURE__*/React.createElement("div", {
+      key: m.id,
+      onClick: () => tal && onOpenTalent(tal.id),
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '13px',
+        padding: '14px 18px',
+        borderBottom: '1px solid var(--border)',
+        cursor: 'pointer',
+        background: m.unread ? 'var(--accent-soft)' : 'transparent'
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        width: '40px',
+        height: '40px',
+        flexShrink: 0,
+        borderRadius: 'var(--radius-md)',
+        background: 'var(--ink-900)',
+        color: '#fff',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }
+    }, /*#__PURE__*/React.createElement(WS.Icon, {
+      name: "building",
+      size: 18
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px'
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: 'var(--font-display)',
+        fontSize: '14px',
+        fontWeight: 700,
+        color: 'var(--text-heading)'
+      }
+    }, m.from), m.unread && /*#__PURE__*/React.createElement("span", {
+      style: {
+        width: '7px',
+        height: '7px',
+        borderRadius: '50%',
+        background: 'var(--accent)'
+      }
+    }), tal && /*#__PURE__*/React.createElement(WS.Badge, {
+      variant: "subtle",
+      size: "sm"
+    }, tal.me ? 'Ich' : tal.name.split(' ')[0])), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: '13px',
+        color: 'var(--text-muted)',
+        marginTop: '2px',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis'
+      }
+    }, m.text)), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: 'var(--font-mono)',
+        fontSize: '11px',
+        color: 'var(--text-soft)',
+        flexShrink: 0
+      }
+    }, m.when));
+  }));
+}
+Object.assign(window, {
+  Dashboard,
+  TalentGrid,
+  JobsView,
+  Inbox
+});
+})(); } catch (e) { __ds_ns.__errors.push({ path: "ui_kits/recruiting/Workspace.jsx", error: String((e && e.message) || e) }); }
 
 // ui_kits/recruiting/app.jsx
 try { (() => {
-function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
-/* __kit_guard__ */
-(function () {
-  var __s = document.currentScript;
-  if (__s && /_ds_bundle\.js/.test(__s.src || '')) return;
-  /* app.jsx — orchestrates the myJob recruiting workspace for two roles. */
-  const A = window.BewerbungstoolDesignSystem_a75119;
-  const VERMITTLER_NAV = [{
-    id: 'mandate',
-    label: 'Mandate',
-    icon: 'briefcase'
-  }, {
-    id: 'pool',
-    label: 'Talent-Pool',
-    icon: 'users'
-  }, {
-    id: 'platzierungen',
-    label: 'Platzierungen',
-    icon: 'award'
-  }, {
-    id: 'berichte',
-    label: 'Berichte',
-    icon: 'trend'
-  }, {
-    id: 'postfach',
-    label: 'Postfach',
-    icon: 'inbox'
-  }];
-  const TITLES = {
-    hr: {
-      pipeline: ['Pipeline', 'Alle Kandidat:innen über die Phasen ziehen'],
-      talente: ['Talente', 'Durchsuchbare Liste aller Bewerbungen'],
-      stellen: ['Stellen', 'Offene Positionen und ihre Pipelines'],
-      berichte: ['Berichte', 'Funnel, Quellen und Kennzahlen'],
-      postfach: ['Postfach', 'Nachrichten von Kandidat:innen']
-    },
-    vermittler: {
-      mandate: ['Mandate', 'Suchaufträge je Kunde mit Provision und Frist'],
-      pool: ['Talent-Pool', 'Eigener Kandidaten-Pool und Verfügbarkeit'],
-      platzierungen: ['Platzierungen', 'Gebuchte Vermittlungen und Provision'],
-      berichte: ['Berichte', 'Provision, Mandate und Auslastung'],
-      postfach: ['Postfach', 'Nachrichten von Kandidat:innen']
-    }
+/* app.jsx — orchestrates the unified myJob workspace. Define-only; render is in index.html. */
+const A = window.BewerbungstoolDesignSystem_a75119;
+const TITLES = {
+  uebersicht: ['Übersicht', 'Vermittlung & eigene Bewerbungen auf einen Blick'],
+  mandate: ['Mandate', 'Suchaufträge je Kunde mit Provision und Frist'],
+  pool: ['Talent-Pool', 'Wen du vertrittst — Ich zuerst'],
+  bewerbungen: ['Bewerbungen', 'Pipeline aller Vorschläge und eigenen Mappen'],
+  platzierungen: ['Platzierungen', 'Gebuchte Vermittlungen und Provision'],
+  berichte: ['Berichte', 'Provision, Funnel und Auslastung'],
+  postfach: ['Postfach', 'Nachrichten von Kunden und Firmen']
+};
+function App() {
+  const [nav, setNav] = React.useState('uebersicht');
+  const [search, setSearch] = React.useState('');
+  const [openTalent, setOpenTalent] = React.useState(null);
+  const [mappeFor, setMappeFor] = React.useState(null);
+  const [editing, setEditing] = React.useState(null);
+  const talents = window.TALENTS;
+  const apps = window.APPLICATIONS;
+  const me = talents.find(t => t.me);
+  const unread = window.MESSAGES.filter(m => m.unread).length;
+  const badges = {
+    bewerbungen: apps.filter(a => a.status !== 'rejected' && a.status !== 'hired').length,
+    postfach: unread || undefined
   };
-  function App() {
-    const [role, setRole] = React.useState('hr');
-    const [nav, setNav] = React.useState('pipeline');
-    const [search, setSearch] = React.useState('');
-    const [selected, setSelected] = React.useState(null);
-    const [candidates, setCandidates] = React.useState(window.CANDIDATES);
-    const navItems = role === 'hr' ? window.HR_NAV : VERMITTLER_NAV;
-    const switchRole = r => {
-      setRole(r);
-      setNav(r === 'hr' ? 'pipeline' : 'mandate');
-      setSelected(null);
-    };
-    const visible = React.useMemo(() => {
-      const q = search.trim().toLowerCase();
-      if (!q) return candidates;
-      return candidates.filter(c => (c.name + ' ' + c.role + ' ' + c.position).toLowerCase().includes(q));
-    }, [candidates, search]);
-    const open = id => setSelected(id);
-    const close = () => setSelected(null);
-    const advance = id => {
-      setCandidates(cs => cs.map(c => {
-        if (c.id !== id) return c;
-        const i = window.STAGES_ORDER.indexOf(c.status);
-        const next = window.STAGES_ORDER[Math.min(i + 1, window.STAGES_ORDER.length - 1)];
-        return {
-          ...c,
-          status: next
-        };
-      }));
-    };
-    const reject = id => {
-      setCandidates(cs => cs.map(c => c.id === id ? {
-        ...c,
-        status: 'rejected'
-      } : c));
-      close();
-    };
-    const cand = candidates.find(c => c.id === selected);
-    const [title, subtitle] = TITLES[role][nav] || ['', ''];
-    const ACTION_LABEL = {
-      pipeline: 'Kandidat:in',
-      stellen: 'Stelle anlegen',
-      mandate: 'Mandat anlegen',
-      pool: 'Talent hinzufügen',
-      platzierungen: 'Platzierung buchen'
-    };
-    const actions = ACTION_LABEL[nav] ? /*#__PURE__*/React.createElement(A.Button, {
-      variant: "primary",
-      size: "sm",
-      iconLeft: /*#__PURE__*/React.createElement(A.Icon, {
-        name: "plus",
-        size: 15
-      })
-    }, ACTION_LABEL[nav]) : null;
+  const goTalent = id => setOpenTalent(id);
+  const back = () => setOpenTalent(null);
+  const talent = openTalent && talents.find(t => t.id === openTalent);
+  const talentApps = id => apps.filter(a => a.talentId === id);
+  const editTalent = editing && talents.find(t => t.id === editing);
+
+  // editor takes over the whole canvas
+  if (editTalent) {
     return /*#__PURE__*/React.createElement(window.AppShell, {
-      active: nav,
-      onNav: setNav,
-      navItems: navItems,
-      role: role,
-      onRole: switchRole,
+      active: "pool",
+      onNav: n => {
+        setEditing(null);
+        setOpenTalent(null);
+        setNav(n);
+      },
+      me: me,
+      talentCount: talents.length,
       search: search,
       onSearch: setSearch,
-      title: title,
-      subtitle: subtitle,
-      actions: actions
-    }, role === 'hr' && nav === 'pipeline' && /*#__PURE__*/React.createElement("div", {
+      title: editTalent.me ? 'Meine Dokumente' : editTalent.name,
+      subtitle: "Lebenslauf & Anschreiben bearbeiten",
+      badges: badges
+    }, /*#__PURE__*/React.createElement(window.Editor, {
+      talent: editTalent,
+      onClose: () => setEditing(null),
+      onCreateMappe: () => {
+        setMappeFor(editTalent);
+      }
+    }), mappeFor && /*#__PURE__*/React.createElement(window.MappeModal, {
+      talent: mappeFor,
+      onClose: () => setMappeFor(null)
+    }));
+  }
+
+  // a talent profile takes over the whole canvas regardless of nav
+  let title, subtitle, body;
+  if (talent) {
+    title = talent.me ? 'Mein Profil' : talent.name;
+    subtitle = 'Lebenslauf, Anhänge und Bewerbungen';
+    body = /*#__PURE__*/React.createElement(window.TalentProfile, {
+      talent: talent,
+      apps: talentApps(talent.id),
+      onBack: back,
+      onEdit: () => setEditing(talent.id),
+      onCreateMappe: () => setMappeFor(talent)
+    });
+  } else {
+    [title, subtitle] = TITLES[nav];
+    if (nav === 'uebersicht') body = /*#__PURE__*/React.createElement(window.Dashboard, {
+      me: me,
+      apps: apps,
+      vkpis: window.VERMITTLER_KPIS,
+      clients: window.CLIENTS,
+      mandates: window.MANDATES,
+      onOpenTalent: goTalent,
+      onOpenPipeline: () => setNav('bewerbungen'),
+      onOpenMandate: () => setNav('mandate')
+    });else if (nav === 'mandate') body = /*#__PURE__*/React.createElement(window.MandateView, {
+      clients: window.CLIENTS,
+      mandates: window.MANDATES
+    });else if (nav === 'pool') body = /*#__PURE__*/React.createElement(window.TalentGrid, {
+      talents: talents,
+      apps: apps,
+      onOpen: goTalent
+    });else if (nav === 'bewerbungen') body = /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         flexDirection: 'column',
-        gap: '20px',
+        gap: '16px',
         height: '100%'
       }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: '14px',
-        flexShrink: 0
-      }
-    }, window.KPIS.map((k, i) => /*#__PURE__*/React.createElement(A.StatCard, _extends({
-      key: i
-    }, k)))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        flex: 1,
-        minHeight: 0
-      }
     }, /*#__PURE__*/React.createElement(window.PipelineBoard, {
-      candidates: visible,
-      onOpen: open
-    }))), role === 'hr' && nav === 'talente' && /*#__PURE__*/React.createElement(window.CandidateList, {
-      candidates: visible,
-      onOpen: open
-    }), role === 'hr' && nav === 'stellen' && /*#__PURE__*/React.createElement(window.JobsView, {
-      jobs: window.JOBS,
-      candidates: candidates,
-      onOpen: open
-    }), role === 'hr' && nav === 'berichte' && /*#__PURE__*/React.createElement(window.ReportsView, {
-      candidates: candidates,
-      kpis: window.KPIS
-    }), role === 'vermittler' && nav === 'mandate' && /*#__PURE__*/React.createElement(window.MandateView, {
-      clients: window.CLIENTS,
-      mandates: window.MANDATES
-    }), role === 'vermittler' && nav === 'pool' && /*#__PURE__*/React.createElement(window.PoolView, {
-      pool: window.POOL,
-      candidates: candidates,
-      onOpen: open
-    }), role === 'vermittler' && nav === 'platzierungen' && /*#__PURE__*/React.createElement(window.PlatzierungenView, {
+      apps: apps,
+      talents: talents,
+      onOpen: goTalent
+    }));else if (nav === 'platzierungen') body = /*#__PURE__*/React.createElement(window.PlatzierungenView, {
       placements: window.PLACEMENTS,
-      candidates: candidates,
       kpis: window.VERMITTLER_KPIS
-    }), role === 'vermittler' && nav === 'berichte' && /*#__PURE__*/React.createElement(window.VermittlerReports, {
+    });else if (nav === 'berichte') body = /*#__PURE__*/React.createElement(window.ReportsView, {
       clients: window.CLIENTS,
       mandates: window.MANDATES,
       placements: window.PLACEMENTS,
+      apps: apps,
       kpis: window.VERMITTLER_KPIS
-    }), nav === 'postfach' && /*#__PURE__*/React.createElement(window.Inbox, {
-      candidates: candidates,
-      onOpen: open
-    }), cand && /*#__PURE__*/React.createElement(window.CandidateDetail, {
-      c: cand,
-      onClose: close,
-      onAdvance: advance,
-      onReject: reject
-    }));
+    });else if (nav === 'postfach') body = /*#__PURE__*/React.createElement(window.Inbox, {
+      messages: window.MESSAGES,
+      apps: apps,
+      talents: talents,
+      onOpenTalent: goTalent
+    });
   }
-  ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(App, null));
-})();
+  const actions = !talent && (nav === 'bewerbungen' || nav === 'uebersicht') ? /*#__PURE__*/React.createElement(A.Button, {
+    variant: "primary",
+    size: "sm",
+    iconLeft: /*#__PURE__*/React.createElement(A.Icon, {
+      name: "plus",
+      size: 15
+    }),
+    onClick: () => setMappeFor(me)
+  }, "Bewerbung einpflegen") : !talent && nav === 'mandate' ? /*#__PURE__*/React.createElement(A.Button, {
+    variant: "primary",
+    size: "sm",
+    iconLeft: /*#__PURE__*/React.createElement(A.Icon, {
+      name: "plus",
+      size: 15
+    })
+  }, "Mandat anlegen") : null;
+  return /*#__PURE__*/React.createElement(window.AppShell, {
+    active: talent ? 'pool' : nav,
+    onNav: n => {
+      setOpenTalent(null);
+      setNav(n);
+    },
+    me: me,
+    talentCount: talents.length,
+    search: search,
+    onSearch: setSearch,
+    title: title,
+    subtitle: subtitle,
+    badges: badges,
+    actions: actions
+  }, body, mappeFor && /*#__PURE__*/React.createElement(window.MappeModal, {
+    talent: mappeFor,
+    onClose: () => setMappeFor(null)
+  }));
+}
+Object.assign(window, {
+  App
+});
 })(); } catch (e) { __ds_ns.__errors.push({ path: "ui_kits/recruiting/app.jsx", error: String((e && e.message) || e) }); }
 
 // ui_kits/recruiting/data.js
 try { (() => {
-/* __kit_guard__ */
-(function () {
-  var __s = document.currentScript;
-  if (__s && /_ds_bundle\.js/.test(__s.src || '')) return;
-  /* Sample recruiting data for the myJob ATS UI kit. German, realistic. */
-  const STAGES_ORDER = ['new', 'review', 'interview', 'offer', 'hired'];
-  const STAGE_LABELS = {
-    new: 'Neu',
-    review: 'Sichtung',
-    interview: 'Interview',
-    offer: 'Angebot',
-    hired: 'Eingestellt',
-    rejected: 'Absage'
-  };
-  const JOBS = [{
-    id: 'j1',
-    title: 'Senior C++ Engineer',
-    team: 'Plattform · Backend',
-    location: 'Berlin · Hybrid',
-    open: 24,
-    type: 'Vollzeit'
-  }, {
-    id: 'j2',
-    title: 'Product Designer:in',
-    team: 'Design · UX',
-    location: 'Remote (DE)',
-    open: 31,
-    type: 'Vollzeit'
-  }, {
-    id: 'j3',
-    title: 'DevOps Engineer',
-    team: 'Infrastructure',
-    location: 'München · Vor Ort',
-    open: 12,
-    type: 'Vollzeit'
-  }, {
-    id: 'j4',
-    title: 'Werkstudent:in Data',
-    team: 'Analytics',
-    location: 'Hamburg · Hybrid',
-    open: 9,
-    type: 'Werkstudent'
-  }];
-  const CANDIDATES = [{
-    id: 'c1',
-    name: 'Suhay Sevinc',
-    role: 'M.Sc. Software Engineer',
-    position: 'Senior C++ Engineer',
-    jobId: 'j1',
-    src: '../../assets/img/candidate-portrait-sm.jpg',
-    status: 'interview',
-    score: 88,
-    when: '2 Tage',
-    source: 'LinkedIn',
+/* myJob — candidate-centric data model.
+   Core object = TALENT. "Ich" (me) is talent #1; representing others is the
+   Vermittler extension. Each talent owns a Lebenslauf, Anhänge and Bewerbungen. */
+
+const STAGES_ORDER = ['new', 'review', 'interview', 'offer', 'hired'];
+const STAGE_LABELS = {
+  new: 'Eingereicht',
+  review: 'In Prüfung',
+  interview: 'Interview',
+  offer: 'Angebot',
+  hired: 'Zusage',
+  rejected: 'Absage'
+};
+
+/* ---------- Anhänge (documents) — shared library per talent ---------- */
+const ME_ATTACHMENTS = [{
+  id: 'at1',
+  name: 'Arbeitszeugnis — Aurora Systems',
+  tag: 'Zeugnis',
+  sub: '2 Seiten · PDF',
+  kind: 'zeugnis'
+}, {
+  id: 'at2',
+  name: 'M.Sc. Zeugnis — TU Berlin',
+  tag: 'Zeugnis',
+  sub: '1 Seite · PDF',
+  kind: 'zeugnis'
+}, {
+  id: 'at3',
+  name: 'Zertifikat — CKA Kubernetes',
+  tag: 'Zertifikat',
+  sub: '1 Seite · PDF',
+  kind: 'zertifikat'
+}, {
+  id: 'at4',
+  name: 'Empfehlungsschreiben — M. Vogel',
+  tag: 'Referenz',
+  sub: '1 Seite · PDF',
+  kind: 'referenz'
+}];
+
+/* ---------- Lebenslauf for "Ich" ---------- */
+const ME_RESUME = {
+  summary: 'Backend-Engineer mit 6 Jahren Erfahrung in hochperformanten, verteilten Systemen. Zuletzt Tech-Lead eines Matching-Teams. Schwerpunkte: C++/Rust, Systemdesign und Zuverlässigkeit im großen Maßstab.',
+  experience: [{
+    role: 'Tech Lead — Matching-Team',
+    company: 'Aurora Systems GmbH',
+    period: '2023 — heute',
     location: 'Berlin',
-    email: 'suhay.sevinc@example.de',
-    phone: '+49 151 2345 6789',
-    salary: '78.000 €',
-    notice: '3 Monate',
-    skills: ['C++', 'Rust', 'Distributed Systems', 'gRPC', 'Kubernetes', 'CMake'],
-    summary: 'Backend-Engineer mit 6 Jahren Erfahrung in hochperformanten verteilten Systemen. Zuletzt Tech-Lead eines Matching-Teams.',
-    timeline: [{
-      t: 'Beworben',
-      d: '12.06.2026',
-      who: 'via LinkedIn'
-    }, {
-      t: 'In Sichtung verschoben',
-      d: '13.06.2026',
-      who: 'Petra Voss (HR)'
-    }, {
-      t: 'Telefon-Screening',
-      d: '16.06.2026',
-      who: 'Petra Voss'
-    }, {
-      t: 'Tech-Interview geplant',
-      d: '24.06.2026',
-      who: 'Plattform-Team'
-    }]
+    bullets: ['Verantwortung für ein Echtzeit-Matching-System mit 40 Mio. Anfragen/Tag', 'Team von 5 Engineers fachlich geführt; Latenz um 38 % reduziert'],
+    skills: ['C++', 'Rust', 'gRPC']
   }, {
-    id: 'c2',
-    name: 'Lena Brandt',
-    role: 'Product Designerin',
-    position: 'Product Designer:in',
-    jobId: 'j2',
-    status: 'review',
-    score: 81,
-    when: '4 Tage',
-    source: 'Empfehlung',
-    location: 'Leipzig',
-    email: 'lena.brandt@example.de',
-    phone: '+49 160 1112 2334',
-    salary: '64.000 €',
-    notice: '6 Wochen',
-    skills: ['Figma', 'Design Systems', 'Prototyping', 'User Research'],
-    summary: 'Produktdesignerin mit Fokus auf B2B-SaaS und Design-Systeme.'
-  }, {
-    id: 'c3',
-    name: 'Marco Adler',
-    role: 'DevOps Engineer',
-    position: 'DevOps Engineer',
-    jobId: 'j3',
-    status: 'new',
-    score: 64,
-    when: 'heute',
-    source: 'Stellenportal',
-    location: 'München',
-    email: 'marco.adler@example.de',
-    phone: '+49 170 5566 7788',
-    salary: '72.000 €',
-    notice: '3 Monate',
-    skills: ['Terraform', 'AWS', 'CI/CD', 'Go'],
-    summary: 'Plattform- und DevOps-Engineer mit Schwerpunkt Automatisierung.'
-  }, {
-    id: 'c4',
-    name: 'Petra Nowak',
-    role: 'Frontend Engineer',
-    position: 'Senior C++ Engineer',
-    jobId: 'j1',
-    status: 'new',
-    score: 58,
-    when: 'heute',
-    source: 'Stellenportal',
-    location: 'Wien',
-    email: 'petra.nowak@example.at',
-    phone: '+43 660 1234 567',
-    salary: '60.000 €',
-    notice: '1 Monat',
-    skills: ['TypeScript', 'React', 'WebGL'],
-    summary: 'Frontend-Engineer mit Interesse an systemnaher Entwicklung.'
-  }, {
-    id: 'c5',
-    name: 'Jonas Krüger',
     role: 'Senior Backend Engineer',
-    position: 'Senior C++ Engineer',
-    jobId: 'j1',
-    status: 'review',
-    score: 79,
-    when: '3 Tage',
-    source: 'LinkedIn',
-    location: 'Köln',
-    email: 'jonas.krueger@example.de',
-    phone: '+49 152 9988 7766',
-    salary: '82.000 €',
-    notice: '3 Monate',
-    skills: ['C++', 'Go', 'PostgreSQL', 'Kafka'],
-    summary: 'Erfahrener Backend-Engineer aus dem Fintech-Umfeld.'
-  }, {
-    id: 'c6',
-    name: 'Aylin Demir',
-    role: 'UX Researcher',
-    position: 'Product Designer:in',
-    jobId: 'j2',
-    status: 'interview',
-    score: 84,
-    when: '1 Tag',
-    source: 'Empfehlung',
-    location: 'Berlin',
-    email: 'aylin.demir@example.de',
-    phone: '+49 151 4433 2211',
-    salary: '66.000 €',
-    notice: '2 Monate',
-    skills: ['User Research', 'Interviews', 'Figma', 'Survey'],
-    summary: 'UX-Researcherin mit starkem qualitativen Hintergrund.'
-  }, {
-    id: 'c7',
-    name: 'Tobias Frank',
-    role: 'Cloud Engineer',
-    position: 'DevOps Engineer',
-    jobId: 'j3',
-    status: 'offer',
-    score: 90,
-    when: '5 Tage',
-    source: 'LinkedIn',
-    location: 'Stuttgart',
-    email: 'tobias.frank@example.de',
-    phone: '+49 162 1010 2020',
-    salary: '85.000 €',
-    notice: '3 Monate',
-    skills: ['AWS', 'Kubernetes', 'Terraform', 'Python'],
-    summary: 'Cloud-Engineer mit Architektur-Erfahrung über mehrere Teams.'
-  }, {
-    id: 'c8',
-    name: 'Sophie Lehmann',
-    role: 'Junior Designer',
-    position: 'Product Designer:in',
-    jobId: 'j2',
-    status: 'new',
-    score: 52,
-    when: 'gestern',
-    source: 'Stellenportal',
+    company: 'Nordlicht Software',
+    period: '2020 — 2023',
     location: 'Hamburg',
-    email: 'sophie.lehmann@example.de',
-    phone: '+49 159 3030 4040',
-    salary: '48.000 €',
-    notice: 'sofort',
-    skills: ['Figma', 'Illustration'],
-    summary: 'Junior-Designerin mit starkem Portfolio.'
+    bullets: ['Event-getriebene Plattform auf Kafka & Kubernetes aufgebaut', 'Migration eines Monolithen zu Services geleitet'],
+    skills: ['Go', 'Kafka', 'Kubernetes']
   }, {
-    id: 'c9',
-    name: 'Daniel Roth',
-    role: 'Data Analyst',
-    position: 'Werkstudent:in Data',
-    jobId: 'j4',
-    status: 'review',
-    score: 71,
-    when: '6 Tage',
-    source: 'Uni-Portal',
-    location: 'Hamburg',
-    email: 'daniel.roth@example.de',
-    phone: '+49 151 7070 8080',
-    salary: '—',
-    notice: 'flexibel',
-    skills: ['Python', 'SQL', 'Pandas'],
-    summary: 'Werkstudent mit Schwerpunkt Datenanalyse.'
-  }, {
-    id: 'c10',
-    name: 'Mara Vogel',
-    role: 'Engineering Manager',
-    position: 'Senior C++ Engineer',
-    jobId: 'j1',
-    status: 'hired',
-    score: 92,
-    when: '8 Tage',
-    source: 'Empfehlung',
-    location: 'Berlin',
-    email: 'mara.vogel@example.de',
-    phone: '+49 151 6060 5050',
-    salary: '95.000 €',
-    notice: '—',
-    skills: ['C++', 'Leadership', 'Architecture'],
-    summary: 'Engineering-Managerin, Zusage erhalten und angenommen.'
-  }, {
-    id: 'c11',
-    name: 'Felix Wagner',
-    role: 'SRE',
-    position: 'DevOps Engineer',
-    jobId: 'j3',
-    status: 'interview',
-    score: 77,
-    when: '2 Tage',
-    source: 'LinkedIn',
+    role: 'Software Engineer',
+    company: 'Falk & Partner',
+    period: '2018 — 2020',
     location: 'München',
-    email: 'felix.wagner@example.de',
-    phone: '+49 170 2323 4545',
-    salary: '80.000 €',
-    notice: '3 Monate',
-    skills: ['SRE', 'Prometheus', 'Go', 'Linux'],
-    summary: 'Site-Reliability-Engineer mit Observability-Fokus.'
+    bullets: ['Hochlast-APIs für den Beratungsbereich entwickelt'],
+    skills: ['Python', 'PostgreSQL']
+  }],
+  education: [{
+    degree: 'M.Sc. Informatik',
+    school: 'TU Berlin',
+    period: '2016 — 2018',
+    note: 'Schwerpunkt Verteilte Systeme · 1,3'
   }, {
-    id: 'c12',
-    name: 'Hanna Schulz',
-    role: 'Brand Designer',
-    position: 'Product Designer:in',
-    jobId: 'j2',
-    status: 'offer',
-    score: 86,
-    when: '4 Tage',
-    source: 'Empfehlung',
-    location: 'Berlin',
-    email: 'hanna.schulz@example.de',
-    phone: '+49 151 1212 3434',
-    salary: '70.000 €',
-    notice: '6 Wochen',
-    skills: ['Branding', 'Figma', 'Motion'],
-    summary: 'Brand-Designerin mit Schnittstelle zu Produkt.'
-  }];
-  const KPIS = [{
-    label: 'Neue Bewerbungen',
-    value: '48',
-    delta: '+12%',
-    dir: 'up',
-    icon: 'inbox'
+    degree: 'B.Sc. Informatik',
+    school: 'Universität Hamburg',
+    period: '2013 — 2016',
+    note: '1,7'
+  }],
+  skillGroups: [{
+    label: 'Sprachen',
+    items: ['C++', 'Rust', 'Go', 'Python']
   }, {
-    label: 'Im Interview',
-    value: '14',
-    delta: '+3',
-    dir: 'up',
-    icon: 'users'
+    label: 'Systeme',
+    items: ['gRPC', 'Kubernetes', 'Kafka', 'PostgreSQL']
   }, {
-    label: 'Offene Stellen',
-    value: '7',
-    delta: '+1',
-    dir: 'up',
-    icon: 'briefcase'
-  }, {
-    label: 'Time-to-Hire',
-    value: '21 T',
-    delta: '-3 T',
-    dir: 'down',
-    icon: 'clock'
-  }];
+    label: 'Methoden',
+    items: ['Systemdesign', 'Observability', 'Code Review']
+  }]
+};
 
-  /* ===== Vermittler-Seite (Agentur "TalentBridge") =====
-     The agency works mandates for several CLIENT companies, runs a shared
-     candidate POOL, and books PLACEMENTS that earn a Provision (fee). */
-  const CLIENTS = [{
-    id: 'k1',
-    name: 'Aurora Systems GmbH',
-    industry: 'SaaS · Plattform',
-    location: 'Berlin',
-    since: '2024'
-  }, {
-    id: 'k2',
-    name: 'Nordlicht Software',
-    industry: 'Fintech',
-    location: 'Hamburg',
-    since: '2025'
-  }, {
-    id: 'k3',
-    name: 'Falk & Partner',
-    industry: 'Beratung',
-    location: 'München',
-    since: '2023'
-  }, {
-    id: 'k4',
-    name: 'Meridian Labs',
-    industry: 'KI · Research',
-    location: 'Remote',
-    since: '2026'
-  }];
-  const MANDATES = [{
-    id: 'm1',
-    clientId: 'k1',
-    role: 'Senior C++ Engineer',
-    location: 'Berlin · Hybrid',
-    fee: '22%',
-    feeValue: '17.160 €',
-    deadline: '30.06.2026',
-    priority: 'hoch',
-    submitted: 4,
-    interviews: 2,
-    status: 'aktiv'
-  }, {
-    id: 'm2',
-    clientId: 'k1',
-    role: 'DevOps Engineer',
-    location: 'Berlin',
-    fee: '20%',
-    feeValue: '14.000 €',
-    deadline: '15.07.2026',
-    priority: 'mittel',
-    submitted: 2,
-    interviews: 1,
-    status: 'aktiv'
-  }, {
-    id: 'm3',
-    clientId: 'k2',
-    role: 'Backend Engineer',
-    location: 'Hamburg',
-    fee: '22%',
-    feeValue: '16.500 €',
-    deadline: '10.07.2026',
-    priority: 'hoch',
-    submitted: 3,
-    interviews: 1,
-    status: 'aktiv'
-  }, {
-    id: 'm4',
-    clientId: 'k3',
-    role: 'Plattform-Engineer',
-    location: 'München',
-    fee: '18%',
-    feeValue: '12.200 €',
-    deadline: '05.07.2026',
-    priority: 'niedrig',
-    submitted: 1,
-    interviews: 0,
-    status: 'pausiert'
-  }, {
-    id: 'm5',
-    clientId: 'k4',
-    role: 'Distributed Systems Eng.',
-    location: 'Remote',
-    fee: '24%',
-    feeValue: '19.800 €',
-    deadline: '20.07.2026',
-    priority: 'mittel',
-    submitted: 2,
-    interviews: 1,
-    status: 'aktiv'
-  }];
+/* ---------- Anschreiben for "Ich" (default, pro Stelle anpassbar) ---------- */
+const ME_LETTER = {
+  firma: 'Aurora Systems GmbH',
+  ansprechpartner: 'Frau Dr. Petra Lindner',
+  strasse: 'Lichtstraße 12',
+  plzOrt: '10115 Berlin',
+  betreff: 'Bewerbung als Senior C++ Engineer — Plattform-Team',
+  anrede: 'Sehr geehrte Frau Dr. Lindner,',
+  absaetze: ['mit großem Interesse habe ich Ihre Ausschreibung gelesen. Verteilte, latenzkritische Systeme sind seit sechs Jahren mein Handwerk — und Ihr Plattform-Team arbeitet genau an den Problemen, die mich antreiben.', 'Als Tech-Lead bei Aurora Systems verantworte ich ein Echtzeit-Matching-System mit 40 Mio. Anfragen pro Tag und habe die Latenz um 38 % gesenkt. Meine Schwerpunkte liegen in C++ und Rust, im sauberen Systemdesign und in der Zuverlässigkeit großer Dienste.', 'Gerne zeige ich Ihnen im Gespräch, wie ich diese Erfahrung bei Ihnen einbringen kann. Über eine Einladung freue ich mich sehr.'],
+  gruss: 'Mit freundlichen Grüßen'
+};
 
-  /* agency view of candidates: who's available + which clients they're submitted to */
-  const POOL = [{
-    id: 'c1',
-    availability: 'sofort',
-    rate: '650 €/Tag',
-    submittedTo: ['Aurora Systems', 'Meridian Labs']
-  }, {
-    id: 'c5',
-    availability: 'in 3 Mon.',
-    rate: '—',
-    submittedTo: ['Aurora Systems']
-  }, {
-    id: 'c11',
-    availability: 'sofort',
-    rate: '—',
-    submittedTo: ['Aurora Systems', 'Falk & Partner']
-  }, {
-    id: 'c3',
-    availability: 'in 3 Mon.',
-    rate: '—',
-    submittedTo: ['Aurora Systems']
-  }, {
-    id: 'c7',
-    availability: 'in 1 Mon.',
-    rate: '—',
-    submittedTo: ['Meridian Labs']
-  }, {
-    id: 'c6',
-    availability: 'sofort',
-    rate: '—',
-    submittedTo: ['Nordlicht Software']
-  }, {
-    id: 'c2',
-    availability: 'in 6 Wo.',
-    rate: '—',
-    submittedTo: ['Nordlicht Software']
-  }];
-  const PLACEMENTS = [{
-    id: 'p1',
-    candId: 'c10',
-    client: 'Aurora Systems GmbH',
-    role: 'Engineering Manager',
-    start: '01.07.2026',
-    fee: '19.000 €',
-    status: 'In Rechnung'
-  }, {
-    id: 'p2',
-    candId: 'c12',
-    client: 'Nordlicht Software',
-    role: 'Brand Designer',
-    start: '15.06.2026',
-    fee: '12.600 €',
-    status: 'Bezahlt'
-  }, {
-    id: 'p3',
-    candId: 'c7',
-    client: 'Meridian Labs',
-    role: 'Cloud Engineer',
-    start: '01.08.2026',
-    fee: '17.000 €',
-    status: 'Probezeit'
-  }];
-  const VERMITTLER_KPIS = [{
-    label: 'Aktive Mandate',
-    value: '5',
-    delta: '+2',
-    dir: 'up',
-    icon: 'briefcase'
-  }, {
-    label: 'Im Talent-Pool',
-    value: '42',
-    delta: '+6',
-    dir: 'up',
-    icon: 'users'
-  }, {
-    label: 'Platzierungen Q2',
-    value: '7',
-    delta: '+3',
-    dir: 'up',
-    icon: 'award'
-  }, {
-    label: 'Provision Q2',
-    value: '128 T€',
-    delta: '+18%',
-    dir: 'up',
-    icon: 'trend'
-  }];
-  Object.assign(window, {
-    STAGES_ORDER,
-    STAGE_LABELS,
-    JOBS,
-    CANDIDATES,
-    KPIS,
-    CLIENTS,
-    MANDATES,
-    POOL,
-    PLACEMENTS,
-    VERMITTLER_KPIS
-  });
-})();
+/* ---------- Talents (the pool) — "me" pinned first ---------- */
+const TALENTS = [{
+  id: 'me',
+  me: true,
+  name: 'Suhay Sevinc',
+  role: 'M.Sc. Software Engineer',
+  headline: 'Senior C++ / Distributed Systems',
+  src: '../../assets/img/candidate-portrait-sm.jpg',
+  location: 'Berlin',
+  email: 'suhay.sevinc@example.de',
+  phone: '+49 151 2345 6789',
+  linkedin: 'linkedin.com/in/suhaysevinc',
+  availability: 'in 3 Monaten',
+  salary: '78.000 €',
+  score: 88,
+  skills: ['C++', 'Rust', 'Distributed Systems', 'gRPC', 'Kubernetes'],
+  resume: ME_RESUME,
+  letter: ME_LETTER,
+  attachments: ME_ATTACHMENTS
+}, {
+  id: 't2',
+  name: 'Lena Brandt',
+  role: 'Product Designerin',
+  headline: 'B2B-SaaS · Design Systems',
+  location: 'Leipzig',
+  email: 'lena.brandt@example.de',
+  phone: '+49 160 1112 2334',
+  availability: 'in 6 Wochen',
+  salary: '64.000 €',
+  score: 81,
+  skills: ['Figma', 'Design Systems', 'Prototyping'],
+  attachments: []
+}, {
+  id: 't3',
+  name: 'Marco Adler',
+  role: 'DevOps Engineer',
+  headline: 'Cloud · Automatisierung',
+  location: 'München',
+  email: 'marco.adler@example.de',
+  phone: '+49 170 5566 7788',
+  availability: 'sofort',
+  salary: '72.000 €',
+  score: 74,
+  skills: ['Terraform', 'AWS', 'CI/CD', 'Go'],
+  attachments: []
+}, {
+  id: 't4',
+  name: 'Aylin Demir',
+  role: 'UX Researcher',
+  headline: 'Qualitative Research',
+  location: 'Berlin',
+  email: 'aylin.demir@example.de',
+  phone: '+49 151 4433 2211',
+  availability: 'in 2 Monaten',
+  salary: '66.000 €',
+  score: 84,
+  skills: ['User Research', 'Interviews', 'Figma'],
+  attachments: []
+}];
+
+/* ---------- Bewerbungen (applications) — belong to a talent ---------- */
+const APPLICATIONS = [{
+  id: 'b1',
+  talentId: 'me',
+  company: 'Aurora Systems GmbH',
+  role: 'Senior C++ Engineer',
+  location: 'Berlin · Hybrid',
+  status: 'interview',
+  date: '12.06.2026',
+  next: 'Tech-Interview · 24.06.',
+  score: 88,
+  attachments: ['at1', 'at3'],
+  anschreiben: true
+}, {
+  id: 'b2',
+  talentId: 'me',
+  company: 'Meridian Labs',
+  role: 'Distributed Systems Eng.',
+  location: 'Remote',
+  status: 'review',
+  date: '09.06.2026',
+  next: 'In Prüfung',
+  score: 84,
+  attachments: ['at1', 'at2'],
+  anschreiben: true
+}, {
+  id: 'b3',
+  talentId: 'me',
+  company: 'Falk & Partner',
+  role: 'Plattform-Engineer',
+  location: 'München',
+  status: 'offer',
+  date: '05.06.2026',
+  next: 'Angebot — Frist 28.06.',
+  score: 90,
+  attachments: ['at1', 'at2', 'at4'],
+  anschreiben: true
+}, {
+  id: 'b4',
+  talentId: 'me',
+  company: 'Hansa Digital',
+  role: 'C++ Tech Lead',
+  location: 'Bremen',
+  status: 'rejected',
+  date: '28.05.2026',
+  next: 'Leider abgesagt',
+  score: 70,
+  attachments: ['at1'],
+  anschreiben: true
+}, {
+  id: 'b5',
+  talentId: 'me',
+  company: 'Nordlicht Software',
+  role: 'Backend Engineer',
+  location: 'Hamburg',
+  status: 'new',
+  date: '02.06.2026',
+  next: 'Eingereicht',
+  score: 80,
+  attachments: ['at1', 'at3'],
+  anschreiben: false
+}, {
+  id: 'b6',
+  talentId: 't2',
+  company: 'Aurora Systems GmbH',
+  role: 'Product Designer:in',
+  location: 'Berlin',
+  status: 'interview',
+  date: '10.06.2026',
+  next: 'Portfolio-Call · 26.06.',
+  score: 81,
+  attachments: [],
+  anschreiben: true
+}, {
+  id: 'b7',
+  talentId: 't3',
+  company: 'Meridian Labs',
+  role: 'DevOps Engineer',
+  location: 'Remote',
+  status: 'new',
+  date: 'heute',
+  next: 'Eingereicht',
+  score: 74,
+  attachments: [],
+  anschreiben: false
+}, {
+  id: 'b8',
+  talentId: 't4',
+  company: 'Nordlicht Software',
+  role: 'UX Researcher',
+  location: 'Hamburg',
+  status: 'offer',
+  date: '04.06.2026',
+  next: 'Angebot erhalten',
+  score: 84,
+  attachments: [],
+  anschreiben: true
+}, {
+  id: 'b9',
+  talentId: 't2',
+  company: 'Falk & Partner',
+  role: 'Brand Designer:in',
+  location: 'München',
+  status: 'review',
+  date: '07.06.2026',
+  next: 'In Prüfung',
+  score: 78,
+  attachments: [],
+  anschreiben: true
+}];
+
+/* ---------- Stellen (saved open positions) ---------- */
+const JOBS = [{
+  id: 'j1',
+  title: 'Senior C++ Engineer',
+  company: 'Aurora Systems GmbH',
+  location: 'Berlin · Hybrid',
+  type: 'Vollzeit',
+  salary: '75–90 T€',
+  match: 92,
+  saved: true
+}, {
+  id: 'j2',
+  title: 'Distributed Systems Eng.',
+  company: 'Meridian Labs',
+  location: 'Remote (DE)',
+  type: 'Vollzeit',
+  salary: '80–95 T€',
+  match: 86,
+  saved: true
+}, {
+  id: 'j3',
+  title: 'Backend Engineer (Rust)',
+  company: 'Hojo Tech',
+  location: 'Berlin',
+  type: 'Vollzeit',
+  salary: '70–85 T€',
+  match: 79,
+  saved: false
+}, {
+  id: 'j4',
+  title: 'Plattform-Engineer',
+  company: 'Falk & Partner',
+  location: 'München',
+  type: 'Vollzeit',
+  salary: '72–88 T€',
+  match: 83,
+  saved: true
+}];
+const MESSAGES = [{
+  id: 'm1',
+  appId: 'b1',
+  from: 'Aurora Systems · Recruiting',
+  text: 'Gerne laden wir Sie zum Tech-Interview am 24.06. um 14:00 ein.',
+  when: 'vor 2 Std.',
+  unread: true
+}, {
+  id: 'm2',
+  appId: 'b3',
+  from: 'Falk & Partner · HR',
+  text: 'Anbei unser Angebot. Wir würden uns über eine Rückmeldung bis 28.06. freuen.',
+  when: 'vor 5 Std.',
+  unread: true
+}, {
+  id: 'm3',
+  appId: 'b8',
+  from: 'Nordlicht Software',
+  text: 'Das Angebot für Aylin Demir ist raus — Details im Anhang.',
+  when: 'gestern',
+  unread: false
+}, {
+  id: 'm4',
+  appId: 'b2',
+  from: 'Meridian Labs',
+  text: 'Vielen Dank für die Unterlagen, wir melden uns diese Woche.',
+  when: 'vor 2 Tagen',
+  unread: false
+}];
+const KPIS = [{
+  label: 'Aktive Bewerbungen',
+  value: '7',
+  delta: '+2',
+  dir: 'up',
+  icon: 'send'
+}, {
+  label: 'Im Interview',
+  value: '2',
+  delta: '+1',
+  dir: 'up',
+  icon: 'message'
+}, {
+  label: 'Angebote',
+  value: '2',
+  delta: '+1',
+  dir: 'up',
+  icon: 'award'
+}, {
+  label: 'Antwortquote',
+  value: '63%',
+  delta: '+5%',
+  dir: 'up',
+  icon: 'trend'
+}];
+
+/* ===== Vermittler-Seite (du betreibst die Vermittlung selbst) =====
+   Kunden (Auftraggeber) → Mandate (Suchaufträge mit Provision) → Platzierungen. */
+const CLIENTS = [{
+  id: 'k1',
+  name: 'Aurora Systems GmbH',
+  industry: 'SaaS · Plattform',
+  location: 'Berlin',
+  since: '2024'
+}, {
+  id: 'k2',
+  name: 'Nordlicht Software',
+  industry: 'Fintech',
+  location: 'Hamburg',
+  since: '2025'
+}, {
+  id: 'k3',
+  name: 'Falk & Partner',
+  industry: 'Beratung',
+  location: 'München',
+  since: '2023'
+}, {
+  id: 'k4',
+  name: 'Meridian Labs',
+  industry: 'KI · Research',
+  location: 'Remote',
+  since: '2026'
+}];
+const MANDATES = [{
+  id: 'ma1',
+  clientId: 'k1',
+  role: 'Senior C++ Engineer',
+  location: 'Berlin · Hybrid',
+  fee: '22%',
+  feeValue: '17.160 €',
+  deadline: '30.06.2026',
+  priority: 'hoch',
+  submitted: 4,
+  interviews: 2,
+  status: 'aktiv'
+}, {
+  id: 'ma2',
+  clientId: 'k1',
+  role: 'DevOps Engineer',
+  location: 'Berlin',
+  fee: '20%',
+  feeValue: '14.000 €',
+  deadline: '15.07.2026',
+  priority: 'mittel',
+  submitted: 2,
+  interviews: 1,
+  status: 'aktiv'
+}, {
+  id: 'ma3',
+  clientId: 'k2',
+  role: 'Backend Engineer',
+  location: 'Hamburg',
+  fee: '22%',
+  feeValue: '16.500 €',
+  deadline: '10.07.2026',
+  priority: 'hoch',
+  submitted: 3,
+  interviews: 1,
+  status: 'aktiv'
+}, {
+  id: 'ma4',
+  clientId: 'k3',
+  role: 'Plattform-Engineer',
+  location: 'München',
+  fee: '18%',
+  feeValue: '12.200 €',
+  deadline: '05.07.2026',
+  priority: 'niedrig',
+  submitted: 1,
+  interviews: 0,
+  status: 'pausiert'
+}, {
+  id: 'ma5',
+  clientId: 'k4',
+  role: 'Distributed Systems Eng.',
+  location: 'Remote',
+  fee: '24%',
+  feeValue: '19.800 €',
+  deadline: '20.07.2026',
+  priority: 'mittel',
+  submitted: 2,
+  interviews: 1,
+  status: 'aktiv'
+}];
+const PLACEMENTS = [{
+  id: 'pl1',
+  candName: 'Mara Vogel',
+  candRole: 'Engineering Manager',
+  client: 'Aurora Systems GmbH',
+  start: '01.07.2026',
+  fee: '19.000 €',
+  status: 'In Rechnung'
+}, {
+  id: 'pl2',
+  candName: 'Lena Brandt',
+  candRole: 'Brand Designer',
+  client: 'Nordlicht Software',
+  start: '15.06.2026',
+  fee: '12.600 €',
+  status: 'Bezahlt'
+}, {
+  id: 'pl3',
+  candName: 'Aylin Demir',
+  candRole: 'UX Researcher',
+  client: 'Meridian Labs',
+  start: '01.08.2026',
+  fee: '17.000 €',
+  status: 'Probezeit'
+}];
+const VERMITTLER_KPIS = [{
+  label: 'Aktive Mandate',
+  value: '5',
+  delta: '+2',
+  dir: 'up',
+  icon: 'briefcase'
+}, {
+  label: 'Talente im Pool',
+  value: '4',
+  delta: '+1',
+  dir: 'up',
+  icon: 'users'
+}, {
+  label: 'Platzierungen Q2',
+  value: '7',
+  delta: '+3',
+  dir: 'up',
+  icon: 'award'
+}, {
+  label: 'Provision Q2',
+  value: '128 T€',
+  delta: '+18%',
+  dir: 'up',
+  icon: 'trend'
+}];
+Object.assign(window, {
+  STAGES_ORDER,
+  STAGE_LABELS,
+  TALENTS,
+  APPLICATIONS,
+  JOBS,
+  MESSAGES,
+  KPIS,
+  CLIENTS,
+  MANDATES,
+  PLACEMENTS,
+  VERMITTLER_KPIS
+});
 })(); } catch (e) { __ds_ns.__errors.push({ path: "ui_kits/recruiting/data.js", error: String((e && e.message) || e) }); }
 
 __ds_ns.Avatar = __ds_scope.Avatar;

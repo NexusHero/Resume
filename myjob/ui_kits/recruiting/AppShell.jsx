@@ -1,17 +1,17 @@
-/* __kit_guard__ */
-(function(){ var __s=document.currentScript; if (__s && /_ds_bundle\.js/.test(__s.src||'')) return;
-/* AppShell — the dark navigation rail + sticky topbar that wraps every screen. */
+/* AppShell — dark nav rail + sticky topbar. One coherent product, no role toggle. */
 const { Icon, IconButton, Avatar, Badge } = window.BewerbungstoolDesignSystem_a75119;
 
-const HR_NAV = [
-  { id: 'pipeline', label: 'Pipeline', icon: 'columns' },
-  { id: 'stellen', label: 'Stellen', icon: 'briefcase' },
-  { id: 'talente', label: 'Talente', icon: 'users' },
+const NAV = [
+  { id: 'uebersicht', label: 'Übersicht', icon: 'home' },
+  { id: 'mandate', label: 'Mandate', icon: 'briefcase' },
+  { id: 'pool', label: 'Talent-Pool', icon: 'users' },
+  { id: 'bewerbungen', label: 'Bewerbungen', icon: 'columns' },
+  { id: 'platzierungen', label: 'Platzierungen', icon: 'award' },
   { id: 'berichte', label: 'Berichte', icon: 'trend' },
   { id: 'postfach', label: 'Postfach', icon: 'inbox' },
 ];
 
-function NavItem({ item, active, onClick }) {
+function NavItem({ item, active, onClick, badge }) {
   const [hover, setHover] = React.useState(false);
   return (
     <button
@@ -28,15 +28,17 @@ function NavItem({ item, active, onClick }) {
       }}
     >
       <Icon name={item.icon} size={17} style={{ color: active ? 'var(--accent-on-dark)' : 'currentColor' }} />
-      {item.label}
+      <span style={{ flex: 1 }}>{item.label}</span>
+      {badge != null && (
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 600, color: active ? '#fff' : 'var(--sidebar-soft)', background: active ? 'var(--accent)' : 'var(--sidebar-glass)', borderRadius: 'var(--radius-pill)', padding: '1px 7px', minWidth: '18px', textAlign: 'center' }}>{badge}</span>
+      )}
     </button>
   );
 }
 
-function AppShell({ active, onNav, navItems = HR_NAV, role, onRole, search, onSearch, title, subtitle, actions, children }) {
+function AppShell({ active, onNav, me, talentCount, search, onSearch, title, subtitle, badges = {}, actions, children }) {
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--surface-app)' }}>
-      {/* nav rail */}
       <aside style={{
         width: 'var(--app-nav-width)', flexShrink: 0, display: 'flex', flexDirection: 'column',
         background: 'linear-gradient(165deg, var(--ink-850) 0%, var(--ink-900) 100%)',
@@ -51,38 +53,24 @@ function AppShell({ active, onNav, navItems = HR_NAV, role, onRole, search, onSe
         </div>
 
         <nav style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: '3px', flex: 1 }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--sidebar-soft)', padding: '8px 11px 6px' }}>{role === 'hr' ? 'Arbeitsbereich' : 'Agentur'}</div>
-          {navItems.map((n) => <NavItem key={n.id} item={n} active={active === n.id} onClick={() => onNav(n.id)} />)}
+          {NAV.map((n) => <NavItem key={n.id} item={n} active={active === n.id} onClick={() => onNav(n.id)} badge={badges[n.id]} />)}
         </nav>
 
-        {/* role switcher */}
-        <div style={{ padding: '14px 14px 10px', borderTop: '1px solid var(--sidebar-border)' }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--sidebar-soft)', marginBottom: '8px' }}>Ansicht</div>
-          <div style={{ display: 'flex', background: 'var(--sidebar-glass)', borderRadius: 'var(--radius-md)', padding: '3px', border: '1px solid var(--sidebar-border)' }}>
-            {[['hr', 'HR'], ['vermittler', 'Vermittler']].map(([id, lbl]) => (
-              <button key={id} onClick={() => onRole(id)} style={{
-                flex: 1, padding: '6px 8px', border: 'none', cursor: 'pointer', borderRadius: 'var(--radius-sm)',
-                fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600,
-                background: role === id ? 'var(--accent)' : 'transparent',
-                color: role === id ? '#fff' : 'var(--sidebar-muted)', transition: 'background var(--dur-fast)',
-              }}>{lbl}</button>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ padding: '10px 14px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Avatar name={role === 'hr' ? 'Petra Voss' : 'Karl Mertens'} size="sm" />
+        {/* who I represent — the Vermittler scale, stated quietly */}
+        <button onClick={() => onNav('talente')} style={{
+          margin: '0 14px 10px', padding: '11px 13px', borderRadius: 'var(--radius-md)', cursor: 'pointer', textAlign: 'left',
+          background: 'var(--sidebar-glass)', border: '1px solid var(--sidebar-border)', display: 'flex', alignItems: 'center', gap: '10px',
+        }}>
+          <Avatar name={me.name} src={me.src} size="sm" ring />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{role === 'hr' ? 'Petra Voss' : 'Karl Mertens'}</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--sidebar-soft)' }}>{role === 'hr' ? 'Recruiting · Acme' : 'Vermittler · TalentBridge'}</div>
+            <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{me.name}</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--sidebar-soft)' }}>Ich · +{talentCount - 1} Talente</div>
           </div>
-          <Icon name="logout" size={15} style={{ color: 'var(--sidebar-soft)' }} />
-        </div>
+          <Icon name="chevronRight" size={14} style={{ color: 'var(--sidebar-soft)' }} />
+        </button>
       </aside>
 
-      {/* main column */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        {/* topbar */}
         <header style={{
           height: 'var(--app-topbar-h)', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '16px',
           padding: '0 28px', background: 'color-mix(in oklch, var(--paper) 88%, transparent)',
@@ -96,7 +84,7 @@ function AppShell({ active, onNav, navItems = HR_NAV, role, onRole, search, onSe
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface-card)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', padding: '0 11px', width: '220px' }}>
               <Icon name="search" size={15} style={{ color: 'var(--text-soft)' }} />
-              <input value={search} onChange={(e) => onSearch(e.target.value)} placeholder="Suchen …" style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-heading)', padding: '8px 0' }} />
+              <input value={search} onChange={(e) => onSearch(e.target.value)} placeholder="Talente, Firmen, Stellen …" style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-heading)', padding: '8px 0' }} />
             </label>
             <div style={{ position: 'relative' }}>
               <IconButton icon="bell" label="Benachrichtigungen" variant="outline" />
@@ -114,6 +102,4 @@ function AppShell({ active, onNav, navItems = HR_NAV, role, onRole, search, onSe
   );
 }
 
-Object.assign(window, { AppShell, HR_NAV });
-
-})();
+Object.assign(window, { AppShell });

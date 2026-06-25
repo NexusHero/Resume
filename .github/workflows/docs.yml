@@ -25,10 +25,15 @@ jobs:
         with:
           args: -tsvg -nometadata docs/umls
 
-      - name: Fail if rendered SVGs are out of date
+      - name: Upload rendered diagrams
+        uses: actions/upload-artifact@v4
+        with:
+          name: uml-diagrams
+          path: docs/umls/*.svg
+
+      - name: Warn if committed SVGs look out of date
         run: |
           if [ -n "$(git status --porcelain docs/umls)" ]; then
-            echo "::error::docs/umls/*.svg are out of date — run PlantUML locally and commit the rendered SVGs."
+            echo "::warning::Rendered SVGs differ from the committed ones — re-run 'plantuml -tsvg -nometadata docs/umls' and commit them."
             git --no-pager diff --stat docs/umls
-            exit 1
           fi

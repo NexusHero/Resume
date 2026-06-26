@@ -8,6 +8,23 @@ design system (an ATS for HR & Vermittler, plus an applicant app).
 Everything is plain HTML/CSS/React over a shared design-token layer. No framework build
 step for the pages themselves; Node is used only for PDF generation and the local server.
 
+## Screenshots
+
+**Launcher & interactive CV**
+
+<p>
+  <img src="docs/images/launcher.png" alt="Launcher — the application suite home" width="44%" />
+  <img src="docs/images/cv.png" alt="Interactive CV — EN/DE toggle and accent themes" width="54%" />
+</p>
+
+**myJob — recruiting workspace**
+
+![myJob — Overview](docs/images/myjob-overview.png)
+
+![myJob — Mandates](docs/images/myjob-mandates.png)
+
+![myJob — Talent Pool](docs/images/myjob-talent-pool.png)
+
 ## Quick start
 
 ```bash

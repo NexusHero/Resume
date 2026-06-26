@@ -1,26 +1,20 @@
 # Dependencies & build output
 node_modules
 dist
-core/dist
+server/dist
 coverage
 reports
 .stryker-tmp
 package-lock.json
 
-# Vendored / generated / design-system-owned assets (not hand-formatted here;
-# the backend comes under full formatting with the TypeScript rewrite in core/)
-vendor
+# Vendored / generated / design-system-owned assets (not hand-formatted here).
+# The TypeScript backend under server/ IS formatted.
+design
 **/_ds_bundle.js
 _ds_manifest.json
 assets
 *.pdf
 index.html
-styles.css
-tokens
-ui_kits
-components
-myjob
 
-# Legacy JS backend — replaced by core/ (TypeScript) in PR2
+# Build / PDF scripts (plain JS)
 tools
-generate-pdf.js

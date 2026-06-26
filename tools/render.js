@@ -22,7 +22,7 @@ async function toPdf(page) {
 async function renderCV(browser, { lang = 'de' } = {}) {
   const page = await browser.newPage();
   try {
-    await page.goto(fileUrl('ui_kits/cv/index.html'), { waitUntil: 'networkidle0', timeout: 60000 });
+    await page.goto(fileUrl('design/documents/ui_kits/cv/index.html'), { waitUntil: 'networkidle0', timeout: 60000 });
     await ready(page, '.cv-page');
     if (lang === 'de') {
       await page.click('#lang button[data-v="de"]');
@@ -36,7 +36,7 @@ async function renderCV(browser, { lang = 'de' } = {}) {
 async function renderCoverLetter(browser, opts = {}) {
   const page = await browser.newPage();
   try {
-    await page.goto(fileUrl('ui_kits/cover-letter/index.html'), { waitUntil: 'networkidle0', timeout: 60000 });
+    await page.goto(fileUrl('design/documents/ui_kits/cover-letter/index.html'), { waitUntil: 'networkidle0', timeout: 60000 });
     await ready(page, '.cl-page');
     await page.evaluate((o) => {
       const esc = (s) => String(s == null ? '' : s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));

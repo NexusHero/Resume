@@ -13,7 +13,7 @@ const path = require('path');
 const cp = require('child_process');
 
 const ROOT = path.join(__dirname, '..');
-const DIR = path.join(ROOT, 'bewerbungen');
+const DIR = path.join(ROOT, 'archive', 'bewerbungen');
 const LOG = path.join(DIR, 'log.json');
 const HIST = path.join(DIR, 'history.jsonl');
 const { buildHome } = require('./build-home');

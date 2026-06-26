@@ -1,0 +1,39 @@
+<!-- @dsCard group="Karriere" viewport="1320x860" name="myJob · Karriere — persönlicher Tracker" subtitle="Track applications you sent (anti-forget) + work history & lifetime earnings. Light/dark + two layout directions." -->
+<!-- @startingPoint section="myJob" subtitle="Personal career tracker — applications sent, work history, lifetime earnings · light + dark" viewport="1320x860" -->
+<!DOCTYPE html>
+<html lang="de" data-theme="blueprint">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>myJob · Karriere</title>
+<link rel="stylesheet" href="../../styles.css" />
+<style>
+  html, body { height: 100%; margin: 0; }
+  #root { height: 100vh; }
+  @keyframes kfade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes kslide { from { transform: translateX(24px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  @keyframes kpop { from { transform: scale(0.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  *::-webkit-scrollbar { width: 10px; height: 10px; }
+  *::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; border: 3px solid var(--surface-app); }
+</style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script src="../../_ds_bundle.js"></script>
+  <script src="data.js"></script>
+  <script type="text/babel" src="Shell.jsx"></script>
+  <script type="text/babel" src="Dashboard.jsx"></script>
+  <script type="text/babel" src="JobSearch.jsx"></script>
+  <script type="text/babel" src="JobSources.jsx"></script>
+  <script type="text/babel" src="CreateApplication.jsx"></script>
+  <script type="text/babel" src="Applications.jsx"></script>
+  <script type="text/babel" src="Positions.jsx"></script>
+  <script type="text/babel" src="app.jsx"></script>
+  <script type="text/babel" data-presets="react">
+    ReactDOM.createRoot(document.getElementById('root')).render(<window.KApp />);
+  </script>
+</body>
+</html>

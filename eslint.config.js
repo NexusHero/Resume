@@ -1,5 +1,5 @@
-// Flat ESLint config. Lints the TypeScript backend (core/) and this repo's tooling.
-// The legacy `tools/` JS backend is superseded by core/ and intentionally not linted.
+// Flat ESLint config. Lints the TypeScript backend (server/) and this repo's tooling.
+// The legacy `tools/` JS backend is superseded by server/ and intentionally not linted.
 const js = require('@eslint/js');
 const globals = require('globals');
 const tseslint = require('typescript-eslint');
@@ -8,27 +8,22 @@ module.exports = tseslint.config(
   {
     ignores: [
       'node_modules/**',
-      'core/dist/**',
+      'server/dist/**',
       'dist/**',
       'coverage/**',
       'reports/**',
       '.stryker-tmp/**',
-      'vendor/**',
+      'design/**',
       '**/_ds_bundle.js',
       'assets/**',
       'index.html',
-      'tokens/**',
-      'ui_kits/**',
-      'components/**',
-      'myjob/**',
       'tools/**',
-      'generate-pdf.js',
     ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ['core/**/*.ts', 'e2e/**/*.ts', 'playwright.config.ts'],
+    files: ['server/**/*.ts', 'e2e/**/*.ts', 'playwright.config.ts'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',

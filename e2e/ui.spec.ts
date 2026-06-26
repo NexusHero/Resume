@@ -11,7 +11,7 @@ test.describe('UI acceptance — the suite renders in English', () => {
   });
 
   test('Recruiting_Loads_NavigationIsEnglish', async ({ page }) => {
-    await page.goto('/myjob/ui_kits/recruiting/index.html');
+    await page.goto('/design/myjob/ui_kits/recruiting/index.html');
     const nav = page.locator('nav button');
     await expect(nav.first()).toBeVisible();
     await expect(nav).toContainText(['Overview', 'Talent Pool', 'Applications']);
@@ -19,7 +19,7 @@ test.describe('UI acceptance — the suite renders in English', () => {
   });
 
   test('Recruiting_OpenTalentPool_ShowsTalents', async ({ page }) => {
-    await page.goto('/myjob/ui_kits/recruiting/index.html');
+    await page.goto('/design/myjob/ui_kits/recruiting/index.html');
     await page.getByRole('button', { name: /Talent Pool/ }).click();
     await expect(page.locator('main')).toContainText('Add talent');
     await expect(page.locator('main')).toContainText('Suhay Sevinc');

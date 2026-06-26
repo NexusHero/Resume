@@ -1,6 +1,6 @@
 /** PDF merge helper (pdf-lib). */
 const path = require('path');
-const { PDFDocument } = require(path.join(__dirname, '..', 'vendor/pdf-lib.min.js'));
+const { PDFDocument } = require(path.join(__dirname, '..', 'design/documents/vendor/pdf-lib.min.js'));
 
 async function mergePdfs(buffers, { title } = {}) {
   const out = await PDFDocument.create();

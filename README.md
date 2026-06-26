@@ -40,17 +40,17 @@ Open **`index.html`** (the launcher) by double-click, or browse to
 
 ```
 index.html                 ← launcher / home (generated)
-ui_kits/
-  cv/                      ← interactive CV (EN/DE, accent themes, PDF export)
-  cover-letter/            ← Anschreiben (theme switch, PDF export)
-  bewerbung/               ← Bewerbungsmappe builder (merge cover letter + CV + Zeugnisse)
-tokens/  styles.css  _ds_bundle.js  vendor/   ← CV design system + local React/pdf-lib
-components/                ← CV design-system component sources
+server/                    ← REST API + static server (TypeScript, hexagonal)
+design/
+  documents/               ← CV design system: tokens, components, styles.css, _ds_bundle.js, vendor
+    ui_kits/
+      cv/                  ← interactive CV (EN/DE, accent themes, PDF export)
+      cover-letter/        ← Anschreiben (theme switch, PDF export)
+      bewerbung/           ← Bewerbungsmappe builder (merge cover letter + CV + Zeugnisse)
+  myjob/                   ← myJob app design system (recruiting · bewerber · karriere · cv)
 assets/                    ← portrait (full + downscaled)
-bewerbungen/               ← sent-application log + history + archived PDFs
-tools/                     ← build + server scripts
-myjob/                     ← myJob recruiting design system (see below)
-generate-pdf.js            ← npm run pdf entry point
+archive/bewerbungen/       ← sent-application log + history + archived PDFs
+tools/                     ← build + PDF scripts (generate-pdf.js entry point)
 ```
 
 ## npm scripts
@@ -59,13 +59,15 @@ generate-pdf.js            ← npm run pdf entry point
 | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `npm run pdf`                                 | Renders `Lebenslauf-DE.pdf`, `Lebenslauf-EN.pdf`, `Anschreiben.pdf` (Puppeteer, A4, vector text), then rebuilds the Bewerbungsmappe builder (with CV + cover letter pre-loaded) and the home page. |
 | `npm run serve`                               | Local REST API + static server on `http://localhost:4178`. Serves all apps over http (so Safari/`file://` limits don't apply) and exposes the applications API.                                    |
-| `npm run sent -- "Firma" "Stelle" [pfad.pdf]` | Records a sent application: archives the PDF into `bewerbungen/`, appends to `log.json` + `history.jsonl`, commits to git, and refreshes the home list.                                            |
+| `npm run sent -- "Firma" "Stelle" [pfad.pdf]` | Records a sent application: archives the PDF into `archive/bewerbungen/`, appends to `log.json` + `history.jsonl`, commits to git, and refreshes the home list.                                    |
 | `npm run home`                                | Regenerates `index.html` only.                                                                                                                                                                     |
 
 ## REST API (`npm run serve`)
 
 The server is the external interface for automating application data; every change is
-appended to `bewerbungen/history.jsonl` and committed to git.
+appended to `archive/bewerbungen/history.jsonl` and committed to git.
+
+> Note: `npm run sent` / the `/api/build` archive currently writes under `archive/bewerbungen/`.
 
 - `GET  /api/applications` — list recorded applications
 - `GET  /api/history` — the audit trail
@@ -74,16 +76,16 @@ appended to `bewerbungen/history.jsonl` and committed to git.
   CV + attachments, archive + log + commit, and return the combined PDF
 - `PATCH /api/applications/:id` — update status (e.g. → "Gespräch")
 
-## myJob — Bewerbungstool (`myjob/`)
+## myJob — Bewerbungstool (`design/myjob/`)
 
 A recruiting design system imported from a Claude Design project, built on the same token
 DNA. Two runnable apps:
 
-- **`myjob/ui_kits/recruiting/index.html`** — myJob Workspace, an ATS with two role
+- **`design/myjob/ui_kits/recruiting/index.html`** — myJob Workspace, an ATS with two role
   workflows you switch in the nav: **HR** (Pipeline · Stellen · Talente · Berichte ·
   Postfach) and **Vermittler** (Mandate · Talent-Pool · Platzierungen · Berichte ·
   Postfach), sharing a slide-in candidate detail with stage actions.
-- **`myjob/ui_kits/bewerber/index.html`** — myJob für Bewerber:innen: an applications
+- **`design/myjob/ui_kits/bewerber/index.html`** — myJob für Bewerber:innen: an applications
   tracker and Bewerbungsmappe composer.
 
 These load React/Babel from a CDN and compile JSX at runtime, so **open them through the
@@ -92,6 +94,6 @@ server** (`npm run serve` → linked from the launcher), not via `file://`.
 ## Notes
 
 - Generated PDFs at the repo root are git-ignored (regenerate with `npm run pdf`);
-  archived application PDFs under `bewerbungen/` are kept.
+  archived application PDFs under `archive/bewerbungen/` are kept.
 - Accent themes (`data-theme="blueprint|signal|graphite"`) swap per subtree; the recruiting
   funnel keeps a fixed status palette in every accent.

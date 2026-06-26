@@ -31,7 +31,7 @@ const ICONS = {
 
 function readLog() {
   try {
-    const data = JSON.parse(readRoot('bewerbungen/log.json'));
+    const data = JSON.parse(readRoot('archive/bewerbungen/log.json'));
     if (Array.isArray(data)) return data;
   } catch (_) {}
   return [];
@@ -44,7 +44,7 @@ function fmtDate(iso) {
 }
 
 function buildHome() {
-  const css = FONT_IMPORT + '\n' + TOKEN_FILES.map((t) => readRoot(`tokens/${t}.css`)).join('\n');
+  const css = FONT_IMPORT + '\n' + TOKEN_FILES.map((t) => readRoot(`design/documents/tokens/${t}.css`)).join('\n');
   const photoURI =
     'data:image/jpeg;base64,' + fs.readFileSync(path.join(ROOT, 'assets/suhay-photo-sm.jpg')).toString('base64');
 
@@ -145,15 +145,15 @@ body { margin: 0; min-height: 100vh; font-family: var(--font-body); color: var(-
 
     <p class="kicker">Application Suite</p>
     <div class="tiles">
-${card('ui_kits/cv/index.html', 'var(--accent)', ICONS.cv, 'Resume', 'Interactive CV — EN/DE toggle, accent themes, PDF export.')}
-${card('ui_kits/cover-letter/index.html', '#7c3aed', ICONS.letter, 'Cover letter', 'Cover letter with theme choice and PDF export.')}
-${card('ui_kits/bewerbung/index.html', '#0891b2', ICONS.bundle, 'Application dossier', 'Merge cover letter + résumé + references into one PDF.')}
+${card('design/documents/ui_kits/cv/index.html', 'var(--accent)', ICONS.cv, 'Resume', 'Interactive CV — EN/DE toggle, accent themes, PDF export.')}
+${card('design/documents/ui_kits/cover-letter/index.html', '#7c3aed', ICONS.letter, 'Cover letter', 'Cover letter with theme choice and PDF export.')}
+${card('design/documents/ui_kits/bewerbung/index.html', '#0891b2', ICONS.bundle, 'Application dossier', 'Merge cover letter + résumé + references into one PDF.')}
     </div>
 
     <p class="kicker" style="margin-top:34px;">myJob — Application tool <span style="text-transform:none;letter-spacing:0;color:var(--sidebar-soft);font-weight:400;">· requires <b style="color:var(--sidebar-muted);">npm run serve</b></span></p>
     <div class="tiles">
-${card('myjob/ui_kits/recruiting/index.html', '#1d4ed8', ICONS.recruiting, 'myJob Workspace', 'ATS for HR & agencies — pipeline, talents, mandates, placements.')}
-${card('myjob/ui_kits/bewerber/index.html', '#0d9488', ICONS.bewerber, 'myJob for applicants', 'Track applications and assemble your dossier.')}
+${card('design/myjob/ui_kits/recruiting/index.html', '#1d4ed8', ICONS.recruiting, 'myJob Workspace', 'ATS for HR & agencies — pipeline, talents, mandates, placements.')}
+${card('design/myjob/ui_kits/bewerber/index.html', '#0d9488', ICONS.bewerber, 'myJob for applicants', 'Track applications and assemble your dossier.')}
     </div>
 ${appsSection}
   </div>

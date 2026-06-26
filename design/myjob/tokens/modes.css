@@ -1,0 +1,73 @@
+/* ============================================================
+   COLOR MODES — light (default) + dark.
+   Light mode lives in colors.css (:root). Dark mode flips the
+   SEMANTIC aliases only, so every component adapts automatically.
+   Apply on any wrapper (or <html>):  data-mode="dark"
+   Accents still swap independently via data-theme.
+   ============================================================ */
+
+[data-mode="dark"] {
+  /* ---- Surfaces: paper world inverts to ink ---- */
+  --paper:          #121a2b;
+  --paper-subtle:   #0f1626;
+  --paper-sunk:     #1b2438;
+
+  --surface-page:   #05070b;   /* deepest background, behind sheets */
+  --surface-app:    #0b1220;   /* the working canvas */
+  --surface-card:   #121a2b;   /* raised sheets / cards */
+  --surface-subtle: #0f1626;
+  --surface-sunk:   #1b2438;
+
+  /* ---- Text inverts ---- */
+  --text-heading: #f4f7fb;
+  --text-body:    #e3e9f2;
+  --text-muted:   #9fb0c5;
+  --text-soft:    #6b7e96;
+
+  /* ---- Borders become translucent light ---- */
+  --border:        rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.17);
+
+  /* ---- Accent: use the on-dark tint for fills/soft chips ---- */
+  --accent-strong:  var(--accent-on-dark);
+  --accent-soft:    color-mix(in srgb, var(--accent) 22%, transparent);
+  --accent-border:  color-mix(in srgb, var(--accent) 46%, transparent);
+
+  /* ---- Pipeline status: translucent fills + lightened text so chips
+          stay legible on dark surfaces ---- */
+  --status-new-soft:    color-mix(in srgb, var(--status-new) 22%, transparent);
+  --status-new-border:  color-mix(in srgb, var(--status-new) 46%, transparent);
+  --status-new-strong:  color-mix(in srgb, var(--status-new) 42%, white);
+
+  --status-review-soft:   color-mix(in srgb, var(--status-review) 24%, transparent);
+  --status-review-border: color-mix(in srgb, var(--status-review) 48%, transparent);
+  --status-review-strong: color-mix(in srgb, var(--status-review) 48%, white);
+
+  --status-interview-soft:   color-mix(in srgb, var(--status-interview) 26%, transparent);
+  --status-interview-border: color-mix(in srgb, var(--status-interview) 50%, transparent);
+  --status-interview-strong: color-mix(in srgb, var(--status-interview) 50%, white);
+
+  --status-offer-soft:   color-mix(in srgb, var(--status-offer) 24%, transparent);
+  --status-offer-border: color-mix(in srgb, var(--status-offer) 48%, transparent);
+  --status-offer-strong: color-mix(in srgb, var(--status-offer) 50%, white);
+
+  --status-hired-soft:   color-mix(in srgb, var(--status-hired) 24%, transparent);
+  --status-hired-border: color-mix(in srgb, var(--status-hired) 48%, transparent);
+  --status-hired-strong: color-mix(in srgb, var(--status-hired) 50%, white);
+
+  --status-rejected-soft:   color-mix(in srgb, var(--status-rejected) 24%, transparent);
+  --status-rejected-border: color-mix(in srgb, var(--status-rejected) 48%, transparent);
+  --status-rejected-strong: color-mix(in srgb, var(--status-rejected) 50%, white);
+
+  /* ---- Semantic feedback tints ---- */
+  --success-soft: color-mix(in srgb, var(--success) 22%, transparent);
+  --warning-soft: color-mix(in srgb, var(--warning) 22%, transparent);
+  --danger-soft:  color-mix(in srgb, var(--danger) 22%, transparent);
+  --info-soft:    color-mix(in srgb, var(--info) 22%, transparent);
+
+  /* ---- Shadows deepen on dark ---- */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 8px 24px -16px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 10px 30px -10px rgba(0, 0, 0, 0.5), 0 30px 60px -30px rgba(0, 0, 0, 0.6);
+  --shadow-page: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 30px -10px rgba(0, 0, 0, 0.5), 0 30px 60px -30px rgba(0, 0, 0, 0.6);
+}

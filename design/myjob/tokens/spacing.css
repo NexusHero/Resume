@@ -1,0 +1,37 @@
+/* ============================================================
+   SPACING & LAYOUT TOKENS — 4px base grid
+   ============================================================ */
+:root {
+  --space-0:  0;
+  --space-1:  2px;
+  --space-2:  4px;
+  --space-3:  6px;
+  --space-4:  8px;
+  --space-5:  12px;
+  --space-6:  16px;
+  --space-7:  20px;
+  --space-8:  24px;
+  --space-9:  32px;
+  --space-10: 40px;
+  --space-11: 48px;
+  --space-12: 56px;
+  --space-13: 64px;
+
+  /* Semantic layout rhythm */
+  --gap-badge:    6px;    /* between tags in a cluster */
+  --gap-list:     7px;    /* between sidebar list items */
+  --gap-section:  44px;   /* between major main-column sections */
+  --pad-card:     18px 22px;
+  --pad-sidebar:  44px 36px 48px;
+  --pad-main:     56px;
+
+  /* App-shell geometry (myJob workspace + bewerber app) */
+  --app-nav-width: 244px;
+  --app-topbar-h:  60px;
+  --pad-app:       26px 28px;
+  --row-h:         60px;
+
+  /* Document / resume page geometry (CV kit) */
+  --sidebar-width: 360px;
+  --page-max:      1180px;
+}

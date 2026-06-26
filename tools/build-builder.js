@@ -23,13 +23,13 @@ const FONT_IMPORT =
 const TOKEN_FILES = ['colors', 'typography', 'spacing', 'effects', 'themes', 'base'];
 
 function combinedCSS() {
-  return FONT_IMPORT + '\n' + TOKEN_FILES.map((t) => readRoot(`tokens/${t}.css`)).join('\n');
+  return FONT_IMPORT + '\n' + TOKEN_FILES.map((t) => readRoot(`design/documents/tokens/${t}.css`)).join('\n');
 }
 
 /** @param {{name:string, bytes:Buffer|Uint8Array}[]} embedded */
 function buildBuilder(embedded = []) {
-  const { PDFDocument } = require(path.join(ROOT, 'vendor/pdf-lib.min.js'));
-  const pdfLib = safeJS(readRoot('vendor/pdf-lib.min.js'));
+  const { PDFDocument } = require(path.join(ROOT, 'design/documents/vendor/pdf-lib.min.js'));
+  const pdfLib = safeJS(readRoot('design/documents/vendor/pdf-lib.min.js'));
   const css = combinedCSS();
 
   return (async () => {
@@ -41,7 +41,7 @@ function buildBuilder(embedded = []) {
       docs.push({ name: d.name, pages, b64: bytes.toString('base64') });
     }
     const html = render(css, pdfLib, JSON.stringify(docs));
-    const outPath = path.join(ROOT, 'ui_kits/bewerbung/index.html');
+    const outPath = path.join(ROOT, 'design/documents/ui_kits/bewerbung/index.html');
     fs.mkdirSync(path.dirname(outPath), { recursive: true });
     fs.writeFileSync(outPath, html);
     return outPath;

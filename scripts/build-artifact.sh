@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Build a downloadable, runnable artifact of the suite.
 #
-# Baseline: a versioned bundle with the compiled TypeScript server (core/dist)
+# Baseline: a versioned bundle with the compiled TypeScript server (server/dist)
 # the user unpacks and runs with `npm ci --omit=dev && npm start`.
 # PR4 will upgrade this to a single self-contained executable (@yao-pkg/pkg).
 set -euo pipefail
@@ -18,12 +18,12 @@ NAME="resume-suite-v${VERSION}-${OSNAME}"
 npm run build
 
 rm -rf "$OUT/$NAME"
-mkdir -p "$OUT/$NAME/core"
+mkdir -p "$OUT/$NAME/server"
 
-# Ship the compiled server + the static web app + the CLI tools.
-cp -R core/dist "$OUT/$NAME/core/dist"
-cp core/openapi.yaml "$OUT/$NAME/core/" 2>/dev/null || true
-cp -R tools myjob ui_kits components tokens assets vendor styles.css index.html \
+# Ship the compiled server + the static web app (design/) + the CLI tools.
+cp -R server/dist "$OUT/$NAME/server/dist"
+cp server/openapi.yaml "$OUT/$NAME/server/" 2>/dev/null || true
+cp -R tools design assets index.html \
       package.json package-lock.json README.md LICENSE "$OUT/$NAME/" 2>/dev/null || true
 
 cat > "$OUT/$NAME/RUN.md" <<'EOF'

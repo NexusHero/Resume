@@ -7,10 +7,10 @@
     "node": ">=24"
   },
   "scripts": {
-    "serve": "tsx core/src/index.ts",
-    "start": "node core/dist/index.js",
+    "serve": "tsx server/src/index.ts",
+    "start": "node server/dist/index.js",
     "build": "tsc -p tsconfig.json",
-    "pdf": "node generate-pdf.js",
+    "pdf": "node tools/generate-pdf.js",
     "home": "node tools/build-home.js",
     "sent": "node tools/log-application.js",
     "lint": "eslint .",

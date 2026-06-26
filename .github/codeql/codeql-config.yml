@@ -1,0 +1,12 @@
+name: 'CodeQL config — scan our own code, skip generated/vendor/prototype'
+
+# CodeQL otherwise scans everything, which floods the alerts with findings in
+# code we do not hand-author: the design-system prototypes (React-via-Babel demo
+# kits under design/**), vendored libraries (React, pdf-lib) and the large
+# compiled _ds_bundle.js files. Excluding them leaves the alerts that matter —
+# the TypeScript backend under server/.
+paths-ignore:
+  - design/**
+  - '**/vendor/**'
+  - '**/_ds_bundle.js'
+  - '**/*.min.js'

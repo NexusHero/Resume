@@ -16,6 +16,12 @@ module.exports = {
     '!server/src/adapters/git-versioner.ts',
     '!server/src/adapters/pino-logger.ts',
     '!server/src/adapters/node-fetch.ts',
+    // SQL: the DB connection and the thin Drizzle CRUD glue are exercised by the
+    // DATABASE_URL-gated integration test, not unit-covered (pure mappers are).
+    '!server/src/adapters/sql/db.ts',
+    '!server/src/adapters/sql/sql-application-repository.ts',
+    '!server/src/adapters/sql/sql-audit-log.ts',
+    '!server/src/adapters/sql/sql-saved-search-repository.ts',
   ],
   coverageDirectory: 'coverage',
   coverageThreshold: {

@@ -28,11 +28,17 @@ Small, low-risk PRs. No architectural change.
 
 Cheapest big step — the ports already exist.
 
-- **1.1** SQL adapter (Drizzle) for `ApplicationRepository`, `AuditLog`; object-storage
-  adapter (S3/MinIO) for `PdfArchive`. Config-switchable (`STORE=fs|sql`); the
-  existing acceptance suite runs against SQL via Testcontainers. **L**
-- **1.2** Make the git `Versioner` an optional audit mechanism, not the data store
-  (app must run with no git repo). **M**
+- **1.1** SQL adapter (Drizzle) for `ApplicationRepository`, `AuditLog`. **L**
+  - ✅ Postgres adapters (Drizzle + `pg`) for applications, audit log and saved
+    searches; `schema.ts` + idempotent `migrate()` run on boot; pure row↔domain
+    mappers unit-tested; `createPersistence` factory switches on `STORE=fs|sql`
+    (default `fs` → app/CI/offline unchanged). Thin DB glue is exercised by a
+    `DATABASE_URL`-gated integration test (skipped without a DB, so the gate stays
+    Docker-free); verified end-to-end against real Postgres 16.
+  - Outstanding: object-storage adapter (S3/MinIO) for `PdfArchive` (still fs).
+- **1.2** ✅ Make the git `Versioner` optional — a `NoopVersioner` is used when
+  `STORE=sql` (no JSON files to commit; committing would also needlessly fire git
+  hooks). The git versioner now only runs for the file store.
 
 ## Phase 2 — Multi-tenancy & auth (turns the tool into a product)
 

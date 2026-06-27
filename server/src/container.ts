@@ -18,6 +18,7 @@ import { PuppeteerPdfRenderer } from './adapters/puppeteer-pdf-renderer';
 import { PdfLibMerger } from './adapters/pdf-lib-merger';
 import { createJobSource } from './adapters/job-source-factory';
 import { nodeFetch } from './adapters/node-fetch';
+import { KeywordSkillExtractor } from './adapters/keyword-skill-extractor';
 import { ApplicationService } from './services/application-service';
 import { JobSearchService } from './services/job-search-service';
 import { ApplicationController } from './http/application-controller';
@@ -41,6 +42,7 @@ export function buildContainer(config: AppConfig = loadConfig()): AwilixContaine
     jobSource: asFunction(({ config: c, logger }) =>
       createJobSource({ config: c, logger, httpFetch: nodeFetch }),
     ).singleton(),
+    skillExtractor: asFunction(() => new KeywordSkillExtractor()).singleton(),
     applicationService: asClass(ApplicationService).singleton(),
     jobSearchService: asClass(JobSearchService).singleton(),
     applicationController: asClass(ApplicationController).singleton(),

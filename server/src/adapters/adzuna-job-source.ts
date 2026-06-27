@@ -69,7 +69,9 @@ export class AdzunaJobSource implements JobSource {
       mode: '',
       salary: this.salary(j),
       posted: j.created ? j.created.slice(0, 10) : undefined,
-      skills: j.category?.label ? [j.category.label] : [],
+      // Adzuna's coarse category (e.g. "IT Jobs") is not a skill; real skills are
+      // recovered from the description by the SkillExtractor (roadmap 3.2).
+      skills: [],
       snippet: snippetFrom(j.description),
       source: this.name,
       url: j.redirect_url,

@@ -117,6 +117,11 @@ paths:
         - { name: q, in: query, required: false, schema: { type: string } }
         - { name: country, in: query, required: false, schema: { type: string } }
         - { name: city, in: query, required: false, schema: { type: string } }
+        - name: sources
+          in: query
+          required: false
+          description: Restrict to specific job sources (repeatable)
+          schema: { type: array, items: { type: string } }
         - name: threshold
           in: query
           required: false

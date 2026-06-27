@@ -16,7 +16,8 @@ import { FsPdfArchive } from './adapters/fs-pdf-archive';
 import { GitVersioner } from './adapters/git-versioner';
 import { PuppeteerPdfRenderer } from './adapters/puppeteer-pdf-renderer';
 import { PdfLibMerger } from './adapters/pdf-lib-merger';
-import { SampleJobSource } from './adapters/sample-job-source';
+import { createJobSource } from './adapters/job-source-factory';
+import { nodeFetch } from './adapters/node-fetch';
 import { ApplicationService } from './services/application-service';
 import { JobSearchService } from './services/job-search-service';
 import { ApplicationController } from './http/application-controller';
@@ -37,7 +38,9 @@ export function buildContainer(config: AppConfig = loadConfig()): AwilixContaine
     versioner: asClass(GitVersioner).singleton(),
     pdfRenderer: asClass(PuppeteerPdfRenderer).singleton(),
     pdfMerger: asClass(PdfLibMerger).singleton(),
-    jobSource: asClass(SampleJobSource).singleton(),
+    jobSource: asFunction(({ config: c, logger }) =>
+      createJobSource({ config: c, logger, httpFetch: nodeFetch }),
+    ).singleton(),
     applicationService: asClass(ApplicationService).singleton(),
     jobSearchService: asClass(JobSearchService).singleton(),
     applicationController: asClass(ApplicationController).singleton(),

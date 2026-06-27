@@ -12,6 +12,7 @@ module.exports = {
     '!server/src/adapters/pdf-lib-merger.ts',
     '!server/src/adapters/git-versioner.ts',
     '!server/src/adapters/pino-logger.ts',
+    '!server/src/adapters/node-fetch.ts',
   ],
   thresholds: {
     high: 85,

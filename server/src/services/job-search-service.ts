@@ -1,4 +1,4 @@
-import { type CandidateProfile, normalizeSkill, scoreJob } from '../domain/skill';
+import { type CandidateProfile, scoreJob, unionSkills } from '../domain/skill';
 import type { Job, JobQuery, JobSearchResult, ScoredJob } from '../domain/job';
 import type { JobSource } from '../ports/job-source';
 import type { SkillExtractor } from '../ports/skill-extractor';
@@ -56,22 +56,8 @@ export class JobSearchService {
     // Enrich the posting's tags with skills detected in its title + description,
     // so jobs that arrive without structured tags can still be matched.
     const detected = this.extractor.extract(`${job.role} ${job.snippet ?? ''}`);
-    const skills = union(job.skills, detected);
+    const skills = unionSkills(job.skills, detected);
     const { score, matched, missing } = scoreJob(this.profile, skills);
     return { ...job, skills, match: score, matchedSkills: matched, missingSkills: missing };
   }
-}
-
-/** Merge two skill lists, case-insensitively, preserving first-seen display form. */
-function union(a: string[], b: string[]): string[] {
-  const seen = new Set(a.map(normalizeSkill));
-  const out = [...a];
-  for (const skill of b) {
-    const key = normalizeSkill(skill);
-    if (!seen.has(key)) {
-      seen.add(key);
-      out.push(skill);
-    }
-  }
-  return out;
 }

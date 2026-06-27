@@ -9,6 +9,8 @@ import type { Clock } from '../../src/ports/clock';
 import type { IdGenerator } from '../../src/ports/id-generator';
 import type { Logger } from '../../src/ports/logger';
 import type { SkillExtractor } from '../../src/ports/skill-extractor';
+import type { SavedSearch } from '../../src/domain/saved-search';
+import type { SavedSearchRepository } from '../../src/ports/saved-search-repository';
 
 export class InMemoryApplicationRepository implements ApplicationRepository {
   apps: Application[] = [];
@@ -104,3 +106,21 @@ export const noopLogger: Logger = {
 export const noopSkillExtractor: SkillExtractor = {
   extract: () => [],
 };
+
+export class InMemorySavedSearchRepository implements SavedSearchRepository {
+  searches: SavedSearch[] = [];
+  async list(): Promise<SavedSearch[]> {
+    return this.searches.map((s) => ({ ...s }));
+  }
+  async findById(id: string): Promise<SavedSearch | null> {
+    return this.searches.find((s) => s.id === id) ?? null;
+  }
+  async add(search: SavedSearch): Promise<void> {
+    this.searches.push(search);
+  }
+  async remove(id: string): Promise<boolean> {
+    const before = this.searches.length;
+    this.searches = this.searches.filter((s) => s.id !== id);
+    return this.searches.length < before;
+  }
+}

@@ -67,6 +67,13 @@ New ports in the hexagonal core. Uses the Claude API.
 - **3.3** `CoverLetterWriter` port — auto-tailored cover letter per job, folded into `build`. **M**
 - **3.4** ATS keyword scoring (JobScan-style) — CV↔posting gap analysis; shares
   `missingSkills` with 3.2. **M**
+  - ✅ `analyzeGap` domain + `AtsService` + `POST /api/v1/ats`: paste a posting
+    (role/text/skills), get a coverage score, matched + missing keywords and
+    per-gap recommendations. Reuses `SkillExtractor` + `scoreJob`.
+- **Saved / named searches** ✅ — `SavedSearch` domain, `SavedSearchRepository`
+  port + fs adapter, `SavedSearchService`, REST CRUD + run
+  (`GET/POST/DELETE /api/v1/searches`, `GET /api/v1/searches/:id/run`). Lets the
+  candidate keep several named queries and re-run them through the two-tier search.
 
 ### 3.5 — Skill-based two-tier job matching ✅ (shipped)
 

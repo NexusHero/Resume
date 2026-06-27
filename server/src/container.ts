@@ -19,10 +19,15 @@ import { PdfLibMerger } from './adapters/pdf-lib-merger';
 import { createJobSource } from './adapters/job-source-factory';
 import { nodeFetch } from './adapters/node-fetch';
 import { KeywordSkillExtractor } from './adapters/keyword-skill-extractor';
+import { FsSavedSearchRepository } from './adapters/fs-saved-search-repository';
 import { ApplicationService } from './services/application-service';
 import { JobSearchService } from './services/job-search-service';
+import { AtsService } from './services/ats-service';
+import { SavedSearchService } from './services/saved-search-service';
 import { ApplicationController } from './http/application-controller';
 import { JobController } from './http/job-controller';
+import { AtsController } from './http/ats-controller';
+import { SavedSearchController } from './http/saved-search-controller';
 
 /** Composition root: wires every port to its production adapter (no decorators). */
 export function buildContainer(config: AppConfig = loadConfig()): AwilixContainer {
@@ -43,10 +48,15 @@ export function buildContainer(config: AppConfig = loadConfig()): AwilixContaine
       createJobSource({ config: c, logger, httpFetch: nodeFetch }),
     ).singleton(),
     skillExtractor: asFunction(() => new KeywordSkillExtractor()).singleton(),
+    savedSearchRepository: asClass(FsSavedSearchRepository).singleton(),
     applicationService: asClass(ApplicationService).singleton(),
     jobSearchService: asClass(JobSearchService).singleton(),
+    atsService: asClass(AtsService).singleton(),
+    savedSearchService: asClass(SavedSearchService).singleton(),
     applicationController: asClass(ApplicationController).singleton(),
     jobController: asClass(JobController).singleton(),
+    atsController: asClass(AtsController).singleton(),
+    savedSearchController: asClass(SavedSearchController).singleton(),
   });
   return container;
 }

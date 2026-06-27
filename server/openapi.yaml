@@ -133,6 +133,73 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/JobSearchResult' }
+  /ats:
+    post:
+      summary: ATS keyword gap analysis of a posting against the candidate profile
+      description: >
+        Declared skills are unioned with skills extracted from the role + free
+        text, then compared to the candidate's profile. Returns a coverage score,
+        matched and missing keywords, and recommendations.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AtsRequest' }
+      responses:
+        '200':
+          description: Gap report
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AtsReport' }
+        '400': { $ref: '#/components/responses/Problem' }
+  /searches:
+    get:
+      summary: List the candidate's named searches
+      responses:
+        '200':
+          description: Saved searches
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SavedSearch' }
+    post:
+      summary: Name and store a search
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateSavedSearch' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  search: { $ref: '#/components/schemas/SavedSearch' }
+        '400': { $ref: '#/components/responses/Problem' }
+  /searches/{id}:
+    delete:
+      summary: Delete a saved search
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '204': { description: Deleted }
+        '404': { $ref: '#/components/responses/Problem' }
+  /searches/{id}/run:
+    get:
+      summary: Run a saved search and return its two-tier result
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Two-tier search result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JobSearchResult' }
+        '404': { $ref: '#/components/responses/Problem' }
 components:
   responses:
     Problem:
@@ -249,6 +316,45 @@ components:
             total: { type: integer }
             top: { type: integer }
             more: { type: integer }
+    AtsRequest:
+      type: object
+      description: At least one of role, text or skills must be present.
+      properties:
+        role: { type: string }
+        text: { type: string }
+        skills: { type: array, items: { type: string } }
+    AtsReport:
+      type: object
+      required: [score, requiredSkills, matched, missing, recommendations]
+      properties:
+        score: { type: integer, minimum: 0, maximum: 100 }
+        requiredSkills: { type: array, items: { type: string } }
+        matched: { type: array, items: { type: string } }
+        missing: { type: array, items: { type: string } }
+        recommendations: { type: array, items: { type: string } }
+    SavedSearch:
+      type: object
+      required: [id, name, query, createdAt]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        query:
+          type: object
+          properties:
+            q: { type: string }
+            city: { type: string }
+            country: { type: string }
+            threshold: { type: integer }
+        createdAt: { type: string, format: date-time }
+    CreateSavedSearch:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        q: { type: string }
+        city: { type: string }
+        country: { type: string }
+        threshold: { type: integer, minimum: 0, maximum: 100, default: 80 }
     Problem:
       type: object
       properties:

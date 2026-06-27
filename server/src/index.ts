@@ -4,6 +4,8 @@ import { createApp } from './http/create-app';
 import type { Logger } from './ports/logger';
 import type { ApplicationController } from './http/application-controller';
 import type { JobController } from './http/job-controller';
+import type { AtsController } from './http/ats-controller';
+import type { SavedSearchController } from './http/saved-search-controller';
 
 function main(): void {
   const config = loadConfig();
@@ -13,6 +15,8 @@ function main(): void {
   const app = createApp({
     applicationController: container.resolve<ApplicationController>('applicationController'),
     jobController: container.resolve<JobController>('jobController'),
+    atsController: container.resolve<AtsController>('atsController'),
+    savedSearchController: container.resolve<SavedSearchController>('savedSearchController'),
     config,
     logger,
   });

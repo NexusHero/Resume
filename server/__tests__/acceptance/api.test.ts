@@ -3,7 +3,10 @@ import type { Express } from 'express';
 import { loadConfig } from '../../src/config';
 import { createApp } from '../../src/http/create-app';
 import { ApplicationController } from '../../src/http/application-controller';
+import { JobController } from '../../src/http/job-controller';
 import { ApplicationService } from '../../src/services/application-service';
+import { JobSearchService } from '../../src/services/job-search-service';
+import { SampleJobSource } from '../../src/adapters/sample-job-source';
 import {
   InMemoryApplicationRepository,
   InMemoryAuditLog,
@@ -29,9 +32,17 @@ function makeApp(): Express {
     logger: noopLogger,
   });
   const controller = new ApplicationController({ applicationService: service });
+  const config = loadConfig({});
+  const jobSearchService = new JobSearchService({
+    jobSource: new SampleJobSource(),
+    candidateProfile: config.candidateProfile,
+    logger: noopLogger,
+  });
+  const jobController = new JobController({ jobSearchService, config });
   return createApp({
     applicationController: controller,
-    config: loadConfig({}),
+    jobController,
+    config,
     logger: noopLogger,
   });
 }
@@ -119,6 +130,40 @@ describe('REST API /api/v1', () => {
     const res = await request(app).options('/api/v1/applications');
     expect(res.status).toBe(204);
     expect(res.headers['access-control-allow-origin']).toBe('*');
+  });
+
+  it('Jobs_GetNoParams_RunsPreconfiguredSearchInTwoTiers', async () => {
+    const res = await request(app).get('/api/v1/jobs');
+    expect(res.status).toBe(200);
+    expect(res.body.threshold).toBe(80);
+    expect(Array.isArray(res.body.top)).toBe(true);
+    expect(Array.isArray(res.body.more)).toBe(true);
+    // every top hit is >= threshold, every "more" is below it
+    expect(res.body.top.every((j: { match: number }) => j.match >= 80)).toBe(true);
+    expect(res.body.more.every((j: { match: number }) => j.match < 80)).toBe(true);
+    // top tier is sorted best-first and carries skill explanations
+    expect(res.body.top[0]).toHaveProperty('matchedSkills');
+    expect(res.body.top[0]).toHaveProperty('missingSkills');
+    expect(res.body.counts.total).toBe(res.body.counts.top + res.body.counts.more);
+  });
+
+  it('Jobs_GetWithKeyword_FiltersBySearchTerm', async () => {
+    const res = await request(app).get('/api/v1/jobs').query({ q: 'Rust' });
+    expect(res.status).toBe(200);
+    const all = [...res.body.top, ...res.body.more];
+    expect(all.length).toBeGreaterThan(0);
+    expect(
+      all.every((j: { role: string; skills: string[] }) =>
+        `${j.role} ${j.skills.join(' ')}`.toLowerCase().includes('rust'),
+      ),
+    ).toBe(true);
+  });
+
+  it('Jobs_GetWithThreshold_MovesBoundary', async () => {
+    const res = await request(app).get('/api/v1/jobs').query({ threshold: 100 });
+    expect(res.status).toBe(200);
+    expect(res.body.threshold).toBe(100);
+    expect(res.body.top.every((j: { match: number }) => j.match === 100)).toBe(true);
   });
 
   it('Static_GetRoot_ServesLauncher', async () => {

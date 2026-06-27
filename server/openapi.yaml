@@ -104,6 +104,30 @@ paths:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/AuditEvent' }
+  /jobs:
+    get:
+      summary: Two-tier, skill-matched job search
+      description: >
+        Searches connected job sources, scores each posting against the
+        candidate's skills, and splits the result into strong fits
+        (match >= threshold) and stretch / new-domain opportunities below it.
+        With no query parameters it runs the candidate's pre-configured default
+        search so the screen is never empty.
+      parameters:
+        - { name: q, in: query, required: false, schema: { type: string } }
+        - { name: country, in: query, required: false, schema: { type: string } }
+        - { name: city, in: query, required: false, schema: { type: string } }
+        - name: threshold
+          in: query
+          required: false
+          description: Tier boundary in percent (default 80)
+          schema: { type: integer, minimum: 0, maximum: 100, default: 80 }
+      responses:
+        '200':
+          description: Two-tier search result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JobSearchResult' }
 components:
   responses:
     Problem:
@@ -184,6 +208,42 @@ components:
         id: { type: string }
         by: { type: string }
         commit: { type: string }
+    ScoredJob:
+      type: object
+      required: [id, company, role, city, country, mode, skills, source, match]
+      properties:
+        id: { type: string }
+        company: { type: string }
+        role: { type: string }
+        city: { type: string }
+        country: { type: string }
+        mode: { type: string }
+        salary: { type: string }
+        posted: { type: string }
+        skills: { type: array, items: { type: string } }
+        snippet: { type: string }
+        source: { type: string }
+        url: { type: string }
+        match: { type: integer, minimum: 0, maximum: 100 }
+        matchedSkills: { type: array, items: { type: string } }
+        missingSkills: { type: array, items: { type: string } }
+    JobSearchResult:
+      type: object
+      required: [threshold, top, more, counts]
+      properties:
+        threshold: { type: integer }
+        top:
+          type: array
+          items: { $ref: '#/components/schemas/ScoredJob' }
+        more:
+          type: array
+          items: { $ref: '#/components/schemas/ScoredJob' }
+        counts:
+          type: object
+          properties:
+            total: { type: integer }
+            top: { type: integer }
+            more: { type: integer }
     Problem:
       type: object
       properties:

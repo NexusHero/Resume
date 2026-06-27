@@ -16,14 +16,18 @@ import { FsPdfArchive } from './adapters/fs-pdf-archive';
 import { GitVersioner } from './adapters/git-versioner';
 import { PuppeteerPdfRenderer } from './adapters/puppeteer-pdf-renderer';
 import { PdfLibMerger } from './adapters/pdf-lib-merger';
+import { SampleJobSource } from './adapters/sample-job-source';
 import { ApplicationService } from './services/application-service';
+import { JobSearchService } from './services/job-search-service';
 import { ApplicationController } from './http/application-controller';
+import { JobController } from './http/job-controller';
 
 /** Composition root: wires every port to its production adapter (no decorators). */
 export function buildContainer(config: AppConfig = loadConfig()): AwilixContainer {
   const container = createContainer({ injectionMode: InjectionMode.PROXY });
   container.register({
     config: asValue(config),
+    candidateProfile: asValue(config.candidateProfile),
     logger: asFunction(() => createLogger()).singleton(),
     clock: asClass(SystemClock).singleton(),
     idGenerator: asClass(RandomIdGenerator).singleton(),
@@ -33,8 +37,11 @@ export function buildContainer(config: AppConfig = loadConfig()): AwilixContaine
     versioner: asClass(GitVersioner).singleton(),
     pdfRenderer: asClass(PuppeteerPdfRenderer).singleton(),
     pdfMerger: asClass(PdfLibMerger).singleton(),
+    jobSource: asClass(SampleJobSource).singleton(),
     applicationService: asClass(ApplicationService).singleton(),
+    jobSearchService: asClass(JobSearchService).singleton(),
     applicationController: asClass(ApplicationController).singleton(),
+    jobController: asClass(JobController).singleton(),
   });
   return container;
 }

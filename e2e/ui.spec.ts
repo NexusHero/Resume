@@ -24,4 +24,16 @@ test.describe('UI acceptance — the suite renders in English', () => {
     await expect(page.locator('main')).toContainText('Add talent');
     await expect(page.locator('main')).toContainText('Suhay Sevinc');
   });
+
+  test('Karriere_Jobsuche_ShowsTwoMatchTiers', async ({ page }) => {
+    await page.goto('/design/myjob/ui_kits/karriere/index.html');
+    await page.getByRole('button', { name: /Jobsuche/ }).click();
+    const main = page.locator('main');
+    // pre-configured search ran on open → both tiers visible
+    await expect(main).toContainText('Top-Treffer');
+    await expect(main).toContainText('Weitere & Entwicklungschancen');
+    // "Nur Top-Treffer" collapses the stretch tier
+    await page.getByRole('button', { name: /Nur Top-Treffer/ }).click();
+    await expect(main).not.toContainText('Weitere & Entwicklungschancen');
+  });
 });

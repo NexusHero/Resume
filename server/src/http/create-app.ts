@@ -2,11 +2,13 @@ import express, { type Express, type Request, type Response, type NextFunction }
 import type { AppConfig } from '../config';
 import type { Logger } from '../ports/logger';
 import type { ApplicationController } from './application-controller';
+import type { JobController } from './job-controller';
 import { asyncHandler } from './async-handler';
 import { errorHandler, notFound } from './problem';
 
 export interface AppDeps {
   applicationController: ApplicationController;
+  jobController: JobController;
   config: AppConfig;
   logger: Logger;
 }
@@ -24,7 +26,7 @@ function cors(_req: Request, res: Response, next: NextFunction): void {
 
 /** Builds the Express application (no port binding — supertest can drive it directly). */
 export function createApp(deps: AppDeps): Express {
-  const { applicationController: c } = deps;
+  const { applicationController: c, jobController: j } = deps;
   const app = express();
 
   app.use(cors);
@@ -37,6 +39,7 @@ export function createApp(deps: AppDeps): Express {
   api.post('/applications/build', asyncHandler(c.build));
   api.patch('/applications/:id', asyncHandler(c.update));
   api.get('/history', asyncHandler(c.history));
+  api.get('/jobs', asyncHandler(j.search));
   api.use((_req, res) => notFound(res));
 
   app.use('/api/v1', api);

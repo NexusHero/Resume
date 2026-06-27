@@ -19,6 +19,8 @@ function tmpConfig(): AppConfig {
     historyFile: path.join(storeDir, 'history.jsonl'),
     staticDir: rootDir,
     versionedPaths: ['bewerbungen'],
+    candidateProfile: { skills: [] },
+    defaultJobSearch: { threshold: 80 },
   };
 }
 

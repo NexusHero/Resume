@@ -13,6 +13,9 @@ const ME = {
   location: 'Berlin',
   src: '../../assets/img/candidate-portrait-sm.jpg',
   email: 'suhay.sevinc@example.de',
+  /* Skills the candidate already has — used to match jobs and to flag which
+     new skills a lower-matching ("stretch") job would add. */
+  skills: ['C++', 'Rust', 'Distributed Systems', 'gRPC', 'Kubernetes', 'Go', 'AWS', 'PostgreSQL', 'Microservices', 'Remote'],
 };
 
 /* short codes shown as chips on each application */
@@ -250,5 +253,16 @@ function makeDraft(job, opts) {
   };
 }
 
-window.KarriereData = { ME, DOC, APPLICATIONS, POSITIONS, JOBS, COUNTRIES, PROVIDERS, fmtEUR, positionTotal, anschreibenTemplate, makeDraft };
+/* Split a job's required skills against the candidate's: which they already
+   have vs. which the job would add. Mirrors the server-side Matcher; here it
+   only powers the "+ neue Skills" hint on stretch-tier jobs. */
+function skillMatch(job) {
+  const have = new Set((ME.skills || []).map((s) => s.toLowerCase()));
+  const matched = [];
+  const missing = [];
+  (job.tags || []).forEach((t) => (have.has(t.toLowerCase()) ? matched : missing).push(t));
+  return { matched, missing };
+}
+
+window.KarriereData = { ME, DOC, APPLICATIONS, POSITIONS, JOBS, COUNTRIES, PROVIDERS, fmtEUR, positionTotal, anschreibenTemplate, makeDraft, skillMatch };
 })();

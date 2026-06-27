@@ -16,8 +16,9 @@ function MatchPill({ v }) {
   );
 }
 
-function JobRow({ job, onOpen }) {
+function JobRow({ job, onOpen, stretch }) {
   const [hover, setHover] = React.useState(false);
+  const missing = stretch ? (window.KarriereData.skillMatch(job).missing) : [];
   return (
     <div onClick={() => onOpen(job.id)} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px 18px', cursor: 'pointer', background: hover ? 'var(--surface-subtle)' : 'transparent', borderBottom: '1px solid var(--border)', transition: 'background var(--dur-fast) var(--ease-out)' }}>
@@ -26,6 +27,7 @@ function JobRow({ job, onOpen }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
           <span style={{ fontFamily: 'var(--font-display)', fontSize: '15px', fontWeight: 700, color: 'var(--text-heading)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{job.role}</span>
           <span style={{ flexShrink: 0 }}><MatchPill v={job.match} /></span>
+          {missing.length > 0 && <span style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '4px', fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 600, color: 'var(--text-soft)', background: 'var(--surface-subtle)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '2px 8px' }}><JS.Icon name="trend" size={10} />+{missing.length} neue Skill{missing.length === 1 ? '' : 's'}</span>}
         </div>
         <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.company} · {job.city} · {job.mode}</div>
         <div style={{ display: 'flex', gap: '6px', marginTop: '9px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -121,6 +123,20 @@ function SourceChip({ name, tile, active, onClick }) {
   );
 }
 
+function TierHeader({ icon, tone, title, hint, count }) {
+  const strong = tone === 'hired' ? 'var(--status-hired-strong)' : 'var(--accent-strong)';
+  const soft = tone === 'hired' ? 'var(--status-hired-soft)' : 'var(--accent-soft)';
+  const border = tone === 'hired' ? 'var(--status-hired-border)' : 'var(--accent-border)';
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 18px', borderBottom: '1px solid var(--border)', background: 'var(--surface-subtle)' }}>
+      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '24px', borderRadius: 'var(--radius-md)', background: soft, color: strong, border: `1px solid ${border}` }}><JS.Icon name={icon} size={13} /></span>
+      <span style={{ fontFamily: 'var(--font-display)', fontSize: '13.5px', fontWeight: 700, color: 'var(--text-heading)' }}>{title}</span>
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: strong }}>{count}</span>
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--text-soft)', marginLeft: 'auto' }}>{hint}</span>
+    </div>
+  );
+}
+
 function Jobsuche({ onCreate, providers, onManageSources }) {
   const { JOBS, COUNTRIES } = window.KarriereData;
   const allProviders = providers || window.KarriereData.PROVIDERS;
@@ -133,6 +149,8 @@ function Jobsuche({ onCreate, providers, onManageSources }) {
   const [loading, setLoading] = React.useState(false);
   const [openJob, setOpenJob] = React.useState(null);
   const [creating, setCreating] = React.useState(null);
+  const [onlyTop, setOnlyTop] = React.useState(false);
+  const THRESHOLD = 80; // tier boundary: strong fits vs. stretch opportunities
 
   // keep source filter in sync as providers connect/disconnect
   React.useEffect(() => { setActiveSources(new Set(connectedNames)); }, [connectedNames.join('|')]);
@@ -153,6 +171,11 @@ function Jobsuche({ onCreate, providers, onManageSources }) {
     }
     return true;
   });
+  // Two tiers: strong fits (>= threshold) first, then stretch / new-domain roles —
+  // the lower tier is kept, not dropped, so growth opportunities stay visible.
+  const ranked = [...results].sort((a, b) => b.match - a.match);
+  const topJobs = ranked.filter((j) => j.match >= THRESHOLD);
+  const moreJobs = ranked.filter((j) => j.match < THRESHOLD);
   const job = JOBS.find((j) => j.id === openJob);
 
   const inputBox = { display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface-card)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', padding: '0 12px', height: '42px' };
@@ -200,20 +223,37 @@ function Jobsuche({ onCreate, providers, onManageSources }) {
       </JS.Card>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)' }}><span style={{ color: 'var(--text-heading)', fontWeight: 600 }}>{loading ? '…' : results.length}</span> Jobs aus {activeSources.size} Quelle{activeSources.size === 1 ? '' : 'n'}</div>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)' }}><span style={{ color: 'var(--text-heading)', fontWeight: 600 }}>{loading ? '…' : results.length}</span> Jobs · <span style={{ color: 'var(--status-hired-strong)', fontWeight: 600 }}>{loading ? '…' : topJobs.length}</span> Top-Treffer aus {activeSources.size} Quelle{activeSources.size === 1 ? '' : 'n'}</div>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-soft)' }}><span style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--status-hired)' }} />synchronisiert vor 4 Min</span>
+          <JS.Button size="sm" variant={onlyTop ? 'primary' : 'outline'} iconLeft={<JS.Icon name="zap" size={14} />} onClick={() => setOnlyTop((v) => !v)}>Nur Top-Treffer</JS.Button>
           <JS.Button size="sm" variant="outline" iconLeft={<JS.Icon name="trend" size={14} />} onClick={runSearch}>Aktualisieren</JS.Button>
         </div>
       </div>
 
-      <JS.Card pad={false}>
-        {loading ? (
-          <React.Fragment><SkeletonRow /><SkeletonRow /><SkeletonRow /></React.Fragment>
-        ) : results.length === 0 ? (
-          <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Keine Jobs für diese Suche. Filter oder Quellen anpassen.</div>
-        ) : results.map((j) => <JobRow key={j.id} job={j} onOpen={setOpenJob} />)}
-      </JS.Card>
+      {loading ? (
+        <JS.Card pad={false}><SkeletonRow /><SkeletonRow /><SkeletonRow /></JS.Card>
+      ) : results.length === 0 ? (
+        <JS.Card pad={false}><div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Keine Jobs für diese Suche. Filter oder Quellen anpassen.</div></JS.Card>
+      ) : (
+        <React.Fragment>
+          {topJobs.length > 0 && (
+            <JS.Card pad={false}>
+              <TierHeader icon="zap" tone="hired" title="Top-Treffer" hint={`≥ ${THRESHOLD}% deiner Skills`} count={topJobs.length} />
+              {topJobs.map((j) => <JobRow key={j.id} job={j} onOpen={setOpenJob} />)}
+            </JS.Card>
+          )}
+          {!onlyTop && moreJobs.length > 0 && (
+            <JS.Card pad={false}>
+              <TierHeader icon="trend" tone="accent" title="Weitere & Entwicklungschancen" hint="neue Domänen & Technologien" count={moreJobs.length} />
+              {moreJobs.map((j) => <JobRow key={j.id} job={j} onOpen={setOpenJob} stretch={true} />)}
+            </JS.Card>
+          )}
+          {topJobs.length === 0 && onlyTop && (
+            <JS.Card pad={false}><div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Keine Treffer ≥ {THRESHOLD}%. Schalte „Nur Top-Treffer" aus, um Entwicklungschancen zu sehen.</div></JS.Card>
+          )}
+        </React.Fragment>
+      )}
 
       {job && <JobDetail job={job} onClose={() => setOpenJob(null)} onCreate={(jb) => { setOpenJob(null); setCreating(jb); }} />}
       {creating && (

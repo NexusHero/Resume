@@ -3,6 +3,7 @@ import { buildContainer } from './container';
 import { createApp } from './http/create-app';
 import type { Logger } from './ports/logger';
 import type { ApplicationController } from './http/application-controller';
+import type { JobController } from './http/job-controller';
 
 function main(): void {
   const config = loadConfig();
@@ -11,6 +12,7 @@ function main(): void {
 
   const app = createApp({
     applicationController: container.resolve<ApplicationController>('applicationController'),
+    jobController: container.resolve<JobController>('jobController'),
     config,
     logger,
   });

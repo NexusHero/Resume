@@ -18,6 +18,10 @@ export interface AppConfig {
   defaultJobSearch: Record<string, unknown>;
   /** Which live job boards to query (none → offline sample). */
   jobSources: JobSourcesConfig;
+  /** Storage backend: 'fs' (JSON files, default) or 'sql' (Postgres). */
+  store: 'fs' | 'sql';
+  /** Postgres connection string, used when store === 'sql'. */
+  databaseUrl: string;
 }
 
 /** Live job-board wiring, resolved from the environment. */
@@ -86,5 +90,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
         country: env.ADZUNA_COUNTRY ?? 'de',
       },
     },
+    store: env.STORE === 'sql' ? 'sql' : 'fs',
+    databaseUrl: env.DATABASE_URL ?? '',
   };
 }

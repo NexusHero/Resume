@@ -110,6 +110,23 @@ report: coverage `score`, `matched` and `missing` keywords, and `recommendations
 - `DELETE /api/v1/searches/:id` — remove one
 - `GET /api/v1/searches/:id/run` — run it through the two-tier job search
 
+### Storage backend
+
+Defaults to JSON files under `archive/bewerbungen/`. Set `STORE=sql` with a
+`DATABASE_URL` to persist applications, the audit trail and saved searches in
+Postgres instead (tables are created on boot). In SQL mode the git versioner is
+disabled (there are no files to version).
+
+```bash
+STORE=sql DATABASE_URL=postgres://user:pass@host:5432/db npm run serve
+```
+
+A throwaway Postgres for local use:
+
+```bash
+docker run -d -e POSTGRES_PASSWORD=test -e POSTGRES_DB=resume -p 5432:5432 postgres:16-alpine
+```
+
 ## myJob — Bewerbungstool (`design/myjob/`)
 
 A recruiting design system imported from a Claude Design project, built on the same token

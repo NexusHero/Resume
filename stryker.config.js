@@ -13,6 +13,10 @@ module.exports = {
     '!server/src/adapters/git-versioner.ts',
     '!server/src/adapters/pino-logger.ts',
     '!server/src/adapters/node-fetch.ts',
+    '!server/src/adapters/sql/db.ts',
+    '!server/src/adapters/sql/sql-application-repository.ts',
+    '!server/src/adapters/sql/sql-audit-log.ts',
+    '!server/src/adapters/sql/sql-saved-search-repository.ts',
   ],
   thresholds: {
     high: 85,

@@ -48,7 +48,13 @@ New ports in the hexagonal core. Uses the Claude API.
 
 - **3.1** `JobSource` port + adapter per board (Bundesagentur/Adzuna/Arbeitnow public;
   StepStone/Indeed/LinkedIn/XING via key/OAuth). Sample offline adapter exists. **L**
-  - ✅ port + `SampleJobSource` shipped in 3.5; real board adapters outstanding.
+  - ✅ port + `SampleJobSource` shipped in 3.5.
+  - ✅ live adapters: **Arbeitnow** (open), **Bundesagentur** (public key),
+    **Adzuna** (app id+key). Resilient `CompositeJobSource` (one failing source is
+    skipped) + `createJobSource` factory; enabled via `JOB_SOURCES` env, offline
+    sample as default. Mappers unit-tested against recorded shapes; verified live.
+  - Outstanding: OAuth boards (StepStone/Indeed/LinkedIn/XING). Note: postings
+    without skill tags score neutral (100) until skill extraction lands in 3.2.
 - **3.2** `Matcher` port — job↔candidate score feeding the existing `match %` UI. **M**
   - ✅ skill scoring (`domain/skill.ts`) + `JobSearchService` shipped in 3.5;
     LLM-assisted skill extraction (`SkillExtractor` adapter) outstanding.

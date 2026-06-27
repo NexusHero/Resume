@@ -21,6 +21,11 @@ function tmpConfig(): AppConfig {
     versionedPaths: ['bewerbungen'],
     candidateProfile: { skills: [] },
     defaultJobSearch: { threshold: 80 },
+    jobSources: {
+      arbeitnow: { enabled: false },
+      bundesagentur: { enabled: false, apiKey: 'test' },
+      adzuna: { enabled: false, appId: '', appKey: '', country: 'de' },
+    },
   };
 }
 

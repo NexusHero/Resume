@@ -76,6 +76,28 @@ appended to `archive/bewerbungen/history.jsonl` and committed to git.
   CV + attachments, archive + log + commit, and return the combined PDF
 - `PATCH /api/applications/:id` — update status (e.g. → "Gespräch")
 
+### Job search (`GET /api/v1/jobs`)
+
+Two-tier, skill-matched search across connected job boards. Each posting is scored
+against the candidate's skills; results split into strong fits (`match >= threshold`,
+default 80) and stretch / new-domain roles. With no query parameters it runs a
+pre-configured default search.
+
+`?q=`, `?city=`, `?country=`, `?threshold=` refine the search.
+
+**Live sources** are off by default (offline sample data is used). Enable them via env:
+
+| Env                               | Purpose                                                         |
+| --------------------------------- | --------------------------------------------------------------- |
+| `JOB_SOURCES`                     | comma list: `arbeitnow,bundesagentur,adzuna`                    |
+| `BA_API_KEY`                      | Bundesagentur key (defaults to the public `jobboerse-jobsuche`) |
+| `ADZUNA_APP_ID`, `ADZUNA_APP_KEY` | Adzuna credentials (required to enable Adzuna)                  |
+| `ADZUNA_COUNTRY`                  | Adzuna country code (default `de`)                              |
+
+```bash
+JOB_SOURCES=arbeitnow,bundesagentur npm run serve
+```
+
 ## myJob — Bewerbungstool (`design/myjob/`)
 
 A recruiting design system imported from a Claude Design project, built on the same token

@@ -15,6 +15,15 @@ export interface AppConfig {
   candidateProfile: CandidateProfile;
   /** Pre-configured search run when /api/v1/jobs is called with no params. */
   defaultJobSearch: Record<string, unknown>;
+  /** Which live job boards to query (none → offline sample). */
+  jobSources: JobSourcesConfig;
+}
+
+/** Live job-board wiring, resolved from the environment. */
+export interface JobSourcesConfig {
+  arbeitnow: { enabled: boolean };
+  bundesagentur: { enabled: boolean; apiKey: string };
+  adzuna: { enabled: boolean; appId: string; appKey: string; country: string };
 }
 
 /**
@@ -39,6 +48,18 @@ const CANDIDATE_PROFILE: CandidateProfile = {
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const rootDir = path.resolve(__dirname, '..', '..');
   const storeDir = path.join(rootDir, 'archive', 'bewerbungen');
+
+  // JOB_SOURCES is a comma list, e.g. "arbeitnow,bundesagentur,adzuna".
+  // Unset → no live sources → offline sample (keeps dev/CI deterministic).
+  const enabled = new Set(
+    (env.JOB_SOURCES ?? '')
+      .split(',')
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean),
+  );
+  const adzunaId = env.ADZUNA_APP_ID ?? '';
+  const adzunaKey = env.ADZUNA_APP_KEY ?? '';
+
   return {
     port: Number(env.PORT ?? 4178),
     rootDir,
@@ -49,5 +70,19 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     versionedPaths: ['archive/bewerbungen'],
     candidateProfile: CANDIDATE_PROFILE,
     defaultJobSearch: { threshold: 80 },
+    jobSources: {
+      arbeitnow: { enabled: enabled.has('arbeitnow') },
+      bundesagentur: {
+        enabled: enabled.has('bundesagentur'),
+        apiKey: env.BA_API_KEY ?? 'jobboerse-jobsuche',
+      },
+      adzuna: {
+        // Adzuna needs credentials; enabling it without them would only 401.
+        enabled: enabled.has('adzuna') && Boolean(adzunaId && adzunaKey),
+        appId: adzunaId,
+        appKey: adzunaKey,
+        country: env.ADZUNA_COUNTRY ?? 'de',
+      },
+    },
   };
 }

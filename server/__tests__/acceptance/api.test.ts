@@ -4,14 +4,19 @@ import { loadConfig } from '../../src/config';
 import { createApp } from '../../src/http/create-app';
 import { ApplicationController } from '../../src/http/application-controller';
 import { JobController } from '../../src/http/job-controller';
+import { AtsController } from '../../src/http/ats-controller';
+import { SavedSearchController } from '../../src/http/saved-search-controller';
 import { ApplicationService } from '../../src/services/application-service';
 import { JobSearchService } from '../../src/services/job-search-service';
+import { AtsService } from '../../src/services/ats-service';
+import { SavedSearchService } from '../../src/services/saved-search-service';
 import { SampleJobSource } from '../../src/adapters/sample-job-source';
 import { KeywordSkillExtractor } from '../../src/adapters/keyword-skill-extractor';
 import {
   InMemoryApplicationRepository,
   InMemoryAuditLog,
   InMemoryPdfArchive,
+  InMemorySavedSearchRepository,
   FakePdfRenderer,
   FakePdfMerger,
   FakeVersioner,
@@ -41,9 +46,25 @@ function makeApp(): Express {
     logger: noopLogger,
   });
   const jobController = new JobController({ jobSearchService, config });
+  const atsController = new AtsController({
+    atsService: new AtsService({
+      skillExtractor: new KeywordSkillExtractor(),
+      candidateProfile: config.candidateProfile,
+    }),
+  });
+  const savedSearchController = new SavedSearchController({
+    savedSearchService: new SavedSearchService({
+      savedSearchRepository: new InMemorySavedSearchRepository(),
+      jobSearchService,
+      clock: new FixedClock(),
+      idGenerator: new SequenceIdGenerator('search'),
+    }),
+  });
   return createApp({
     applicationController: controller,
     jobController,
+    atsController,
+    savedSearchController,
     config,
     logger: noopLogger,
   });
@@ -166,6 +187,67 @@ describe('REST API /api/v1', () => {
     expect(res.status).toBe(200);
     expect(res.body.threshold).toBe(100);
     expect(res.body.top.every((j: { match: number }) => j.match === 100)).toBe(true);
+  });
+
+  it('Ats_PostPostingText_ReturnsGapReport', async () => {
+    const res = await request(app)
+      .post('/api/v1/ats')
+      .send({ role: 'Senior C++ Engineer', text: 'Build gRPC services with Kotlin.' });
+    expect(res.status).toBe(200);
+    // profile has C++ and gRPC, not Kotlin
+    expect(res.body.matched).toEqual(expect.arrayContaining(['C++', 'gRPC']));
+    expect(res.body.missing).toContain('Kotlin');
+    expect(res.body.recommendations.length).toBe(res.body.missing.length);
+    expect(res.body.score).toBeGreaterThan(0);
+  });
+
+  it('Ats_PostEmpty_Returns400Problem', async () => {
+    const res = await request(app).post('/api/v1/ats').send({});
+    expect(res.status).toBe(400);
+    expect(res.headers['content-type']).toMatch(/application\/problem\+json/);
+  });
+
+  it('SavedSearch_CrudAndRun_Works', async () => {
+    const empty = await request(app).get('/api/v1/searches');
+    expect(empty.body).toEqual([]);
+
+    const created = await request(app)
+      .post('/api/v1/searches')
+      .send({ name: 'Rust remote', q: 'Rust', threshold: 70 });
+    expect(created.status).toBe(201);
+    const id = created.body.search.id;
+    expect(created.body.search).toMatchObject({
+      name: 'Rust remote',
+      query: { q: 'Rust', threshold: 70 },
+    });
+
+    const list = await request(app).get('/api/v1/searches');
+    expect(list.body).toHaveLength(1);
+
+    const run = await request(app).get(`/api/v1/searches/${id}/run`);
+    expect(run.status).toBe(200);
+    expect(run.body.threshold).toBe(70);
+    expect(Array.isArray(run.body.top)).toBe(true);
+
+    const del = await request(app).delete(`/api/v1/searches/${id}`);
+    expect(del.status).toBe(204);
+    expect((await request(app).get('/api/v1/searches')).body).toEqual([]);
+  });
+
+  it('SavedSearch_CreateMissingName_Returns400', async () => {
+    const res = await request(app).post('/api/v1/searches').send({ q: 'Rust' });
+    expect(res.status).toBe(400);
+  });
+
+  it('SavedSearch_RunUnknown_Returns404Problem', async () => {
+    const res = await request(app).get('/api/v1/searches/nope/run');
+    expect(res.status).toBe(404);
+    expect(res.body).toMatchObject({ status: 404, title: 'NotFoundError' });
+  });
+
+  it('SavedSearch_DeleteUnknown_Returns404Problem', async () => {
+    const res = await request(app).delete('/api/v1/searches/nope');
+    expect(res.status).toBe(404);
   });
 
   it('Static_GetRoot_ServesLauncher', async () => {

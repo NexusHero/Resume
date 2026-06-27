@@ -98,6 +98,18 @@ pre-configured default search.
 JOB_SOURCES=arbeitnow,bundesagentur npm run serve
 ```
 
+### ATS gap analysis (`POST /api/v1/ats`)
+
+Paste a posting (`{ role?, text?, skills? }`, at least one) and get a JobScan-style
+report: coverage `score`, `matched` and `missing` keywords, and `recommendations`.
+
+### Saved searches (`/api/v1/searches`)
+
+- `GET /api/v1/searches` — list named searches
+- `POST /api/v1/searches` — store one (`{ name, q?, city?, country?, threshold? }`)
+- `DELETE /api/v1/searches/:id` — remove one
+- `GET /api/v1/searches/:id/run` — run it through the two-tier job search
+
 ## myJob — Bewerbungstool (`design/myjob/`)
 
 A recruiting design system imported from a Claude Design project, built on the same token

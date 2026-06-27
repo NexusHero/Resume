@@ -8,6 +8,7 @@ import type { Versioner } from '../../src/ports/versioner';
 import type { Clock } from '../../src/ports/clock';
 import type { IdGenerator } from '../../src/ports/id-generator';
 import type { Logger } from '../../src/ports/logger';
+import type { SkillExtractor } from '../../src/ports/skill-extractor';
 
 export class InMemoryApplicationRepository implements ApplicationRepository {
   apps: Application[] = [];
@@ -97,4 +98,9 @@ export const noopLogger: Logger = {
   warn() {},
   error() {},
   debug() {},
+};
+
+/** A SkillExtractor that finds nothing — keeps tiering tests free of taxonomy effects. */
+export const noopSkillExtractor: SkillExtractor = {
+  extract: () => [],
 };

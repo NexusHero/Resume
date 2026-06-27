@@ -7,6 +7,7 @@ import { JobController } from '../../src/http/job-controller';
 import { ApplicationService } from '../../src/services/application-service';
 import { JobSearchService } from '../../src/services/job-search-service';
 import { SampleJobSource } from '../../src/adapters/sample-job-source';
+import { KeywordSkillExtractor } from '../../src/adapters/keyword-skill-extractor';
 import {
   InMemoryApplicationRepository,
   InMemoryAuditLog,
@@ -35,6 +36,7 @@ function makeApp(): Express {
   const config = loadConfig({});
   const jobSearchService = new JobSearchService({
     jobSource: new SampleJobSource(),
+    skillExtractor: new KeywordSkillExtractor(),
     candidateProfile: config.candidateProfile,
     logger: noopLogger,
   });

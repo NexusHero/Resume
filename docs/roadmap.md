@@ -56,8 +56,14 @@ New ports in the hexagonal core. Uses the Claude API.
   - Outstanding: OAuth boards (StepStone/Indeed/LinkedIn/XING). Note: postings
     without skill tags score neutral (100) until skill extraction lands in 3.2.
 - **3.2** `Matcher` port — job↔candidate score feeding the existing `match %` UI. **M**
-  - ✅ skill scoring (`domain/skill.ts`) + `JobSearchService` shipped in 3.5;
-    LLM-assisted skill extraction (`SkillExtractor` adapter) outstanding.
+  - ✅ skill scoring (`domain/skill.ts`) + `JobSearchService` shipped in 3.5.
+  - ✅ skill **extraction**: `SkillExtractor` port + rule-based `KeywordSkillExtractor`
+    (taxonomy + word-boundary matching for `C++`/`C#`/`Go`/`Java`…). The service
+    enriches a posting's tags with skills found in its title/description, so
+    tagless boards (Bundesagentur) become matchable. Verified live.
+  - Outstanding (needs AI, deferred to the very end): an **LLM-backed
+    `SkillExtractor`** to resolve context the keyword matcher cannot — e.g. "jobs
+    _in Rust_" (the German town) vs the Rust language; seniority/synonyms.
 - **3.3** `CoverLetterWriter` port — auto-tailored cover letter per job, folded into `build`. **M**
 - **3.4** ATS keyword scoring (JobScan-style) — CV↔posting gap analysis; shares
   `missingSkills` with 3.2. **M**

@@ -227,7 +227,7 @@ describe('AdzunaJobSource', () => {
       city: 'Hamburg',
       country: 'DE',
       salary: '70.000 – 90.000 €',
-      skills: ['IT Jobs'],
+      skills: [],
       snippet: 'Work on scalable services.',
       source: 'Adzuna',
     });

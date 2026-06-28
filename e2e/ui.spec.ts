@@ -25,15 +25,21 @@ test.describe('UI acceptance — the suite renders in English', () => {
     await expect(page.locator('main')).toContainText('Suhay Sevinc');
   });
 
-  test('Karriere_Jobsuche_ShowsTwoMatchTiers', async ({ page }) => {
+  test('Karriere_Jobsuche_SearchesJobBoardsAndCreatesApplication', async ({ page }) => {
     await page.goto('/design/myjob/ui_kits/karriere/index.html');
     await page.getByRole('button', { name: /Jobsuche/ }).click();
     const main = page.locator('main');
-    // pre-configured search ran on open → both tiers visible
-    await expect(main).toContainText('Top-Treffer');
-    await expect(main).toContainText('Weitere & Entwicklungschancen');
-    // "Nur Top-Treffer" collapses the stretch tier
-    await page.getByRole('button', { name: /Nur Top-Treffer/ }).click();
-    await expect(main).not.toContainText('Weitere & Entwicklungschancen');
+    // search filters + connected job-board sources are present
+    await expect(main).toContainText('Suchbegriffe');
+    await expect(main).toContainText('Quellen');
+    // a pre-run search lists source-attributed postings with a match score
+    await expect(main).toContainText('Senior C++ Engineer');
+    await expect(main).toContainText('via Bundesagentur für Arbeit');
+    await expect(main).toContainText('94%');
+    // open a posting and build an application from it (sending is for later)
+    await page.getByText('Senior C++ Engineer').first().click();
+    await page.getByRole('button', { name: 'Bewerbung erstellen' }).click();
+    await expect(page.locator('body')).toContainText('Unterlagen für die Mappe');
+    await expect(page.getByRole('button', { name: 'Vormerken' })).toBeVisible();
   });
 });

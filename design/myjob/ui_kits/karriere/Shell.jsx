@@ -70,7 +70,7 @@ function NavItem({ item, active, onClick, badge, bright }) {
   );
 }
 
-function Shell({ theme, mode, direction, onMode, onDirection, active, onNav, me, badges = {}, title, subtitle, actions, children }) {
+function Shell({ theme, mode, direction, onMode, onDirection, active, onNav, me, badges = {}, title, subtitle, actions, onSettings, children }) {
   const bright = direction === 'bright';
   const sidebarBg = bright
     ? 'var(--surface-card)'
@@ -121,6 +121,7 @@ function Shell({ theme, mode, direction, onMode, onDirection, active, onNav, me,
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
             {actions}
+            {onSettings && <SH.IconButton icon="settings" label="KI-Modell wählen" variant="ghost" onClick={onSettings} />}
             <SegToggle bright value={direction} onChange={onDirection} options={[{ id: 'rail', label: 'Kompakt' }, { id: 'bright', label: 'Luftig' }]} />
             <SegToggle bright value={mode} onChange={onMode} options={[{ id: 'light', label: 'Hell' }, { id: 'dark', label: 'Dunkel' }]} />
           </div>

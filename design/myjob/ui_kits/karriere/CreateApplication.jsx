@@ -11,14 +11,27 @@ const DOC_OPTIONS = [
   { code: 'portfolio', label: 'Portfolio / GitHub', icon: 'code', hint: 'Code-Beispiele' },
 ];
 
+const PROVIDER_LABEL = { claude: 'Claude', gemini: 'Gemini', template: 'Vorlage' };
+
 function CreateApplication({ job, onClose, onSave }) {
-  const { anschreibenTemplate, makeDraft } = window.KarriereData;
+  const { anschreibenTemplate, makeDraft, api } = window.KarriereData;
   const [docs, setDocs] = React.useState({ cv: true, anschreiben: true, mappe: false, zeugnisse: false, portfolio: false });
-  const [anschreiben, setAnschreiben] = React.useState(() => anschreibenTemplate(job));
+  const [anschreiben, setAnschreiben] = React.useState('');
+  const [gen, setGen] = React.useState({ loading: true, provider: null });
   const [salary, setSalary] = React.useState('');
   const [notes, setNotes] = React.useState('');
   const toggle = (code) => setDocs((d) => ({ ...d, [code]: !d[code] }));
   const chosen = Object.keys(docs).filter((k) => docs[k]);
+
+  // Generate the Anschreiben via the selected LLM provider (Claude/Gemini),
+  // falling back to the local template if the API is unreachable.
+  const generate = React.useCallback(() => {
+    setGen({ loading: true, provider: null });
+    api.generateCoverLetter(job)
+      .then((r) => { setAnschreiben(r.text); setGen({ loading: false, provider: r.provider }); })
+      .catch(() => { setAnschreiben(anschreibenTemplate(job)); setGen({ loading: false, provider: 'template' }); });
+  }, []);
+  React.useEffect(() => { generate(); }, []);
 
   const save = () => {
     onSave(makeDraft(job, { docs: chosen.length ? chosen : ['cv'], salary, notes, anschreiben }));
@@ -57,7 +70,18 @@ function CreateApplication({ job, onClose, onSave }) {
             </div>
           </section>
 
-          <CA.Textarea label="Anschreiben" rows={6} value={anschreiben} onChange={(e) => setAnschreiben(e.target.value)} hint="Vorlage automatisch befüllt — frei anpassbar." />
+          <section>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+              <h4 style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--text-soft)', margin: 0 }}>Anschreiben</h4>
+              {gen.provider && !gen.loading && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 600, color: 'var(--accent-strong)', background: 'var(--accent-soft)', border: '1px solid var(--accent-border)', borderRadius: 'var(--radius-pill)', padding: '2px 8px' }}><CA.Icon name="zap" size={10} />{gen.provider === 'template' ? 'Vorlage' : `generiert mit ${PROVIDER_LABEL[gen.provider] || gen.provider}`}</span>
+              )}
+              <span style={{ marginLeft: 'auto' }}>
+                <CA.Button size="sm" variant="ghost" iconLeft={<CA.Icon name="trend" size={13} />} onClick={generate} disabled={gen.loading}>{gen.loading ? 'Generiere …' : 'Neu generieren'}</CA.Button>
+              </span>
+            </div>
+            <CA.Textarea rows={7} value={gen.loading ? 'Anschreiben wird generiert …' : anschreiben} onChange={(e) => setAnschreiben(e.target.value)} hint="Automatisch erstellt — frei anpassbar." />
+          </section>
 
           <CA.Input label="Gehaltswunsch (optional)" icon="zap" placeholder="z. B. 88.000 €" value={salary} onChange={(e) => setSalary(e.target.value)} />
 

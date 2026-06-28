@@ -18,7 +18,7 @@ function MatchPill({ v }) {
 
 function JobRow({ job, onOpen, stretch }) {
   const [hover, setHover] = React.useState(false);
-  const missing = stretch ? (window.KarriereData.skillMatch(job).missing) : [];
+  const missing = stretch ? (job.missingSkills || []) : [];
   return (
     <div onClick={() => onOpen(job.id)} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px 18px', cursor: 'pointer', background: hover ? 'var(--surface-subtle)' : 'transparent', borderBottom: '1px solid var(--border)', transition: 'background var(--dur-fast) var(--ease-out)' }}>
@@ -69,13 +69,16 @@ function JobDetail({ job, onClose, onCreate }) {
             <KField label="Arbeitsmodell" value={job.mode} />
             <KField label="Veröffentlicht" value={job.posted} />
           </section>
-          <section style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '11px 13px', borderRadius: 'var(--radius-md)', background: 'var(--surface-subtle)', border: '1px solid var(--border)' }}>
+          <a href={job.url || undefined} target="_blank" rel="noopener noreferrer"
+            onClick={(e) => { if (!job.url) e.preventDefault(); }}
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '11px 13px', borderRadius: 'var(--radius-md)', background: 'var(--surface-subtle)', border: '1px solid var(--border)', textDecoration: 'none', cursor: job.url ? 'pointer' : 'default' }}>
             <JS.Icon name={job.applyVia === 'E-Mail' ? 'mail' : job.applyVia === 'LinkedIn Easy Apply' ? 'linkedin' : 'globe'} size={16} style={{ color: 'var(--accent)' }} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9.5px', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Bewerbung über · {job.applyVia}</div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-heading)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.applyUrl}</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9.5px', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Stellenausschreibung{job.applyVia !== '—' ? ` · ${job.applyVia}` : ''}</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: job.url ? 'var(--accent-strong)' : 'var(--text-soft)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.applyUrl}</div>
             </div>
-          </section>
+            {job.url && <JS.Icon name="chevronRight" size={15} style={{ color: 'var(--text-soft)', flexShrink: 0 }} />}
+          </a>
           <section>
             <h4 style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--text-soft)', margin: '0 0 8px' }}>Beschreibung</h4>
             <p style={{ fontSize: '13.5px', lineHeight: 1.65, color: 'var(--text-body)', margin: 0 }}>{job.snippet}</p>
@@ -86,9 +89,16 @@ function JobDetail({ job, onClose, onCreate }) {
           </section>
         </div>
 
-        <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', display: 'flex', gap: '10px', background: 'var(--surface-subtle)', position: 'sticky', bottom: 0 }}>
-          <JS.Button variant="primary" block iconLeft={<JS.Icon name="edit" size={15} />} onClick={() => onCreate(job)}>Bewerbung erstellen</JS.Button>
-          <JS.IconButton icon="bookmark" label="Merken" variant="outline" size="lg" />
+        <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '10px', background: 'var(--surface-subtle)', position: 'sticky', bottom: 0 }}>
+          {job.url && (
+            <a href={job.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+              <JS.Button variant="outline" block iconLeft={<JS.Icon name="globe" size={15} />}>Stellenausschreibung öffnen</JS.Button>
+            </a>
+          )}
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <JS.Button variant="primary" block iconLeft={<JS.Icon name="edit" size={15} />} onClick={() => onCreate(job)}>Bewerbung erstellen</JS.Button>
+            <JS.IconButton icon="bookmark" label="Merken" variant="outline" size="lg" />
+          </div>
         </div>
       </div>
     </div>
@@ -138,59 +148,57 @@ function TierHeader({ icon, tone, title, hint, count }) {
 }
 
 function Jobsuche({ onCreate, providers, onManageSources }) {
-  const { JOBS, COUNTRIES } = window.KarriereData;
-  const allProviders = providers || window.KarriereData.PROVIDERS;
-  const connected = allProviders.filter((p) => p.connected);
-  const connectedNames = connected.map((p) => p.name);
+  const { COUNTRIES, api, tileColor } = window.KarriereData;
   const [country, setCountry] = React.useState('Alle Länder');
   const [city, setCity] = React.useState('');
   const [kw, setKw] = React.useState('');
-  const [activeSources, setActiveSources] = React.useState(() => new Set(connectedNames));
-  const [loading, setLoading] = React.useState(false);
+  const [result, setResult] = React.useState({ top: [], more: [], jobs: [], counts: { total: 0 } });
+  const [activeSources, setActiveSources] = React.useState(() => new Set());
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(null);
   const [openJob, setOpenJob] = React.useState(null);
   const [creating, setCreating] = React.useState(null);
   const [onlyTop, setOnlyTop] = React.useState(false);
-  const THRESHOLD = 80; // tier boundary: strong fits vs. stretch opportunities
+  const THRESHOLD = 80; // tier boundary: strong fits vs. stretch opportunities (server-side)
 
-  // keep source filter in sync as providers connect/disconnect
-  React.useEffect(() => { setActiveSources(new Set(connectedNames)); }, [connectedNames.join('|')]);
+  // Live fetch from the REST API — real postings from the connected job boards.
+  const runSearch = React.useCallback(() => {
+    setLoading(true);
+    setError(null);
+    api.searchJobs({ country, city, q: kw })
+      .then((data) => {
+        setResult(data);
+        setActiveSources(new Set(data.jobs.map((j) => j.source))); // show every source by default
+      })
+      .catch((err) => setError(err.message || 'Suche fehlgeschlagen'))
+      .finally(() => setLoading(false));
+  }, [country, city, kw]);
 
-  const runSearch = () => { setLoading(true); setTimeout(() => setLoading(false), 750); };
-  React.useEffect(() => { runSearch(); }, []);
+  React.useEffect(() => { runSearch(); }, []); // initial load (default search)
 
   const toggleSource = (name) => setActiveSources((prev) => { const n = new Set(prev); n.has(name) ? n.delete(name) : n.add(name); return n; });
 
-  const results = JOBS.filter((j) => {
-    if (!connectedNames.includes(j.source)) return false; // only from connected APIs
-    if (!activeSources.has(j.source)) return false;
-    if (country !== 'Alle Länder' && j.country !== country) return false;
-    if (city && !(j.city.toLowerCase().includes(city.toLowerCase()))) return false;
-    if (kw) {
-      const hay = (j.role + ' ' + j.company + ' ' + j.tags.join(' ')).toLowerCase();
-      if (!hay.includes(kw.toLowerCase())) return false;
-    }
-    return true;
-  });
-  // Two tiers: strong fits (>= threshold) first, then stretch / new-domain roles —
-  // the lower tier is kept, not dropped, so growth opportunities stay visible.
-  const ranked = [...results].sort((a, b) => b.match - a.match);
-  const topJobs = ranked.filter((j) => j.match >= THRESHOLD);
-  const moreJobs = ranked.filter((j) => j.match < THRESHOLD);
-  const job = JOBS.find((j) => j.id === openJob);
+  // Sources present in the current results — a client-side filter over what the API returned.
+  const sources = Array.from(new Set(result.jobs.map((j) => j.source)));
+  const inSource = (j) => activeSources.has(j.source);
+  const topJobs = result.top.filter(inSource);
+  const moreJobs = result.more.filter(inSource);
+  const results = [...topJobs, ...moreJobs];
+  const job = result.jobs.find((j) => j.id === openJob);
 
   const inputBox = { display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface-card)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', padding: '0 12px', height: '42px' };
 
-  if (connected.length === 0) {
+  if (error) {
     return (
       <div style={{ maxWidth: '1100px' }}>
         <JS.Card>
           <div style={{ padding: '36px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
-            <span style={{ width: '52px', height: '52px', borderRadius: 'var(--radius-lg)', background: 'var(--accent-soft)', color: 'var(--accent-strong)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><JS.Icon name="globe" size={24} /></span>
+            <span style={{ width: '52px', height: '52px', borderRadius: 'var(--radius-lg)', background: 'var(--status-rejected-soft, var(--accent-soft))', color: 'var(--status-rejected-strong, var(--accent-strong))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><JS.Icon name="info" size={24} /></span>
             <div>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)' }}>Noch keine Jobquelle verbunden</div>
-              <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px', maxWidth: '420px' }}>Verbinde eine Jobbörse oder einen Aggregator, um Stellen per API in deine Suche zu holen.</div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)' }}>Jobs konnten nicht geladen werden</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px', maxWidth: '460px' }}>Läuft der API-Server? Aktiviere Jobquellen über <code style={{ fontFamily: 'var(--font-mono)' }}>JOB_SOURCES=arbeitnow,bundesagentur,adzuna</code>. ({error})</div>
             </div>
-            <JS.Button variant="primary" iconLeft={<JS.Icon name="plus" size={15} />} onClick={onManageSources}>Jobquelle verbinden</JS.Button>
+            <JS.Button variant="primary" iconLeft={<JS.Icon name="trend" size={15} />} onClick={runSearch}>Erneut versuchen</JS.Button>
           </div>
         </JS.Card>
       </div>
@@ -217,7 +225,8 @@ function Jobsuche({ onCreate, providers, onManageSources }) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '14px', paddingTop: '14px', borderTop: '1px solid var(--border)' }}>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--text-soft)', marginRight: '2px' }}>Quellen</span>
-          {connected.map((p) => <SourceChip key={p.id} name={p.name} tile={p.tile} active={activeSources.has(p.name)} onClick={() => toggleSource(p.name)} />)}
+          {sources.length === 0 && !loading && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>—</span>}
+          {sources.map((name) => <SourceChip key={name} name={name} tile={tileColor(name)} active={activeSources.has(name)} onClick={() => toggleSource(name)} />)}
           <button onClick={onManageSources} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '6px 10px', borderRadius: 'var(--radius-pill)', border: '1px dashed var(--border-strong)', background: 'transparent', color: 'var(--text-soft)' }}><JS.Icon name="plus" size={12} />Quelle</button>
         </div>
       </JS.Card>

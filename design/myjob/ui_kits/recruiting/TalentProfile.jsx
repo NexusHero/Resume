@@ -2,20 +2,44 @@
    Resume (editable CV) · Attachments (linkable docs) · Applications. */
 const TP = window.MyJobDesignSystem_f3658e;
 
-function EditableSection({ icon, title, onEdit, children }) {
+/* A titled block in the dark CV sidebar. */
+function CvSideSection({ title, children }) {
+  return (
+    <section style={{ marginBottom: '26px' }}>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--sidebar-soft)', marginBottom: '13px' }}>{title}</div>
+      {children}
+    </section>
+  );
+}
+
+/* A contact row in the dark sidebar. `icon === null` aligns with a quiet dot. */
+function CvContact({ icon, value }) {
+  if (!value) return null;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '9px', marginBottom: '8px' }}>
+      {icon
+        ? <TP.Icon name={icon} size={13} style={{ color: 'var(--sidebar-soft)', flexShrink: 0 }} />
+        : <span style={{ width: '13px', display: 'inline-flex', justifyContent: 'center', flexShrink: 0, color: 'var(--sidebar-soft)' }}>·</span>}
+      <span style={{ fontSize: '12.5px', color: 'var(--sidebar-muted)', wordBreak: 'break-word' }}>{value}</span>
+    </div>
+  );
+}
+
+/* A section heading in the paper main column, with a hover edit affordance. */
+function CvMainHeading({ icon, title, onEdit }) {
   const [hover, setHover] = React.useState(false);
   return (
-    <section onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} style={{ marginBottom: '26px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '9px', marginBottom: '14px' }}>
-        <TP.Icon name={icon} size={15} style={{ color: 'var(--accent)' }} />
-        <h3 style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: 0 }}>{title}</h3>
-        <span style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+    <div onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      style={{ display: 'flex', alignItems: 'center', gap: '9px', marginBottom: '14px' }}>
+      <TP.Icon name={icon} size={15} style={{ color: 'var(--accent)' }} />
+      <h3 style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: 0 }}>{title}</h3>
+      <span style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+      {onEdit && (
         <span style={{ opacity: hover ? 1 : 0, transition: 'opacity var(--dur-fast)' }}>
           <TP.IconButton icon="edit" label="Edit" variant="ghost" size="sm" onClick={onEdit} />
         </span>
-      </div>
-      {children}
-    </section>
+      )}
+    </div>
   );
 }
 
@@ -34,66 +58,85 @@ function ResumeTab({ talent, onEdit, onCreateMappe }) {
   }
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '24px', alignItems: 'start' }}>
-      {/* CV sheet */}
-      <TP.Card style={{ padding: '32px 34px' }} bodyStyle={{ padding: 0 }}>
-        <div style={{ padding: '32px 34px' }}>
-          <EditableSection icon="user" title="Profile" onEdit={onEdit}>
-            <p style={{ fontSize: '14.5px', lineHeight: 1.65, color: 'var(--text-body)', margin: 0 }}>{r.summary}</p>
-          </EditableSection>
+      {/* CV document — dark "ink" sidebar + paper main (engineering-instrument look) */}
+      <TP.Card bodyStyle={{ padding: 0 }} style={{ overflow: 'hidden' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '264px 1fr', minHeight: '460px' }}>
+          {/* dark colored sidebar — identity, contact & skills */}
+          <aside style={{ background: 'linear-gradient(180deg, var(--ink-850) 0%, var(--ink-900) 100%)', color: '#fff', padding: '30px 26px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '13px', paddingBottom: '22px', marginBottom: '24px', borderBottom: '1px solid var(--sidebar-border)' }}>
+              <TP.Avatar name={talent.name} src={talent.src} size={60} radius="var(--radius-lg)" />
+              <div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: '19px', fontWeight: 700, letterSpacing: '-0.02em' }}>{talent.name}</div>
+                <span style={{ display: 'inline-block', marginTop: '9px', fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#fff', background: 'var(--sidebar-glass-strong)', border: '1px solid var(--sidebar-border-strong)', padding: '4px 11px', borderRadius: 'var(--radius-pill)' }}>{talent.role}</span>
+              </div>
+            </div>
 
-          <EditableSection icon="briefcase" title="Experience" onEdit={onEdit}>
-            <div style={{ position: 'relative', paddingLeft: '22px' }}>
-              <span style={{ position: 'absolute', left: '5px', top: '6px', bottom: '6px', width: '1.5px', background: 'var(--border-strong)' }} />
-              {r.experience.map((e, i) => (
-                <div key={i} style={{ position: 'relative', marginBottom: i === r.experience.length - 1 ? 0 : '20px' }}>
-                  <span style={{ position: 'absolute', left: '-21px', top: '4px', width: '10px', height: '10px', borderRadius: '50%', background: i === 0 ? 'var(--accent)' : '#fff', border: `2px solid ${i === 0 ? 'var(--accent)' : 'var(--border-strong)'}` }} />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '10px' }}>
-                    <div style={{ fontFamily: 'var(--font-display)', fontSize: '15.5px', fontWeight: 700, color: 'var(--text-heading)' }}>{e.role}</div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', whiteSpace: 'nowrap' }}>{e.period}</div>
-                  </div>
-                  <div style={{ fontSize: '13px', color: 'var(--accent-strong)', fontWeight: 600, margin: '2px 0 8px' }}>{e.company} · {e.location}</div>
-                  <ul style={{ margin: '0 0 9px', paddingLeft: '17px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    {e.bullets.map((b, j) => <li key={j} style={{ fontSize: '13.5px', lineHeight: 1.55, color: 'var(--text-body)' }}>{b}</li>)}
-                  </ul>
-                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                    {e.skills.map((s, j) => <TP.Badge key={j} variant="subtle" size="sm">{s}</TP.Badge>)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </EditableSection>
+            <CvSideSection title="Kontakt">
+              <CvContact icon="pin" value={talent.location} />
+              <CvContact icon="mail" value={talent.email} />
+              <CvContact icon={null} value={talent.phone} />
+              {talent.linkedin && <CvContact icon="globe" value={talent.linkedin} />}
+              {talent.availability && <CvContact icon="clock" value={talent.availability} />}
+            </CvSideSection>
 
-          <EditableSection icon="cap" title="Education" onEdit={onEdit}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {r.education.map((e, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
-                  <div>
-                    <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-heading)' }}>{e.degree}</div>
-                    <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '1px' }}>{e.school} · {e.note}</div>
+            <CvSideSection title="Skills">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '13px' }}>
+                {r.skillGroups.map((g, i) => (
+                  <div key={i}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9.5px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--sidebar-soft)', marginBottom: '7px' }}>{g.label}</div>
+                    <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                      {g.items.map((s, j) => (
+                        <span key={j} style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--sidebar-text)', background: 'var(--sidebar-glass)', border: '1px solid var(--sidebar-border-strong)', borderRadius: 'var(--radius-pill)', padding: '3px 9px' }}>{s}</span>
+                      ))}
+                    </div>
                   </div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', whiteSpace: 'nowrap' }}>{e.period}</div>
-                </div>
-              ))}
-            </div>
-          </EditableSection>
+                ))}
+              </div>
+            </CvSideSection>
 
-          <section>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '9px', marginBottom: '14px' }}>
-              <TP.Icon name="zap" size={15} style={{ color: 'var(--accent)' }} />
-              <h3 style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: 0 }}>Skills</h3>
-              <span style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {r.skillGroups.map((g, i) => (
-                <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'baseline' }}>
-                  <span style={{ width: '78px', flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>{g.label}</span>
-                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                    {g.items.map((s, j) => <TP.Badge key={j} variant={j === 0 ? 'soft' : 'outline'} size="sm">{s}</TP.Badge>)}
+            <CvSideSection title="Ausbildung">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '13px' }}>
+                {r.education.map((e, i) => (
+                  <div key={i}>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#fff' }}>{e.degree}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--sidebar-muted)', marginTop: '2px' }}>{e.school}</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--sidebar-soft)', marginTop: '3px' }}>{e.period} · {e.note}</div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </section>
+                ))}
+              </div>
+            </CvSideSection>
+          </aside>
+
+          {/* paper main — summary & experience */}
+          <div style={{ background: 'var(--surface-card)', padding: '32px 34px' }}>
+            <section style={{ marginBottom: '26px' }}>
+              <CvMainHeading icon="user" title="Profil" onEdit={onEdit} />
+              <p style={{ fontSize: '14.5px', lineHeight: 1.65, color: 'var(--text-body)', margin: 0 }}>{r.summary}</p>
+            </section>
+
+            <section>
+              <CvMainHeading icon="briefcase" title="Werdegang" onEdit={onEdit} />
+              <div style={{ position: 'relative', paddingLeft: '22px' }}>
+                <span style={{ position: 'absolute', left: '5px', top: '6px', bottom: '6px', width: '1.5px', background: 'var(--border-strong)' }} />
+                {r.experience.map((e, i) => (
+                  <div key={i} style={{ position: 'relative', marginBottom: i === r.experience.length - 1 ? 0 : '20px' }}>
+                    <span style={{ position: 'absolute', left: '-21px', top: '4px', width: '10px', height: '10px', borderRadius: '50%', background: i === 0 ? 'var(--accent)' : '#fff', border: `2px solid ${i === 0 ? 'var(--accent)' : 'var(--border-strong)'}` }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '10px' }}>
+                      <div style={{ fontFamily: 'var(--font-display)', fontSize: '15.5px', fontWeight: 700, color: 'var(--text-heading)' }}>{e.role}</div>
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', whiteSpace: 'nowrap' }}>{e.period}</div>
+                    </div>
+                    <div style={{ fontSize: '13px', color: 'var(--accent-strong)', fontWeight: 600, margin: '2px 0 8px' }}>{e.company} · {e.location}</div>
+                    <ul style={{ margin: '0 0 9px', paddingLeft: '17px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      {e.bullets.map((b, j) => <li key={j} style={{ fontSize: '13.5px', lineHeight: 1.55, color: 'var(--text-body)' }}>{b}</li>)}
+                    </ul>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                      {e.skills.map((s, j) => <TP.Badge key={j} variant="subtle" size="sm">{s}</TP.Badge>)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
         </div>
       </TP.Card>
 

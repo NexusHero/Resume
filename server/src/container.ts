@@ -20,14 +20,19 @@ import { PdfLibMerger } from './adapters/pdf-lib-merger';
 import { createJobSource } from './adapters/job-source-factory';
 import { nodeFetch } from './adapters/node-fetch';
 import { KeywordSkillExtractor } from './adapters/keyword-skill-extractor';
+import { AnthropicLlmProvider } from './adapters/anthropic-llm-provider';
+import { GeminiLlmProvider } from './adapters/gemini-llm-provider';
 import { ApplicationService } from './services/application-service';
 import { JobSearchService } from './services/job-search-service';
 import { AtsService } from './services/ats-service';
 import { SavedSearchService } from './services/saved-search-service';
+import { LlmService } from './services/llm-service';
+import { CoverLetterService } from './services/cover-letter-service';
 import { ApplicationController } from './http/application-controller';
 import { JobController } from './http/job-controller';
 import { AtsController } from './http/ats-controller';
 import { SavedSearchController } from './http/saved-search-controller';
+import { LlmController } from './http/llm-controller';
 
 /** Composition root: wires every port to its production adapter (no decorators). */
 export function buildContainer(config: AppConfig = loadConfig(), db?: Db): AwilixContainer {
@@ -36,6 +41,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
   container.register({
     config: asValue(config),
     candidateProfile: asValue(config.candidateProfile),
+    candidate: asValue(config.candidate),
     logger: asFunction(() => createLogger()).singleton(),
     clock: asClass(SystemClock).singleton(),
     idGenerator: asClass(RandomIdGenerator).singleton(),
@@ -55,14 +61,27 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
       createJobSource({ config: c, logger, httpFetch: nodeFetch }),
     ).singleton(),
     skillExtractor: asFunction(() => new KeywordSkillExtractor()).singleton(),
+    llmService: asFunction(
+      ({ config: c, logger }) =>
+        new LlmService({
+          providers: [
+            new AnthropicLlmProvider({ httpFetch: nodeFetch, config: c.llm.anthropic }),
+            new GeminiLlmProvider({ httpFetch: nodeFetch, config: c.llm.gemini }),
+          ],
+          defaultProvider: c.llm.provider,
+          logger,
+        }),
+    ).singleton(),
     applicationService: asClass(ApplicationService).singleton(),
     jobSearchService: asClass(JobSearchService).singleton(),
     atsService: asClass(AtsService).singleton(),
     savedSearchService: asClass(SavedSearchService).singleton(),
+    coverLetterService: asClass(CoverLetterService).singleton(),
     applicationController: asClass(ApplicationController).singleton(),
     jobController: asClass(JobController).singleton(),
     atsController: asClass(AtsController).singleton(),
     savedSearchController: asClass(SavedSearchController).singleton(),
+    llmController: asClass(LlmController).singleton(),
   });
   return container;
 }

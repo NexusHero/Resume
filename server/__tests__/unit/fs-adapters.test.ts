@@ -23,6 +23,12 @@ function tmpConfig(): AppConfig {
     staticDir: rootDir,
     versionedPaths: ['bewerbungen'],
     candidateProfile: { skills: [] },
+    candidate: { name: 'Test User', title: 'Engineer' },
+    llm: {
+      provider: 'claude',
+      anthropic: { apiKey: '', model: 'claude-opus-4-8' },
+      gemini: { apiKey: '', model: 'gemini-2.5-flash' },
+    },
     defaultJobSearch: { threshold: 80 },
     jobSources: {
       arbeitnow: { enabled: false },

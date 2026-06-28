@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="blueprint">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>myJob Recruit — Matching</title>
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  html, body { margin: 0; height: 100%; background: var(--surface-app); }
+  #root { height: 100vh; }
+  .seg { display: inline-flex; background: var(--surface-sunk); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 3px; gap: 3px; }
+  .seg button { appearance: none; border: none; cursor: pointer; font-family: var(--font-body); font-size: var(--fs-sm); font-weight: var(--fw-medium); padding: 7px 15px; border-radius: var(--radius-sm); color: var(--text-muted); background: transparent; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; transition: all var(--dur-fast); }
+  .seg button.on { background: var(--surface-card); color: var(--text-heading); font-weight: var(--fw-semibold); box-shadow: var(--shadow-sm); }
+  .seg .cnt { font-family: var(--font-mono); font-size: var(--fs-2xs); color: var(--text-soft); }
+  .chip { appearance: none; cursor: pointer; font-family: var(--font-body); font-size: var(--fs-sm); font-weight: var(--fw-medium); padding: 6px 13px; border-radius: var(--radius-pill); border: 1px solid var(--border-strong); background: var(--surface-card); color: var(--text-muted); display: inline-flex; align-items: center; gap: 7px; transition: all var(--dur-fast); }
+  .chip.on { background: var(--accent-soft); border-color: var(--accent-border); color: var(--accent-strong); font-weight: var(--fw-semibold); }
+  .feedcap { font-family: var(--font-mono); font-size: var(--fs-2xs); letter-spacing: var(--ls-wide); text-transform: uppercase; color: var(--text-soft); }
+  .candrow { display: flex; gap: 8px; flex-wrap: wrap; }
+  .candchip { appearance: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; padding: 4px 13px 4px 4px; border-radius: var(--radius-pill); border: 1px solid var(--border-strong); background: var(--surface-card); color: var(--text-muted); font-family: var(--font-body); font-size: var(--fs-sm); font-weight: var(--fw-medium); transition: all var(--dur-fast); }
+  .candchip.on { background: var(--accent-soft); border-color: var(--accent-border); color: var(--accent-strong); font-weight: var(--fw-semibold); }
+  .candchip .ini { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-display); font-weight: 600; font-size: 10px; color: #fff; flex: none; }
+  .candchip.addnew { border-style: dashed; color: var(--text-soft); padding: 8px 14px; }
+  /* P1 · mode toggle two-line labels (name the starting point) */
+  .seg button { flex-direction: column; align-items: flex-start; gap: 3px; }
+  .seg .lbl { display: inline-flex; align-items: center; gap: 6px; }
+  .seg .sub { font-family: var(--font-mono); font-size: 9px; letter-spacing: var(--ls-wide); text-transform: uppercase; color: var(--text-soft); font-weight: 500; }
+  /* P4 · manual create */
+  .createbtn { appearance: none; cursor: pointer; width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 13px; border-radius: var(--radius-lg); border: 1px dashed var(--border-strong); background: var(--surface-card); color: var(--text-muted); font-family: var(--font-body); font-size: var(--fs-sm); font-weight: var(--fw-semibold); transition: all var(--dur-fast); }
+  .createbtn:hover { border-color: var(--accent-border); color: var(--accent-strong); background: var(--accent-soft); }
+  .emptybox { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 32px; text-align: center; border: 1px dashed var(--border-strong); border-radius: var(--radius-lg); }
+  .emptybox .ttl { font-family: var(--font-display); font-weight: var(--fw-semibold); font-size: var(--fs-md); color: var(--text-heading); }
+  .emptybox .sub { font-size: var(--fs-sm); color: var(--text-soft); margin-bottom: 6px; }
+  .modalbg { position: fixed; inset: 0; background: color-mix(in oklch, var(--ink-900) 55%, transparent); backdrop-filter: blur(3px); display: flex; align-items: flex-start; justify-content: center; padding: 48px 20px; z-index: 50; overflow-y: auto; }
+  .modalcard { width: 100%; max-width: 580px; background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); padding: 26px 28px; }
+  .formgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  /* P3 · toast closes the tracking loop */
+  .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); background: var(--ink-900); color: #fff; font-family: var(--font-body); font-size: var(--fs-sm); padding: 12px 20px; border-radius: var(--radius-pill); box-shadow: var(--shadow-md); display: flex; align-items: center; gap: 8px; z-index: 60; animation: toastin var(--dur-med) var(--ease-out); }
+  .toast b { color: var(--accent-on-dark); }
+  @keyframes toastin { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../_ds_bundle.js"></script>
+<script type="text/babel">
+const DS = window.MyJobDesignSystem_f3658e;
+const { AppShell, Avatar, Icon, MetaPill, StatusBadge, Input, Select, Button } = DS;
+
+/* These two are inlined so the screen renders independent of bundle-compile timing.
+   In a formal template they come from the bundle like everything else. */
+
+/**
+ * MatchIndicator — the candidate-FIT signal, and the brand's ownable idea.
+ *
+ * Deliberately RADIAL (a conic ring) so it can never be confused with the
+ * linear neutral ProgressBar that shows mandate *fill / completion*. It rides
+ * the accent. Optional two-tier breakdown (Pflicht- vs Bonus-Skills) is what
+ * makes the score legible: "9/10 must-haves, 3/6 bonus" beats a bare 74%.
+ *
+ *   variant="ring"  full ring (+ optional tiers beside it)   — profiles, detail panels
+ *   variant="chip"  compact pill "● 74% Match"               — list rows
+ *   variant="bare"  ring only, no caption                    — tight spots
+ */
+const SIZES = {
+  sm: { ring: 40, hole: 28, font: '11px', stroke: 6 },
+  md: { ring: 58, hole: 42, font: '13px', stroke: 8 },
+  lg: { ring: 76, hole: 56, font: '16px', stroke: 10 },
+};
+
+function MatchIndicator({
+  value = 0,
+  tiers,
+  variant = 'ring',
+  size = 'md',
+  label = 'Match',
+  style = {},
+  ...rest
+}) {
+  const pct = Math.max(0, Math.min(100, Math.round(value)));
+
+  if (variant === 'chip') {
+    return (
+      <span
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          fontFamily: 'var(--font-body)',
+          fontSize: '12px',
+          fontWeight: 'var(--fw-semibold)',
+          color: 'var(--match-strong)',
+          background: 'var(--match-soft)',
+          border: '1px solid var(--accent-border)',
+          borderRadius: 'var(--radius-pill)',
+          padding: '3px 10px 3px 8px',
+          whiteSpace: 'nowrap',
+          ...style,
+        }}
+        {...rest}
+      >
+        <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--match)', flexShrink: 0 }} />
+        <span style={{ fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums' }}>{pct}%</span>
+        {label && <span style={{ color: 'var(--text-muted)', fontWeight: 'var(--fw-medium)' }}>{label}</span>}
+      </span>
+    );
+  }
+
+  const sz = SIZES[size] || SIZES.md;
+  const ring = (
+    <div
+      style={{
+        width: sz.ring,
+        height: sz.ring,
+        borderRadius: '50%',
+        flexShrink: 0,
+        display: 'grid',
+        placeItems: 'center',
+        background: `conic-gradient(var(--match) ${pct}%, var(--match-track) 0)`,
+      }}
+    >
+      <div
+        style={{
+          width: sz.hole,
+          height: sz.hole,
+          borderRadius: '50%',
+          background: 'var(--surface-card)',
+          display: 'grid',
+          placeItems: 'center',
+        }}
+      >
+        <span
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontVariantNumeric: 'tabular-nums',
+            fontWeight: 'var(--fw-semibold)',
+            fontSize: sz.font,
+            color: 'var(--match-strong)',
+          }}
+        >
+          {pct}
+        </span>
+      </div>
+    </div>
+  );
+
+  if (variant === 'bare' || !tiers || tiers.length === 0) {
+    return <div style={{ display: 'inline-flex', ...style }} {...rest}>{ring}</div>;
+  }
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', ...style }} {...rest}>
+      {ring}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, minWidth: 0 }}>
+        {tiers.map((t, i) => {
+          const tp = t.max ? Math.round((t.value / t.max) * 100) : Math.max(0, Math.min(100, t.value));
+          const bonus = i > 0;
+          return (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)', width: '92px', flexShrink: 0 }}>{t.label}</span>
+              <span style={{ flex: 1, height: '7px', borderRadius: 'var(--radius-pill)', background: 'var(--match-track)', overflow: 'hidden' }}>
+                <span
+                  style={{
+                    display: 'block',
+                    height: '100%',
+                    width: `${tp}%`,
+                    borderRadius: 'var(--radius-pill)',
+                    background: bonus ? 'var(--match-bonus)' : 'var(--match)',
+                    transition: 'width var(--dur-med) var(--ease-out)',
+                  }}
+                />
+              </span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', fontVariantNumeric: 'tabular-nums', width: '38px', textAlign: 'right', flexShrink: 0 }}>
+                {t.max ? `${t.value}/${t.max}` : `${tp}%`}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+
+/**
+ * PositionCard — the "Stelle" object: the trackable job posting, and the thing
+ * the recruiter applies a candidate TO. This is the entity the system was
+ * missing — it carries the description, the skill requirements, and (crucially
+ * for the DACH market) its COUNTRY and SOURCE as first-class fields, so Swiss
+ * postings (jobs.ch / jobup.ch / job-room.ch, CHF, Pensum %) are modelled, not
+ * bolted on.
+ *
+ * Two contexts:
+ *   • plain — a posting in the Stellen list (no candidate).
+ *   • matched — shown against a candidate: a MatchIndicator chip appears and
+ *     each required skill is marked met (✓) or missing, and the primary action
+ *     becomes "<Name> bewerben" (apply on the candidate's behalf).
+ */
+
+const FLAGS = {
+  DE: (
+    <g>
+      <rect width="22" height="5.33" y="0" fill="#000" />
+      <rect width="22" height="5.34" y="5.33" fill="#DD0000" />
+      <rect width="22" height="5.33" y="10.67" fill="#FFCE00" />
+    </g>
+  ),
+  AT: (
+    <g>
+      <rect width="22" height="5.33" y="0" fill="#ED2939" />
+      <rect width="22" height="5.34" y="5.33" fill="#fff" />
+      <rect width="22" height="5.33" y="10.67" fill="#ED2939" />
+    </g>
+  ),
+  CH: (
+    <g>
+      <rect width="22" height="16" fill="#D52B1E" />
+      <rect x="9.2" y="3.4" width="3.6" height="9.2" fill="#fff" />
+      <rect x="6.4" y="6.2" width="9.2" height="3.6" fill="#fff" />
+    </g>
+  ),
+};
+const COUNTRY_LABEL = { DE: 'Deutschland', AT: 'Österreich', CH: 'Schweiz' };
+
+function Flag({ country }) {
+  const f = FLAGS[country];
+  if (!f) return null;
+  return (
+    <span
+      title={COUNTRY_LABEL[country]}
+      style={{ display: 'inline-flex', width: '18px', height: '13px', borderRadius: '3px', overflow: 'hidden', flexShrink: 0, boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.08)' }}
+    >
+      <svg viewBox="0 0 22 16" width="18" height="13" preserveAspectRatio="none">{f}</svg>
+    </span>
+  );
+}
+
+function CompanyTile({ company, logo }) {
+  if (logo) {
+    return <img src={logo} alt="" style={{ width: '44px', height: '44px', borderRadius: 'var(--radius-md)', objectFit: 'cover', flexShrink: 0, border: '1px solid var(--border)' }} />;
+  }
+  const initials = (company || '?').split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+  return (
+    <span style={{ width: '44px', height: '44px', borderRadius: 'var(--radius-md)', flexShrink: 0, display: 'grid', placeItems: 'center', background: 'var(--surface-sunk)', border: '1px solid var(--border)', fontFamily: 'var(--font-display)', fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-md)', color: 'var(--text-muted)' }}>
+      {initials}
+    </span>
+  );
+}
+
+function SkillTag({ name, met }) {
+  // met === undefined → neutral requirement; true → candidate has it; false → gap.
+  const known = met !== undefined;
+  const has = met === true;
+  return (
+    <span
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: '5px',
+        fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-2xs)', fontWeight: 'var(--fw-medium)',
+        padding: '3px 9px', borderRadius: 'var(--radius-pill)', whiteSpace: 'nowrap',
+        border: '1px solid',
+        ...(has
+          ? { background: 'var(--accent-soft)', borderColor: 'var(--accent-border)', color: 'var(--accent-strong)' }
+          : known
+          ? { background: 'transparent', borderColor: 'var(--border-strong)', color: 'var(--text-soft)' }
+          : { background: 'var(--surface-sunk)', borderColor: 'var(--border)', color: 'var(--text-muted)' }),
+      }}
+    >
+      {known && <Icon name={has ? 'check' : 'x'} size={11} />}
+      {name}
+    </span>
+  );
+}
+
+function PositionCard({
+  title,
+  company,
+  logo,
+  location,
+  country,
+  source,
+  origin = 'source',
+  pensum,
+  salary,
+  posted,
+  skills = [],
+  match,
+  status,
+  applyLabel,
+  onApply,
+  onView,
+  selected = false,
+  onClick,
+  style = {},
+  ...rest
+}) {
+  const [hover, setHover] = React.useState(false);
+  const matched = match != null;
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        display: 'flex', flexDirection: 'column', gap: '14px',
+        padding: '18px 20px',
+        background: 'var(--surface-card)',
+        border: `1px solid ${selected ? 'var(--accent-border)' : 'var(--border)'}`,
+        borderRadius: 'var(--radius-lg)',
+        boxShadow: hover || selected ? 'var(--shadow-md)' : 'var(--shadow-sm)',
+        cursor: onClick ? 'pointer' : 'default',
+        transition: 'box-shadow var(--dur-fast) var(--ease-out), border-color var(--dur-fast)',
+        ...style,
+      }}
+      {...rest}
+    >
+      {/* header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '13px' }}>
+        <CompanyTile company={company} logo={logo} />
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--fs-lg)', fontWeight: 'var(--fw-semibold)', color: 'var(--text-heading)', letterSpacing: 'var(--ls-tight)', lineHeight: 1.25 }}>
+            {title}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginTop: '3px', minWidth: 0 }}>
+            <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {company}{location ? ` · ${location}` : ''}
+            </span>
+            {country && <Flag country={country} />}
+          </div>
+        </div>
+        {matched ? (
+          <MatchIndicator value={match} variant="chip" />
+        ) : status ? (
+          <StatusBadge status={status} size="sm" />
+        ) : null}
+      </div>
+
+      {/* meta row — a manually-created posting wears a dashed badge so its provenance is clear */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '7px' }}>
+        {origin === 'manual' && (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-2xs)', fontWeight: 'var(--fw-semibold)', color: 'var(--ink-700)', background: 'var(--surface-sunk)', border: '1px dashed var(--text-soft)', borderRadius: 'var(--radius-pill)', padding: '3px 9px' }}>
+            <Icon name="edit" size={12} />Manuell erstellt
+          </span>
+        )}
+        {source && <MetaPill icon="search">{source}</MetaPill>}
+        {pensum && <MetaPill icon="briefcase">{pensum}</MetaPill>}
+        {salary && <MetaPill icon="tag" tone="accent">{salary}</MetaPill>}
+        {posted && <MetaPill icon="clock">{posted}</MetaPill>}
+      </div>
+
+      {/* skills */}
+      {skills.length > 0 && (
+        <div>
+          {matched && (
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-3xs)', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '8px' }}>
+              Skill-Abgleich
+            </div>
+          )}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+            {skills.map((s, i) => (
+              <SkillTag key={i} name={typeof s === 'string' ? s : s.name} met={typeof s === 'string' ? undefined : s.met} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* actions */}
+      {(onView || onApply) && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '2px', paddingTop: '14px', borderTop: '1px solid var(--border)' }}>
+          {onView && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onView(); }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', fontFamily: 'var(--font-body)', fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-medium)', color: 'var(--text-muted)', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', padding: '8px 13px', cursor: 'pointer' }}
+            >
+              <Icon name="fileText" size={15} />Stellenbeschreibung
+            </button>
+          )}
+          {onApply && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onApply(); }}
+              style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '7px', fontFamily: 'var(--font-body)', fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--accent-contrast)', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 'var(--radius-md)', padding: '8px 15px', cursor: 'pointer' }}
+            >
+              {applyLabel || 'Bewerber bewerben'}<Icon name="arrowRight" size={15} />
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+const RECRUIT_NAV = [
+  { id: 'overview', label: 'Overview', icon: 'home' },
+  { id: 'pool', label: 'Talent-Pool', icon: 'users' },
+  { id: 'stellen', label: 'Stellen', icon: 'briefcase' },
+  { id: 'matching', label: 'Matching', icon: 'search' },
+  { id: 'pipeline', label: 'Pipeline', icon: 'columns', badge: 2 },
+  { id: 'inbox', label: 'Inbox', icon: 'inbox', badge: 3 },
+];
+
+/* The recruiter's candidates. SUHAY is one of them; the matching basis in
+   candidate-first (auto) mode, and just one option in job-first (manual) mode. */
+const SUHAY = {
+  id: 'c1',
+  name: 'Suhay Sevinc',
+  role: 'Full-Stack Developer',
+  skills: ['React', 'TypeScript', 'Node.js', 'CSS Architecture', 'GraphQL'],
+};
+const CANDIDATES = [
+  SUHAY,
+  { id: 'c2', name: 'Lena Bauer', role: 'Senior Frontend Engineer', skills: ['React', 'TypeScript', 'CSS Architecture', 'Vue', 'Testing'] },
+  { id: 'c3', name: 'Milan Ebert', role: 'Frontend Engineer', skills: ['React', 'Redux', 'TypeScript', 'Testing'] },
+  { id: 'c4', name: 'Nora Vogt', role: 'Full-Stack Developer', skills: ['Node.js', 'React', 'Kubernetes', 'GraphQL'] },
+];
+
+/* Job postings, Swiss-heavy. `req` lists the posting's required skills;
+   `met` is derived against Suhay's skill set below. */
+const RAW_JOBS = [
+  { id: 'j1', title: 'Senior Frontend Engineer', company: 'Helvetia Digital AG', location: 'Zürich', country: 'CH', source: 'jobs.ch', pensum: '80–100%', salary: 'CHF 110–130k', posted: 'vor 2 Tagen', match: 88, req: ['React', 'TypeScript', 'GraphQL', 'CSS Architecture'] },
+  { id: 'j2', title: 'Full-Stack Engineer', company: 'Swisscom Labs', location: 'Bern', country: 'CH', source: 'job-room.ch', pensum: '60–80%', salary: 'CHF 95–115k', posted: 'gestern', match: 81, req: ['Node.js', 'React', 'Kubernetes'] },
+  { id: 'j3', title: 'React Engineer', company: 'Acme Software', location: 'Remote', country: 'DE', source: 'LinkedIn', pensum: 'Vollzeit', salary: '€ 78–95k', posted: 'vor 3 Tagen', match: 74, req: ['React', 'TypeScript', 'Redux'] },
+  { id: 'j4', title: 'Frontend Developer', company: 'Migros Digital', location: 'Zürich', country: 'CH', source: 'jobs.ch', pensum: '80–100%', salary: 'CHF 100–120k', posted: 'vor 4 Tagen', match: 69, req: ['React', 'Vue', 'TypeScript'] },
+  { id: 'j5', title: 'UI Engineer', company: 'Bitpanda', location: 'Wien', country: 'AT', source: 'LinkedIn', pensum: 'Vollzeit', salary: '€ 70–85k', posted: 'vor 1 Woche', match: 63, req: ['React', 'CSS Architecture', 'Testing'] },
+  { id: 'j6', title: 'Frontend Engineer', company: 'Ringier AG', location: 'Zürich', country: 'CH', source: 'jobup.ch', pensum: '80–100%', salary: 'CHF 105–125k', posted: 'vor 2 Tagen', match: 0, req: ['React', 'TypeScript', 'Testing'] },
+  { id: 'j7', title: 'Software Engineer Backend', company: 'PostFinance', location: 'Bern', country: 'CH', source: 'jobs.ch', pensum: '100%', salary: 'CHF 110–128k', posted: 'vor 6 Tagen', match: 0, req: ['Node.js', 'TypeScript', 'Kubernetes'] },
+];
+
+/* One matching function, both directions: skill overlap between a candidate
+   and a posting's required skills. Auto mode ranks JOBS for a fixed candidate;
+   manual mode ranks CANDIDATES for a fixed job. */
+function matchScore(cand, job) {
+  const met = job.req.filter((r) => cand.skills.includes(r)).length;
+  return { pct: Math.round((met / job.req.length) * 100), met, total: job.req.length };
+}
+function skillsFor(cand, job) {
+  return job.req.map((name) => ({ name, met: cand.skills.includes(name) }));
+}
+
+function ModeToggle({ mode, setMode, autoCount, manualCount }) {
+  return (
+    <div className="seg">
+      <button className={mode === 'auto' ? 'on' : ''} onClick={() => setMode('auto')}>
+        <span className="lbl"><Icon name="trend" size={15} />Auto · Skill-Match <span className="cnt">{autoCount}</span></span>
+        <span className="sub">vom Kandidaten aus</span>
+      </button>
+      <button className={mode === 'manual' ? 'on' : ''} onClick={() => setMode('manual')}>
+        <span className="lbl"><Icon name="filter" size={15} />Manuell <span className="cnt">{manualCount}</span></span>
+        <span className="sub">von der Stelle aus</span>
+      </button>
+    </div>
+  );
+}
+
+function CountryFilter({ value, setValue }) {
+  const opts = [['ALL', 'Alle'], ['CH', '🇨🇭 Schweiz'], ['DE', '🇩🇪 Deutschland'], ['AT', '🇦🇹 Österreich']];
+  return (
+    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+      {opts.map(([k, lbl]) => (
+        <button key={k} className={'chip' + (value === k ? ' on' : '')} onClick={() => setValue(k)}>{lbl}</button>
+      ))}
+    </div>
+  );
+}
+
+/* Swiss job markets, surfaced as selectable sources. The three CH boards are
+   flagged so the Schweizer Markt reads at a glance; LinkedIn is the cross-DACH
+   board. New boards plug in via Settings ▸ Quellen. */
+const SOURCES = [
+  { id: 'Alle', label: 'Alle Quellen' },
+  { id: 'jobs.ch', label: 'jobs.ch', ch: true },
+  { id: 'jobup.ch', label: 'jobup.ch', ch: true },
+  { id: 'job-room.ch', label: 'job-room.ch', ch: true },
+  { id: 'LinkedIn', label: 'LinkedIn' },
+];
+function SourceFilter({ value, setValue }) {
+  return (
+    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+      {SOURCES.map((s) => (
+        <button key={s.id} className={'chip' + (value === s.id ? ' on' : '')} onClick={() => setValue(s.id)} style={{ paddingLeft: s.ch ? '8px' : undefined }}>
+          {s.ch && <Flag country="CH" />}{s.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function CandidateSwitcher({ value, onChange }) {
+  return (
+    <div>
+      <div className="feedcap" style={{ marginBottom: '9px' }}>Schritt 1 · Kandidat wählen</div>
+      <div className="candrow">
+        {CANDIDATES.map((c) => {
+          const on = c.id === value;
+          const ini = c.name.split(' ').slice(0, 2).map((w) => w[0]).join('');
+          return (
+            <button key={c.id} className={'candchip' + (on ? ' on' : '')} onClick={() => onChange(c.id)}>
+              <span className="ini" style={{ background: on ? 'var(--accent)' : 'var(--ink-700)' }}>{ini}</span>
+              {c.name}
+            </button>
+          );
+        })}
+        <button className="candchip addnew" onClick={() => {}}><Icon name="plus" size={14} />Kandidat anlegen</button>
+      </div>
+    </div>
+  );
+}
+
+function BasisPanel({ cand, jobs, applied }) {
+  const avg = Math.round(jobs.reduce((a, j) => a + matchScore(cand, j).pct, 0) / jobs.length);
+  const appliedJobs = jobs.filter((j) => applied[`${cand.id}-${j.id}`]);
+  return (
+    <div style={{ padding: '22px 20px' }}>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-3xs)', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '14px' }}>Matching-Basis · Kandidat</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '13px' }}>
+        <Avatar name={cand.name} size="lg" ring />
+        <div>
+          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 'var(--fw-bold)', fontSize: 'var(--fs-lg)', color: 'var(--text-heading)' }}>{cand.name}</div>
+          <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-muted)' }}>{cand.role}</div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', margin: '20px 0', padding: '14px 0', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
+        <MatchIndicator value={avg} size="lg" variant="bare" />
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-md)', color: 'var(--text-heading)', whiteSpace: 'nowrap' }}>Ø {avg}% Match</div>
+          <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-soft)' }}>über {jobs.length} aktuelle Treffer</div>
+        </div>
+      </div>
+
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-3xs)', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '10px' }}>Profil-Skills</div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+        {cand.skills.map((s) => (
+          <span key={s} style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-2xs)', fontWeight: 'var(--fw-medium)', color: 'var(--accent-strong)', background: 'var(--accent-soft)', border: '1px solid var(--accent-border)', borderRadius: 'var(--radius-pill)', padding: '3px 10px' }}>{s}</span>
+        ))}
+      </div>
+
+      <div style={{ marginTop: '22px', fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-3xs)', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '10px' }}>In dieser Session beworben · {appliedJobs.length}</div>
+      {appliedJobs.length === 0 ? (
+        <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-soft)' }}>Noch nichts — bewirb {cand.name.split(' ')[0]} auf einen Treffer.</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
+          {appliedJobs.map((j) => (
+            <div key={j.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+              <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-body)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{j.title} · {j.company}</span>
+              <StatusBadge status="new" size="sm" />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* Job-first detail panel: pick a candidate FOR this job. The recruiter's
+   talents, ranked by their match to THIS posting (the reverse direction). */
+function CandidatePicker({ job, applied, onApply }) {
+  const ranked = CANDIDATES.map((c) => ({ c, m: matchScore(c, job) })).sort((a, b) => b.m.pct - a.m.pct);
+  return (
+    <div style={{ padding: '22px 20px' }}>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-3xs)', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--accent-strong)', marginBottom: '12px' }}>Schritt 2 · Kandidat wählen</div>
+
+      {/* the selected job's context */}
+      <div style={{ paddingBottom: '16px', borderBottom: '1px solid var(--border)', marginBottom: '16px' }}>
+        <div style={{ fontFamily: 'var(--font-display)', fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-md)', color: 'var(--text-heading)', lineHeight: 1.25 }}>{job.title}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginTop: '4px' }}>
+          <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-muted)' }}>{job.company} · {job.location}</span>
+          <Flag country={job.country} />
+        </div>
+        <div style={{ display: 'flex', gap: '6px', marginTop: '10px', flexWrap: 'wrap' }}>
+          <MetaPill icon="search">{job.source}</MetaPill>
+          <MetaPill icon="tag" tone="accent">{job.salary}</MetaPill>
+        </div>
+      </div>
+
+      <div className="feedcap" style={{ marginBottom: '11px' }}>Deine Talente · nach Match gerankt</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        {ranked.map(({ c, m }) => {
+          const done = applied[`${c.id}-${job.id}`];
+          return (
+            <div key={c.id} style={{ display: 'flex', flexDirection: 'column', gap: '9px', padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '11px' }}>
+                <Avatar name={c.name} size="sm" />
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontFamily: 'var(--font-display)', fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-sm)', color: 'var(--text-heading)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</div>
+                  <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-soft)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.role}</div>
+                </div>
+                <MatchIndicator value={m.pct} variant="chip" label="" />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-3xs)', color: 'var(--text-soft)' }}>{m.met}/{m.total} Pflicht-Skills</span>
+                {done ? (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: 'var(--fs-xs)', fontWeight: 'var(--fw-semibold)', color: 'var(--success)', background: 'var(--success-soft)', borderRadius: 'var(--radius-md)', padding: '6px 11px' }}>
+                    <Icon name="check" size={14} />beworben
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => onApply(c.id, job.id)}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: 'var(--fs-xs)', fontWeight: 'var(--fw-semibold)', color: 'var(--accent-contrast)', background: 'var(--accent)', border: 'none', borderRadius: 'var(--radius-md)', padding: '6px 13px', cursor: 'pointer' }}
+                  >
+                    bewerben<Icon name="arrowRight" size={13} />
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function JobPickPrompt() {
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '40px 28px', gap: '14px' }}>
+      <div style={{ width: '52px', height: '52px', borderRadius: 'var(--radius-lg)', background: 'var(--surface-sunk)', display: 'grid', placeItems: 'center', color: 'var(--text-soft)' }}>
+        <Icon name="briefcase" size={24} />
+      </div>
+      <div style={{ fontFamily: 'var(--font-display)', fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-md)', color: 'var(--text-heading)' }}>Stelle wählen</div>
+      <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-soft)', maxWidth: '34ch' }}>Wähle links eine Stelle, um deine Kandidaten — nach Match zu genau dieser Stelle gerankt — zu sehen und zu bewerben.</div>
+    </div>
+  );
+}
+
+function CreateJobModal({ onClose, onCreate }) {
+  const [f, setF] = React.useState({ title: '', company: '', location: '', country: 'CH', pensum: '100%', salary: '', link: '', skills: '' });
+  const upd = (k) => (e) => setF((p) => ({ ...p, [k]: e && e.target ? e.target.value : e }));
+  const deriveSource = (link) => {
+    const l = (link || '').toLowerCase();
+    if (l.includes('jobup')) return 'jobup.ch';
+    if (l.includes('job-room')) return 'job-room.ch';
+    if (l.includes('jobs.ch')) return 'jobs.ch';
+    if (l.includes('linkedin')) return 'LinkedIn';
+    return undefined;
+  };
+  const valid = f.title.trim() && f.company.trim();
+  const submit = () => {
+    if (!valid) return;
+    onCreate({
+      id: 'm' + Date.now(), origin: 'manual',
+      title: f.title.trim(), company: f.company.trim(), location: f.location.trim(),
+      country: f.country, source: deriveSource(f.link),
+      pensum: f.pensum.trim() || undefined, salary: f.salary.trim() || undefined,
+      posted: 'gerade erstellt',
+      req: f.skills.split(',').map((s) => s.trim()).filter(Boolean),
+    });
+  };
+  return (
+    <div className="modalbg" onClick={onClose}>
+      <div className="modalcard" onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+          <div style={{ width: '40px', height: '40px', borderRadius: 'var(--radius-md)', background: 'var(--surface-sunk)', border: '1px dashed var(--text-soft)', display: 'grid', placeItems: 'center', color: 'var(--ink-700)', flex: 'none' }}>
+            <Icon name="edit" size={18} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 'var(--fs-xl)', color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.015em' }}>Stelle manuell erstellen</h2>
+            <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-soft)', margin: '3px 0 0' }}>Eine Stelle, die nicht in den Treffern war — z. B. von jobs.ch. Sie wird klar als „Manuell erstellt" markiert.</p>
+          </div>
+          <button onClick={onClose} style={{ appearance: 'none', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-soft)', padding: '4px' }}><Icon name="x" size={20} /></button>
+        </div>
+
+        <div className="formgrid" style={{ marginTop: '20px' }}>
+          <Input wrapStyle={{ gridColumn: '1 / -1' }} label="Stellentitel *" icon="briefcase" placeholder="z. B. Senior Frontend Engineer" value={f.title} onChange={upd('title')} />
+          <Input label="Firma *" icon="building" placeholder="z. B. Helvetia Digital AG" value={f.company} onChange={upd('company')} />
+          <Input label="Ort" icon="pin" placeholder="z. B. Zürich" value={f.location} onChange={upd('location')} />
+          <Select label="Land" value={f.country} onChange={upd('country')} options={[{ value: 'CH', label: '🇨🇭 Schweiz' }, { value: 'DE', label: '🇩🇪 Deutschland' }, { value: 'AT', label: '🇦🇹 Österreich' }]} />
+          <Input label="Pensum" placeholder="z. B. 80–100%" value={f.pensum} onChange={upd('pensum')} />
+          <Input label="Gehalt" icon="tag" placeholder="z. B. CHF 110–130k" value={f.salary} onChange={upd('salary')} />
+          <Input label="Quelle / Link" icon="search" placeholder="z. B. jobs.ch/de/…" value={f.link} onChange={upd('link')} />
+          <Input wrapStyle={{ gridColumn: '1 / -1' }} label="Pflicht-Skills (Komma-getrennt)" placeholder="React, TypeScript, GraphQL" value={f.skills} onChange={upd('skills')} hint="Bestimmen das Match zu deinen Kandidaten." />
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '22px' }}>
+          <Button variant="ghost" onClick={onClose}>Abbrechen</Button>
+          <Button variant="primary" disabled={!valid} onClick={submit} iconRight={<Icon name="arrowRight" size={15} />}>Stelle erstellen</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MatchingScreen() {
+  const [mode, setMode] = React.useState('auto');
+  const [country, setCountry] = React.useState('ALL');
+  const [selCandId, setSelCand] = React.useState('c1');
+  const [selJobId, setSelJob] = React.useState(null);
+  const [source, setSource] = React.useState('Alle');
+  const [query, setQuery] = React.useState('');
+  const [applied, setApplied] = React.useState({});
+  const [customJobs, setCustomJobs] = React.useState([]);
+  const [creating, setCreating] = React.useState(false);
+  const [toast, setToast] = React.useState(null);
+
+  const allJobs = [...customJobs, ...RAW_JOBS];
+  const selCand = CANDIDATES.find((c) => c.id === selCandId);
+  const autoJobs = [...allJobs].map((j) => ({ ...j, _m: matchScore(selCand, j).pct })).sort((a, b) => b._m - a._m);
+  const q = query.trim().toLowerCase();
+  const manualJobs = allJobs.filter((j) =>
+    (country === 'ALL' || j.country === country) &&
+    (j.origin === 'manual' || source === 'Alle' || j.source === source) &&
+    (!q || `${j.title} ${j.company} ${j.location || ''}`.toLowerCase().includes(q))
+  );
+  const selJob = mode === 'manual' ? manualJobs.find((j) => j.id === selJobId) : null;
+
+  const apply = (candId, jobId) => {
+    setApplied((p) => ({ ...p, [`${candId}-${jobId}`]: true }));
+    const c = CANDIDATES.find((x) => x.id === candId);
+    const j = allJobs.find((x) => x.id === jobId);
+    setToast({ cand: c ? c.name.split(' ')[0] : '', job: j ? j.title : '', key: `${candId}-${jobId}` });
+    clearTimeout(window.__mjToast);
+    window.__mjToast = setTimeout(() => setToast(null), 5500);
+  };
+
+  const undoApply = () => {
+    setToast((cur) => {
+      if (cur) setApplied((p) => { const n = { ...p }; delete n[cur.key]; return n; });
+      return null;
+    });
+    clearTimeout(window.__mjToast);
+  };
+
+  const createJob = (job) => {
+    setCustomJobs((p) => [job, ...p]);
+    setCreating(false);
+    setMode('manual'); setCountry('ALL'); setSource('Alle'); setQuery(''); setSelJob(job.id);
+  };
+
+  /* candidate-first card — the SELECTED candidate; ranks + applies the job */
+  const renderAutoCard = (job) => {
+    const done = applied[`${selCand.id}-${job.id}`];
+    const first = selCand.name.split(' ')[0];
+    return (
+      <PositionCard
+        key={job.id}
+        title={job.title} company={job.company} location={job.location} country={job.country}
+        source={job.source} origin={job.origin} pensum={job.pensum} salary={job.salary} posted={job.posted}
+        match={matchScore(selCand, job).pct}
+        skills={skillsFor(selCand, job)}
+        status={done ? 'new' : undefined}
+        applyLabel={done ? `✓ ${first} beworben` : `${first} bewerben`}
+        onApply={done ? undefined : () => apply(selCand.id, job.id)}
+        onView={() => {}}
+      />
+    );
+  };
+
+  /* job-first card — selectable; the apply happens in the candidate picker */
+  const renderManualCard = (job) => (
+    <PositionCard
+      key={job.id}
+      title={job.title} company={job.company} location={job.location} country={job.country}
+      source={job.source} origin={job.origin} pensum={job.pensum} salary={job.salary} posted={job.posted}
+      skills={job.req}
+      selected={selJobId === job.id}
+      onClick={() => setSelJob(job.id)}
+      applyLabel={selJobId === job.id ? '✓ Stelle gewählt' : 'Kandidat wählen'}
+      onApply={() => setSelJob(job.id)}
+      onView={() => {}}
+    />
+  );
+
+  const content = (
+    <div style={{ maxWidth: '760px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', marginBottom: '18px' }}>
+        <ModeToggle mode={mode} setMode={setMode} autoCount={autoJobs.length} manualCount={manualJobs.length} />
+      </div>
+
+      {mode === 'auto' ? (
+        <div>
+          <div style={{ marginBottom: '18px' }}>
+            <CandidateSwitcher value={selCandId} onChange={(id) => setSelCand(id)} />
+          </div>
+          <div className="feedcap" style={{ marginBottom: '8px' }}>Schritt 2 · Stelle bewerben</div>
+          <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-muted)', margin: '0 0 16px' }}>
+            Stellen nach <b style={{ color: 'var(--text-heading)' }}>{selCand.name}s Skill-Profil</b> — bester Treffer zuerst. Ein Klick bewirbt {selCand.name.split(' ')[0]}.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {autoJobs.map((j) => renderAutoCard(j))}
+          </div>
+        </div>
+      ) : (
+        <div>
+          <div className="feedcap" style={{ marginBottom: '10px' }}>Schritt 1 · Stelle suchen &amp; wählen</div>
+          <div style={{ marginBottom: '14px' }}>
+            <Input icon="search" placeholder="Stelle suchen: Titel, Firma, Ort …" value={query} onChange={(e) => { setQuery(e.target.value); setSelJob(null); }} />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '16px' }}>
+            <div>
+              <div className="feedcap" style={{ marginBottom: '9px' }}>Land</div>
+              <CountryFilter value={country} setValue={(v) => { setCountry(v); setSelJob(null); }} />
+            </div>
+            <div>
+              <div className="feedcap" style={{ marginBottom: '9px' }}>Quelle · Schweizer Jobbörsen &amp; mehr</div>
+              <SourceFilter value={source} setValue={(v) => { setSource(v); setSelJob(null); }} />
+            </div>
+          </div>
+          <div style={{ marginBottom: '14px' }}>
+            <button className="createbtn" onClick={() => setCreating(true)}><Icon name="plus" size={16} />Stelle manuell erstellen</button>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {manualJobs.map((j) => renderManualCard(j))}
+            {manualJobs.length === 0 && (
+              <div className="emptybox">
+                <div className="ttl">Keine Stelle gefunden</div>
+                <div className="sub">Nicht in den Treffern — z. B. eine jobs.ch-Stelle? Leg sie manuell an.</div>
+                <button className="createbtn" style={{ width: 'auto' }} onClick={() => setCreating(true)}><Icon name="plus" size={16} />Stelle manuell erstellen</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  const detail = mode === 'auto'
+    ? <BasisPanel cand={selCand} jobs={allJobs} applied={applied} />
+    : selJob
+      ? <CandidatePicker job={selJob} applied={applied} onApply={apply} />
+      : <JobPickPrompt />;
+
+  return (
+    <React.Fragment>
+      <AppShell
+        product="recruit" posture="rail"
+        nav={RECRUIT_NAV} active="matching" onNav={() => {}}
+        account={{ name: 'Suhay Sevinc', meta: 'Me · +3 Talente' }}
+        title="Matching"
+        subtitle={mode === 'auto'
+          ? `Vom Kandidaten aus · ${selCand.name}`
+          : selJob ? `Von der Stelle aus · ${selJob.title}` : 'Von der Stelle aus · job-first'}
+        detail={detail}
+      >
+        {content}
+      </AppShell>
+      {creating && <CreateJobModal onClose={() => setCreating(false)} onCreate={createJob} />}
+      {toast && (
+        <div className="toast">
+          <Icon name="checkCircle" size={16} />
+          <span>{toast.cand} auf „{toast.job}" beworben — <b>in Pipeline</b></span>
+          <button
+            onClick={undoApply}
+            style={{ marginLeft: '6px', appearance: 'none', border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--accent-on-dark)', padding: '2px 4px' }}
+          >Rückgängig</button>
+        </div>
+      )}
+    </React.Fragment>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<MatchingScreen />);
+</script>
+</body>
+</html>

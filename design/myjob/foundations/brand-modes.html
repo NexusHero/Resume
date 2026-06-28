@@ -1,0 +1,34 @@
+<!-- @dsCard group="Brand" viewport="700x200" name="Light & dark mode" subtitle="Set data-mode=&quot;dark&quot; on any wrapper — semantic tokens flip, components adapt" -->
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8" /><link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; padding: 18px; background: var(--surface-page); display: flex; gap: 16px; }
+  .pane { flex: 1; border-radius: var(--radius-lg); padding: 16px; background: var(--surface-app); border: 1px solid var(--border); display: flex; flex-direction: column; gap: 12px; }
+  .name { font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--ls-wide); text-transform: uppercase; color: var(--text-soft); }
+  .card { background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .h { font-family: var(--font-display); font-weight: 700; font-size: 16px; color: var(--text-heading); }
+  .p { font-size: 12.5px; color: var(--text-muted); margin: 0; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .btn { font-family: var(--font-mono); font-weight: 600; font-size: 11px; color: var(--accent-contrast); background: var(--accent); border-radius: var(--radius-pill); padding: 7px 13px; }
+  .chip { font-family: var(--font-mono); font-size: 10.5px; font-weight: 600; color: var(--status-interview-strong); background: var(--status-interview-soft); border: 1px solid var(--status-interview-border); border-radius: var(--radius-pill); padding: 3px 9px; }
+  .soft { font-family: var(--font-mono); font-size: 10.5px; color: var(--accent-strong); background: var(--accent-soft); border: 1px solid var(--accent-border); border-radius: var(--radius-pill); padding: 3px 9px; }
+</style></head>
+<body>
+  <div class="pane" data-mode="light">
+    <span class="name">Light</span>
+    <div class="card">
+      <span class="h">Lebensverdienst</span>
+      <p class="p">€ 184.500 über 4 Stellen</p>
+      <div class="row"><span class="btn">Details</span><span class="chip">Interview</span><span class="soft">+12%</span></div>
+    </div>
+  </div>
+  <div class="pane" data-mode="dark">
+    <span class="name">Dark</span>
+    <div class="card">
+      <span class="h">Lebensverdienst</span>
+      <p class="p">€ 184.500 über 4 Stellen</p>
+      <div class="row"><span class="btn">Details</span><span class="chip">Interview</span><span class="soft">+12%</span></div>
+    </div>
+  </div>
+</body></html>

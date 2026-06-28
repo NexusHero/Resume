@@ -1,0 +1,16 @@
+<!-- @dsCard group="Brand" viewport="700x150" name="Accent themes in context" subtitle="One UI, three accents — set data-theme on any wrapper" -->
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8" /><link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; padding: 20px; background: var(--surface-app); display: flex; gap: 16px; }
+  .card { flex: 1; background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .name { font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--ls-wide); text-transform: uppercase; color: var(--text-soft); }
+  .btn { font-family: var(--font-mono); font-weight: 600; font-size: 12px; color: var(--accent-contrast); background: var(--accent); border-radius: var(--radius-pill); padding: 8px 14px; text-align: center; }
+  .chip { display: inline-flex; align-self: flex-start; font-family: var(--font-mono); font-size: 11px; color: var(--accent-strong); background: var(--accent-soft); border: 1px solid var(--accent-border); border-radius: var(--radius-pill); padding: 3px 10px; }
+</style></head>
+<body>
+  <div class="card" data-theme="blueprint"><span class="name">Blueprint · default</span><span class="chip">92% Match</span><div class="btn">Stelle anlegen</div></div>
+  <div class="card" data-theme="signal"><span class="name">Signal</span><span class="chip">92% Match</span><div class="btn">Stelle anlegen</div></div>
+  <div class="card" data-theme="graphite"><span class="name">Graphite</span><span class="chip">92% Match</span><div class="btn">Stelle anlegen</div></div>
+</body></html>

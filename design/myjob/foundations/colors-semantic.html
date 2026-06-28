@@ -1,0 +1,19 @@
+<!-- @dsCard group="Colors" viewport="700x120" name="Semantic feedback" subtitle="Success / Warning / Danger / Info — shared across products" -->
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8" /><link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; padding: 18px; background: var(--surface-card); }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .item { border-radius: var(--radius-md); padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+  .t { font-family: var(--font-display); font-weight: 700; font-size: 14px; }
+  .h { font-family: var(--font-mono); font-size: 10px; opacity: 0.8; }
+</style></head>
+<body>
+<div class="grid">
+  <div class="item" style="background:var(--success-soft)"><span class="t" style="color:var(--success)">Success</span><span class="h" style="color:var(--success)">#1f8a5b</span></div>
+  <div class="item" style="background:var(--warning-soft)"><span class="t" style="color:var(--warning)">Warning</span><span class="h" style="color:var(--warning)">#c2410c</span></div>
+  <div class="item" style="background:var(--danger-soft)"><span class="t" style="color:var(--danger)">Danger</span><span class="h" style="color:var(--danger)">#be123c</span></div>
+  <div class="item" style="background:var(--info-soft)"><span class="t" style="color:var(--info)">Info</span><span class="h" style="color:var(--info)">#2563eb</span></div>
+</div>
+</body></html>

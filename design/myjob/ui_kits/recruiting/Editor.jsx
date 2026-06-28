@@ -3,6 +3,14 @@
    This is the "richtig bearbeiten, wie vorher, mit dem Header" experience. */
 const ED = window.MyJobDesignSystem_f3658e;
 
+/* CV style presets for the live customization bar (accent + font + size). */
+const ED_ACCENTS = [
+  { accent: '#2A6FDB', strong: '#1d4ed8', onDark: '#7aa7f5' },
+  { accent: '#1F8A5B', strong: '#15734a', onDark: '#6ee7b7' },
+  { accent: '#D97757', strong: '#b45309', onDark: '#f0a58a' },
+  { accent: '#7C3AED', strong: '#6d28d9', onDark: '#c4b5fd' },
+];
+
 /* ---------------- live preview: Lebenslauf ---------------- */
 function SectionHead({ children }) {
   return (
@@ -168,6 +176,35 @@ function Editor({ talent, onClose, onCreateMappe }) {
   const setPara = (i, v) => setLetter((s) => { const a = [...s.absaetze]; a[i] = v; return { ...s, absaetze: a }; });
   const addPara = () => setLetter((s) => ({ ...s, absaetze: [...s.absaetze, ''] }));
 
+  /* ---- Magic: AI adjusts the active document. The suggestion is shown GREY
+     and only applied on “Übernehmen” (or discarded on “Verwerfen”). ---- */
+  const [gen, setGen] = React.useState(false);
+  const [pending, setPending] = React.useState(null);
+  const runAI = () => {
+    setGen(true);
+    setTimeout(() => {
+      if (doc === 'lebenslauf') {
+        setPending({ kind: 'summary', value: 'Senior Software Engineer (M.Sc.) mit 7+ Jahren in C++ und C#/.NET, Echtzeit- und verteilten Systemen. Bewährt in sicherheitskritischen Branchen (Verteidigung, Lasertechnik); Fokus auf Systemarchitektur, DevOps (CI/CD) und Clean Code.' });
+      } else {
+        setPending({ kind: 'letter', value: [
+          'mit großem Interesse bewerbe ich mich auf Ihre ausgeschriebene Position. Als Software Engineer (M.Sc.) mit über 7 Jahren Erfahrung in C++ und C#/.NET bringe ich genau das Profil mit, das Sie suchen.',
+          'Aktuell entwickle ich bei der Rheinmetall Air Defence AG in Zürich Steuersoftware für das Oerlikon Skynex®-System. Zuvor habe ich bei TRUMPF über fünf Jahre Visionsysteme, Microservices und CI/CD-Pipelines gestaltet.',
+          'Gerne zeige ich Ihnen in einem persönlichen Gespräch, wie ich mit moderner C++-Entwicklung und Systemarchitektur einen unmittelbaren Beitrag leiste.',
+        ] });
+      }
+      setGen(false);
+    }, 1100);
+  };
+  const acceptAI = () => {
+    if (pending && pending.kind === 'summary') setResume((s) => ({ ...s, summary: pending.value }));
+    if (pending && pending.kind === 'letter') setLetter((s) => ({ ...s, absaetze: pending.value }));
+    setPending(null);
+  };
+  const cancelAI = () => setPending(null);
+
+  /* live CV customization: accent colour, font family, size */
+  const [cfg, setCfg] = React.useState({ accent: '#2A6FDB', strong: '#1d4ed8', onDark: '#7aa7f5', font: 'var(--font-display)', size: 1 });
+
   const seg = (id, label) => (
     <button onClick={() => setDoc(id)} style={{ flex: 1, padding: '8px 10px', border: 'none', cursor: 'pointer', borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600, background: doc === id ? 'var(--surface-card)' : 'transparent', color: doc === id ? 'var(--text-heading)' : 'var(--text-soft)', boxShadow: doc === id ? 'var(--shadow-xs)' : 'none' }}>{label}</button>
   );
@@ -186,6 +223,28 @@ function Editor({ talent, onClose, onCreateMappe }) {
           </div>
 
           <div style={{ flex: 1, overflowY: 'auto', paddingRight: '8px' }}>
+            {(gen || pending) && (
+              <div style={{ border: '1px dashed var(--accent-border)', borderRadius: 'var(--radius-md)', overflow: 'hidden', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '8px 12px', background: 'var(--accent-soft)', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 600, color: 'var(--accent-strong)' }}>
+                  <ED.Icon name="zap" size={12} />KI-Vorschlag · noch nicht übernommen
+                </div>
+                <div style={{ padding: '12px 13px' }}>
+                  {gen ? (
+                    <div style={{ fontSize: '12.5px', color: 'var(--accent-strong)', fontStyle: 'italic' }}>myJob passt an …</div>
+                  ) : pending.kind === 'summary' ? (
+                    <div style={{ fontSize: '12.5px', lineHeight: 1.6, color: 'var(--text-soft)', fontStyle: 'italic' }}>{pending.value}</div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>{pending.value.map((p, i) => <p key={i} style={{ fontSize: '12.5px', lineHeight: 1.6, color: 'var(--text-soft)', fontStyle: 'italic', margin: 0 }}>{p}</p>)}</div>
+                  )}
+                </div>
+                {!gen && (
+                  <div style={{ display: 'flex', gap: '8px', padding: '10px 13px', borderTop: '1px solid var(--border)', background: 'var(--surface-subtle)' }}>
+                    <button onClick={acceptAI} style={{ appearance: 'none', cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-sm)', padding: '6px 12px' }}><ED.Icon name="check" size={13} />Übernehmen</button>
+                    <button onClick={cancelAI} style={{ appearance: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-sm)', padding: '6px 12px' }}><ED.Icon name="x" size={13} />Verwerfen</button>
+                  </div>
+                )}
+              </div>
+            )}
             {/* shared contact */}
             <FormGroup title="Contact / header">
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
@@ -267,12 +326,29 @@ function Editor({ talent, onClose, onCreateMappe }) {
               <ED.Icon name="eye" size={14} /> Live-Vorschau · {doc === 'lebenslauf' ? 'Resume' : 'Cover letter'}
             </span>
             <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={runAI} style={{ appearance: 'none', cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12.5px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-md)', padding: '7px 12px' }}>
+                <ED.Icon name="zap" size={14} />KI anpassen
+              </button>
               <ED.Button size="sm" variant="outline" iconLeft={<ED.Icon name="download" size={14} />}>PDF</ED.Button>
               <ED.Button size="sm" variant="primary" iconRight={<ED.Icon name="arrowRight" size={14} />} onClick={onCreateMappe}>To dossier</ED.Button>
             </div>
           </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '8px 16px', borderBottom: '1px solid var(--border)', flexShrink: 0, flexWrap: 'wrap' }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Stil</span>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              {ED_ACCENTS.map((a, i) => <span key={i} onClick={() => setCfg((c) => ({ ...c, accent: a.accent, strong: a.strong, onDark: a.onDark }))} style={{ width: '22px', height: '22px', borderRadius: '6px', cursor: 'pointer', background: a.accent, border: `2px solid ${cfg.accent === a.accent ? 'var(--text-heading)' : 'transparent'}` }} />)}
+            </div>
+            <select value={cfg.font} onChange={(e) => setCfg((c) => ({ ...c, font: e.target.value }))} style={{ padding: '5px 9px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-heading)' }}>
+              <option value="var(--font-display)">Space Grotesk</option>
+              <option value="var(--font-body)">Inter</option>
+              <option value="Georgia, serif">Georgia</option>
+            </select>
+            <div style={{ display: 'inline-flex', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '2px', gap: '2px' }}>
+              {[['S', 0.92], ['M', 1], ['L', 1.08]].map(([l, v]) => <button key={l} onClick={() => setCfg((c) => ({ ...c, size: v }))} style={{ border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: cfg.size === v ? 600 : 500, padding: '4px 9px', borderRadius: '4px', background: cfg.size === v ? 'var(--surface-card)' : 'transparent', color: cfg.size === v ? 'var(--text-heading)' : 'var(--text-muted)' }}>{l}</button>)}
+            </div>
+          </div>
           <div ref={previewRef} style={{ flex: 1, overflowY: 'auto', padding: '28px', display: 'flex', justifyContent: 'center' }}>
-            <div style={{ zoom: scale }}>
+            <div style={{ zoom: scale * cfg.size, '--accent': cfg.accent, '--accent-strong': cfg.strong, '--accent-on-dark': cfg.onDark, '--font-display': cfg.font, '--font-body': cfg.font }}>
               {doc === 'lebenslauf' ? <ResumeDoc contact={contact} resume={resume} /> : <LetterDoc contact={contact} letter={letter} />}
             </div>
           </div>

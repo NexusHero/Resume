@@ -1,0 +1,59 @@
+<!-- @dsCard group="Components" viewport="700x560" name="Data — cards, KPIs, status, pipeline rows" subtitle="Card, StatCard, ProgressBar, StatusBadge, Tabs, CandidateRow" -->
+<!DOCTYPE html>
+<html lang="en" data-theme="blueprint">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../../styles.css" />
+<style>
+  body { margin: 0; padding: 22px; background: var(--surface-app); }
+  .wrap { display: flex; flex-direction: column; gap: 18px; }
+  .lbl { font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--ls-wide); text-transform: uppercase; color: var(--text-soft); margin-bottom: -8px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<script type="text/babel">
+const { Card, StatCard, ProgressBar, StatusBadge, Tabs, CandidateRow, Button } = window.MyJobDesignSystem_f3658e;
+function Demo() {
+  const [tab, setTab] = React.useState('all');
+  return (
+    <div className="wrap">
+      <div className="lbl">StatCard</div>
+      <div className="grid3">
+        <StatCard label="Aktive Mandate" value="18" delta="+3" dir="up" icon="briefcase" />
+        <StatCard label="Im Interview" value="7" delta="+2" dir="up" icon="users" />
+        <StatCard label="Absagequote" value="24%" delta="-2%" dir="down" icon="trend" />
+      </div>
+
+      <div className="lbl">StatusBadge — pipeline stages</div>
+      <div className="row">
+        <StatusBadge status="new" /><StatusBadge status="review" /><StatusBadge status="interview" />
+        <StatusBadge status="offer" /><StatusBadge status="hired" /><StatusBadge status="rejected" />
+      </div>
+
+      <div className="lbl">ProgressBar &amp; Tabs</div>
+      <div className="row" style={{ alignItems:'stretch' }}>
+        <div style={{ flex:1, minWidth:'200px' }}><ProgressBar value={92} tone="hired" label="Match · Lena B." showValue /></div>
+        <div style={{ flex:1, minWidth:'200px' }}><ProgressBar value={48} tone="review" label="Match · Max K." showValue /></div>
+      </div>
+      <Tabs tabs={[{id:'all',label:'Alle',count:42},{id:'new',label:'Neu',count:6},{id:'interview',label:'Interview',count:7}]} value={tab} onChange={setTab} />
+
+      <div className="lbl">Card + CandidateRow</div>
+      <Card title="Pipeline · React Engineer" subtitle="3 Kandidat:innen" action={<Button size="sm" variant="outline">Alle</Button>} pad={false}>
+        <CandidateRow name="Lena Bauer" role="Senior Frontend Engineer" position="React Engineer · Acme" score={92} status="interview" when="vor 2 Std" />
+        <CandidateRow name="Suhay Sevinc" role="Full-Stack Developer" position="React Engineer · Acme" src="../../assets/img/candidate-portrait-sm.jpg" score={88} status="review" when="vor 5 Std" selected />
+        <CandidateRow name="Max Klein" role="Junior Developer" position="React Engineer · Acme" score={61} status="new" when="gestern" />
+      </Card>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+</script>
+</body>
+</html>

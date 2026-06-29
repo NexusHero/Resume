@@ -76,6 +76,57 @@ appended to `archive/bewerbungen/history.jsonl` and committed to git.
   CV + attachments, archive + log + commit, and return the combined PDF
 - `PATCH /api/applications/:id` — update status (e.g. → "Gespräch")
 
+### Job search (`GET /api/v1/jobs`)
+
+Two-tier, skill-matched search across connected job boards. Each posting is scored
+against the candidate's skills; results split into strong fits (`match >= threshold`,
+default 80) and stretch / new-domain roles. With no query parameters it runs a
+pre-configured default search.
+
+`?q=`, `?city=`, `?country=`, `?threshold=` refine the search.
+
+**Live sources** are off by default (offline sample data is used). Enable them via env:
+
+| Env                               | Purpose                                                         |
+| --------------------------------- | --------------------------------------------------------------- |
+| `JOB_SOURCES`                     | comma list: `arbeitnow,bundesagentur,adzuna`                    |
+| `BA_API_KEY`                      | Bundesagentur key (defaults to the public `jobboerse-jobsuche`) |
+| `ADZUNA_APP_ID`, `ADZUNA_APP_KEY` | Adzuna credentials (required to enable Adzuna)                  |
+| `ADZUNA_COUNTRY`                  | Adzuna country code (default `de`)                              |
+
+```bash
+JOB_SOURCES=arbeitnow,bundesagentur npm run serve
+```
+
+### ATS gap analysis (`POST /api/v1/ats`)
+
+Paste a posting (`{ role?, text?, skills? }`, at least one) and get a JobScan-style
+report: coverage `score`, `matched` and `missing` keywords, and `recommendations`.
+
+### Saved searches (`/api/v1/searches`)
+
+- `GET /api/v1/searches` — list named searches
+- `POST /api/v1/searches` — store one (`{ name, q?, city?, country?, threshold? }`)
+- `DELETE /api/v1/searches/:id` — remove one
+- `GET /api/v1/searches/:id/run` — run it through the two-tier job search
+
+### Storage backend
+
+Defaults to JSON files under `archive/bewerbungen/`. Set `STORE=sql` with a
+`DATABASE_URL` to persist applications, the audit trail and saved searches in
+Postgres instead (tables are created on boot). In SQL mode the git versioner is
+disabled (there are no files to version).
+
+```bash
+STORE=sql DATABASE_URL=postgres://user:pass@host:5432/db npm run serve
+```
+
+A throwaway Postgres for local use:
+
+```bash
+docker run -d -e POSTGRES_PASSWORD=test -e POSTGRES_DB=resume -p 5432:5432 postgres:16-alpine
+```
+
 ## myJob — Bewerbungstool (`design/myjob/`)
 
 A recruiting design system imported from a Claude Design project, built on the same token

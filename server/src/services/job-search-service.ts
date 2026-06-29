@@ -1,10 +1,12 @@
-import { type CandidateProfile, scoreJob } from '../domain/skill';
+import { type CandidateProfile, scoreJob, unionSkills } from '../domain/skill';
 import type { Job, JobQuery, JobSearchResult, ScoredJob } from '../domain/job';
 import type { JobSource } from '../ports/job-source';
+import type { SkillExtractor } from '../ports/skill-extractor';
 import type { Logger } from '../ports/logger';
 
 export interface JobSearchServiceDeps {
   jobSource: JobSource;
+  skillExtractor: SkillExtractor;
   candidateProfile: CandidateProfile;
   logger: Logger;
 }
@@ -18,11 +20,13 @@ export interface JobSearchServiceDeps {
  */
 export class JobSearchService {
   private readonly source: JobSource;
+  private readonly extractor: SkillExtractor;
   private readonly profile: CandidateProfile;
   private readonly logger: Logger;
 
   constructor(deps: JobSearchServiceDeps) {
     this.source = deps.jobSource;
+    this.extractor = deps.skillExtractor;
     this.profile = deps.candidateProfile;
     this.logger = deps.logger;
   }
@@ -49,7 +53,11 @@ export class JobSearchService {
   }
 
   private score(job: Job): ScoredJob {
-    const { score, matched, missing } = scoreJob(this.profile, job.skills);
-    return { ...job, match: score, matchedSkills: matched, missingSkills: missing };
+    // Enrich the posting's tags with skills detected in its title + description,
+    // so jobs that arrive without structured tags can still be matched.
+    const detected = this.extractor.extract(`${job.role} ${job.snippet ?? ''}`);
+    const skills = unionSkills(job.skills, detected);
+    const { score, matched, missing } = scoreJob(this.profile, skills);
+    return { ...job, skills, match: score, matchedSkills: matched, missingSkills: missing };
   }
 }

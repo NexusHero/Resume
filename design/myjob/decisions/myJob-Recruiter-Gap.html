@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>myJob — Vermittler-Modell · Gap-Analyse</title>
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html { background: var(--surface-page); }
+  body {
+    margin: 0; font-family: var(--font-body); font-size: var(--fs-md);
+    line-height: var(--lh-normal); color: var(--text-body);
+    background: var(--surface-page); -webkit-font-smoothing: antialiased;
+  }
+  .doc { max-width: 1180px; margin: 0 auto; padding: 0 0 96px; }
+
+  .kicker { font-family: var(--font-mono); font-size: var(--fs-2xs); font-weight: 600; letter-spacing: var(--ls-wider); text-transform: uppercase; }
+  .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  h1, h2, h3 { font-family: var(--font-display); letter-spacing: var(--ls-tight); color: var(--text-heading); margin: 0; }
+  h1 { font-size: var(--fs-4xl); line-height: var(--lh-tight); letter-spacing: var(--ls-tighter); }
+  h3 { font-size: var(--fs-lg); }
+  p { margin: 0; text-wrap: pretty; }
+
+  /* header band */
+  .band { background: linear-gradient(165deg, var(--ink-850), var(--ink-900)); color: var(--sidebar-text); padding: 52px 56px 46px; border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+  .band .kicker { color: var(--accent-on-dark); }
+  .band h1 { color: #fff; max-width: 24ch; margin: 16px 0 18px; }
+  .band p { color: var(--sidebar-muted); max-width: 70ch; font-size: var(--fs-lg); }
+  .band .brandrow { display: flex; align-items: center; gap: 12px; }
+  .logomark { width: 30px; height: 30px; border-radius: 9px; background: var(--accent); display: flex; align-items: flex-end; justify-content: center; padding: 6px; gap: 2px; }
+  .logomark i { display: block; width: 4px; background: #fff; border-radius: 1px; }
+  .logomark i:nth-child(1) { height: 7px; opacity: .55; }
+  .logomark i:nth-child(2) { height: 12px; opacity: .78; }
+  .logomark i:nth-child(3) { height: 17px; }
+  .wordmark { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-lg); color: #fff; }
+  .wordmark span { color: var(--accent-on-dark); }
+
+  section { padding: 0 56px; margin-top: 54px; }
+  .sec-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 20px; }
+  .sec-head .kicker { color: var(--accent-strong); }
+  .sec-num { font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 600; color: var(--text-soft); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 2px 9px; }
+  .lede { color: var(--text-muted); max-width: 74ch; margin-top: -6px; margin-bottom: 24px; }
+
+  .card { background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: 22px 24px; }
+  .grid { display: grid; gap: 18px; }
+  .g2 { grid-template-columns: 1fr 1fr; }
+  .g3 { grid-template-columns: repeat(3, 1fr); }
+
+  /* use-case flow strip */
+  .flow { display: flex; align-items: stretch; gap: 0; overflow: hidden; }
+  .step { flex: 1; padding: 18px 16px; position: relative; }
+  .step + .step { border-left: 1px solid var(--border); }
+  .step .n { font-family: var(--font-mono); font-size: var(--fs-3xs); font-weight: 600; color: var(--accent-strong); letter-spacing: var(--ls-wide); }
+  .step h3 { font-size: var(--fs-md); margin: 8px 0 5px; }
+  .step p { font-size: var(--fs-xs); color: var(--text-muted); }
+  .step .who { display: inline-block; margin-top: 9px; font-family: var(--font-mono); font-size: var(--fs-3xs); letter-spacing: var(--ls-wide); text-transform: uppercase; padding: 2px 7px; border-radius: var(--radius-pill); }
+  .who.rec { color: var(--accent-strong); background: var(--accent-soft); }
+  .who.sys { color: var(--text-soft); background: var(--surface-sunk); }
+  .step .pct { font-family: var(--font-mono); font-weight: 600; color: var(--accent); }
+
+  /* data model */
+  .model { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; align-items: stretch; }
+  .ent { padding: 20px; border: 1px solid var(--border); background: var(--surface-card); position: relative; }
+  .ent.mid { background: var(--accent-soft); border-color: var(--accent-border); border-left: none; border-right: none; }
+  .ent .lab { font-family: var(--font-mono); font-size: var(--fs-3xs); letter-spacing: var(--ls-wide); text-transform: uppercase; color: var(--text-soft); }
+  .ent h3 { font-size: var(--fs-lg); margin: 6px 0 4px; }
+  .ent .desc { font-size: var(--fs-xs); color: var(--text-muted); }
+  .ent ul { margin: 12px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .ent li { font-size: var(--fs-xs); color: var(--text-body); display: flex; align-items: center; gap: 8px; }
+  .ent li::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); flex: none; }
+  .ent .state { position: absolute; top: 16px; right: 16px; font-family: var(--font-mono); font-size: var(--fs-3xs); font-weight: 600; padding: 2px 7px; border-radius: var(--radius-pill); }
+
+  /* capability map */
+  .legend { display: flex; gap: 18px; margin-bottom: 18px; flex-wrap: wrap; }
+  .lg { display: inline-flex; align-items: center; gap: 7px; font-size: var(--fs-sm); color: var(--text-muted); }
+  .lg .mk { width: 18px; height: 18px; border-radius: 6px; display: grid; place-items: center; font-size: 11px; font-weight: 700; flex: none; }
+  .mk.ok { background: var(--success-soft); color: var(--success); }
+  .mk.part { background: var(--warning-soft); color: var(--warning); }
+  .mk.no { background: var(--danger-soft); color: var(--danger); }
+
+  .cap { display: flex; flex-direction: column; gap: 10px; }
+  .crow { display: grid; grid-template-columns: 26px 1fr auto; align-items: start; gap: 15px; padding: 15px 18px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-card); box-shadow: var(--shadow-sm); }
+  .crow.is-no { border-left: 3px solid var(--danger); }
+  .crow.is-part { border-left: 3px solid var(--warning); }
+  .crow.is-ok { border-left: 3px solid var(--success); }
+  .crow .mk { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; font-size: 12px; font-weight: 700; margin-top: 1px; }
+  .crow .body .t { font-family: var(--font-display); font-weight: 600; font-size: var(--fs-md); color: var(--text-heading); }
+  .crow .body .d { font-size: var(--fs-sm); color: var(--text-muted); margin-top: 3px; }
+  .crow .body .d code { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--accent-strong); background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; }
+  .crow .tagcol { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .verdict { font-family: var(--font-mono); font-size: var(--fs-3xs); font-weight: 600; letter-spacing: var(--ls-wide); text-transform: uppercase; padding: 3px 9px; border-radius: var(--radius-pill); white-space: nowrap; }
+  .verdict.ok { color: var(--success); background: var(--success-soft); }
+  .verdict.part { color: var(--warning); background: var(--warning-soft); }
+  .verdict.no { color: var(--danger); background: var(--danger-soft); }
+
+  /* reframe callout */
+  .reframe { display: flex; gap: 16px; align-items: flex-start; padding: 20px 22px; border: 1px solid var(--accent-border); border-left: 3px solid var(--accent); border-radius: var(--radius-md); background: var(--accent-soft); }
+  .reframe .lab { font-family: var(--font-mono); font-size: var(--fs-3xs); font-weight: 600; letter-spacing: var(--ls-wide); text-transform: uppercase; color: var(--accent-strong); white-space: nowrap; padding-top: 3px; }
+  .reframe p { font-size: var(--fs-sm); color: var(--text-body); }
+  .reframe b { color: var(--text-heading); font-weight: 600; }
+
+  /* swiss */
+  .swiss { display: flex; align-items: center; gap: 18px; }
+  .flag { width: 52px; height: 52px; border-radius: var(--radius-md); background: #d52b1e; position: relative; flex: none; box-shadow: var(--shadow-sm); }
+  .flag::before, .flag::after { content: ''; position: absolute; background: #fff; border-radius: 1px; }
+  .flag::before { width: 24px; height: 7px; top: 50%; left: 50%; transform: translate(-50%,-50%); }
+  .flag::after { width: 7px; height: 24px; top: 50%; left: 50%; transform: translate(-50%,-50%); }
+
+  /* sitemap mini */
+  .nav-list { display: flex; flex-direction: column; gap: 6px; }
+  .nav-row { display: flex; align-items: center; gap: 12px; padding: 10px 13px; border-radius: var(--radius-md); background: var(--surface-subtle); border: 1px solid var(--border); }
+  .nav-row.is-new { background: var(--accent-soft); border-color: var(--accent-border); }
+  .nav-row .ic { width: 26px; height: 26px; border-radius: 7px; background: var(--ink-850); color: var(--accent-on-dark); display: grid; place-items: center; flex: none; font-family: var(--font-mono); font-size: 11px; font-weight: 700; }
+  .nav-row .lb { font-weight: 600; color: var(--text-heading); font-size: var(--fs-sm); }
+  .nav-row .nt { color: var(--text-soft); font-size: var(--fs-xs); margin-top: 1px; }
+  .nav-row .nb { margin-left: auto; font-family: var(--font-mono); font-size: var(--fs-3xs); font-weight: 600; letter-spacing: var(--ls-wide); text-transform: uppercase; padding: 2px 8px; border-radius: var(--radius-pill); }
+  .nb.new { color: var(--accent-strong); background: var(--accent-soft); }
+  .nb.keep { color: var(--text-soft); background: var(--surface-sunk); }
+
+  .foot { padding: 0 56px; margin-top: 60px; }
+  .foot .card { background: linear-gradient(165deg, var(--ink-850), var(--ink-900)); border: none; display: flex; gap: 20px; align-items: flex-start; }
+  .foot .kicker { color: var(--accent-on-dark); }
+  .foot h3 { color: #fff; }
+  .foot p { color: var(--sidebar-muted); font-size: var(--fs-sm); margin-top: 4px; }
+  .foot ol { margin: 14px 0 0; padding-left: 20px; color: var(--sidebar-text); font-size: var(--fs-sm); }
+  .foot ol li { margin-bottom: 7px; }
+  .foot ol li b { color: #fff; }
+
+  @media (max-width: 900px) {
+    section, .band, .foot { padding-left: 22px; padding-right: 22px; }
+    .g2, .g3, .flow, .model { grid-template-columns: 1fr; }
+    .flow { flex-direction: column; }
+    .step + .step { border-left: none; border-top: 1px solid var(--border); }
+    .ent.mid { border-left: 1px solid var(--accent-border); border-right: 1px solid var(--accent-border); }
+  }
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <!-- HEADER -->
+  <header class="band">
+    <div class="brandrow">
+      <div class="logomark"><i></i><i></i><i></i></div>
+      <div class="wordmark"><span>my</span>Job</div>
+      <div class="kicker" style="margin-left:auto;">Gap-Analyse · Vermittler-Modell · Jun 2026</div>
+    </div>
+    <h1>Der Vermittler ist der Operator. Der Bewerber ist das Objekt der Arbeit.</h1>
+    <p>Dein Use-Case schärft das Produkt: nicht „zwei gleichwertige Apps", sondern ein <b style="color:#fff;">Vermittler-Workspace</b>, in dem Profile, Suche, Bewerbung-im-Auftrag, CV-Bau und Dossiers passieren. Hier steht, was davon schon im System lebt — und was fehlt.</p>
+  </header>
+
+  <!-- USE CASE FLOW -->
+  <section>
+    <div class="sec-head"><span class="sec-num">01</span><span class="kicker">Der Kern-Use-Case, als Kette</span></div>
+    <p class="lede">„Bewerber Suhay → Jobs mit x % Profil-Überschneidung → Job taucht auf → ich, der Vermittler, bewerbe Suhay → Dossier → Interview-Prep." Jede Stufe braucht eine eigene Oberfläche.</p>
+    <div class="card" style="padding:0;">
+      <div class="flow">
+        <div class="step">
+          <div class="n">01 · PROFIL</div>
+          <h3>Bewerber-Profil</h3>
+          <p>Suhays Skills, Historie, CV liegen im Pool. Die Datenbasis für jedes Matching.</p>
+          <span class="who rec">Vermittler pflegt</span>
+        </div>
+        <div class="step">
+          <div class="n">02 · MATCH</div>
+          <h3>Auto-Suche</h3>
+          <p>System findet Stellen mit <span class="pct">x %</span> Skill-Überschneidung — Pflicht + Bonus.</p>
+          <span class="who sys">System schlägt vor</span>
+        </div>
+        <div class="step">
+          <div class="n">03 · TREFFER</div>
+          <h3>Job taucht auf</h3>
+          <p>Eine passende Stelle poppt im Vermittler-Feed — inkl. Stellenbeschreibung.</p>
+          <span class="who sys">System signalisiert</span>
+        </div>
+        <div class="step">
+          <div class="n">04 · BEWERBEN</div>
+          <h3>Im Auftrag bewerben</h3>
+          <p>Vermittler bewerbt Suhay auf die Stelle. Eine Bewerbung = Bewerber × Stelle.</p>
+          <span class="who rec">Vermittler handelt</span>
+        </div>
+        <div class="step">
+          <div class="n">05 · DOSSIER</div>
+          <h3>Dossier + Tuning</h3>
+          <p>Pro Stelle ein Dossier; CV temporär angepasst, falls andere Skills vorn stehen müssen.</p>
+          <span class="who rec">Vermittler kuratiert</span>
+        </div>
+        <div class="step">
+          <div class="n">06 · PREP</div>
+          <h3>Interview-Prep</h3>
+          <p>Später: Dossier + Stellenbeschreibung wieder einsehen, um Interviews vorzubereiten.</p>
+          <span class="who rec">Vermittler nutzt</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DATA MODEL -->
+  <section>
+    <div class="sec-head"><span class="sec-num">02</span><span class="kicker">Das Datenmodell, das fehlt</span></div>
+    <p class="lede">Heute hat das System <b>Zeilen</b> (ApplicationRow, CandidateRow) — aber nicht die <b>Objekte</b> dahinter. Das ist die eigentliche Lücke: eine Bewerbung ist ein Verhältnis zwischen Bewerber und Stelle, mit einem eigenen Dossier.</p>
+    <div class="model">
+      <div class="ent">
+        <span class="state verdict part">teilweise</span>
+        <span class="lab">Entität A</span>
+        <h3>Bewerber</h3>
+        <p class="desc">Person + Skills + CV. Vom Vermittler gepflegt.</p>
+        <ul>
+          <li>Profil &amp; Skill-Set</li>
+          <li>CV (bearbeitbar)</li>
+          <li>Avatar / Stammdaten</li>
+        </ul>
+      </div>
+      <div class="ent mid">
+        <span class="state verdict no">fehlt</span>
+        <span class="lab">Verknüpfung</span>
+        <h3>Bewerbung + Dossier</h3>
+        <p class="desc">Bewerber × Stelle. Trägt Status, getuntes CV, Notizen.</p>
+        <ul>
+          <li>Pipeline-Status (6 Stages)</li>
+          <li>Temporäres CV-Tuning</li>
+          <li>Interview-Prep-Notizen</li>
+        </ul>
+      </div>
+      <div class="ent">
+        <span class="state verdict no">fehlt</span>
+        <span class="lab">Entität B</span>
+        <h3>Stelle</h3>
+        <p class="desc">Job-Posting + Beschreibung + Quelle/Land.</p>
+        <ul>
+          <li>Stellenbeschreibung</li>
+          <li>Skill-Anforderungen</li>
+          <li>Quelle · Land (inkl. 🇨🇭)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- CAPABILITY MAP -->
+  <section>
+    <div class="sec-head"><span class="sec-num">03</span><span class="kicker">Was steht — und was fehlt</span></div>
+    <div class="legend">
+      <span class="lg"><span class="mk ok">✓</span> Gebaut — Komponente lebt im System</span>
+      <span class="lg"><span class="mk part">~</span> Teilweise — Atom da, Workflow fehlt</span>
+      <span class="lg"><span class="mk no">×</span> Fehlt — noch nichts</span>
+    </div>
+    <div class="cap">
+
+      <div class="crow is-ok">
+        <span class="mk ok">✓</span>
+        <div class="body">
+          <div class="t">Bewerbungen trackbar</div>
+          <div class="d"><code>ApplicationRow</code> · <code>StatusBadge</code> · die 6 semantischen Pipeline-Stages. Die Tracking-Oberflächen stehen.</div>
+        </div>
+        <div class="tagcol"><span class="verdict ok">Gebaut</span></div>
+      </div>
+
+      <div class="crow is-ok">
+        <span class="mk ok">✓</span>
+        <div class="body">
+          <div class="t">Skill-Match als Signal</div>
+          <div class="d"><code>MatchIndicator</code> — radial, zweistufig (Pflicht- + Bonus-Skills). Das Herz der Auto-Suche existiert als Atom.</div>
+        </div>
+        <div class="tagcol"><span class="verdict ok">Gebaut</span></div>
+      </div>
+
+      <div class="crow is-ok">
+        <span class="mk ok">✓</span>
+        <div class="body">
+          <div class="t">Geteiltes Shell + Talent-Liste</div>
+          <div class="d"><code>AppShell</code> (Vermittler = Desktop-Rail) · <code>CandidateRow</code> für den Talent-Pool. Das Gerüst trägt.</div>
+        </div>
+        <div class="tagcol"><span class="verdict ok">Gebaut</span></div>
+      </div>
+
+      <div class="crow is-part">
+        <span class="mk part">~</span>
+        <div class="body">
+          <div class="t">Positionen / Stellen trackbar</div>
+          <div class="d">Nav-Slot „Mandates" ist da — aber kein <code>Stelle</code>-Objekt: keine Komponente, die Posting + Beschreibung + Quelle + zugeordnete Bewerber hält.</div>
+        </div>
+        <div class="tagcol"><span class="verdict part">Teilweise</span></div>
+      </div>
+
+      <div class="crow is-part">
+        <span class="mk part">~</span>
+        <div class="body">
+          <div class="t">Automatische Suche (Skill-Überschneidung)</div>
+          <div class="d">Das Match-<i>Signal</i> steht, der Such-<i>Flow</i> fehlt: Bewerberprofil rein → gerankte Stellen-Treffer raus. Kein Discovery-Screen.</div>
+        </div>
+        <div class="tagcol"><span class="verdict part">Teilweise</span></div>
+      </div>
+
+      <div class="crow is-no">
+        <span class="mk no">×</span>
+        <div class="body">
+          <div class="t">Manuelle Suche</div>
+          <div class="d">Die zweite Suchart — Filter über Rolle, Ort, Quelle, Land — ist nirgends angelegt.</div>
+        </div>
+        <div class="tagcol"><span class="verdict no">Fehlt</span></div>
+      </div>
+
+      <div class="crow is-no">
+        <span class="mk no">×</span>
+        <div class="body">
+          <div class="t">Bewerber im Auftrag bewerben</div>
+          <div class="d">Die Kern-Aktion des Vermittlers — „Suhay auf diese Stelle bewerben" — existiert nicht. Damit fehlt auch das Modell <code>Bewerbung = Bewerber × Stelle</code>.</div>
+        </div>
+        <div class="tagcol"><span class="verdict no">Fehlt</span></div>
+      </div>
+
+      <div class="crow is-no">
+        <span class="mk no">×</span>
+        <div class="body">
+          <div class="t">CV-Builder (Vermittler-Sicht)</div>
+          <div class="d">Skills, Bulletpoints, ganze Firmen-Positionen bearbeiten — am eigenen CV <i>und</i> an fremden. Der alte <code>bewerber/</code>-Mappe-Composer ist applicant-seitig &amp; pre-restructure, kann das nicht.</div>
+        </div>
+        <div class="tagcol"><span class="verdict no">Fehlt</span></div>
+      </div>
+
+      <div class="crow is-no">
+        <span class="mk no">×</span>
+        <div class="body">
+          <div class="t">Dossier pro Stelle + temporäres CV-Tuning</div>
+          <div class="d">Pro (Bewerber × Stelle) ein abgelegtes Dossier, in dem Skills für genau diese Stelle nach vorn gezogen werden. Kein Objekt, kein Ablage-Ort.</div>
+        </div>
+        <div class="tagcol"><span class="verdict no">Fehlt</span></div>
+      </div>
+
+      <div class="crow is-no">
+        <span class="mk no">×</span>
+        <div class="body">
+          <div class="t">Interview-Prep-Ansicht</div>
+          <div class="d">Dossier + Stellenbeschreibung später wieder gemeinsam einsehen, um Interviews vorzubereiten. Nicht angelegt.</div>
+        </div>
+        <div class="tagcol"><span class="verdict no">Fehlt</span></div>
+      </div>
+
+      <div class="crow is-no">
+        <span class="mk no">×</span>
+        <div class="body">
+          <div class="t">Schweizer Stellen / Quellen-Geografie</div>
+          <div class="d">Land &amp; Quelle sind nirgends modelliert — der CH-Markt fehlt komplett. Du hältst ihn für sehr wichtig; aktuell ein blinder Fleck.</div>
+        </div>
+        <div class="tagcol"><span class="verdict no">Fehlt</span></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- REFRAME -->
+  <section>
+    <div class="sec-head"><span class="sec-num">04</span><span class="kicker">Die Korrektur an unserer früheren Entscheidung</span></div>
+    <div class="reframe">
+      <span class="lab">Reframe</span>
+      <p>Im Restructure-Doc hatten wir CV/Mappe <b>applicant-seitig</b> verortet (myJob ▸ Dokumente). Dein Use-Case dreht das: <b>CV-Builder, Suche, Bewerben-im-Auftrag und Dossiers leben im Vermittler-Workspace.</b> Damit ist die Vermittler-App das <b>schwere</b> Produkt — die Bewerber-App schrumpft auf ein Status-Fenster („wo stehen meine Bewerbungen"). Suhay als Bewerber <i>und</i> Vermittler ist derselbe Mensch in zwei Rollen, aber die Arbeit passiert auf der Vermittler-Seite.</p>
+    </div>
+  </section>
+
+  <!-- SWISS + REVISED SITEMAP -->
+  <section>
+    <div class="sec-head"><span class="sec-num">05</span><span class="kicker">Folge fürs Vermittler-Menü</span></div>
+    <p class="lede">Die fehlenden Workflows brauchen Heimaten. Vorschlag für das revidierte Vermittler-Rail — <span class="nb new" style="display:inline-block;">neu</span> markiert, was dieser Use-Case erzwingt.</p>
+    <div class="grid g2">
+      <div class="card">
+        <div class="nav-list">
+          <div class="nav-row"><span class="ic">01</span><div><div class="lb">Overview</div><div class="nt">KPIs · was braucht heute Aufmerksamkeit</div></div><span class="nb keep">bleibt</span></div>
+          <div class="nav-row is-new"><span class="ic">02</span><div><div class="lb">Talent-Pool</div><div class="nt">Bewerber + ihre CVs — Einstieg in den CV-Builder</div></div><span class="nb new">erweitert</span></div>
+          <div class="nav-row is-new"><span class="ic">03</span><div><div class="lb">Stellen</div><div class="nt">Postings + Beschreibung + Quelle/Land 🇨🇭🇩🇪</div></div><span class="nb new">neu</span></div>
+          <div class="nav-row is-new"><span class="ic">04</span><div><div class="lb">Matching</div><div class="nt">Auto (Skill-%) + manuelle Suche · „bewerben"-Aktion</div></div><span class="nb new">neu</span></div>
+          <div class="nav-row"><span class="ic">05</span><div><div class="lb">Pipeline</div><div class="nt">Bewerbungen über die 6 Stages · je ein Dossier</div></div><span class="nb keep">bleibt</span></div>
+          <div class="nav-row"><span class="ic">06</span><div><div class="lb">Inbox</div><div class="nt">Nachrichten zu Stellen &amp; Bewerbern</div></div><span class="nb keep">bleibt</span></div>
+        </div>
+        <p style="font-size:var(--fs-xs); color:var(--text-soft); margin-top:14px;">„Performance" rückt unter Overview; Dossier &amp; Interview-Prep sind Detail-Ansichten <i>innerhalb</i> Pipeline, kein eigener Nav-Punkt.</p>
+      </div>
+      <div class="card">
+        <div class="swiss">
+          <div class="flag"></div>
+          <div>
+            <h3 style="margin-bottom:4px;">Schweiz ist kein Filter — es ist eine Quelle</h3>
+            <p style="font-size:var(--fs-sm); color:var(--text-muted);">CH-Stellen fehlen, weil <b style="color:var(--text-heading);">Quelle</b> und <b style="color:var(--text-heading);">Land</b> nirgends Felder am Stellen-Objekt sind.</p>
+          </div>
+        </div>
+        <ul style="margin:18px 0 0; padding:0; list-style:none; display:flex; flex-direction:column; gap:11px;">
+          <li style="display:flex; gap:10px; font-size:var(--fs-sm); color:var(--text-body);"><span class="num" style="color:var(--accent-strong); font-weight:600;">1.</span> <span><b>Land + Quelle</b> als Felder am Stellen-Objekt — Voraussetzung für alles Weitere.</span></li>
+          <li style="display:flex; gap:10px; font-size:var(--fs-sm); color:var(--text-body);"><span class="num" style="color:var(--accent-strong); font-weight:600;">2.</span> <span><b>CH-Quellen anbinden</b> (z. B. jobs.ch / lokale Boards) als eigene Source unter Settings.</span></li>
+          <li style="display:flex; gap:10px; font-size:var(--fs-sm); color:var(--text-body);"><span class="num" style="color:var(--accent-strong); font-weight:600;">3.</span> <span><b>Land-Facette</b> in beiden Suchen (DE / CH / AT) — der DACH-Anspruch wird erst hier eingelöst.</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOT -->
+  <div class="foot">
+    <div class="card">
+      <div class="logomark"><i></i><i></i><i></i></div>
+      <div>
+        <div class="kicker">Vorschlag fürs Vorgehen</div>
+        <h3>Erst das Objekt, dann der Workflow.</h3>
+        <p>Reihenfolge, die jede spätere Lücke vermeidet:</p>
+        <ol>
+          <li><b>Stelle-Objekt</b> bauen (Beschreibung · Skills · Land/Quelle inkl. CH) — schaltet Tracking, Suche und Schweiz auf einen Schlag frei.</li>
+          <li><b>Matching-Screen</b>: Auto-Suche (MatchIndicator gerankt) + manuelle Suche, mit der „Suhay bewerben"-Aktion.</li>
+          <li><b>CV-Builder</b> (Vermittler-Sicht) — Skills/Bullets/Positionen, eigenes &amp; fremde CVs.</li>
+          <li><b>Dossier + Interview-Prep</b> als Detail-Ansichten in der Pipeline.</li>
+        </ol>
+        <p style="margin-top:14px;">Sag mir: Fange ich mit dem <b style="color:#fff;">Stelle-Objekt + Matching-Screen</b> an (der Use-Case-Kern), oder willst du den <b style="color:#fff;">CV-Builder</b> zuerst sehen?</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

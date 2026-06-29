@@ -1,0 +1,36 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Accent palettes" subtitle="Blueprint (default), Signal, Graphite — each swaps the --accent group" -->
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8" /><link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; padding: 18px; background: var(--surface-card); font-family: var(--font-body); }
+  .group { display: flex; flex-direction: column; gap: 14px; }
+  .theme { display: flex; align-items: center; gap: 14px; }
+  .name { width: 90px; font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
+  .swatches { display: flex; gap: 8px; }
+  .sw { width: 86px; height: 52px; border-radius: var(--radius-md); display: flex; align-items: flex-end; padding: 6px 8px; box-sizing: border-box; }
+  .hex { font-family: var(--font-mono); font-size: 10px; color: #fff; opacity: 0.92; }
+  .hexd { color: var(--text-soft); }
+</style></head>
+<body>
+<div class="group">
+  <div class="theme"><span class="name">Blueprint</span><div class="swatches">
+    <div class="sw" style="background:var(--blueprint-500)"><span class="hex">#2563eb</span></div>
+    <div class="sw" style="background:var(--blueprint-600)"><span class="hex">#1d4ed8</span></div>
+    <div class="sw" style="background:var(--blueprint-soft);border:1px solid var(--blueprint-border)"><span class="hex hexd">soft</span></div>
+    <div class="sw" style="background:var(--ink-900)"><span class="hex" style="color:var(--blueprint-on-dark)">on-dark</span></div>
+  </div></div>
+  <div class="theme"><span class="name">Signal</span><div class="swatches">
+    <div class="sw" style="background:var(--signal-500)"><span class="hex">#e8590c</span></div>
+    <div class="sw" style="background:var(--signal-600)"><span class="hex">#c2410c</span></div>
+    <div class="sw" style="background:var(--signal-soft);border:1px solid var(--signal-border)"><span class="hex hexd">soft</span></div>
+    <div class="sw" style="background:var(--ink-900)"><span class="hex" style="color:var(--signal-on-dark)">on-dark</span></div>
+  </div></div>
+  <div class="theme"><span class="name">Graphite</span><div class="swatches">
+    <div class="sw" style="background:var(--graphite-500)"><span class="hex">#334155</span></div>
+    <div class="sw" style="background:var(--graphite-600)"><span class="hex">#1e293b</span></div>
+    <div class="sw" style="background:var(--graphite-soft);border:1px solid var(--graphite-border)"><span class="hex hexd">soft</span></div>
+    <div class="sw" style="background:var(--ink-900)"><span class="hex" style="color:var(--graphite-on-dark)">on-dark</span></div>
+  </div></div>
+</div>
+</body></html>

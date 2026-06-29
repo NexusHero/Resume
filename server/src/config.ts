@@ -8,6 +8,7 @@ export interface AppConfig {
   storeDir: string;
   logFile: string;
   historyFile: string;
+  savedSearchesFile: string;
   staticDir: string;
   /** Repo-relative paths the Versioner stages on each change. */
   versionedPaths: string[];
@@ -15,6 +16,19 @@ export interface AppConfig {
   candidateProfile: CandidateProfile;
   /** Pre-configured search run when /api/v1/jobs is called with no params. */
   defaultJobSearch: Record<string, unknown>;
+  /** Which live job boards to query (none → offline sample). */
+  jobSources: JobSourcesConfig;
+  /** Storage backend: 'fs' (JSON files, default) or 'sql' (Postgres). */
+  store: 'fs' | 'sql';
+  /** Postgres connection string, used when store === 'sql'. */
+  databaseUrl: string;
+}
+
+/** Live job-board wiring, resolved from the environment. */
+export interface JobSourcesConfig {
+  arbeitnow: { enabled: boolean };
+  bundesagentur: { enabled: boolean; apiKey: string };
+  adzuna: { enabled: boolean; appId: string; appKey: string; country: string };
 }
 
 /**
@@ -39,15 +53,44 @@ const CANDIDATE_PROFILE: CandidateProfile = {
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const rootDir = path.resolve(__dirname, '..', '..');
   const storeDir = path.join(rootDir, 'archive', 'bewerbungen');
+
+  // JOB_SOURCES is a comma list, e.g. "arbeitnow,bundesagentur,adzuna".
+  // Unset → no live sources → offline sample (keeps dev/CI deterministic).
+  const enabled = new Set(
+    (env.JOB_SOURCES ?? '')
+      .split(',')
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean),
+  );
+  const adzunaId = env.ADZUNA_APP_ID ?? '';
+  const adzunaKey = env.ADZUNA_APP_KEY ?? '';
+
   return {
     port: Number(env.PORT ?? 4178),
     rootDir,
     storeDir,
     logFile: path.join(storeDir, 'log.json'),
     historyFile: path.join(storeDir, 'history.jsonl'),
+    savedSearchesFile: path.join(storeDir, 'saved-searches.json'),
     staticDir: rootDir,
     versionedPaths: ['archive/bewerbungen'],
     candidateProfile: CANDIDATE_PROFILE,
     defaultJobSearch: { threshold: 80 },
+    jobSources: {
+      arbeitnow: { enabled: enabled.has('arbeitnow') },
+      bundesagentur: {
+        enabled: enabled.has('bundesagentur'),
+        apiKey: env.BA_API_KEY ?? 'jobboerse-jobsuche',
+      },
+      adzuna: {
+        // Adzuna needs credentials; enabling it without them would only 401.
+        enabled: enabled.has('adzuna') && Boolean(adzunaId && adzunaKey),
+        appId: adzunaId,
+        appKey: adzunaKey,
+        country: env.ADZUNA_COUNTRY ?? 'de',
+      },
+    },
+    store: env.STORE === 'sql' ? 'sql' : 'fs',
+    databaseUrl: env.DATABASE_URL ?? '',
   };
 }

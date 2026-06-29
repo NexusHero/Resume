@@ -1,0 +1,149 @@
+<!-- @dsCard group="App shell" viewport="1320x1240" name="App shell — one shell, two postures" subtitle="AppShell (rail · tabs), ApplicationRow, MatchIndicator, remapped status" -->
+<!DOCTYPE html>
+<html lang="de" data-theme="blueprint">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../../styles.css" />
+<style>
+  body { margin: 0; padding: 26px; background: var(--surface-page); }
+  .stage { display: flex; flex-direction: column; gap: 26px; align-items: flex-start; }
+  .lbl { font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--ls-wide); text-transform: uppercase; color: var(--text-soft); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .lbl b { color: var(--text-heading); font-family: var(--font-display); font-size: 12px; letter-spacing: 0; text-transform: none; }
+  /* desktop frame */
+  .desktop { width: 100%; }
+  .desk-frame { height: 560px; border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-md); background: var(--surface-card); }
+  /* phone frame */
+  .phone { width: 320px; flex-shrink: 0; }
+  .phone-frame { height: 600px; border: 8px solid var(--ink-900); border-radius: 34px; overflow: hidden; box-shadow: var(--shadow-md); background: var(--surface-app); }  .panel-pad { padding: 20px; }
+  .det-cap { font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--ls-wide); text-transform: uppercase; color: var(--text-soft); margin-bottom: 12px; }
+  .det-name { font-family: var(--font-display); font-weight: 700; font-size: 20px; color: var(--text-heading); letter-spacing: -0.015em; }
+  .det-role { font-size: 13px; color: var(--text-muted); margin: 2px 0 18px; }
+  .det-divider { height: 1px; background: var(--border); margin: 18px 0; }
+  .kfact { display: flex; justify-content: space-between; align-items: baseline; padding: 7px 0; }
+  .kfact .k { font-size: 13px; color: var(--text-muted); }
+  .kfact .v { font-family: var(--font-mono); font-size: 13px; color: var(--text-heading); font-variant-numeric: tabular-nums; }
+  .kpi-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<script type="text/babel">
+const DS = window.MyJobDesignSystem_f3658e;
+const { AppShell, ApplicationRow, MatchIndicator, CandidateRow, StatCard, StatusBadge, Card, Button } = DS;
+
+const recruitNav = [
+  { id: 'overview', label: 'Overview', icon: 'home' },
+  { id: 'mandate', label: 'Mandates', icon: 'briefcase' },
+  { id: 'pool', label: 'Talent Pool', icon: 'users' },
+  { id: 'pipeline', label: 'Pipeline', icon: 'columns' },
+  { id: 'performance', label: 'Performance', icon: 'trend' },
+  { id: 'inbox', label: 'Inbox', icon: 'inbox', badge: 3 },
+];
+
+const applicantNav = [
+  { id: 'dashboard', label: 'Start', icon: 'home' },
+  { id: 'jobsuche', label: 'Jobs', icon: 'search' },
+  { id: 'bewerbungen', label: 'Bewerbungen', icon: 'send', badge: 2 },
+  { id: 'dokumente', label: 'Dokumente', icon: 'fileText' },
+  { id: 'karriere', label: 'Karriere', icon: 'briefcase' },
+];
+
+const talents = [
+  { name: 'Lena Bauer', role: 'Senior Frontend Engineer', position: 'React Engineer · Acme', score: 92, status: 'interview', when: 'vor 2 Std' },
+  { name: 'Suhay Sevinc', role: 'Full-Stack Developer', position: 'React Engineer · Acme', score: 88, status: 'review', when: 'vor 5 Std' },
+  { name: 'Max Klein', role: 'Junior Developer', position: 'React Engineer · Acme', score: 61, status: 'new', when: 'gestern' },
+  { name: 'Nora Vogt', role: 'Product Designer', position: 'UX Lead · Helio', score: 79, status: 'offer', when: 'vor 1 Tag' },
+];
+
+const applications = [
+  { position: 'Senior Product Designer', company: 'Aurora Systems GmbH', location: 'München', appId: 'BEW-1042', match: 88, status: 'interview', when: 'vor 2 Tagen' },
+  { position: 'UX Engineer', company: 'Nordlicht AG', location: 'Remote', appId: 'BEW-1039', match: 74, status: 'review', when: 'vor 4 Tagen' },
+  { position: 'Design Lead', company: 'Helio Mobility', location: 'Berlin', appId: 'BEW-1031', match: 91, status: 'offer', when: 'vor 1 Woche' },
+  { position: 'Product Designer', company: 'Kestrel Labs', location: 'Hamburg', appId: 'BEW-1024', match: 63, status: 'new', when: 'vor 1 Woche' },
+  { position: 'Interaction Designer', company: 'Vela Health', location: 'München', appId: 'BEW-1018', match: 55, status: 'rejected', when: 'vor 2 Wochen' },
+];
+
+function RecruitDemo() {
+  const [sel, setSel] = React.useState(1);
+  const t = talents[sel];
+  const detail = (
+    <div className="panel-pad">
+      <div className="det-cap">Talent · Detail</div>
+      <div className="det-name">{t.name}</div>
+      <div className="det-role">{t.role}</div>
+      <MatchIndicator
+        value={t.score} size="lg"
+        tiers={[
+          { label: 'Pflicht-Skills', value: t.score >= 85 ? 9 : 7, max: 10 },
+          { label: 'Bonus-Skills', value: t.score >= 85 ? 4 : 2, max: 6 },
+        ]}
+      />
+      <div className="det-divider"></div>
+      <div className="kfact"><span className="k">Mandat</span><span className="v">React Engineer</span></div>
+      <div className="kfact"><span className="k">Status</span><StatusBadge status={t.status} size="sm" /></div>
+      <div className="kfact"><span className="k">Gehalt erwartet</span><span className="v">78.000 €</span></div>
+      <div className="kfact"><span className="k">Verfügbar ab</span><span className="v">01.09.</span></div>
+      <div style={{ marginTop: 18, display: 'flex', gap: 8 }}>
+        <Button size="sm">Zum Interview</Button>
+        <Button size="sm" variant="outline">Mappe öffnen</Button>
+      </div>
+    </div>
+  );
+  return (
+    <AppShell
+      product="recruit" posture="rail"
+      nav={recruitNav} active="pool" onNav={() => {}}
+      account={{ name: 'Suhay Sevinc', meta: 'Me · +3 Talente' }}
+      title="Talent Pool" subtitle="4 Talente · React Engineer" search searchPlaceholder="Talente, Firmen, Rollen …"
+      detail={detail}
+    >
+      <Card title="React Engineer · Acme" subtitle="4 passende Talente" pad={false}>
+        {talents.map((c, i) => (
+          <CandidateRow key={i} {...c} selected={i === sel} onClick={() => setSel(i)} />
+        ))}
+      </Card>
+    </AppShell>
+  );
+}
+
+function ApplicantDemo() {
+  const [sel, setSel] = React.useState(0);
+  return (
+    <AppShell
+      product="applicant" posture="tabs"
+      nav={applicantNav} active="bewerbungen" onNav={() => {}}
+      account={{ name: 'Suhay Sevinc' }}
+      title="Bewerbungen"
+    >
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: 10 }}>5 aktiv · 1 Angebot</div>
+      <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+        {applications.map((a, i) => (
+          <ApplicationRow key={i} {...a} selected={i === sel} onClick={() => setSel(i)} style={i === applications.length - 1 ? { borderBottom: 'none' } : {}} />
+        ))}
+      </div>
+    </AppShell>
+  );
+}
+
+function Demo() {
+  return (
+    <div className="stage">
+      <div className="desktop">
+        <div className="lbl">posture="rail" · <b>myJob Recruit</b> · desktop-first — rail + detail panel</div>
+        <div className="desk-frame"><RecruitDemo /></div>
+      </div>
+      <div className="phone">
+        <div className="lbl">posture="tabs" · <b>myJob</b> · mobile-first</div>
+        <div className="phone-frame"><ApplicantDemo /></div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+</script>
+</body>
+</html>

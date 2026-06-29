@@ -6,7 +6,9 @@ import type { AppConfig } from '../../src/config';
 import { FsApplicationRepository } from '../../src/adapters/fs-application-repository';
 import { FsAuditLog } from '../../src/adapters/fs-audit-log';
 import { FsPdfArchive } from '../../src/adapters/fs-pdf-archive';
+import { FsSavedSearchRepository } from '../../src/adapters/fs-saved-search-repository';
 import type { Application, AuditEvent } from '../../src/domain/application';
+import type { SavedSearch } from '../../src/domain/saved-search';
 
 function tmpConfig(): AppConfig {
   const rootDir = mkdtempSync(path.join(os.tmpdir(), 'resume-'));
@@ -17,10 +19,18 @@ function tmpConfig(): AppConfig {
     storeDir,
     logFile: path.join(storeDir, 'log.json'),
     historyFile: path.join(storeDir, 'history.jsonl'),
+    savedSearchesFile: path.join(storeDir, 'saved-searches.json'),
     staticDir: rootDir,
     versionedPaths: ['bewerbungen'],
     candidateProfile: { skills: [] },
     defaultJobSearch: { threshold: 80 },
+    jobSources: {
+      arbeitnow: { enabled: false },
+      bundesagentur: { enabled: false, apiKey: 'test' },
+      adzuna: { enabled: false, appId: '', appKey: '', country: 'de' },
+    },
+    store: 'fs',
+    databaseUrl: '',
   };
 }
 
@@ -105,5 +115,56 @@ describe('FsPdfArchive', () => {
     expect(rel).toBe('bewerbungen/2026-06-25_aurora_a1.pdf');
     const written = await fs.readFile(path.join(config.rootDir, rel), 'utf8');
     expect(written).toBe('PDF');
+  });
+});
+
+const search = (id: string, name = 'Rust'): SavedSearch => ({
+  id,
+  name,
+  query: { q: 'Rust', threshold: 80 },
+  createdAt: '2026-06-25T10:00:00.000Z',
+});
+
+describe('FsSavedSearchRepository', () => {
+  it('Repository_NoFile_ListsEmpty', async () => {
+    const repo = new FsSavedSearchRepository({ config: tmpConfig() });
+    expect(await repo.list()).toEqual([]);
+  });
+
+  it('Repository_AddThenFind_RoundTrips', async () => {
+    const repo = new FsSavedSearchRepository({ config: tmpConfig() });
+    await repo.add(search('s1'));
+    expect(await repo.findById('s1')).toMatchObject({ id: 's1', name: 'Rust' });
+    expect(await repo.findById('missing')).toBeNull();
+  });
+
+  it('Repository_RemoveExisting_ReturnsTrueAndDeletes', async () => {
+    const repo = new FsSavedSearchRepository({ config: tmpConfig() });
+    await repo.add(search('s1'));
+    expect(await repo.remove('s1')).toBe(true);
+    expect(await repo.list()).toEqual([]);
+  });
+
+  it('Repository_RemoveUnknown_ReturnsFalse', async () => {
+    const repo = new FsSavedSearchRepository({ config: tmpConfig() });
+    await repo.add(search('s1'));
+    expect(await repo.remove('nope')).toBe(false);
+    expect(await repo.list()).toHaveLength(1);
+  });
+
+  it('Repository_MalformedFile_ListsEmpty', async () => {
+    const config = tmpConfig();
+    await fs.mkdir(config.storeDir, { recursive: true });
+    await fs.writeFile(config.savedSearchesFile, 'not json');
+    const repo = new FsSavedSearchRepository({ config });
+    expect(await repo.list()).toEqual([]);
+  });
+
+  it('Repository_NonArrayJson_ListsEmpty', async () => {
+    const config = tmpConfig();
+    await fs.mkdir(config.storeDir, { recursive: true });
+    await fs.writeFile(config.savedSearchesFile, '{"x":1}');
+    const repo = new FsSavedSearchRepository({ config });
+    expect(await repo.list()).toEqual([]);
   });
 });

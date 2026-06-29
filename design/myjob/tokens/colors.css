@@ -62,23 +62,26 @@
   --status-new-border: #bfdbfe;
   --status-new-strong: #1d4ed8;
 
-  /* Sichtung — screening / in review */
-  --status-review:        #c2410c;
-  --status-review-soft:   #fff4ed;
-  --status-review-border: #fed7aa;
-  --status-review-strong: #9a3412;
+  /* Sichtung — screening / in review. NEUTRAL slate: "in Prüfung" is not an
+     error. (Was orange #c2410c — read as danger. Fixed in the restructure.) */
+  --status-review:        #64748b;
+  --status-review-soft:   #f1f5f9;
+  --status-review-border: #cbd5e1;
+  --status-review-strong: #475569;
 
-  /* Interview — interviewing */
-  --status-interview:        #7c3aed;
-  --status-interview-soft:   #f5f3ff;
-  --status-interview-border: #ddd6fe;
-  --status-interview-strong: #6d28d9;
+  /* Interview — interviewing. ACTIVE indigo (engaged, neutral-positive).
+     (Was violet #7c3aed — rainbow. Now reads as forward motion.) */
+  --status-interview:        #4f46e5;
+  --status-interview-soft:   #eef2ff;
+  --status-interview-border: #c7d2fe;
+  --status-interview-strong: #4338ca;
 
-  /* Angebot — offer extended */
-  --status-offer:        #0891b2;
-  --status-offer-soft:   #ecfeff;
-  --status-offer-border: #a5f3fc;
-  --status-offer-strong: #0e7490;
+  /* Angebot — offer extended. AMBER attention: awaiting candidate response.
+     (Was cyan #0891b2.) */
+  --status-offer:        #d97706;
+  --status-offer-soft:   #fffbeb;
+  --status-offer-border: #fde68a;
+  --status-offer-strong: #b45309;
 
   /* Eingestellt — hired */
   --status-hired:        #1f8a5b;
@@ -102,6 +105,25 @@
   --warning-soft: #fff4ed;
   --danger-soft:  #fff1f2;
   --info-soft:    #eff6ff;
+
+  /* ============================================================
+     MATCH vs PROGRESS — two percentages that must never look alike.
+       • MATCH = candidate FIT (74–90%). RADIAL form, rides the accent.
+         The ownable signal; two-tier (Pflicht- + Bonus-Skills).
+       • PROGRESS = completion / mandate fill (20–24%). LINEAR form,
+         neutral slate — never accent, so it can't read as "good".
+     Distinguished by SHAPE first (ring vs bar), color second — so the
+     difference survives the accent swap and colour-blindness.
+     ============================================================ */
+  --match:        var(--accent);
+  --match-strong: var(--accent-strong);
+  --match-soft:   var(--accent-soft);
+  --match-bonus:  var(--accent-on-dark);   /* the lighter second tier */
+  --match-track:  var(--surface-sunk);
+
+  --progress:        var(--neutral-500);
+  --progress-strong: var(--neutral-700);
+  --progress-track:  var(--surface-sunk);
 
   /* ============================================================
      SEMANTIC ALIASES — components reference these, not raw values

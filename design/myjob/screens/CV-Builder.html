@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="blueprint">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>myJob Recruit — CV-Builder</title>
+<link rel="stylesheet" href="../styles.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  html, body { margin: 0; height: 100%; background: var(--surface-app); }
+  #root { height: 100vh; }
+
+  /* ---- the CV document. Everything themable rides CSS custom props that the
+         cvConfig object sets, so a REST call / agent can drive the exact look. ---- */
+  .cv-stage { padding: 28px; display: flex; justify-content: center; }
+  .cv-page {
+    width: 720px; background: #fff; box-shadow: var(--shadow-page); border-radius: 6px; overflow: hidden;
+    display: grid; grid-template-columns: var(--cv-side-w, 36%) 1fr;
+    font-family: var(--cv-font, 'Inter'), sans-serif;
+    font-size: calc(15px * var(--cv-scale, 1));
+    color: #1e2430;
+  }
+  .cv-side { background: var(--cv-side-bg, #1e293b); color: var(--cv-side-text, #e8edf5); padding: calc(1.6em) calc(1.3em); }
+  .cv-main { padding: calc(1.7em) calc(1.6em); background: #fff; }
+
+  .cv-photo { width: 5.4em; height: 5.4em; border-radius: 999px; background: rgba(255,255,255,.12); display: grid; place-items: center; font-weight: 700; font-size: 1.6em; color: #fff; margin-bottom: 1em; border: 2px solid rgba(255,255,255,.25); }
+  .cv-side h1 { font-size: 1.5em; margin: 0; line-height: 1.1; color: #fff; }
+  .cv-side .role { font-size: .82em; opacity: .8; margin-top: .25em; }
+  .cv-sec-lab { font-size: .62em; letter-spacing: .14em; text-transform: uppercase; opacity: .6; margin: 1.6em 0 .6em; font-weight: 600; }
+  .cv-contact { display: flex; flex-direction: column; gap: .45em; font-size: .74em; opacity: .9; }
+  .cv-contact div { display: flex; gap: .55em; align-items: center; }
+  .cv-skill { display: inline-block; font-size: .68em; padding: .25em .7em; border-radius: 999px; background: color-mix(in oklch, var(--cv-accent, #2A6FDB) 26%, transparent); color: #fff; margin: 0 .35em .4em 0; border: 1px solid color-mix(in oklch, #fff 18%, transparent); }
+  .cv-lang { display: flex; justify-content: space-between; font-size: .76em; padding: .2em 0; opacity: .92; }
+
+  .cv-main h2 { font-size: 1.9em; margin: 0; color: #11161f; line-height: 1.05; letter-spacing: -.01em; }
+  .cv-main .head-role { color: var(--cv-accent, #2A6FDB); font-weight: 600; font-size: .92em; margin: .25em 0 0; }
+  .cv-m-lab { font-size: .64em; letter-spacing: .12em; text-transform: uppercase; color: var(--cv-accent, #2A6FDB); font-weight: 700; margin: 1.5em 0 .55em; border-bottom: 2px solid color-mix(in oklch, var(--cv-accent, #2A6FDB) 30%, transparent); padding-bottom: .35em; }
+  .cv-about { font-size: .82em; line-height: 1.55; color: #3a4252; }
+  .cv-job { margin-bottom: .9em; }
+  .cv-job .jt { font-weight: 700; font-size: .9em; color: #11161f; }
+  .cv-job .co { font-size: .78em; color: #5a6473; }
+  .cv-job .per { font-size: .68em; color: var(--cv-accent, #2A6FDB); font-weight: 600; float: right; }
+  .cv-job ul { margin: .4em 0 0; padding-left: 1.1em; }
+  .cv-job li { font-size: .76em; line-height: 1.45; color: #3a4252; margin-bottom: .22em; }
+  .cv-jobskills { margin-top: .55em; display: flex; flex-wrap: wrap; gap: .35em; align-items: center; }
+  .cv-jskill { font-size: .66em; padding: .22em .65em; border-radius: 999px; background: color-mix(in oklch, var(--cv-accent, #2A6FDB) 12%, transparent); color: var(--cv-accent, #2A6FDB); border: 1px solid color-mix(in oklch, var(--cv-accent, #2A6FDB) 32%, transparent); cursor: pointer; font-weight: 600; transition: all var(--dur-fast); }
+  .cv-jskill:hover { background: color-mix(in oklch, var(--cv-accent, #2A6FDB) 22%, transparent); }
+  .cv-jskill.add { background: transparent; border-style: dashed; color: #5a6473; border-color: #c7ccd6; }
+  .cv-jskill.add:hover { color: var(--cv-accent, #2A6FDB); border-color: var(--cv-accent, #2A6FDB); }
+  .cv-jskill-input { font-size: .66em; padding: .22em .55em; border-radius: 999px; border: 1px solid var(--cv-accent, #2A6FDB); outline: none; width: 6.5em; font-family: inherit; color: #11161f; }
+
+  /* compact density */
+  .cv-page.compact { font-size: calc(13.5px * var(--cv-scale, 1)); }
+  .cv-page.compact .cv-side, .cv-page.compact .cv-main { padding: calc(1.25em) calc(1.15em); }
+
+  /* ---- control panel ---- */
+  .panel { padding: 20px; }
+  .panel h3 { font-family: var(--font-display); font-size: var(--fs-md); font-weight: var(--fw-semibold); color: var(--text-heading); margin: 0 0 4px; }
+  .panel .pcap { font-size: var(--fs-xs); color: var(--text-soft); margin-bottom: 18px; }
+  .ctl { margin-bottom: 20px; }
+  .ctl-lab { font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--ls-wide); text-transform: uppercase; color: var(--text-soft); margin-bottom: 9px; display: flex; justify-content: space-between; }
+  .ctl-lab .val { color: var(--text-muted); }
+  .swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+  .sw { width: 30px; height: 30px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; transition: transform var(--dur-fast); }
+  .sw:hover { transform: scale(1.08); }
+  .sw.on { border-color: var(--text-heading); box-shadow: 0 0 0 2px var(--surface-card) inset; }
+  .seg { display: inline-flex; background: var(--surface-sunk); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 3px; gap: 3px; width: 100%; }
+  .seg button { flex: 1; appearance: none; border: none; cursor: pointer; font-family: var(--font-body); font-size: var(--fs-xs); font-weight: var(--fw-medium); padding: 7px 8px; border-radius: var(--radius-sm); color: var(--text-muted); background: transparent; }
+  .seg button.on { background: var(--surface-card); color: var(--text-heading); font-weight: var(--fw-semibold); box-shadow: var(--shadow-sm); }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  .api-note { margin-top: 8px; padding: 13px 14px; border: 1px dashed var(--border-strong); border-radius: var(--radius-md); background: var(--surface-subtle); }
+  .api-note .t { display: flex; align-items: center; gap: 7px; font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--text-heading); margin-bottom: 7px; }
+  .api-note code { display: block; font-family: var(--font-mono); font-size: 10.5px; color: var(--accent-strong); background: var(--surface-card); border: 1px solid var(--border); border-radius: 6px; padding: 8px 9px; white-space: pre-wrap; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../_ds_bundle.js"></script>
+<script src="../data/talent-pool.js"></script>
+<script type="text/babel">
+const DS = window.MyJobDesignSystem_f3658e;
+const { AppShell, Icon, Button } = DS;
+const T = window.MyJobTalents;
+const ME = T.me;
+
+const RECRUIT_NAV = [
+  { id: 'overview', label: 'Overview', icon: 'home' },
+  { id: 'pool', label: 'Talent-Pool', icon: 'users' },
+  { id: 'stellen', label: 'Stellen', icon: 'briefcase' },
+  { id: 'matching', label: 'Matching', icon: 'search' },
+  { id: 'pipeline', label: 'Pipeline', icon: 'columns', badge: 2 },
+  { id: 'inbox', label: 'Inbox', icon: 'inbox', badge: 3 },
+];
+
+/* ===========================================================================
+   cvConfig — the SINGLE source of truth for the CV's look. The control panel
+   edits it; window.myJobCV.apply({...}) sets it from REST / an agent. Persisted
+   to localStorage so a refresh keeps the look.
+   =========================================================================== */
+const DEFAULT_CFG = {
+  accent: '#2A6FDB',
+  sidebarBg: '#1e293b',
+  sidebarText: '#e8edf5',
+  font: 'Inter',
+  scale: 1.0,
+  density: 'comfortable',
+  sideWidth: 36,
+};
+const ACCENTS = ['#2A6FDB', '#1F8A5B', '#D97757', '#7C3AED', '#0E7490', '#B45309', '#111827'];
+const SIDEBARS = [
+  { bg: '#1e293b', text: '#e8edf5' }, { bg: '#0f172a', text: '#e8edf5' },
+  { bg: '#1f2937', text: '#f3f4f6' }, { bg: '#2A6FDB', text: '#ffffff' },
+  { bg: '#1F8A5B', text: '#ffffff' }, { bg: '#f1f5f9', text: '#1e293b' },
+  { bg: '#fff7ed', text: '#7c2d12' },
+];
+const FONTS = [
+  { id: 'Inter', label: 'Inter · Sans' },
+  { id: 'Space Grotesk', label: 'Space Grotesk' },
+  { id: 'Source Serif 4', label: 'Source Serif · Serif' },
+  { id: 'Lora', label: 'Lora · Serif' },
+  { id: 'Georgia', label: 'Georgia · System' },
+];
+const LS_KEY = 'myjob.cvConfig';
+function loadCfg() { try { return { ...DEFAULT_CFG, ...JSON.parse(localStorage.getItem(LS_KEY) || '{}') }; } catch (e) { return { ...DEFAULT_CFG }; } }
+
+function CvDocument({ cfg }) {
+  const c = ME;
+  const initials = c.name.split(' ').slice(0, 2).map((w) => w[0]).join('');
+  /* per-position skills are editable in the builder — seeded from each job's
+     tech list, with “+ Skill” to add and click-to-remove. */
+  const [jobSkills, setJobSkills] = React.useState(() => c.experience.map((j) => [...(j.tech || [])]));
+  const [adding, setAdding] = React.useState(null);
+  const [draft, setDraft] = React.useState('');
+  const addSkill = (i) => {
+    const v = draft.trim();
+    if (v) setJobSkills((p) => p.map((arr, k) => (k === i ? (arr.includes(v) ? arr : [...arr, v]) : arr)));
+    setDraft(''); setAdding(null);
+  };
+  const removeSkill = (i, s) => setJobSkills((p) => p.map((arr, k) => (k === i ? arr.filter((x) => x !== s) : arr)));
+  const style = {
+    '--cv-accent': cfg.accent,
+    '--cv-side-bg': cfg.sidebarBg,
+    '--cv-side-text': cfg.sidebarText,
+    '--cv-font': cfg.font,
+    '--cv-scale': cfg.scale,
+    '--cv-side-w': cfg.sideWidth + '%',
+  };
+  return (
+    <div className={'cv-page' + (cfg.density === 'compact' ? ' compact' : '')} style={style}>
+      <aside className="cv-side">
+        <div className="cv-photo">{initials}</div>
+        <h1>{c.name}</h1>
+        <div className="role">{c.role}</div>
+
+        <div className="cv-sec-lab">Kontakt</div>
+        <div className="cv-contact">
+          <div><span>✉</span>{c.contact.mail}</div>
+          <div><span>☎</span>{c.contact.phone}</div>
+          <div><span>⌖</span>{c.location}</div>
+          <div><span>↗</span>{c.contact.linkedin}</div>
+        </div>
+
+        <div className="cv-sec-lab">Kompetenzen</div>
+        <div>{(c.skills || []).slice(0, 10).map((s) => <span className="cv-skill" key={s}>{s}</span>)}</div>
+
+        <div className="cv-sec-lab">Sprachen</div>
+        {c.languages.map((l, i) => <div className="cv-lang" key={i}><span>{l[0]}</span><span style={{ opacity: .7 }}>{l[1]}</span></div>)}
+      </aside>
+
+      <main className="cv-main">
+        <h2>{c.name}</h2>
+        <div className="head-role">{c.role} · {c.headline}</div>
+
+        <div className="cv-m-lab">Profil</div>
+        <p className="cv-about">{c.about}</p>
+
+        <div className="cv-m-lab">Berufserfahrung</div>
+        {c.experience.map((j, i) => (
+          <div className="cv-job" key={i}>
+            <span className="per">{j.period}</span>
+            <div className="jt">{j.title}</div>
+            <div className="co">{j.company} · {j.location}</div>
+            <ul>{j.bullets.slice(0, 3).map((b, k) => <li key={k}>{b}</li>)}</ul>
+            <div className="cv-jobskills">
+              {jobSkills[i].map((s) => (
+                <span className="cv-jskill" key={s} title="Klicken zum Entfernen" onClick={() => removeSkill(i, s)}>{s}</span>
+              ))}
+              {adding === i ? (
+                <input
+                  className="cv-jskill-input" autoFocus value={draft} placeholder="Skill …"
+                  onChange={(e) => setDraft(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') addSkill(i); if (e.key === 'Escape') { setDraft(''); setAdding(null); } }}
+                  onBlur={() => addSkill(i)}
+                />
+              ) : (
+                <span className="cv-jskill add" onClick={() => { setDraft(''); setAdding(i); }}>+ Skill</span>
+              )}
+            </div>
+          </div>
+        ))}
+
+        <div className="cv-m-lab">Bildung</div>
+        {c.education.map((e, i) => (
+          <div className="cv-job" key={i}>
+            <span className="per">{e.period}</span>
+            <div className="jt">{e.title}</div>
+            <div className="co">{e.school} · Note {e.grade}</div>
+          </div>
+        ))}
+      </main>
+    </div>
+  );
+}
+
+function ControlPanel({ cfg, set }) {
+  return (
+    <div className="panel">
+      <h3>Anpassung</h3>
+      <div className="pcap">Live-Vorschau · auch per REST / Agentic setzbar</div>
+
+      <div className="ctl">
+        <div className="ctl-lab">Akzentfarbe</div>
+        <div className="swatches">
+          {ACCENTS.map((a) => <span key={a} className={'sw' + (cfg.accent === a ? ' on' : '')} style={{ background: a }} onClick={() => set({ accent: a })} />)}
+        </div>
+      </div>
+
+      <div className="ctl">
+        <div className="ctl-lab">Linke Leiste</div>
+        <div className="swatches">
+          {SIDEBARS.map((s) => <span key={s.bg} className={'sw' + (cfg.sidebarBg === s.bg ? ' on' : '')} style={{ background: s.bg, borderColor: cfg.sidebarBg === s.bg ? 'var(--text-heading)' : 'var(--border)' }} onClick={() => set({ sidebarBg: s.bg, sidebarText: s.text })} />)}
+        </div>
+      </div>
+
+      <div className="ctl">
+        <div className="ctl-lab">Leistenbreite <span className="val">{cfg.sideWidth}%</span></div>
+        <input type="range" min="28" max="44" step="1" value={cfg.sideWidth} onChange={(e) => set({ sideWidth: +e.target.value })} />
+      </div>
+
+      <div className="ctl">
+        <div className="ctl-lab">Schrift</div>
+        <select value={cfg.font} onChange={(e) => set({ font: e.target.value })} style={{ width: '100%', padding: '9px 11px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', fontFamily: 'var(--font-body)', fontSize: 'var(--fs-sm)', color: 'var(--text-heading)' }}>
+          {FONTS.map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}
+        </select>
+      </div>
+
+      <div className="ctl">
+        <div className="ctl-lab">Schriftgröße <span className="val">{Math.round(cfg.scale * 100)}%</span></div>
+        <input type="range" min="0.85" max="1.2" step="0.01" value={cfg.scale} onChange={(e) => set({ scale: +e.target.value })} />
+      </div>
+
+      <div className="ctl">
+        <div className="ctl-lab">Dichte</div>
+        <div className="seg">
+          <button className={cfg.density === 'comfortable' ? 'on' : ''} onClick={() => set({ density: 'comfortable' })}>Komfortabel</button>
+          <button className={cfg.density === 'compact' ? 'on' : ''} onClick={() => set({ density: 'compact' })}>Kompakt</button>
+        </div>
+      </div>
+
+      <div className="api-note">
+        <div className="t"><Icon name="zap" size={14} style={{ color: 'var(--accent-strong)' }} />REST / Agentic</div>
+        <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-soft)', marginBottom: '8px' }}>Dieselben Werte setzt ein Agent oder ein REST-Aufruf über:</div>
+        <code>window.myJobCV.apply({"{"} accent:'#1F8A5B', font:'Lora', scale:1.05, sidebarBg:'#0f172a' {"}"})</code>
+      </div>
+    </div>
+  );
+}
+
+function Builder() {
+  const [cfg, setCfg] = React.useState(loadCfg);
+  const set = (patch) => setCfg((p) => { const next = { ...p, ...patch }; try { localStorage.setItem(LS_KEY, JSON.stringify(next)); } catch (e) {} return next; });
+
+  // expose the REST / agentic surface
+  React.useEffect(() => {
+    window.myJobCV = {
+      get: () => ({ ...cfg }),
+      apply: (partial) => set(partial || {}),
+      reset: () => set(DEFAULT_CFG),
+      schema: { accent: 'hex', sidebarBg: 'hex', sidebarText: 'hex', font: FONTS.map((f) => f.id), scale: '0.85–1.2', density: ['comfortable', 'compact'], sideWidth: '28–44' },
+    };
+  }, [cfg]);
+
+  return (
+    <AppShell
+      product="recruit" posture="rail"
+      nav={RECRUIT_NAV} active="pool" onNav={() => {}}
+      account={{ name: 'Suhay Sevinc', meta: 'Me · +3 Talente' }}
+      title="CV-Builder"
+      subtitle={`${ME.name} · Lebenslauf`}
+      actions={<Button size="sm" iconLeft={<Icon name="download" size={14} />}>Als PDF</Button>}
+      detail={<ControlPanel cfg={cfg} set={set} />}
+    >
+      <div className="cv-stage"><CvDocument cfg={cfg} /></div>
+    </AppShell>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<Builder />);
+</script>
+</body>
+</html>

@@ -34,6 +34,20 @@ export function normalizeSkill(name: string): string {
   return name.trim().toLowerCase();
 }
 
+/** Merge two skill lists case-insensitively, preserving first-seen display form. */
+export function unionSkills(a: string[], b: string[]): string[] {
+  const seen = new Set(a.map(normalizeSkill));
+  const out = [...a];
+  for (const skill of b) {
+    const key = normalizeSkill(skill);
+    if (!seen.has(key)) {
+      seen.add(key);
+      out.push(skill);
+    }
+  }
+  return out;
+}
+
 /**
  * Score a job's required skills against a candidate profile.
  *

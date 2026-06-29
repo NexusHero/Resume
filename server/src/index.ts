@@ -1,18 +1,31 @@
 import { loadConfig } from './config';
 import { buildContainer } from './container';
 import { createApp } from './http/create-app';
+import { createDb, migrate, type Db } from './adapters/sql/db';
 import type { Logger } from './ports/logger';
 import type { ApplicationController } from './http/application-controller';
 import type { JobController } from './http/job-controller';
+import type { AtsController } from './http/ats-controller';
+import type { SavedSearchController } from './http/saved-search-controller';
 
-function main(): void {
+async function main(): Promise<void> {
   const config = loadConfig();
-  const container = buildContainer(config);
+
+  let db: Db | undefined;
+  if (config.store === 'sql') {
+    const conn = createDb(config.databaseUrl);
+    await migrate(conn.pool);
+    db = conn.db;
+  }
+
+  const container = buildContainer(config, db);
   const logger = container.resolve<Logger>('logger');
 
   const app = createApp({
     applicationController: container.resolve<ApplicationController>('applicationController'),
     jobController: container.resolve<JobController>('jobController'),
+    atsController: container.resolve<AtsController>('atsController'),
+    savedSearchController: container.resolve<SavedSearchController>('savedSearchController'),
     config,
     logger,
   });
@@ -32,4 +45,7 @@ function main(): void {
   process.on('SIGTERM', () => shutdown('SIGTERM'));
 }
 
-main();
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

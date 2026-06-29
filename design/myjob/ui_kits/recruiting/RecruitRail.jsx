@@ -1,14 +1,18 @@
-/* AppShell — dark nav rail + sticky topbar. One coherent product, no role toggle. */
+/* RecruitRail — LEGACY recruiting shell. Superseded by the canonical, shared
+   components/app/AppShell.jsx (rail + tabs postures). Kept only so the old
+   recruiting kit keeps running until its screens migrate to templates/. */
 const { Icon, IconButton, Avatar, Badge } = window.MyJobDesignSystem_f3658e;
 
 const NAV = [
-  { id: 'uebersicht', label: 'Overview', icon: 'home' },
+  { id: 'uebersicht', label: 'Workspace', icon: 'home' },
   { id: 'mandate', label: 'Mandates', icon: 'briefcase' },
   { id: 'pool', label: 'Talent Pool', icon: 'users' },
+  { id: 'matching', label: 'Matching', icon: 'search' },
   { id: 'bewerbungen', label: 'Applications', icon: 'columns' },
   { id: 'platzierungen', label: 'Placements', icon: 'award' },
   { id: 'berichte', label: 'Reports', icon: 'trend' },
   { id: 'postfach', label: 'Inbox', icon: 'inbox' },
+  { id: 'einstellungen', label: 'Settings', icon: 'sliders' },
 ];
 
 function NavItem({ item, active, onClick, badge }) {
@@ -36,7 +40,7 @@ function NavItem({ item, active, onClick, badge }) {
   );
 }
 
-function AppShell({ active, onNav, me, talentCount, search, onSearch, title, subtitle, badges = {}, actions, children }) {
+function RecruitRail({ active, onNav, me, talentCount, search, onSearch, title, subtitle, badges = {}, actions, children }) {
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--surface-app)' }}>
       <aside style={{
@@ -48,7 +52,7 @@ function AppShell({ active, onNav, me, talentCount, search, onSearch, title, sub
           <img src="../../assets/logo/myjob-mark.svg" width="34" height="34" alt="" />
           <div>
             <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '18px', color: '#fff', letterSpacing: '-0.02em', lineHeight: 1 }}><span style={{ color: 'var(--accent-on-dark)' }}>my</span>Job</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--sidebar-soft)', marginTop: '3px' }}>Application Suite</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--sidebar-soft)', marginTop: '3px' }}>We connect partners</div>
           </div>
         </div>
 
@@ -102,4 +106,4 @@ function AppShell({ active, onNav, me, talentCount, search, onSearch, title, sub
   );
 }
 
-Object.assign(window, { AppShell });
+Object.assign(window, { RecruitRail });

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="blueprint">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>myJob Recruit — Einstellungen</title>
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  html, body { margin: 0; height: 100%; background: var(--surface-app); }
+  #root { height: 100vh; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 8px 0 60px; }
+  .sec { background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: 22px 24px; margin-bottom: 18px; }
+  .sec-h { display: flex; align-items: center; gap: 11px; margin-bottom: 16px; }
+  .sec-h .ic { width: 34px; height: 34px; border-radius: var(--radius-md); display: grid; place-items: center; background: var(--surface-sunk); color: var(--text-muted); flex: none; }
+  .sec-h h2 { font-family: var(--font-display); font-size: var(--fs-lg); font-weight: var(--fw-semibold); color: var(--text-heading); margin: 0; letter-spacing: var(--ls-tight); }
+  .sec-h .sub { font-size: var(--fs-xs); color: var(--text-soft); margin-top: 1px; }
+  .field { margin-bottom: 16px; }
+  .flab { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: var(--ls-wide); text-transform: uppercase; color: var(--text-soft); margin-bottom: 7px; display: block; }
+  .keyrow { display: flex; gap: 9px; align-items: stretch; }
+  .keyrow input { flex: 1; appearance: none; border: 1px solid var(--border-strong); border-radius: var(--radius-md); background: var(--surface-card); font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--text-heading); padding: 10px 12px; outline: none; }
+  .keyrow input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .iconbtn { appearance: none; cursor: pointer; border: 1px solid var(--border-strong); border-radius: var(--radius-md); background: var(--surface-card); color: var(--text-muted); padding: 0 12px; display: grid; place-items: center; }
+  .hint { font-size: var(--fs-xs); color: var(--text-soft); margin-top: 7px; }
+  .saved { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-xs); color: var(--success); font-weight: var(--fw-medium); }
+  select.sel { width: 100%; padding: 10px 12px; border-radius: var(--radius-md); border: 1px solid var(--border-strong); background: var(--surface-card); font-family: var(--font-body); font-size: var(--fs-sm); color: var(--text-heading); }
+
+  .fw { padding: 14px 16px; border: 1px dashed var(--border-strong); border-radius: var(--radius-md); background: var(--surface-subtle); }
+  .fw .t { display: flex; align-items: center; gap: 8px; font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--text-heading); margin-bottom: 8px; }
+  .fw p { font-size: var(--fs-xs); color: var(--text-muted); margin: 0 0 8px; line-height: 1.55; }
+  .fw code { font-family: var(--font-mono); font-size: 11px; color: var(--accent-strong); background: var(--surface-card); border: 1px solid var(--border); border-radius: 5px; padding: 1px 6px; }
+  .prov-chips { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 4px; }
+  .pchip { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 3px 10px; }
+  .pchip.on { color: var(--accent-strong); border-color: var(--accent-border); background: var(--accent-soft); font-weight: 600; }
+
+  .agentrow { display: flex; align-items: flex-start; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .agentrow:last-child { border-bottom: none; }
+  .agentrow .body { flex: 1; min-width: 0; }
+  .agentrow .at { font-weight: var(--fw-semibold); font-size: var(--fs-sm); color: var(--text-heading); }
+  .agentrow .ad { font-size: var(--fs-xs); color: var(--text-soft); margin-top: 2px; }
+  .auto-seg { display: inline-flex; background: var(--surface-sunk); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 2px; gap: 2px; flex: none; }
+  .auto-seg button { appearance: none; border: none; cursor: pointer; font-family: var(--font-body); font-size: 11px; font-weight: var(--fw-medium); padding: 5px 9px; border-radius: var(--radius-sm); color: var(--text-muted); background: transparent; white-space: nowrap; }
+  .auto-seg button.on { background: var(--surface-card); color: var(--text-heading); font-weight: var(--fw-semibold); box-shadow: var(--shadow-sm); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../_ds_bundle.js"></script>
+<script type="text/babel">
+const DS = window.MyJobDesignSystem_f3658e;
+const { AppShell, Icon, Button } = DS;
+
+const RECRUIT_NAV = [
+  { id: 'overview', label: 'Overview', icon: 'home' },
+  { id: 'pool', label: 'Talent-Pool', icon: 'users' },
+  { id: 'stellen', label: 'Stellen', icon: 'briefcase' },
+  { id: 'matching', label: 'Matching', icon: 'search' },
+  { id: 'pipeline', label: 'Pipeline', icon: 'columns', badge: 2 },
+  { id: 'inbox', label: 'Inbox', icon: 'inbox', badge: 3 },
+];
+
+const KEY_LS = 'myjob.geminiKey';
+
+function GeminiSection() {
+  const [key, setKey] = React.useState(() => { try { return localStorage.getItem(KEY_LS) || ''; } catch (e) { return ''; } });
+  const [show, setShow] = React.useState(false);
+  const [saved, setSaved] = React.useState(false);
+  const [model, setModel] = React.useState('gemini-2.0-flash');
+  const save = () => { try { localStorage.setItem(KEY_LS, key); } catch (e) {} setSaved(true); setTimeout(() => setSaved(false), 2200); };
+  return (
+    <div className="sec">
+      <div className="sec-h">
+        <span className="ic"><Icon name="zap" size={18} /></span>
+        <div><h2>KI · Gemini</h2><div className="sub">Schlüssel für AI-Anschreiben, CV-Zuschnitt und den Agentic-Modus</div></div>
+      </div>
+
+      <div className="field">
+        <label className="flab">Gemini API-Key</label>
+        <div className="keyrow">
+          <input type={show ? 'text' : 'password'} value={key} onChange={(e) => setKey(e.target.value)} placeholder="AIza…" autoComplete="off" spellCheck="false" />
+          <button className="iconbtn" title={show ? 'verbergen' : 'anzeigen'} onClick={() => setShow((s) => !s)}><Icon name={show ? 'eye' : 'eye'} size={16} /></button>
+          <Button size="md" onClick={save}>Speichern</Button>
+        </div>
+        <div className="hint">
+          {saved ? <span className="saved"><Icon name="check" size={13} />Gespeichert · lokal im Browser</span>
+                 : 'Wird lokal gespeichert (localStorage). Der Schlüssel verlässt dieses Gerät nicht — der Backend-Aufruf läuft serverseitig über das Framework unten.'}
+        </div>
+      </div>
+
+      <div className="field">
+        <label className="flab">Modell</label>
+        <select className="sel" value={model} onChange={(e) => setModel(e.target.value)}>
+          <option value="gemini-2.0-flash">gemini-2.0-flash · schnell</option>
+          <option value="gemini-2.0-pro">gemini-2.0-pro · stark</option>
+          <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+        </select>
+      </div>
+    </div>
+  );
+}
+
+function FrameworkSection() {
+  return (
+    <div className="sec">
+      <div className="sec-h">
+        <span className="ic"><Icon name="code" size={18} /></span>
+        <div><h2>KI-Framework</h2><div className="sub">Provider-agnostisch — Gemini ist nur ein austauschbarer Anbieter</div></div>
+      </div>
+      <div className="fw">
+        <div className="t"><Icon name="info" size={15} style={{ color: 'var(--accent-strong)' }} />Architektur-Entscheidung</div>
+        <p>Die AI-Integration läuft über ein <b>provider-agnostisches Framework</b> — das Node.js-Pendant zu <code>Microsoft.Extensions.AI</code> (.NET). In Node.js ist das die <b>Vercel AI SDK</b> (<code>ai</code>) bzw. <b>LangChain.js</b>: eine einheitliche Abstraktion (<code>generateText</code> / <code>streamText</code>), unter der Gemini nur ein Provider von vielen ist.</p>
+        <p>Vorteil: derselbe Code treibt CV-Zuschnitt, Anschreiben-Entwürfe und später den Agentic-Modus — und der Anbieter ist mit einer Zeile wechselbar (Gemini → OpenAI → lokal), ohne die Produkt-Logik anzufassen.</p>
+        <div className="prov-chips">
+          <span className="pchip on">Google Gemini</span>
+          <span className="pchip">OpenAI</span>
+          <span className="pchip">Anthropic</span>
+          <span className="pchip">Azure</span>
+          <span className="pchip">lokal / Ollama</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AgentRow({ title, desc, value, onChange, levels }) {
+  return (
+    <div className="agentrow">
+      <div className="body"><div className="at">{title}</div><div className="ad">{desc}</div></div>
+      <div className="auto-seg">
+        {levels.map((l) => <button key={l} className={value === l ? 'on' : ''} onClick={() => onChange(l)}>{l}</button>)}
+      </div>
+    </div>
+  );
+}
+
+function AgenticSection() {
+  const [src, setSrc] = React.useState('Autonom');
+  const [apply, setApply] = React.useState('Mit Freigabe');
+  const [cv, setCv] = React.useState('Vorschlag');
+  return (
+    <div className="sec">
+      <div className="sec-h">
+        <span className="ic"><Icon name="users" size={18} /></span>
+        <div><h2>Agentic-Modus</h2><div className="sub">Wie weit der Agent pro Aufgabe selbst handeln darf</div></div>
+      </div>
+      <AgentRow title="Sourcing" desc="Nachts neue Stellen finden, die zu deinen Kandidaten passen (reversibel)." value={src} onChange={setSrc} levels={['Aus', 'Vorschlag', 'Autonom']} />
+      <AgentRow title="Bewerben im Auftrag" desc="Echte Menschen, echte Firmen — braucht immer deine Freigabe." value={apply} onChange={setApply} levels={['Aus', 'Mit Freigabe']} />
+      <AgentRow title="CV- & Anschreiben-Zuschnitt" desc="Entwurf wird grau vorgeschlagen — du übernimmst oder verwirfst." value={cv} onChange={setCv} levels={['Aus', 'Vorschlag']} />
+    </div>
+  );
+}
+
+function Settings() {
+  return (
+    <AppShell
+      product="recruit" posture="rail"
+      nav={RECRUIT_NAV} active="__settings" onNav={() => {}}
+      account={{ name: 'Suhay Sevinc', meta: 'Me · +3 Talente' }}
+      title="Einstellungen"
+      subtitle="KI, Framework & Agentic-Modus"
+    >
+      <div className="wrap">
+        <GeminiSection />
+        <FrameworkSection />
+        <AgenticSection />
+      </div>
+    </AppShell>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<Settings />);
+</script>
+</body>
+</html>

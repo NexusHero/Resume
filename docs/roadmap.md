@@ -28,11 +28,17 @@ Small, low-risk PRs. No architectural change.
 
 Cheapest big step — the ports already exist.
 
-- **1.1** SQL adapter (Drizzle) for `ApplicationRepository`, `AuditLog`; object-storage
-  adapter (S3/MinIO) for `PdfArchive`. Config-switchable (`STORE=fs|sql`); the
-  existing acceptance suite runs against SQL via Testcontainers. **L**
-- **1.2** Make the git `Versioner` an optional audit mechanism, not the data store
-  (app must run with no git repo). **M**
+- **1.1** SQL adapter (Drizzle) for `ApplicationRepository`, `AuditLog`. **L**
+  - ✅ Postgres adapters (Drizzle + `pg`) for applications, audit log and saved
+    searches; `schema.ts` + idempotent `migrate()` run on boot; pure row↔domain
+    mappers unit-tested; `createPersistence` factory switches on `STORE=fs|sql`
+    (default `fs` → app/CI/offline unchanged). Thin DB glue is exercised by a
+    `DATABASE_URL`-gated integration test (skipped without a DB, so the gate stays
+    Docker-free); verified end-to-end against real Postgres 16.
+  - Outstanding: object-storage adapter (S3/MinIO) for `PdfArchive` (still fs).
+- **1.2** ✅ Make the git `Versioner` optional — a `NoopVersioner` is used when
+  `STORE=sql` (no JSON files to commit; committing would also needlessly fire git
+  hooks). The git versioner now only runs for the file store.
 
 ## Phase 2 — Multi-tenancy & auth (turns the tool into a product)
 
@@ -48,13 +54,32 @@ New ports in the hexagonal core. Uses the Claude API.
 
 - **3.1** `JobSource` port + adapter per board (Bundesagentur/Adzuna/Arbeitnow public;
   StepStone/Indeed/LinkedIn/XING via key/OAuth). Sample offline adapter exists. **L**
-  - ✅ port + `SampleJobSource` shipped in 3.5; real board adapters outstanding.
+  - ✅ port + `SampleJobSource` shipped in 3.5.
+  - ✅ live adapters: **Arbeitnow** (open), **Bundesagentur** (public key),
+    **Adzuna** (app id+key). Resilient `CompositeJobSource` (one failing source is
+    skipped) + `createJobSource` factory; enabled via `JOB_SOURCES` env, offline
+    sample as default. Mappers unit-tested against recorded shapes; verified live.
+  - Outstanding: OAuth boards (StepStone/Indeed/LinkedIn/XING). Note: postings
+    without skill tags score neutral (100) until skill extraction lands in 3.2.
 - **3.2** `Matcher` port — job↔candidate score feeding the existing `match %` UI. **M**
-  - ✅ skill scoring (`domain/skill.ts`) + `JobSearchService` shipped in 3.5;
-    LLM-assisted skill extraction (`SkillExtractor` adapter) outstanding.
+  - ✅ skill scoring (`domain/skill.ts`) + `JobSearchService` shipped in 3.5.
+  - ✅ skill **extraction**: `SkillExtractor` port + rule-based `KeywordSkillExtractor`
+    (taxonomy + word-boundary matching for `C++`/`C#`/`Go`/`Java`…). The service
+    enriches a posting's tags with skills found in its title/description, so
+    tagless boards (Bundesagentur) become matchable. Verified live.
+  - Outstanding (needs AI, deferred to the very end): an **LLM-backed
+    `SkillExtractor`** to resolve context the keyword matcher cannot — e.g. "jobs
+    _in Rust_" (the German town) vs the Rust language; seniority/synonyms.
 - **3.3** `CoverLetterWriter` port — auto-tailored cover letter per job, folded into `build`. **M**
 - **3.4** ATS keyword scoring (JobScan-style) — CV↔posting gap analysis; shares
   `missingSkills` with 3.2. **M**
+  - ✅ `analyzeGap` domain + `AtsService` + `POST /api/v1/ats`: paste a posting
+    (role/text/skills), get a coverage score, matched + missing keywords and
+    per-gap recommendations. Reuses `SkillExtractor` + `scoreJob`.
+- **Saved / named searches** ✅ — `SavedSearch` domain, `SavedSearchRepository`
+  port + fs adapter, `SavedSearchService`, REST CRUD + run
+  (`GET/POST/DELETE /api/v1/searches`, `GET /api/v1/searches/:id/run`). Lets the
+  candidate keep several named queries and re-run them through the two-tier search.
 
 ### 3.5 — Skill-based two-tier job matching ✅ (shipped)
 

@@ -11,5 +11,5 @@ export interface HttpResponse {
 
 export type HttpFetch = (
   url: string,
-  init?: { headers?: Record<string, string> },
+  init?: { method?: string; headers?: Record<string, string>; body?: string },
 ) => Promise<HttpResponse>;

@@ -25,15 +25,104 @@ test.describe('UI acceptance — the suite renders in English', () => {
     await expect(page.locator('main')).toContainText('Suhay Sevinc');
   });
 
-  test('Karriere_Jobsuche_ShowsTwoMatchTiers', async ({ page }) => {
+  test('Karriere_Jobsuche_FetchesJobsFromApiAndCreatesApplication', async ({ page }) => {
+    // The Jobsuche now fetches live from the REST API; stub it so the flow is
+    // deterministic regardless of which job boards are configured on the server.
+    await page.route('**/api/v1/jobs**', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          threshold: 80,
+          counts: { total: 1, top: 1, more: 0 },
+          top: [
+            {
+              id: 'j1',
+              company: 'Celonis',
+              role: 'Senior C++ Engineer',
+              city: 'München',
+              country: 'Deutschland',
+              mode: 'hybrid',
+              salary: '85.000 – 98.000 €',
+              posted: '2026-06-26',
+              skills: ['C++', 'gRPC'],
+              snippet: 'Kerngeschäftslogik der Process-Mining-Engine.',
+              source: 'Bundesagentur für Arbeit',
+              url: 'https://careers.celonis.com/job/123',
+              match: 94,
+              matchedSkills: ['C++', 'gRPC'],
+              missingSkills: [],
+            },
+          ],
+          more: [],
+        }),
+      }),
+    );
+    // Cover letter is generated via the backend when the create dialog opens.
+    await page.route('**/api/v1/cover-letter', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ text: 'Sehr geehrtes Team von Celonis, …', provider: 'template' }),
+      }),
+    );
+
     await page.goto('/design/myjob/ui_kits/karriere/index.html');
     await page.getByRole('button', { name: /Jobsuche/ }).click();
     const main = page.locator('main');
-    // pre-configured search ran on open → both tiers visible
-    await expect(main).toContainText('Top-Treffer');
-    await expect(main).toContainText('Weitere & Entwicklungschancen');
-    // "Nur Top-Treffer" collapses the stretch tier
-    await page.getByRole('button', { name: /Nur Top-Treffer/ }).click();
-    await expect(main).not.toContainText('Weitere & Entwicklungschancen');
+    // search filters + source chips derived from the API results
+    await expect(main).toContainText('Suchbegriffe');
+    await expect(main).toContainText('Quellen');
+    // the fetched posting is listed, source-attributed, with its match score
+    await expect(main).toContainText('Senior C++ Engineer');
+    await expect(main).toContainText('via Bundesagentur für Arbeit');
+    await expect(main).toContainText('94%');
+    // open the posting → the real apply link is present
+    await page.getByText('Senior C++ Engineer').first().click();
+    await expect(page.getByRole('link', { name: /Stellenausschreibung öffnen/ })).toHaveAttribute(
+      'href',
+      'https://careers.celonis.com/job/123',
+    );
+    // build an application from it (sending is for later)
+    await page.getByRole('button', { name: 'Bewerbung erstellen' }).click();
+    await expect(page.locator('body')).toContainText('Unterlagen für die Mappe');
+    await expect(page.getByRole('button', { name: 'Vormerken' })).toBeVisible();
+  });
+
+  test('Karriere_Settings_SwitchesLlmProvider', async ({ page }) => {
+    await page.route('**/api/v1/jobs**', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          threshold: 80,
+          counts: { total: 0, top: 0, more: 0 },
+          top: [],
+          more: [],
+        }),
+      }),
+    );
+    let current = 'claude';
+    await page.route('**/api/v1/settings/llm', (route) => {
+      if (route.request().method() === 'PUT')
+        current = JSON.parse(route.request().postData() || '{}').provider;
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          current,
+          providers: [
+            { id: 'claude', label: 'Claude (Anthropic)', available: true },
+            { id: 'gemini', label: 'Gemini (Google)', available: true },
+          ],
+        }),
+      });
+    });
+
+    await page.goto('/design/myjob/ui_kits/karriere/index.html');
+    await page.getByRole('button', { name: /KI-Modell wählen/ }).click();
+    const dialog = page.locator('body');
+    await expect(dialog).toContainText('KI-Modell');
+    await expect(dialog).toContainText('Claude');
+    await expect(dialog).toContainText('Gemini');
+    await page.getByText('Gemini', { exact: true }).click();
+    // the backend was asked to switch
+    await expect.poll(() => current).toBe('gemini');
   });
 });

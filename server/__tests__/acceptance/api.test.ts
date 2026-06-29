@@ -10,6 +10,12 @@ import { ApplicationService } from '../../src/services/application-service';
 import { JobSearchService } from '../../src/services/job-search-service';
 import { AtsService } from '../../src/services/ats-service';
 import { SavedSearchService } from '../../src/services/saved-search-service';
+import { LlmController } from '../../src/http/llm-controller';
+import { LlmService } from '../../src/services/llm-service';
+import { CoverLetterService } from '../../src/services/cover-letter-service';
+import { AnthropicLlmProvider } from '../../src/adapters/anthropic-llm-provider';
+import { GeminiLlmProvider } from '../../src/adapters/gemini-llm-provider';
+import { nodeFetch } from '../../src/adapters/node-fetch';
 import { SampleJobSource } from '../../src/adapters/sample-job-source';
 import { KeywordSkillExtractor } from '../../src/adapters/keyword-skill-extractor';
 import {
@@ -60,11 +66,28 @@ function makeApp(): Express {
       idGenerator: new SequenceIdGenerator('search'),
     }),
   });
+  const llmService = new LlmService({
+    providers: [
+      new AnthropicLlmProvider({ httpFetch: nodeFetch, config: config.llm.anthropic }),
+      new GeminiLlmProvider({ httpFetch: nodeFetch, config: config.llm.gemini }),
+    ],
+    defaultProvider: config.llm.provider,
+    logger: noopLogger,
+  });
+  const llmController = new LlmController({
+    llmService,
+    coverLetterService: new CoverLetterService({
+      llmService,
+      candidate: config.candidate,
+      logger: noopLogger,
+    }),
+  });
   return createApp({
     applicationController: controller,
     jobController,
     atsController,
     savedSearchController,
+    llmController,
     config,
     logger: noopLogger,
   });
@@ -254,5 +277,44 @@ describe('REST API /api/v1', () => {
     const res = await request(app).get('/');
     expect(res.status).toBe(200);
     expect(res.text).toMatch(/<!DOCTYPE html>/i);
+  });
+
+  it('LlmSettings_Get_ReturnsProvidersAndCurrent', async () => {
+    const res = await request(app).get('/api/v1/settings/llm');
+    expect(res.status).toBe(200);
+    expect(res.body.current).toBe('claude');
+    expect(res.body.providers.map((p: { id: string }) => p.id).sort()).toEqual([
+      'claude',
+      'gemini',
+    ]);
+    // No API keys configured in the test env → both providers report unavailable.
+    expect(res.body.providers.every((p: { available: boolean }) => p.available === false)).toBe(
+      true,
+    );
+  });
+
+  it('LlmSettings_Put_SwitchesProvider', async () => {
+    const res = await request(app).put('/api/v1/settings/llm').send({ provider: 'gemini' });
+    expect(res.status).toBe(200);
+    expect(res.body.current).toBe('gemini');
+  });
+
+  it('LlmSettings_PutUnknown_Returns400', async () => {
+    const res = await request(app).put('/api/v1/settings/llm').send({ provider: 'openai' });
+    expect(res.status).toBe(400);
+  });
+
+  it('CoverLetter_Post_FallsBackToTemplate', async () => {
+    const res = await request(app)
+      .post('/api/v1/cover-letter')
+      .send({ company: 'Celonis', role: 'Senior C++ Engineer', city: 'München', skills: ['C++'] });
+    expect(res.status).toBe(200);
+    expect(res.body.provider).toBe('template'); // no keys → deterministic template
+    expect(res.body.text).toContain('Celonis');
+  });
+
+  it('CoverLetter_PostMissingCompany_Returns400', async () => {
+    const res = await request(app).post('/api/v1/cover-letter').send({ role: 'Engineer' });
+    expect(res.status).toBe(400);
   });
 });

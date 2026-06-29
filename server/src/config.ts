@@ -1,5 +1,7 @@
 import path from 'node:path';
 import type { CandidateProfile } from './domain/skill';
+import type { CandidateIdentity } from './domain/cover-letter';
+import type { LlmProviderId } from './ports/llm-provider';
 
 /** Runtime configuration, resolved from the environment and repo layout. */
 export interface AppConfig {
@@ -14,6 +16,10 @@ export interface AppConfig {
   versionedPaths: string[];
   /** The searching candidate's skills (drives job matching). */
   candidateProfile: CandidateProfile;
+  /** The candidate's identity (drives cover-letter authorship). */
+  candidate: CandidateIdentity;
+  /** LLM provider wiring for cover-letter generation. */
+  llm: LlmConfig;
   /** Pre-configured search run when /api/v1/jobs is called with no params. */
   defaultJobSearch: Record<string, unknown>;
   /** Which live job boards to query (none → offline sample). */
@@ -22,6 +28,14 @@ export interface AppConfig {
   store: 'fs' | 'sql';
   /** Postgres connection string, used when store === 'sql'. */
   databaseUrl: string;
+}
+
+/** LLM provider wiring, resolved from the environment. */
+export interface LlmConfig {
+  /** Provider selected at startup. */
+  provider: LlmProviderId;
+  anthropic: { apiKey: string; model: string };
+  gemini: { apiKey: string; model: string };
 }
 
 /** Live job-board wiring, resolved from the environment. */
@@ -75,6 +89,21 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     staticDir: rootDir,
     versionedPaths: ['archive/bewerbungen'],
     candidateProfile: CANDIDATE_PROFILE,
+    candidate: {
+      name: env.CANDIDATE_NAME ?? 'Suhay Sevinc',
+      title: env.CANDIDATE_TITLE ?? 'M.Sc. Software Engineer',
+    },
+    llm: {
+      provider: env.LLM_PROVIDER === 'gemini' ? 'gemini' : 'claude',
+      anthropic: {
+        apiKey: env.ANTHROPIC_API_KEY ?? '',
+        model: env.ANTHROPIC_MODEL ?? 'claude-opus-4-8',
+      },
+      gemini: {
+        apiKey: env.GEMINI_API_KEY ?? '',
+        model: env.GEMINI_MODEL ?? 'gemini-2.5-flash',
+      },
+    },
     defaultJobSearch: { threshold: 80 },
     jobSources: {
       arbeitnow: { enabled: enabled.has('arbeitnow') },

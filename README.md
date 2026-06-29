@@ -110,6 +110,25 @@ report: coverage `score`, `matched` and `missing` keywords, and `recommendations
 - `DELETE /api/v1/searches/:id` — remove one
 - `GET /api/v1/searches/:id/run` — run it through the two-tier job search
 
+### Cover letters & LLM provider (`/api/v1/cover-letter`, `/api/v1/settings/llm`)
+
+`POST /api/v1/cover-letter` (`{ company, role, city?, skills? }`) generates a tailored
+German Anschreiben with the currently selected LLM provider, falling back to a
+deterministic template when no provider is configured. Switch providers at runtime
+via `GET`/`PUT /api/v1/settings/llm` (`{ provider: "claude" | "gemini" }`) — the
+Karriere app exposes this as the **KI-Modell** dialog in the top bar.
+
+Providers are off (template-only) until you supply a key:
+
+| Env                                 | Purpose                                                     |
+| ----------------------------------- | ----------------------------------------------------------- |
+| `LLM_PROVIDER`                      | default provider at startup: `claude` (default) or `gemini` |
+| `ANTHROPIC_API_KEY`                 | enables Claude                                              |
+| `ANTHROPIC_MODEL`                   | Claude model (default `claude-opus-4-8`)                    |
+| `GEMINI_API_KEY`                    | enables Gemini                                              |
+| `GEMINI_MODEL`                      | Gemini model (default `gemini-2.5-flash`)                   |
+| `CANDIDATE_NAME`, `CANDIDATE_TITLE` | who the letter is authored as                               |
+
 ### Storage backend
 
 Defaults to JSON files under `archive/bewerbungen/`. Set `STORE=sql` with a

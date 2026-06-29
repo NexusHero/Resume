@@ -200,6 +200,62 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/JobSearchResult' }
         '404': { $ref: '#/components/responses/Problem' }
+  /settings/llm:
+    get:
+      summary: Current LLM provider and availability
+      responses:
+        '200':
+          description: Provider settings
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LlmSettings' }
+    put:
+      summary: Switch the active LLM provider
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [provider]
+              properties:
+                provider: { type: string, enum: [claude, gemini] }
+      responses:
+        '200':
+          description: Updated provider settings
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LlmSettings' }
+        '400': { $ref: '#/components/responses/Problem' }
+  /cover-letter:
+    post:
+      summary: Generate a tailored cover letter via the active LLM provider
+      description: >
+        Uses the selected provider (Claude or Gemini); falls back to a
+        deterministic template when no provider is configured or a call fails.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [company, role]
+              properties:
+                company: { type: string }
+                role: { type: string }
+                city: { type: string }
+                skills: { type: array, items: { type: string } }
+      responses:
+        '200':
+          description: Generated cover letter
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  text: { type: string }
+                  provider: { type: string, enum: [claude, gemini, template] }
+        '400': { $ref: '#/components/responses/Problem' }
 components:
   responses:
     Problem:
@@ -355,6 +411,18 @@ components:
         city: { type: string }
         country: { type: string }
         threshold: { type: integer, minimum: 0, maximum: 100, default: 80 }
+    LlmSettings:
+      type: object
+      properties:
+        current: { type: string, enum: [claude, gemini] }
+        providers:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, enum: [claude, gemini] }
+              label: { type: string }
+              available: { type: boolean }
     Problem:
       type: object
       properties:

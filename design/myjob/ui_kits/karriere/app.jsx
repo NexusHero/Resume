@@ -22,6 +22,7 @@ function App() {
   const [openApp, setOpenApp] = React.useState(null);
   const [openPos, setOpenPos] = React.useState(null);
   const [toast, setToast] = React.useState(null);
+  const [settingsOpen, setSettingsOpen] = React.useState(false);
 
   React.useEffect(() => { try { localStorage.setItem('karriere.mode', mode); } catch (e) {} }, [mode]);
   React.useEffect(() => { try { localStorage.setItem('karriere.dir', direction); } catch (e) {} }, [direction]);
@@ -63,6 +64,7 @@ function App() {
       active={active} onNav={nav} me={ME}
       badges={{ bewerbungen: awaiting + drafts }}
       title={meta.t} subtitle={meta.s}
+      onSettings={() => setSettingsOpen(true)}
       actions={active !== 'jobsuche' ? <KA.Button size="sm" variant="primary" iconLeft={<KA.Icon name="search" size={14} />} onClick={() => nav('jobsuche')}>Jobs finden</KA.Button> : null}
     >
       {active === 'uebersicht' && (
@@ -80,6 +82,8 @@ function App() {
       {active === 'stellen' && (
         <window.KStellen openId={openPos} onOpen={setOpenPos} onClose={() => setOpenPos(null)} />
       )}
+
+      {settingsOpen && <window.KSettings onClose={() => setSettingsOpen(false)} />}
 
       {toast && (
         <div style={{ position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)', zIndex: 60, display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 18px', borderRadius: 'var(--radius-pill)', background: 'var(--ink-900)', color: '#fff', boxShadow: 'var(--shadow-lg)', animation: 'kpop var(--dur-med) var(--ease-out)' }}>

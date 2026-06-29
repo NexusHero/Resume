@@ -7,6 +7,7 @@ import type { ApplicationController } from './http/application-controller';
 import type { JobController } from './http/job-controller';
 import type { AtsController } from './http/ats-controller';
 import type { SavedSearchController } from './http/saved-search-controller';
+import type { LlmController } from './http/llm-controller';
 
 async function main(): Promise<void> {
   const config = loadConfig();
@@ -26,6 +27,7 @@ async function main(): Promise<void> {
     jobController: container.resolve<JobController>('jobController'),
     atsController: container.resolve<AtsController>('atsController'),
     savedSearchController: container.resolve<SavedSearchController>('savedSearchController'),
+    llmController: container.resolve<LlmController>('llmController'),
     config,
     logger,
   });

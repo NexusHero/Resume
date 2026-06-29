@@ -13,6 +13,9 @@ const ME = {
   location: 'Berlin',
   src: '../../assets/img/candidate-portrait-sm.jpg',
   email: 'suhay.sevinc@example.de',
+  /* Skills the candidate already has — used to match jobs and to flag which
+     new skills a lower-matching ("stretch") job would add. */
+  skills: ['C++', 'Rust', 'Distributed Systems', 'gRPC', 'Kubernetes', 'Go', 'AWS', 'PostgreSQL', 'Microservices', 'Remote'],
 };
 
 /* short codes shown as chips on each application */
@@ -250,5 +253,97 @@ function makeDraft(job, opts) {
   };
 }
 
-window.KarriereData = { ME, DOC, APPLICATIONS, POSITIONS, JOBS, COUNTRIES, PROVIDERS, fmtEUR, positionTotal, anschreibenTemplate, makeDraft };
+/* Split a job's required skills against the candidate's: which they already
+   have vs. which the job would add. Mirrors the server-side Matcher; here it
+   only powers the "+ neue Skills" hint on stretch-tier jobs. */
+function skillMatch(job) {
+  const have = new Set((ME.skills || []).map((s) => s.toLowerCase()));
+  const matched = [];
+  const missing = [];
+  (job.tags || []).forEach((t) => (have.has(t.toLowerCase()) ? matched : missing).push(t));
+  return { matched, missing };
+}
+
+/* ============================================================
+   Live backend wiring. The Jobsuche and the Anschreiben-Generator
+   talk to the REST API (server/src) instead of the sample data above.
+   Base URL is same-origin when served by the app server; override via
+   window.KARRIERE_API for a split dev setup.
+   ============================================================ */
+const API_BASE = (typeof window !== 'undefined' && window.KARRIERE_API) || '/api/v1';
+
+/* Deterministic brand-tile color from a company name (no real logos). */
+function tileColor(name) {
+  let h = 0;
+  for (let i = 0; i < (name || '').length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return `hsl(${h % 360}, 58%, 45%)`;
+}
+
+/* Map a backend ScoredJob → the shape the Jobsuche UI renders. */
+function mapJob(j) {
+  const apply = j.url ? new URL(j.url, 'https://x').host.replace(/^www\./, '') : null;
+  return {
+    id: j.id,
+    company: j.company || '—',
+    role: j.role || '—',
+    city: j.city || '—',
+    country: j.country || '—',
+    mode: j.mode || '—',
+    salary: j.salary || '—',
+    posted: j.posted || '—',
+    match: typeof j.match === 'number' ? j.match : 0,
+    tags: j.skills || [],
+    missingSkills: j.missingSkills || [],
+    snippet: j.snippet || 'Keine Beschreibung verfügbar.',
+    source: j.source || 'Quelle',
+    tile: tileColor(j.company),
+    url: j.url || null,
+    applyVia: j.url ? 'Stellenanzeige' : '—',
+    applyUrl: apply || (j.url ? j.url : 'Keine Bewerbungs-URL'),
+  };
+}
+
+async function jsonOrThrow(res) {
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+const api = {
+  /* GET /jobs — returns { jobs, top, more, counts } already mapped to UI shape. */
+  async searchJobs({ country, city, q } = {}) {
+    const params = new URLSearchParams();
+    if (country && country !== 'Alle Länder') params.set('country', country);
+    if (city) params.set('city', city);
+    if (q) params.set('q', q);
+    const data = await jsonOrThrow(await fetch(`${API_BASE}/jobs?${params.toString()}`));
+    const top = (data.top || []).map(mapJob);
+    const more = (data.more || []).map(mapJob);
+    return { top, more, jobs: [...top, ...more], counts: data.counts || { total: top.length + more.length } };
+  },
+  /* POST /cover-letter — { text, provider }. */
+  async generateCoverLetter(job) {
+    return jsonOrThrow(
+      await fetch(`${API_BASE}/cover-letter`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ company: job.company, role: job.role, city: job.city, skills: job.tags || [] }),
+      }),
+    );
+  },
+  /* GET/PUT /settings/llm — provider selection. */
+  async getLlmSettings() {
+    return jsonOrThrow(await fetch(`${API_BASE}/settings/llm`));
+  },
+  async setLlmProvider(provider) {
+    return jsonOrThrow(
+      await fetch(`${API_BASE}/settings/llm`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ provider }),
+      }),
+    );
+  },
+};
+
+window.KarriereData = { ME, DOC, APPLICATIONS, POSITIONS, JOBS, COUNTRIES, PROVIDERS, fmtEUR, positionTotal, anschreibenTemplate, makeDraft, skillMatch, api, mapJob, tileColor };
 })();

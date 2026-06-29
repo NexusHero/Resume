@@ -1,0 +1,19 @@
+<!-- @dsCard group="Spacing" viewport="700x160" name="Shadows & elevation" subtitle="--shadow-sm/md/lg on paper + the floating-sheet shadow" -->
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8" /><link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; padding: 26px 22px; background: var(--surface-app); }
+  .row { display: flex; gap: 24px; align-items: center; }
+  .col { display: flex; flex-direction: column; gap: 12px; align-items: center; }
+  .box { width: 120px; height: 72px; background: var(--surface-card); border-radius: var(--radius-lg); border: 1px solid var(--border); }
+  .t { font-family: var(--font-mono); font-size: 10px; color: var(--text-soft); }
+</style></head>
+<body>
+<div class="row">
+  <div class="col"><div class="box" style="box-shadow:var(--shadow-sm)"></div><span class="t">shadow-sm</span></div>
+  <div class="col"><div class="box" style="box-shadow:var(--shadow-md)"></div><span class="t">shadow-md</span></div>
+  <div class="col"><div class="box" style="box-shadow:var(--shadow-lg)"></div><span class="t">shadow-lg</span></div>
+  <div class="col"><div class="box" style="box-shadow:var(--shadow-page)"></div><span class="t">shadow-page</span></div>
+</div>
+</body></html>

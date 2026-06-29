@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>myJob — System-Restructure · Decisions</title>
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html { background: var(--surface-page); }
+  body {
+    margin: 0;
+    font-family: var(--font-body);
+    font-size: var(--fs-md);
+    line-height: var(--lh-normal);
+    color: var(--text-body);
+    background: var(--surface-page);
+    -webkit-font-smoothing: antialiased;
+  }
+  .doc { max-width: 1140px; margin: 0 auto; padding: 0 0 96px; }
+
+  /* ---- mono signature, used ONLY where it earns its place ---- */
+  .kicker {
+    font-family: var(--font-mono);
+    font-size: var(--fs-2xs);
+    font-weight: 600;
+    letter-spacing: var(--ls-wider);
+    text-transform: uppercase;
+  }
+  .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+  h1, h2, h3 { font-family: var(--font-display); letter-spacing: var(--ls-tight); color: var(--text-heading); margin: 0; }
+  h1 { font-size: var(--fs-4xl); line-height: var(--lh-tight); letter-spacing: var(--ls-tighter); }
+  h2 { font-size: var(--fs-2xl); line-height: 1.2; }
+  h3 { font-size: var(--fs-lg); }
+  p { margin: 0; text-wrap: pretty; }
+
+  /* ---- header band (ink) ---- */
+  .band {
+    background: linear-gradient(165deg, var(--ink-850), var(--ink-900));
+    color: var(--sidebar-text);
+    padding: 52px 56px 46px;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  }
+  .band .kicker { color: var(--accent-on-dark); }
+  .band h1 { color: #fff; max-width: 22ch; margin: 16px 0 18px; }
+  .band p { color: var(--sidebar-muted); max-width: 64ch; font-size: var(--fs-lg); }
+  .band .brandrow { display: flex; align-items: center; gap: 12px; }
+  .logomark {
+    width: 30px; height: 30px; border-radius: 9px;
+    background: var(--accent); display: grid; place-items: end center;
+    padding: 6px; gap: 2px; grid-auto-flow: column;
+  }
+  .logomark i { display: block; width: 4px; background: #fff; border-radius: 1px; }
+  .logomark i:nth-child(1) { height: 7px; opacity: .55; }
+  .logomark i:nth-child(2) { height: 12px; opacity: .78; }
+  .logomark i:nth-child(3) { height: 17px; }
+  .wordmark { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-lg); color: #fff; }
+  .wordmark span { color: var(--accent-on-dark); }
+
+  section { padding: 0 56px; margin-top: 56px; }
+  .sec-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 22px; }
+  .sec-head .kicker { color: var(--accent-strong); }
+  .sec-num {
+    font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 600;
+    color: var(--text-soft); border: 1px solid var(--border); border-radius: var(--radius-pill);
+    padding: 2px 9px;
+  }
+  .lede { color: var(--text-muted); max-width: 70ch; margin-top: -8px; margin-bottom: 26px; }
+
+  .card {
+    background: var(--surface-card); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: 22px 24px;
+  }
+  .grid { display: grid; gap: 18px; }
+  .g2 { grid-template-columns: 1fr 1fr; }
+  .g3 { grid-template-columns: repeat(3, 1fr); }
+  .g4 { grid-template-columns: repeat(4, 1fr); }
+
+  /* ---- the shift ---- */
+  .shift { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 28px; }
+  .shift .arrow { color: var(--accent); font-size: 30px; line-height: 1; }
+  .heap { display: flex; flex-direction: column; gap: 10px; }
+  .app-chip {
+    display: flex; align-items: center; gap: 11px; padding: 12px 15px;
+    border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-subtle);
+  }
+  .app-chip.faded { opacity: .55; }
+  .app-chip.strong { border-color: var(--accent-border); background: var(--accent-soft); }
+  .app-chip .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .app-chip b { font-family: var(--font-display); font-weight: 600; font-size: var(--fs-md); color: var(--text-heading); }
+  .app-chip small { display: block; color: var(--text-soft); font-size: var(--fs-xs); }
+  .persona-tag {
+    font-family: var(--font-mono); font-size: var(--fs-3xs); letter-spacing: var(--ls-wide);
+    text-transform: uppercase; color: var(--text-soft); margin-left: auto; white-space: nowrap;
+  }
+
+  /* ---- decisions ---- */
+  .decision { display: flex; flex-direction: column; gap: 8px; }
+  .decision .q { color: var(--text-soft); font-size: var(--fs-sm); }
+  .decision .a { font-family: var(--font-display); font-weight: 600; font-size: var(--fs-lg); color: var(--text-heading); line-height: 1.25; }
+  .decision .why { color: var(--text-muted); font-size: var(--fs-sm); }
+  .pick {
+    align-self: flex-start; font-family: var(--font-mono); font-size: var(--fs-3xs); font-weight: 600;
+    letter-spacing: var(--ls-wide); text-transform: uppercase; color: var(--success);
+    background: var(--success-soft); border-radius: var(--radius-pill); padding: 3px 9px; margin-bottom: 2px;
+  }
+
+  /* ---- sitemap ---- */
+  .map-head { display: flex; align-items: center; gap: 11px; margin-bottom: 16px; }
+  .map-head .badge { font-family: var(--font-mono); font-size: var(--fs-2xs); font-weight: 600; color: var(--accent-contrast); background: var(--accent); border-radius: var(--radius-pill); padding: 3px 10px; }
+  .map-head .posture { margin-left: auto; font-family: var(--font-mono); font-size: var(--fs-3xs); letter-spacing: var(--ls-wide); text-transform: uppercase; color: var(--text-soft); }
+  .nav-list { display: flex; flex-direction: column; gap: 6px; }
+  .nav-row {
+    display: flex; align-items: center; gap: 12px; padding: 11px 14px;
+    border-radius: var(--radius-md); background: var(--surface-subtle); border: 1px solid var(--border);
+  }
+  .nav-row.home { background: var(--accent-soft); border-color: var(--accent-border); }
+  .nav-row .ico { width: 30px; height: 30px; border-radius: 8px; background: var(--ink-850); color: var(--accent-on-dark); display: grid; place-items: center; flex: none; }
+  .nav-row .ico svg { width: 16px; height: 16px; }
+  .nav-row .label { font-weight: 600; color: var(--text-heading); font-size: var(--fs-sm); }
+  .nav-row .note { color: var(--text-soft); font-size: var(--fs-xs); margin-top: 1px; }
+  .nav-row .idx { font-family: var(--font-mono); font-size: var(--fs-2xs); color: var(--text-soft); margin-left: auto; }
+  .util { margin-top: 12px; padding-top: 14px; border-top: 1px dashed var(--border-strong); display: flex; flex-direction: column; gap: 6px; }
+  .util .u { display: flex; align-items: center; gap: 10px; color: var(--text-muted); font-size: var(--fs-sm); }
+  .util .u .k { font-family: var(--font-mono); font-size: var(--fs-2xs); color: var(--text-soft); }
+
+  /* ---- shell concept ---- */
+  .frame { border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); background: var(--surface-card); }
+  .frame .cap { padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 9px; }
+  .frame .cap .kicker { color: var(--text-soft); }
+  .mock { display: flex; height: 230px; }
+  .mock .rail { width: 64px; background: linear-gradient(165deg, var(--ink-850), var(--ink-900)); padding: 14px 0; display: flex; flex-direction: column; align-items: center; gap: 11px; }
+  .mock .rail .ri { width: 30px; height: 30px; border-radius: 8px; background: var(--sidebar-glass); }
+  .mock .rail .ri.on { background: var(--accent); }
+  .mock .canvas { flex: 1; background: var(--surface-app); padding: 13px; display: grid; grid-template-columns: 1.5fr 1fr; gap: 10px; }
+  .mock .canvas .col { display: flex; flex-direction: column; gap: 7px; }
+  .mock .ln { height: 13px; border-radius: 5px; background: var(--surface-card); border: 1px solid var(--border); }
+  .mock .ln.tall { height: 46px; }
+  .mock .panel { background: var(--surface-card); border: 1px solid var(--border); border-radius: 8px; }
+
+  .phone { width: 132px; margin: 0 auto; }
+  .phone .scr { height: 230px; border: 1px solid var(--border); border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; background: var(--surface-app); }
+  .phone .top { height: 38px; background: linear-gradient(165deg, var(--ink-850), var(--ink-900)); }
+  .phone .body { flex: 1; padding: 11px; display: flex; flex-direction: column; gap: 7px; }
+  .phone .body .ln { height: 13px; border-radius: 5px; background: var(--surface-card); border: 1px solid var(--border); }
+  .phone .body .ln.tall { height: 50px; }
+  .phone .tabs { height: 40px; background: var(--surface-card); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-around; padding: 0 8px; }
+  .phone .tabs .t { width: 18px; height: 18px; border-radius: 6px; background: var(--surface-sunk); }
+  .phone .tabs .t.on { background: var(--accent); }
+
+  /* ---- token: mono detox before/after ---- */
+  .ba { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+  .ba .pane { padding: 20px 22px; }
+  .ba .pane + .pane { border-left: 1px solid var(--border); }
+  .ba .tag { display: inline-flex; align-items: center; gap: 7px; font-family: var(--font-mono); font-size: var(--fs-2xs); font-weight: 600; letter-spacing: var(--ls-wide); text-transform: uppercase; padding: 3px 9px; border-radius: var(--radius-pill); margin-bottom: 16px; }
+  .tag.bad { color: var(--danger); background: var(--danger-soft); }
+  .tag.good { color: var(--success); background: var(--success-soft); }
+
+  /* sample application rows */
+  .arow { display: flex; align-items: center; gap: 13px; padding: 13px 0; }
+  .arow + .arow { border-top: 1px solid var(--border); }
+  .av { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(165deg, var(--ink-700), var(--ink-850)); color: #fff; display: grid; place-items: center; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-sm); flex: none; }
+  .arow .main { min-width: 0; flex: 1; }
+  /* BAD pattern — everything mono+caps */
+  .mono-all .nm { font-family: var(--font-mono); font-size: var(--fs-2xs); letter-spacing: var(--ls-wide); text-transform: uppercase; color: var(--text-heading); }
+  .mono-all .sub { font-family: var(--font-mono); font-size: var(--fs-3xs); letter-spacing: var(--ls-wide); text-transform: uppercase; color: var(--text-soft); margin-top: 3px; }
+  .mono-all .pct { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--accent); text-decoration: underline; }
+  /* GOOD pattern — humanist labels, mono only for data */
+  .clean .nm { font-family: var(--font-display); font-weight: 600; font-size: var(--fs-md); color: var(--text-heading); }
+  .clean .sub { font-size: var(--fs-xs); color: var(--text-muted); margin-top: 2px; }
+  .clean .sub .id { font-family: var(--font-mono); color: var(--text-soft); }
+
+  /* ---- match vs progress ---- */
+  .ring { --p: 74; width: 58px; height: 58px; border-radius: 50%; flex: none; display: grid; place-items: center;
+    background: conic-gradient(var(--accent) calc(var(--p) * 1%), var(--accent-soft) 0); }
+  .ring .hole { width: 42px; height: 42px; border-radius: 50%; background: var(--surface-card); display: grid; place-items: center; }
+  .ring .hole b { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: 600; font-size: var(--fs-sm); color: var(--accent-strong); }
+  .tier { display: flex; flex-direction: column; gap: 7px; flex: 1; }
+  .tier .t { display: flex; align-items: center; gap: 9px; }
+  .tier .t .lab { font-size: var(--fs-xs); color: var(--text-muted); width: 88px; flex: none; }
+  .tier .bar { flex: 1; height: 7px; border-radius: var(--radius-pill); background: var(--surface-sunk); overflow: hidden; }
+  .tier .bar i { display: block; height: 100%; border-radius: var(--radius-pill); background: var(--accent); }
+  .tier .bar.bonus i { background: var(--accent-on-dark); }
+  .tier .v { font-family: var(--font-mono); font-size: var(--fs-2xs); color: var(--text-soft); width: 34px; text-align: right; flex: none; }
+
+  .prog { display: flex; flex-direction: column; gap: 11px; }
+  .prog .p { display: flex; align-items: center; gap: 12px; }
+  .prog .p .lab { font-size: var(--fs-sm); color: var(--text-body); width: 150px; flex: none; }
+  .prog .track { flex: 1; height: 8px; border-radius: var(--radius-pill); background: var(--surface-sunk); overflow: hidden; }
+  .prog .track i { display: block; height: 100%; background: var(--neutral-500); border-radius: var(--radius-pill); }
+  .prog .v { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-muted); width: 42px; text-align: right; flex: none; }
+
+  .vs-note { font-size: var(--fs-sm); color: var(--text-muted); margin-top: 14px; }
+  .vs-note b { color: var(--text-heading); font-weight: 600; }
+
+  /* ---- status remap ---- */
+  .stage-track { display: flex; gap: 0; border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--border); }
+  .stage { flex: 1; padding: 16px 14px; text-align: center; border-right: 1px solid var(--border); position: relative; }
+  .stage:last-child { border-right: none; }
+  .stage .nm { font-weight: 600; font-size: var(--fs-sm); color: var(--text-heading); }
+  .stage .role { font-family: var(--font-mono); font-size: var(--fs-3xs); letter-spacing: var(--ls-wide); text-transform: uppercase; color: var(--text-soft); margin-top: 5px; }
+  .stage .swatch { width: 100%; height: 6px; border-radius: var(--radius-pill); margin-bottom: 12px; }
+  .chip { display: inline-flex; align-items: center; gap: 7px; font-size: var(--fs-xs); font-weight: 600; padding: 4px 11px; border-radius: var(--radius-pill); }
+  .chip .d { width: 7px; height: 7px; border-radius: 50%; }
+
+  .fixbox { display: flex; gap: 14px; align-items: flex-start; margin-top: 20px; padding: 16px 18px; border: 1px solid var(--warning); border-left: 3px solid var(--warning); border-radius: var(--radius-md); background: var(--warning-soft); }
+  .fixbox .lab { font-family: var(--font-mono); font-size: var(--fs-3xs); font-weight: 600; letter-spacing: var(--ls-wide); text-transform: uppercase; color: var(--warning); white-space: nowrap; padding-top: 2px; }
+  .fixbox p { font-size: var(--fs-sm); color: var(--text-body); }
+
+  /* ---- collapse map ---- */
+  .collapse { display: flex; flex-direction: column; gap: 10px; }
+  .crow { display: grid; grid-template-columns: 1fr auto 0.9fr; align-items: center; gap: 18px; padding: 14px 18px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-card); box-shadow: var(--shadow-sm); }
+  .crow .from { display: flex; flex-wrap: wrap; gap: 6px; }
+  .src { font-family: var(--font-mono); font-size: var(--fs-2xs); color: var(--text-muted); background: var(--surface-sunk); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 3px 9px; }
+  .src .app { color: var(--text-soft); }
+  .crow .arr { color: var(--accent); font-family: var(--font-mono); font-size: var(--fs-sm); }
+  .crow .to { display: flex; align-items: center; gap: 9px; }
+  .crow .to b { font-family: var(--font-display); font-weight: 600; color: var(--text-heading); font-size: var(--fs-md); }
+  .crow .to .verb { font-family: var(--font-mono); font-size: var(--fs-3xs); letter-spacing: var(--ls-wide); text-transform: uppercase; color: var(--accent-strong); }
+
+  .foot { padding: 0 56px; margin-top: 64px; }
+  .foot .card { display: flex; align-items: center; gap: 20px; background: linear-gradient(165deg, var(--ink-850), var(--ink-900)); border: none; }
+  .foot .kicker { color: var(--accent-on-dark); }
+  .foot h3 { color: #fff; }
+  .foot p { color: var(--sidebar-muted); font-size: var(--fs-sm); margin-top: 4px; }
+
+  @media (max-width: 880px) {
+    section, .band, .foot { padding-left: 22px; padding-right: 22px; }
+    .g2, .g3, .g4, .shift, .ba, .crow { grid-template-columns: 1fr; }
+    .shift .arrow { transform: rotate(90deg); justify-self: center; }
+  }
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <!-- ============ HEADER BAND ============ -->
+  <header class="band">
+    <div class="brandrow">
+      <div class="logomark"><i></i><i></i><i></i></div>
+      <div class="wordmark"><span>my</span>Job</div>
+      <div class="kicker" style="margin-left:auto;">System Restructure · v1 · Jun 2026</div>
+    </div>
+    <h1>Drei Apps, zwei Personas → zwei Apps, ein Shell.</h1>
+    <p>Die Entscheidungsgrundlage, bevor irgendein Screen angefasst wird: zwei Sitemaps, ein geteiltes Shell, die revidierten Type-, Match- und Status-Tokens — und die Collapse-Map, die zeigt, welcher alte Screen in welchem neuen aufgeht.</p>
+  </header>
+
+  <!-- ============ THE SHIFT ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">00</span>
+      <span class="kicker">Der Schnitt</span>
+    </div>
+    <div class="card">
+      <div class="shift">
+        <div class="heap">
+          <div class="kicker" style="color:var(--text-soft); margin-bottom:4px;">Heute · 3 Shells</div>
+          <div class="app-chip"><span class="dot" style="background:var(--blueprint-500);"></span><div><b>recruiting</b><small>ATS · Workspace</small></div><span class="persona-tag">Vermittler</span></div>
+          <div class="app-chip faded"><span class="dot" style="background:var(--neutral-400);"></span><div><b>karriere</b><small>Karriere-Tracker</small></div><span class="persona-tag">Bewerber:in</span></div>
+          <div class="app-chip faded"><span class="dot" style="background:var(--neutral-400);"></span><div><b>bewerber</b><small>Dossier-App</small></div><span class="persona-tag">Bewerber:in</span></div>
+        </div>
+        <div class="arrow">→</div>
+        <div class="heap">
+          <div class="kicker" style="color:var(--accent-strong); margin-bottom:4px;">Ziel · 2 Apps, 1 Shell</div>
+          <div class="app-chip strong"><span class="dot" style="background:var(--accent);"></span><div><b>myJob Recruit</b><small>Recruiter · Desktop-first</small></div><span class="persona-tag">Vermittler</span></div>
+          <div class="app-chip strong"><span class="dot" style="background:var(--accent);"></span><div><b>myJob</b><small>Bewerber:in · Mobile-first</small></div><span class="persona-tag">Bewerber:in</span></div>
+          <p style="font-size:var(--fs-xs); color:var(--text-soft); margin-top:6px;"><span class="num">bewerber</span> wird in <span class="num">karriere</span> gefaltet. Das CV ist ein Export-Artefakt, kein Nav-Screen.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DECISIONS ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">01</span>
+      <span class="kicker">Vier Entscheidungen — die offenen Fragen, beantwortet</span>
+    </div>
+    <p class="lede">Festgelegt, damit wir nicht in Screen 7 neu verhandeln. Jede prägt den Rest.</p>
+    <div class="grid g2">
+      <div class="card decision">
+        <span class="pick">Entschieden</span>
+        <span class="q">Career / „Meine Stellen" = Arbeitshistorie oder gemerkte Jobs?</span>
+        <span class="a">Arbeitshistorie + Earnings.</span>
+        <span class="why">Career ist die Datenquelle, aus der das CV-Export-Artefakt entsteht — das gibt dem Screen einen echten Job. Gemerkte Jobs sind ein Filter in <b>Jobsuche</b>, kein eigenes Ziel.</span>
+      </div>
+      <div class="card decision">
+        <span class="pick">Entschieden</span>
+        <span class="q">Ein Account mit Mode-Switch — oder zwei Produkte?</span>
+        <span class="a">Zwei Produkte, ein Shell. Kein Account-Toggle.</span>
+        <span class="why">Recruiter und Bewerber:in sind selten dieselbe Person in einer Session. Geteilt wird die Shell-Komponente und das Token-Layer — nicht der Account.</span>
+      </div>
+      <div class="card decision">
+        <span class="pick">Entschieden</span>
+        <span class="q">Wo lebt Settings?</span>
+        <span class="a">Utility am Rail-Fuß, kein Top-6-Ziel.</span>
+        <span class="why">Über Account / Avatar unten im Rail. <span class="num">Jobquellen</span> → Settings ▸ Quellen. So bleiben die sechs Primärziele sauber.</span>
+      </div>
+      <div class="card decision">
+        <span class="pick">Entschieden</span>
+        <span class="q">Bewerber mobile-first, Recruit desktop-first?</span>
+        <span class="a">Ja. Ein Shell, zwei Default-Postures.</span>
+        <span class="why">Recruiter am Desk mit mehrspaltiger Pipeline + Detail-Panel → Rail nativ. Bewerber:in checkt Status am Handy → Shell klappt auf Bottom-Tabs.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SITEMAPS ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">02</span>
+      <span class="kicker">Zwei Sitemaps — je 6 Ziele, jedes verdient seinen Platz</span>
+    </div>
+    <div class="grid g2">
+      <!-- RECRUIT -->
+      <div class="card">
+        <div class="map-head">
+          <span class="badge">Recruit</span>
+          <h3>myJob Recruit</h3>
+          <span class="posture">Desktop-first</span>
+        </div>
+        <div class="nav-list">
+          <div class="nav-row home">
+            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg></span>
+            <div><div class="label">Overview</div><div class="note">Das einzige Zuhause des KPI-Streifens</div></div>
+            <span class="idx">01</span>
+          </div>
+          <div class="nav-row">
+            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></span>
+            <div><div class="label">Mandates</div><div class="note">Mandate · Auslastung = Progress-Token</div></div>
+            <span class="idx">02</span>
+          </div>
+          <div class="nav-row">
+            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 010 6"/></svg></span>
+            <div><div class="label">Talent Pool</div><div class="note">Talente · Fit = Match-Token</div></div>
+            <span class="idx">03</span>
+          </div>
+          <div class="nav-row">
+            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="11" rx="1"/><rect x="17" y="4" width="4" height="7" rx="1"/></svg></span>
+            <div><div class="label">Pipeline <span class="num" style="color:var(--text-soft);font-size:var(--fs-2xs);">← Applications</span></div><div class="note">Kanban über die 6 fixen Stages</div></div>
+            <span class="idx">04</span>
+          </div>
+          <div class="nav-row">
+            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9l5-4 5 4 6-5"/></svg></span>
+            <div><div class="label">Performance <span class="num" style="color:var(--text-soft);font-size:var(--fs-2xs);">← Reports + Placements</span></div><div class="note">Tabs: Funnel · Fees · Platzierungen</div></div>
+            <span class="idx">05</span>
+          </div>
+          <div class="nav-row">
+            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H7l-3 3z"/></svg></span>
+            <div><div class="label">Inbox</div><div class="note">Nachrichten zu Mandaten & Talenten</div></div>
+            <span class="idx">06</span>
+          </div>
+        </div>
+        <div class="util">
+          <div class="u"><span class="k">UTIL</span> Settings ▸ Sources, Team, Abrechnung</div>
+          <div class="u"><span class="k">UTIL</span> Account · der Vermittler-Switch lebt hier</div>
+        </div>
+      </div>
+
+      <!-- MYJOB -->
+      <div class="card">
+        <div class="map-head">
+          <span class="badge">myJob</span>
+          <h3>myJob für Bewerber:innen</h3>
+          <span class="posture">Mobile-first</span>
+        </div>
+        <div class="nav-list">
+          <div class="nav-row home">
+            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg></span>
+            <div><div class="label">Dashboard <span class="num" style="color:var(--text-soft);font-size:var(--fs-2xs);">← Übersicht</span></div><div class="note">Nächster Schritt, nicht KPI-Klon</div></div>
+            <span class="idx">01</span>
+          </div>
+          <div class="nav-row">
+            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg></span>
+            <div><div class="label">Jobsuche</div><div class="note">Zweistufiges Skill-Match — der Differenzierer</div></div>
+            <span class="idx">02</span>
+          </div>
+          <div class="nav-row">
+            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h6M9 13h6M9 17h3"/></svg></span>
+            <div><div class="label">Bewerbungen <span class="num" style="color:var(--text-soft);font-size:var(--fs-2xs);">← absorbiert „My applications"</span></div><div class="note">Die reiche Liste — kanonische ApplicationRow</div></div>
+            <span class="idx">03</span>
+          </div>
+          <div class="nav-row">
+            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l3 3v15H6z"/><path d="M14 3v4h4"/></svg></span>
+            <div><div class="label">Dokumente</div><div class="note">CV/Docs + Mappe-Builder als Task, nicht Top-Tab</div></div>
+            <span class="idx">04</span>
+          </div>
+          <div class="nav-row">
+            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 012-2h8l6 6v10"/><path d="M4 13h16"/></svg></span>
+            <div><div class="label">Karriere <span class="num" style="color:var(--text-soft);font-size:var(--fs-2xs);">← Meine Stellen</span></div><div class="note">Arbeitshistorie & Earnings → speist das CV</div></div>
+            <span class="idx">05</span>
+          </div>
+          <div class="nav-row">
+            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H7l-3 3z"/></svg></span>
+            <div><div class="label">Postfach</div><div class="note">Antworten von Vermittlern & Firmen</div></div>
+            <span class="idx">06</span>
+          </div>
+        </div>
+        <div class="util">
+          <div class="u"><span class="k">UTIL</span> Settings ▸ Quellen (<span class="num">← Jobquellen</span>), Profil</div>
+          <div class="u"><span class="k">EXPORT</span> CV — Artefakt aus Karriere + Dokumente, kein Screen</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SHELL ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">03</span>
+      <span class="kicker">Ein Shell — zwei Postures</span>
+    </div>
+    <p class="lede">Dieselbe Shell-Komponente. Desktop: ink-Rail links + Detail-Panel rechts (Listen sind nie leer). Mobile: Rail klappt auf Bottom-Tabs, Detail wird Vollbild-Push.</p>
+    <div class="grid g2">
+      <div class="frame">
+        <div class="cap"><span class="kicker">Desktop · Recruit</span></div>
+        <div class="mock">
+          <div class="rail"><div class="ri on"></div><div class="ri"></div><div class="ri"></div><div class="ri"></div><div class="ri"></div><div class="ri"></div></div>
+          <div class="canvas">
+            <div class="col"><div class="ln"></div><div class="ln"></div><div class="ln"></div><div class="ln"></div><div class="ln"></div></div>
+            <div class="panel"></div>
+          </div>
+        </div>
+      </div>
+      <div class="frame">
+        <div class="cap"><span class="kicker">Mobile · myJob</span></div>
+        <div style="padding:16px; background:var(--surface-app);">
+          <div class="phone">
+            <div class="scr">
+              <div class="top"></div>
+              <div class="body"><div class="ln tall"></div><div class="ln"></div><div class="ln"></div><div class="ln"></div></div>
+              <div class="tabs"><div class="t on"></div><div class="t"></div><div class="t"></div><div class="t"></div><div class="t"></div><div class="t"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TOKEN: MONO DETOX ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">04</span>
+      <span class="kicker">Token-Revision · A — Mono-Detox</span>
+    </div>
+    <p class="lede">Mono wird nicht gelöscht — es bekommt einen Job. Nur Zahlen, IDs, Währung, %, Tech-Tags & Code. Labels gehen zurück auf Inter. Das Signature-Element wird <i>stärker</i>, weil es etwas bedeutet.</p>
+    <div class="ba">
+      <div class="pane">
+        <span class="tag bad">● Heute · Mono als Dekoration</span>
+        <div class="mono-all">
+          <div class="arow">
+            <span class="av">SK</span>
+            <div class="main"><div class="nm">Sara Klein</div><div class="sub">Senior Product Designer · Aurora GmbH</div></div>
+            <span class="pct">74%</span>
+          </div>
+          <div class="arow">
+            <span class="av">ME</span>
+            <div class="main"><div class="nm">Milan Ebert</div><div class="sub">Frontend Engineer · Nordlicht AG</div></div>
+            <span class="pct">88%</span>
+          </div>
+        </div>
+        <p style="font-size:var(--fs-xs); color:var(--text-soft); margin-top:14px;">Alles gleich laut. Das Match-Signal sieht aus wie ein Link.</p>
+      </div>
+      <div class="pane">
+        <span class="tag good">● Ziel · Mono nur für Daten</span>
+        <div class="clean">
+          <div class="arow">
+            <span class="av">SK</span>
+            <div class="main"><div class="nm">Sara Klein</div><div class="sub">Senior Product Designer · Aurora GmbH · <span class="id">MND-204</span></div></div>
+            <span class="chip" style="color:var(--accent-strong); background:var(--accent-soft);"><span class="d" style="background:var(--accent);"></span><span class="num">74%</span> Match</span>
+          </div>
+          <div class="arow">
+            <span class="av">ME</span>
+            <div class="main"><div class="nm">Milan Ebert</div><div class="sub">Frontend Engineer · Nordlicht AG · <span class="id">MND-211</span></div></div>
+            <span class="chip" style="color:var(--accent-strong); background:var(--accent-soft);"><span class="d" style="background:var(--accent);"></span><span class="num">88%</span> Match</span>
+          </div>
+        </div>
+        <p style="font-size:var(--fs-xs); color:var(--text-soft); margin-top:14px;">Name = Display, Kontext = Inter, ID & % = Mono. Ein Hero-Signal pro Reihe.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TOKEN: MATCH vs PROGRESS ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">05</span>
+      <span class="kicker">Token-Revision · B — Match ≠ Progress</span>
+    </div>
+    <p class="lede">Heute heißt dasselbe Pill mal Kandidaten-<b>Match</b> (74–90%) mal Mandat-<b>Fill</b> (20–24%). Über die <i>Form</i> trennen, nicht nur die Farbe — überlebt Farbenblindheit und Accent-Swap.</p>
+    <div class="grid g2">
+      <div class="card">
+        <div class="kicker" style="color:var(--accent-strong); margin-bottom:4px;">Match · radial + Accent</div>
+        <p style="font-size:var(--fs-xs); color:var(--text-soft); margin-bottom:18px;">Kandidaten-Fit. Zweistufig: Pflicht-Skills zuerst, Bonus separat — die ownable idea.</p>
+        <div style="display:flex; align-items:center; gap:18px;">
+          <div class="ring" style="--p:74;"><div class="hole"><b>74%</b></div></div>
+          <div class="tier">
+            <div class="t"><span class="lab">Pflicht-Skills</span><span class="bar"><i style="width:90%;"></i></span><span class="v">9/10</span></div>
+            <div class="t"><span class="lab">Bonus-Skills</span><span class="bar bonus"><i style="width:50%;"></i></span><span class="v">3/6</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="kicker" style="color:var(--text-muted); margin-bottom:4px;">Progress · linear + neutral</div>
+        <p style="font-size:var(--fs-xs); color:var(--text-soft); margin-bottom:18px;">Mandat-Auslastung / Fortschritt. Slate, nie Accent — kein „Erfolg" impliziert.</p>
+        <div class="prog">
+          <div class="p"><span class="lab">Senior Designer · Aurora</span><span class="track"><i style="width:24%;"></i></span><span class="v">24%</span></div>
+          <div class="p"><span class="lab">Frontend · Nordlicht</span><span class="track"><i style="width:60%;"></i></span><span class="v">60%</span></div>
+          <div class="p"><span class="lab">PM · Helio</span><span class="track"><i style="width:20%;"></i></span><span class="v">20%</span></div>
+        </div>
+      </div>
+    </div>
+    <p class="vs-note"><b>Regel:</b> Radial + Accent = wie gut passt jemand. Linear + Slate = wie weit ist etwas. Nie dieselbe Form für beide.</p>
+  </section>
+
+  <!-- ============ TOKEN: STATUS ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">06</span>
+      <span class="kicker">Token-Revision · C — Status-Farben werden semantisch</span>
+    </div>
+    <p class="lede">Die sechs fixen Pipeline-Stages, neu gemappt: neutral (grau/blau) → aktiv (blau) → Achtung (amber) → Erfolg (grün) / Problem (rot). Rot <i>nur</i> für echte Probleme.</p>
+    <div class="stage-track">
+      <div class="stage">
+        <div class="swatch" style="background:var(--info);"></div>
+        <div class="nm">Neu</div>
+        <div class="role">Neutral · Info</div>
+      </div>
+      <div class="stage">
+        <div class="swatch" style="background:var(--neutral-500);"></div>
+        <div class="nm">Sichtung</div>
+        <div class="role">Neutral · Slate</div>
+      </div>
+      <div class="stage">
+        <div class="swatch" style="background:var(--accent-strong);"></div>
+        <div class="nm">Interview</div>
+        <div class="role">Aktiv · Accent</div>
+      </div>
+      <div class="stage">
+        <div class="swatch" style="background:var(--warning);"></div>
+        <div class="nm">Angebot</div>
+        <div class="role">Achtung · Amber</div>
+      </div>
+      <div class="stage">
+        <div class="swatch" style="background:var(--success);"></div>
+        <div class="nm">Eingestellt</div>
+        <div class="role">Erfolg · Grün</div>
+      </div>
+      <div class="stage">
+        <div class="swatch" style="background:var(--danger);"></div>
+        <div class="nm">Absage</div>
+        <div class="role">Problem · Rot</div>
+      </div>
+    </div>
+    <div class="fixbox">
+      <span class="lab">Bug behoben</span>
+      <p>Heute ist <b>Sichtung</b> orange-rot (<span class="num">--status-review: #c2410c</span>) — liest sich wie ein Fehler, obwohl es eine neutrale „in Prüfung"-Stage ist. Neu: neutrales Slate. Rot bleibt <b>Absage</b> vorbehalten. Auch <b>Interview</b> war Violett (Rainbow) → wird Accent-Blau (aktiv).</p>
+    </div>
+  </section>
+
+  <!-- ============ COLLAPSE MAP ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">07</span>
+      <span class="kicker">Collapse-Map — wo alte Screens zusammenfallen</span>
+    </div>
+    <p class="lede">Jede Redundanz, aufgelöst. Geteilter Inhalt lebt genau einmal.</p>
+    <div class="collapse">
+      <div class="crow">
+        <div class="from">
+          <span class="src"><span class="app">recruiting/</span>Overview · KPIs</span>
+          <span class="src"><span class="app">recruiting/</span>Reports · KPIs</span>
+          <span class="src"><span class="app">recruiting/</span>Placements · KPIs</span>
+        </div>
+        <span class="arr">→</span>
+        <div class="to"><span class="verb">Merge</span><b>Overview</b></div>
+      </div>
+      <div class="crow">
+        <div class="from">
+          <span class="src"><span class="app">recruiting/</span>Reports</span>
+          <span class="src"><span class="app">recruiting/</span>Placements</span>
+        </div>
+        <span class="arr">→</span>
+        <div class="to"><span class="verb">Tabs</span><b>Performance</b></div>
+      </div>
+      <div class="crow">
+        <div class="from">
+          <span class="src"><span class="app">recruiting/</span>Applications</span>
+        </div>
+        <span class="arr">→</span>
+        <div class="to"><span class="verb">Rename</span><b>Pipeline</b></div>
+      </div>
+      <div class="crow">
+        <div class="from">
+          <span class="src"><span class="app">karriere/</span>Bewerbungen</span>
+          <span class="src"><span class="app">bewerber/</span>My applications</span>
+          <span class="src"><span class="app">recruiting/</span>Applications-Summary</span>
+        </div>
+        <span class="arr">→</span>
+        <div class="to"><span class="verb">Canonical</span><b>ApplicationRow</b></div>
+      </div>
+      <div class="crow">
+        <div class="from">
+          <span class="src"><span class="app">recruiting/</span>Overview</span>
+          <span class="src"><span class="app">karriere/</span>Übersicht</span>
+        </div>
+        <span class="arr">→</span>
+        <div class="to"><span class="verb">Split</span><b>je 1 Home / Persona</b></div>
+      </div>
+      <div class="crow">
+        <div class="from">
+          <span class="src"><span class="app">bewerber/</span>Create dossier</span>
+        </div>
+        <span class="arr">→</span>
+        <div class="to"><span class="verb">Demote</span><b>Dokumente ▸ Mappe-Task</b></div>
+      </div>
+      <div class="crow">
+        <div class="from">
+          <span class="src"><span class="app">karriere/</span>Jobquellen</span>
+        </div>
+        <span class="arr">→</span>
+        <div class="to"><span class="verb">Move</span><b>Settings ▸ Quellen</b></div>
+      </div>
+      <div class="crow">
+        <div class="from">
+          <span class="src"><span class="app">cv/</span>Interactive Résumé</span>
+        </div>
+        <span class="arr">→</span>
+        <div class="to"><span class="verb">Artefakt</span><b>Export, kein Nav</b></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FOOT ============ -->
+  <div class="foot">
+    <div class="card">
+      <div class="logomark"><i></i><i></i><i></i></div>
+      <div>
+        <div class="kicker">Nächster Schritt</div>
+        <h3>Sign-off auf diese Entscheidungen → dann baue ich das geteilte Shell.</h3>
+        <p>Danach: kanonische Komponenten (ApplicationRow · KpiTile · Match) und die ~12 überlebenden Ziele. Sag mir, wo du anders entscheidest — besonders bei Mono-als-Job.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

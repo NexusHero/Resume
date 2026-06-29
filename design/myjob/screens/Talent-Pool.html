@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="blueprint">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>myJob Recruit — Talent-Pool</title>
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  html, body { margin: 0; height: 100%; background: var(--surface-app); }
+  #root { height: 100vh; }
+  .pool { display: grid; grid-template-columns: 264px 1fr; gap: 0; height: 100%; }
+  @media (max-width: 880px) { .pool { grid-template-columns: 1fr; } }
+
+  .list { border-right: 1px solid var(--border); overflow-y: auto; background: var(--surface-card); }
+  .lrow { display: flex; align-items: center; gap: 11px; padding: 13px 14px; cursor: pointer; border-bottom: 1px solid var(--border); border-left: 3px solid transparent; transition: background var(--dur-fast); }
+  .lrow:hover { background: var(--surface-subtle); }
+  .lrow.on { background: var(--accent-soft); border-left-color: var(--accent); }
+  .lrow .txt { min-width: 0; flex: 1; }
+  .lrow .nm { font-family: var(--font-display); font-weight: var(--fw-semibold); font-size: var(--fs-sm); color: var(--text-heading); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lrow .rl { font-size: var(--fs-xs); color: var(--text-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lrow .me { font-family: var(--font-mono); font-size: var(--fs-3xs); font-weight: 600; letter-spacing: var(--ls-wide); text-transform: uppercase; color: var(--accent-strong); background: var(--accent-soft); border: 1px solid var(--accent-border); border-radius: var(--radius-pill); padding: 1px 6px; }
+
+  .prof { overflow-y: auto; padding: 26px 30px 60px; }
+  .prof-max { max-width: 720px; }
+  .cv-head { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+  .cv-head .who { flex: 1; min-width: 200px; }
+  .cv-name { font-family: var(--font-display); font-size: var(--fs-2xl); font-weight: var(--fw-bold); letter-spacing: var(--ls-tighter); color: var(--text-heading); line-height: 1.12; }
+  .cv-role { font-size: var(--fs-md); color: var(--text-muted); margin-top: 3px; }
+  .cv-head-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 13px; }
+
+  .sec { margin-top: 34px; }
+  .sec-lab { font-size: var(--fs-xs); color: var(--text-soft); margin-bottom: 14px; padding-bottom: 7px; border-bottom: 1px solid var(--border); }
+  .about { font-size: var(--fs-md); line-height: 1.6; color: var(--text-body); text-wrap: pretty; }
+
+  .job { display: grid; grid-template-columns: 130px 1fr; gap: 18px; padding: 4px 0 22px; }
+  @media (max-width: 620px) { .job { grid-template-columns: 1fr; gap: 6px; } }
+  .job .when { font-family: var(--font-mono); font-size: var(--fs-2xs); color: var(--text-soft); padding-top: 3px; }
+  .job .jt { font-family: var(--font-display); font-weight: var(--fw-semibold); font-size: var(--fs-md); color: var(--text-heading); }
+  .job .co { font-size: var(--fs-sm); color: var(--text-muted); margin: 1px 0 10px; }
+  .job ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 7px; }
+  .job li { font-size: var(--fs-sm); color: var(--text-body); line-height: 1.45; padding-left: 16px; position: relative; }
+  .job li::before { content: ''; position: absolute; left: 2px; top: 8px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+  .techrow { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 11px; }
+  .tech { font-family: var(--font-mono); font-size: var(--fs-3xs); color: var(--text-soft); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 2px 7px; }
+
+  .skill-group { margin-bottom: 14px; }
+  .skill-group .gl { font-size: var(--fs-xs); color: var(--text-soft); margin-bottom: 7px; }
+  .skill-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .stag { font-size: var(--fs-xs); color: var(--text-muted); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 4px 11px; }
+  .stag.strong { color: var(--accent-strong); border-color: var(--accent-border); background: var(--accent-soft); font-weight: var(--fw-semibold); }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  @media (max-width: 620px) { .two { grid-template-columns: 1fr; } }
+  .cert, .edu { padding: 11px 0; border-bottom: 1px solid var(--border); }
+  .cert:last-child, .edu:last-child { border-bottom: none; }
+  .cert .ct, .edu .et { font-weight: var(--fw-semibold); font-size: var(--fs-sm); color: var(--text-heading); }
+  .cert .cd, .edu .ed { font-size: var(--fs-xs); color: var(--text-soft); margin-top: 2px; }
+  .lang-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: var(--fs-sm); }
+  .lang-row .lv { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-soft); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../_ds_bundle.js"></script>
+<script src="../data/talent-pool.js"></script>
+<script type="text/babel">
+const DS = window.MyJobDesignSystem_f3658e;
+const { AppShell, Avatar, Icon, Button, MetaPill, StatusBadge } = DS;
+const T = window.MyJobTalents;
+
+const RECRUIT_NAV = [
+  { id: 'overview', label: 'Overview', icon: 'home' },
+  { id: 'pool', label: 'Talent-Pool', icon: 'users' },
+  { id: 'stellen', label: 'Stellen', icon: 'briefcase' },
+  { id: 'matching', label: 'Matching', icon: 'search' },
+  { id: 'pipeline', label: 'Pipeline', icon: 'columns', badge: 2 },
+  { id: 'inbox', label: 'Inbox', icon: 'inbox', badge: 3 },
+];
+
+function CvProfile({ c }) {
+  const full = c.experience; // only Suhay has the full CV; others show a light profile
+  return (
+    <div className="prof">
+      <div className="prof-max">
+        <div className="cv-head">
+          <Avatar name={c.name} size="lg" ring />
+          <div className="who">
+            <div className="cv-name">{c.name}</div>
+            <div className="cv-role">{c.role}{c.headline ? ` · ${c.headline}` : ''}</div>
+            <div className="cv-head-meta">
+              {c.location && <MetaPill icon="pin">{c.location}</MetaPill>}
+              {c.available && <MetaPill icon="clock">verfügbar {c.available}</MetaPill>}
+              {c.salaryTarget && <MetaPill icon="tag" tone="accent">{c.salaryTarget}</MetaPill>}
+              {c.workPermit && <MetaPill icon="id">{c.workPermit}</MetaPill>}
+            </div>
+          </div>
+          <Button size="sm" variant="outline" iconLeft={<Icon name="edit" size={14} />}>CV bearbeiten</Button>
+        </div>
+
+        {c.about && (
+          <div className="sec">
+            <div className="sec-lab">Über</div>
+            <p className="about">{c.about}</p>
+          </div>
+        )}
+
+        {full && (
+          <div className="sec">
+            <div className="sec-lab">Berufserfahrung</div>
+            {c.experience.map((j, i) => (
+              <div className="job" key={i}>
+                <div className="when">{j.period}{j.current ? ' · aktuell' : ''}</div>
+                <div>
+                  <div className="jt">{j.title}</div>
+                  <div className="co">{j.company} · {j.location}</div>
+                  <ul>{j.bullets.map((b, k) => <li key={k}>{b}</li>)}</ul>
+                  <div className="techrow">{j.tech.map((t) => <span className="tech" key={t}>{t}</span>)}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="sec">
+          <div className="sec-lab">Kompetenzen</div>
+          {c.skillGroups
+            ? c.skillGroups.map((g, i) => (
+                <div className="skill-group" key={i}>
+                  <div className="gl">{g.label}</div>
+                  <div className="skill-tags">{g.items.map((s) => <span className={'stag' + (g.strong ? ' strong' : '')} key={s}>{s}</span>)}</div>
+                </div>
+              ))
+            : <div className="skill-tags">{c.skills.map((s) => <span className="stag" key={s}>{s}</span>)}</div>}
+        </div>
+
+        {(c.certs || c.education) && (
+          <div className="sec two">
+            {c.certs && (
+              <div>
+                <div className="sec-lab">Zertifizierungen</div>
+                {c.certs.map((ct, i) => (
+                  <div className="cert" key={i}>
+                    <div className="ct">{ct.title}</div>
+                    <div className="cd">{ct.year}{ct.progress ? ` · ${ct.progress}` : ''}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {c.education && (
+              <div>
+                <div className="sec-lab">Bildungsweg</div>
+                {c.education.map((e, i) => (
+                  <div className="edu" key={i}>
+                    <div className="et">{e.title}</div>
+                    <div className="ed">{e.school} · {e.period} · Note {e.grade}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {c.languages && (
+          <div className="sec">
+            <div className="sec-lab">Sprachen</div>
+            {c.languages.map((l, i) => (
+              <div className="lang-row" key={i}><span>{l[0]}</span><span className="lv">{l[1]}</span></div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Pool() {
+  const [sel, setSel] = React.useState('me');
+  const cand = T.all.find((c) => c.id === sel);
+  return (
+    <AppShell
+      product="recruit" posture="rail"
+      nav={RECRUIT_NAV} active="pool" onNav={() => {}}
+      account={{ name: 'Suhay Sevinc', meta: 'Me · +3 Talente' }}
+      title="Talent-Pool"
+      subtitle={`${T.all.length} Kandidaten`}
+      search searchPlaceholder="Kandidaten suchen …"
+    >
+      <div style={{ height: '100%', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', background: 'var(--surface-card)', boxShadow: 'var(--shadow-sm)' }}>
+        <div className="pool">
+          <div className="list">
+            {T.all.map((c) => (
+              <div key={c.id} className={'lrow' + (sel === c.id ? ' on' : '')} onClick={() => setSel(c.id)}>
+                <Avatar name={c.name} size="sm" ring={sel === c.id} />
+                <div className="txt">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '7px', minWidth: 0 }}>
+                    <span className="nm">{c.name}</span>
+                    {c.id === 'me' && <span className="me">Ich</span>}
+                  </div>
+                  <div className="rl">{c.role}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <CvProfile c={cand} />
+        </div>
+      </div>
+    </AppShell>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<Pool />);
+</script>
+</body>
+</html>

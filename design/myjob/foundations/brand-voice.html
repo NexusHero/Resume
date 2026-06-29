@@ -1,0 +1,32 @@
+<!-- @dsCard group="Brand" viewport="700x190" name="Voice & tone" subtitle="German UI, du-Form, calm and precise — no hype, no emoji" -->
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8" /><link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; padding: 20px 24px; background: var(--surface-card); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 28px; }
+  .col h4 { font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--ls-wide); text-transform: uppercase; margin: 0 0 8px; }
+  .yes h4 { color: var(--success); }
+  .no h4 { color: var(--danger); }
+  .line { font-family: var(--font-body); font-size: 13.5px; color: var(--text-body); margin: 0 0 5px; display: flex; gap: 8px; }
+  .line .m { font-family: var(--font-mono); flex-shrink: 0; }
+  .yes .m { color: var(--success); }
+  .no .m { color: var(--danger); }
+  .no .line { color: var(--text-soft); }
+</style></head>
+<body>
+<div class="grid">
+  <div class="col yes">
+    <h4>So klingt myJob</h4>
+    <p class="line"><span class="m">+</span>„Bewerbung eingegangen — wir melden uns in 5 Tagen."</p>
+    <p class="line"><span class="m">+</span>„3 Talente passen zu diesem Mandat."</p>
+    <p class="line"><span class="m">+</span>„Mappe erstellt. Jetzt herunterladen?"</p>
+  </div>
+  <div class="col no">
+    <h4>So nicht</h4>
+    <p class="line"><span class="m">–</span>„Wow! Deine Bewerbung ist raus! 🚀"</p>
+    <p class="line"><span class="m">–</span>„Revolutioniere jetzt dein Recruiting!"</p>
+    <p class="line"><span class="m">–</span>„Ein Fehler ist aufgetreten."</p>
+  </div>
+</div>
+</body></html>

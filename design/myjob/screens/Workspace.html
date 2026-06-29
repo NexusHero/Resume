@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="blueprint">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>myJob Recruit — Workspace</title>
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  html, body { margin: 0; height: 100%; background: var(--surface-app); }
+  #root { height: 100vh; }
+  .ws { max-width: 860px; }
+  .greet { font-family: var(--font-display); font-size: var(--fs-2xl); font-weight: var(--fw-bold); letter-spacing: var(--ls-tighter); color: var(--text-heading); margin: 0; }
+  .greet-sub { font-size: var(--fs-sm); color: var(--text-soft); margin: 3px 0 0; }
+
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 22px 0; }
+  @media (max-width: 720px) { .kpis { grid-template-columns: 1fr; } }
+  .kpi { background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: 16px 18px; }
+  .kpi .n { font-family: var(--font-mono); font-size: var(--fs-3xl); font-weight: var(--fw-bold); color: var(--text-heading); font-variant-numeric: tabular-nums; line-height: 1; }
+  .kpi .l { font-size: var(--fs-xs); color: var(--text-soft); margin-top: 6px; }
+
+  .block { background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); margin-bottom: 18px; overflow: hidden; }
+  .block-h { display: flex; align-items: center; gap: 10px; padding: 15px 18px; border-bottom: 1px solid var(--border); }
+  .block-h h2 { font-family: var(--font-display); font-size: var(--fs-md); font-weight: var(--fw-semibold); color: var(--text-heading); margin: 0; }
+  .block-h .cnt { margin-left: auto; font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-soft); }
+
+  .row { display: flex; align-items: center; gap: 13px; padding: 13px 18px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background var(--dur-fast); }
+  .row:last-child { border-bottom: none; }
+  .row:hover { background: var(--surface-subtle); }
+  .row .who { min-width: 0; flex: 1; }
+  .row .pos { font-family: var(--font-display); font-weight: var(--fw-semibold); font-size: var(--fs-sm); color: var(--text-heading); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .meta { font-size: var(--fs-xs); color: var(--text-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .cand { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-xs); color: var(--text-muted); }
+  .row .when { font-family: var(--font-mono); font-size: var(--fs-2xs); color: var(--text-soft); white-space: nowrap; }
+  .urg { font-family: var(--font-mono); font-size: var(--fs-2xs); font-weight: var(--fw-semibold); color: var(--status-offer-strong); white-space: nowrap; }
+
+  /* detail panel */
+  .panel { padding: 20px; }
+  .panel .cap { font-family: var(--font-mono); font-size: var(--fs-3xs); letter-spacing: var(--ls-wide); text-transform: uppercase; color: var(--text-soft); margin-bottom: 12px; }
+  .me { display: flex; align-items: center; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .me .nm { font-family: var(--font-display); font-weight: var(--fw-bold); font-size: var(--fs-md); color: var(--text-heading); }
+  .me .rl { font-size: var(--fs-xs); color: var(--text-soft); }
+  .qa { display: flex; flex-direction: column; gap: 8px; }
+  .qa a { display: flex; align-items: center; gap: 11px; padding: 11px 13px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--surface-card); text-decoration: none; color: var(--text-heading); font-size: var(--fs-sm); font-weight: var(--fw-medium); transition: all var(--dur-fast); }
+  .qa a:hover { border-color: var(--accent-border); background: var(--accent-soft); color: var(--accent-strong); }
+  .qa a .ic { width: 30px; height: 30px; border-radius: var(--radius-md); display: grid; place-items: center; background: var(--ink-850); color: var(--accent-on-dark); flex: none; }
+  .qa a .ar { margin-left: auto; color: var(--text-soft); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../_ds_bundle.js"></script>
+<script src="../data/talent-pool.js"></script>
+<script type="text/babel">
+const DS = window.MyJobDesignSystem_f3658e;
+const { AppShell, Avatar, Icon, Button, StatusBadge, MatchIndicator } = DS;
+const T = window.MyJobTalents;
+
+/* Workspace is the LANDING — no launcher menu. You start here. CV, Anschreiben
+   and Dossier are reached from within (quick access + each candidate's profile),
+   never as separate top-level apps. */
+const NAV = [
+  { id: 'workspace', label: 'Workspace', icon: 'home' },
+  { id: 'pool', label: 'Talent-Pool', icon: 'users' },
+  { id: 'stellen', label: 'Stellen', icon: 'briefcase' },
+  { id: 'matching', label: 'Matching', icon: 'search' },
+  { id: 'pipeline', label: 'Pipeline', icon: 'columns', badge: 2 },
+  { id: 'inbox', label: 'Inbox', icon: 'inbox', badge: 3 },
+];
+
+const ATTENTION = [
+  { cand: 'Lena Bauer', pos: 'Design Lead', co: 'Helio Mobility', status: 'offer', urg: 'Angebot läuft in 2 Tagen ab' },
+  { cand: 'Suhay Sevinc', pos: 'Senior Frontend Engineer', co: 'Helvetia Digital AG', status: 'interview', urg: 'Interview morgen · 14:00' },
+  { cand: 'Milan Ebert', pos: 'Backend Engineer', co: 'Nordlicht AG', status: 'review', urg: 'seit 5 Tagen ohne Rückmeldung' },
+];
+const ACTIVE = [
+  { cand: 'Suhay Sevinc', pos: 'Senior Frontend Engineer', co: 'Helvetia Digital AG · Zürich', match: 88, status: 'interview', when: 'vor 2 Tagen' },
+  { cand: 'Lena Bauer', pos: 'Design Lead', co: 'Helio Mobility · Berlin', match: 91, status: 'offer', when: 'vor 1 Woche' },
+  { cand: 'Nora Vogt', pos: 'Product Designer', co: 'Aurora Systems · München', match: 74, status: 'review', when: 'vor 4 Tagen' },
+  { cand: 'Milan Ebert', pos: 'Backend Engineer', co: 'Swisscom Labs · Bern', match: 81, status: 'new', when: 'gestern' },
+];
+
+function Workspace() {
+  const me = T.me;
+  const detail = (
+    <div className="panel">
+      <div className="me">
+        <Avatar name={me.name} size="lg" ring />
+        <div style={{ minWidth: 0 }}>
+          <div className="nm">{me.name}</div>
+          <div className="rl">{me.role}</div>
+        </div>
+      </div>
+      <div className="cap">Schnellzugriff</div>
+      <div className="qa">
+        <a href="Matching.html"><span className="ic"><Icon name="search" size={16} /></span>Neue Bewerbung<span className="ar"><Icon name="chevronRight" size={15} /></span></a>
+        <a href="Talent-Pool.html"><span className="ic"><Icon name="users" size={16} /></span>Talent-Pool<span className="ar"><Icon name="chevronRight" size={15} /></span></a>
+        <a href="CV-Builder.html"><span className="ic"><Icon name="fileText" size={16} /></span>CV-Builder<span className="ar"><Icon name="chevronRight" size={15} /></span></a>
+        <a href="Bewerbung-vorbereiten.html"><span className="ic"><Icon name="mail" size={16} /></span>Anschreiben & Dossier<span className="ar"><Icon name="chevronRight" size={15} /></span></a>
+        <a href="Settings.html"><span className="ic"><Icon name="sliders" size={16} /></span>Einstellungen<span className="ar"><Icon name="chevronRight" size={15} /></span></a>
+      </div>
+    </div>
+  );
+
+  return (
+    <AppShell
+      product="recruit" posture="rail"
+      nav={NAV} active="workspace" onNav={() => {}}
+      account={{ name: 'Suhay Sevinc', meta: 'Me · +3 Talente' }}
+      title="Workspace" subtitle="Sonntag, 28. Juni"
+      search searchPlaceholder="Kandidaten, Stellen, Bewerbungen …"
+      detail={detail}
+    >
+      <div className="ws">
+        <h1 className="greet">Guten Abend, Suhay</h1>
+        <p className="greet-sub">4 aktive Bewerbungen · 1 Angebot offen · 1 Interview morgen</p>
+
+        <div className="kpis">
+          <div className="kpi"><div className="n">4</div><div className="l">Aktive Bewerbungen</div></div>
+          <div className="kpi"><div className="n">2</div><div className="l">Interviews diese Woche</div></div>
+          <div className="kpi"><div className="n">1</div><div className="l">Offenes Angebot</div></div>
+        </div>
+
+        <div className="block">
+          <div className="block-h"><Icon name="alert" size={16} style={{ color: 'var(--status-offer-strong)' }} /><h2>Braucht Aufmerksamkeit</h2><span className="cnt">{ATTENTION.length}</span></div>
+          {ATTENTION.map((a, i) => (
+            <div className="row" key={i}>
+              <Avatar name={a.cand} size="sm" />
+              <div className="who">
+                <div className="pos">{a.pos}</div>
+                <div className="meta">{a.co} · <span style={{ color: 'var(--text-muted)' }}>{a.cand}</span></div>
+              </div>
+              <span className="urg">{a.urg}</span>
+              <StatusBadge status={a.status} size="sm" />
+            </div>
+          ))}
+        </div>
+
+        <div className="block">
+          <div className="block-h"><Icon name="columns" size={16} style={{ color: 'var(--text-muted)' }} /><h2>Aktive Bewerbungen</h2><a href="Matching.html" style={{ marginLeft: 'auto', fontSize: 'var(--fs-xs)', color: 'var(--accent-strong)', textDecoration: 'none', fontWeight: 'var(--fw-medium)' }}>+ Neue Bewerbung</a></div>
+          {ACTIVE.map((a, i) => (
+            <div className="row" key={i}>
+              <Avatar name={a.cand} size="sm" />
+              <div className="who">
+                <div className="pos">{a.pos}</div>
+                <div className="meta">{a.co} · <span style={{ color: 'var(--text-muted)' }}>{a.cand}</span></div>
+              </div>
+              <MatchIndicator value={a.match} variant="chip" label="" />
+              <StatusBadge status={a.status} size="sm" />
+              <span className="when">{a.when}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </AppShell>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<Workspace />);
+</script>
+</body>
+</html>

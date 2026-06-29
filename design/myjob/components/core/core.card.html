@@ -1,0 +1,74 @@
+<!-- @dsCard group="Components" viewport="700x430" name="Core — buttons, badges, avatar, icons" subtitle="Button variants/sizes, IconButton, Badge, Avatar, MetaPill, the icon set" -->
+<!DOCTYPE html>
+<html lang="en" data-theme="blueprint">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../../styles.css" />
+<style>
+  body { margin: 0; padding: 22px; background: var(--surface-app); }
+  .wrap { display: flex; flex-direction: column; gap: 18px; }
+  .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .lbl { font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--ls-wide); text-transform: uppercase; color: var(--text-soft); width: 100%; margin-bottom: -4px; }
+  .dark { background: linear-gradient(165deg, var(--ink-850), var(--ink-900)); border-radius: var(--radius-md); padding: 14px 16px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<script type="text/babel">
+const { Button, IconButton, Badge, Avatar, MetaPill, Icon } = window.MyJobDesignSystem_f3658e;
+const ICONS = ['briefcase','users','columns','award','inbox','search','bell','calendar','trend','star','check','plus'];
+function Demo() {
+  return (
+    <div className="wrap">
+      <div className="row"><span className="lbl">Button — variants</span>
+        <Button variant="primary" iconLeft={<Icon name="plus" size={15} />}>Stelle anlegen</Button>
+        <Button variant="ink">Mappe</Button>
+        <Button variant="outline">Filter</Button>
+        <Button variant="ghost">Abbrechen</Button>
+        <Button variant="danger">Absage</Button>
+      </div>
+      <div className="row"><span className="lbl">Sizes &amp; disabled</span>
+        <Button size="sm">Small</Button>
+        <Button size="md">Medium</Button>
+        <Button size="lg">Large</Button>
+        <Button disabled>Disabled</Button>
+      </div>
+      <div className="row"><span className="lbl">IconButton</span>
+        <IconButton icon="bell" label="Benachrichtigungen" variant="outline" />
+        <IconButton icon="settings" label="Einstellungen" variant="ghost" />
+        <IconButton icon="plus" label="Neu" variant="ink" />
+        <IconButton icon="search" label="Suche" variant="accent" />
+        <div className="dark"><IconButton icon="more" label="Mehr" variant="glass" /></div>
+      </div>
+      <div className="row"><span className="lbl">Badge</span>
+        <Badge variant="outline">React</Badge>
+        <Badge variant="subtle">TypeScript</Badge>
+        <Badge variant="soft">Top-Match</Badge>
+        <Badge variant="solid">Neu</Badge>
+        <div className="dark" style={{ display:'flex', gap:'8px' }}>
+          <Badge variant="glass">Remote</Badge>
+          <Badge variant="light">Deutsch</Badge>
+        </div>
+      </div>
+      <div className="row"><span className="lbl">Avatar &amp; MetaPill</span>
+        <Avatar name="Suhay Sevinc" src="../../assets/img/candidate-portrait-sm.jpg" size="lg" />
+        <Avatar name="Lena Bauer" size="md" ring />
+        <Avatar name="Max Klein" size="sm" />
+        <MetaPill icon="calendar">2021 — heute</MetaPill>
+        <MetaPill icon="pin">Berlin</MetaPill>
+        <MetaPill icon="zap" tone="accent">92% Match</MetaPill>
+      </div>
+      <div className="row"><span className="lbl">Icon set</span>
+        {ICONS.map(n => <span key={n} style={{ color:'var(--text-muted)' }}><Icon name={n} size={20} /></span>)}
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+</script>
+</body>
+</html>

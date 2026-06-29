@@ -7,54 +7,53 @@ const STAGE_LABELS = { new: 'Submitted', review: 'In review', interview: 'Interv
 
 /* ---------- Anhänge (documents) — shared library per talent ---------- */
 const ME_ATTACHMENTS = [
-  { id: 'at1', name: 'Arbeitszeugnis — Aurora Systems', tag: 'Zeugnis', sub: '2 Seiten · PDF', kind: 'zeugnis' },
-  { id: 'at2', name: 'M.Sc. Zeugnis — TU Berlin', tag: 'Zeugnis', sub: '1 Seite · PDF', kind: 'zeugnis' },
-  { id: 'at3', name: 'Zertifikat — CKA Kubernetes', tag: 'Zertifikat', sub: '1 Seite · PDF', kind: 'zertifikat' },
-  { id: 'at4', name: 'Empfehlungsschreiben — M. Vogel', tag: 'Referenz', sub: '1 Seite · PDF', kind: 'referenz' },
+  { id: 'at1', name: 'Arbeitszeugnis — TRUMPF SE + Co. KG', tag: 'Zeugnis', sub: '2 Seiten · PDF', kind: 'zeugnis' },
+  { id: 'at2', name: 'M.Sc. Zeugnis — Hochschule Furtwangen', tag: 'Zeugnis', sub: '1 Seite · PDF', kind: 'zeugnis' },
+  { id: 'at3', name: 'ISAQB Foundation Level — Zertifikat', tag: 'Zertifikat', sub: '1 Seite · PDF', kind: 'zertifikat' },
+  { id: 'at4', name: 'Clean Code C++17 — Zertifikat', tag: 'Zertifikat', sub: '1 Seite · PDF', kind: 'zertifikat' },
 ];
 
 /* ---------- Lebenslauf for "Me" ---------- */
 const ME_RESUME = {
-  summary: 'Backend engineer with 6 years of experience in high-performance, distributed systems. Most recently tech lead of a matching team. Focus areas: C++/Rust, systems design and reliability at scale.',
+  summary: 'Software Engineer (M.Sc.) mit über 7 Jahren Erfahrung in hardwarenaher, verteilter und sicherheitskritischer Softwareentwicklung (C++ und C#/.NET). Schwerpunkte: komplexe Systemarchitekturen, moderne DevOps-Praktiken (CI/CD) und agile Methoden.',
   experience: [
-    { role: 'Tech Lead — Matching-Team', company: 'Aurora Systems GmbH', period: '2023 — present', location: 'Berlin', bullets: ['Owned a real-time matching system handling 40M requests/day', 'Led a team of 5 engineers; reduced latency by 38%'], skills: ['C++', 'Rust', 'gRPC'] },
-    { role: 'Senior Backend Engineer', company: 'Nordlicht Software', period: '2020 — 2023', location: 'Hamburg', bullets: ['Built an event-driven platform on Kafka & Kubernetes', 'Led the migration of a monolith to services'], skills: ['Go', 'Kafka', 'Kubernetes'] },
-    { role: 'Software Engineer', company: 'Falk & Partner', period: '2018 — 2020', location: 'Munich', bullets: ['Developed high-load APIs for the consulting division'], skills: ['Python', 'PostgreSQL'] },
+    { role: 'Software Engineer', company: 'Rheinmetall Air Defence AG', period: '11/2024 — heute', location: 'Zürich (CH)', bullets: ['Zentrale Steuersoftware der Oerlikon Skynex® für Control Nodes und Feuerleitgeräte entwickelt', 'Taktische Kommunikationsprotokolle (TCP, REST, Protobuf) zur Vernetzung von Sensoren, Effektoren und Simulationen implementiert', 'QML-Bedienoberflächen umgesetzt und Gitflow + CI/CD teamweit eingeführt'], skills: ['C++20', 'QML', 'Protobuf', 'REST'] },
+    { role: 'Software Engineer C++ / C#', company: 'TRUMPF SE + Co. KG', period: '03/2019 — 10/2024', location: 'Schramberg (DE)', bullets: ['C++-Visionsystem weiterentwickelt; Kameraanbindung von 60 auf 280 FPS gesteigert', '.NET/gRPC Quality Data Store und CAD/CAM-Microservice (C#) gebaut', 'Scrum Master eines 5-köpfigen Teams; OPC-UA/gRPC-Integration entwickelt'], skills: ['C++17', 'C#', '.NET', 'gRPC', 'OPC-UA'] },
   ],
   education: [
-    { degree: 'M.Sc. Computer Science', school: 'TU Berlin', period: '2016 — 2018', note: 'Focus on Distributed Systems · 1.3' },
-    { degree: 'B.Sc. Computer Science', school: 'University of Hamburg', period: '2013 — 2016', note: '1.7' },
+    { degree: 'M.Sc. Informatik', school: 'Hochschule Furtwangen', period: '2017 — 2019', note: 'Schwerpunkt Software Engineering · Note 1.9' },
+    { degree: 'B.Sc. Allgemeine Informatik', school: 'Hochschule Furtwangen', period: '2014 — 2017', note: 'Note 2.2' },
   ],
   skillGroups: [
-    { label: 'Languages', items: ['C++', 'Rust', 'Go', 'Python'] },
-    { label: 'Systems', items: ['gRPC', 'Kubernetes', 'Kafka', 'PostgreSQL'] },
-    { label: 'Methods', items: ['Systemdesign', 'Observability', 'Code Review'] },
+    { label: 'Sprachen', items: ['C++20', 'C# / .NET', 'Python'] },
+    { label: 'Protokolle & APIs', items: ['gRPC', 'Protobuf', 'OPC-UA', 'REST', 'MQTT'] },
+    { label: 'Architektur & DevOps', items: ['Microservices', 'Clean Architecture', 'ISAQB', 'Docker', 'CI/CD'] },
   ],
 };
 
 /* ---------- Anschreiben for "Me" (default, pro Stelle anpassbar) ---------- */
 const ME_LETTER = {
-  firma: 'Aurora Systems GmbH',
-  ansprechpartner: 'Dr. Petra Lindner',
-  strasse: 'Lichtstrasse 12',
-  plzOrt: '10115 Berlin',
-  betreff: 'Application for Senior C++ Engineer — Platform Team',
-  anrede: 'Dear Dr. Lindner,',
+  firma: '[Unternehmensname]',
+  ansprechpartner: '[Ansprechpartner / Personalabteilung]',
+  strasse: '[Straße und Hausnummer]',
+  plzOrt: '[PLZ Ort]',
+  betreff: 'Bewerbung als [Stellenbezeichnung]',
+  anrede: 'Sehr geehrte Damen und Herren,',
   absaetze: [
-    'I read your posting with great interest. Distributed, latency-critical systems have been my craft for six years — and your platform team works on exactly the problems that drive me.',
-    'As tech lead at Aurora Systems I own a real-time matching system handling 40M requests per day and reduced latency by 38%. My focus is on C++ and Rust, clean systems design and the reliability of large services.',
-    'I would be glad to show you in person how I can bring this experience to your team. I look forward to an invitation.',
+    'mit großem Interesse habe ich Ihre Ausschreibung gelesen. Als Software Engineer (M.Sc.) mit über 7 Jahren Erfahrung in C++ und C#/.NET bringe ich genau das technische Profil mit, das Sie suchen.',
+    'Aktuell entwickle ich bei der Rheinmetall Air Defence AG in Zürich Steuersoftware für das Oerlikon Skynex®-System — inkl. taktischer Kommunikationsprotokolle und QML-Oberflächen. Zuvor habe ich bei TRUMPF über fünf Jahre Visionsysteme, Microservices und CI/CD-Pipelines maßgeblich gestaltet.',
+    'Gerne überzeuge ich Sie in einem persönlichen Gespräch, wie ich mit moderner C++-Entwicklung, Systemarchitektur und DevOps einen Beitrag leisten kann.',
   ],
-  gruss: 'Kind regards',
+  gruss: 'Mit freundlichen Grüßen',
 };
 
 /* ---------- Talents (the pool) — "me" pinned first ---------- */
 const TALENTS = [
   {
-    id: 'me', me: true, name: 'Suhay Sevinc', role: 'M.Sc. Software Engineer', headline: 'Senior C++ / Distributed Systems',
-    src: '../../assets/img/candidate-portrait-sm.jpg', location: 'Berlin', email: 'suhay.sevinc@example.de', phone: '+49 151 2345 6789',
-    linkedin: 'linkedin.com/in/suhaysevinc', availability: 'in 3 months', salary: '78.000 €', score: 88,
-    skills: ['C++', 'Rust', 'Distributed Systems', 'gRPC', 'Kubernetes'],
+    id: 'me', me: true, name: 'Suhay Sevinc', role: 'M.Sc. Software Engineer', headline: 'Senior C++ / C# · Echtzeit- & verteilte Systeme',
+    src: '../../assets/img/candidate-portrait-sm.jpg', location: 'Blumberg, DE', email: 'suhay.sevinc@gmail.com', phone: '+49 176 91407840',
+    linkedin: 'linkedin.com/in/suhay-sevinc', availability: 'sofort', salary: 'CHF 120–140k', score: 88,
+    skills: ['C++20', 'C# / .NET', 'Qt / QML', 'Microservices', 'gRPC'],
     resume: ME_RESUME, letter: ME_LETTER, attachments: ME_ATTACHMENTS,
   },
   { id: 't2', name: 'Lena Brandt', role: 'Product Designer', headline: 'B2B-SaaS · Design Systems', location: 'Leipzig', email: 'lena.brandt@example.de', phone: '+49 160 1112 2334', availability: 'in 6 weeks', salary: '64.000 €', score: 81, skills: ['Figma', 'Design Systems', 'Prototyping'], attachments: [] },

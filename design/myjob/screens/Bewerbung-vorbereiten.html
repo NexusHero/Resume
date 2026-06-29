@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="blueprint">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>myJob Recruit — Bewerbung vorbereiten</title>
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  html, body { margin: 0; height: 100%; background: var(--surface-app); }
+  #root { height: 100vh; }
+
+  .prep-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 920px) { .prep-grid { grid-template-columns: 1fr; } }
+
+  .pcard { background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; overflow: hidden; }
+  .pcard-head { display: flex; align-items: center; gap: 11px; padding: 16px 18px; border-bottom: 1px solid var(--border); }
+  .pcard-head .ic { width: 32px; height: 32px; border-radius: var(--radius-md); display: grid; place-items: center; background: var(--surface-sunk); color: var(--text-muted); flex: none; }
+  .pcard-head h3 { font-family: var(--font-display); font-size: var(--fs-md); font-weight: var(--fw-semibold); color: var(--text-heading); margin: 0; letter-spacing: var(--ls-tight); }
+  .pcard-head .sub { font-size: var(--fs-xs); color: var(--text-soft); margin-top: 1px; }
+  .pcard-body { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+
+  /* magic button */
+  .magic { position: relative; appearance: none; cursor: pointer; border: none; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; gap: 9px; font-family: var(--font-body); font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--accent-contrast); background: var(--accent); border-radius: var(--radius-md); padding: 11px 18px; transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast); box-shadow: 0 1px 2px color-mix(in oklch, var(--accent) 40%, transparent); }
+  .magic:hover { transform: translateY(-1px); box-shadow: 0 4px 14px color-mix(in oklch, var(--accent) 38%, transparent); }
+  .magic::after { content: ''; position: absolute; top: 0; left: -60%; width: 40%; height: 100%; background: linear-gradient(100deg, transparent, color-mix(in oklch, #fff 45%, transparent), transparent); transform: skewX(-18deg); animation: shimmer 3.2s ease-in-out infinite; }
+  @keyframes shimmer { 0%, 60% { left: -60%; } 100% { left: 130%; } }
+  .magic.ghost { background: transparent; color: var(--accent-strong); border: 1px solid var(--accent-border); box-shadow: none; }
+  .magic.ghost::after { display: none; }
+  .magic[disabled] { opacity: .5; cursor: default; }
+  .magic[disabled]:hover { transform: none; }
+
+  /* empty / invitation state */
+  .invite { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; padding: 30px 18px; }
+  .invite .halo { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-strong); }
+  .invite p { font-size: var(--fs-sm); color: var(--text-soft); max-width: 34ch; margin: 0; }
+
+  /* shimmer skeleton while "generating" */
+  .skel { height: 12px; border-radius: 6px; background: linear-gradient(90deg, var(--surface-sunk) 25%, var(--surface-subtle) 37%, var(--surface-sunk) 63%); background-size: 400% 100%; animation: load 1.3s ease infinite; }
+  @keyframes load { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+
+  /* provenance chip */
+  .prov { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: var(--fs-3xs); font-weight: var(--fw-semibold); letter-spacing: var(--ls-wide); text-transform: uppercase; padding: 3px 9px; border-radius: var(--radius-pill); }
+  .prov.ai { color: var(--accent-strong); background: var(--accent-soft); }
+  .prov.done { color: var(--success); background: var(--success-soft); }
+
+  /* skill chip */
+  .skill { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: var(--fs-xs); font-weight: var(--fw-medium); padding: 5px 11px; border-radius: var(--radius-pill); border: 1px solid var(--border); background: transparent; color: var(--text-muted); transition: all var(--dur-fast); user-select: none; }
+  .skill.hl { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-strong); font-weight: var(--fw-semibold); }
+  .skill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+  .cvline { display: flex; align-items: flex-start; gap: 10px; padding: 11px 12px; border-radius: var(--radius-md); border: 1px solid var(--border); transition: all var(--dur-med) var(--ease-out); }
+  .cvline.hl { border-color: var(--accent-border); background: var(--accent-soft); }
+  .cvline .bullet { width: 6px; height: 6px; border-radius: 50%; background: var(--text-soft); margin-top: 6px; flex: none; }
+  .cvline.hl .bullet { background: var(--accent); }
+  .cvline .txt { font-size: var(--fs-sm); color: var(--text-body); line-height: 1.45; }
+  .cvline .tag { margin-left: auto; font-family: var(--font-mono); font-size: var(--fs-3xs); font-weight: var(--fw-semibold); color: var(--accent-strong); white-space: nowrap; flex: none; }
+
+  /* sticky decision footer */
+  .decide { position: sticky; bottom: 0; margin-top: 20px; background: color-mix(in oklch, var(--paper) 90%, transparent); backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); padding: 14px 18px; display: flex; align-items: center; gap: 16px; }
+  .decide .checks { display: flex; gap: 16px; flex-wrap: wrap; }
+  .decide .ck { display: inline-flex; align-items: center; gap: 7px; font-size: var(--fs-sm); color: var(--text-muted); }
+  .decide .ck .box { width: 18px; height: 18px; border-radius: 5px; display: grid; place-items: center; border: 1px solid var(--border-strong); color: transparent; flex: none; }
+  .decide .ck.on .box { background: var(--success); border-color: var(--success); color: #fff; }
+  .decide .ck.on { color: var(--text-heading); font-weight: var(--fw-medium); }
+  .send { margin-left: auto; appearance: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-body); font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--accent-contrast); background: var(--accent); border: none; border-radius: var(--radius-md); padding: 11px 18px; transition: opacity var(--dur-fast); }
+  .send[disabled] { opacity: .4; cursor: default; }
+
+  .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); background: var(--ink-900); color: #fff; font-family: var(--font-body); font-size: var(--fs-sm); padding: 12px 20px; border-radius: var(--radius-pill); box-shadow: var(--shadow-md); display: flex; align-items: center; gap: 8px; z-index: 60; }
+  .toast b { color: var(--accent-on-dark); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../_ds_bundle.js"></script>
+<script type="text/babel">
+const DS = window.MyJobDesignSystem_f3658e;
+const { AppShell, Avatar, Icon, Button, Textarea, StatusBadge } = DS;
+
+const RECRUIT_NAV = [
+  { id: 'overview', label: 'Overview', icon: 'home' },
+  { id: 'pool', label: 'Talent-Pool', icon: 'users' },
+  { id: 'stellen', label: 'Stellen', icon: 'briefcase' },
+  { id: 'matching', label: 'Matching', icon: 'search' },
+  { id: 'pipeline', label: 'Pipeline', icon: 'columns', badge: 2 },
+  { id: 'inbox', label: 'Inbox', icon: 'inbox', badge: 3 },
+];
+
+/* The application being prepared: Suhay × the Helvetia position. */
+const CTX = {
+  cand: { name: 'Suhay Sevinc', role: 'Full-Stack Developer' },
+  job: { title: 'Senior Frontend Engineer', company: 'Helvetia Digital AG', location: 'Zürich', country: 'CH' },
+  match: 88,
+  required: ['React', 'TypeScript', 'GraphQL', 'CSS Architecture'],
+};
+const CAND_SKILLS = ['React', 'TypeScript', 'Node.js', 'CSS Architecture', 'GraphQL', 'REST', 'Jest', 'Figma'];
+const CV_LINES = [
+  { id: 'l1', txt: 'Frontend-Architektur einer React/TypeScript-Plattform (2 Jahre)', rel: true },
+  { id: 'l2', txt: 'GraphQL-API-Design für ein Microservice-Backend', rel: true },
+  { id: 'l3', txt: 'Aufbau eines Design-Systems mit skalierbarer CSS-Architektur', rel: true },
+  { id: 'l4', txt: 'Node.js-Services für interne Tooling-Pipelines', rel: false },
+  { id: 'l5', txt: 'Betreuung von Werkstudierenden im Frontend-Team', rel: false },
+];
+
+const LETTERS = [
+  `Sehr geehrte Damen und Herren,
+
+mit großem Interesse bewerbe ich mich auf die Position als Senior Frontend Engineer bei der Helvetia Digital AG in Zürich.
+
+In den vergangenen Jahren habe ich als Full-Stack Developer tiefe Erfahrung mit React und TypeScript aufgebaut — genau den Technologien, die im Zentrum dieser Rolle stehen. Meine Arbeit an skalierbaren CSS-Architekturen und GraphQL-Schnittstellen deckt sich unmittelbar mit Ihren Anforderungen.
+
+Die Aussicht, bei Helvetia Digital an einem Produkt mit Schweizer Qualitätsanspruch mitzuwirken, reizt mich sehr. Ich bin überzeugt, mit meiner Kombination aus technischer Tiefe und Produktverständnis einen schnellen Beitrag leisten zu können.
+
+Über ein persönliches Gespräch würde ich mich sehr freuen.
+
+Freundliche Grüße
+Suhay Sevinc`,
+  `Guten Tag,
+
+die Position als Senior Frontend Engineer bei Helvetia Digital hat sofort meine Aufmerksamkeit geweckt — sie trifft genau das, woran ich am liebsten arbeite.
+
+Mit React und TypeScript als täglichem Handwerk und einem Schwerpunkt auf sauberer CSS-Architektur und GraphQL bringe ich die Kernkompetenzen mit, die Sie suchen. In meinem letzten Projekt habe ich eine Frontend-Plattform von Grund auf mitgestaltet und dabei besonders auf Wartbarkeit und Tempo geachtet.
+
+Helvetia Digital steht für Qualität und einen klaren Anspruch — ein Umfeld, in dem ich mich weiterentwickeln und zugleich unmittelbar Wirkung erzielen möchte.
+
+Gerne überzeuge ich Sie in einem Gespräch persönlich.
+
+Freundliche Grüße
+Suhay Sevinc`,
+];
+
+function Sparkle({ size = 16 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true" style={{ display: 'block', flexShrink: 0 }}>
+      <path d="M12 2l1.6 5.1a5 5 0 0 0 3.3 3.3L22 12l-5.1 1.6a5 5 0 0 0-3.3 3.3L12 22l-1.6-5.1a5 5 0 0 0-3.3-3.3L2 12l5.1-1.6a5 5 0 0 0 3.3-3.3L12 2z" />
+      <path d="M19 3l.6 1.9a2 2 0 0 0 1.3 1.3L22.8 7l-1.9.6a2 2 0 0 0-1.3 1.3L19 11l-.6-1.9a2 2 0 0 0-1.3-1.3L15.2 7l1.9-.6a2 2 0 0 0 1.3-1.3L19 3z" opacity="0.7" />
+    </svg>
+  );
+}
+
+/* ---- Card A · Anschreiben ---- */
+function LetterCard({ status, setStatus }) {
+  const [text, setText] = React.useState('');
+  const [variant, setVariant] = React.useState(0);
+
+  const generate = (v) => {
+    setStatus('gen');
+    setTimeout(() => {
+      const idx = v != null ? v : variant;
+      setText(LETTERS[idx]);
+      setStatus('draft');
+    }, 1200);
+  };
+  const regenerate = () => { const next = (variant + 1) % LETTERS.length; setVariant(next); generate(next); };
+
+  return (
+    <div className="pcard">
+      <div className="pcard-head">
+        <span className="ic"><Icon name="mail" size={17} /></span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h3>Anschreiben</h3>
+          <div className="sub">Entwurf aus Profil + Stelle</div>
+        </div>
+        {status === 'draft' && <span className="prov ai"><Sparkle size={11} />Entwurf · KI</span>}
+        {status === 'done' && <span className="prov done"><Icon name="check" size={12} />Bestätigt</span>}
+      </div>
+      <div className="pcard-body">
+        {status === 'idle' && (
+          <div className="invite">
+            <span className="halo"><Sparkle size={22} /></span>
+            <p>myJob entwirft ein Anschreiben aus Suhays Profil und der Stelle. Du prüfst und passt an — abgesendet wird nichts ohne dich.</p>
+            <button className="magic" onClick={() => generate()}><Sparkle size={15} />Anschreiben generieren</button>
+          </div>
+        )}
+        {status === 'gen' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '6px 0' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'var(--accent-strong)', fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-medium)', marginBottom: '4px' }}>
+              <Sparkle size={14} />myJob schreibt …
+            </div>
+            {[92, 100, 86, 70, 96, 64].map((w, i) => <div key={i} className="skel" style={{ width: w + '%' }} />)}
+          </div>
+        )}
+        {(status === 'draft' || status === 'done') && (
+          <React.Fragment>
+            <Textarea rows={13} value={text} readOnly={status === 'done'} onChange={(e) => setText(e.target.value)} style={status === 'done' ? { background: 'var(--surface-subtle)', color: 'var(--text-body)' } : {}} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {status === 'draft' ? (
+                <React.Fragment>
+                  <button className="magic ghost" onClick={regenerate}><Sparkle size={13} />Neu generieren</button>
+                  <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-soft)' }}>oder direkt im Feld bearbeiten</span>
+                  <button className="magic" style={{ marginLeft: 'auto' }} onClick={() => setStatus('done')}><Icon name="check" size={15} />Übernehmen</button>
+                </React.Fragment>
+              ) : (
+                <button className="magic ghost" style={{ marginLeft: 'auto' }} onClick={() => setStatus('draft')}><Icon name="edit" size={14} />Bearbeiten</button>
+              )}
+            </div>
+          </React.Fragment>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ---- Card B · CV-Anpassung ---- */
+function CvCard({ status, setStatus }) {
+  const [highlights, setHighlights] = React.useState({}); // skill -> bool
+  const [linesOrder, setLinesOrder] = React.useState(CV_LINES);
+
+  const generate = () => {
+    setStatus('gen');
+    setTimeout(() => {
+      const hl = {};
+      CTX.required.forEach((s) => { if (CAND_SKILLS.includes(s)) hl[s] = true; });
+      setHighlights(hl);
+      setLinesOrder([...CV_LINES].sort((a, b) => (b.rel ? 1 : 0) - (a.rel ? 1 : 0)));
+      setStatus('draft');
+    }, 950);
+  };
+  const toggleSkill = (s) => {
+    if (status !== 'draft') return;
+    setHighlights((p) => ({ ...p, [s]: !p[s] }));
+  };
+  const hlCount = Object.values(highlights).filter(Boolean).length;
+
+  return (
+    <div className="pcard">
+      <div className="pcard-head">
+        <span className="ic"><Icon name="fileText" size={17} /></span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h3>CV-Anpassung</h3>
+          <div className="sub">Relevante Skills für diese Stelle vorheben</div>
+        </div>
+        {status === 'draft' && <span className="prov ai"><Sparkle size={11} />{hlCount} hervorgehoben</span>}
+        {status === 'done' && <span className="prov done"><Icon name="check" size={12} />Bestätigt</span>}
+      </div>
+      <div className="pcard-body">
+        {status === 'idle' && (
+          <div className="invite">
+            <span className="halo"><Sparkle size={22} /></span>
+            <p>myJob zieht die Skills nach vorn, die diese Stelle verlangt — und ordnet die CV-Punkte passend. Du behältst die Kontrolle über jeden Tag.</p>
+            <button className="magic" onClick={generate}><Sparkle size={15} />Skills für diese Stelle vorheben</button>
+          </div>
+        )}
+        {status === 'gen' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '6px 0' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'var(--accent-strong)', fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-medium)', marginBottom: '4px' }}>
+              <Sparkle size={14} />gleicht Skills mit der Stelle ab …
+            </div>
+            {[60, 80, 100, 88].map((w, i) => <div key={i} className="skel" style={{ width: w + '%' }} />)}
+          </div>
+        )}
+        {(status === 'draft' || status === 'done') && (
+          <React.Fragment>
+            <div>
+              <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-soft)', marginBottom: '9px' }}>
+                Skills {status === 'draft' && <span style={{ color: 'var(--text-muted)' }}>· tippe einen an, um die Hervorhebung zu ändern</span>}
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '7px' }}>
+                {CAND_SKILLS.map((s) => (
+                  <span key={s} className={'skill' + (highlights[s] ? ' hl' : '')} onClick={() => toggleSkill(s)}>
+                    {highlights[s] && <span className="dot" />}{s}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-soft)', marginBottom: '9px' }}>Erfahrung · relevante zuerst</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {linesOrder.map((l) => (
+                  <div key={l.id} className={'cvline' + (l.rel ? ' hl' : '')}>
+                    <span className="bullet" />
+                    <span className="txt">{l.txt}</span>
+                    {l.rel && <span className="tag">vorgehoben</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {status === 'draft' ? (
+                <button className="magic" style={{ marginLeft: 'auto' }} onClick={() => setStatus('done')}><Icon name="check" size={15} />Übernehmen</button>
+              ) : (
+                <button className="magic ghost" style={{ marginLeft: 'auto' }} onClick={() => setStatus('draft')}><Icon name="edit" size={14} />Bearbeiten</button>
+              )}
+            </div>
+          </React.Fragment>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PrepScreen() {
+  const [letter, setLetter] = React.useState('idle');
+  const [cv, setCv] = React.useState('idle');
+  const [sent, setSent] = React.useState(false);
+  const both = letter === 'done' && cv === 'done';
+
+  const ContextBar = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', padding: '16px 18px', background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', marginBottom: '20px' }}>
+      <Avatar name={CTX.cand.name} size="md" ring />
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--fs-md)', fontWeight: 'var(--fw-semibold)', color: 'var(--text-heading)' }}>{CTX.cand.name}</div>
+        <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-soft)' }}>{CTX.cand.role}</div>
+      </div>
+      <Icon name="arrowRight" size={18} style={{ color: 'var(--text-soft)' }} />
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--fs-md)', fontWeight: 'var(--fw-semibold)', color: 'var(--text-heading)' }}>{CTX.job.title}</div>
+        <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-soft)' }}>{CTX.job.company} · {CTX.job.location} · {CTX.job.country}</div>
+      </div>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--accent-strong)', background: 'var(--accent-soft)', border: '1px solid var(--accent-border)', borderRadius: 'var(--radius-pill)', padding: '5px 12px' }}>
+        <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--accent)' }} />{CTX.match}% Match
+      </span>
+    </div>
+  );
+
+  return (
+    <React.Fragment>
+      <AppShell
+        product="recruit" posture="rail"
+        nav={RECRUIT_NAV} active="matching" onNav={() => {}}
+        account={{ name: 'Suhay Sevinc', meta: 'Me · +3 Talente' }}
+        title="Bewerbung vorbereiten"
+        subtitle="Magic-Entwürfe · du bestätigst"
+      >
+        <div style={{ maxWidth: '1000px' }}>
+          {ContextBar}
+          <div className="prep-grid">
+            <LetterCard status={letter} setStatus={setLetter} />
+            <CvCard status={cv} setStatus={setCv} />
+          </div>
+          <div className="decide">
+            <div className="checks">
+              <span className={'ck' + (letter === 'done' ? ' on' : '')}><span className="box"><Icon name="check" size={12} /></span>Anschreiben</span>
+              <span className={'ck' + (cv === 'done' ? ' on' : '')}><span className="box"><Icon name="check" size={12} /></span>CV-Anpassung</span>
+            </div>
+            <button className="send" disabled={!both} onClick={() => both && setSent(true)}>
+              <Icon name="send" size={15} />Bewerbung absenden
+            </button>
+          </div>
+        </div>
+      </AppShell>
+      {sent && (
+        <div className="toast">
+          <Icon name="checkCircle" size={16} />
+          Suhay auf „{CTX.job.title}" beworben — <b>in Pipeline</b>
+        </div>
+      )}
+    </React.Fragment>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<PrepScreen />);
+</script>
+</body>
+</html>

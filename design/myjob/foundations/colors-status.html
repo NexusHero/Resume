@@ -1,0 +1,23 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Pipeline status" subtitle="The recruiting funnel — fixed colors in every accent theme" -->
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8" /><link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; padding: 18px; background: var(--surface-card); }
+  .grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+  .stage { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-weight: 600; font-size: 11.5px; border-radius: var(--radius-pill); padding: 4px 10px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .bar { width: 100%; height: 8px; border-radius: var(--radius-pill); }
+  .key { font-family: var(--font-mono); font-size: 9.5px; color: var(--text-soft); }
+</style></head>
+<body>
+<div class="grid">
+  <div class="stage"><span class="chip" style="background:var(--status-new-soft);color:var(--status-new-strong);border:1px solid var(--status-new-border)"><span class="dot" style="background:var(--status-new)"></span>Neu</span><div class="bar" style="background:var(--status-new)"></div><span class="key">new</span></div>
+  <div class="stage"><span class="chip" style="background:var(--status-review-soft);color:var(--status-review-strong);border:1px solid var(--status-review-border)"><span class="dot" style="background:var(--status-review)"></span>Sichtung</span><div class="bar" style="background:var(--status-review)"></div><span class="key">review</span></div>
+  <div class="stage"><span class="chip" style="background:var(--status-interview-soft);color:var(--status-interview-strong);border:1px solid var(--status-interview-border)"><span class="dot" style="background:var(--status-interview)"></span>Interview</span><div class="bar" style="background:var(--status-interview)"></div><span class="key">interview</span></div>
+  <div class="stage"><span class="chip" style="background:var(--status-offer-soft);color:var(--status-offer-strong);border:1px solid var(--status-offer-border)"><span class="dot" style="background:var(--status-offer)"></span>Angebot</span><div class="bar" style="background:var(--status-offer)"></div><span class="key">offer</span></div>
+  <div class="stage"><span class="chip" style="background:var(--status-hired-soft);color:var(--status-hired-strong);border:1px solid var(--status-hired-border)"><span class="dot" style="background:var(--status-hired)"></span>Eingestellt</span><div class="bar" style="background:var(--status-hired)"></div><span class="key">hired</span></div>
+  <div class="stage"><span class="chip" style="background:var(--status-rejected-soft);color:var(--status-rejected-strong);border:1px solid var(--status-rejected-border)"><span class="dot" style="background:var(--status-rejected)"></span>Absage</span><div class="bar" style="background:var(--status-rejected)"></div><span class="key">rejected</span></div>
+</div>
+</body></html>

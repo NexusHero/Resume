@@ -1,0 +1,24 @@
+<!-- @dsCard group="Colors" viewport="700x130" name="Neutral & paper scale" subtitle="Light working surfaces, borders and text greys" -->
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8" /><link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; padding: 18px; background: var(--surface-card); }
+  .row { display: flex; gap: 6px; }
+  .sw { flex: 1; height: 72px; border-radius: var(--radius-sm); border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: flex-end; padding: 7px 8px; box-sizing: border-box; }
+  .t { font-family: var(--font-mono); font-size: 9.5px; color: var(--text-muted); }
+  .h { font-family: var(--font-mono); font-size: 9px; color: var(--text-soft); }
+  .dk .t, .dk .h { color: rgba(255,255,255,0.8); }
+</style></head>
+<body>
+<div class="row">
+  <div class="sw" style="background:var(--paper)"><span class="t">paper</span><span class="h">#ffffff</span></div>
+  <div class="sw" style="background:var(--paper-subtle)"><span class="t">subtle</span><span class="h">#f8fafc</span></div>
+  <div class="sw" style="background:var(--neutral-200)"><span class="t">n-200</span><span class="h">#e5e7eb</span></div>
+  <div class="sw" style="background:var(--neutral-300)"><span class="t">n-300</span><span class="h">#cbd5e1</span></div>
+  <div class="sw" style="background:var(--neutral-400)"><span class="t">n-400</span><span class="h">#94a3b8</span></div>
+  <div class="sw dk" style="background:var(--neutral-500)"><span class="t">n-500</span><span class="h">#64748b</span></div>
+  <div class="sw dk" style="background:var(--neutral-700)"><span class="t">n-700</span><span class="h">#334155</span></div>
+  <div class="sw dk" style="background:var(--neutral-950)"><span class="t">n-950</span><span class="h">#0a0a0a</span></div>
+</div>
+</body></html>

@@ -9,14 +9,10 @@ function Dashboard({ me, apps, vkpis, clients, mandates, onOpenTalent, onOpenPip
   const topMandates = mandates.filter((m) => m.status === 'active').slice(0, 4);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-      {/* greeting */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '20px 24px', borderRadius: 'var(--radius-lg)', background: 'linear-gradient(160deg, var(--ink-850), var(--ink-900))', color: '#fff' }}>
-        <WS.Avatar name={me.name} src={me.src} size={52} radius="var(--radius-md)" ring />
-        <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: '20px', fontWeight: 700, letterSpacing: '-0.02em' }}>Hello, {me.name.split(' ')[0]}.</div>
-          <div style={{ fontSize: '13px', color: 'var(--sidebar-muted)', marginTop: '2px' }}>{mandates.filter((m) => m.status === 'active').length} active mandates · {nextSteps.length} of your own applications in motion.</div>
-        </div>
-        <WS.Button variant="primary" iconLeft={<WS.Icon name="user" size={15} />} onClick={() => onOpenTalent('me')}>My profile</WS.Button>
+      {/* greeting — quiet, no dark bar; profile lives bottom-left in the rail */}
+      <div>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-heading)' }}>Hello, {me.name.split(' ')[0]}.</div>
+        <div style={{ fontSize: '13px', color: 'var(--text-soft)', marginTop: '3px' }}>{mandates.filter((m) => m.status === 'active').length} active mandates · {nextSteps.length} of your own applications in motion.</div>
       </div>
 
       {/* agency kpis */}

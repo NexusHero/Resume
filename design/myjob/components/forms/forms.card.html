@@ -1,0 +1,47 @@
+<!-- @dsCard group="Components" viewport="700x340" name="Forms — input, select, textarea, checkbox, switch" subtitle="Labelled fields with the shared focus glow + toggles" -->
+<!DOCTYPE html>
+<html lang="en" data-theme="blueprint">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../../styles.css" />
+<style>
+  body { margin: 0; padding: 22px; background: var(--surface-app); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+  .row { display: flex; align-items: center; gap: 22px; margin-top: 16px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<script type="text/babel">
+const { Input, Select, Textarea, Checkbox, Switch } = window.MyJobDesignSystem_f3658e;
+function Demo() {
+  const [remote, setRemote] = React.useState(true);
+  const [notify, setNotify] = React.useState(true);
+  const [v, setV] = React.useState('Lena Bauer');
+  return (
+    <div>
+      <div className="grid2">
+        <Input label="Name" icon="user" value={v} onChange={e => setV(e.target.value)} />
+        <Input label="E-Mail" icon="mail" type="email" placeholder="name@firma.de" />
+        <Select label="Status" options={[{value:'new',label:'Neu'},{value:'review',label:'Sichtung'},{value:'interview',label:'Interview'}]} defaultValue="review" />
+        <Input label="PLZ" error="Pflichtfeld" />
+      </div>
+      <div style={{ marginTop:'16px' }}>
+        <Textarea label="Notiz" rows={2} hint="Intern, nicht sichtbar für Bewerber:innen" defaultValue="Starkes Portfolio, Interview terminieren." />
+      </div>
+      <div className="row">
+        <Checkbox label="Remote möglich" checked={remote} onChange={setRemote} />
+        <Checkbox label="Vollzeit" checked={false} onChange={() => {}} />
+        <Switch label="Benachrichtigungen" checked={notify} onChange={setNotify} />
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+</script>
+</body>
+</html>

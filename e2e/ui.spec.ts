@@ -1,13 +1,64 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('UI acceptance — the suite renders in English', () => {
-  test('Launcher_Loads_ShowsEnglishEntryPoints', async ({ page }) => {
+  test('Root_LandsOnWorkspace_NotLauncher', async ({ page }) => {
+    // Stub the live job board so the workspace's Job search is deterministic.
+    await page.route('**/api/v1/jobs**', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          threshold: 80,
+          counts: { total: 0, top: 0, more: 0 },
+          top: [],
+          more: [],
+        }),
+      }),
+    );
     await page.goto('/');
-    await expect(page.locator('body')).toContainText('Application Suite');
-    await expect(page.locator('body')).toContainText('myJob Workspace');
-    await expect(page.locator('body')).toContainText('myJob for applicants');
-    // No German leaked into the launcher.
-    await expect(page.locator('body')).not.toContainText('Bewerbungs-Suite');
+    // Redirected straight into the unified workspace (no launcher page).
+    await expect(page).toHaveURL(/recruiting\/index\.html$/);
+    const nav = page.locator('nav');
+    await expect(nav).toContainText('Workspace');
+    await expect(nav).toContainText('Job search');
+    await expect(nav).toContainText('Talent Pool');
+    await expect(page.locator('body')).not.toContainText('Application Suite');
+  });
+
+  test('Workspace_JobSearch_FetchesLiveJobs', async ({ page }) => {
+    await page.route('**/api/v1/jobs**', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          threshold: 80,
+          counts: { total: 1, top: 1, more: 0 },
+          top: [
+            {
+              id: 'j1',
+              company: 'Acme',
+              role: 'Backend Engineer',
+              city: 'Berlin',
+              country: 'Germany',
+              mode: 'remote',
+              salary: '€80k',
+              posted: '2026-06-29',
+              skills: ['Go'],
+              snippet: 'Build things.',
+              source: 'Arbeitnow',
+              url: 'https://acme.test/job',
+              match: 90,
+              matchedSkills: ['Go'],
+              missingSkills: [],
+            },
+          ],
+          more: [],
+        }),
+      }),
+    );
+    await page.goto('/design/myjob/ui_kits/recruiting/index.html');
+    await page.getByRole('button', { name: /Job search/ }).click();
+    const main = page.locator('main');
+    await expect(main).toContainText('Backend Engineer');
+    await expect(main).toContainText('via Arbeitnow');
   });
 
   test('Recruiting_Loads_NavigationIsEnglish', async ({ page }) => {

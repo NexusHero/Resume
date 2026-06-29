@@ -275,8 +275,14 @@ describe('REST API /api/v1', () => {
     expect(res.status).toBe(404);
   });
 
-  it('Static_GetRoot_ServesLauncher', async () => {
+  it('Root_Redirects_ToWorkspace', async () => {
     const res = await request(app).get('/');
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe('/design/myjob/ui_kits/recruiting/index.html');
+  });
+
+  it('Static_ServesWorkspaceHtml', async () => {
+    const res = await request(app).get('/design/myjob/ui_kits/recruiting/index.html');
     expect(res.status).toBe(200);
     expect(res.text).toMatch(/<!DOCTYPE html>/i);
   });

@@ -3,6 +3,7 @@ const A = window.MyJobDesignSystem_f3658e;
 
 const TITLES = {
   uebersicht: ['Workspace', 'What needs your attention today'],
+  jobsuche: ['Job search', 'Find live jobs from connected boards and apply'],
   mandate: ['Mandates', 'Search mandates per client with fee and deadline'],
   pool: ['Talent Pool', 'Who you represent — me first'],
   matching: ['Matching', 'Find roles by skill-overlap — apply on a candidate’s behalf'],
@@ -21,12 +22,33 @@ function App() {
   const [editing, setEditing] = React.useState(null);
 
   const [talents, setTalents] = React.useState(window.TALENTS);
-  const apps = window.APPLICATIONS;
+  const [apps, setApps] = React.useState(window.APPLICATIONS);
   const me = talents.find((t) => t.me);
 
   const deleteTalent = (id) => {
     setTalents((prev) => prev.filter((t) => t.id !== id));
     setOpenTalent(null);
+  };
+
+  // A draft built in the live job search (KCreateApplication) → a pipeline entry.
+  const addFromJobSearch = (draft) => {
+    setApps((prev) => [
+      {
+        id: draft.id,
+        talentId: 'me',
+        company: draft.company,
+        role: draft.role,
+        location: draft.location || '',
+        status: 'new',
+        date: 'today',
+        next: 'Created from job search',
+        score: draft.match || 80,
+        attachments: [],
+        anschreiben: Boolean(draft.anschreiben),
+      },
+      ...prev,
+    ]);
+    setNav('bewerbungen');
   };
 
   const unread = window.MESSAGES.filter((m) => m.unread).length;
@@ -58,6 +80,7 @@ function App() {
   } else {
     [title, subtitle] = TITLES[nav];
     if (nav === 'uebersicht') body = <window.Dashboard me={me} apps={apps} vkpis={window.VERMITTLER_KPIS} clients={window.CLIENTS} mandates={window.MANDATES} onOpenTalent={goTalent} onOpenPipeline={() => setNav('bewerbungen')} onOpenMandate={() => setNav('mandate')} />;
+    else if (nav === 'jobsuche') body = <window.KJobsuche onCreate={addFromJobSearch} providers={window.KarriereData.PROVIDERS} onManageSources={() => setNav('einstellungen')} />;
     else if (nav === 'mandate') body = <window.MandateView clients={window.CLIENTS} mandates={window.MANDATES} />;
     else if (nav === 'pool') body = <window.TalentGrid talents={talents} apps={apps} onOpen={goTalent} onDelete={deleteTalent} />;
     else if (nav === 'matching') body = <window.Matching talents={talents} />;

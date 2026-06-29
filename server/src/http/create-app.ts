@@ -64,6 +64,9 @@ export function createApp(deps: AppDeps): Express {
 
   app.use('/api/v1', api);
 
+  // The unified myJob Workspace is the home — skip the old launcher page.
+  app.get('/', (_req, res) => res.redirect('/design/myjob/ui_kits/recruiting/index.html'));
+
   // Static web UIs (CV, cover letter, myJob). Served after the API routes.
   // No-cache so the browser always re-validates — the in-browser Babel apps have
   // no content hashes, so caching would otherwise serve stale JS after a change.

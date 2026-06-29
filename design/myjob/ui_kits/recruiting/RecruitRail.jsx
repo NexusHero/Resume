@@ -5,6 +5,7 @@ const { Icon, IconButton, Avatar, Badge } = window.MyJobDesignSystem_f3658e;
 
 const NAV = [
   { id: 'uebersicht', label: 'Workspace', icon: 'home' },
+  { id: 'jobsuche', label: 'Job search', icon: 'globe' },
   { id: 'mandate', label: 'Mandates', icon: 'briefcase' },
   { id: 'pool', label: 'Talent Pool', icon: 'users' },
   { id: 'matching', label: 'Matching', icon: 'search' },

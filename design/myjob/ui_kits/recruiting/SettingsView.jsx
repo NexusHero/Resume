@@ -34,36 +34,36 @@ function SettingsView() {
   const [show, setShow] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
   const [model, setModel] = React.useState('gemini-2.0-flash');
-  const [src, setSrc] = React.useState('Autonom'); const [apply, setApply] = React.useState('Mit Freigabe'); const [cv, setCv] = React.useState('Vorschlag');
+  const [src, setSrc] = React.useState('Autonomous'); const [apply, setApply] = React.useState('With approval'); const [cv, setCv] = React.useState('Suggest');
   const save = () => { try { localStorage.setItem(SV_KEY, key); } catch (e) {} setSaved(true); setTimeout(() => setSaved(false), 2200); };
 
   return (
     <div style={{ maxWidth: '720px' }}>
-      <SvSection icon="zap" title="KI · Gemini" sub="Schlüssel für AI-Anschreiben, CV-Zuschnitt und den Agentic-Modus">
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '7px' }}>Gemini API-Key</div>
+      <SvSection icon="zap" title="AI · Gemini" sub="Key for AI cover letters, CV tailoring and agentic mode">
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '7px' }}>Gemini API key</div>
         <div style={{ display: 'flex', gap: '9px' }}>
           <input type={show ? 'text' : 'password'} value={key} onChange={(e) => setKey(e.target.value)} placeholder="AIza…" autoComplete="off" spellCheck="false" style={{ flex: 1, border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', background: 'var(--surface-card)', fontFamily: 'var(--font-mono)', fontSize: '13px', color: 'var(--text-heading)', padding: '10px 12px', outline: 'none' }} />
-          <button onClick={() => setShow((s) => !s)} title="anzeigen" style={{ cursor: 'pointer', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', background: 'var(--surface-card)', color: 'var(--text-muted)', padding: '0 12px' }}><SV.Icon name="eye" size={16} /></button>
-          <SV.Button size="md" onClick={save}>Speichern</SV.Button>
+          <button onClick={() => setShow((s) => !s)} title="show" style={{ cursor: 'pointer', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', background: 'var(--surface-card)', color: 'var(--text-muted)', padding: '0 12px' }}><SV.Icon name="eye" size={16} /></button>
+          <SV.Button size="md" onClick={save}>Save</SV.Button>
         </div>
-        <div style={{ fontSize: '12px', color: saved ? 'var(--success)' : 'var(--text-soft)', marginTop: '7px' }}>{saved ? '✓ Gespeichert · lokal im Browser' : 'Lokal gespeichert. Der Backend-Aufruf läuft serverseitig über das Framework unten.'}</div>
-        <div style={{ marginTop: '16px', fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '7px' }}>Modell</div>
+        <div style={{ fontSize: '12px', color: saved ? 'var(--success)' : 'var(--text-soft)', marginTop: '7px' }}>{saved ? '✓ Saved · locally in the browser' : 'Stored locally. The backend call runs server-side through the framework below.'}</div>
+        <div style={{ marginTop: '16px', fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '7px' }}>Model</div>
         <select value={model} onChange={(e) => setModel(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-heading)' }}>
-          <option value="gemini-2.0-flash">gemini-2.0-flash · schnell</option>
-          <option value="gemini-2.0-pro">gemini-2.0-pro · stark</option>
+          <option value="gemini-2.0-flash">gemini-2.0-flash · fast</option>
+          <option value="gemini-2.0-pro">gemini-2.0-pro · powerful</option>
         </select>
       </SvSection>
 
-      <SvSection icon="code" title="KI-Framework" sub="Provider-agnostisch — Gemini ist nur ein austauschbarer Anbieter">
+      <SvSection icon="code" title="AI framework" sub="Provider-agnostic — Gemini is just one swappable provider">
         <div style={{ padding: '14px 16px', border: '1px dashed var(--border-strong)', borderRadius: 'var(--radius-md)', background: 'var(--surface-subtle)', fontSize: '12.5px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-          Die AI-Integration läuft über ein <b style={{ color: 'var(--text-heading)' }}>provider-agnostisches Framework</b> — das Node.js-Pendant zu <code style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--accent-strong)' }}>Microsoft.Extensions.AI</code>: die <b style={{ color: 'var(--text-heading)' }}>Vercel AI SDK</b> / LangChain.js. Eine Abstraktion treibt CV-Zuschnitt, Anschreiben und den Agentic-Modus; der Anbieter (Gemini → OpenAI → lokal) ist mit einer Zeile wechselbar.
+          The AI integration runs through a <b style={{ color: 'var(--text-heading)' }}>provider-agnostic framework</b> — the Node.js counterpart to <code style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--accent-strong)' }}>Microsoft.Extensions.AI</code>: the <b style={{ color: 'var(--text-heading)' }}>Vercel AI SDK</b> / LangChain.js. One abstraction drives CV tailoring, cover letters and agentic mode; the provider (Gemini → OpenAI → local) is swappable in a single line.
         </div>
       </SvSection>
 
-      <SvSection icon="users" title="Agentic-Modus" sub="Wie weit der Agent pro Aufgabe selbst handeln darf">
-        <AutoRow title="Sourcing" desc="Nachts passende Stellen finden (reversibel)." value={src} onChange={setSrc} levels={['Aus', 'Vorschlag', 'Autonom']} />
-        <AutoRow title="Bewerben im Auftrag" desc="Echte Menschen — braucht immer deine Freigabe." value={apply} onChange={setApply} levels={['Aus', 'Mit Freigabe']} />
-        <AutoRow title="CV- & Anschreiben-Zuschnitt" desc="Entwurf wird grau vorgeschlagen — übernehmen oder verwerfen." value={cv} onChange={setCv} levels={['Aus', 'Vorschlag']} />
+      <SvSection icon="users" title="Agentic mode" sub="How far the agent may act on its own per task">
+        <AutoRow title="Sourcing" desc="Find matching roles overnight (reversible)." value={src} onChange={setSrc} levels={['Off', 'Suggest', 'Autonomous']} />
+        <AutoRow title="Apply on behalf" desc="Real people — always needs your approval." value={apply} onChange={setApply} levels={['Off', 'With approval']} />
+        <AutoRow title="CV & cover-letter tailoring" desc="A draft is suggested in grey — accept or discard." value={cv} onChange={setCv} levels={['Off', 'Suggest']} />
       </SvSection>
     </div>
   );

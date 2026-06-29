@@ -5,14 +5,14 @@ const MT = window.MyJobDesignSystem_f3658e;
 
 /* DACH roles with required skills — Swiss-heavy (country + source are modelled). */
 const MT_JOBS = [
-  { id: 'j1', title: 'Senior C++ Engineer', company: 'Helvetia Digital AG', location: 'Zürich', country: 'CH', source: 'jobs.ch', pensum: '80–100%', salary: 'CHF 120–140k', posted: 'vor 2 Tagen', req: ['C++20', 'Qt / QML', 'gRPC', 'Microservices'] },
-  { id: 'j2', title: 'Software Engineer Embedded', company: 'Sensirion AG', location: 'Stäfa', country: 'CH', source: 'jobs.ch', pensum: '100%', salary: 'CHF 115–130k', posted: 'gestern', req: ['C++20', 'Microservices', 'REST'] },
-  { id: 'j3', title: '.NET Backend Engineer', company: 'Swisscom', location: 'Bern', country: 'CH', source: 'job-room.ch', pensum: '80–100%', salary: 'CHF 110–128k', posted: 'vor 4 Tagen', req: ['C# / .NET', 'gRPC', 'Microservices'] },
-  { id: 'j4', title: 'Software Engineer C++', company: 'TRUMPF', location: 'Ditzingen', country: 'DE', source: 'LinkedIn', pensum: 'Vollzeit', salary: '€ 85–98k', posted: 'vor 1 Woche', req: ['C++20', 'OPC-UA', 'Docker'] },
-  { id: 'j5', title: 'DevOps Engineer', company: 'Migros Digital', location: 'Zürich', country: 'CH', source: 'jobs.ch', pensum: '80–100%', salary: 'CHF 105–120k', posted: 'vor 3 Tagen', req: ['Terraform', 'AWS', 'CI/CD', 'Go'] },
-  { id: 'j6', title: 'Product Designer', company: 'Aurora Systems', location: 'München', country: 'DE', source: 'LinkedIn', pensum: 'Vollzeit', salary: '€ 72–85k', posted: 'vor 5 Tagen', req: ['Figma', 'Design Systems', 'Prototyping'] },
+  { id: 'j1', title: 'Senior C++ Engineer', company: 'Helvetia Digital AG', location: 'Zurich', country: 'CH', source: 'jobs.ch', pensum: '80–100%', salary: 'CHF 120–140k', posted: '2 days ago', req: ['C++20', 'Qt / QML', 'gRPC', 'Microservices'] },
+  { id: 'j2', title: 'Software Engineer Embedded', company: 'Sensirion AG', location: 'Stäfa', country: 'CH', source: 'jobs.ch', pensum: '100%', salary: 'CHF 115–130k', posted: 'yesterday', req: ['C++20', 'Microservices', 'REST'] },
+  { id: 'j3', title: '.NET Backend Engineer', company: 'Swisscom', location: 'Bern', country: 'CH', source: 'job-room.ch', pensum: '80–100%', salary: 'CHF 110–128k', posted: '4 days ago', req: ['C# / .NET', 'gRPC', 'Microservices'] },
+  { id: 'j4', title: 'Software Engineer C++', company: 'TRUMPF', location: 'Ditzingen', country: 'DE', source: 'LinkedIn', pensum: 'Full-time', salary: '€85–98k', posted: '1 week ago', req: ['C++20', 'OPC-UA', 'Docker'] },
+  { id: 'j5', title: 'DevOps Engineer', company: 'Migros Digital', location: 'Zurich', country: 'CH', source: 'jobs.ch', pensum: '80–100%', salary: 'CHF 105–120k', posted: '3 days ago', req: ['Terraform', 'AWS', 'CI/CD', 'Go'] },
+  { id: 'j6', title: 'Product Designer', company: 'Aurora Systems', location: 'Munich', country: 'DE', source: 'LinkedIn', pensum: 'Full-time', salary: '€72–85k', posted: '5 days ago', req: ['Figma', 'Design Systems', 'Prototyping'] },
 ];
-const MT_SOURCES = ['Alle', 'jobs.ch', 'job-room.ch', 'LinkedIn'];
+const MT_SOURCES = ['All', 'jobs.ch', 'job-room.ch', 'LinkedIn'];
 
 function mtScore(cand, job) {
   const have = (cand.skills || []).map((s) => s.toLowerCase());
@@ -58,19 +58,19 @@ function Matching({ talents, onApplied }) {
     <div style={{ maxWidth: '780px' }}>
       {/* mode */}
       <div style={{ display: 'inline-flex', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '3px', gap: '3px', marginBottom: '20px' }}>
-        {[['auto', 'Auto · Skill-Match'], ['manual', 'Manuell']].map(([id, lbl]) => (
+        {[['auto', 'Auto · skill match'], ['manual', 'Manual']].map(([id, lbl]) => (
           <button key={id} onClick={() => setMode(id)} style={{ appearance: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: mode === id ? 600 : 500, padding: '8px 16px', borderRadius: 'var(--radius-sm)', background: mode === id ? 'var(--surface-card)' : 'transparent', color: mode === id ? 'var(--text-heading)' : 'var(--text-soft)', boxShadow: mode === id ? 'var(--shadow-sm)' : 'none' }}>{lbl}</button>
         ))}
       </div>
 
       {/* candidate switcher */}
-      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '9px' }}>Kandidat</div>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '9px' }}>Candidate</div>
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '18px' }}>
         {talents.map((t) => {
           const on = t.id === candId;
           return (
             <button key={t.id} onClick={() => setCandId(t.id)} style={{ appearance: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '4px 13px 4px 4px', borderRadius: 'var(--radius-pill)', border: `1px solid ${on ? 'var(--accent-border)' : 'var(--border-strong)'}`, background: on ? 'var(--accent-soft)' : 'var(--surface-card)', color: on ? 'var(--accent-strong)' : 'var(--text-muted)', fontSize: '13px', fontWeight: on ? 600 : 500 }}>
-              <MT.Avatar name={t.name} src={t.src} size="xs" />{t.name}{t.me ? ' · Ich' : ''}
+              <MT.Avatar name={t.name} src={t.src} size="xs" />{t.name}{t.me ? ' · Me' : ''}
             </button>
           );
         })}
@@ -80,10 +80,10 @@ function Matching({ talents, onApplied }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '18px' }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface-card)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', padding: '0 12px' }}>
             <MT.Icon name="search" size={15} style={{ color: 'var(--text-soft)' }} />
-            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Stelle suchen: Titel, Firma, Ort …" style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-heading)', padding: '10px 0' }} />
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search roles: title, company, location …" style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-heading)', padding: '10px 0' }} />
           </label>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            {[['ALL', 'Alle Länder'], ['CH', '🇨🇭 Schweiz'], ['DE', '🇩🇪 Deutschland']].map(([k, l]) => chip(country === k, l, () => setCountry(k)))}
+            {[['ALL', 'All countries'], ['CH', '🇨🇭 Switzerland'], ['DE', '🇩🇪 Germany']].map(([k, l]) => chip(country === k, l, () => setCountry(k)))}
           </div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {MT_SOURCES.map((s) => chip(source === s, s, () => setSource(s)))}
@@ -92,7 +92,7 @@ function Matching({ talents, onApplied }) {
       )}
 
       {mode === 'auto' && (
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 16px' }}>Rollen nach <b style={{ color: 'var(--text-heading)' }}>{cand.name}s Skill-Profil</b> — bester Treffer zuerst.</p>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 16px' }}>Roles by <b style={{ color: 'var(--text-heading)' }}>{cand.name}'s skill profile</b> — best match first.</p>
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -107,14 +107,14 @@ function Matching({ talents, onApplied }) {
               match={mtScore(cand, job).pct}
               skills={mtSkills(cand, job)}
               status={done ? 'new' : undefined}
-              applyLabel={done ? `✓ ${first} beworben` : `${first} bewerben`}
+              applyLabel={done ? `✓ ${first} applied` : `Apply ${first}`}
               onApply={done ? undefined : () => apply(cand.id, job.id)}
               onView={() => {}}
             />
           );
         })}
         {mode === 'manual' && manualJobs.length === 0 && (
-          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-soft)', border: '1px dashed var(--border-strong)', borderRadius: 'var(--radius-lg)' }}>Keine Stelle gefunden.</div>
+          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-soft)', border: '1px dashed var(--border-strong)', borderRadius: 'var(--radius-lg)' }}>No roles found.</div>
         )}
       </div>
 

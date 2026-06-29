@@ -535,8 +535,8 @@
     new: { label: "Neu", color: "var(--status-new)", soft: "var(--status-new-soft)", border: "var(--status-new-border)", strong: "var(--status-new-strong)" },
     review: { label: "Sichtung", color: "var(--status-review)", soft: "var(--status-review-soft)", border: "var(--status-review-border)", strong: "var(--status-review-strong)" },
     interview: { label: "Interview", color: "var(--status-interview)", soft: "var(--status-interview-soft)", border: "var(--status-interview-border)", strong: "var(--status-interview-strong)" },
-    offer: { label: "Angebot", color: "var(--status-offer)", soft: "var(--status-offer-soft)", border: "var(--status-offer-border)", strong: "var(--status-offer-strong)" },
-    hired: { label: "Eingestellt", color: "var(--status-hired)", soft: "var(--status-hired-soft)", border: "var(--status-hired-border)", strong: "var(--status-hired-strong)" },
+    offer: { label: "Offer", color: "var(--status-offer)", soft: "var(--status-offer-soft)", border: "var(--status-offer-border)", strong: "var(--status-offer-strong)" },
+    hired: { label: "Hired", color: "var(--status-hired)", soft: "var(--status-hired-soft)", border: "var(--status-hired-border)", strong: "var(--status-hired-strong)" },
     rejected: { label: "Absage", color: "var(--status-rejected)", soft: "var(--status-rejected-soft)", border: "var(--status-rejected-border)", strong: "var(--status-rejected-strong)" }
   };
   function StatusBadge({ status = "new", label, dot = true, size = "md", style = {}, ...rest }) {

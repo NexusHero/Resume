@@ -32,7 +32,7 @@ function ResumeDoc({ contact, resume }) {
 
         <div style={{ height: '1px', background: 'var(--sidebar-border)', margin: '24px 0' }} />
 
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--sidebar-soft)', marginBottom: '13px' }}>Kontakt</div>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--sidebar-soft)', marginBottom: '13px' }}>Contact</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '11px' }}>
           {[['mail', contact.email], ['phone', contact.phone], ['pin', contact.location], ['linkedin', contact.linkedin]].filter(([, v]) => v).map(([ic, v]) => (
             <div key={ic} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -184,12 +184,12 @@ function Editor({ talent, onClose, onCreateMappe }) {
     setGen(true);
     setTimeout(() => {
       if (doc === 'lebenslauf') {
-        setPending({ kind: 'summary', value: 'Senior Software Engineer (M.Sc.) mit 7+ Jahren in C++ und C#/.NET, Echtzeit- und verteilten Systemen. Bewährt in sicherheitskritischen Branchen (Verteidigung, Lasertechnik); Fokus auf Systemarchitektur, DevOps (CI/CD) und Clean Code.' });
+        setPending({ kind: 'summary', value: 'Senior Software Engineer (M.Sc.) with 7+ years in C++ and C#/.NET, real-time and distributed systems. Proven in safety-critical industries (defense, laser technology); focused on system architecture, DevOps (CI/CD) and clean code.' });
       } else {
         setPending({ kind: 'letter', value: [
-          'mit großem Interesse bewerbe ich mich auf Ihre ausgeschriebene Position. Als Software Engineer (M.Sc.) mit über 7 Jahren Erfahrung in C++ und C#/.NET bringe ich genau das Profil mit, das Sie suchen.',
-          'Aktuell entwickle ich bei der Rheinmetall Air Defence AG in Zürich Steuersoftware für das Oerlikon Skynex®-System. Zuvor habe ich bei TRUMPF über fünf Jahre Visionsysteme, Microservices und CI/CD-Pipelines gestaltet.',
-          'Gerne zeige ich Ihnen in einem persönlichen Gespräch, wie ich mit moderner C++-Entwicklung und Systemarchitektur einen unmittelbaren Beitrag leiste.',
+          'I am applying for your open position with great interest. As a Software Engineer (M.Sc.) with over 7 years of experience in C++ and C#/.NET, I bring exactly the profile you are looking for.',
+          'I currently develop control software for the Oerlikon Skynex® system at Rheinmetall Air Defence AG in Zurich. Before that, I shaped vision systems, microservices and CI/CD pipelines at TRUMPF for over five years.',
+          'I would be glad to show you in person how I can make an immediate contribution with modern C++ development and system architecture.',
         ] });
       }
       setGen(false);
@@ -239,8 +239,8 @@ function Editor({ talent, onClose, onCreateMappe }) {
                 </div>
                 {!gen && (
                   <div style={{ display: 'flex', gap: '8px', padding: '10px 13px', borderTop: '1px solid var(--border)', background: 'var(--surface-subtle)' }}>
-                    <button onClick={acceptAI} style={{ appearance: 'none', cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-sm)', padding: '6px 12px' }}><ED.Icon name="check" size={13} />Übernehmen</button>
-                    <button onClick={cancelAI} style={{ appearance: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-sm)', padding: '6px 12px' }}><ED.Icon name="x" size={13} />Verwerfen</button>
+                    <button onClick={acceptAI} style={{ appearance: 'none', cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-sm)', padding: '6px 12px' }}><ED.Icon name="check" size={13} />Accept</button>
+                    <button onClick={cancelAI} style={{ appearance: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-sm)', padding: '6px 12px' }}><ED.Icon name="x" size={13} />Discard</button>
                   </div>
                 )}
               </div>
@@ -249,10 +249,10 @@ function Editor({ talent, onClose, onCreateMappe }) {
             <FormGroup title="Contact / header">
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <ED.Input label="Name" value={contact.name} onChange={(e) => setC('name', e.target.value)} wrapStyle={{ gridColumn: '1 / -1' }} />
-                <ED.Input label="Rolle" value={contact.role} onChange={(e) => setC('role', e.target.value)} wrapStyle={{ gridColumn: '1 / -1' }} />
-                <ED.Input label="E-Mail" value={contact.email} onChange={(e) => setC('email', e.target.value)} />
-                <ED.Input label="Telefon" value={contact.phone} onChange={(e) => setC('phone', e.target.value)} />
-                <ED.Input label="Ort" value={contact.location} onChange={(e) => setC('location', e.target.value)} />
+                <ED.Input label="Role" value={contact.role} onChange={(e) => setC('role', e.target.value)} wrapStyle={{ gridColumn: '1 / -1' }} />
+                <ED.Input label="Email" value={contact.email} onChange={(e) => setC('email', e.target.value)} />
+                <ED.Input label="Phone" value={contact.phone} onChange={(e) => setC('phone', e.target.value)} />
+                <ED.Input label="Location" value={contact.location} onChange={(e) => setC('location', e.target.value)} />
                 <ED.Input label="LinkedIn" value={contact.linkedin} onChange={(e) => setC('linkedin', e.target.value)} />
               </div>
             </FormGroup>
@@ -273,7 +273,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
                         <ED.Input label="Position" value={e.role} onChange={(ev) => setExp(i, 'role', ev.target.value)} />
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '9px' }}>
                           <ED.Input label="Company" value={e.company} onChange={(ev) => setExp(i, 'company', ev.target.value)} />
-                          <ED.Input label="Zeitraum" value={e.period} onChange={(ev) => setExp(i, 'period', ev.target.value)} />
+                          <ED.Input label="Period" value={e.period} onChange={(ev) => setExp(i, 'period', ev.target.value)} />
                         </div>
                         <ED.Textarea label="Responsibilities (one per line)" rows={3} value={e.bullets.join('\n')} onChange={(ev) => setExp(i, 'bullets', ev.target.value.split('\n'))} />
                       </div>
@@ -285,9 +285,9 @@ function Editor({ talent, onClose, onCreateMappe }) {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {resume.education.map((e, i) => (
                       <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '9px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '12px', background: 'var(--surface-subtle)' }}>
-                        <ED.Input label="Abschluss" value={e.degree} onChange={(ev) => setEdu(i, 'degree', ev.target.value)} wrapStyle={{ gridColumn: '1 / -1' }} />
+                        <ED.Input label="Degree" value={e.degree} onChange={(ev) => setEdu(i, 'degree', ev.target.value)} wrapStyle={{ gridColumn: '1 / -1' }} />
                         <ED.Input label="Institution" value={e.school} onChange={(ev) => setEdu(i, 'school', ev.target.value)} />
-                        <ED.Input label="Zeitraum" value={e.period} onChange={(ev) => setEdu(i, 'period', ev.target.value)} />
+                        <ED.Input label="Period" value={e.period} onChange={(ev) => setEdu(i, 'period', ev.target.value)} />
                       </div>
                     ))}
                   </div>
@@ -323,7 +323,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
         <div style={{ background: 'var(--surface-page)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>
-              <ED.Icon name="eye" size={14} /> Live-Vorschau · {doc === 'lebenslauf' ? 'Resume' : 'Cover letter'}
+              <ED.Icon name="eye" size={14} /> Live preview · {doc === 'lebenslauf' ? 'Resume' : 'Cover letter'}
             </span>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button onClick={runAI} style={{ appearance: 'none', cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12.5px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-md)', padding: '7px 12px' }}>

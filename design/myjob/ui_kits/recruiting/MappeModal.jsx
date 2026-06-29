@@ -29,7 +29,7 @@ function MappeModal({ talent, onClose }) {
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Recipient</div>
             <MM.Input label="Company" icon="building" defaultValue="Aurora Systems GmbH" />
             <MM.Input label="Position" icon="briefcase" defaultValue="Senior C++ Engineer" />
-            <MM.Input label="Contact person" icon="user" defaultValue="Personalabteilung" />
+            <MM.Input label="Contact person" icon="user" defaultValue="HR department" />
             <MM.Input label="ZIP & city" icon="pin" defaultValue="10115 Berlin" />
           </div>
 

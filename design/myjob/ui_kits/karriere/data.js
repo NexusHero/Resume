@@ -19,7 +19,7 @@ const ME = {
 };
 
 /* short codes shown as chips on each application */
-const DOC = { cv: 'Lebenslauf', anschreiben: 'Anschreiben', mappe: 'Mappe', zeugnisse: 'Zeugnisse', portfolio: 'Portfolio' };
+const DOC = { cv: 'Résumé', anschreiben: 'Cover letter', mappe: 'Bundle', zeugnisse: 'References', portfolio: 'Portfolio' };
 
 /* a brand tile color per company (no real logos) */
 const APPLICATIONS = [
@@ -187,15 +187,15 @@ function positionTotal(p) {
 
 /* ---- Job search results (Jobsuche). Searchable by Land / Stadt / Suchbegriff ---- */
 const JOBS = [
-  { id: 'j1', company: 'Celonis', tile: '#6366f1', role: 'Senior C++ Engineer', city: 'München', country: 'Deutschland', mode: 'hybrid', salary: '85.000 – 98.000 €', posted: 'vor 2 Tagen', match: 94, tags: ['C++', 'gRPC', 'Distributed Systems'], snippet: 'Kerngeschäftslogik der Process-Mining-Engine in modernem C++20.' },
-  { id: 'j2', company: 'GitLab', tile: '#fc6d26', role: 'Backend Engineer (Rust)', city: 'Remote', country: 'Remote · EU', mode: 'remote', salary: '80.000 – 95.000 €', posted: 'vor 4 Tagen', match: 90, tags: ['Rust', 'PostgreSQL', 'Remote'], snippet: 'Vollständig remote, asynchrone Kultur, Open-Source-Codebasis.' },
-  { id: 'j3', company: 'Bitpanda', tile: '#1d4ed8', role: 'Platform Engineer', city: 'Wien', country: 'Österreich', mode: 'hybrid', salary: '70.000 – 88.000 €', posted: 'vor 1 Tag', match: 86, tags: ['Kubernetes', 'Go', 'AWS'], snippet: 'Skalierung der Trading-Plattform für Millionen Nutzer:innen.' },
-  { id: 'j4', company: 'Zalando', tile: '#ff6900', role: 'Senior Software Engineer', city: 'Berlin', country: 'Deutschland', mode: 'remote', salary: '82.000 – 96.000 €', posted: 'vor 6 Tagen', match: 88, tags: ['Scala', 'Kafka', 'Microservices'], snippet: 'Event-getriebene Services im Fashion-Commerce-Backend.' },
-  { id: 'j5', company: 'Frequenz', tile: '#1f8a5b', role: 'Distributed Systems Engineer', city: 'Berlin', country: 'Deutschland', mode: 'hybrid', salary: '78.000 – 92.000 €', posted: 'vor 3 Tagen', match: 91, tags: ['Rust', 'gRPC', 'Energy'], snippet: 'Echtzeit-Steuerung dezentraler Energienetze.' },
-  { id: 'j6', company: 'Proton', tile: '#6d4aff', role: 'C++ Software Engineer', city: 'Zürich', country: 'Schweiz', mode: 'vor Ort', salary: 'CHF 120k – 140k', posted: 'vor 5 Tagen', match: 83, tags: ['C++', 'Cryptography', 'Privacy'], snippet: 'Sichere, quelloffene Produkte für Millionen von Nutzer:innen.' },
-  { id: 'j7', company: 'N26', tile: '#1f8a5b', role: 'Backend Engineer', city: 'Berlin', country: 'Deutschland', mode: 'hybrid', salary: '75.000 – 90.000 €', posted: 'vor 8 Tagen', match: 87, tags: ['Java', 'Spring', 'Fintech'], snippet: 'Bezahl- und Konto-Services der mobilen Bank.' },
-  { id: 'j8', company: 'Dynatrace', tile: '#1496ff', role: 'Senior Backend Engineer', city: 'Linz', country: 'Österreich', mode: 'hybrid', salary: '72.000 – 89.000 €', posted: 'vor 2 Tagen', match: 80, tags: ['Java', 'Observability', 'Cloud'], snippet: 'Observability-Plattform für große Cloud-Umgebungen.' },
-  { id: 'j9', company: 'Siemens', tile: '#009999', role: 'Cloud Software Engineer', city: 'Hamburg', country: 'Deutschland', mode: 'hybrid', salary: '74.000 – 88.000 €', posted: 'vor 7 Tagen', match: 78, tags: ['Azure', 'C#', 'IoT'], snippet: 'Industrielle IoT-Lösungen in der Cloud.' },
+  { id: 'j1', company: 'Celonis', tile: '#6366f1', role: 'Senior C++ Engineer', city: 'München', country: 'Germany', mode: 'hybrid', salary: '85.000 – 98.000 €', posted: 'vor 2 Tagen', match: 94, tags: ['C++', 'gRPC', 'Distributed Systems'], snippet: 'Core business logic of the process-mining engine in modern C++20.' },
+  { id: 'j2', company: 'GitLab', tile: '#fc6d26', role: 'Backend Engineer (Rust)', city: 'Remote', country: 'Remote · EU', mode: 'remote', salary: '80.000 – 95.000 €', posted: 'vor 4 Tagen', match: 90, tags: ['Rust', 'PostgreSQL', 'Remote'], snippet: 'Fully remote, async culture, open-source codebase.' },
+  { id: 'j3', company: 'Bitpanda', tile: '#1d4ed8', role: 'Platform Engineer', city: 'Wien', country: 'Austria', mode: 'hybrid', salary: '70.000 – 88.000 €', posted: 'vor 1 Tag', match: 86, tags: ['Kubernetes', 'Go', 'AWS'], snippet: 'Scaling the trading platform for millions of users.' },
+  { id: 'j4', company: 'Zalando', tile: '#ff6900', role: 'Senior Software Engineer', city: 'Berlin', country: 'Germany', mode: 'remote', salary: '82.000 – 96.000 €', posted: 'vor 6 Tagen', match: 88, tags: ['Scala', 'Kafka', 'Microservices'], snippet: 'Event-getriebene Services im Fashion-Commerce-Backend.' },
+  { id: 'j5', company: 'Frequenz', tile: '#1f8a5b', role: 'Distributed Systems Engineer', city: 'Berlin', country: 'Germany', mode: 'hybrid', salary: '78.000 – 92.000 €', posted: 'vor 3 Tagen', match: 91, tags: ['Rust', 'gRPC', 'Energy'], snippet: 'Echtzeit-Steuerung dezentraler Energienetze.' },
+  { id: 'j6', company: 'Proton', tile: '#6d4aff', role: 'C++ Software Engineer', city: 'Zürich', country: 'Switzerland', mode: 'vor Ort', salary: 'CHF 120k – 140k', posted: 'vor 5 Tagen', match: 83, tags: ['C++', 'Cryptography', 'Privacy'], snippet: 'Secure, open-source products for millions of users.' },
+  { id: 'j7', company: 'N26', tile: '#1f8a5b', role: 'Backend Engineer', city: 'Berlin', country: 'Germany', mode: 'hybrid', salary: '75.000 – 90.000 €', posted: 'vor 8 Tagen', match: 87, tags: ['Java', 'Spring', 'Fintech'], snippet: 'Bezahl- und Konto-Services der mobilen Bank.' },
+  { id: 'j8', company: 'Dynatrace', tile: '#1496ff', role: 'Senior Backend Engineer', city: 'Linz', country: 'Austria', mode: 'hybrid', salary: '72.000 – 89.000 €', posted: 'vor 2 Tagen', match: 80, tags: ['Java', 'Observability', 'Cloud'], snippet: 'Observability platform for large cloud environments.' },
+  { id: 'j9', company: 'Siemens', tile: '#009999', role: 'Cloud Software Engineer', city: 'Hamburg', country: 'Germany', mode: 'hybrid', salary: '74.000 – 88.000 €', posted: 'vor 7 Tagen', match: 78, tags: ['Azure', 'C#', 'IoT'], snippet: 'Industrial IoT solutions in the cloud.' },
 ];
 
 const COUNTRIES = ['All countries', 'Germany', 'Austria', 'Switzerland', 'Remote · EU'];
@@ -294,7 +294,7 @@ function mapJob(j) {
     match: typeof j.match === 'number' ? j.match : 0,
     tags: j.skills || [],
     missingSkills: j.missingSkills || [],
-    snippet: j.snippet || 'Keine Beschreibung verfügbar.',
+    snippet: j.snippet || 'No description available.',
     source: j.source || 'Quelle',
     tile: tileColor(j.company),
     url: j.url || null,

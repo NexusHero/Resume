@@ -71,7 +71,7 @@ function ResumeTab({ talent, onEdit, onCreateMappe }) {
               </div>
             </div>
 
-            <CvSideSection title="Kontakt">
+            <CvSideSection title="Contact">
               <CvContact icon="pin" value={talent.location} />
               <CvContact icon="mail" value={talent.email} />
               <CvContact icon={null} value={talent.phone} />
@@ -94,7 +94,7 @@ function ResumeTab({ talent, onEdit, onCreateMappe }) {
               </div>
             </CvSideSection>
 
-            <CvSideSection title="Ausbildung">
+            <CvSideSection title="Education">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '13px' }}>
                 {r.education.map((e, i) => (
                   <div key={i}>
@@ -110,12 +110,12 @@ function ResumeTab({ talent, onEdit, onCreateMappe }) {
           {/* paper main — summary & experience */}
           <div style={{ background: 'var(--surface-card)', padding: '32px 34px' }}>
             <section style={{ marginBottom: '26px' }}>
-              <CvMainHeading icon="user" title="Profil" onEdit={onEdit} />
+              <CvMainHeading icon="user" title="Profile" onEdit={onEdit} />
               <p style={{ fontSize: '14.5px', lineHeight: 1.65, color: 'var(--text-body)', margin: 0 }}>{r.summary}</p>
             </section>
 
             <section>
-              <CvMainHeading icon="briefcase" title="Werdegang" onEdit={onEdit} />
+              <CvMainHeading icon="briefcase" title="Experience" onEdit={onEdit} />
               <div style={{ position: 'relative', paddingLeft: '22px' }}>
                 <span style={{ position: 'absolute', left: '5px', top: '6px', bottom: '6px', width: '1.5px', background: 'var(--border-strong)' }} />
                 {r.experience.map((e, i) => (

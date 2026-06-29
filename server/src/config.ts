@@ -36,6 +36,7 @@ export interface LlmConfig {
   provider: LlmProviderId;
   anthropic: { apiKey: string; model: string };
   gemini: { apiKey: string; model: string };
+  openai: { apiKey: string; model: string };
 }
 
 /** Live job-board wiring, resolved from the environment. */
@@ -94,7 +95,12 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       title: env.CANDIDATE_TITLE ?? 'M.Sc. Software Engineer',
     },
     llm: {
-      provider: env.LLM_PROVIDER === 'gemini' ? 'gemini' : 'claude',
+      provider:
+        env.LLM_PROVIDER === 'gemini'
+          ? 'gemini'
+          : env.LLM_PROVIDER === 'openai'
+            ? 'openai'
+            : 'claude',
       anthropic: {
         apiKey: env.ANTHROPIC_API_KEY ?? '',
         model: env.ANTHROPIC_MODEL ?? 'claude-opus-4-8',
@@ -102,6 +108,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       gemini: {
         apiKey: env.GEMINI_API_KEY ?? '',
         model: env.GEMINI_MODEL ?? 'gemini-2.5-flash',
+      },
+      openai: {
+        apiKey: env.OPENAI_API_KEY ?? '',
+        model: env.OPENAI_MODEL ?? 'gpt-4o-mini',
       },
     },
     defaultJobSearch: { threshold: 80 },

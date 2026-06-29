@@ -22,6 +22,7 @@ import { nodeFetch } from './adapters/node-fetch';
 import { KeywordSkillExtractor } from './adapters/keyword-skill-extractor';
 import { AnthropicLlmProvider } from './adapters/anthropic-llm-provider';
 import { GeminiLlmProvider } from './adapters/gemini-llm-provider';
+import { OpenAiLlmProvider } from './adapters/openai-llm-provider';
 import { ApplicationService } from './services/application-service';
 import { JobSearchService } from './services/job-search-service';
 import { AtsService } from './services/ats-service';
@@ -67,6 +68,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
           providers: [
             new AnthropicLlmProvider({ httpFetch: nodeFetch, config: c.llm.anthropic }),
             new GeminiLlmProvider({ httpFetch: nodeFetch, config: c.llm.gemini }),
+            new OpenAiLlmProvider({ httpFetch: nodeFetch, config: c.llm.openai }),
           ],
           defaultProvider: c.llm.provider,
           logger,

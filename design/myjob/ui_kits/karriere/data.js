@@ -334,12 +334,13 @@ const api = {
   async getLlmSettings() {
     return jsonOrThrow(await fetch(`${API_BASE}/settings/llm`));
   },
-  async setLlmProvider(provider) {
+  async setLlmProvider(provider, apiKey) {
+    const body = apiKey === undefined ? { provider } : { provider, apiKey };
     return jsonOrThrow(
       await fetch(`${API_BASE}/settings/llm`, {
         method: 'PUT',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ provider }),
+        body: JSON.stringify(body),
       }),
     );
   },

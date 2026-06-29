@@ -62,6 +62,20 @@ export class LlmService {
     return this.settings();
   }
 
+  /** Set the API key for a provider at runtime (from the settings UI). */
+  setApiKey(id: string, key: string): LlmSettings {
+    const provider = this.providers.get(id as LlmProviderId);
+    if (!provider) {
+      throw new ValidationError(`Unknown LLM provider: ${id}`, {
+        allowed: [...this.providers.keys()],
+      });
+    }
+    provider.setApiKey(key);
+    // Never log the key itself — only that one was set.
+    this.logger.info({ provider: id, configured: provider.available }, 'llm api key updated');
+    return this.settings();
+  }
+
   /** The active provider, or null when it has no credentials configured. */
   active(): LlmProvider | null {
     const provider = this.providers.get(this.currentId);

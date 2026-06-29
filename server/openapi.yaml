@@ -219,7 +219,10 @@ paths:
               type: object
               required: [provider]
               properties:
-                provider: { type: string, enum: [claude, gemini] }
+                provider: { type: string, enum: [claude, gemini, openai] }
+                apiKey:
+                  type: string
+                  description: Optional — set/replace this provider's API key (held in server memory).
       responses:
         '200':
           description: Updated provider settings
@@ -254,7 +257,7 @@ paths:
                 type: object
                 properties:
                   text: { type: string }
-                  provider: { type: string, enum: [claude, gemini, template] }
+                  provider: { type: string, enum: [claude, gemini, openai, template] }
         '400': { $ref: '#/components/responses/Problem' }
 components:
   responses:
@@ -414,13 +417,13 @@ components:
     LlmSettings:
       type: object
       properties:
-        current: { type: string, enum: [claude, gemini] }
+        current: { type: string, enum: [claude, gemini, openai] }
         providers:
           type: array
           items:
             type: object
             properties:
-              id: { type: string, enum: [claude, gemini] }
+              id: { type: string, enum: [claude, gemini, openai] }
               label: { type: string }
               available: { type: boolean }
     Problem:

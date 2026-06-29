@@ -4,7 +4,11 @@ import { coverLetterRequestSchema } from '../domain/cover-letter';
 import type { LlmService } from '../services/llm-service';
 import type { CoverLetterService } from '../services/cover-letter-service';
 
-const setProviderSchema = z.object({ provider: z.string().min(1) });
+const setProviderSchema = z.object({
+  provider: z.string().min(1),
+  /** Optional — set/replace this provider's API key (settings UI). */
+  apiKey: z.string().optional(),
+});
 
 /**
  * LLM provider settings + cover-letter generation.
@@ -27,8 +31,10 @@ export class LlmController {
   };
 
   setProvider = async (req: Request, res: Response): Promise<void> => {
-    const { provider } = setProviderSchema.parse(req.body);
-    res.json(this.llm.setProvider(provider));
+    const { provider, apiKey } = setProviderSchema.parse(req.body);
+    this.llm.setProvider(provider);
+    if (apiKey !== undefined) this.llm.setApiKey(provider, apiKey);
+    res.json(this.llm.settings());
   };
 
   generateCoverLetter = async (req: Request, res: Response): Promise<void> => {

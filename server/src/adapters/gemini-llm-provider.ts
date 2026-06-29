@@ -21,7 +21,7 @@ export class GeminiLlmProvider implements LlmProvider {
   readonly id: LlmProviderId = 'gemini';
   readonly label = 'Gemini (Google)';
   private readonly http: HttpFetch;
-  private readonly apiKey: string;
+  private apiKey: string;
   private readonly model: string;
 
   constructor(deps: { httpFetch: HttpFetch; config: GeminiConfig }) {
@@ -32,6 +32,10 @@ export class GeminiLlmProvider implements LlmProvider {
 
   get available(): boolean {
     return Boolean(this.apiKey);
+  }
+
+  setApiKey(key: string): void {
+    this.apiKey = key.trim();
   }
 
   async generate(input: LlmGenerateInput): Promise<string> {

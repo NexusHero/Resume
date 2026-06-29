@@ -5,7 +5,7 @@
  * vendor over the injectable {@link ../ports/http-fetch.HttpFetch} boundary, so
  * they unit-test against recorded JSON without touching the network.
  */
-export type LlmProviderId = 'claude' | 'gemini';
+export type LlmProviderId = 'claude' | 'gemini' | 'openai';
 
 export interface LlmGenerateInput {
   /** Optional system / instruction prompt. */
@@ -22,6 +22,8 @@ export interface LlmProvider {
   readonly label: string;
   /** True only when credentials are configured — an unavailable provider must not be selected. */
   readonly available: boolean;
+  /** Set/replace the API key at runtime (e.g. from the settings UI). */
+  setApiKey(key: string): void;
   /** Generate a completion. Throws on transport / API errors. */
   generate(input: LlmGenerateInput): Promise<string>;
 }

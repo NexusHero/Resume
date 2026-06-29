@@ -15,6 +15,7 @@ import { LlmService } from '../../src/services/llm-service';
 import { CoverLetterService } from '../../src/services/cover-letter-service';
 import { AnthropicLlmProvider } from '../../src/adapters/anthropic-llm-provider';
 import { GeminiLlmProvider } from '../../src/adapters/gemini-llm-provider';
+import { OpenAiLlmProvider } from '../../src/adapters/openai-llm-provider';
 import { nodeFetch } from '../../src/adapters/node-fetch';
 import { SampleJobSource } from '../../src/adapters/sample-job-source';
 import { KeywordSkillExtractor } from '../../src/adapters/keyword-skill-extractor';
@@ -70,6 +71,7 @@ function makeApp(): Express {
     providers: [
       new AnthropicLlmProvider({ httpFetch: nodeFetch, config: config.llm.anthropic }),
       new GeminiLlmProvider({ httpFetch: nodeFetch, config: config.llm.gemini }),
+      new OpenAiLlmProvider({ httpFetch: nodeFetch, config: config.llm.openai }),
     ],
     defaultProvider: config.llm.provider,
     logger: noopLogger,
@@ -286,6 +288,7 @@ describe('REST API /api/v1', () => {
     expect(res.body.providers.map((p: { id: string }) => p.id).sort()).toEqual([
       'claude',
       'gemini',
+      'openai',
     ]);
     // No API keys configured in the test env → both providers report unavailable.
     expect(res.body.providers.every((p: { available: boolean }) => p.available === false)).toBe(
@@ -300,7 +303,7 @@ describe('REST API /api/v1', () => {
   });
 
   it('LlmSettings_PutUnknown_Returns400', async () => {
-    const res = await request(app).put('/api/v1/settings/llm').send({ provider: 'openai' });
+    const res = await request(app).put('/api/v1/settings/llm').send({ provider: 'mistral' });
     expect(res.status).toBe(400);
   });
 

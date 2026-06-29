@@ -6,6 +6,13 @@ const ST = window.MyJobDesignSystem_f3658e;
 const PROVIDER_META = {
   claude: { label: 'Claude', vendor: 'Anthropic', tile: '#d97706', desc: "Anthropic's models (Opus). Writes nuanced, natural cover letters." },
   gemini: { label: 'Gemini', vendor: 'Google', tile: '#1a73e8', desc: "Google's models (Gemini). Fast and cost-effective." },
+  openai: { label: 'OpenAI', vendor: 'OpenAI', tile: '#10a37f', desc: 'OpenAI GPT models. Versatile and widely used.' },
+};
+
+const KEY_HINT = {
+  claude: 'Get a key at console.anthropic.com',
+  gemini: 'Get a key at aistudio.google.com/apikey',
+  openai: 'Get a key at platform.openai.com/api-keys',
 };
 
 function ProviderCard({ id, info, active, onSelect, busy }) {
@@ -32,6 +39,8 @@ function Settings({ onClose }) {
   const { api } = window.KarriereData;
   const [state, setState] = React.useState({ loading: true, error: null, current: null, providers: [] });
   const [busy, setBusy] = React.useState(false);
+  const [keyInput, setKeyInput] = React.useState('');
+  const [savedKey, setSavedKey] = React.useState(false);
 
   React.useEffect(() => {
     api.getLlmSettings()
@@ -41,9 +50,22 @@ function Settings({ onClose }) {
 
   const select = (id) => {
     setBusy(true);
+    setSavedKey(false);
     api.setLlmProvider(id)
       .then((s) => setState((st) => ({ ...st, current: s.current, providers: s.providers })))
       .catch((e) => setState((st) => ({ ...st, error: e.message || 'Could not switch provider' })))
+      .finally(() => setBusy(false));
+  };
+
+  // Save the API key for the active provider — sent to the backend (held in
+  // server memory for this session; use the .env file to persist it).
+  const saveKey = () => {
+    if (!state.current || !keyInput.trim()) return;
+    setBusy(true);
+    setSavedKey(false);
+    api.setLlmProvider(state.current, keyInput.trim())
+      .then((s) => { setState((st) => ({ ...st, current: s.current, providers: s.providers })); setKeyInput(''); setSavedKey(true); })
+      .catch((e) => setState((st) => ({ ...st, error: e.message || 'Could not save key' })))
       .finally(() => setBusy(false));
   };
 
@@ -66,8 +88,24 @@ function Settings({ onClose }) {
           {!state.loading && state.providers.map((p) => (
             <ProviderCard key={p.id} id={p.id} info={p} active={state.current === p.id} onSelect={select} busy={busy} />
           ))}
-          {!state.loading && !state.error && (
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-soft)', marginTop: '4px' }}>Missing a key? Set <code>ANTHROPIC_API_KEY</code> or <code>GEMINI_API_KEY</code> on the server.</div>
+
+          {!state.loading && state.current && (
+            <div style={{ marginTop: '8px', paddingTop: '14px', borderTop: '1px solid var(--border)' }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '8px' }}>
+                API key · {(PROVIDER_META[state.current] || {}).label || state.current}
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input type="password" value={keyInput} onChange={(e) => { setKeyInput(e.target.value); setSavedKey(false); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') saveKey(); }}
+                  placeholder={(state.providers.find((p) => p.id === state.current) || {}).available ? '•••••••••• (set — paste a new key to replace)' : 'Paste your API key …'}
+                  autoComplete="off" spellCheck="false"
+                  style={{ flex: 1, minWidth: 0, border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', background: 'var(--surface-card)', fontFamily: 'var(--font-mono)', fontSize: '12.5px', color: 'var(--text-heading)', padding: '9px 12px', outline: 'none' }} />
+                <ST.Button variant="primary" onClick={saveKey} disabled={busy || !keyInput.trim()}>Save</ST.Button>
+              </div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: savedKey ? 'var(--status-hired-strong)' : 'var(--text-soft)', marginTop: '7px' }}>
+                {savedKey ? '✓ Key saved — active for this session.' : `${KEY_HINT[state.current] || ''} · stored in server memory; use .env to persist.`}
+              </div>
+            </div>
           )}
         </div>
       </div>

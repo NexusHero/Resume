@@ -1,5 +1,6 @@
 import { AnthropicLlmProvider } from '../../src/adapters/anthropic-llm-provider';
 import { GeminiLlmProvider } from '../../src/adapters/gemini-llm-provider';
+import { OpenAiLlmProvider } from '../../src/adapters/openai-llm-provider';
 import { LlmService } from '../../src/services/llm-service';
 import { CoverLetterService } from '../../src/services/cover-letter-service';
 import { coverLetterTemplate, coverLetterPrompt } from '../../src/domain/cover-letter';
@@ -90,17 +91,45 @@ describe('GeminiLlmProvider', () => {
   });
 });
 
+describe('OpenAiLlmProvider', () => {
+  it('Generate_PostsChatCompletionAndExtractsText', async () => {
+    const { http, calls } = fakeHttp({ choices: [{ message: { content: 'Hi there' } }] });
+    const provider = new OpenAiLlmProvider({
+      httpFetch: http,
+      config: { apiKey: 'o-key', model: 'gpt-4o-mini' },
+    });
+    const text = await provider.generate({ system: 'sys', prompt: 'hi' });
+
+    expect(text).toBe('Hi there');
+    const init = calls[0]!.init as { headers: Record<string, string>; body: string };
+    expect(init.headers.authorization).toBe('Bearer o-key');
+    const sent = JSON.parse(init.body);
+    expect(sent.model).toBe('gpt-4o-mini');
+    expect(sent.messages[0]).toEqual({ role: 'system', content: 'sys' });
+  });
+
+  it('SetApiKey_MakesProviderAvailable', () => {
+    const { http } = fakeHttp({});
+    const provider = new OpenAiLlmProvider({ httpFetch: http, config: { apiKey: '', model: 'm' } });
+    expect(provider.available).toBe(false);
+    provider.setApiKey('sk-new');
+    expect(provider.available).toBe(true);
+  });
+});
+
 describe('LlmService', () => {
   const claude: LlmProvider = {
     id: 'claude',
     label: 'Claude',
     available: true,
+    setApiKey: () => {},
     generate: async () => 'c',
   };
   const gemini: LlmProvider = {
     id: 'gemini',
     label: 'Gemini',
     available: false,
+    setApiKey: () => {},
     generate: async () => 'g',
   };
 
@@ -138,6 +167,22 @@ describe('LlmService', () => {
     svc.setProvider('gemini'); // unavailable
     expect(svc.active()).toBeNull();
   });
+
+  it('SetApiKey_UpdatesAvailabilityAndRejectsUnknown', () => {
+    const openai = new OpenAiLlmProvider({
+      httpFetch: fakeHttp({}).http,
+      config: { apiKey: '', model: 'm' },
+    });
+    const svc = new LlmService({
+      providers: [openai],
+      defaultProvider: 'openai',
+      logger: noopLogger,
+    });
+    expect(svc.settings().providers[0]!.available).toBe(false);
+    svc.setApiKey('openai', 'sk-x');
+    expect(svc.settings().providers[0]!.available).toBe(true);
+    expect(() => svc.setApiKey('nope', 'x')).toThrow(ValidationError);
+  });
 });
 
 describe('CoverLetterService', () => {
@@ -146,6 +191,7 @@ describe('CoverLetterService', () => {
       id: 'claude',
       label: 'Claude',
       available: true,
+      setApiKey: () => {},
       generate: async () => 'LLM letter',
     };
     const llm = new LlmService({
@@ -163,6 +209,7 @@ describe('CoverLetterService', () => {
       id: 'claude',
       label: 'Claude',
       available: false,
+      setApiKey: () => {},
       generate: async () => 'unused',
     };
     const llm = new LlmService({
@@ -182,6 +229,7 @@ describe('CoverLetterService', () => {
       id: 'gemini',
       label: 'Gemini',
       available: true,
+      setApiKey: () => {},
       generate: async () => {
         throw new Error('boom');
       },

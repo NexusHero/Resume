@@ -25,7 +25,7 @@ export class AnthropicLlmProvider implements LlmProvider {
   readonly id: LlmProviderId = 'claude';
   readonly label = 'Claude (Anthropic)';
   private readonly http: HttpFetch;
-  private readonly apiKey: string;
+  private apiKey: string;
   private readonly model: string;
 
   constructor(deps: { httpFetch: HttpFetch; config: AnthropicConfig }) {
@@ -36,6 +36,10 @@ export class AnthropicLlmProvider implements LlmProvider {
 
   get available(): boolean {
     return Boolean(this.apiKey);
+  }
+
+  setApiKey(key: string): void {
+    this.apiKey = key.trim();
   }
 
   async generate(input: LlmGenerateInput): Promise<string> {

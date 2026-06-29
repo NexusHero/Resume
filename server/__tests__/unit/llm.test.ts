@@ -202,13 +202,13 @@ describe('cover-letter domain', () => {
     const text = coverLetterTemplate(req, candidate);
     expect(text).toContain('Celonis');
     expect(text).toContain('Senior C++ Engineer');
-    expect(text).toContain('C++ und gRPC');
+    expect(text).toContain('C++ and gRPC');
     expect(text.trim().endsWith('Suhay Sevinc')).toBe(true);
   });
 
   it('Prompt_IncludesStructuredFacts', () => {
     const { system, prompt } = coverLetterPrompt(req, candidate);
-    expect(system).toContain('Deutsch');
+    expect(system).toContain('English');
     expect(prompt).toContain('Celonis');
     expect(prompt).toContain('C++, gRPC');
   });

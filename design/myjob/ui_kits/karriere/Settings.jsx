@@ -1,11 +1,11 @@
 /* Settings — choose the LLM provider (Claude or Gemini) used to generate
-   Anschreiben. The choice is persisted server-side via /settings/llm, so the
+   cover letters. The choice is persisted server-side via /settings/llm, so the
    backend switches which model writes the cover letters. */
 const ST = window.MyJobDesignSystem_f3658e;
 
 const PROVIDER_META = {
-  claude: { label: 'Claude', vendor: 'Anthropic', tile: '#d97706', desc: 'Anthropics Modelle (Opus). Schreibt nuancierte, natürliche Anschreiben.' },
-  gemini: { label: 'Gemini', vendor: 'Google', tile: '#1a73e8', desc: 'Googles Modelle (Gemini). Schnell und kostengünstig.' },
+  claude: { label: 'Claude', vendor: 'Anthropic', tile: '#d97706', desc: "Anthropic's models (Opus). Writes nuanced, natural cover letters." },
+  gemini: { label: 'Gemini', vendor: 'Google', tile: '#1a73e8', desc: "Google's models (Gemini). Fast and cost-effective." },
 };
 
 function ProviderCard({ id, info, active, onSelect, busy }) {
@@ -19,7 +19,7 @@ function ProviderCard({ id, info, active, onSelect, busy }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontFamily: 'var(--font-display)', fontSize: '15px', fontWeight: 700, color: 'var(--text-heading)' }}>{meta.label}</span>
           {meta.vendor && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-soft)' }}>{meta.vendor}</span>}
-          {!info.available && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9.5px', fontWeight: 600, color: 'var(--text-soft)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '1px 7px' }}>API-Key fehlt</span>}
+          {!info.available && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9.5px', fontWeight: 600, color: 'var(--text-soft)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '1px 7px' }}>API key missing</span>}
         </div>
         <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '3px' }}>{meta.desc}</div>
       </div>
@@ -36,14 +36,14 @@ function Settings({ onClose }) {
   React.useEffect(() => {
     api.getLlmSettings()
       .then((s) => setState({ loading: false, error: null, current: s.current, providers: s.providers }))
-      .catch((e) => setState({ loading: false, error: e.message || 'Laden fehlgeschlagen', current: null, providers: [] }));
+      .catch((e) => setState({ loading: false, error: e.message || 'Failed to load', current: null, providers: [] }));
   }, []);
 
   const select = (id) => {
     setBusy(true);
     api.setLlmProvider(id)
       .then((s) => setState((st) => ({ ...st, current: s.current, providers: s.providers })))
-      .catch((e) => setState((st) => ({ ...st, error: e.message || 'Umschalten fehlgeschlagen' })))
+      .catch((e) => setState((st) => ({ ...st, error: e.message || 'Could not switch provider' })))
       .finally(() => setBusy(false));
   };
 
@@ -54,20 +54,20 @@ function Settings({ onClose }) {
         <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <span style={{ width: '38px', height: '38px', borderRadius: 'var(--radius-md)', background: 'var(--accent-soft)', color: 'var(--accent-strong)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><ST.Icon name="sliders" size={18} /></span>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)' }}>KI-Modell</div>
-            <div style={{ fontSize: '12.5px', color: 'var(--text-soft)' }}>Wer schreibt deine Anschreiben?</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)' }}>AI model</div>
+            <div style={{ fontSize: '12.5px', color: 'var(--text-soft)' }}>Who writes your cover letters?</div>
           </div>
-          <ST.IconButton icon="x" label="Schließen" variant="ghost" onClick={onClose} />
+          <ST.IconButton icon="x" label="Close" variant="ghost" onClick={onClose} />
         </div>
 
         <div style={{ padding: '18px 24px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {state.loading && <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Lädt …</div>}
+          {state.loading && <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Loading …</div>}
           {state.error && <div style={{ padding: '12px 14px', borderRadius: 'var(--radius-md)', background: 'var(--surface-subtle)', border: '1px solid var(--border)', fontSize: '12.5px', color: 'var(--text-muted)' }}><ST.Icon name="info" size={13} style={{ verticalAlign: '-2px', marginRight: '6px' }} />{state.error}</div>}
           {!state.loading && state.providers.map((p) => (
             <ProviderCard key={p.id} id={p.id} info={p} active={state.current === p.id} onSelect={select} busy={busy} />
           ))}
           {!state.loading && !state.error && (
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-soft)', marginTop: '4px' }}>Fehlt ein Key? Setze <code>ANTHROPIC_API_KEY</code> bzw. <code>GEMINI_API_KEY</code> auf dem Server.</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-soft)', marginTop: '4px' }}>Missing a key? Set <code>ANTHROPIC_API_KEY</code> or <code>GEMINI_API_KEY</code> on the server.</div>
           )}
         </div>
       </div>

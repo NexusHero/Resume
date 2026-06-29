@@ -9,7 +9,7 @@ function daysAgo(d) {
   return Math.round((TODAY - new Date(d)) / 86400000);
 }
 function fmtDate(d) {
-  return new Date(d).toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' });
+  return new Date(d).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 function CompanyTile({ app, size = 40 }) {
   const ini = app.company.split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
@@ -52,18 +52,18 @@ function AppRow({ app, onOpen }) {
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-body)', fontVariantNumeric: 'tabular-nums' }}>{app.draft ? fmtDate(app.created) : fmtDate(app.sent)}</div>
         {app.draft ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-soft)', marginTop: '3px' }}>
-            <AP.Icon name="edit" size={11} />erstellt
+            <AP.Icon name="edit" size={11} />created
           </div>
         ) : overdue ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--warning)', marginTop: '3px' }}>
-            <AP.Icon name="alert" size={11} />{sinceReply == null ? 'keine Bestätigung' : `${sinceReply} T ohne Antwort`}
+            <AP.Icon name="alert" size={11} />{sinceReply == null ? 'no confirmation' : `${sinceReply}d without reply`}
           </div>
         ) : (
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-soft)', marginTop: '3px' }}>vor {sent} Tagen</div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-soft)', marginTop: '3px' }}>{sent} days ago</div>
         )}
       </div>
       {app.draft
-        ? <AP.Badge variant="subtle" size="sm" icon={<AP.Icon name="bookmark" size={11} />} style={{ color: 'var(--warning)', borderColor: 'color-mix(in srgb, var(--warning) 40%, transparent)', background: 'var(--warning-soft)' }}>Entwurf</AP.Badge>
+        ? <AP.Badge variant="subtle" size="sm" icon={<AP.Icon name="bookmark" size={11} />} style={{ color: 'var(--warning)', borderColor: 'color-mix(in srgb, var(--warning) 40%, transparent)', background: 'var(--warning-soft)' }}>Draft</AP.Badge>
         : <AP.StatusBadge status={app.status} label={app.statusLabel} size="sm" />}
       <AP.Icon name="chevronRight" size={16} style={{ color: 'var(--text-soft)' }} />
     </div>
@@ -86,7 +86,7 @@ function TimelineDot({ ev, last }) {
   );
 }
 
-function DetailPanel({ app, onClose, onMarkSent }) {
+function DetailPanel({ app, onClose, onMarkSent, onDelete }) {
   const { DOC } = window.KarriereData;
   const sinceReply = daysAgo(app.lastReply);
   const overdue = app && app.awaiting && (sinceReply == null || sinceReply >= 10);
@@ -101,12 +101,12 @@ function DetailPanel({ app, onClose, onMarkSent }) {
             <div style={{ fontSize: '13.5px', color: 'var(--text-muted)' }}>{app.role}</div>
             <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
               {app.draft
-                ? <AP.Badge variant="subtle" size="sm" icon={<AP.Icon name="bookmark" size={11} />} style={{ color: 'var(--warning)', borderColor: 'color-mix(in srgb, var(--warning) 40%, transparent)', background: 'var(--warning-soft)' }}>Entwurf · nicht gesendet</AP.Badge>
+                ? <AP.Badge variant="subtle" size="sm" icon={<AP.Icon name="bookmark" size={11} />} style={{ color: 'var(--warning)', borderColor: 'color-mix(in srgb, var(--warning) 40%, transparent)', background: 'var(--warning-soft)' }}>Draft · not sent</AP.Badge>
                 : <AP.StatusBadge status={app.status} label={app.statusLabel} size="sm" />}
               <AP.MetaPill icon="pin">{app.location}</AP.MetaPill>
             </div>
           </div>
-          <AP.IconButton icon="x" label="Schließen" variant="ghost" onClick={onClose} />
+          <AP.IconButton icon="x" label="Close" variant="ghost" onClick={onClose} />
         </div>
 
         <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -114,7 +114,7 @@ function DetailPanel({ app, onClose, onMarkSent }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '14px 16px', borderRadius: 'var(--radius-md)', background: 'var(--accent-soft)', border: '1px solid var(--accent-border)' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
                 <AP.Icon name="info" size={17} style={{ color: 'var(--accent-strong)', flexShrink: 0, marginTop: '1px' }} />
-                <div style={{ fontSize: '12.5px', color: 'var(--text-body)', flex: 1 }}>Jedes Unternehmen hat seine eigene Bewerbungsseite. Öffne sie, bewirb dich dort manuell — und markiere die Bewerbung danach als gesendet.</div>
+                <div style={{ fontSize: '12.5px', color: 'var(--text-body)', flex: 1 }}>Every company has its own application page. Open it, apply there manually — then mark the application as sent.</div>
               </div>
               {app.applyUrl && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--surface-card)', border: '1px solid var(--border)' }}>
@@ -126,21 +126,21 @@ function DetailPanel({ app, onClose, onMarkSent }) {
                 </div>
               )}
               <div style={{ display: 'flex', gap: '8px' }}>
-                <AP.Button size="sm" variant="primary" iconLeft={<AP.Icon name="external" size={13} />} onClick={() => app.applyUrl && window.open((app.applyVia === 'E-Mail' ? 'mailto:' : 'https://') + app.applyUrl, '_blank')}>Zur Bewerbungsseite</AP.Button>
-                <AP.Button size="sm" variant="outline" iconLeft={<AP.Icon name="check" size={13} />} onClick={() => onMarkSent && onMarkSent(app.id)}>Als gesendet markieren</AP.Button>
+                <AP.Button size="sm" variant="primary" iconLeft={<AP.Icon name="external" size={13} />} onClick={() => app.applyUrl && window.open((app.applyVia === 'E-Mail' ? 'mailto:' : 'https://') + app.applyUrl, '_blank')}>Open application page</AP.Button>
+                <AP.Button size="sm" variant="outline" iconLeft={<AP.Icon name="check" size={13} />} onClick={() => onMarkSent && onMarkSent(app.id)}>Mark as sent</AP.Button>
               </div>
             </div>
           )}
           {overdue && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', borderRadius: 'var(--radius-md)', background: 'var(--warning-soft)', border: '1px solid color-mix(in srgb, var(--warning) 35%, transparent)' }}>
               <AP.Icon name="alert" size={17} style={{ color: 'var(--warning)' }} />
-              <div style={{ fontSize: '12.5px', color: 'var(--text-body)', flex: 1 }}>{sinceReply == null ? 'Kein Eingang bestätigt — Versand prüfen und nachfassen.' : `Seit ${sinceReply} Tagen keine Rückmeldung. Zeit nachzufassen.`}</div>
-              <AP.Button size="sm" variant="primary" iconLeft={<AP.Icon name="send" size={13} />}>Nachfassen</AP.Button>
+              <div style={{ fontSize: '12.5px', color: 'var(--text-body)', flex: 1 }}>{sinceReply == null ? 'No receipt confirmed — check delivery and follow up.' : `No reply for ${sinceReply} days. Time to follow up.`}</div>
+              <AP.Button size="sm" variant="primary" iconLeft={<AP.Icon name="send" size={13} />}>Follow up</AP.Button>
             </div>
           )}
 
           <section>
-            <h4 style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--text-soft)', margin: '0 0 12px' }}>{app.draft ? 'Ausgewählte Unterlagen' : 'Gesendete Unterlagen'}</h4>
+            <h4 style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--text-soft)', margin: '0 0 12px' }}>{app.draft ? 'Selected documents' : 'Sent documents'}</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {app.docs.map((c) => (
                 <div key={c} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--surface-subtle)' }}>
@@ -153,10 +153,10 @@ function DetailPanel({ app, onClose, onMarkSent }) {
           </section>
 
           <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <Field label={app.draft ? 'Erstellt am' : 'Gesendet am'} value={fmtDate(app.draft ? app.created : app.sent)} />
-            <Field label="Kanal" value={`${app.channel} · ${app.via}`} />
-            <Field label="Gehaltswunsch" value={app.salaryAsked} mono />
-            <Field label="Ansprechpartner" value={app.recruiter ? app.recruiter.name : '—'} />
+            <Field label={app.draft ? 'Created on' : 'Sent on'} value={fmtDate(app.draft ? app.created : app.sent)} />
+            <Field label="Channel" value={`${app.channel} · ${app.via}`} />
+            <Field label="Desired salary" value={app.salaryAsked} mono />
+            <Field label="Contact" value={app.recruiter ? app.recruiter.name : '—'} />
           </section>
 
           {app.nextStep && (
@@ -167,18 +167,22 @@ function DetailPanel({ app, onClose, onMarkSent }) {
           )}
 
           <section>
-            <h4 style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--text-soft)', margin: '0 0 14px' }}>Verlauf</h4>
+            <h4 style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--text-soft)', margin: '0 0 14px' }}>Timeline</h4>
             {app.timeline.map((ev, i) => <TimelineDot key={i} ev={ev} last={i === app.timeline.length - 1} />)}
           </section>
 
           <section>
-            <h4 style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--text-soft)', margin: '0 0 8px' }}>Notiz</h4>
+            <h4 style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--text-soft)', margin: '0 0 8px' }}>Note</h4>
             <p style={{ fontSize: '13px', lineHeight: 1.6, color: 'var(--text-body)', margin: 0 }}>{app.notes}</p>
           </section>
 
           <div style={{ display: 'flex', gap: '10px' }}>
-            <AP.Button variant="outline" size="sm" iconLeft={<AP.Icon name="edit" size={14} />}>Status ändern</AP.Button>
-            <AP.Button variant="ghost" size="sm" iconLeft={<AP.Icon name="external" size={14} />}>Stelle öffnen</AP.Button>
+            <AP.Button variant="outline" size="sm" iconLeft={<AP.Icon name="edit" size={14} />}>Change status</AP.Button>
+            <AP.Button variant="ghost" size="sm" iconLeft={<AP.Icon name="external" size={14} />}>Open posting</AP.Button>
+            {onDelete && (
+              <AP.Button variant="ghost" size="sm" iconLeft={<AP.Icon name="trash" size={14} />} style={{ marginLeft: 'auto', color: 'var(--status-rejected-strong, var(--warning))' }}
+                onClick={() => { if (window.confirm(`Delete the application for ${app.company}?`)) { onClose(); onDelete(app.id); } }}>Delete</AP.Button>
+            )}
           </div>
         </div>
       </div>
@@ -195,7 +199,7 @@ function Field({ label, value, mono }) {
   );
 }
 
-function Bewerbungen({ apps, openId, onOpen, onClose, onMarkSent, onFindJobs }) {
+function Bewerbungen({ apps, openId, onOpen, onClose, onMarkSent, onDelete, onFindJobs }) {
   const APPLICATIONS = apps || window.KarriereData.APPLICATIONS;
   const [tab, setTab] = React.useState('alle');
   const [q, setQ] = React.useState('');
@@ -217,47 +221,47 @@ function Bewerbungen({ apps, openId, onOpen, onClose, onMarkSent, onFindJobs }) 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 18px', borderRadius: 'var(--radius-lg)', background: 'var(--accent-soft)', border: '1px solid var(--accent-border)' }}>
           <span style={{ width: '34px', height: '34px', borderRadius: 'var(--radius-md)', background: 'var(--accent)', color: 'var(--accent-contrast)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><AP.Icon name="bookmark" size={18} /></span>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '14px', color: 'var(--text-heading)' }}>{drafts.length} vorgemerkte {drafts.length === 1 ? 'Bewerbung' : 'Bewerbungen'}</div>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Erstellt, aber noch nicht gesendet. Öffnen → „Als gesendet markieren“, sobald du sie abgeschickt hast.</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '14px', color: 'var(--text-heading)' }}>{drafts.length} saved {drafts.length === 1 ? 'application' : 'applications'}</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Created but not sent yet. Open → "Mark as sent" once you've submitted them.</div>
           </div>
-          <AP.Button size="sm" variant="outline" onClick={() => setTab('entwurf')}>Anzeigen</AP.Button>
+          <AP.Button size="sm" variant="outline" onClick={() => setTab('entwurf')}>Show</AP.Button>
         </div>
       )}
       {awaiting.length > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 18px', borderRadius: 'var(--radius-lg)', background: 'var(--warning-soft)', border: '1px solid color-mix(in srgb, var(--warning) 32%, transparent)' }}>
           <span style={{ width: '34px', height: '34px', borderRadius: 'var(--radius-md)', background: 'var(--warning)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><AP.Icon name="alert" size={18} /></span>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '14px', color: 'var(--text-heading)' }}>{awaiting.length} Bewerbungen warten auf Antwort</div>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Damit du keine vergisst: hier nachfassen, sobald es zu lange still ist.</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '14px', color: 'var(--text-heading)' }}>{awaiting.length} applications awaiting a reply</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>So you never forget: follow up here once it's been quiet too long.</div>
           </div>
-          <AP.Button size="sm" variant="ink" onClick={() => setTab('offen')}>Anzeigen</AP.Button>
+          <AP.Button size="sm" variant="ink" onClick={() => setTab('offen')}>Show</AP.Button>
         </div>
       )}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: '200px' }}>
           <AP.Tabs value={tab} onChange={setTab} tabs={[
-            { id: 'alle', label: 'Alle', count: APPLICATIONS.length },
-            { id: 'entwurf', label: 'Entwürfe', count: drafts.length },
-            { id: 'offen', label: 'Antwort offen', count: awaiting.length },
-            { id: 'aktiv', label: 'Aktiv' },
-            { id: 'fertig', label: 'Abgeschlossen' },
+            { id: 'alle', label: 'All', count: APPLICATIONS.length },
+            { id: 'entwurf', label: 'Drafts', count: drafts.length },
+            { id: 'offen', label: 'Awaiting reply', count: awaiting.length },
+            { id: 'aktiv', label: 'Active' },
+            { id: 'fertig', label: 'Closed' },
           ]} />
         </div>
         <label style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface-card)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', padding: '0 11px', width: '210px' }}>
           <AP.Icon name="search" size={15} style={{ color: 'var(--text-soft)' }} />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Firma oder Rolle …" style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-heading)', padding: '9px 0' }} />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Company or role …" style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-heading)', padding: '9px 0' }} />
         </label>
-        <AP.Button variant="primary" iconLeft={<AP.Icon name="search" size={15} />} onClick={onFindJobs}>Jobs finden</AP.Button>
+        <AP.Button variant="primary" iconLeft={<AP.Icon name="search" size={15} />} onClick={onFindJobs}>Find jobs</AP.Button>
       </div>
 
       <AP.Card pad={false}>
         {filtered.length === 0 ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Keine Bewerbungen in dieser Ansicht.</div>
+          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>No applications in this view.</div>
         ) : filtered.map((a) => <AppRow key={a.id} app={a} onOpen={() => onOpen(a.id)} />)}
       </AP.Card>
 
-      {openApp && <DetailPanel app={openApp} onClose={onClose} onMarkSent={onMarkSent} />}
+      {openApp && <DetailPanel app={openApp} onClose={onClose} onMarkSent={onMarkSent} onDelete={onDelete} />}
     </div>
   );
 }

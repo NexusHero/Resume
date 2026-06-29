@@ -3,11 +3,11 @@
 const KA = window.MyJobDesignSystem_f3658e;
 
 const TITLES = {
-  uebersicht: { t: 'Übersicht', s: 'Dein Karriere-Überblick auf einen Blick' },
-  jobsuche: { t: 'Jobsuche', s: 'Jobs nach Land, Stadt & Suchbegriff finden — live aus verbundenen Quellen' },
-  jobquellen: { t: 'Jobquellen', s: 'Jobbörsen & APIs verbinden, um Stellen automatisch zu holen' },
-  bewerbungen: { t: 'Bewerbungen', s: 'Jede Bewerbung — erstellt, vorgemerkt, gesendet. Damit du keine vergisst' },
-  stellen: { t: 'Meine Stellen', s: 'Arbeitshistorie & was du bisher verdient hast' },
+  uebersicht: { t: 'Overview', s: 'Your career at a glance' },
+  jobsuche: { t: 'Job search', s: 'Find jobs by country, city & keyword — live from connected sources' },
+  jobquellen: { t: 'Job sources', s: 'Connect job boards & APIs to pull postings automatically' },
+  bewerbungen: { t: 'Applications', s: 'Every application — created, saved, sent. So you never forget one' },
+  stellen: { t: 'My positions', s: 'Work history & what you have earned so far' },
 };
 
 function load(k, d) { try { return localStorage.getItem(k) || d; } catch (e) { return d; } }
@@ -37,24 +37,30 @@ function App() {
     setApps((prev) => [draft, ...prev]);
     setActive('bewerbungen');
     setOpenApp(draft.id);
-    setToast({ icon: 'checkCircle', text: `Bewerbung für ${draft.company} vorgemerkt.` });
+    setToast({ icon: 'checkCircle', text: `Application for ${draft.company} saved.` });
   };
   const markSent = (id) => {
     setApps((prev) => prev.map((a) => a.id === id ? {
       ...a, draft: false, status: 'new', statusLabel: 'Gesendet', sent: a.created || '2026-06-26', awaiting: true,
-      nextStep: 'Warten auf Eingangsbestätigung.',
-      timeline: [...a.timeline, { date: a.created || '2026-06-26', label: 'Als gesendet markiert', kind: 'ack' }],
+      nextStep: 'Waiting for confirmation of receipt.',
+      timeline: [...a.timeline, { date: a.created || '2026-06-26', label: 'Marked as sent', kind: 'ack' }],
     } : a));
-    setToast({ icon: 'send', text: 'Als gesendet markiert.' });
+    setToast({ icon: 'send', text: 'Marked as sent.' });
+  };
+  const deleteApp = (id) => {
+    const app = apps.find((a) => a.id === id);
+    setApps((prev) => prev.filter((a) => a.id !== id));
+    setOpenApp(null);
+    setToast({ icon: 'info', text: `Application${app ? ` for ${app.company}` : ''} deleted.` });
   };
   const toggleProvider = (id, connected) => {
     setProviders((prev) => prev.map((p) => p.id === id ? {
-      ...p, connected, jobs: connected ? (p.jobs || (p.id === 'remotive' ? 1 : 2)) : 0, lastSync: connected ? 'gerade eben' : null,
+      ...p, connected, jobs: connected ? (p.jobs || (p.id === 'remotive' ? 1 : 2)) : 0, lastSync: connected ? 'just now' : null,
     } : p));
     const prov = providers.find((p) => p.id === id);
     setToast(connected
-      ? { icon: 'checkCircle', text: `${prov ? prov.name : 'Quelle'} verbunden — Jobs werden geladen.` }
-      : { icon: 'info', text: `${prov ? prov.name : 'Quelle'} getrennt.` });
+      ? { icon: 'checkCircle', text: `${prov ? prov.name : 'Source'} connected — loading jobs.` }
+      : { icon: 'info', text: `${prov ? prov.name : 'Source'} disconnected.` });
   };
 
   return (
@@ -65,7 +71,7 @@ function App() {
       badges={{ bewerbungen: awaiting + drafts }}
       title={meta.t} subtitle={meta.s}
       onSettings={() => setSettingsOpen(true)}
-      actions={active !== 'jobsuche' ? <KA.Button size="sm" variant="primary" iconLeft={<KA.Icon name="search" size={14} />} onClick={() => nav('jobsuche')}>Jobs finden</KA.Button> : null}
+      actions={active !== 'jobsuche' ? <KA.Button size="sm" variant="primary" iconLeft={<KA.Icon name="search" size={14} />} onClick={() => nav('jobsuche')}>Find jobs</KA.Button> : null}
     >
       {active === 'uebersicht' && (
         <window.KUebersicht apps={apps} onNav={nav} onOpenApp={(id) => { setActive('bewerbungen'); setOpenApp(id); }} />
@@ -77,7 +83,7 @@ function App() {
         <window.KJobquellen providers={providers} onToggle={toggleProvider} onFindJobs={() => nav('jobsuche')} />
       )}
       {active === 'bewerbungen' && (
-        <window.KBewerbungen apps={apps} openId={openApp} onOpen={setOpenApp} onClose={() => setOpenApp(null)} onMarkSent={markSent} onFindJobs={() => nav('jobsuche')} />
+        <window.KBewerbungen apps={apps} openId={openApp} onOpen={setOpenApp} onClose={() => setOpenApp(null)} onMarkSent={markSent} onDelete={deleteApp} onFindJobs={() => nav('jobsuche')} />
       )}
       {active === 'stellen' && (
         <window.KStellen openId={openPos} onOpen={setOpenPos} onClose={() => setOpenPos(null)} />

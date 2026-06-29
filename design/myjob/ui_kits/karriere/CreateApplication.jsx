@@ -4,14 +4,14 @@
 const CA = window.MyJobDesignSystem_f3658e;
 
 const DOC_OPTIONS = [
-  { code: 'cv', label: 'Lebenslauf', icon: 'fileText', hint: 'Aktuelle Version' },
-  { code: 'anschreiben', label: 'Anschreiben', icon: 'edit', hint: 'Auf die Stelle angepasst' },
-  { code: 'mappe', label: 'Bewerbungsmappe (PDF)', icon: 'paperclip', hint: 'Alles in einem Dokument' },
-  { code: 'zeugnisse', label: 'Zeugnisse', icon: 'award', hint: 'Arbeits- & Studienzeugnisse' },
-  { code: 'portfolio', label: 'Portfolio / GitHub', icon: 'code', hint: 'Code-Beispiele' },
+  { code: 'cv', label: 'Résumé', icon: 'fileText', hint: 'Current version' },
+  { code: 'anschreiben', label: 'Cover letter', icon: 'edit', hint: 'Tailored to the role' },
+  { code: 'mappe', label: 'Application bundle (PDF)', icon: 'paperclip', hint: 'Everything in one document' },
+  { code: 'zeugnisse', label: 'References', icon: 'award', hint: 'Work & academic references' },
+  { code: 'portfolio', label: 'Portfolio / GitHub', icon: 'code', hint: 'Code samples' },
 ];
 
-const PROVIDER_LABEL = { claude: 'Claude', gemini: 'Gemini', template: 'Vorlage' };
+const PROVIDER_LABEL = { claude: 'Claude', gemini: 'Gemini', template: 'Template' };
 
 function CreateApplication({ job, onClose, onSave }) {
   const { anschreibenTemplate, makeDraft, api } = window.KarriereData;
@@ -44,15 +44,15 @@ function CreateApplication({ job, onClose, onSave }) {
         <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '13px' }}>
           <div style={{ width: '40px', height: '40px', borderRadius: 'var(--radius-md)', background: job.tile, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '14px', flexShrink: 0 }}>{job.company.split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase()}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)' }}>Bewerbung erstellen</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)' }}>Create application</div>
             <div style={{ fontSize: '12.5px', color: 'var(--text-soft)' }}>{job.role} · {job.company} · {job.city}</div>
           </div>
-          <CA.IconButton icon="x" label="Schließen" variant="ghost" onClick={onClose} />
+          <CA.IconButton icon="x" label="Close" variant="ghost" onClick={onClose} />
         </div>
 
         <div style={{ padding: '20px 24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '22px' }}>
           <section>
-            <h4 style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--text-soft)', margin: '0 0 12px' }}>Unterlagen für die Mappe</h4>
+            <h4 style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--text-soft)', margin: '0 0 12px' }}>Documents for the bundle</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {DOC_OPTIONS.map((o) => {
                 const on = docs[o.code];
@@ -72,28 +72,28 @@ function CreateApplication({ job, onClose, onSave }) {
 
           <section>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-              <h4 style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--text-soft)', margin: 0 }}>Anschreiben</h4>
+              <h4 style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--text-soft)', margin: 0 }}>Cover letter</h4>
               {gen.provider && !gen.loading && (
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 600, color: 'var(--accent-strong)', background: 'var(--accent-soft)', border: '1px solid var(--accent-border)', borderRadius: 'var(--radius-pill)', padding: '2px 8px' }}><CA.Icon name="zap" size={10} />{gen.provider === 'template' ? 'Vorlage' : `generiert mit ${PROVIDER_LABEL[gen.provider] || gen.provider}`}</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 600, color: 'var(--accent-strong)', background: 'var(--accent-soft)', border: '1px solid var(--accent-border)', borderRadius: 'var(--radius-pill)', padding: '2px 8px' }}><CA.Icon name="zap" size={10} />{gen.provider === 'template' ? 'Template' : `generated with ${PROVIDER_LABEL[gen.provider] || gen.provider}`}</span>
               )}
               <span style={{ marginLeft: 'auto' }}>
-                <CA.Button size="sm" variant="ghost" iconLeft={<CA.Icon name="trend" size={13} />} onClick={generate} disabled={gen.loading}>{gen.loading ? 'Generiere …' : 'Neu generieren'}</CA.Button>
+                <CA.Button size="sm" variant="ghost" iconLeft={<CA.Icon name="trend" size={13} />} onClick={generate} disabled={gen.loading}>{gen.loading ? 'Generating …' : 'Regenerate'}</CA.Button>
               </span>
             </div>
-            <CA.Textarea rows={7} value={gen.loading ? 'Anschreiben wird generiert …' : anschreiben} onChange={(e) => setAnschreiben(e.target.value)} hint="Automatisch erstellt — frei anpassbar." />
+            <CA.Textarea rows={7} value={gen.loading ? 'Generating cover letter …' : anschreiben} onChange={(e) => setAnschreiben(e.target.value)} hint="Generated automatically — fully editable." />
           </section>
 
-          <CA.Input label="Gehaltswunsch (optional)" icon="zap" placeholder="z. B. 88.000 €" value={salary} onChange={(e) => setSalary(e.target.value)} />
+          <CA.Input label="Desired salary (optional)" icon="zap" placeholder="e.g. €88,000" value={salary} onChange={(e) => setSalary(e.target.value)} />
 
-          <CA.Textarea label="Notiz für dich (optional)" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} hint="Nur für dich sichtbar — z. B. woher du den Job hast." />
+          <CA.Textarea label="Note to self (optional)" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} hint="Visible only to you — e.g. where you found the job." />
         </div>
 
         <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', background: 'var(--surface-subtle)', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '7px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', flex: 1, whiteSpace: 'nowrap' }}>
-            <CA.Icon name="info" size={14} />{chosen.length} Unterlage{chosen.length === 1 ? '' : 'n'} · senden später
+            <CA.Icon name="info" size={14} />{chosen.length} document{chosen.length === 1 ? '' : 's'} · send later
           </div>
-          <CA.Button variant="ghost" onClick={onClose}>Abbrechen</CA.Button>
-          <CA.Button variant="primary" iconLeft={<CA.Icon name="bookmark" size={15} />} onClick={save}>Vormerken</CA.Button>
+          <CA.Button variant="ghost" onClick={onClose}>Cancel</CA.Button>
+          <CA.Button variant="primary" iconLeft={<CA.Icon name="bookmark" size={15} />} onClick={save}>Save</CA.Button>
         </div>
       </div>
     </div>

@@ -10,13 +10,13 @@ describe('SampleJobSource.search', () => {
   });
 
   it('Search_AllCountriesSentinel_DoesNotFilter', async () => {
-    const jobs = await source.search(jobQuerySchema.parse({ country: 'Alle Länder' }));
+    const jobs = await source.search(jobQuerySchema.parse({ country: 'All countries' }));
     expect(jobs.length).toBeGreaterThan(5);
   });
 
   it('Search_ByCountry_FiltersExact', async () => {
-    const jobs = await source.search(jobQuerySchema.parse({ country: 'Schweiz' }));
-    expect(jobs.every((j) => j.country === 'Schweiz')).toBe(true);
+    const jobs = await source.search(jobQuerySchema.parse({ country: 'Switzerland' }));
+    expect(jobs.every((j) => j.country === 'Switzerland')).toBe(true);
     expect(jobs.length).toBeGreaterThan(0);
   });
 

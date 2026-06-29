@@ -60,7 +60,7 @@ function Dashboard({ me, apps, vkpis, clients, mandates, onOpenTalent, onOpenPip
 }
 
 /* ---------- Talents grid ---------- */
-function TalentGrid({ talents, apps, onOpen }) {
+function TalentGrid({ talents, apps, onOpen, onDelete }) {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
@@ -82,6 +82,10 @@ function TalentGrid({ talents, apps, onOpen }) {
                   </div>
                   <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.role}</div>
                 </div>
+                {!t.me && onDelete && (
+                  <WS.IconButton icon="trash" label="Delete talent" variant="ghost" size="sm"
+                    onClick={(e) => { e.stopPropagation(); if (window.confirm(`Delete ${t.name} from the talent pool?`)) onDelete(t.id); }} />
+                )}
               </div>
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', margin: '13px 0' }}>
                 {t.skills.slice(0, 3).map((s, i) => <WS.Badge key={i} variant="outline" size="sm">{s}</WS.Badge>)}

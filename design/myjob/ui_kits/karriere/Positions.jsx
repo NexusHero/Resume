@@ -1,13 +1,13 @@
-/* Meine Stellen — work history + earnings. Two comp models:
-   salary (Gehaltsverlauf + total paid) and hourly (Stunden × Satz).
+/* My positions — work history + earnings. Two comp models:
+   salary (salary history + total paid) and hourly (hours × rate).
    List → click a position → earnings detail with a small bar chart. */
 const PO = window.MyJobDesignSystem_f3658e;
 
 function fmtMonth(ym) {
-  if (!ym) return 'heute';
+  if (!ym) return 'today';
   const [y, m] = ym.split('-');
   if (!m) return y;
-  return new Date(+y, +m - 1, 1).toLocaleDateString('de-DE', { month: 'short', year: 'numeric' });
+  return new Date(+y, +m - 1, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 }
 function PosTile({ p, size = 44 }) {
   const ini = p.company.split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
@@ -43,7 +43,7 @@ function PosRow({ p, onOpen }) {
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
             <span style={{ fontFamily: 'var(--font-display)', fontSize: '15px', fontWeight: 700, color: 'var(--text-heading)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{p.company}</span>
-            {p.current && <PO.Badge variant="soft" size="sm" style={{ flexShrink: 0 }}>aktiv</PO.Badge>}
+            {p.current && <PO.Badge variant="soft" size="sm" style={{ flexShrink: 0 }}>active</PO.Badge>}
           </div>
           <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.role}</div>
         </div>
@@ -54,7 +54,7 @@ function PosRow({ p, onOpen }) {
       </div>
       <div style={{ textAlign: 'right' }}>
         <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)', fontVariantNumeric: 'tabular-nums' }}>{fmtEUR(t.total)}</div>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-soft)' }}>{p.model === 'hourly' ? `${t.hours} h × ${p.rate} €` : 'gesamt bezahlt'}</div>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-soft)' }}>{p.model === 'hourly' ? `${t.hours} h × ${p.rate} €` : 'total paid'}</div>
       </div>
       <PO.Icon name="chevronRight" size={16} style={{ color: 'var(--text-soft)' }} />
     </div>
@@ -66,11 +66,11 @@ function EarnDetail({ p, onClose }) {
   const t = positionTotal(p);
   let chart, breakdown;
   if (p.model === 'salary') {
-    chart = p.salary.map((s, i) => ({ label: 'ab ' + fmtMonth(s.from), label2: fmtEUR(s.gross).replace('€ ', ''), v: s.gross }));
+    chart = p.salary.map((s, i) => ({ label: 'from ' + fmtMonth(s.from), label2: fmtEUR(s.gross).replace('€ ', ''), v: s.gross }));
     const base = t.total - (p.bonusPaid || 0);
     breakdown = [
-      { k: 'Grundgehalt (kumuliert)', v: base, c: 'var(--accent)' },
-      { k: 'Bonus (kumuliert)', v: p.bonusPaid || 0, c: 'var(--status-offer)' },
+      { k: 'Base salary (cumulative)', v: base, c: 'var(--accent)' },
+      { k: 'Bonus (cumulative)', v: p.bonusPaid || 0, c: 'var(--status-offer)' },
     ];
   } else {
     chart = p.hours.map((h) => ({ label: h.month, label2: h.h + 'h', v: h.h * p.rate }));
@@ -89,26 +89,28 @@ function EarnDetail({ p, onClose }) {
               <PO.MetaPill icon="calendar">{fmtMonth(p.start)} – {fmtMonth(p.end)}</PO.MetaPill>
             </div>
           </div>
-          <PO.IconButton icon="x" label="Schließen" variant="ghost" onClick={onClose} />
+          <PO.IconButton icon="x" label="Close" variant="ghost" onClick={onClose} />
         </div>
 
         <div style={{ padding: '22px 24px', display: 'flex', flexDirection: 'column', gap: '22px' }}>
           <div style={{ background: 'linear-gradient(160deg, var(--ink-800), var(--ink-900))', borderRadius: 'var(--radius-lg)', padding: '20px 22px', color: '#fff' }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--sidebar-soft)' }}>Bisher verdient</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--sidebar-soft)' }}>Earned to date</div>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: '40px', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.1, marginTop: '4px', fontVariantNumeric: 'tabular-nums' }}>{fmtEUR(t.total)}</div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11.5px', color: 'var(--accent-on-dark)', marginTop: '4px' }}>
-              {p.model === 'hourly' ? `${t.hours} Stunden × ${p.rate} €/h` : `aktueller Stand: ${fmtEUR(p.salary[p.salary.length - 1].gross)} / Monat brutto`}
+              {p.model === 'hourly'
+                ? `${t.hours} hours × €${p.rate}/h`
+                : `current: ${fmtEUR(p.salary[p.salary.length - 1].gross)} / month gross`}
             </div>
           </div>
 
           <section>
-            <h4 style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--text-soft)', margin: '0 0 16px' }}>{p.model === 'salary' ? 'Gehaltsverlauf · brutto / Monat' : 'Stunden × Satz'}</h4>
+            <h4 style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--text-soft)', margin: '0 0 16px' }}>{p.model === 'salary' ? 'Salary history · gross / month' : 'Hours × rate'}</h4>
             <MiniBars data={chart} color={p.model === 'salary' ? 'var(--accent)' : 'var(--status-hired)'} />
           </section>
 
           {breakdown && (
             <section style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <h4 style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--text-soft)', margin: 0 }}>Zusammensetzung</h4>
+              <h4 style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--text-soft)', margin: 0 }}>Breakdown</h4>
               {breakdown.map((b) => (
                 <div key={b.k} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <div style={{ flex: 1 }}>
@@ -126,8 +128,8 @@ function EarnDetail({ p, onClose }) {
           )}
 
           <div style={{ display: 'flex', gap: '10px' }}>
-            <PO.Button variant="outline" size="sm" iconLeft={<PO.Icon name="download" size={14} />}>Als Nachweis (PDF)</PO.Button>
-            <PO.Button variant="ghost" size="sm" iconLeft={<PO.Icon name="edit" size={14} />}>Bearbeiten</PO.Button>
+            <PO.Button variant="outline" size="sm" iconLeft={<PO.Icon name="download" size={14} />}>As proof (PDF)</PO.Button>
+            <PO.Button variant="ghost" size="sm" iconLeft={<PO.Icon name="edit" size={14} />}>Edit</PO.Button>
           </div>
         </div>
       </div>
@@ -143,12 +145,12 @@ function Stellen({ openId, onOpen, onClose }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', maxWidth: '1100px' }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
-        <PO.StatCard label="Lebensverdienst" value={fmtEUR(lifetime)} icon="trend" />
-        <PO.StatCard label="Aktive Stellen" value={current.length} icon="briefcase" />
-        <PO.StatCard label="Stundensatz · Freelance" value={'75\u00a0€'} icon="zap" />
+        <PO.StatCard label="Lifetime earnings" value={fmtEUR(lifetime)} icon="trend" />
+        <PO.StatCard label="Active positions" value={current.length} icon="briefcase" />
+        <PO.StatCard label="Hourly rate · Freelance" value={'75\u00a0€'} icon="zap" />
       </div>
 
-      <AP_Card title="Arbeitshistorie" subtitle="Klicke eine Stelle für den Verdienst-Verlauf">
+      <AP_Card title="Work history" subtitle="Click a position for its earnings history">
         {POSITIONS.map((p) => <PosRow key={p.id} p={p} onOpen={onOpen} />)}
       </AP_Card>
 

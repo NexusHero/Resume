@@ -4,11 +4,11 @@
 const SH = window.MyJobDesignSystem_f3658e;
 
 const NAV = [
-  { id: 'uebersicht', label: 'Übersicht', icon: 'home' },
-  { id: 'jobsuche', label: 'Jobsuche', icon: 'search' },
-  { id: 'jobquellen', label: 'Jobquellen', icon: 'globe' },
-  { id: 'bewerbungen', label: 'Bewerbungen', icon: 'send' },
-  { id: 'stellen', label: 'Meine Stellen', icon: 'briefcase' },
+  { id: 'uebersicht', label: 'Overview', icon: 'home' },
+  { id: 'jobsuche', label: 'Job search', icon: 'search' },
+  { id: 'jobquellen', label: 'Job sources', icon: 'globe' },
+  { id: 'bewerbungen', label: 'Applications', icon: 'send' },
+  { id: 'stellen', label: 'My positions', icon: 'briefcase' },
 ];
 
 function SegToggle({ options, value, onChange, bright }) {
@@ -90,12 +90,12 @@ function Shell({ theme, mode, direction, onMode, onDirection, active, onNav, me,
             <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '17px', color: brandColor, letterSpacing: '-0.02em', lineHeight: 1 }}>
               <span style={{ color: bright ? 'var(--accent)' : 'var(--accent-on-dark)' }}>my</span>Job
             </div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.14em', textTransform: 'uppercase', color: brandSub, marginTop: '3px' }}>Karriere</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.14em', textTransform: 'uppercase', color: brandSub, marginTop: '3px' }}>Career</div>
           </div>
         </div>
 
         <nav style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: '3px', flex: 1 }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: bright ? 'var(--text-soft)' : 'var(--sidebar-soft)', padding: '8px 12px 4px' }}>Mein Karriere-Tracker</div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: bright ? 'var(--text-soft)' : 'var(--sidebar-soft)', padding: '8px 12px 4px' }}>My career tracker</div>
           {NAV.map((n) => <NavItem key={n.id} item={n} active={active === n.id} onClick={() => onNav(n.id)} badge={badges[n.id]} bright={bright} />)}
         </nav>
 
@@ -121,9 +121,9 @@ function Shell({ theme, mode, direction, onMode, onDirection, active, onNav, me,
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
             {actions}
-            {onSettings && <SH.IconButton icon="settings" label="KI-Modell wählen" variant="ghost" onClick={onSettings} />}
-            <SegToggle bright value={direction} onChange={onDirection} options={[{ id: 'rail', label: 'Kompakt' }, { id: 'bright', label: 'Luftig' }]} />
-            <SegToggle bright value={mode} onChange={onMode} options={[{ id: 'light', label: 'Hell' }, { id: 'dark', label: 'Dunkel' }]} />
+            {onSettings && <SH.IconButton icon="settings" label="Choose AI model" variant="ghost" onClick={onSettings} />}
+            <SegToggle bright value={direction} onChange={onDirection} options={[{ id: 'rail', label: 'Compact' }, { id: 'bright', label: 'Airy' }]} />
+            <SegToggle bright value={mode} onChange={onMode} options={[{ id: 'light', label: 'Light' }, { id: 'dark', label: 'Dark' }]} />
           </div>
         </header>
 

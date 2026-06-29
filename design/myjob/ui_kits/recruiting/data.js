@@ -50,15 +50,12 @@ const ME_LETTER = {
 /* ---------- Talents (the pool) — "me" pinned first ---------- */
 const TALENTS = [
   {
-    id: 'me', me: true, name: 'Suhay Sevinc', role: 'M.Sc. Software Engineer', headline: 'Senior C++ / C# · Echtzeit- & verteilte Systeme',
+    id: 'me', me: true, name: 'Suhay Sevinc', role: 'M.Sc. Software Engineer', headline: 'Senior C++ / C# · real-time & distributed systems',
     src: '../../assets/img/candidate-portrait-sm.jpg', location: 'Blumberg, DE', email: 'suhay.sevinc@gmail.com', phone: '+49 176 91407840',
-    linkedin: 'linkedin.com/in/suhay-sevinc', availability: 'sofort', salary: 'CHF 120–140k', score: 88,
+    linkedin: 'linkedin.com/in/suhay-sevinc', availability: 'immediately', salary: 'CHF 120–140k', score: 88,
     skills: ['C++20', 'C# / .NET', 'Qt / QML', 'Microservices', 'gRPC'],
     resume: ME_RESUME, letter: ME_LETTER, attachments: ME_ATTACHMENTS,
   },
-  { id: 't2', name: 'Lena Brandt', role: 'Product Designer', headline: 'B2B-SaaS · Design Systems', location: 'Leipzig', email: 'lena.brandt@example.de', phone: '+49 160 1112 2334', availability: 'in 6 weeks', salary: '64.000 €', score: 81, skills: ['Figma', 'Design Systems', 'Prototyping'], attachments: [] },
-  { id: 't3', name: 'Marco Adler', role: 'DevOps Engineer', headline: 'Cloud · Automation', location: 'Munich', email: 'marco.adler@example.de', phone: '+49 170 5566 7788', availability: 'immediately', salary: '72.000 €', score: 74, skills: ['Terraform', 'AWS', 'CI/CD', 'Go'], attachments: [] },
-  { id: 't4', name: 'Aylin Demir', role: 'UX Researcher', headline: 'Qualitative Research', location: 'Berlin', email: 'aylin.demir@example.de', phone: '+49 151 4433 2211', availability: 'in 2 months', salary: '66.000 €', score: 84, skills: ['User Research', 'Interviews', 'Figma'], attachments: [] },
 ];
 
 /* ---------- Bewerbungen (applications) — belong to a talent ---------- */

@@ -14,7 +14,7 @@ test.describe('UI acceptance — the suite renders in English', () => {
     await page.goto('/design/myjob/ui_kits/recruiting/index.html');
     const nav = page.locator('nav button');
     await expect(nav.first()).toBeVisible();
-    await expect(nav).toContainText(['Overview', 'Talent Pool', 'Applications']);
+    await expect(nav).toContainText(['Workspace', 'Talent Pool', 'Applications']);
     await expect(page.locator('nav')).not.toContainText('Übersicht');
   });
 
@@ -66,25 +66,25 @@ test.describe('UI acceptance — the suite renders in English', () => {
     );
 
     await page.goto('/design/myjob/ui_kits/karriere/index.html');
-    await page.getByRole('button', { name: /Jobsuche/ }).click();
+    await page.getByRole('button', { name: /Job search/ }).click();
     const main = page.locator('main');
     // search filters + source chips derived from the API results
-    await expect(main).toContainText('Suchbegriffe');
-    await expect(main).toContainText('Quellen');
+    await expect(main).toContainText('Keywords');
+    await expect(main).toContainText('Sources');
     // the fetched posting is listed, source-attributed, with its match score
     await expect(main).toContainText('Senior C++ Engineer');
     await expect(main).toContainText('via Bundesagentur für Arbeit');
     await expect(main).toContainText('94%');
     // open the posting → the real apply link is present
     await page.getByText('Senior C++ Engineer').first().click();
-    await expect(page.getByRole('link', { name: /Stellenausschreibung öffnen/ })).toHaveAttribute(
+    await expect(page.getByRole('link', { name: /Open job posting/ })).toHaveAttribute(
       'href',
       'https://careers.celonis.com/job/123',
     );
     // build an application from it (sending is for later)
-    await page.getByRole('button', { name: 'Bewerbung erstellen' }).click();
-    await expect(page.locator('body')).toContainText('Unterlagen für die Mappe');
-    await expect(page.getByRole('button', { name: 'Vormerken' })).toBeVisible();
+    await page.getByRole('button', { name: 'Create application' }).click();
+    await expect(page.locator('body')).toContainText('Documents for the bundle');
+    await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeVisible();
   });
 
   test('Karriere_Settings_SwitchesLlmProvider', async ({ page }) => {
@@ -116,9 +116,9 @@ test.describe('UI acceptance — the suite renders in English', () => {
     });
 
     await page.goto('/design/myjob/ui_kits/karriere/index.html');
-    await page.getByRole('button', { name: /KI-Modell wählen/ }).click();
+    await page.getByRole('button', { name: /Choose AI model/ }).click();
     const dialog = page.locator('body');
-    await expect(dialog).toContainText('KI-Modell');
+    await expect(dialog).toContainText('AI model');
     await expect(dialog).toContainText('Claude');
     await expect(dialog).toContainText('Gemini');
     await page.getByText('Gemini', { exact: true }).click();

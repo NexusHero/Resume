@@ -20,9 +20,14 @@ function App() {
   const [mappeFor, setMappeFor] = React.useState(null);
   const [editing, setEditing] = React.useState(null);
 
-  const talents = window.TALENTS;
+  const [talents, setTalents] = React.useState(window.TALENTS);
   const apps = window.APPLICATIONS;
   const me = talents.find((t) => t.me);
+
+  const deleteTalent = (id) => {
+    setTalents((prev) => prev.filter((t) => t.id !== id));
+    setOpenTalent(null);
+  };
 
   const unread = window.MESSAGES.filter((m) => m.unread).length;
   const badges = { bewerbungen: apps.filter((a) => a.status !== 'rejected' && a.status !== 'hired').length, postfach: unread || undefined };
@@ -54,7 +59,7 @@ function App() {
     [title, subtitle] = TITLES[nav];
     if (nav === 'uebersicht') body = <window.Dashboard me={me} apps={apps} vkpis={window.VERMITTLER_KPIS} clients={window.CLIENTS} mandates={window.MANDATES} onOpenTalent={goTalent} onOpenPipeline={() => setNav('bewerbungen')} onOpenMandate={() => setNav('mandate')} />;
     else if (nav === 'mandate') body = <window.MandateView clients={window.CLIENTS} mandates={window.MANDATES} />;
-    else if (nav === 'pool') body = <window.TalentGrid talents={talents} apps={apps} onOpen={goTalent} />;
+    else if (nav === 'pool') body = <window.TalentGrid talents={talents} apps={apps} onOpen={goTalent} onDelete={deleteTalent} />;
     else if (nav === 'matching') body = <window.Matching talents={talents} />;
     else if (nav === 'bewerbungen') body = (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '100%' }}>

@@ -24,93 +24,93 @@ const DOC = { cv: 'Lebenslauf', anschreiben: 'Anschreiben', mappe: 'Mappe', zeug
 /* a brand tile color per company (no real logos) */
 const APPLICATIONS = [
   {
-    id: 'a1', company: 'Celonis', tile: '#6366f1', role: 'Senior C++ Engineer', location: 'München · hybrid',
-    sent: '2026-06-18', channel: 'Stellenportal', via: 'myJob', status: 'interview', statusLabel: 'Interview',
-    docs: ['cv', 'anschreiben', 'mappe'], salaryAsked: '88.000 €',
-    lastReply: '2026-06-22', awaiting: false, nextStep: 'Tech-Interview · 30. Juni, 14:00',
+    id: 'a1', company: 'Celonis', tile: '#6366f1', role: 'Senior C++ Engineer', location: 'Munich · hybrid',
+    sent: '2026-06-18', channel: 'Job board', via: 'myJob', status: 'interview', statusLabel: 'Interview',
+    docs: ['cv', 'anschreiben', 'mappe'], salaryAsked: '€88,000',
+    lastReply: '2026-06-22', awaiting: false, nextStep: 'Tech interview · June 30, 2:00 PM',
     recruiter: { name: 'Jana Pohl', role: 'Tech Recruiter' },
-    notes: 'Zweites Gespräch terminiert. Auf System-Design vorbereiten (gRPC, Sharding).',
+    notes: 'Second interview scheduled. Prepare for system design (gRPC, sharding).',
     timeline: [
-      { date: '2026-06-18', label: 'Bewerbung gesendet', kind: 'sent' },
-      { date: '2026-06-19', label: 'Eingang bestätigt', kind: 'ack' },
-      { date: '2026-06-22', label: 'Einladung zum Interview', kind: 'interview' },
+      { date: '2026-06-18', label: 'Application sent', kind: 'sent' },
+      { date: '2026-06-19', label: 'Receipt confirmed', kind: 'ack' },
+      { date: '2026-06-22', label: 'Interview invitation', kind: 'interview' },
     ],
   },
   {
     id: 'a2', company: 'Trade Republic', tile: '#0f172a', role: 'Backend Engineer (Rust)', location: 'Berlin · remote',
-    sent: '2026-06-11', channel: 'Website', via: 'direkt', status: 'review', statusLabel: 'In Prüfung',
-    docs: ['cv', 'anschreiben'], salaryAsked: '85.000 €',
+    sent: '2026-06-11', channel: 'Website', via: 'direct', status: 'review', statusLabel: 'In review',
+    docs: ['cv', 'anschreiben'], salaryAsked: '€85,000',
     lastReply: '2026-06-12', awaiting: true, nextStep: null,
     recruiter: { name: 'Talent Team', role: 'People' },
-    notes: 'Eingang bestätigt, seitdem still. Am 27.06 nachfassen.',
+    notes: 'Receipt confirmed, quiet since. Follow up on June 27.',
     timeline: [
-      { date: '2026-06-11', label: 'Bewerbung gesendet', kind: 'sent' },
-      { date: '2026-06-12', label: 'Eingang bestätigt', kind: 'ack' },
+      { date: '2026-06-11', label: 'Application sent', kind: 'sent' },
+      { date: '2026-06-12', label: 'Receipt confirmed', kind: 'ack' },
     ],
   },
   {
     id: 'a3', company: 'N26', tile: '#1f8a5b', role: 'Platform Engineer', location: 'Berlin · hybrid',
-    sent: '2026-06-02', channel: 'LinkedIn', via: 'Empfehlung', status: 'offer', statusLabel: 'Angebot',
-    docs: ['cv', 'anschreiben', 'mappe', 'zeugnisse'], salaryAsked: '90.000 €',
-    lastReply: '2026-06-20', awaiting: false, nextStep: 'Angebot prüfen · Frist 30. Juni',
+    sent: '2026-06-02', channel: 'LinkedIn', via: 'Referral', status: 'offer', statusLabel: 'Offer',
+    docs: ['cv', 'anschreiben', 'mappe', 'zeugnisse'], salaryAsked: '€90,000',
+    lastReply: '2026-06-20', awaiting: false, nextStep: 'Review offer · deadline June 30',
     recruiter: { name: 'Marco Reus', role: 'Hiring Manager' },
-    notes: 'Angebot 92.000 € + 10% Bonus. Gegen Celonis abwägen.',
+    notes: 'Offer €92,000 + 10% bonus. Weigh against Celonis.',
     timeline: [
-      { date: '2026-06-02', label: 'Bewerbung gesendet', kind: 'sent' },
-      { date: '2026-06-04', label: 'Eingang bestätigt', kind: 'ack' },
-      { date: '2026-06-09', label: 'Screening-Call', kind: 'interview' },
-      { date: '2026-06-16', label: 'Onsite (3 Runden)', kind: 'interview' },
-      { date: '2026-06-20', label: 'Angebot erhalten', kind: 'offer' },
+      { date: '2026-06-02', label: 'Application sent', kind: 'sent' },
+      { date: '2026-06-04', label: 'Receipt confirmed', kind: 'ack' },
+      { date: '2026-06-09', label: 'Screening call', kind: 'interview' },
+      { date: '2026-06-16', label: 'Onsite (3 rounds)', kind: 'interview' },
+      { date: '2026-06-20', label: 'Offer received', kind: 'offer' },
     ],
   },
   {
-    id: 'a4', company: 'Personio', tile: '#0a5dff', role: 'Software Engineer · Backend', location: 'München · hybrid',
-    sent: '2026-05-28', channel: 'Stellenportal', via: 'myJob', status: 'rejected', statusLabel: 'Absage',
-    docs: ['cv', 'anschreiben'], salaryAsked: '82.000 €',
+    id: 'a4', company: 'Personio', tile: '#0a5dff', role: 'Software Engineer · Backend', location: 'Munich · hybrid',
+    sent: '2026-05-28', channel: 'Job board', via: 'myJob', status: 'rejected', statusLabel: 'Rejected',
+    docs: ['cv', 'anschreiben'], salaryAsked: '€82,000',
     lastReply: '2026-06-10', awaiting: false, nextStep: null,
     recruiter: { name: 'Recruiting', role: 'People' },
-    notes: 'Absage nach Screening — Profil zu Infra-lastig. Feedback war fair.',
+    notes: 'Rejected after screening — profile too infra-heavy. Feedback was fair.',
     timeline: [
-      { date: '2026-05-28', label: 'Bewerbung gesendet', kind: 'sent' },
-      { date: '2026-05-30', label: 'Eingang bestätigt', kind: 'ack' },
-      { date: '2026-06-10', label: 'Absage', kind: 'rejected' },
+      { date: '2026-05-28', label: 'Application sent', kind: 'sent' },
+      { date: '2026-05-30', label: 'Receipt confirmed', kind: 'ack' },
+      { date: '2026-06-10', label: 'Rejection', kind: 'rejected' },
     ],
   },
   {
     id: 'a5', company: 'SAP', tile: '#0a6ed1', role: 'Cloud Engineer', location: 'Walldorf · hybrid',
-    sent: '2026-05-20', channel: 'Website', via: 'direkt', status: 'review', statusLabel: 'In Prüfung',
-    docs: ['cv', 'anschreiben', 'zeugnisse'], salaryAsked: '80.000 €',
+    sent: '2026-05-20', channel: 'Website', via: 'direct', status: 'review', statusLabel: 'In review',
+    docs: ['cv', 'anschreiben', 'zeugnisse'], salaryAsked: '€80,000',
     lastReply: null, awaiting: true, nextStep: null,
     recruiter: null,
-    notes: 'Keine Bestätigung erhalten — Eingang unklar. Dringend nachfassen.',
+    notes: 'No confirmation received — receipt unclear. Follow up urgently.',
     timeline: [
-      { date: '2026-05-20', label: 'Bewerbung gesendet', kind: 'sent' },
+      { date: '2026-05-20', label: 'Application sent', kind: 'sent' },
     ],
   },
   {
     id: 'a6', company: 'Zalando', tile: '#ff6900', role: 'Senior Software Engineer', location: 'Berlin · remote',
     sent: '2026-05-09', channel: 'LinkedIn', via: 'myJob', status: 'interview', statusLabel: 'Interview',
-    docs: ['cv', 'anschreiben', 'portfolio'], salaryAsked: '86.000 €',
-    lastReply: '2026-05-26', awaiting: true, nextStep: 'Warte auf Feedback nach 2. Runde',
+    docs: ['cv', 'anschreiben', 'portfolio'], salaryAsked: '€86,000',
+    lastReply: '2026-05-26', awaiting: true, nextStep: 'Awaiting feedback after round 2',
     recruiter: { name: 'Lea Sommer', role: 'Tech Recruiter' },
-    notes: 'Zwei Runden gut gelaufen. Seit 26.05 keine Rückmeldung — nachfassen.',
+    notes: 'Two rounds went well. No reply since May 26 — follow up.',
     timeline: [
-      { date: '2026-05-09', label: 'Bewerbung gesendet', kind: 'sent' },
-      { date: '2026-05-12', label: 'Eingang bestätigt', kind: 'ack' },
-      { date: '2026-05-19', label: '1. Interview', kind: 'interview' },
-      { date: '2026-05-26', label: '2. Interview', kind: 'interview' },
+      { date: '2026-05-09', label: 'Application sent', kind: 'sent' },
+      { date: '2026-05-12', label: 'Receipt confirmed', kind: 'ack' },
+      { date: '2026-05-19', label: '1st interview', kind: 'interview' },
+      { date: '2026-05-26', label: '2nd interview', kind: 'interview' },
     ],
   },
   {
-    id: 'a7', company: 'Check24', tile: '#005ea8', role: 'Backend Developer', location: 'München · vor Ort',
-    sent: '2026-04-30', channel: 'Stellenportal', via: 'direkt', status: 'rejected', statusLabel: 'Absage',
-    docs: ['cv', 'anschreiben'], salaryAsked: '78.000 €',
+    id: 'a7', company: 'Check24', tile: '#005ea8', role: 'Backend Developer', location: 'Munich · on-site',
+    sent: '2026-04-30', channel: 'Job board', via: 'direct', status: 'rejected', statusLabel: 'Rejected',
+    docs: ['cv', 'anschreiben'], salaryAsked: '€78,000',
     lastReply: '2026-05-14', awaiting: false, nextStep: null,
     recruiter: null,
-    notes: 'Absage. Vor-Ort-Pflicht war ohnehin ein Ausschluss.',
+    notes: 'Rejected. The on-site requirement was a deal-breaker anyway.',
     timeline: [
-      { date: '2026-04-30', label: 'Bewerbung gesendet', kind: 'sent' },
-      { date: '2026-05-14', label: 'Absage', kind: 'rejected' },
+      { date: '2026-04-30', label: 'Application sent', kind: 'sent' },
+      { date: '2026-05-14', label: 'Rejection', kind: 'rejected' },
     ],
   },
 ];
@@ -121,7 +121,7 @@ const APPLICATIONS = [
 const POSITIONS = [
   {
     id: 'p1', company: 'Aleph Systems', tile: '#2563eb', role: 'Senior Software Engineer',
-    type: 'Festanstellung', location: 'Berlin · hybrid', current: true,
+    type: 'Full-time', location: 'Berlin · hybrid', current: true,
     start: '2024-03', end: null, model: 'salary',
     // monthly gross in € — a raise mid-2025
     salary: [
@@ -132,7 +132,7 @@ const POSITIONS = [
   },
   {
     id: 'p2', company: 'Voltaic Labs', tile: '#7c3aed', role: 'Backend Engineer',
-    type: 'Festanstellung', location: 'München · vor Ort', current: false,
+    type: 'Full-time', location: 'Munich · on-site', current: false,
     start: '2021-09', end: '2024-02', model: 'salary',
     salary: [
       { from: '2021-09', gross: 5200 },
@@ -141,8 +141,8 @@ const POSITIONS = [
     bonusPaid: 5400,
   },
   {
-    id: 'p3', company: 'TU Berlin · Lehrstuhl DS', tile: '#1f8a5b', role: 'Wissensch. Mitarbeiter (Werkstudent)',
-    type: 'Werkstudent', location: 'Berlin', current: false,
+    id: 'p3', company: 'TU Berlin · Distributed Systems Chair', tile: '#1f8a5b', role: 'Research Assistant (Working Student)',
+    type: 'Working student', location: 'Berlin', current: false,
     start: '2020-04', end: '2021-08', model: 'hourly',
     rate: 17.5, // €/h
     hours: [ // hours logged per month (sampled)
@@ -152,8 +152,8 @@ const POSITIONS = [
     ],
   },
   {
-    id: 'p4', company: 'Freelance · diverse', tile: '#c2410c', role: 'Freelance Developer',
-    type: 'Freiberuflich', location: 'remote', current: true,
+    id: 'p4', company: 'Freelance · various', tile: '#c2410c', role: 'Freelance Developer',
+    type: 'Freelance', location: 'remote', current: true,
     start: '2023-01', end: null, model: 'hourly',
     rate: 75, // €/h
     hours: [
@@ -198,18 +198,18 @@ const JOBS = [
   { id: 'j9', company: 'Siemens', tile: '#009999', role: 'Cloud Software Engineer', city: 'Hamburg', country: 'Deutschland', mode: 'hybrid', salary: '74.000 – 88.000 €', posted: 'vor 7 Tagen', match: 78, tags: ['Azure', 'C#', 'IoT'], snippet: 'Industrielle IoT-Lösungen in der Cloud.' },
 ];
 
-const COUNTRIES = ['Alle Länder', 'Deutschland', 'Österreich', 'Schweiz', 'Remote · EU'];
+const COUNTRIES = ['All countries', 'Germany', 'Austria', 'Switzerland', 'Remote · EU'];
 
 /* ---- Job-API providers (Jobquellen). Connect these to pull live jobs. ---- */
 const PROVIDERS = [
-  { id: 'ba', name: 'Bundesagentur für Arbeit', tile: '#d4002a', kind: 'Öffentliche Jobbörse', auth: 'public', connected: true, jobs: 3, lastSync: 'vor 4 Min', desc: 'Offizielle Stellenbörse der Bundesagentur. Keine Zugangsdaten nötig.', region: 'DE' },
-  { id: 'adzuna', name: 'Adzuna', tile: '#7c3aed', kind: 'Aggregator', auth: 'apikey', connected: true, jobs: 4, lastSync: 'vor 12 Min', desc: 'Aggregiert Stellen aus tausenden Quellen. App ID + API Key.', region: 'DE · AT · CH' },
-  { id: 'arbeitnow', name: 'Arbeitnow', tile: '#0891b2', kind: 'Aggregator', auth: 'public', connected: true, jobs: 2, lastSync: 'vor 4 Min', desc: 'Tech- & englischsprachige Jobs in Europa. Offene API.', region: 'EU' },
-  { id: 'remotive', name: 'Remotive', tile: '#1f8a5b', kind: 'Remote', auth: 'public', connected: false, jobs: 0, lastSync: null, desc: 'Kuratierte Remote-Jobs weltweit. Offene API.', region: 'Remote' },
-  { id: 'stepstone', name: 'StepStone', tile: '#0a6b3b', kind: 'Jobbörse', auth: 'oauth', connected: false, jobs: 0, lastSync: null, desc: 'Große DACH-Jobbörse. Partner-Zugang via OAuth erforderlich.', region: 'DE · AT' },
-  { id: 'indeed', name: 'Indeed', tile: '#2557a7', kind: 'Aggregator', auth: 'oauth', connected: false, jobs: 0, lastSync: null, desc: 'Weltweit größter Job-Aggregator. Publisher-Konto nötig.', region: 'Global' },
-  { id: 'linkedin', name: 'LinkedIn Jobs', tile: '#0a66c2', kind: 'Netzwerk', auth: 'oauth', connected: false, jobs: 0, lastSync: null, desc: 'Jobs aus deinem Netzwerk. OAuth-Anmeldung erforderlich.', region: 'Global' },
-  { id: 'xing', name: 'XING / New Work', tile: '#0698a0', kind: 'Netzwerk', auth: 'oauth', connected: false, jobs: 0, lastSync: null, desc: 'DACH-Karrierenetzwerk. OAuth-Anmeldung erforderlich.', region: 'DE · AT · CH' },
+  { id: 'ba', name: 'Bundesagentur für Arbeit', tile: '#d4002a', kind: 'Public job board', auth: 'public', connected: true, jobs: 3, lastSync: '4 min ago', desc: "Germany's official federal employment agency job board. No credentials needed.", region: 'DE' },
+  { id: 'adzuna', name: 'Adzuna', tile: '#7c3aed', kind: 'Aggregator', auth: 'apikey', connected: true, jobs: 4, lastSync: '12 min ago', desc: 'Aggregates postings from thousands of sources. App ID + API key.', region: 'DE · AT · CH' },
+  { id: 'arbeitnow', name: 'Arbeitnow', tile: '#0891b2', kind: 'Aggregator', auth: 'public', connected: true, jobs: 2, lastSync: '4 min ago', desc: 'Tech & English-language jobs across Europe. Open API.', region: 'EU' },
+  { id: 'remotive', name: 'Remotive', tile: '#1f8a5b', kind: 'Remote', auth: 'public', connected: false, jobs: 0, lastSync: null, desc: 'Curated remote jobs worldwide. Open API.', region: 'Remote' },
+  { id: 'stepstone', name: 'StepStone', tile: '#0a6b3b', kind: 'Job board', auth: 'oauth', connected: false, jobs: 0, lastSync: null, desc: 'Large DACH job board. Partner access via OAuth required.', region: 'DE · AT' },
+  { id: 'indeed', name: 'Indeed', tile: '#2557a7', kind: 'Aggregator', auth: 'oauth', connected: false, jobs: 0, lastSync: null, desc: "World's largest job aggregator. Publisher account needed.", region: 'Global' },
+  { id: 'linkedin', name: 'LinkedIn Jobs', tile: '#0a66c2', kind: 'Network', auth: 'oauth', connected: false, jobs: 0, lastSync: null, desc: 'Jobs from your network. OAuth sign-in required.', region: 'Global' },
+  { id: 'xing', name: 'XING / New Work', tile: '#0698a0', kind: 'Network', auth: 'oauth', connected: false, jobs: 0, lastSync: null, desc: 'DACH career network. OAuth sign-in required.', region: 'DE · AT · CH' },
 ];
 
 /* which provider each sample job came from (connected sources only) */
@@ -233,9 +233,9 @@ JOBS.forEach((j) => { const a = _apply[j.id] || { via: 'Unternehmensseite', url:
 let _draftN = 0;
 
 const anschreibenTemplate = (job) =>
-  `Sehr geehrtes Team von ${job.company},\n\nmit großem Interesse habe ich Ihre Ausschreibung als ${job.role} in ${job.city} gelesen. ` +
-  `Als M.Sc. Software Engineer mit Schwerpunkt ${job.tags.slice(0, 2).join(' und ')} bringe ich genau die Erfahrung mit, die Sie suchen.\n\n` +
-  `Über ein persönliches Gespräch freue ich mich sehr.\n\nMit freundlichen Grüßen\nSuhay Sevinc`;
+  `Dear ${job.company} team,\n\nI read your posting for the ${job.role} role in ${job.city} with great interest. ` +
+  `As an M.Sc. Software Engineer focused on ${job.tags.slice(0, 2).join(' and ')}, I bring exactly the experience you are looking for.\n\n` +
+  `I would welcome the opportunity to discuss my application in person.\n\nKind regards\nSuhay Sevinc`;
 
 function makeDraft(job, opts) {
   _draftN += 1;
@@ -243,12 +243,12 @@ function makeDraft(job, opts) {
   return {
     id: 'draft' + _draftN, company: job.company, tile: job.tile, role: job.role,
     location: `${job.city} · ${job.mode}`, sent: null, created: today,
-    channel: 'myJob', via: 'Jobsuche', status: 'draft', statusLabel: 'Entwurf', draft: true,
+    channel: 'myJob', via: 'Job search', status: 'draft', statusLabel: 'Draft', draft: true,
     applyVia: job.applyVia, applyUrl: job.applyUrl,
     docs: opts.docs, salaryAsked: opts.salary || '—', anschreiben: opts.anschreiben,
-    lastReply: null, awaiting: false, nextStep: 'Noch nicht gesendet — wenn bereit, abschicken.',
-    recruiter: null, notes: opts.notes || 'Aus der Jobsuche erstellt und vorgemerkt.',
-    timeline: [{ date: today, label: 'Bewerbung erstellt & vorgemerkt', kind: 'sent' }],
+    lastReply: null, awaiting: false, nextStep: 'Not sent yet — submit when ready.',
+    recruiter: null, notes: opts.notes || 'Created and saved from the job search.',
+    timeline: [{ date: today, label: 'Application created & saved', kind: 'sent' }],
     match: job.match,
   };
 }
@@ -312,7 +312,7 @@ const api = {
   /* GET /jobs — returns { jobs, top, more, counts } already mapped to UI shape. */
   async searchJobs({ country, city, q } = {}) {
     const params = new URLSearchParams();
-    if (country && country !== 'Alle Länder') params.set('country', country);
+    if (country && country !== 'All countries') params.set('country', country);
     if (city) params.set('city', city);
     if (q) params.set('q', q);
     const data = await jsonOrThrow(await fetch(`${API_BASE}/jobs?${params.toString()}`));

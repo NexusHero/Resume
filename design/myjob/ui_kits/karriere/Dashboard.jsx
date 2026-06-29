@@ -17,23 +17,23 @@ function Uebersicht({ apps, onNav, onOpenApp }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '1100px' }}>
       <div style={{ background: 'linear-gradient(160deg, var(--ink-800), var(--ink-950))', borderRadius: 'var(--radius-xl)', padding: '24px 26px', color: '#fff', display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: '240px' }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--sidebar-soft)' }}>Bisher insgesamt verdient</div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--sidebar-soft)' }}>Total earned to date</div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: '44px', fontWeight: 700, letterSpacing: '-0.025em', lineHeight: 1.05, marginTop: '4px', fontVariantNumeric: 'tabular-nums' }}>{fmtEUR(lifetime)}</div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--accent-on-dark)', marginTop: '6px' }}>über {POSITIONS.length} Stellen · seit 2020</div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--accent-on-dark)', marginTop: '6px' }}>across {POSITIONS.length} positions · since 2020</div>
         </div>
         <button onClick={() => onNav('stellen')} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', border: '1px solid var(--sidebar-border-strong)', background: 'var(--sidebar-glass)', color: '#fff', borderRadius: 'var(--radius-pill)', padding: '11px 18px', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '12.5px', fontWeight: 600 }}>
-          Verdienst ansehen <DB.Icon name="arrowRight" size={15} />
+          View earnings <DB.Icon name="arrowRight" size={15} />
         </button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
-        <DB.StatCard label="Aktive Bewerbungen" value={active.length} icon="send" />
-        <DB.StatCard label="Antwort offen" value={awaiting.length} icon="clock" delta="nachfassen" dir={awaiting.length ? 'down' : 'up'} />
-        <DB.StatCard label="Angebote" value={offers.length} icon="award" delta={offers.length ? 'aktiv' : '—'} dir="up" />
+        <DB.StatCard label="Active applications" value={active.length} icon="send" />
+        <DB.StatCard label="Awaiting reply" value={awaiting.length} icon="clock" delta="follow up" dir={awaiting.length ? 'down' : 'up'} />
+        <DB.StatCard label="Offers" value={offers.length} icon="award" delta={offers.length ? 'active' : '—'} dir="up" />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '16px', alignItems: 'start' }}>
-        <DB.Card title="Zuletzt gesendet" subtitle="Deine neuesten Bewerbungen" action={<DB.Button size="sm" variant="ghost" iconRight={<DB.Icon name="arrowRight" size={13} />} onClick={() => onNav('bewerbungen')}>Alle</DB.Button>} pad={false}>
+        <DB.Card title="Recently sent" subtitle="Your latest applications" action={<DB.Button size="sm" variant="ghost" iconRight={<DB.Icon name="arrowRight" size={13} />} onClick={() => onNav('bewerbungen')}>All</DB.Button>} pad={false}>
           {recent.map((a) => {
             const ini = a.company.split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
             return (
@@ -49,9 +49,9 @@ function Uebersicht({ apps, onNav, onOpenApp }) {
           })}
         </DB.Card>
 
-        <DB.Card title="Nachfassen fällig" subtitle="Damit nichts vergessen wird">
+        <DB.Card title="Follow-ups due" subtitle="So nothing slips">
           {awaiting.length === 0 ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--success)', fontSize: '13px' }}><DB.Icon name="checkCircle" size={18} /> Alles beantwortet 🎯</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--success)', fontSize: '13px' }}><DB.Icon name="checkCircle" size={18} /> All caught up 🎯</div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {awaiting.map((a) => {
@@ -61,7 +61,7 @@ function Uebersicht({ apps, onNav, onOpenApp }) {
                     <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--warning)', flexShrink: 0 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-heading)' }}>{a.company}</div>
-                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--warning)' }}>{since == null ? 'keine Bestätigung' : `${since} Tage ohne Antwort`}</div>
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--warning)' }}>{since == null ? 'no confirmation' : `${since} days without reply`}</div>
                     </div>
                     <DB.Icon name="send" size={15} style={{ color: 'var(--text-soft)' }} />
                   </div>

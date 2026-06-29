@@ -65,7 +65,16 @@ export function createApp(deps: AppDeps): Express {
   app.use('/api/v1', api);
 
   // Static web UIs (CV, cover letter, myJob). Served after the API routes.
-  app.use(express.static(deps.config.staticDir, { index: 'index.html' }));
+  // No-cache so the browser always re-validates — the in-browser Babel apps have
+  // no content hashes, so caching would otherwise serve stale JS after a change.
+  app.use(
+    express.static(deps.config.staticDir, {
+      index: 'index.html',
+      etag: true,
+      lastModified: true,
+      setHeaders: (res) => res.setHeader('Cache-Control', 'no-cache'),
+    }),
+  );
 
   app.use(errorHandler(deps.logger));
   return app;

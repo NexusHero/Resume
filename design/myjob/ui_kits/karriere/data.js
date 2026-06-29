@@ -185,19 +185,6 @@ function positionTotal(p) {
   return { total };
 }
 
-/* ---- Job search results (Jobsuche). Searchable by Land / Stadt / Suchbegriff ---- */
-const JOBS = [
-  { id: 'j1', company: 'Celonis', tile: '#6366f1', role: 'Senior C++ Engineer', city: 'München', country: 'Germany', mode: 'hybrid', salary: '85.000 – 98.000 €', posted: 'vor 2 Tagen', match: 94, tags: ['C++', 'gRPC', 'Distributed Systems'], snippet: 'Core business logic of the process-mining engine in modern C++20.' },
-  { id: 'j2', company: 'GitLab', tile: '#fc6d26', role: 'Backend Engineer (Rust)', city: 'Remote', country: 'Remote · EU', mode: 'remote', salary: '80.000 – 95.000 €', posted: 'vor 4 Tagen', match: 90, tags: ['Rust', 'PostgreSQL', 'Remote'], snippet: 'Fully remote, async culture, open-source codebase.' },
-  { id: 'j3', company: 'Bitpanda', tile: '#1d4ed8', role: 'Platform Engineer', city: 'Wien', country: 'Austria', mode: 'hybrid', salary: '70.000 – 88.000 €', posted: 'vor 1 Tag', match: 86, tags: ['Kubernetes', 'Go', 'AWS'], snippet: 'Scaling the trading platform for millions of users.' },
-  { id: 'j4', company: 'Zalando', tile: '#ff6900', role: 'Senior Software Engineer', city: 'Berlin', country: 'Germany', mode: 'remote', salary: '82.000 – 96.000 €', posted: 'vor 6 Tagen', match: 88, tags: ['Scala', 'Kafka', 'Microservices'], snippet: 'Event-getriebene Services im Fashion-Commerce-Backend.' },
-  { id: 'j5', company: 'Frequenz', tile: '#1f8a5b', role: 'Distributed Systems Engineer', city: 'Berlin', country: 'Germany', mode: 'hybrid', salary: '78.000 – 92.000 €', posted: 'vor 3 Tagen', match: 91, tags: ['Rust', 'gRPC', 'Energy'], snippet: 'Echtzeit-Steuerung dezentraler Energienetze.' },
-  { id: 'j6', company: 'Proton', tile: '#6d4aff', role: 'C++ Software Engineer', city: 'Zürich', country: 'Switzerland', mode: 'vor Ort', salary: 'CHF 120k – 140k', posted: 'vor 5 Tagen', match: 83, tags: ['C++', 'Cryptography', 'Privacy'], snippet: 'Secure, open-source products for millions of users.' },
-  { id: 'j7', company: 'N26', tile: '#1f8a5b', role: 'Backend Engineer', city: 'Berlin', country: 'Germany', mode: 'hybrid', salary: '75.000 – 90.000 €', posted: 'vor 8 Tagen', match: 87, tags: ['Java', 'Spring', 'Fintech'], snippet: 'Bezahl- und Konto-Services der mobilen Bank.' },
-  { id: 'j8', company: 'Dynatrace', tile: '#1496ff', role: 'Senior Backend Engineer', city: 'Linz', country: 'Austria', mode: 'hybrid', salary: '72.000 – 89.000 €', posted: 'vor 2 Tagen', match: 80, tags: ['Java', 'Observability', 'Cloud'], snippet: 'Observability platform for large cloud environments.' },
-  { id: 'j9', company: 'Siemens', tile: '#009999', role: 'Cloud Software Engineer', city: 'Hamburg', country: 'Germany', mode: 'hybrid', salary: '74.000 – 88.000 €', posted: 'vor 7 Tagen', match: 78, tags: ['Azure', 'C#', 'IoT'], snippet: 'Industrial IoT solutions in the cloud.' },
-];
-
 const COUNTRIES = ['All countries', 'Germany', 'Austria', 'Switzerland', 'Remote · EU'];
 
 /* ---- Job-API providers (Jobquellen). Connect these to pull live jobs. ---- */
@@ -211,24 +198,6 @@ const PROVIDERS = [
   { id: 'linkedin', name: 'LinkedIn Jobs', tile: '#0a66c2', kind: 'Network', auth: 'oauth', connected: false, jobs: 0, lastSync: null, desc: 'Jobs from your network. OAuth sign-in required.', region: 'Global' },
   { id: 'xing', name: 'XING / New Work', tile: '#0698a0', kind: 'Network', auth: 'oauth', connected: false, jobs: 0, lastSync: null, desc: 'DACH career network. OAuth sign-in required.', region: 'DE · AT · CH' },
 ];
-
-/* which provider each sample job came from (connected sources only) */
-const _jobSource = { j1: 'Bundesagentur für Arbeit', j2: 'Arbeitnow', j3: 'Adzuna', j4: 'Adzuna', j5: 'Arbeitnow', j6: 'Adzuna', j7: 'Adzuna', j8: 'Bundesagentur für Arbeit', j9: 'Adzuna' };
-JOBS.forEach((j) => { j.source = _jobSource[j.id] || 'Adzuna'; });
-
-/* where you actually apply — each company has its own page (manual send) */
-const _apply = {
-  j1: { via: 'Unternehmensseite', url: 'careers.celonis.com' },
-  j2: { via: 'Unternehmensseite', url: 'gitlab.com/jobs' },
-  j3: { via: 'Unternehmensseite', url: 'jobs.bitpanda.com' },
-  j4: { via: 'Unternehmensseite', url: 'jobs.zalando.com' },
-  j5: { via: 'E-Mail', url: 'jobs@frequenz.com' },
-  j6: { via: 'Unternehmensseite', url: 'proton.me/careers' },
-  j7: { via: 'LinkedIn Easy Apply', url: 'linkedin.com/jobs/n26' },
-  j8: { via: 'Unternehmensseite', url: 'jobs.sap.com' },
-  j9: { via: 'Unternehmensseite', url: 'siemens.com/careers' },
-};
-JOBS.forEach((j) => { const a = _apply[j.id] || { via: 'Unternehmensseite', url: j.company.toLowerCase().replace(/\s+/g, '') + '.com/jobs' }; j.applyVia = a.via; j.applyUrl = a.url; });
 
 let _draftN = 0;
 
@@ -358,6 +327,5 @@ window.KarriereData = {
   demo: DEMO,
   APPLICATIONS: DEMO ? APPLICATIONS : [],
   POSITIONS: DEMO ? POSITIONS : [],
-  JOBS: DEMO ? JOBS : [],
 };
 })();

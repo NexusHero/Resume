@@ -41,6 +41,8 @@ export interface LlmConfig {
 
 /** Live job-board wiring, resolved from the environment. */
 export interface JobSourcesConfig {
+  /** Force the offline sample source (opt-in mock). */
+  sample: boolean;
   arbeitnow: { enabled: boolean };
   bundesagentur: { enabled: boolean; apiKey: string };
   adzuna: { enabled: boolean; appId: string; appKey: string; country: string };
@@ -70,13 +72,16 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const storeDir = path.join(rootDir, 'archive', 'bewerbungen');
 
   // JOB_SOURCES is a comma list, e.g. "arbeitnow,bundesagentur,adzuna".
-  // Unset → no live sources → offline sample (keeps dev/CI deterministic).
+  // Default (unset) = the keyless LIVE sources, so real jobs are the standard.
+  // Opt into the offline sample explicitly with JOB_SOURCES=sample (or "none").
+  const raw = env.JOB_SOURCES ?? 'arbeitnow,bundesagentur';
   const enabled = new Set(
-    (env.JOB_SOURCES ?? '')
+    raw
       .split(',')
       .map((s) => s.trim().toLowerCase())
       .filter(Boolean),
   );
+  const useSample = enabled.has('sample') || enabled.has('none');
   const adzunaId = env.ADZUNA_APP_ID ?? '';
   const adzunaKey = env.ADZUNA_APP_KEY ?? '';
 
@@ -116,14 +121,16 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     },
     defaultJobSearch: { threshold: 80 },
     jobSources: {
-      arbeitnow: { enabled: enabled.has('arbeitnow') },
+      // Opt-in offline mock — off by default so real jobs are the standard.
+      sample: useSample,
+      arbeitnow: { enabled: !useSample && enabled.has('arbeitnow') },
       bundesagentur: {
-        enabled: enabled.has('bundesagentur'),
+        enabled: !useSample && enabled.has('bundesagentur'),
         apiKey: env.BA_API_KEY ?? 'jobboerse-jobsuche',
       },
       adzuna: {
         // Adzuna needs credentials; enabling it without them would only 401.
-        enabled: enabled.has('adzuna') && Boolean(adzunaId && adzunaKey),
+        enabled: !useSample && enabled.has('adzuna') && Boolean(adzunaId && adzunaKey),
         appId: adzunaId,
         appKey: adzunaKey,
         country: env.ADZUNA_COUNTRY ?? 'de',

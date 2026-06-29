@@ -85,18 +85,20 @@ pre-configured default search.
 
 `?q=`, `?city=`, `?country=`, `?threshold=` refine the search.
 
-**Live sources** are off by default (offline sample data is used). Enable them via env:
+**Live sources are the default** — with no env set, the keyless boards
+(Arbeitnow + Bundesagentur) are queried, so real jobs are the standard. The
+offline sample is opt-in.
 
 | Env                               | Purpose                                                         |
 | --------------------------------- | --------------------------------------------------------------- |
-| `JOB_SOURCES`                     | comma list: `arbeitnow,bundesagentur,adzuna`                    |
+| `JOB_SOURCES`                     | comma list (default `arbeitnow,bundesagentur`); add `adzuna`    |
+| `JOB_SOURCES=sample`              | opt into the offline mock jobs                                  |
 | `BA_API_KEY`                      | Bundesagentur key (defaults to the public `jobboerse-jobsuche`) |
 | `ADZUNA_APP_ID`, `ADZUNA_APP_KEY` | Adzuna credentials (required to enable Adzuna)                  |
 | `ADZUNA_COUNTRY`                  | Adzuna country code (default `de`)                              |
 
-```bash
-JOB_SOURCES=arbeitnow,bundesagentur npm run serve
-```
+The Career app's tracker (applications & work history) also starts **empty** by
+default; append `?demo=1` to its URL to load sample data.
 
 ### ATS gap analysis (`POST /api/v1/ats`)
 

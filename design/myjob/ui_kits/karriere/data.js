@@ -346,5 +346,18 @@ const api = {
   },
 };
 
-window.KarriereData = { ME, DOC, APPLICATIONS, POSITIONS, JOBS, COUNTRIES, PROVIDERS, fmtEUR, positionTotal, anschreibenTemplate, makeDraft, skillMatch, api, mapJob, tileColor };
+/* Demo mode is opt-in: by default the tracker starts empty (real data only —
+   you add applications from the job search). Enable the sample applications &
+   work history with ?demo=1 in the URL (or window.KARRIERE_DEMO = true). */
+const DEMO =
+  (typeof window !== 'undefined' && window.KARRIERE_DEMO === true) ||
+  (typeof location !== 'undefined' && /[?&]demo(=1|=true)?(&|$)/.test(location.search));
+
+window.KarriereData = {
+  ME, DOC, COUNTRIES, PROVIDERS, fmtEUR, positionTotal, anschreibenTemplate, makeDraft, skillMatch, api, mapJob, tileColor,
+  demo: DEMO,
+  APPLICATIONS: DEMO ? APPLICATIONS : [],
+  POSITIONS: DEMO ? POSITIONS : [],
+  JOBS: DEMO ? JOBS : [],
+};
 })();

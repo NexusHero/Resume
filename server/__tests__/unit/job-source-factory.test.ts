@@ -12,8 +12,18 @@ function build(env: NodeJS.ProcessEnv): AppConfig {
 }
 
 describe('createJobSource', () => {
-  it('NoSourcesConfigured_FallsBackToSample', () => {
+  it('DefaultEnv_UsesLiveSources', () => {
+    // No JOB_SOURCES set → real keyless sources are the default (not the mock).
     const src = createJobSource({ config: build({}), logger: noopLogger, httpFetch: noHttp });
+    expect(src).toBeInstanceOf(CompositeJobSource);
+  });
+
+  it('SampleOptIn_ReturnsSample', () => {
+    const src = createJobSource({
+      config: build({ JOB_SOURCES: 'sample' }),
+      logger: noopLogger,
+      httpFetch: noHttp,
+    });
     expect(src).toBeInstanceOf(SampleJobSource);
   });
 

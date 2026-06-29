@@ -32,6 +32,7 @@ function tmpConfig(): AppConfig {
     },
     defaultJobSearch: { threshold: 80 },
     jobSources: {
+      sample: true,
       arbeitnow: { enabled: false },
       bundesagentur: { enabled: false, apiKey: 'test' },
       adzuna: { enabled: false, appId: '', appKey: '', country: 'de' },

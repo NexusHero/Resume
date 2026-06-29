@@ -15,13 +15,19 @@ export interface JobSourceFactoryDeps {
 }
 
 /**
- * Assembles the live job sources enabled in config. With none enabled (the
- * default — no API keys, offline, CI) it falls back to the curated
- * SampleJobSource so the search always works.
+ * Assembles the live job sources enabled in config. Real (keyless) sources are
+ * the default; the curated offline SampleJobSource is opt-in (JOB_SOURCES=sample)
+ * and is also the safety fallback if nothing is enabled.
  */
 export function createJobSource(deps: JobSourceFactoryDeps): JobSource {
   const { config, logger, httpFetch } = deps;
   const cfg = config.jobSources;
+
+  if (cfg.sample) {
+    logger.info({}, 'offline sample job source (opt-in)');
+    return new SampleJobSource();
+  }
+
   const sources: JobSource[] = [];
 
   if (cfg.arbeitnow.enabled) {

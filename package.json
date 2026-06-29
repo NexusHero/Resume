@@ -7,8 +7,8 @@
     "node": ">=24"
   },
   "scripts": {
-    "serve": "tsx server/src/index.ts",
-    "start": "node server/dist/index.js",
+    "serve": "tsx --env-file-if-exists=.env server/src/index.ts",
+    "start": "node --env-file-if-exists=.env server/dist/index.js",
     "build": "tsc -p tsconfig.json",
     "pdf": "node tools/generate-pdf.js",
     "home": "node tools/build-home.js",

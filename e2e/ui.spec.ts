@@ -59,6 +59,37 @@ test.describe('UI acceptance — the suite renders in English', () => {
     await expect(page.locator('main')).not.toContainText('Mara Vogel');
   });
 
+  test('Recruiting_TalentPool_RendersApiTalentsWithMe', async ({ page }) => {
+    // Stub the live talents endpoint with a candidate not in the sample; the
+    // pinned "me" talent (Suhay Sevinc) must still appear alongside it.
+    await page.route('**/api/v1/talents', (route) => {
+      if (route.request().method() !== 'GET') return route.continue();
+      return route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify([
+          {
+            id: 't-api-1',
+            name: 'Tobias Wirth',
+            role: 'Staff Engineer',
+            headline: 'Platform · Reliability',
+            location: 'Hamburg',
+            email: 'tobias@example.de',
+            phone: '',
+            availability: 'in 2 months',
+            salary: '95.000 €',
+            skills: ['Go', 'Kubernetes'],
+            createdAt: '2026-06-25T10:00:00.000Z',
+            updatedAt: '2026-06-25T10:00:00.000Z',
+          },
+        ]),
+      });
+    });
+    await page.goto('/design/myjob/ui_kits/recruiting/index.html');
+    await page.getByRole('button', { name: /Talent Pool/ }).click();
+    await expect(page.locator('main')).toContainText('Tobias Wirth'); // from the API
+    await expect(page.locator('main')).toContainText('Suhay Sevinc'); // pinned "me"
+  });
+
   test('Karriere_Jobsuche_FetchesJobsFromApiAndCreatesApplication', async ({ page }) => {
     // The Jobsuche now fetches live from the REST API; stub it so the flow is
     // deterministic regardless of which job boards are configured on the server.

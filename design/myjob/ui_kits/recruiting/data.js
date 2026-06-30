@@ -166,7 +166,61 @@ function toPlacementCreate(p) {
   };
 }
 
+/* Backend Talent → the shape TalentGrid/TalentProfile render. Dossier fields
+   (resume, attachments, letter) are absent on purpose: TalentProfile shows its
+   empty states for API talents, while the rich "me" talent stays the sample
+   object (its dossier is edited via the document editor — a separate concern). */
+function mapTalent(t) {
+  const filled =
+    [t.role, t.headline, t.location, t.email, t.phone, t.availability, t.salary].filter(Boolean)
+      .length + (Array.isArray(t.skills) && t.skills.length ? 1 : 0);
+  return {
+    id: t.id,
+    name: t.name,
+    role: t.role || '',
+    headline: t.headline || '',
+    location: t.location || '',
+    email: t.email || '',
+    phone: t.phone || '',
+    availability: t.availability || '',
+    salary: t.salary || '',
+    skills: Array.isArray(t.skills) ? t.skills : [],
+    score: typeof t.score === 'number' ? t.score : Math.round((filled / 8) * 100),
+    attachments: [],
+    me: false,
+  };
+}
+
+/* A UI talent → the POST body the API expects. */
+function toTalentCreate(t) {
+  return {
+    name: t.name || '',
+    role: t.role || '',
+    headline: t.headline || '',
+    location: t.location || '',
+    email: t.email || '',
+    phone: t.phone || '',
+    availability: t.availability || '',
+    salary: t.salary || '',
+    skills: Array.isArray(t.skills) ? t.skills : [],
+  };
+}
+
 const RecruitApi = {
+  async listTalents() {
+    const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/talents`));
+    return Array.isArray(data) ? data.map(mapTalent) : [];
+  },
+  async createTalent(input) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/talents`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(toTalentCreate(input)),
+      }),
+    );
+    return mapTalent(data.talent);
+  },
   async listPlacements() {
     const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/placements`));
     return Array.isArray(data) ? data.map(mapPlacement) : [];

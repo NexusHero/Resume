@@ -317,6 +317,16 @@ const RecruitApi = {
     );
     return mapMandate(data.mandate);
   },
+  async updateMandate(id, input) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/mandates/${id}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(toMandateCreate(input)),
+      }),
+    );
+    return mapMandate(data.mandate);
+  },
   async listTalents() {
     const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/talents`));
     return Array.isArray(data) ? data.map(mapTalent) : [];
@@ -339,6 +349,16 @@ const RecruitApi = {
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/placements`, {
         method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(toPlacementCreate(input)),
+      }),
+    );
+    return mapPlacement(data.placement);
+  },
+  async updatePlacement(id, input) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/placements/${id}`, {
+        method: 'PATCH',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(toPlacementCreate(input)),
       }),

@@ -27,6 +27,10 @@ export class SqlUserRepository implements UserRepository {
     await this.db.insert(users).values(userToRow(user));
   }
 
+  async updatePassword(id: string, passwordHash: string): Promise<void> {
+    await this.db.update(users).set({ passwordHash }).where(eq(users.id, id));
+  }
+
   async remove(id: string): Promise<boolean> {
     const removed = await this.db.delete(users).where(eq(users.id, id)).returning({ id: users.id });
     return removed.length > 0;

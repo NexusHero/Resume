@@ -12,6 +12,7 @@ import type { TalentController } from './talent-controller';
 import type { PlacementController } from './placement-controller';
 import type { AuthController } from './auth-controller';
 import type { AccountController } from './account-controller';
+import type { PasswordResetController } from './password-reset-controller';
 import { asyncHandler } from './async-handler';
 import { errorHandler, notFound } from './problem';
 import { corsMiddleware, securityHeaders, recruitingCsp, RECRUITING_KIT_PREFIX } from './security';
@@ -27,6 +28,7 @@ export interface AppDeps {
   placementController: PlacementController;
   authController: AuthController;
   accountController: AccountController;
+  passwordResetController: PasswordResetController;
   config: AppConfig;
   logger: Logger;
 }
@@ -44,6 +46,7 @@ export function createApp(deps: AppDeps): Express {
     placementController: p,
     authController: auth,
     accountController: account,
+    passwordResetController: passwordReset,
   } = deps;
   const app = express();
 
@@ -64,6 +67,10 @@ export function createApp(deps: AppDeps): Express {
   });
   api.post('/auth/register', authLimiter, asyncHandler(auth.register));
   api.post('/auth/login', authLimiter, asyncHandler(auth.login));
+  // Password reset: request a link, then set a new password with the token.
+  // Rate-limited like the other credential endpoints.
+  api.post('/auth/password-reset/request', authLimiter, asyncHandler(passwordReset.request));
+  api.post('/auth/password-reset/confirm', authLimiter, asyncHandler(passwordReset.confirm));
   api.post('/auth/logout', asyncHandler(auth.logout));
   api.get('/auth/me', asyncHandler(auth.me));
   api.get('/auth/providers', asyncHandler(auth.providersInfo));

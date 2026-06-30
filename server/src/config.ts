@@ -16,6 +16,7 @@ export interface AppConfig {
   placementsFile: string;
   usersFile: string;
   sessionsFile: string;
+  passwordResetTokensFile: string;
   apiKeysFile: string;
   staticDir: string;
   /** Repo-relative paths the Versioner stages on each change. */
@@ -38,6 +39,22 @@ export interface AppConfig {
   auth: AuthConfig;
   /** HTTP hardening (CORS allow-list). */
   security: SecurityConfig;
+  /** Transactional email + password-reset wiring. */
+  mail: MailConfig;
+}
+
+/** Transactional-email configuration, resolved from the environment. */
+export interface MailConfig {
+  /** `smtp` sends via nodemailer; anything else logs to the console (dev default). */
+  transport: 'console' | 'smtp';
+  /** From address on outgoing mail. */
+  from: string;
+  /** Public base URL used to build links in emails (e.g. the reset link). */
+  appBaseUrl: string;
+  /** Lifetime of a password-reset token in milliseconds. */
+  resetTokenTtlMs: number;
+  /** SMTP relay settings, used when transport === 'smtp'. */
+  smtp: { host: string; port: number; secure: boolean; user: string; pass: string };
 }
 
 /** Security configuration, resolved from the environment. */
@@ -118,9 +135,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   );
   const adzunaId = env.ADZUNA_APP_ID ?? '';
   const adzunaKey = env.ADZUNA_APP_KEY ?? '';
+  const port = Number(env.PORT ?? 4178);
 
   return {
-    port: Number(env.PORT ?? 4178),
+    port,
     rootDir,
     storeDir,
     logFile: path.join(storeDir, 'log.json'),
@@ -131,6 +149,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     placementsFile: path.join(storeDir, 'placements.json'),
     usersFile: path.join(storeDir, 'users.json'),
     sessionsFile: path.join(storeDir, 'sessions.json'),
+    passwordResetTokensFile: path.join(storeDir, 'password-reset-tokens.json'),
     apiKeysFile: path.join(storeDir, 'api-keys.json'),
     staticDir: rootDir,
     versionedPaths: ['archive/bewerbungen'],
@@ -182,6 +201,21 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
         .map((o) => o.trim())
         .filter(Boolean),
       encryptionSecret: env.APP_SECRET ?? 'myjob-dev-insecure-secret',
+    },
+    mail: {
+      transport: env.MAIL_TRANSPORT === 'smtp' ? 'smtp' : 'console',
+      from: env.MAIL_FROM ?? 'myJob <no-reply@myjob.local>',
+      // Public origin the app is reached at; drives the link inside reset emails.
+      appBaseUrl: (env.APP_BASE_URL ?? `http://localhost:${port}`).replace(/\/+$/, ''),
+      resetTokenTtlMs: (Number(env.RESET_TOKEN_TTL_MINUTES) || 60) * 60 * 1000,
+      smtp: {
+        host: env.SMTP_HOST ?? '',
+        port: Number(env.SMTP_PORT) || 587,
+        // Implicit TLS (port 465) → secure; STARTTLS (587) negotiates from plain.
+        secure: env.SMTP_SECURE === 'true' || Number(env.SMTP_PORT) === 465,
+        user: env.SMTP_USER ?? '',
+        pass: env.SMTP_PASS ?? '',
+      },
     },
   };
 }

@@ -16,6 +16,9 @@ module.exports = {
     '!server/src/adapters/git-versioner.ts',
     '!server/src/adapters/pino-logger.ts',
     '!server/src/adapters/node-fetch.ts',
+    // SMTP mailer talks to a real relay (nodemailer) — exercised by deployment,
+    // not unit-covered; the console mailer and the factory selection are.
+    '!server/src/adapters/smtp-mailer.ts',
     // SQL: the DB connection and the thin Drizzle CRUD glue are exercised by the
     // DATABASE_URL-gated integration test, not unit-covered (pure mappers are).
     '!server/src/adapters/sql/db.ts',
@@ -27,6 +30,7 @@ module.exports = {
     '!server/src/adapters/sql/sql-placement-repository.ts',
     '!server/src/adapters/sql/sql-user-repository.ts',
     '!server/src/adapters/sql/sql-session-store.ts',
+    '!server/src/adapters/sql/sql-password-reset-token-store.ts',
     '!server/src/adapters/sql/sql-api-key-store.ts',
   ],
   coverageDirectory: 'coverage',

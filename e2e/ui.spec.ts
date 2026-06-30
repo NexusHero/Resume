@@ -400,6 +400,34 @@ test.describe('UI acceptance — the suite renders in English', () => {
     await expect(page.getByRole('button', { name: /Talent Pool/ })).toBeVisible();
   });
 
+  test('Recruiting_PasswordReset_SetsNewPasswordFromTokenLink', async ({ page }) => {
+    // Opened from the emailed link (?reset_token) → the set-new-password form.
+    await page.route('**/api/v1/auth/me', (route) =>
+      route.fulfill({ contentType: 'application/json', body: JSON.stringify({ user: null }) }),
+    );
+    await page.route('**/api/v1/auth/providers', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ google: false, linkedin: false }),
+      }),
+    );
+    let confirmBody: unknown = null;
+    await page.route('**/api/v1/auth/password-reset/confirm', (route) => {
+      confirmBody = JSON.parse(route.request().postData() || '{}');
+      route.fulfill({ status: 204, body: '' });
+    });
+    await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html?reset_token=tok-from-email');
+    await expect(page.getByRole('heading', { name: 'Choose a new password' })).toBeVisible();
+    const passwords = page.getByPlaceholder('••••••••');
+    await passwords.nth(0).fill('brand-new-password');
+    await passwords.nth(1).fill('brand-new-password');
+    await page.locator('button[type="submit"]').click();
+    // back to login with a success notice; the token was forwarded to the API
+    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
+    await expect(page.getByRole('status')).toContainText('password has been reset');
+    expect(confirmBody).toEqual({ token: 'tok-from-email', password: 'brand-new-password' });
+  });
+
   test('Recruiting_Settings_LoadsProvidersAndSwitchesModel', async ({ page }) => {
     await page.route('**/api/v1/auth/me', (route) =>
       route.fulfill({

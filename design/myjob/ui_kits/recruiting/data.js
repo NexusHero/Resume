@@ -281,6 +281,25 @@ const RecruitApi = {
   async authLogout() {
     await fetch(`${RECRUIT_API_BASE}/auth/logout`, { method: 'POST' });
   },
+  async requestPasswordReset(email) {
+    // Always resolves (the server replies 202 whether or not the email exists).
+    await fetch(`${RECRUIT_API_BASE}/auth/password-reset/request`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+  },
+  async confirmPasswordReset(token, password) {
+    const res = await fetch(`${RECRUIT_API_BASE}/auth/password-reset/confirm`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ token, password }),
+    });
+    if (!res.ok)
+      throw new Error(
+        (await res.json().catch(() => ({}))).detail || 'This reset link is invalid or has expired',
+      );
+  },
   /* ---- Account (DSGVO) ---- */
   async exportAccount() {
     // The full owner-scoped payload (account + mandates/talents/placements).

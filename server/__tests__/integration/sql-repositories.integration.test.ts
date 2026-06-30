@@ -8,6 +8,7 @@ import { SqlTalentRepository } from '../../src/adapters/sql/sql-talent-repositor
 import { SqlPlacementRepository } from '../../src/adapters/sql/sql-placement-repository';
 import { SqlUserRepository } from '../../src/adapters/sql/sql-user-repository';
 import { SqlSessionStore } from '../../src/adapters/sql/sql-session-store';
+import { SqlPasswordResetTokenStore } from '../../src/adapters/sql/sql-password-reset-token-store';
 import { SqlApiKeyStore } from '../../src/adapters/sql/sql-api-key-store';
 import { SecretCipher } from '../../src/adapters/secret-cipher';
 import { loadConfig } from '../../src/config';
@@ -43,7 +44,7 @@ suite('SQL repositories (real Postgres)', () => {
 
   beforeEach(async () => {
     await pool.query(
-      'TRUNCATE applications, audit_events, saved_searches, mandates, talents, placements, users, sessions, api_keys RESTART IDENTITY',
+      'TRUNCATE applications, audit_events, saved_searches, mandates, talents, placements, users, sessions, password_reset_tokens, api_keys RESTART IDENTITY',
     );
   });
 
@@ -212,9 +213,37 @@ suite('SQL repositories (real Postgres)', () => {
     expect(await repo.findByEmail('a@example.com')).toEqual(user('u1', 'a@example.com'));
     expect(await repo.findById('u1')).toMatchObject({ id: 'u1' });
     expect(await repo.findByEmail('none@example.com')).toBeNull();
+    await repo.updatePassword('u1', 'scrypt$new$hash');
+    expect((await repo.findById('u1'))!.passwordHash).toBe('scrypt$new$hash');
     expect(await repo.remove('u1')).toBe(true);
     expect(await repo.remove('u1')).toBe(false);
     expect(await repo.findById('u1')).toBeNull();
+  });
+
+  it('PasswordResetTokens_SingleUseAndExpiry', async () => {
+    let nowIso = '2026-01-01T00:00:00.000Z';
+    const clock = {
+      isoNow: () => nowIso,
+      now: () => new Date(nowIso),
+      today: () => nowIso.slice(0, 10),
+    };
+    const config = loadConfig({}); // 60-minute reset TTL
+    const store = new SqlPasswordResetTokenStore({ db, clock, config });
+
+    const t1 = await store.create('u1');
+    expect(await store.consume(t1)).toBe('u1'); // single-use
+    expect(await store.consume(t1)).toBeNull(); // already consumed
+
+    // destroyForUser drops outstanding tokens
+    await store.create('u1');
+    await store.destroyForUser('u1');
+    const other = await store.create('u2');
+    expect(await store.consume(other)).toBe('u2');
+
+    // expiry: a token past the TTL is rejected
+    const old = await store.create('u3');
+    nowIso = '2026-01-01T02:00:00.000Z'; // > 60 minutes later
+    expect(await store.consume(old)).toBeNull();
   });
 
   it('Sessions_CreateLookupDestroy_RespectExpiry', async () => {

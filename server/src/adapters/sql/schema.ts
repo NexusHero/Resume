@@ -15,6 +15,13 @@ export const sessions = pgTable('sessions', {
   createdAt: text('created_at').notNull(),
 });
 
+/** One-time, expiring password-reset tokens: an opaque token maps to a user id. */
+export const passwordResetTokens = pgTable('password_reset_tokens', {
+  token: text('token').primaryKey(),
+  userId: text('user_id').notNull(),
+  createdAt: text('created_at').notNull(),
+});
+
 /** Per-user LLM API keys, encrypted at rest. PK is (owner_id, provider). */
 export const apiKeys = pgTable(
   'api_keys',

@@ -12,6 +12,7 @@ import { SystemClock } from './adapters/system-clock';
 import { RandomIdGenerator } from './adapters/random-id-generator';
 import { FsPdfArchive } from './adapters/fs-pdf-archive';
 import { ScryptPasswordHasher } from './adapters/scrypt-password-hasher';
+import { createMailer } from './adapters/mailer-factory';
 import { createPersistence } from './adapters/persistence-factory';
 import type { Db } from './adapters/sql/db';
 import { GitVersioner } from './adapters/git-versioner';
@@ -34,6 +35,7 @@ import { TalentService } from './services/talent-service';
 import { PlacementService } from './services/placement-service';
 import { AuthService } from './services/auth-service';
 import { AccountService } from './services/account-service';
+import { PasswordResetService } from './services/password-reset-service';
 import { ApplicationController } from './http/application-controller';
 import { JobController } from './http/job-controller';
 import { AtsController } from './http/ats-controller';
@@ -44,6 +46,7 @@ import { TalentController } from './http/talent-controller';
 import { PlacementController } from './http/placement-controller';
 import { AuthController } from './http/auth-controller';
 import { AccountController } from './http/account-controller';
+import { PasswordResetController } from './http/password-reset-controller';
 
 /** Composition root: wires every port to its production adapter (no decorators). */
 export function buildContainer(config: AppConfig = loadConfig(), db?: Db): AwilixContainer {
@@ -68,8 +71,11 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     // Postgres when STORE=sql (so sessions/users survive a multi-instance deploy).
     userRepository: asValue(persistence.userRepository),
     sessionStore: asValue(persistence.sessionStore),
+    passwordResetTokenStore: asValue(persistence.passwordResetTokenStore),
     apiKeyStore: asValue(persistence.apiKeyStore),
     passwordHasher: asClass(ScryptPasswordHasher).singleton(),
+    // Transactional email: console by default, SMTP (nodemailer) when configured.
+    mailer: asFunction(({ config: c, logger }) => createMailer({ config: c, logger })).singleton(),
     pdfArchive: asClass(FsPdfArchive).singleton(),
     // Git versioning only makes sense for the file store; with Postgres there are
     // no JSON files to commit (and committing would needlessly fire git hooks).
@@ -104,6 +110,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     placementService: asClass(PlacementService).singleton(),
     authService: asClass(AuthService).singleton(),
     accountService: asClass(AccountService).singleton(),
+    passwordResetService: asClass(PasswordResetService).singleton(),
     applicationController: asClass(ApplicationController).singleton(),
     jobController: asClass(JobController).singleton(),
     atsController: asClass(AtsController).singleton(),
@@ -114,6 +121,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     placementController: asClass(PlacementController).singleton(),
     authController: asClass(AuthController).singleton(),
     accountController: asClass(AccountController).singleton(),
+    passwordResetController: asClass(PasswordResetController).singleton(),
   });
   return container;
 }

@@ -20,6 +20,8 @@ import type { PlacementRepository } from '../../src/ports/placement-repository';
 import type { User } from '../../src/domain/user';
 import type { UserRepository } from '../../src/ports/user-repository';
 import type { PasswordHasher } from '../../src/ports/password-hasher';
+import type { PasswordResetTokenStore } from '../../src/ports/password-reset-token-store';
+import type { Mailer, MailMessage } from '../../src/ports/mailer';
 import type { ApiKeyStore } from '../../src/ports/api-key-store';
 import type { LlmProviderId } from '../../src/ports/llm-provider';
 
@@ -216,10 +218,45 @@ export class InMemoryUserRepository implements UserRepository {
   async add(user: User): Promise<void> {
     this.users.push(user);
   }
+  async updatePassword(id: string, passwordHash: string): Promise<void> {
+    this.users = this.users.map((u) => (u.id === id ? { ...u, passwordHash } : u));
+  }
   async remove(id: string): Promise<boolean> {
     const before = this.users.length;
     this.users = this.users.filter((u) => u.id !== id);
     return this.users.length < before;
+  }
+}
+
+/** In-memory one-time reset tokens with a fixed-value mint (deterministic tests). */
+export class InMemoryPasswordResetTokenStore implements PasswordResetTokenStore {
+  tokens: { token: string; userId: string }[] = [];
+  private n = 0;
+  /** Tokens that `consume` should treat as expired (returns null but still deletes). */
+  expired = new Set<string>();
+  async create(userId: string): Promise<string> {
+    const token = `reset${++this.n}`;
+    this.tokens.push({ token, userId });
+    return token;
+  }
+  async consume(token: string): Promise<string | null> {
+    const found = this.tokens.find((t) => t.token === token);
+    this.tokens = this.tokens.filter((t) => t.token !== token);
+    if (!found || this.expired.has(token)) return null;
+    return found.userId;
+  }
+  async destroyForUser(userId: string): Promise<void> {
+    this.tokens = this.tokens.filter((t) => t.userId !== userId);
+  }
+}
+
+/** A Mailer that records what it was asked to send (and can be made to fail). */
+export class RecordingMailer implements Mailer {
+  sent: MailMessage[] = [];
+  constructor(private readonly failWith?: Error) {}
+  async send(message: MailMessage): Promise<void> {
+    if (this.failWith) throw this.failWith;
+    this.sent.push(message);
   }
 }
 

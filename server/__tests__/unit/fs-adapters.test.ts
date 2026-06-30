@@ -12,6 +12,7 @@ import { FsTalentRepository } from '../../src/adapters/fs-talent-repository';
 import { FsPlacementRepository } from '../../src/adapters/fs-placement-repository';
 import { FsUserRepository } from '../../src/adapters/fs-user-repository';
 import { FsSessionStore } from '../../src/adapters/fs-session-store';
+import { FsPasswordResetTokenStore } from '../../src/adapters/fs-password-reset-token-store';
 import { FsApiKeyStore } from '../../src/adapters/fs-api-key-store';
 import { SecretCipher } from '../../src/adapters/secret-cipher';
 import { FixedClock } from '../support/fakes';
@@ -37,6 +38,7 @@ function tmpConfig(): AppConfig {
     placementsFile: path.join(storeDir, 'placements.json'),
     usersFile: path.join(storeDir, 'users.json'),
     sessionsFile: path.join(storeDir, 'sessions.json'),
+    passwordResetTokensFile: path.join(storeDir, 'password-reset-tokens.json'),
     apiKeysFile: path.join(storeDir, 'api-keys.json'),
     staticDir: rootDir,
     versionedPaths: ['bewerbungen'],
@@ -63,6 +65,13 @@ function tmpConfig(): AppConfig {
       linkedin: { enabled: false },
     },
     security: { corsOrigins: [], encryptionSecret: 'test-secret' },
+    mail: {
+      transport: 'console',
+      from: 'myJob <no-reply@test.local>',
+      appBaseUrl: 'http://localhost:0',
+      resetTokenTtlMs: 60 * 60 * 1000,
+      smtp: { host: '', port: 587, secure: false, user: '', pass: '' },
+    },
   };
 }
 
@@ -185,6 +194,44 @@ describe('FsSessionStore', () => {
     expect(await store.userIdFor(token)).toBeNull(); // expired
     nowIso = '2026-01-01T00:00:00.000Z'; // even rewinding, the row was pruned
     expect(await store.userIdFor(token)).toBeNull();
+  });
+});
+
+describe('FsPasswordResetTokenStore', () => {
+  it('Consume_ValidToken_ReturnsUserIdOnceThenGone', async () => {
+    const config = tmpConfig();
+    const store = new FsPasswordResetTokenStore({ config, clock: fixedClock });
+    const token = await store.create('u1');
+    expect(await store.consume(token)).toBe('u1'); // single-use
+    expect(await store.consume(token)).toBeNull(); // already consumed
+  });
+
+  it('Consume_UnknownToken_ReturnsNull', async () => {
+    const store = new FsPasswordResetTokenStore({ config: tmpConfig(), clock: fixedClock });
+    expect(await store.consume('nope')).toBeNull();
+  });
+
+  it('Consume_ExpiredToken_ReturnsNullAndPrunes', async () => {
+    let nowIso = '2026-01-01T00:00:00.000Z';
+    const clock = {
+      isoNow: () => nowIso,
+      now: () => new Date(nowIso),
+      today: () => nowIso.slice(0, 10),
+    };
+    const store = new FsPasswordResetTokenStore({ config: tmpConfig(), clock });
+    const token = await store.create('u1');
+    nowIso = '2026-01-01T02:00:00.000Z'; // > 60-minute TTL
+    expect(await store.consume(token)).toBeNull();
+  });
+
+  it('DestroyForUser_DropsOnlyThatUsersTokens', async () => {
+    const config = tmpConfig();
+    const store = new FsPasswordResetTokenStore({ config, clock: fixedClock });
+    const a = await store.create('u1');
+    const b = await store.create('u2');
+    await store.destroyForUser('u1');
+    expect(await store.consume(a)).toBeNull();
+    expect(await store.consume(b)).toBe('u2');
   });
 });
 

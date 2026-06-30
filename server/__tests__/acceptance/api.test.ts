@@ -12,8 +12,10 @@ import { AtsService } from '../../src/services/ats-service';
 import { SavedSearchService } from '../../src/services/saved-search-service';
 import { LlmController } from '../../src/http/llm-controller';
 import { MandateController } from '../../src/http/mandate-controller';
+import { TalentController } from '../../src/http/talent-controller';
 import { LlmService } from '../../src/services/llm-service';
 import { MandateService } from '../../src/services/mandate-service';
+import { TalentService } from '../../src/services/talent-service';
 import { CoverLetterService } from '../../src/services/cover-letter-service';
 import { AnthropicLlmProvider } from '../../src/adapters/anthropic-llm-provider';
 import { GeminiLlmProvider } from '../../src/adapters/gemini-llm-provider';
@@ -26,6 +28,7 @@ import {
   InMemoryPdfArchive,
   InMemorySavedSearchRepository,
   InMemoryMandateRepository,
+  InMemoryTalentRepository,
   FakePdfRenderer,
   FakePdfMerger,
   FakeVersioner,
@@ -92,6 +95,13 @@ function makeApp(): Express {
       idGenerator: new SequenceIdGenerator('mandate'),
     }),
   });
+  const talentController = new TalentController({
+    talentService: new TalentService({
+      talentRepository: new InMemoryTalentRepository(),
+      clock: new FixedClock(),
+      idGenerator: new SequenceIdGenerator('talent'),
+    }),
+  });
   return createApp({
     applicationController: controller,
     jobController,
@@ -99,6 +109,7 @@ function makeApp(): Express {
     savedSearchController,
     llmController,
     mandateController,
+    talentController,
     config,
     logger: noopLogger,
   });
@@ -241,6 +252,63 @@ describe('REST API /api/v1', () => {
 
   it('Mandates_DeleteUnknown_Returns404Problem', async () => {
     const res = await request(app).delete('/api/v1/mandates/nope');
+    expect(res.status).toBe(404);
+    expect(res.body).toMatchObject({ status: 404 });
+  });
+
+  it('Talents_GetEmpty_ReturnsArray', async () => {
+    const res = await request(app).get('/api/v1/talents');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([]);
+  });
+
+  it('Talents_PostValid_Creates201', async () => {
+    const res = await request(app)
+      .post('/api/v1/talents')
+      .send({ name: 'Lena Brandt', role: 'Product Designer', skills: ['Figma'] });
+    expect(res.status).toBe(201);
+    expect(res.body.talent).toMatchObject({
+      id: 'talent1',
+      name: 'Lena Brandt',
+      role: 'Product Designer',
+      skills: ['Figma'],
+    });
+  });
+
+  it('Talents_PostMissingName_Returns400Problem', async () => {
+    const res = await request(app).post('/api/v1/talents').send({ role: 'Designer' });
+    expect(res.status).toBe(400);
+    expect(res.headers['content-type']).toMatch(/application\/problem\+json/);
+    expect(res.body).toMatchObject({ title: 'Validation failed', status: 400 });
+  });
+
+  it('Talents_PatchExisting_Updates', async () => {
+    const created = await request(app).post('/api/v1/talents').send({ name: 'Lena Brandt' });
+    const id = created.body.talent.id;
+    const res = await request(app)
+      .patch(`/api/v1/talents/${id}`)
+      .send({ availability: 'immediately' });
+    expect(res.status).toBe(200);
+    expect(res.body.talent.availability).toBe('immediately');
+  });
+
+  it('Talents_PatchUnknown_Returns404Problem', async () => {
+    const res = await request(app).patch('/api/v1/talents/nope').send({ role: 'x' });
+    expect(res.status).toBe(404);
+    expect(res.body).toMatchObject({ status: 404, title: 'NotFoundError' });
+  });
+
+  it('Talents_DeleteExisting_Returns204', async () => {
+    const created = await request(app).post('/api/v1/talents').send({ name: 'Lena Brandt' });
+    const id = created.body.talent.id;
+    const res = await request(app).delete(`/api/v1/talents/${id}`);
+    expect(res.status).toBe(204);
+    const list = await request(app).get('/api/v1/talents');
+    expect(list.body).toEqual([]);
+  });
+
+  it('Talents_DeleteUnknown_Returns404Problem', async () => {
+    const res = await request(app).delete('/api/v1/talents/nope');
     expect(res.status).toBe(404);
     expect(res.body).toMatchObject({ status: 404 });
   });

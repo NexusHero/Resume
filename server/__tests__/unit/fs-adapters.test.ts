@@ -8,9 +8,11 @@ import { FsAuditLog } from '../../src/adapters/fs-audit-log';
 import { FsPdfArchive } from '../../src/adapters/fs-pdf-archive';
 import { FsSavedSearchRepository } from '../../src/adapters/fs-saved-search-repository';
 import { FsMandateRepository } from '../../src/adapters/fs-mandate-repository';
+import { FsTalentRepository } from '../../src/adapters/fs-talent-repository';
 import type { Application, AuditEvent } from '../../src/domain/application';
 import type { SavedSearch } from '../../src/domain/saved-search';
 import type { Mandate } from '../../src/domain/mandate';
+import type { Talent } from '../../src/domain/talent';
 
 function tmpConfig(): AppConfig {
   const rootDir = mkdtempSync(path.join(os.tmpdir(), 'resume-'));
@@ -23,6 +25,7 @@ function tmpConfig(): AppConfig {
     historyFile: path.join(storeDir, 'history.jsonl'),
     savedSearchesFile: path.join(storeDir, 'saved-searches.json'),
     mandatesFile: path.join(storeDir, 'mandates.json'),
+    talentsFile: path.join(storeDir, 'talents.json'),
     staticDir: rootDir,
     versionedPaths: ['bewerbungen'],
     candidateProfile: { skills: [] },
@@ -239,6 +242,70 @@ describe('FsMandateRepository', () => {
     await fs.mkdir(config.storeDir, { recursive: true });
     await fs.writeFile(config.mandatesFile, 'not json');
     const repo = new FsMandateRepository({ config });
+    expect(await repo.list()).toEqual([]);
+  });
+});
+
+const talent = (id: string, name = 'Lena'): Talent => ({
+  id,
+  name,
+  role: 'Product Designer',
+  headline: '',
+  location: 'Leipzig',
+  email: '',
+  phone: '',
+  availability: '',
+  salary: '',
+  skills: [],
+  createdAt: '2026-06-25T10:00:00.000Z',
+  updatedAt: '2026-06-25T10:00:00.000Z',
+});
+
+describe('FsTalentRepository', () => {
+  it('Repository_NoFile_ListsEmpty', async () => {
+    const repo = new FsTalentRepository({ config: tmpConfig() });
+    expect(await repo.list()).toEqual([]);
+  });
+
+  it('Repository_AddThenFind_RoundTrips', async () => {
+    const repo = new FsTalentRepository({ config: tmpConfig() });
+    await repo.add(talent('t1'));
+    expect(await repo.findById('t1')).toMatchObject({ id: 't1', name: 'Lena' });
+    expect(await repo.findById('missing')).toBeNull();
+  });
+
+  it('Repository_UpdateExisting_Replaces', async () => {
+    const repo = new FsTalentRepository({ config: tmpConfig() });
+    await repo.add(talent('t1'));
+    await repo.update({ ...talent('t1'), availability: 'immediately' });
+    expect(await repo.findById('t1')).toMatchObject({ availability: 'immediately' });
+  });
+
+  it('Repository_UpdateMissing_Inserts', async () => {
+    const repo = new FsTalentRepository({ config: tmpConfig() });
+    await repo.update(talent('t9'));
+    expect(await repo.findById('t9')).toMatchObject({ id: 't9' });
+  });
+
+  it('Repository_RemoveExisting_ReturnsTrueAndDeletes', async () => {
+    const repo = new FsTalentRepository({ config: tmpConfig() });
+    await repo.add(talent('t1'));
+    expect(await repo.remove('t1')).toBe(true);
+    expect(await repo.list()).toEqual([]);
+  });
+
+  it('Repository_RemoveUnknown_ReturnsFalse', async () => {
+    const repo = new FsTalentRepository({ config: tmpConfig() });
+    await repo.add(talent('t1'));
+    expect(await repo.remove('nope')).toBe(false);
+    expect(await repo.list()).toHaveLength(1);
+  });
+
+  it('Repository_MalformedFile_ListsEmpty', async () => {
+    const config = tmpConfig();
+    await fs.mkdir(config.storeDir, { recursive: true });
+    await fs.writeFile(config.talentsFile, 'not json');
+    const repo = new FsTalentRepository({ config });
     expect(await repo.list()).toEqual([]);
   });
 });

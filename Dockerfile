@@ -6,7 +6,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
-RUN npm run build
+RUN npm run build && npm run build:web
 
 # --- Runtime stage: production deps + built server + static web assets --------
 FROM node:24-slim AS runtime

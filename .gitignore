@@ -26,3 +26,6 @@ test-results/
 # Keep the application archive
 !archive/bewerbungen/
 !archive/bewerbungen/*.pdf
+
+# Vite build output (recruiting kit)
+design/myjob/ui_kits/recruiting/dist/

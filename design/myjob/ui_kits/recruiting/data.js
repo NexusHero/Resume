@@ -281,6 +281,19 @@ const RecruitApi = {
   async authLogout() {
     await fetch(`${RECRUIT_API_BASE}/auth/logout`, { method: 'POST' });
   },
+  /* ---- LLM settings (active provider + availability) ---- */
+  async getLlmSettings() {
+    return _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/settings/llm`));
+  },
+  async setLlmProvider(provider) {
+    return _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/settings/llm`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ provider }),
+      }),
+    );
+  },
   async listMandates() {
     const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/mandates`));
     return Array.isArray(data) ? data.map(mapMandate) : [];

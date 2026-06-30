@@ -35,6 +35,7 @@ Ziel: die App auf das Niveau von Design-System und `server/` heben.
 ## 2. Architektur-Entscheidungen (ADRs)
 
 ### ADR-1 — Backend: vorhandenen `server/` ausbauen
+
 Statt eines neuen .NET-Backends oder BaaS wird der bereits saubere Node/TS-
 Hexagonal-Server erweitert. Begründung: geringstes Risiko, vieles ist da
 (Postgres-Storage via `STORE=sql`, `openapi.yaml`, Playwright, CI). Es fehlt die
@@ -42,12 +43,14 @@ Hexagonal-Server erweitert. Begründung: geringstes Risiko, vieles ist da
 Entitäten/Ports/Adapter.
 
 ### ADR-2 — Zwei Design-Systeme, verbunden durch einen Datenvertrag
+
 myJob (Produkt) und Lebenslauf (Dokument) werden **nicht** über gemeinsame
 Tokens gekoppelt, sondern nur über **Daten**. Das Talent-JSON
 (`resume`, `letter`, `attachments` aus `data.js`) ist bereits dieser Vertrag.
 Siehe Abschnitt 4.
 
 ### ADR-3 — Build/Module: Vite + TypeScript + ESM
+
 `window.*`-Globals → `import`/`export`. Runtime-Babel/CDN raus. `_ds_bundle.js`
 wird durch ein importierbares Design-System-Paket abgelöst. `.jsx` → `.tsx`.
 
@@ -56,10 +59,11 @@ wird durch ein importierbares Design-System-Paket abgelöst. `.jsx` → `.tsx`.
 ## 3. Die zwei Design-Systeme
 
 ### 3.1 myJob — Produkt-Theme (App)
+
 - **Dunkle, geschichtete App-Fläche** (Hintergrund → Karte → erhöhte Karte) statt
   hellem „paper".
 - **Warmer Amber-Akzent** als Default (Signal-Richtung), sparsam gesetzt:
-  Primär-Button, aktives Nav, Match-Ring, *eine* KPI.
+  Primär-Button, aktives Nav, Match-Ring, _eine_ KPI.
 - **Genau ein** radialer Glow oben rechts (nur Dark).
 - Light bleibt der ruhige Modus; Rail bleibt dort ink.
 - Regel gegen Überladung: nur ein Gradient, Status bleibt 3-Farben-System
@@ -67,6 +71,7 @@ wird durch ein importierbares Design-System-Paket abgelöst. `.jsx` → `.tsx`.
 - Umsetzung: neue Werte in `tokens/themes.css`; Inline-Styles → Token-Klassen.
 
 ### 3.2 Lebenslauf — Dokument-Design (eigenständig)
+
 - Behält eigene Identität: helles Papier, eigene Typo, Druck-/PDF-Layout,
   EN/DE, eigener Akzent.
 - Bleibt eigenständig nutzbar (eigene Bewerbungen) und unabhängig versioniert.
@@ -78,6 +83,7 @@ wird durch ein importierbares Design-System-Paket abgelöst. `.jsx` → `.tsx`.
 **Prinzip: „App rahmt Dokument" — Design getrennt, Daten geteilt.**
 
 ### Ablauf
+
 1. Vermittler öffnet ein Talent → Profil in myJob-Produkt-Design (dunkel).
 2. Klick auf **„Dossier bearbeiten"** → Canvas wechselt in den Dokument-Modus.
 3. Oben eine schlanke **myJob-Aktionsleiste** (Zurück · Speichern · PDF · EN/DE ·
@@ -87,6 +93,7 @@ wird durch ein importierbares Design-System-Paket abgelöst. `.jsx` → `.tsx`.
    `server/` und archiviert das PDF (`/api/build` existiert bereits).
 
 ### Technische Isolation
+
 - **Empfohlen: iframe.** Das `cv/`-Kit ist „fully self-contained single file" →
   ideal einbettbar. Harte CSS-Isolation, Kommunikation per `postMessage`
   (Daten rein → geändertes JSON + PDF raus).
@@ -94,16 +101,19 @@ wird durch ein importierbares Design-System-Paket abgelöst. `.jsx` → `.tsx`.
   die CV-Tokens nur in diesem Teilbaum setzt.
 
 ### Datenvertrag (Boundary)
+
 ```
 Talent
  ├─ resume       (Lebenslauf-JSON)
  ├─ letter       (Anschreiben-JSON)
  └─ attachments  (Zeugnisse/Zertifikate)
 ```
+
 myJob kennt nur diesen Vertrag, nicht das CV-Rendering → sauberes SRP/DIP.
 Geteilte TS-Typen (`@myjob/contracts`) sichern beide Seiten ab.
 
 ### Alternative B (nur falls maximale Codebase-Trennung gewünscht)
+
 „Dossier bearbeiten" öffnet den Lebenslauf als komplett eigene Editor-App
 (eigene Route/Tab); myJob verlinkt und speichert nur das Ergebnis. Klarste
 Trennung, aber Kontextwechsel für den Nutzer.
@@ -115,6 +125,7 @@ Trennung, aber Kontextwechsel für den Nutzer.
 Priorität: **P0** = Blocker für Produktreife, **P1** = nötig, **P2** = Feinschliff.
 
 ### Phase 0 — Fundament: Build & Module (P0)
+
 - [ ] Vite + TS + ESM-Projekt unter `app/myjob/` (eigenes `package.json`,
       `tsconfig`, `vite.config`).
 - [ ] `window.*` → `import`/`export` durchgängig ersetzen.
@@ -124,6 +135,7 @@ Priorität: **P0** = Blocker für Produktreife, **P1** = nötig, **P2** = Feinsc
 - [ ] `.jsx` → `.tsx` (Start: vorhandene `.d.ts`).
 
 ### Phase 1 — Design produktreif (P0/P1)
+
 - [ ] Dunkles Produkt-Theme als echte Tokens in `tokens/themes.css`
       (Amber-Default, geschichtete Fläche, ein Glow).
 - [ ] Inline-Styles auflösen (v. a. `VermittlerViews.jsx`) → Token-Klassen.
@@ -133,6 +145,7 @@ Priorität: **P0** = Blocker für Produktreife, **P1** = nötig, **P2** = Feinsc
 - [ ] UI durchgängig Deutsch (Overview→Übersicht etc.).
 
 ### Phase 2 — Architektur / SOLID (P1)
+
 - [ ] Daten-/Domänenschicht von Views trennen (Selektoren/View-Models:
       `feeNum`, `perClient`-Aggregation, Funnel).
 - [ ] Routing als Registry statt `if/else` in `app.jsx` (open-closed).
@@ -141,6 +154,7 @@ Priorität: **P0** = Blocker für Produktreife, **P1** = nötig, **P2** = Feinsc
 - [ ] Typsicherer API-Client aus `server/openapi.yaml` (`openapi-typescript`).
 
 ### Phase 3 — Backend & echte Daten (P0)
+
 - [ ] `data.js`-Mock entfernen; UI an `server/` anbinden.
 - [ ] Recruiting-Domäne im `server/` ergänzen: Clients, Mandate, Talente,
       Placements (Entitäten + Ports + Adapter + `container.ts`).
@@ -151,6 +165,7 @@ Priorität: **P0** = Blocker für Produktreife, **P1** = nötig, **P2** = Feinsc
       Dokument-Editor anbinden (Abschnitt 4).
 
 ### Phase 4 — Auth, Sicherheit, Datenschutz (P0)
+
 - [ ] Login/Session + Mandantenfähigkeit (Daten-Isolation pro Nutzer/Agentur).
 - [ ] **DSGVO** (hart erforderlich — Talente = personenbezogene Daten):
       Rechtsgrundlage/Einwilligung, Löschkonzept/Aufbewahrungsfristen,
@@ -159,12 +174,14 @@ Priorität: **P0** = Blocker für Produktreife, **P1** = nötig, **P2** = Feinsc
 - [ ] Security-Header, Input-Validierung, Rate-Limiting (Muster aus EWA).
 
 ### Phase 5 — Qualität & Auslieferung (P1)
+
 - [ ] Tests: Vitest (Unit/Komponenten) + Playwright E2E (bereits konfiguriert).
 - [ ] CI in `.github` (Lint, Typecheck, Test, Build) — Vorlage aus EWA.
 - [ ] Loading-/Empty-/Error-States überall.
 - [ ] Deployment: Dockerfile, Env-Konfiguration, Logging/Observability.
 
 ### Phase 6 — Feinschliff (P2)
+
 - [ ] A11y-Audit, Performance (Bundle, Lazy-Loading je Route).
 - [ ] Vollständige i18n-Infrastruktur, Nutzer-Doku.
 

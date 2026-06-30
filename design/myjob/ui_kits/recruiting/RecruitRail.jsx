@@ -1,19 +1,43 @@
-/* RecruitRail — LEGACY recruiting shell. Superseded by the canonical, shared
-   components/app/AppShell.jsx (rail + tabs postures). Kept only so the old
-   recruiting kit keeps running until its screens migrate to templates/. */
+/* RecruitRail — recruiting shell with a data-driven, grouped navigation.
+   The rail is the desktop posture; the canonical components/app/AppShell.jsx
+   adds a `tabs` (mobile bottom-nav) posture that this kit will adopt next.
+
+   Navigation is a single source of truth: NAV_SECTIONS (grouped destinations)
+   + NAV_FOOTER (pinned utilities). Adding a destination is a data edit here,
+   not a JSX change anywhere else — the modern, scalable nav pattern used by
+   Linear/Notion/Stripe-style products. */
 const { Icon, IconButton, Avatar, Badge } = window.MyJobDesignSystem_f3658e;
 
-const NAV = [
-  { id: 'uebersicht', label: 'Workspace', icon: 'home' },
-  { id: 'mandate', label: 'Mandates', icon: 'briefcase' },
-  { id: 'pool', label: 'Talent Pool', icon: 'users' },
-  { id: 'matching', label: 'Matching', icon: 'search' },
-  { id: 'bewerbungen', label: 'Applications', icon: 'columns' },
-  { id: 'platzierungen', label: 'Placements', icon: 'award' },
-  { id: 'berichte', label: 'Reports', icon: 'trend' },
-  { id: 'postfach', label: 'Inbox', icon: 'inbox' },
-  { id: 'einstellungen', label: 'Settings', icon: 'sliders' },
+/* Grouped destinations. `id` is the routing key consumed by app.jsx. */
+const NAV_SECTIONS = [
+  {
+    label: 'Work',
+    items: [
+      { id: 'uebersicht', label: 'Workspace', icon: 'home' },
+      { id: 'mandate', label: 'Mandates', icon: 'briefcase' },
+      { id: 'bewerbungen', label: 'Applications', icon: 'columns' },
+      { id: 'platzierungen', label: 'Placements', icon: 'award' },
+    ],
+  },
+  {
+    label: 'People',
+    items: [
+      { id: 'pool', label: 'Talent Pool', icon: 'users' },
+      { id: 'matching', label: 'Matching', icon: 'search' },
+    ],
+  },
+  {
+    label: 'Comms',
+    items: [{ id: 'postfach', label: 'Inbox', icon: 'inbox' }],
+  },
+  {
+    label: 'Insights',
+    items: [{ id: 'berichte', label: 'Reports', icon: 'trend' }],
+  },
 ];
+
+/* Pinned utilities, rendered at the bottom of the rail. */
+const NAV_FOOTER = [{ id: 'einstellungen', label: 'Settings', icon: 'sliders' }];
 
 function NavItem({ item, active, onClick, badge }) {
   const [hover, setHover] = React.useState(false);
@@ -40,6 +64,20 @@ function NavItem({ item, active, onClick, badge }) {
   );
 }
 
+/* A labelled group of nav items. The header is a small mono kicker. */
+function NavSection({ section, active, onNav, badges }) {
+  return (
+    <div style={{ marginBottom: '6px' }}>
+      <div style={{ padding: '10px 12px 5px', fontFamily: 'var(--font-mono)', fontSize: '9px', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--sidebar-soft)' }}>{section.label}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+        {section.items.map((n) => (
+          <NavItem key={n.id} item={n} active={active === n.id} onClick={() => onNav(n.id)} badge={badges[n.id]} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function RecruitRail({ active, onNav, me, talentCount, search, onSearch, title, subtitle, badges = {}, actions, children }) {
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--surface-app)' }}>
@@ -56,13 +94,18 @@ function RecruitRail({ active, onNav, me, talentCount, search, onSearch, title, 
           </div>
         </div>
 
-        <nav style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: '3px', flex: 1 }}>
-          {NAV.map((n) => <NavItem key={n.id} item={n} active={active === n.id} onClick={() => onNav(n.id)} badge={badges[n.id]} />)}
+        <nav style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', flex: 1, overflowY: 'auto' }}>
+          {NAV_SECTIONS.map((s) => <NavSection key={s.label} section={s} active={active} onNav={onNav} badges={badges} />)}
         </nav>
+
+        {/* Pinned utilities (Settings) sit just above the identity footer. */}
+        <div style={{ padding: '6px 12px 4px', borderTop: '1px solid var(--sidebar-border)' }}>
+          {NAV_FOOTER.map((n) => <NavItem key={n.id} item={n} active={active === n.id} onClick={() => onNav(n.id)} badge={badges[n.id]} />)}
+        </div>
 
         {/* who I represent — the Vermittler scale, stated quietly */}
         <button onClick={() => onNav('talente')} style={{
-          margin: '0 14px 10px', padding: '11px 13px', borderRadius: 'var(--radius-md)', cursor: 'pointer', textAlign: 'left',
+          margin: '4px 14px 10px', padding: '11px 13px', borderRadius: 'var(--radius-md)', cursor: 'pointer', textAlign: 'left',
           background: 'var(--sidebar-glass)', border: '1px solid var(--sidebar-border)', display: 'flex', alignItems: 'center', gap: '10px',
         }}>
           <Avatar name={me.name} src={me.src} size="sm" ring />

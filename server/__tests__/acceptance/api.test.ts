@@ -11,7 +11,9 @@ import { JobSearchService } from '../../src/services/job-search-service';
 import { AtsService } from '../../src/services/ats-service';
 import { SavedSearchService } from '../../src/services/saved-search-service';
 import { LlmController } from '../../src/http/llm-controller';
+import { MandateController } from '../../src/http/mandate-controller';
 import { LlmService } from '../../src/services/llm-service';
+import { MandateService } from '../../src/services/mandate-service';
 import { CoverLetterService } from '../../src/services/cover-letter-service';
 import { AnthropicLlmProvider } from '../../src/adapters/anthropic-llm-provider';
 import { GeminiLlmProvider } from '../../src/adapters/gemini-llm-provider';
@@ -23,6 +25,7 @@ import {
   InMemoryAuditLog,
   InMemoryPdfArchive,
   InMemorySavedSearchRepository,
+  InMemoryMandateRepository,
   FakePdfRenderer,
   FakePdfMerger,
   FakeVersioner,
@@ -82,12 +85,20 @@ function makeApp(): Express {
       logger: noopLogger,
     }),
   });
+  const mandateController = new MandateController({
+    mandateService: new MandateService({
+      mandateRepository: new InMemoryMandateRepository(),
+      clock: new FixedClock(),
+      idGenerator: new SequenceIdGenerator('mandate'),
+    }),
+  });
   return createApp({
     applicationController: controller,
     jobController,
     atsController,
     savedSearchController,
     llmController,
+    mandateController,
     config,
     logger: noopLogger,
   });
@@ -170,6 +181,68 @@ describe('REST API /api/v1', () => {
     const res = await request(app).get('/api/v1/nope');
     expect(res.status).toBe(404);
     expect(res.body).toMatchObject({ title: 'Not Found' });
+  });
+
+  it('Mandates_GetEmpty_ReturnsArray', async () => {
+    const res = await request(app).get('/api/v1/mandates');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([]);
+  });
+
+  it('Mandates_PostValid_Creates201', async () => {
+    const res = await request(app)
+      .post('/api/v1/mandates')
+      .send({ client: 'Aurora', role: 'C++ Engineer', location: 'Berlin' });
+    expect(res.status).toBe(201);
+    expect(res.body.mandate).toMatchObject({
+      id: 'mandate1',
+      client: 'Aurora',
+      role: 'C++ Engineer',
+      priority: 'medium',
+      status: 'active',
+    });
+  });
+
+  it('Mandates_PostMissingClient_Returns400Problem', async () => {
+    const res = await request(app)
+      .post('/api/v1/mandates')
+      .send({ role: 'C++ Engineer', location: 'Berlin' });
+    expect(res.status).toBe(400);
+    expect(res.headers['content-type']).toMatch(/application\/problem\+json/);
+    expect(res.body).toMatchObject({ title: 'Validation failed', status: 400 });
+  });
+
+  it('Mandates_PatchExisting_Updates', async () => {
+    const created = await request(app)
+      .post('/api/v1/mandates')
+      .send({ client: 'Aurora', role: 'C++ Engineer', location: 'Berlin' });
+    const id = created.body.mandate.id;
+    const res = await request(app).patch(`/api/v1/mandates/${id}`).send({ status: 'paused' });
+    expect(res.status).toBe(200);
+    expect(res.body.mandate.status).toBe('paused');
+  });
+
+  it('Mandates_PatchUnknown_Returns404Problem', async () => {
+    const res = await request(app).patch('/api/v1/mandates/nope').send({ status: 'closed' });
+    expect(res.status).toBe(404);
+    expect(res.body).toMatchObject({ status: 404, title: 'NotFoundError' });
+  });
+
+  it('Mandates_DeleteExisting_Returns204', async () => {
+    const created = await request(app)
+      .post('/api/v1/mandates')
+      .send({ client: 'Aurora', role: 'C++ Engineer', location: 'Berlin' });
+    const id = created.body.mandate.id;
+    const res = await request(app).delete(`/api/v1/mandates/${id}`);
+    expect(res.status).toBe(204);
+    const list = await request(app).get('/api/v1/mandates');
+    expect(list.body).toEqual([]);
+  });
+
+  it('Mandates_DeleteUnknown_Returns404Problem', async () => {
+    const res = await request(app).delete('/api/v1/mandates/nope');
+    expect(res.status).toBe(404);
+    expect(res.body).toMatchObject({ status: 404 });
   });
 
   it('Cors_Preflight_Returns204', async () => {

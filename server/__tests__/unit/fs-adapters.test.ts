@@ -7,8 +7,10 @@ import { FsApplicationRepository } from '../../src/adapters/fs-application-repos
 import { FsAuditLog } from '../../src/adapters/fs-audit-log';
 import { FsPdfArchive } from '../../src/adapters/fs-pdf-archive';
 import { FsSavedSearchRepository } from '../../src/adapters/fs-saved-search-repository';
+import { FsMandateRepository } from '../../src/adapters/fs-mandate-repository';
 import type { Application, AuditEvent } from '../../src/domain/application';
 import type { SavedSearch } from '../../src/domain/saved-search';
+import type { Mandate } from '../../src/domain/mandate';
 
 function tmpConfig(): AppConfig {
   const rootDir = mkdtempSync(path.join(os.tmpdir(), 'resume-'));
@@ -20,6 +22,7 @@ function tmpConfig(): AppConfig {
     logFile: path.join(storeDir, 'log.json'),
     historyFile: path.join(storeDir, 'history.jsonl'),
     savedSearchesFile: path.join(storeDir, 'saved-searches.json'),
+    mandatesFile: path.join(storeDir, 'mandates.json'),
     staticDir: rootDir,
     versionedPaths: ['bewerbungen'],
     candidateProfile: { skills: [] },
@@ -171,6 +174,71 @@ describe('FsSavedSearchRepository', () => {
     await fs.mkdir(config.storeDir, { recursive: true });
     await fs.writeFile(config.savedSearchesFile, '{"x":1}');
     const repo = new FsSavedSearchRepository({ config });
+    expect(await repo.list()).toEqual([]);
+  });
+});
+
+const mandate = (id: string, client = 'Aurora'): Mandate => ({
+  id,
+  client,
+  role: 'C++ Engineer',
+  location: 'Berlin',
+  fee: '22%',
+  feeValue: '17.160 €',
+  deadline: '2026-07-30',
+  priority: 'high',
+  status: 'active',
+  submitted: 0,
+  interviews: 0,
+  createdAt: '2026-06-25T10:00:00.000Z',
+  updatedAt: '2026-06-25T10:00:00.000Z',
+});
+
+describe('FsMandateRepository', () => {
+  it('Repository_NoFile_ListsEmpty', async () => {
+    const repo = new FsMandateRepository({ config: tmpConfig() });
+    expect(await repo.list()).toEqual([]);
+  });
+
+  it('Repository_AddThenFind_RoundTrips', async () => {
+    const repo = new FsMandateRepository({ config: tmpConfig() });
+    await repo.add(mandate('m1'));
+    expect(await repo.findById('m1')).toMatchObject({ id: 'm1', client: 'Aurora' });
+    expect(await repo.findById('missing')).toBeNull();
+  });
+
+  it('Repository_UpdateExisting_Replaces', async () => {
+    const repo = new FsMandateRepository({ config: tmpConfig() });
+    await repo.add(mandate('m1'));
+    await repo.update({ ...mandate('m1'), status: 'paused' });
+    expect(await repo.findById('m1')).toMatchObject({ status: 'paused' });
+  });
+
+  it('Repository_UpdateMissing_Inserts', async () => {
+    const repo = new FsMandateRepository({ config: tmpConfig() });
+    await repo.update(mandate('m9'));
+    expect(await repo.findById('m9')).toMatchObject({ id: 'm9' });
+  });
+
+  it('Repository_RemoveExisting_ReturnsTrueAndDeletes', async () => {
+    const repo = new FsMandateRepository({ config: tmpConfig() });
+    await repo.add(mandate('m1'));
+    expect(await repo.remove('m1')).toBe(true);
+    expect(await repo.list()).toEqual([]);
+  });
+
+  it('Repository_RemoveUnknown_ReturnsFalse', async () => {
+    const repo = new FsMandateRepository({ config: tmpConfig() });
+    await repo.add(mandate('m1'));
+    expect(await repo.remove('nope')).toBe(false);
+    expect(await repo.list()).toHaveLength(1);
+  });
+
+  it('Repository_MalformedFile_ListsEmpty', async () => {
+    const config = tmpConfig();
+    await fs.mkdir(config.storeDir, { recursive: true });
+    await fs.writeFile(config.mandatesFile, 'not json');
+    const repo = new FsMandateRepository({ config });
     expect(await repo.list()).toEqual([]);
   });
 });

@@ -20,7 +20,7 @@ Small, low-risk PRs. No architectural change.
 | 0.3 | Align `@types/node` with `engines` (Node 24)                             | `package.json`                           | S      | ✅                                    |
 | 0.4 | Enable Dependabot (npm + GitHub Actions)                                 | `.github/dependabot.yml`                 | S      | ✅                                    |
 | 0.5 | Generate OpenAPI from zod + serve it at `/api/v1/docs`; drift test       | `http/openapi.ts`, `server/openapi.yaml` | M      | ⬜ (spec now hand-kept incl. `/jobs`) |
-| 0.6 | Wire Stryker mutation testing into CI with a score gate                  | `ci.yml`, `stryker.config.js`            | S      | ⬜                                    |
+| 0.6 | Run the SQL integration tests against Postgres in CI                     | `ci.yml`                                 | S      | ✅                                    |
 | 0.7 | ts-jest → Vitest (removes the CommonJS-only tsconfig)                    | `jest.config.js`, `package.json`         | M      | ⬜                                    |
 | 0.8 | Converge `tools/*.js` onto the `server/` core (one PDF render path)      | `tools/`                                 | M–L    | ⬜                                    |
 

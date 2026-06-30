@@ -50,8 +50,8 @@ Types: `feat` · `fix` · `docs` · `test` · `refactor` · `chore` · `ci` · `
 ## Tests
 
 New logic ships with tests. Name tests `Subject_StateUnderTest_ExpectedBehaviour` and follow
-Arrange–Act–Assert. We aim for **≥ 90 %** coverage on core logic; mutation testing guards the
-test quality.
+Arrange–Act–Assert. We aim for **≥ 90 %** coverage on core logic. The DATABASE_URL-gated SQL
+integration tests run against Postgres in CI.
 
 ## Documentation
 

@@ -116,7 +116,7 @@ audits and versions; an update with no effective change is a no-op (no version i
 | Quality          | Scenario                                                                | Verified by                                   |
 | ---------------- | ----------------------------------------------------------------------- | --------------------------------------------- |
 | Maintainability  | `core/` business logic stays ≥ 90 % covered                             | Jest coverage gate (CI)                       |
-| Test quality     | Surviving mutants stay below threshold                                  | Stryker (`npm run mutation`)                  |
+| Persistence      | The SQL adapters round-trip against a real database                     | Postgres integration tests (CI)               |
 | Interoperability | The API matches the OpenAPI contract and returns problem+json on errors | acceptance (supertest) tests                  |
 | Usability        | The web UIs render and read in English                                  | Playwright UI acceptance (`npm run test:e2e`) |
 | Consistency      | Every commit is a Conventional Commit; format/lint clean                | CI + git hooks                                |

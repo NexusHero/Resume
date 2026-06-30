@@ -152,7 +152,7 @@ ${card('design/documents/ui_kits/bewerbung/index.html', '#0891b2', ICONS.bundle,
 
     <p class="kicker" style="margin-top:34px;">myJob — Application tool <span style="text-transform:none;letter-spacing:0;color:var(--sidebar-soft);font-weight:400;">· requires <b style="color:var(--sidebar-muted);">npm run serve</b></span></p>
     <div class="tiles">
-${card('design/myjob/ui_kits/recruiting/index.html', '#1d4ed8', ICONS.recruiting, 'myJob Workspace', 'ATS for HR & agencies — pipeline, talents, mandates, placements.')}
+${card('design/myjob/ui_kits/recruiting/dist/index.html', '#1d4ed8', ICONS.recruiting, 'myJob Workspace', 'ATS for HR & agencies — pipeline, talents, mandates, placements.')}
 ${card('design/myjob/ui_kits/bewerber/index.html', '#0d9488', ICONS.bewerber, 'myJob for applicants', 'Track applications and assemble your dossier.')}
     </div>
 ${appsSection}

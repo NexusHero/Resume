@@ -17,7 +17,7 @@ test.describe('UI acceptance — the suite renders in English', () => {
         body: JSON.stringify({ user: { id: 'user1', email: 'me@example.de' } }),
       }),
     );
-    await page.goto('/design/myjob/ui_kits/recruiting/index.html');
+    await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     const nav = page.locator('nav');
     await expect(nav.locator('button').first()).toBeVisible();
     // The unified recruiting nav renders these destinations in English.
@@ -41,7 +41,7 @@ test.describe('UI acceptance — the suite renders in English', () => {
         body: JSON.stringify({ user: { id: 'user1', email: 'me@example.de' } }),
       }),
     );
-    await page.goto('/design/myjob/ui_kits/recruiting/index.html');
+    await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     await page.getByRole('button', { name: /Talent Pool/ }).click();
     await expect(page.locator('main')).toContainText('Add talent');
     await expect(page.locator('main')).toContainText('Suhay Sevinc');
@@ -82,7 +82,7 @@ test.describe('UI acceptance — the suite renders in English', () => {
         body: JSON.stringify({ user: { id: 'user1', email: 'me@example.de' } }),
       }),
     );
-    await page.goto('/design/myjob/ui_kits/recruiting/index.html');
+    await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     await page.getByRole('button', { name: /Mandates/ }).click();
     const main = page.locator('main');
     // first load failed → error state, no fabricated sample client
@@ -121,7 +121,7 @@ test.describe('UI acceptance — the suite renders in English', () => {
         body: JSON.stringify({ user: { id: 'user1', email: 'me@example.de' } }),
       }),
     );
-    await page.goto('/design/myjob/ui_kits/recruiting/index.html');
+    await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     await page.getByRole('button', { name: /Placements/ }).click();
     await expect(page.locator('main')).toContainText('Tobias Wirth');
     await expect(page.locator('main')).toContainText('Helio GmbH');
@@ -160,7 +160,7 @@ test.describe('UI acceptance — the suite renders in English', () => {
         body: JSON.stringify({ user: { id: 'user1', email: 'me@example.de' } }),
       }),
     );
-    await page.goto('/design/myjob/ui_kits/recruiting/index.html');
+    await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     await page.getByRole('button', { name: /Talent Pool/ }).click();
     await expect(page.locator('main')).toContainText('Tobias Wirth'); // from the API
     await expect(page.locator('main')).toContainText('Suhay Sevinc'); // pinned "me"
@@ -198,7 +198,7 @@ test.describe('UI acceptance — the suite renders in English', () => {
         body: JSON.stringify({ user: { id: 'user1', email: 'me@example.de' } }),
       }),
     );
-    await page.goto('/design/myjob/ui_kits/recruiting/index.html');
+    await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     await page.getByRole('button', { name: /Mandates/ }).click();
     await expect(page.locator('main')).toContainText('Helio GmbH'); // client group header
     await expect(page.locator('main')).toContainText('Principal Platform Engineer'); // mandate row
@@ -244,7 +244,7 @@ test.describe('UI acceptance — the suite renders in English', () => {
         body: JSON.stringify({ user: { id: 'user1', email: 'me@example.de' } }),
       }),
     );
-    await page.goto('/design/myjob/ui_kits/recruiting/index.html');
+    await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     await page.getByRole('button', { name: /Mandates/ }).click();
     await expect(page.locator('main')).toContainText('No mandates yet.');
 
@@ -295,7 +295,7 @@ test.describe('UI acceptance — the suite renders in English', () => {
         body: JSON.stringify({ user: { id: 'user1', email: 'me@example.de' } }),
       }),
     );
-    await page.goto('/design/myjob/ui_kits/recruiting/index.html');
+    await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     await page.getByRole('button', { name: /Mandates/ }).click();
     const main = page.locator('main');
     await expect(main).toContainText('active');
@@ -363,7 +363,7 @@ test.describe('UI acceptance — the suite renders in English', () => {
         body: JSON.stringify({ user: { id: 'user1', email: 'me@example.de' } }),
       }),
     );
-    await page.goto('/design/myjob/ui_kits/recruiting/index.html');
+    await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     const main = page.locator('main');
     // greeting counts the live active mandates (exactly one)
     await expect(main).toContainText('1 active mandates');
@@ -391,7 +391,7 @@ test.describe('UI acceptance — the suite renders in English', () => {
         body: JSON.stringify({ user: { id: 'user1', email: 'me@example.de' } }),
       }),
     );
-    await page.goto('/design/myjob/ui_kits/recruiting/index.html');
+    await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
     await page.getByPlaceholder('you@example.com').fill('me@example.de');
     await page.getByPlaceholder('••••••••').fill('supersecret');
@@ -423,7 +423,7 @@ test.describe('UI acceptance — the suite renders in English', () => {
         }),
       });
     });
-    await page.goto('/design/myjob/ui_kits/recruiting/index.html');
+    await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     await page.getByRole('button', { name: /Settings/ }).click();
     await expect(page.locator('main')).toContainText('Claude (Anthropic)');
     await expect(page.locator('main')).toContainText('Gemini (Google)');
@@ -459,7 +459,7 @@ test.describe('UI acceptance — the suite renders in English', () => {
         }),
       }),
     );
-    await page.goto('/design/myjob/ui_kits/recruiting/index.html');
+    await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     await page.getByRole('button', { name: /Settings/ }).click();
     await expect(page.locator('main')).toContainText('Data & privacy');
     // clicking Export triggers a JSON file download
@@ -497,13 +497,16 @@ test.describe('UI acceptance — the suite renders in English', () => {
       }
       return route.continue();
     });
-    await page.goto('/design/myjob/ui_kits/recruiting/index.html');
+    await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     await page.getByRole('button', { name: /Settings/ }).click();
     // two-step confirm before the destructive call
     await page.getByRole('button', { name: 'Delete account' }).click();
     await page.getByRole('button', { name: 'Confirm delete' }).click();
-    // erasure ends the session → the app reloads to the login screen
-    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
+    // erasure ends the session → the app reloads to the login screen (the
+    // reload re-fetches the bundle, so allow extra time for it to re-mount)
+    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible({
+      timeout: 15000,
+    });
   });
 
   test('Karriere_Jobsuche_FetchesJobsFromApiAndCreatesApplication', async ({ page }) => {

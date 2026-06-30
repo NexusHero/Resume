@@ -16,9 +16,11 @@ export default defineConfig({
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
-    command: `PORT=${PORT} npm run serve`,
+    // Build the recruiting kit's Vite bundle before serving so the e2e drives
+    // the production build (no CDN, no runtime Babel).
+    command: `npm run build:web && PORT=${PORT} npm run serve`,
     url: `${baseURL}/api/v1/health`,
     reuseExistingServer: !process.env.CI,
-    timeout: 60_000,
+    timeout: 120_000,
   },
 });

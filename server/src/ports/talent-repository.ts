@@ -1,10 +1,10 @@
 import type { Talent } from '../domain/talent';
 
-/** Persistence of the talent pool. */
+/** Persistence of the talent pool, scoped to an owner (the recruiter). */
 export interface TalentRepository {
-  list(): Promise<Talent[]>;
-  findById(id: string): Promise<Talent | null>;
+  list(ownerId: string): Promise<Talent[]>;
+  findById(ownerId: string, id: string): Promise<Talent | null>;
   add(talent: Talent): Promise<void>;
   update(talent: Talent): Promise<void>;
-  remove(id: string): Promise<boolean>;
+  remove(ownerId: string, id: string): Promise<boolean>;
 }

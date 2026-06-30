@@ -6,6 +6,7 @@ export type PlacementStatus = (typeof PLACEMENT_STATUSES)[number];
 /** A booked placement — a candidate hired into a client role, with its fee. */
 export interface Placement {
   id: string;
+  ownerId: string;
   candidateName: string;
   candidateRole: string;
   client: string;

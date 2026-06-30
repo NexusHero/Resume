@@ -15,6 +15,7 @@ export interface AppConfig {
   talentsFile: string;
   placementsFile: string;
   usersFile: string;
+  sessionsFile: string;
   staticDir: string;
   /** Repo-relative paths the Versioner stages on each change. */
   versionedPaths: string[];
@@ -105,6 +106,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     talentsFile: path.join(storeDir, 'talents.json'),
     placementsFile: path.join(storeDir, 'placements.json'),
     usersFile: path.join(storeDir, 'users.json'),
+    sessionsFile: path.join(storeDir, 'sessions.json'),
     staticDir: rootDir,
     versionedPaths: ['archive/bewerbungen'],
     candidateProfile: CANDIDATE_PROFILE,

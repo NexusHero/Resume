@@ -338,4 +338,51 @@ const RecruitApi = {
   },
 };
 
-Object.assign(window, { STAGES_ORDER, STAGE_LABELS, TALENTS, APPLICATIONS, JOBS, MESSAGES, KPIS, CLIENTS, MANDATES, PLACEMENTS, VERMITTLER_KPIS, SAMPLE_MANDATES, RecruitApi });
+/* ---------- Live aggregates ----------
+   The Übersicht (Dashboard) and Berichte (Reports) read from the same live
+   mandates/talents/placements the other views do, so their KPIs and the
+   fee-per-client breakdown reflect the signed-in recruiter's own data rather
+   than the static sample. All helpers are pure so they degrade gracefully to
+   the offline samples when the API is unreachable. */
+
+/** "19.000 €" / "24%" → 19000 / 24 (digits only; German thousands dot dropped). */
+function parseFeeAmount(s) {
+  return parseInt(String(s == null ? '' : s).replace(/[^0-9]/g, ''), 10) || 0;
+}
+
+/** Sum of placement fees, formatted compactly: 128450 → "128 T€", 540 → "540 €". */
+function formatFeeSum(sum) {
+  return sum >= 1000 ? `${Math.round(sum / 1000)} T€` : `${sum} €`;
+}
+
+/** Recruiter KPIs derived from the live data (no deltas — there's no baseline). */
+function computeVermittlerKpis(mandates, talents, placements) {
+  const ms = mandates || [];
+  const ts = talents || [];
+  const ps = placements || [];
+  const active = ms.filter((m) => m.status === 'active').length;
+  const fees = ps.reduce((a, p) => a + parseFeeAmount(p.fee), 0);
+  return [
+    { label: 'Active mandates', value: String(active), icon: 'briefcase' },
+    { label: 'Talents in pool', value: String(ts.length), icon: 'users' },
+    { label: 'Placements', value: String(ps.length), icon: 'award' },
+    { label: 'Fees', value: formatFeeSum(fees), icon: 'trend' },
+  ];
+}
+
+/** The client universe for Reports: every client named by a live mandate or
+    placement, so fees-per-client covers API clients absent from the sample. */
+function deriveReportClients(mandates, placements) {
+  const names = [];
+  const seen = new Set();
+  [...(mandates || []), ...(placements || [])].forEach((row) => {
+    const name = row && row.client;
+    if (name && !seen.has(name)) {
+      seen.add(name);
+      names.push({ name });
+    }
+  });
+  return names;
+}
+
+Object.assign(window, { STAGES_ORDER, STAGE_LABELS, TALENTS, APPLICATIONS, JOBS, MESSAGES, KPIS, CLIENTS, MANDATES, PLACEMENTS, VERMITTLER_KPIS, SAMPLE_MANDATES, RecruitApi, parseFeeAmount, formatFeeSum, computeVermittlerKpis, deriveReportClients });

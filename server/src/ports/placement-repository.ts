@@ -1,10 +1,10 @@
 import type { Placement } from '../domain/placement';
 
-/** Persistence of booked placements. */
+/** Persistence of booked placements, scoped to an owner (the recruiter). */
 export interface PlacementRepository {
-  list(): Promise<Placement[]>;
-  findById(id: string): Promise<Placement | null>;
+  list(ownerId: string): Promise<Placement[]>;
+  findById(ownerId: string, id: string): Promise<Placement | null>;
   add(placement: Placement): Promise<void>;
   update(placement: Placement): Promise<void>;
-  remove(id: string): Promise<boolean>;
+  remove(ownerId: string, id: string): Promise<boolean>;
 }

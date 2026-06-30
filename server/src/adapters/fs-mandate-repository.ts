@@ -14,7 +14,7 @@ export class FsMandateRepository implements MandateRepository {
     this.dir = path.dirname(this.file);
   }
 
-  async list(): Promise<Mandate[]> {
+  private async readAll(): Promise<Mandate[]> {
     try {
       const raw = await fs.readFile(this.file, 'utf8');
       const data = JSON.parse(raw);
@@ -24,28 +24,31 @@ export class FsMandateRepository implements MandateRepository {
     }
   }
 
-  async findById(id: string): Promise<Mandate | null> {
-    const all = await this.list();
-    return all.find((m) => m.id === id) ?? null;
+  async list(ownerId: string): Promise<Mandate[]> {
+    return (await this.readAll()).filter((m) => m.ownerId === ownerId);
+  }
+
+  async findById(ownerId: string, id: string): Promise<Mandate | null> {
+    return (await this.readAll()).find((m) => m.ownerId === ownerId && m.id === id) ?? null;
   }
 
   async add(mandate: Mandate): Promise<void> {
-    const all = await this.list();
+    const all = await this.readAll();
     all.push(mandate);
     await this.write(all);
   }
 
   async update(mandate: Mandate): Promise<void> {
-    const all = await this.list();
+    const all = await this.readAll();
     const i = all.findIndex((m) => m.id === mandate.id);
     if (i < 0) all.push(mandate);
     else all[i] = mandate;
     await this.write(all);
   }
 
-  async remove(id: string): Promise<boolean> {
-    const all = await this.list();
-    const next = all.filter((m) => m.id !== id);
+  async remove(ownerId: string, id: string): Promise<boolean> {
+    const all = await this.readAll();
+    const next = all.filter((m) => !(m.ownerId === ownerId && m.id === id));
     if (next.length === all.length) return false;
     await this.write(next);
     return true;

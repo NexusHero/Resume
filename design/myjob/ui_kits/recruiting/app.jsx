@@ -92,6 +92,17 @@ function Workspace({ onLogout }) {
   const apps = window.APPLICATIONS;
   const me = talents.find((t) => t.me);
 
+  // Übersicht and Berichte run off the same live data the other views use, so
+  // their KPIs and fee breakdown track the signed-in recruiter's own portfolio.
+  const vkpis = React.useMemo(
+    () => window.computeVermittlerKpis(mandates, talents, placements),
+    [mandates, talents, placements],
+  );
+  const reportClients = React.useMemo(
+    () => window.deriveReportClients(mandates, placements),
+    [mandates, placements],
+  );
+
   const unread = window.MESSAGES.filter((m) => m.unread).length;
   const badges = { bewerbungen: apps.filter((a) => a.status !== 'rejected' && a.status !== 'hired').length, postfach: unread || undefined };
 
@@ -120,7 +131,7 @@ function Workspace({ onLogout }) {
     body = <window.TalentProfile talent={talent} apps={talentApps(talent.id)} onBack={back} onEdit={() => setEditing(talent.id)} onCreateMappe={() => setMappeFor(talent)} />;
   } else {
     [title, subtitle] = TITLES[nav];
-    if (nav === 'uebersicht') body = <window.Dashboard me={me} apps={apps} vkpis={window.VERMITTLER_KPIS} clients={window.CLIENTS} mandates={window.MANDATES} onOpenTalent={goTalent} onOpenPipeline={() => setNav('bewerbungen')} onOpenMandate={() => setNav('mandate')} />;
+    if (nav === 'uebersicht') body = <window.Dashboard me={me} apps={apps} vkpis={vkpis} clients={window.CLIENTS} mandates={mandates} onOpenTalent={goTalent} onOpenPipeline={() => setNav('bewerbungen')} onOpenMandate={() => setNav('mandate')} />;
     else if (nav === 'mandate') body = <window.MandateView mandates={mandates} />;
     else if (nav === 'pool') body = <window.TalentGrid talents={talents} apps={apps} onOpen={goTalent} onAdd={addTalent} />;
     else if (nav === 'matching') body = <window.Matching talents={talents} />;
@@ -129,8 +140,8 @@ function Workspace({ onLogout }) {
         <window.PipelineBoard apps={apps} talents={talents} onOpen={goTalent} />
       </div>
     );
-    else if (nav === 'platzierungen') body = <window.PlatzierungenView placements={placements} kpis={window.VERMITTLER_KPIS} />;
-    else if (nav === 'berichte') body = <window.ReportsView clients={window.CLIENTS} mandates={window.MANDATES} placements={placements} apps={apps} kpis={window.VERMITTLER_KPIS} />;
+    else if (nav === 'platzierungen') body = <window.PlatzierungenView placements={placements} kpis={vkpis} />;
+    else if (nav === 'berichte') body = <window.ReportsView clients={reportClients} mandates={mandates} placements={placements} apps={apps} kpis={vkpis} />;
     else if (nav === 'postfach') body = <window.Inbox messages={window.MESSAGES} apps={apps} talents={talents} onOpenTalent={goTalent} />;
     else if (nav === 'einstellungen') body = <window.SettingsView />;
   }

@@ -4,8 +4,6 @@ import { UnauthorizedError } from '../domain/errors';
 import type { AuthService } from '../services/auth-service';
 import type { AppConfig } from '../config';
 
-const COOKIE_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
-
 /** Reads a single cookie value from the raw Cookie header (no cookie-parser dep). */
 function readCookie(req: Request, name: string): string | undefined {
   const header = req.headers.cookie;
@@ -24,11 +22,16 @@ function readCookie(req: Request, name: string): string | undefined {
 export class AuthController {
   private readonly service: AuthService;
   private readonly cookieName: string;
+  private readonly cookieSecure: boolean;
+  private readonly maxAgeMs: number;
   private readonly providers: { google: boolean; linkedin: boolean };
 
   constructor(deps: { authService: AuthService; config: AppConfig }) {
     this.service = deps.authService;
     this.cookieName = deps.config.auth.sessionCookieName;
+    this.cookieSecure = deps.config.auth.cookieSecure;
+    // Keep the cookie's client-side lifetime aligned with the server session TTL.
+    this.maxAgeMs = deps.config.auth.sessionTtlMs;
     this.providers = {
       google: deps.config.auth.google.enabled,
       linkedin: deps.config.auth.linkedin.enabled,
@@ -38,9 +41,10 @@ export class AuthController {
   private setSession(res: Response, token: string): void {
     res.cookie(this.cookieName, token, {
       httpOnly: true,
+      secure: this.cookieSecure,
       sameSite: 'lax',
       path: '/',
-      maxAge: COOKIE_MAX_AGE_MS,
+      maxAge: this.maxAgeMs,
     });
   }
 

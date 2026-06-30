@@ -54,6 +54,10 @@ export interface SecurityConfig {
 export interface AuthConfig {
   /** Name of the session cookie. */
   sessionCookieName: string;
+  /** Send the session cookie with the Secure flag (HTTPS-only). On in production. */
+  cookieSecure: boolean;
+  /** Server-side session lifetime in milliseconds; sessions older than this are rejected. */
+  sessionTtlMs: number;
   /** Social logins are "enabled" only when their credentials are configured. */
   google: { enabled: boolean };
   linkedin: { enabled: boolean };
@@ -157,6 +161,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     databaseUrl: env.DATABASE_URL ?? '',
     auth: {
       sessionCookieName: env.SESSION_COOKIE_NAME ?? 'myjob_session',
+      // Secure cookies require HTTPS; on by default in production, or opt in via
+      // COOKIE_SECURE so local http dev/tests keep working.
+      cookieSecure: env.NODE_ENV === 'production' || env.COOKIE_SECURE === 'true',
+      sessionTtlMs: (Number(env.SESSION_TTL_DAYS) || 30) * 24 * 60 * 60 * 1000,
       google: { enabled: Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET) },
       linkedin: { enabled: Boolean(env.LINKEDIN_CLIENT_ID && env.LINKEDIN_CLIENT_SECRET) },
     },

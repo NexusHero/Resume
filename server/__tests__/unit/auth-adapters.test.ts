@@ -51,4 +51,18 @@ describe('MemorySessionStore', () => {
     expect(await store.userIdFor(a2)).toBeNull();
     expect(await store.userIdFor(b1)).toBe('u2'); // other user's session survives
   });
+
+  it('Session_PastTtl_RejectedAndPruned', async () => {
+    let nowIso = '2026-01-01T00:00:00.000Z';
+    const clock = {
+      isoNow: () => nowIso,
+      now: () => new Date(nowIso),
+      today: () => nowIso.slice(0, 10),
+    };
+    const store = new MemorySessionStore({ clock, ttlMs: 1000 }); // 1s lifetime
+    const token = await store.create('u1');
+    expect(await store.userIdFor(token)).toBe('u1'); // within TTL
+    nowIso = '2026-01-01T00:00:02.000Z'; // +2s > 1s TTL
+    expect(await store.userIdFor(token)).toBeNull(); // expired + pruned
+  });
 });

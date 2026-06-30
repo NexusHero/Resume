@@ -14,7 +14,7 @@ import type { AuthController } from './auth-controller';
 import type { AccountController } from './account-controller';
 import { asyncHandler } from './async-handler';
 import { errorHandler, notFound } from './problem';
-import { corsMiddleware, securityHeaders } from './security';
+import { corsMiddleware, securityHeaders, recruitingCsp, RECRUITING_KIT_PREFIX } from './security';
 
 export interface AppDeps {
   applicationController: ApplicationController;
@@ -109,6 +109,9 @@ export function createApp(deps: AppDeps): Express {
   app.use('/api/v1', api);
 
   // Static web UIs (CV, cover letter, myJob). Served after the API routes.
+  // The Vite-built recruiting kit gets a strict CSP; the CDN-loading legacy
+  // kits are left untouched (a global CSP would break them).
+  app.use(RECRUITING_KIT_PREFIX, recruitingCsp);
   app.use(express.static(deps.config.staticDir, { index: 'index.html' }));
 
   app.use(errorHandler(deps.logger));

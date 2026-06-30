@@ -1,6 +1,11 @@
 import express from 'express';
 import request from 'supertest';
-import { corsMiddleware, securityHeaders } from '../../src/http/security';
+import {
+  corsMiddleware,
+  securityHeaders,
+  recruitingCsp,
+  RECRUITING_KIT_PREFIX,
+} from '../../src/http/security';
 
 function appWith(origins: string[]) {
   const app = express();
@@ -17,6 +22,37 @@ describe('securityHeaders', () => {
     expect(res.headers['x-frame-options']).toBe('SAMEORIGIN');
     expect(res.headers['referrer-policy']).toBe('strict-origin-when-cross-origin');
     expect(res.headers['cross-origin-opener-policy']).toBe('same-origin');
+  });
+});
+
+describe('recruitingCsp', () => {
+  function appWithCsp() {
+    const app = express();
+    app.use(RECRUITING_KIT_PREFIX, recruitingCsp);
+    app.get(`${RECRUITING_KIT_PREFIX}/index.html`, (_req, res) => res.send('<html></html>'));
+    app.get('/other/index.html', (_req, res) => res.send('<html></html>'));
+    return app;
+  }
+
+  it('RecruitingPath_SetsStrictScriptSrcAndFontAllowances', async () => {
+    const res = await request(appWithCsp()).get(`${RECRUITING_KIT_PREFIX}/index.html`);
+    const csp = res.headers['content-security-policy'];
+    expect(csp).toBeDefined();
+    // script-src is same-origin only — no unsafe-inline / unsafe-eval (the real XSS guard)
+    expect(csp).toContain("script-src 'self'");
+    expect(csp).not.toContain('unsafe-eval');
+    expect(csp).not.toMatch(/script-src[^;]*unsafe-inline/);
+    // styles need unsafe-inline (React inline styles) + the Google Fonts CSS host
+    expect(csp).toContain("style-src 'self' 'unsafe-inline' https://fonts.googleapis.com");
+    expect(csp).toContain('font-src');
+    expect(csp).toContain('https://fonts.gstatic.com');
+    expect(csp).toContain("object-src 'none'");
+    expect(csp).toContain('blob:'); // export/PDF downloads
+  });
+
+  it('OtherPaths_AreNotConstrained', async () => {
+    const res = await request(appWithCsp()).get('/other/index.html');
+    expect(res.headers['content-security-policy']).toBeUndefined();
   });
 });
 

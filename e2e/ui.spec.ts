@@ -207,8 +207,10 @@ test.describe('UI acceptance — the suite renders in English', () => {
     await page.getByRole('button', { name: /Settings/ }).click();
     await expect(page.locator('main')).toContainText('Claude (Anthropic)');
     await expect(page.locator('main')).toContainText('Gemini (Google)');
-    // switch the active model to Gemini → the backend is asked to switch
-    await page.locator('input[type="radio"]').nth(1).check();
+    // switch the active model to Gemini → the backend is asked to switch.
+    // Use click (not check): the radio is controlled and only flips once the
+    // PUT resolves and state re-renders, which check() would race.
+    await page.locator('input[type="radio"]').nth(1).click();
     await expect.poll(() => current).toBe('gemini');
   });
 

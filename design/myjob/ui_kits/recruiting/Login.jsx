@@ -83,7 +83,7 @@ function LoginScreen({ providers, onAuthed }) {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '11px' }}>
-          <img src="../../assets/logo/myjob-mark.svg" width="34" height="34" alt="" />
+          <img src="/design/myjob/assets/logo/myjob-mark.svg" width="34" height="34" alt="" />
           <div>
             <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '20px', letterSpacing: '-0.02em' }}>
               <span style={{ color: 'var(--accent-on-dark)' }}>my</span>Job

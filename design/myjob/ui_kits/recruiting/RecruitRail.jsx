@@ -87,7 +87,7 @@ function RecruitRail({ active, onNav, me, talentCount, search, onSearch, title, 
         borderRight: '1px solid var(--sidebar-border)',
       }}>
         <div style={{ padding: '20px 18px 16px', display: 'flex', alignItems: 'center', gap: '11px' }}>
-          <img src="../../assets/logo/myjob-mark.svg" width="34" height="34" alt="" />
+          <img src="/design/myjob/assets/logo/myjob-mark.svg" width="34" height="34" alt="" />
           <div>
             <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '18px', color: '#fff', letterSpacing: '-0.02em', lineHeight: 1 }}><span style={{ color: 'var(--accent-on-dark)' }}>my</span>Job</div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--sidebar-soft)', marginTop: '3px' }}>We connect partners</div>

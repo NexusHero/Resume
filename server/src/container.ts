@@ -68,6 +68,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     // Postgres when STORE=sql (so sessions/users survive a multi-instance deploy).
     userRepository: asValue(persistence.userRepository),
     sessionStore: asValue(persistence.sessionStore),
+    apiKeyStore: asValue(persistence.apiKeyStore),
     passwordHasher: asClass(ScryptPasswordHasher).singleton(),
     pdfArchive: asClass(FsPdfArchive).singleton(),
     // Git versioning only makes sense for the file store; with Postgres there are

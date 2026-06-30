@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, text, serial, integer, jsonb, primaryKey } from 'drizzle-orm/pg-core';
 
 /** Registered accounts (mirrors domain `User`). */
 export const users = pgTable('users', {
@@ -14,6 +14,17 @@ export const sessions = pgTable('sessions', {
   userId: text('user_id').notNull(),
   createdAt: text('created_at').notNull(),
 });
+
+/** Per-user LLM API keys, encrypted at rest. PK is (owner_id, provider). */
+export const apiKeys = pgTable(
+  'api_keys',
+  {
+    ownerId: text('owner_id').notNull(),
+    provider: text('provider').notNull(),
+    value: text('value').notNull(),
+  },
+  (t) => ({ pk: primaryKey({ columns: [t.ownerId, t.provider] }) }),
+);
 
 /** Recorded job applications (mirrors domain `Application`). */
 export const applications = pgTable('applications', {

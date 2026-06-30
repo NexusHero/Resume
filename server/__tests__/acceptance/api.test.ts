@@ -38,6 +38,7 @@ import {
   InMemoryTalentRepository,
   InMemoryPlacementRepository,
   InMemoryUserRepository,
+  InMemoryApiKeyStore,
   fakePasswordHasher,
   FakePdfRenderer,
   FakePdfMerger,
@@ -96,6 +97,7 @@ function makeApp(config = loadConfig({})): Express {
       candidate: config.candidate,
       logger: noopLogger,
     }),
+    apiKeyStore: new InMemoryApiKeyStore(),
   });
   // Shared repositories so the account (DSGVO) endpoints observe the same data
   // the recruiting endpoints write, and erasure affects the same auth state.
@@ -738,6 +740,42 @@ describe('REST API /api/v1', () => {
     expect(res.status).toBe(200);
     expect(res.body.provider).toBe('template'); // no keys → deterministic template
     expect(res.body.text).toContain('Celonis');
+  });
+
+  it('ApiKeys_Unauthenticated_Returns401', async () => {
+    expect((await request(app).get('/api/v1/settings/keys')).status).toBe(401);
+    expect((await request(app).put('/api/v1/settings/keys/claude').send({ key: 'x' })).status).toBe(
+      401,
+    );
+  });
+
+  it('ApiKeys_SetStatusRemove_Flow', async () => {
+    const agent = request.agent(app);
+    await agent
+      .post('/api/v1/auth/register')
+      .send({ email: 'keys@example.com', password: 'correct horse battery' });
+
+    expect((await agent.get('/api/v1/settings/keys')).body).toEqual({
+      claude: false,
+      gemini: false,
+    });
+    expect((await agent.put('/api/v1/settings/keys/claude').send({ key: 'sk-ant-x' })).status).toBe(
+      204,
+    );
+    expect((await agent.get('/api/v1/settings/keys')).body).toEqual({
+      claude: true,
+      gemini: false,
+    });
+    expect((await agent.delete('/api/v1/settings/keys/claude')).status).toBe(204);
+    expect((await agent.get('/api/v1/settings/keys')).body.claude).toBe(false);
+  });
+
+  it('ApiKeys_UnknownProvider_Returns400', async () => {
+    const agent = request.agent(app);
+    await agent
+      .post('/api/v1/auth/register')
+      .send({ email: 'keys2@example.com', password: 'correct horse battery' });
+    expect((await agent.put('/api/v1/settings/keys/openai').send({ key: 'x' })).status).toBe(400);
   });
 
   it('CoverLetter_PostMissingCompany_Returns400', async () => {

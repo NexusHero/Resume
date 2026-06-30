@@ -7,6 +7,7 @@ import type { TalentRepository } from '../ports/talent-repository';
 import type { PlacementRepository } from '../ports/placement-repository';
 import type { UserRepository } from '../ports/user-repository';
 import type { SessionStore } from '../ports/session-store';
+import type { ApiKeyStore } from '../ports/api-key-store';
 import type { Clock } from '../ports/clock';
 import { FsApplicationRepository } from './fs-application-repository';
 import { FsAuditLog } from './fs-audit-log';
@@ -16,6 +17,8 @@ import { FsTalentRepository } from './fs-talent-repository';
 import { FsPlacementRepository } from './fs-placement-repository';
 import { FsUserRepository } from './fs-user-repository';
 import { FsSessionStore } from './fs-session-store';
+import { FsApiKeyStore } from './fs-api-key-store';
+import { SecretCipher } from './secret-cipher';
 import { SqlApplicationRepository } from './sql/sql-application-repository';
 import { SqlAuditLog } from './sql/sql-audit-log';
 import { SqlSavedSearchRepository } from './sql/sql-saved-search-repository';
@@ -24,6 +27,7 @@ import { SqlTalentRepository } from './sql/sql-talent-repository';
 import { SqlPlacementRepository } from './sql/sql-placement-repository';
 import { SqlUserRepository } from './sql/sql-user-repository';
 import { SqlSessionStore } from './sql/sql-session-store';
+import { SqlApiKeyStore } from './sql/sql-api-key-store';
 import type { Db } from './sql/db';
 
 /** The storage ports, resolved to one backend. */
@@ -36,6 +40,7 @@ export interface Persistence {
   placementRepository: PlacementRepository;
   userRepository: UserRepository;
   sessionStore: SessionStore;
+  apiKeyStore: ApiKeyStore;
 }
 
 /**
@@ -45,6 +50,7 @@ export interface Persistence {
  */
 export function createPersistence(deps: { config: AppConfig; clock: Clock; db?: Db }): Persistence {
   const { config, clock, db } = deps;
+  const secretCipher = new SecretCipher({ config });
   if (config.store === 'sql') {
     if (!db) throw new Error('STORE=sql requires a database connection (DATABASE_URL)');
     return {
@@ -56,6 +62,7 @@ export function createPersistence(deps: { config: AppConfig; clock: Clock; db?: 
       placementRepository: new SqlPlacementRepository({ db }),
       userRepository: new SqlUserRepository({ db }),
       sessionStore: new SqlSessionStore({ db, clock, config }),
+      apiKeyStore: new SqlApiKeyStore({ db, secretCipher }),
     };
   }
   return {
@@ -67,5 +74,6 @@ export function createPersistence(deps: { config: AppConfig; clock: Clock; db?: 
     placementRepository: new FsPlacementRepository({ config }),
     userRepository: new FsUserRepository({ config }),
     sessionStore: new FsSessionStore({ config, clock }),
+    apiKeyStore: new FsApiKeyStore({ config, secretCipher }),
   };
 }

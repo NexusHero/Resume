@@ -43,7 +43,7 @@ export class AnthropicLlmProvider implements LlmProvider {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        'x-api-key': this.apiKey,
+        'x-api-key': input.apiKey ?? this.apiKey,
         'anthropic-version': API_VERSION,
       },
       body: JSON.stringify({

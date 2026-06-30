@@ -8,6 +8,8 @@ import { SqlTalentRepository } from '../../src/adapters/sql/sql-talent-repositor
 import { SqlPlacementRepository } from '../../src/adapters/sql/sql-placement-repository';
 import { SqlUserRepository } from '../../src/adapters/sql/sql-user-repository';
 import { SqlSessionStore } from '../../src/adapters/sql/sql-session-store';
+import { SqlApiKeyStore } from '../../src/adapters/sql/sql-api-key-store';
+import { SecretCipher } from '../../src/adapters/secret-cipher';
 import { loadConfig } from '../../src/config';
 import type { Application, AuditEvent } from '../../src/domain/application';
 import type { SavedSearch } from '../../src/domain/saved-search';
@@ -41,7 +43,7 @@ suite('SQL repositories (real Postgres)', () => {
 
   beforeEach(async () => {
     await pool.query(
-      'TRUNCATE applications, audit_events, saved_searches, mandates, talents, placements, users, sessions RESTART IDENTITY',
+      'TRUNCATE applications, audit_events, saved_searches, mandates, talents, placements, users, sessions, api_keys RESTART IDENTITY',
     );
   });
 
@@ -243,5 +245,32 @@ suite('SQL repositories (real Postgres)', () => {
 
     await store.destroy(b1);
     expect(await store.userIdFor(b1)).toBeNull();
+  });
+
+  it('ApiKeys_EncryptedRoundTrip_OwnerScoped', async () => {
+    const cipher = new SecretCipher({ config: loadConfig({}) });
+    const store = new SqlApiKeyStore({ db, secretCipher: cipher });
+    await store.set('owner1', 'claude', 'sk-ant-secret');
+    await store.set('owner1', 'gemini', 'sk-gem');
+    await store.set('other', 'claude', 'sk-other');
+
+    expect(await store.get('owner1', 'claude')).toBe('sk-ant-secret');
+    expect(await store.get('owner2', 'claude')).toBeNull();
+    expect((await store.providersFor('owner1')).sort()).toEqual(['claude', 'gemini']);
+
+    // stored value is ciphertext, not the plaintext key
+    const raw = await pool.query('SELECT value FROM api_keys WHERE owner_id=$1 AND provider=$2', [
+      'owner1',
+      'claude',
+    ]);
+    expect(raw.rows[0].value).not.toContain('sk-ant-secret');
+
+    // upsert overwrites
+    await store.set('owner1', 'claude', 'sk-ant-new');
+    expect(await store.get('owner1', 'claude')).toBe('sk-ant-new');
+
+    expect(await store.remove('owner1', 'claude')).toBe(true);
+    expect(await store.remove('owner1', 'claude')).toBe(false);
+    expect(await store.get('owner1', 'claude')).toBeNull();
   });
 });

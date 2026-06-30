@@ -16,6 +16,7 @@ export interface AppConfig {
   placementsFile: string;
   usersFile: string;
   sessionsFile: string;
+  apiKeysFile: string;
   staticDir: string;
   /** Repo-relative paths the Versioner stages on each change. */
   versionedPaths: string[];
@@ -48,6 +49,12 @@ export interface SecurityConfig {
    * list) to open specific origins.
    */
   corsOrigins: string[];
+  /**
+   * Secret used to encrypt stored secrets (e.g. per-user LLM API keys) at rest.
+   * Set APP_SECRET in production; a fixed dev default keeps local/CI working but
+   * is NOT secret.
+   */
+  encryptionSecret: string;
 }
 
 /** Authentication configuration, resolved from the environment. */
@@ -124,6 +131,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     placementsFile: path.join(storeDir, 'placements.json'),
     usersFile: path.join(storeDir, 'users.json'),
     sessionsFile: path.join(storeDir, 'sessions.json'),
+    apiKeysFile: path.join(storeDir, 'api-keys.json'),
     staticDir: rootDir,
     versionedPaths: ['archive/bewerbungen'],
     candidateProfile: CANDIDATE_PROFILE,
@@ -173,6 +181,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
         .split(',')
         .map((o) => o.trim())
         .filter(Boolean),
+      encryptionSecret: env.APP_SECRET ?? 'myjob-dev-insecure-secret',
     },
   };
 }

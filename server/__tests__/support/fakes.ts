@@ -20,6 +20,8 @@ import type { PlacementRepository } from '../../src/ports/placement-repository';
 import type { User } from '../../src/domain/user';
 import type { UserRepository } from '../../src/ports/user-repository';
 import type { PasswordHasher } from '../../src/ports/password-hasher';
+import type { ApiKeyStore } from '../../src/ports/api-key-store';
+import type { LlmProviderId } from '../../src/ports/llm-provider';
 
 export class InMemoryApplicationRepository implements ApplicationRepository {
   apps: Application[] = [];
@@ -218,6 +220,25 @@ export class InMemoryUserRepository implements UserRepository {
     const before = this.users.length;
     this.users = this.users.filter((u) => u.id !== id);
     return this.users.length < before;
+  }
+}
+
+export class InMemoryApiKeyStore implements ApiKeyStore {
+  keys: { ownerId: string; provider: LlmProviderId; key: string }[] = [];
+  async set(ownerId: string, provider: LlmProviderId, key: string): Promise<void> {
+    this.keys = this.keys.filter((k) => !(k.ownerId === ownerId && k.provider === provider));
+    this.keys.push({ ownerId, provider, key });
+  }
+  async get(ownerId: string, provider: LlmProviderId): Promise<string | null> {
+    return this.keys.find((k) => k.ownerId === ownerId && k.provider === provider)?.key ?? null;
+  }
+  async remove(ownerId: string, provider: LlmProviderId): Promise<boolean> {
+    const before = this.keys.length;
+    this.keys = this.keys.filter((k) => !(k.ownerId === ownerId && k.provider === provider));
+    return this.keys.length < before;
+  }
+  async providersFor(ownerId: string): Promise<LlmProviderId[]> {
+    return this.keys.filter((k) => k.ownerId === ownerId).map((k) => k.provider);
   }
 }
 

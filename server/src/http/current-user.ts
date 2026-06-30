@@ -7,3 +7,8 @@ export function currentUserId(req: Request): string {
   if (!id) throw new UnauthorizedError();
   return id;
 }
+
+/** The user's id if a session was attached, else undefined — for open routes. */
+export function optionalUserId(req: Request): string | undefined {
+  return (req as Request & { userId?: string }).userId;
+}

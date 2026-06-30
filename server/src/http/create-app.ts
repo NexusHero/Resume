@@ -98,7 +98,12 @@ export function createApp(deps: AppDeps): Express {
   api.delete('/account', requireAuth, asyncHandler(account.remove));
   api.get('/settings/llm', asyncHandler(llm.settings));
   api.put('/settings/llm', asyncHandler(llm.setProvider));
-  api.post('/cover-letter', asyncHandler(llm.generateCoverLetter));
+  // Per-user API keys are owner-scoped (encrypted server-side).
+  api.get('/settings/keys', requireAuth, asyncHandler(llm.keysStatus));
+  api.put('/settings/keys/:provider', requireAuth, asyncHandler(llm.setKey));
+  api.delete('/settings/keys/:provider', requireAuth, asyncHandler(llm.removeKey));
+  // Open route, but a signed-in user's own key is used when present.
+  api.post('/cover-letter', asyncHandler(auth.attachUser), asyncHandler(llm.generateCoverLetter));
   api.use((_req, res) => notFound(res));
 
   app.use('/api/v1', api);

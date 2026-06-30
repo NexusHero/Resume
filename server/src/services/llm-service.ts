@@ -67,4 +67,14 @@ export class LlmService {
     const provider = this.providers.get(this.currentId);
     return provider && provider.available ? provider : null;
   }
+
+  /** The currently selected provider id (regardless of availability). */
+  currentProvider(): LlmProviderId {
+    return this.currentId;
+  }
+
+  /** A provider by id regardless of availability — for callers supplying their own key. */
+  get(id: LlmProviderId): LlmProvider | undefined {
+    return this.providers.get(id);
+  }
 }

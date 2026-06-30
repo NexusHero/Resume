@@ -27,6 +27,7 @@ module.exports = {
     '!server/src/adapters/sql/sql-placement-repository.ts',
     '!server/src/adapters/sql/sql-user-repository.ts',
     '!server/src/adapters/sql/sql-session-store.ts',
+    '!server/src/adapters/sql/sql-api-key-store.ts',
   ],
   coverageDirectory: 'coverage',
   coverageThreshold: {

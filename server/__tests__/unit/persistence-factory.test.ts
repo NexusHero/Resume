@@ -12,6 +12,8 @@ import { SqlTalentRepository } from '../../src/adapters/sql/sql-talent-repositor
 import { SqlPlacementRepository } from '../../src/adapters/sql/sql-placement-repository';
 import { SqlUserRepository } from '../../src/adapters/sql/sql-user-repository';
 import { SqlSessionStore } from '../../src/adapters/sql/sql-session-store';
+import { FsApiKeyStore } from '../../src/adapters/fs-api-key-store';
+import { SqlApiKeyStore } from '../../src/adapters/sql/sql-api-key-store';
 import { loadConfig } from '../../src/config';
 import { FixedClock } from '../support/fakes';
 import type { Db } from '../../src/adapters/sql/db';
@@ -28,6 +30,7 @@ describe('createPersistence', () => {
     expect(p.placementRepository).toBeInstanceOf(FsPlacementRepository);
     expect(p.userRepository).toBeInstanceOf(FsUserRepository);
     expect(p.sessionStore).toBeInstanceOf(FsSessionStore);
+    expect(p.apiKeyStore).toBeInstanceOf(FsApiKeyStore);
   });
 
   it('SqlStoreWithDb_UsesSqlAdapters', () => {
@@ -39,6 +42,7 @@ describe('createPersistence', () => {
     expect(p.placementRepository).toBeInstanceOf(SqlPlacementRepository);
     expect(p.userRepository).toBeInstanceOf(SqlUserRepository);
     expect(p.sessionStore).toBeInstanceOf(SqlSessionStore);
+    expect(p.apiKeyStore).toBeInstanceOf(SqlApiKeyStore);
   });
 
   it('SqlStoreWithoutDb_Throws', () => {

@@ -303,6 +303,23 @@ const RecruitApi = {
       }),
     );
   },
+  /* ---- Per-user API keys (stored encrypted server-side) ---- */
+  async getApiKeyStatus() {
+    // { claude: boolean, gemini: boolean } — never the keys themselves.
+    return _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/settings/keys`));
+  },
+  async setApiKey(provider, key) {
+    const res = await fetch(`${RECRUIT_API_BASE}/settings/keys/${provider}`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ key }),
+    });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+  },
+  async removeApiKey(provider) {
+    const res = await fetch(`${RECRUIT_API_BASE}/settings/keys/${provider}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+  },
   async listMandates() {
     const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/mandates`));
     return Array.isArray(data) ? data.map(mapMandate) : [];

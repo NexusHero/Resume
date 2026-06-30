@@ -35,7 +35,7 @@ export class GeminiLlmProvider implements LlmProvider {
   }
 
   async generate(input: LlmGenerateInput): Promise<string> {
-    const url = `${BASE}/${encodeURIComponent(this.model)}:generateContent?key=${encodeURIComponent(this.apiKey)}`;
+    const url = `${BASE}/${encodeURIComponent(this.model)}:generateContent?key=${encodeURIComponent(input.apiKey ?? this.apiKey)}`;
     const res = await this.http(url, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },

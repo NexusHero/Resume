@@ -87,4 +87,15 @@ export class AuthController {
     (req as Request & { userId?: string }).userId = user.id;
     next();
   };
+
+  /**
+   * Soft auth for otherwise-open routes: stamps `req.userId` when a valid session
+   * is present, but never rejects. Lets e.g. cover-letter generation use the
+   * signed-in user's own key while still working for anonymous callers.
+   */
+  attachUser = async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
+    const user = await this.service.currentUser(readCookie(req, this.cookieName));
+    if (user) (req as Request & { userId?: string }).userId = user.id;
+    next();
+  };
 }

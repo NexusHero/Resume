@@ -19,6 +19,26 @@ export class NotFoundError extends DomainError {
   }
 }
 
+/** Authentication failed or is missing (401). */
+export class UnauthorizedError extends DomainError {
+  readonly status = 401;
+  readonly type = 'unauthorized';
+
+  constructor(message = 'Authentication required') {
+    super(message);
+  }
+}
+
+/** The request conflicts with existing state, e.g. a duplicate (409). */
+export class ConflictError extends DomainError {
+  readonly status = 409;
+  readonly type = 'conflict';
+
+  constructor(message = 'Resource already exists') {
+    super(message);
+  }
+}
+
 /** The request payload failed validation (400). */
 export class ValidationError extends DomainError {
   readonly status = 400;

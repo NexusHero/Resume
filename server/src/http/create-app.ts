@@ -9,6 +9,7 @@ import type { LlmController } from './llm-controller';
 import type { MandateController } from './mandate-controller';
 import type { TalentController } from './talent-controller';
 import type { PlacementController } from './placement-controller';
+import type { AuthController } from './auth-controller';
 import { asyncHandler } from './async-handler';
 import { errorHandler, notFound } from './problem';
 
@@ -21,6 +22,7 @@ export interface AppDeps {
   mandateController: MandateController;
   talentController: TalentController;
   placementController: PlacementController;
+  authController: AuthController;
   config: AppConfig;
   logger: Logger;
 }
@@ -47,6 +49,7 @@ export function createApp(deps: AppDeps): Express {
     mandateController: m,
     talentController: t,
     placementController: p,
+    authController: auth,
   } = deps;
   const app = express();
 
@@ -55,6 +58,11 @@ export function createApp(deps: AppDeps): Express {
 
   const api = express.Router();
   api.get('/health', (_req, res) => res.json({ status: 'ok' }));
+  api.post('/auth/register', asyncHandler(auth.register));
+  api.post('/auth/login', asyncHandler(auth.login));
+  api.post('/auth/logout', asyncHandler(auth.logout));
+  api.get('/auth/me', asyncHandler(auth.me));
+  api.get('/auth/providers', asyncHandler(auth.providersInfo));
   api.get('/applications', asyncHandler(c.list));
   api.post('/applications', asyncHandler(c.create));
   api.post('/applications/build', asyncHandler(c.build));

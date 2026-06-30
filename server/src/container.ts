@@ -14,6 +14,9 @@ import { FsPdfArchive } from './adapters/fs-pdf-archive';
 import { FsMandateRepository } from './adapters/fs-mandate-repository';
 import { FsTalentRepository } from './adapters/fs-talent-repository';
 import { FsPlacementRepository } from './adapters/fs-placement-repository';
+import { FsUserRepository } from './adapters/fs-user-repository';
+import { MemorySessionStore } from './adapters/memory-session-store';
+import { ScryptPasswordHasher } from './adapters/scrypt-password-hasher';
 import { createPersistence } from './adapters/persistence-factory';
 import type { Db } from './adapters/sql/db';
 import { GitVersioner } from './adapters/git-versioner';
@@ -34,6 +37,7 @@ import { CoverLetterService } from './services/cover-letter-service';
 import { MandateService } from './services/mandate-service';
 import { TalentService } from './services/talent-service';
 import { PlacementService } from './services/placement-service';
+import { AuthService } from './services/auth-service';
 import { ApplicationController } from './http/application-controller';
 import { JobController } from './http/job-controller';
 import { AtsController } from './http/ats-controller';
@@ -42,6 +46,7 @@ import { LlmController } from './http/llm-controller';
 import { MandateController } from './http/mandate-controller';
 import { TalentController } from './http/talent-controller';
 import { PlacementController } from './http/placement-controller';
+import { AuthController } from './http/auth-controller';
 
 /** Composition root: wires every port to its production adapter (no decorators). */
 export function buildContainer(config: AppConfig = loadConfig(), db?: Db): AwilixContainer {
@@ -62,6 +67,9 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     mandateRepository: asClass(FsMandateRepository).singleton(),
     talentRepository: asClass(FsTalentRepository).singleton(),
     placementRepository: asClass(FsPlacementRepository).singleton(),
+    userRepository: asClass(FsUserRepository).singleton(),
+    sessionStore: asClass(MemorySessionStore).singleton(),
+    passwordHasher: asClass(ScryptPasswordHasher).singleton(),
     pdfArchive: asClass(FsPdfArchive).singleton(),
     // Git versioning only makes sense for the file store; with Postgres there are
     // no JSON files to commit (and committing would needlessly fire git hooks).
@@ -94,6 +102,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     mandateService: asClass(MandateService).singleton(),
     talentService: asClass(TalentService).singleton(),
     placementService: asClass(PlacementService).singleton(),
+    authService: asClass(AuthService).singleton(),
     applicationController: asClass(ApplicationController).singleton(),
     jobController: asClass(JobController).singleton(),
     atsController: asClass(AtsController).singleton(),
@@ -102,6 +111,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     mandateController: asClass(MandateController).singleton(),
     talentController: asClass(TalentController).singleton(),
     placementController: asClass(PlacementController).singleton(),
+    authController: asClass(AuthController).singleton(),
   });
   return container;
 }

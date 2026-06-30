@@ -14,6 +14,7 @@ export interface AppConfig {
   mandatesFile: string;
   talentsFile: string;
   placementsFile: string;
+  usersFile: string;
   staticDir: string;
   /** Repo-relative paths the Versioner stages on each change. */
   versionedPaths: string[];
@@ -31,6 +32,17 @@ export interface AppConfig {
   store: 'fs' | 'sql';
   /** Postgres connection string, used when store === 'sql'. */
   databaseUrl: string;
+  /** Authentication wiring (session cookie + social-login availability). */
+  auth: AuthConfig;
+}
+
+/** Authentication configuration, resolved from the environment. */
+export interface AuthConfig {
+  /** Name of the session cookie. */
+  sessionCookieName: string;
+  /** Social logins are "enabled" only when their credentials are configured. */
+  google: { enabled: boolean };
+  linkedin: { enabled: boolean };
 }
 
 /** LLM provider wiring, resolved from the environment. */
@@ -92,6 +104,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     mandatesFile: path.join(storeDir, 'mandates.json'),
     talentsFile: path.join(storeDir, 'talents.json'),
     placementsFile: path.join(storeDir, 'placements.json'),
+    usersFile: path.join(storeDir, 'users.json'),
     staticDir: rootDir,
     versionedPaths: ['archive/bewerbungen'],
     candidateProfile: CANDIDATE_PROFILE,
@@ -127,5 +140,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     },
     store: env.STORE === 'sql' ? 'sql' : 'fs',
     databaseUrl: env.DATABASE_URL ?? '',
+    auth: {
+      sessionCookieName: env.SESSION_COOKIE_NAME ?? 'myjob_session',
+      google: { enabled: Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET) },
+      linkedin: { enabled: Boolean(env.LINKEDIN_CLIENT_ID && env.LINKEDIN_CLIENT_SECRET) },
+    },
   };
 }

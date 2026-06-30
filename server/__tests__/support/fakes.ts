@@ -17,6 +17,9 @@ import type { Talent } from '../../src/domain/talent';
 import type { TalentRepository } from '../../src/ports/talent-repository';
 import type { Placement } from '../../src/domain/placement';
 import type { PlacementRepository } from '../../src/ports/placement-repository';
+import type { User } from '../../src/domain/user';
+import type { UserRepository } from '../../src/ports/user-repository';
+import type { PasswordHasher } from '../../src/ports/password-hasher';
 
 export class InMemoryApplicationRepository implements ApplicationRepository {
   apps: Application[] = [];
@@ -199,3 +202,26 @@ export class InMemoryPlacementRepository implements PlacementRepository {
     return this.placements.length < before;
   }
 }
+
+export class InMemoryUserRepository implements UserRepository {
+  users: User[] = [];
+  async findByEmail(email: string): Promise<User | null> {
+    return this.users.find((u) => u.email === email) ?? null;
+  }
+  async findById(id: string): Promise<User | null> {
+    return this.users.find((u) => u.id === id) ?? null;
+  }
+  async add(user: User): Promise<void> {
+    this.users.push(user);
+  }
+}
+
+/** A deterministic, fast hasher for tests — NOT for production use. */
+export const fakePasswordHasher: PasswordHasher = {
+  async hash(plaintext: string): Promise<string> {
+    return `hashed:${plaintext}`;
+  },
+  async verify(plaintext: string, hash: string): Promise<boolean> {
+    return hash === `hashed:${plaintext}`;
+  },
+};

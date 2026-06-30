@@ -11,6 +11,8 @@ import type { Logger } from '../../src/ports/logger';
 import type { SkillExtractor } from '../../src/ports/skill-extractor';
 import type { SavedSearch } from '../../src/domain/saved-search';
 import type { SavedSearchRepository } from '../../src/ports/saved-search-repository';
+import type { Mandate } from '../../src/domain/mandate';
+import type { MandateRepository } from '../../src/ports/mandate-repository';
 
 export class InMemoryApplicationRepository implements ApplicationRepository {
   apps: Application[] = [];
@@ -122,5 +124,28 @@ export class InMemorySavedSearchRepository implements SavedSearchRepository {
     const before = this.searches.length;
     this.searches = this.searches.filter((s) => s.id !== id);
     return this.searches.length < before;
+  }
+}
+
+export class InMemoryMandateRepository implements MandateRepository {
+  mandates: Mandate[] = [];
+  async list(): Promise<Mandate[]> {
+    return this.mandates.map((m) => ({ ...m }));
+  }
+  async findById(id: string): Promise<Mandate | null> {
+    return this.mandates.find((m) => m.id === id) ?? null;
+  }
+  async add(mandate: Mandate): Promise<void> {
+    this.mandates.push(mandate);
+  }
+  async update(mandate: Mandate): Promise<void> {
+    const i = this.mandates.findIndex((m) => m.id === mandate.id);
+    if (i < 0) this.mandates.push(mandate);
+    else this.mandates[i] = mandate;
+  }
+  async remove(id: string): Promise<boolean> {
+    const before = this.mandates.length;
+    this.mandates = this.mandates.filter((m) => m.id !== id);
+    return this.mandates.length < before;
   }
 }

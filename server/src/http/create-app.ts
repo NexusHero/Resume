@@ -6,6 +6,7 @@ import type { JobController } from './job-controller';
 import type { AtsController } from './ats-controller';
 import type { SavedSearchController } from './saved-search-controller';
 import type { LlmController } from './llm-controller';
+import type { MandateController } from './mandate-controller';
 import { asyncHandler } from './async-handler';
 import { errorHandler, notFound } from './problem';
 
@@ -15,6 +16,7 @@ export interface AppDeps {
   atsController: AtsController;
   savedSearchController: SavedSearchController;
   llmController: LlmController;
+  mandateController: MandateController;
   config: AppConfig;
   logger: Logger;
 }
@@ -38,6 +40,7 @@ export function createApp(deps: AppDeps): Express {
     atsController: ats,
     savedSearchController: s,
     llmController: llm,
+    mandateController: m,
   } = deps;
   const app = express();
 
@@ -57,6 +60,10 @@ export function createApp(deps: AppDeps): Express {
   api.post('/searches', asyncHandler(s.create));
   api.delete('/searches/:id', asyncHandler(s.remove));
   api.get('/searches/:id/run', asyncHandler(s.run));
+  api.get('/mandates', asyncHandler(m.list));
+  api.post('/mandates', asyncHandler(m.create));
+  api.patch('/mandates/:id', asyncHandler(m.update));
+  api.delete('/mandates/:id', asyncHandler(m.remove));
   api.get('/settings/llm', asyncHandler(llm.settings));
   api.put('/settings/llm', asyncHandler(llm.setProvider));
   api.post('/cover-letter', asyncHandler(llm.generateCoverLetter));

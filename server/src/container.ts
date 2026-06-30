@@ -11,6 +11,7 @@ import { createLogger } from './adapters/pino-logger';
 import { SystemClock } from './adapters/system-clock';
 import { RandomIdGenerator } from './adapters/random-id-generator';
 import { FsPdfArchive } from './adapters/fs-pdf-archive';
+import { FsMandateRepository } from './adapters/fs-mandate-repository';
 import { createPersistence } from './adapters/persistence-factory';
 import type { Db } from './adapters/sql/db';
 import { GitVersioner } from './adapters/git-versioner';
@@ -28,11 +29,13 @@ import { AtsService } from './services/ats-service';
 import { SavedSearchService } from './services/saved-search-service';
 import { LlmService } from './services/llm-service';
 import { CoverLetterService } from './services/cover-letter-service';
+import { MandateService } from './services/mandate-service';
 import { ApplicationController } from './http/application-controller';
 import { JobController } from './http/job-controller';
 import { AtsController } from './http/ats-controller';
 import { SavedSearchController } from './http/saved-search-controller';
 import { LlmController } from './http/llm-controller';
+import { MandateController } from './http/mandate-controller';
 
 /** Composition root: wires every port to its production adapter (no decorators). */
 export function buildContainer(config: AppConfig = loadConfig(), db?: Db): AwilixContainer {
@@ -48,6 +51,9 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     applicationRepository: asValue(persistence.applicationRepository),
     auditLog: asValue(persistence.auditLog),
     savedSearchRepository: asValue(persistence.savedSearchRepository),
+    // Recruiting persistence is file-backed for now; a SQL adapter is a tracked
+    // follow-up (the default 'fs' store powers the offline app and CI).
+    mandateRepository: asClass(FsMandateRepository).singleton(),
     pdfArchive: asClass(FsPdfArchive).singleton(),
     // Git versioning only makes sense for the file store; with Postgres there are
     // no JSON files to commit (and committing would needlessly fire git hooks).
@@ -77,11 +83,13 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     atsService: asClass(AtsService).singleton(),
     savedSearchService: asClass(SavedSearchService).singleton(),
     coverLetterService: asClass(CoverLetterService).singleton(),
+    mandateService: asClass(MandateService).singleton(),
     applicationController: asClass(ApplicationController).singleton(),
     jobController: asClass(JobController).singleton(),
     atsController: asClass(AtsController).singleton(),
     savedSearchController: asClass(SavedSearchController).singleton(),
     llmController: asClass(LlmController).singleton(),
+    mandateController: asClass(MandateController).singleton(),
   });
   return container;
 }

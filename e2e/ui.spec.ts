@@ -29,6 +29,12 @@ test.describe('UI acceptance — the suite renders in English', () => {
   });
 
   test('Recruiting_OpenTalentPool_ShowsTalents', async ({ page }) => {
+    // The pool loads from the API (empty here) — the pinned "me" talent and the
+    // Add-talent action are always present.
+    await page.route('**/api/v1/talents', (route) => {
+      if (route.request().method() !== 'GET') return route.continue();
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify([]) });
+    });
     await page.route('**/api/v1/auth/me', (route) =>
       route.fulfill({
         contentType: 'application/json',
@@ -39,6 +45,52 @@ test.describe('UI acceptance — the suite renders in English', () => {
     await page.getByRole('button', { name: /Talent Pool/ }).click();
     await expect(page.locator('main')).toContainText('Add talent');
     await expect(page.locator('main')).toContainText('Suhay Sevinc');
+  });
+
+  test('Recruiting_DataError_ShowsErrorStateWithRetry', async ({ page }) => {
+    // When the API fails, the view shows an error state (and a Retry) instead of
+    // silently falling back to fabricated sample data.
+    let attempt = 0;
+    await page.route('**/api/v1/mandates', (route) => {
+      if (route.request().method() !== 'GET') return route.continue();
+      attempt += 1;
+      if (attempt === 1) return route.fulfill({ status: 500, body: '' });
+      return route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify([
+          {
+            id: 'ma1',
+            client: 'Helio GmbH',
+            role: 'Principal Platform Engineer',
+            location: 'Hamburg',
+            fee: '24%',
+            feeValue: '31.000 €',
+            deadline: '2026-09-01',
+            priority: 'high',
+            status: 'active',
+            submitted: 3,
+            interviews: 1,
+            createdAt: '2026-06-30T10:00:00.000Z',
+            updatedAt: '2026-06-30T10:00:00.000Z',
+          },
+        ]),
+      });
+    });
+    await page.route('**/api/v1/auth/me', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id: 'user1', email: 'me@example.de' } }),
+      }),
+    );
+    await page.goto('/design/myjob/ui_kits/recruiting/index.html');
+    await page.getByRole('button', { name: /Mandates/ }).click();
+    const main = page.locator('main');
+    // first load failed → error state, no fabricated sample client
+    await expect(main).toContainText("We couldn't load this data.");
+    await expect(main).not.toContainText('Aurora Systems GmbH');
+    // retry succeeds → the real mandate renders
+    await page.getByRole('button', { name: 'Retry' }).click();
+    await expect(main).toContainText('Helio GmbH');
   });
 
   test('Recruiting_Placements_RenderFromApi', async ({ page }) => {

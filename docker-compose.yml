@@ -1,0 +1,38 @@
+# Local production-like stack: the app on Postgres (STORE=sql).
+# Recruiting data (mandates/talents/placements), applications, audit and saved
+# searches go to Postgres; the user/session store and PDF archive are file-backed
+# in the mounted volume. Tables are created on boot (migrate()).
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: myjob
+      POSTGRES_PASSWORD: myjob
+      POSTGRES_DB: myjob
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U myjob']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    environment:
+      PORT: 4178
+      STORE: sql
+      DATABASE_URL: postgres://myjob:myjob@db:5432/myjob
+      # Restrict CORS to your real origin(s) in production (comma-separated):
+      # CORS_ORIGINS: https://app.example.com
+    ports:
+      - '4178:4178'
+    volumes:
+      - app-archive:/app/archive
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db-data:
+  app-archive:

@@ -40,4 +40,15 @@ describe('MemorySessionStore', () => {
     await store.destroy(token);
     expect(await store.userIdFor(token)).toBeNull();
   });
+
+  it('DestroyForUser_RemovesAllOfThatUsersSessions', async () => {
+    const store = new MemorySessionStore();
+    const a1 = await store.create('u1');
+    const a2 = await store.create('u1');
+    const b1 = await store.create('u2');
+    await store.destroyForUser('u1');
+    expect(await store.userIdFor(a1)).toBeNull();
+    expect(await store.userIdFor(a2)).toBeNull();
+    expect(await store.userIdFor(b1)).toBe('u2'); // other user's session survives
+  });
 });

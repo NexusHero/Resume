@@ -60,4 +60,10 @@ export class FsSessionStore implements SessionStore {
     const next = all.filter((s) => s.token !== token);
     if (next.length !== all.length) await this.write(next);
   }
+
+  async destroyForUser(userId: string): Promise<void> {
+    const all = await this.readAll();
+    const next = all.filter((s) => s.userId !== userId);
+    if (next.length !== all.length) await this.write(next);
+  }
 }

@@ -101,6 +101,11 @@ function PlatzierungenView({ placements, kpis }) {
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}><VV.StatusBadge status={PLACEMENT_TONE[p.status]} label={p.status} size="sm" /></div>
           </div>
         ))}
+        {placements.length === 0 && (
+          <div style={{ padding: '40px', textAlign: 'center', fontSize: '13px', color: 'var(--text-soft)' }}>
+            No placements yet.
+          </div>
+        )}
       </VV.Card>
     </div>
   );

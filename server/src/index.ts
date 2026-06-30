@@ -12,6 +12,7 @@ import type { MandateController } from './http/mandate-controller';
 import type { TalentController } from './http/talent-controller';
 import type { PlacementController } from './http/placement-controller';
 import type { AuthController } from './http/auth-controller';
+import type { AccountController } from './http/account-controller';
 
 async function main(): Promise<void> {
   const config = loadConfig();
@@ -36,6 +37,7 @@ async function main(): Promise<void> {
     talentController: container.resolve<TalentController>('talentController'),
     placementController: container.resolve<PlacementController>('placementController'),
     authController: container.resolve<AuthController>('authController'),
+    accountController: container.resolve<AccountController>('accountController'),
     config,
     logger,
   });

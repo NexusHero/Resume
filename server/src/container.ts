@@ -35,6 +35,7 @@ import { MandateService } from './services/mandate-service';
 import { TalentService } from './services/talent-service';
 import { PlacementService } from './services/placement-service';
 import { AuthService } from './services/auth-service';
+import { AccountService } from './services/account-service';
 import { ApplicationController } from './http/application-controller';
 import { JobController } from './http/job-controller';
 import { AtsController } from './http/ats-controller';
@@ -44,6 +45,7 @@ import { MandateController } from './http/mandate-controller';
 import { TalentController } from './http/talent-controller';
 import { PlacementController } from './http/placement-controller';
 import { AuthController } from './http/auth-controller';
+import { AccountController } from './http/account-controller';
 
 /** Composition root: wires every port to its production adapter (no decorators). */
 export function buildContainer(config: AppConfig = loadConfig(), db?: Db): AwilixContainer {
@@ -100,6 +102,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     talentService: asClass(TalentService).singleton(),
     placementService: asClass(PlacementService).singleton(),
     authService: asClass(AuthService).singleton(),
+    accountService: asClass(AccountService).singleton(),
     applicationController: asClass(ApplicationController).singleton(),
     jobController: asClass(JobController).singleton(),
     atsController: asClass(AtsController).singleton(),
@@ -109,6 +112,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     talentController: asClass(TalentController).singleton(),
     placementController: asClass(PlacementController).singleton(),
     authController: asClass(AuthController).singleton(),
+    accountController: asClass(AccountController).singleton(),
   });
   return container;
 }

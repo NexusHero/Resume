@@ -1,4 +1,4 @@
-import { pgTable, text, serial, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, text, serial, integer, jsonb } from 'drizzle-orm/pg-core';
 
 /** Recorded job applications (mirrors domain `Application`). */
 export const applications = pgTable('applications', {
@@ -42,3 +42,52 @@ export interface SavedSearchQueryRow {
   country?: string;
   threshold: number;
 }
+
+/** Client search mandates (mirrors domain `Mandate`). Owner-scoped per recruiter. */
+export const mandates = pgTable('mandates', {
+  id: text('id').primaryKey(),
+  ownerId: text('owner_id').notNull(),
+  client: text('client').notNull(),
+  role: text('role').notNull(),
+  location: text('location').notNull(),
+  fee: text('fee').notNull(),
+  feeValue: text('fee_value').notNull(),
+  deadline: text('deadline').notNull(),
+  priority: text('priority').notNull(),
+  status: text('status').notNull(),
+  submitted: integer('submitted').notNull(),
+  interviews: integer('interviews').notNull(),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+/** Represented candidates (mirrors domain `Talent`). Owner-scoped per recruiter. */
+export const talents = pgTable('talents', {
+  id: text('id').primaryKey(),
+  ownerId: text('owner_id').notNull(),
+  name: text('name').notNull(),
+  role: text('role').notNull(),
+  headline: text('headline').notNull(),
+  location: text('location').notNull(),
+  email: text('email').notNull(),
+  phone: text('phone').notNull(),
+  availability: text('availability').notNull(),
+  salary: text('salary').notNull(),
+  skills: jsonb('skills').$type<string[]>().notNull(),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+/** Booked placements (mirrors domain `Placement`). Owner-scoped per recruiter. */
+export const placements = pgTable('placements', {
+  id: text('id').primaryKey(),
+  ownerId: text('owner_id').notNull(),
+  candidateName: text('candidate_name').notNull(),
+  candidateRole: text('candidate_role').notNull(),
+  client: text('client').notNull(),
+  start: text('start').notNull(),
+  fee: text('fee').notNull(),
+  status: text('status').notNull(),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});

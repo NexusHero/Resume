@@ -22,6 +22,9 @@ module.exports = {
     '!server/src/adapters/sql/sql-application-repository.ts',
     '!server/src/adapters/sql/sql-audit-log.ts',
     '!server/src/adapters/sql/sql-saved-search-repository.ts',
+    '!server/src/adapters/sql/sql-mandate-repository.ts',
+    '!server/src/adapters/sql/sql-talent-repository.ts',
+    '!server/src/adapters/sql/sql-placement-repository.ts',
   ],
   coverageDirectory: 'coverage',
   coverageThreshold: {

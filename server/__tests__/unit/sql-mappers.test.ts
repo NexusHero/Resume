@@ -5,9 +5,18 @@ import {
   auditEventToRow,
   rowToSavedSearch,
   savedSearchToRow,
+  rowToMandate,
+  mandateToRow,
+  rowToTalent,
+  talentToRow,
+  rowToPlacement,
+  placementToRow,
 } from '../../src/adapters/sql/mappers';
 import type { Application, AuditEvent } from '../../src/domain/application';
 import type { SavedSearch } from '../../src/domain/saved-search';
+import type { Mandate } from '../../src/domain/mandate';
+import type { Talent } from '../../src/domain/talent';
+import type { Placement } from '../../src/domain/placement';
 
 describe('application mappers', () => {
   it('Application_RoundTrips_PreservingNullAndUndefined', () => {
@@ -114,5 +123,68 @@ describe('saved-search mappers', () => {
     };
     const row = savedSearchToRow(search);
     expect(rowToSavedSearch(row as Required<typeof row>)).toEqual(search);
+  });
+});
+
+describe('mandate mappers', () => {
+  it('Mandate_RoundTrips_PreservingOwnerAndNumbers', () => {
+    const mandate: Mandate = {
+      id: 'm1',
+      ownerId: 'owner1',
+      client: 'Aurora',
+      role: 'C++ Engineer',
+      location: 'Berlin',
+      fee: '22%',
+      feeValue: '17.160 €',
+      deadline: '2026-07-30',
+      priority: 'high',
+      status: 'active',
+      submitted: 4,
+      interviews: 2,
+      createdAt: '2026-06-25T10:00:00.000Z',
+      updatedAt: '2026-06-25T10:00:00.000Z',
+    };
+    expect(rowToMandate(mandateToRow(mandate) as Required<typeof mandate>)).toEqual(mandate);
+  });
+});
+
+describe('talent mappers', () => {
+  it('Talent_RoundTrips_PreservingOwnerAndSkills', () => {
+    const talent: Talent = {
+      id: 't1',
+      ownerId: 'owner1',
+      name: 'Lena Brandt',
+      role: 'Product Designer',
+      headline: '',
+      location: 'Leipzig',
+      email: '',
+      phone: '',
+      availability: 'immediately',
+      salary: '64.000 €',
+      skills: ['Figma', 'Design Systems'],
+      createdAt: '2026-06-25T10:00:00.000Z',
+      updatedAt: '2026-06-25T10:00:00.000Z',
+    };
+    expect(rowToTalent(talentToRow(talent) as Required<typeof talent>)).toEqual(talent);
+  });
+});
+
+describe('placement mappers', () => {
+  it('Placement_RoundTrips_PreservingOwner', () => {
+    const placement: Placement = {
+      id: 'p1',
+      ownerId: 'owner1',
+      candidateName: 'Mara Vogel',
+      candidateRole: 'Engineering Manager',
+      client: 'Aurora Systems GmbH',
+      start: '2026-07-01',
+      fee: '19.000 €',
+      status: 'invoiced',
+      createdAt: '2026-06-25T10:00:00.000Z',
+      updatedAt: '2026-06-25T10:00:00.000Z',
+    };
+    expect(rowToPlacement(placementToRow(placement) as Required<typeof placement>)).toEqual(
+      placement,
+    );
   });
 });

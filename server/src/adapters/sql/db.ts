@@ -43,5 +43,51 @@ export async function migrate(pool: Pool): Promise<void> {
       query jsonb NOT NULL,
       created_at text NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS mandates (
+      id text PRIMARY KEY,
+      owner_id text NOT NULL,
+      client text NOT NULL,
+      role text NOT NULL,
+      location text NOT NULL,
+      fee text NOT NULL,
+      fee_value text NOT NULL,
+      deadline text NOT NULL,
+      priority text NOT NULL,
+      status text NOT NULL,
+      submitted integer NOT NULL,
+      interviews integer NOT NULL,
+      created_at text NOT NULL,
+      updated_at text NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS mandates_owner_id_idx ON mandates (owner_id);
+    CREATE TABLE IF NOT EXISTS talents (
+      id text PRIMARY KEY,
+      owner_id text NOT NULL,
+      name text NOT NULL,
+      role text NOT NULL,
+      headline text NOT NULL,
+      location text NOT NULL,
+      email text NOT NULL,
+      phone text NOT NULL,
+      availability text NOT NULL,
+      salary text NOT NULL,
+      skills jsonb NOT NULL,
+      created_at text NOT NULL,
+      updated_at text NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS talents_owner_id_idx ON talents (owner_id);
+    CREATE TABLE IF NOT EXISTS placements (
+      id text PRIMARY KEY,
+      owner_id text NOT NULL,
+      candidate_name text NOT NULL,
+      candidate_role text NOT NULL,
+      client text NOT NULL,
+      start text NOT NULL,
+      fee text NOT NULL,
+      status text NOT NULL,
+      created_at text NOT NULL,
+      updated_at text NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS placements_owner_id_idx ON placements (owner_id);
   `);
 }

@@ -47,7 +47,7 @@ import {
   noopLogger,
 } from '../support/fakes';
 
-function makeApp(): Express {
+function makeApp(config = loadConfig({})): Express {
   const service = new ApplicationService({
     applicationRepository: new InMemoryApplicationRepository(),
     auditLog: new InMemoryAuditLog(),
@@ -60,7 +60,6 @@ function makeApp(): Express {
     logger: noopLogger,
   });
   const controller = new ApplicationController({ applicationService: service });
-  const config = loadConfig({});
   const jobSearchService = new JobSearchService({
     jobSource: new SampleJobSource(),
     skillExtractor: new KeywordSkillExtractor(),
@@ -568,6 +567,23 @@ describe('REST API /api/v1', () => {
     const res = await request(app).get('/api/v1/auth/providers');
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ google: false, linkedin: false });
+  });
+
+  it('Auth_DefaultConfig_SessionCookieNotSecure', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/register')
+      .send({ email: 'plain@example.com', password: 'supersecret' });
+    expect(res.headers['set-cookie']?.[0] ?? '').not.toMatch(/Secure/);
+  });
+
+  it('Auth_SecureConfig_SetsSecureSessionCookie', async () => {
+    const base = loadConfig({});
+    const secureApp = makeApp({ ...base, auth: { ...base.auth, cookieSecure: true } });
+    const res = await request(secureApp)
+      .post('/api/v1/auth/register')
+      .send({ email: 'secure@example.com', password: 'supersecret' });
+    expect(res.status).toBe(201);
+    expect(res.headers['set-cookie']?.[0] ?? '').toMatch(/Secure/);
   });
 
   it('Cors_Preflight_Returns204', async () => {

@@ -54,6 +54,8 @@ function tmpConfig(): AppConfig {
     databaseUrl: '',
     auth: {
       sessionCookieName: 'myjob_session',
+      cookieSecure: false,
+      sessionTtlMs: 30 * 24 * 60 * 60 * 1000,
       google: { enabled: false },
       linkedin: { enabled: false },
     },
@@ -163,6 +165,23 @@ describe('FsSessionStore', () => {
     // A subsequent create recovers the file to a valid array.
     const token = await store.create('u2');
     expect(await store.userIdFor(token)).toBe('u2');
+  });
+
+  it('Session_PastTtl_RejectedAndPruned', async () => {
+    // A mutable clock lets time advance past the 30-day TTL between create/read.
+    let nowIso = '2026-01-01T00:00:00.000Z';
+    const clock = {
+      isoNow: () => nowIso,
+      now: () => new Date(nowIso),
+      today: () => nowIso.slice(0, 10),
+    };
+    const store = new FsSessionStore({ config: tmpConfig(), clock });
+    const token = await store.create('u1');
+    expect(await store.userIdFor(token)).toBe('u1'); // fresh → valid
+    nowIso = '2026-03-01T00:00:00.000Z'; // > 30 days later
+    expect(await store.userIdFor(token)).toBeNull(); // expired
+    nowIso = '2026-01-01T00:00:00.000Z'; // even rewinding, the row was pruned
+    expect(await store.userIdFor(token)).toBeNull();
   });
 });
 

@@ -21,11 +21,13 @@ export class FsSessionStore implements SessionStore {
   private readonly file: string;
   private readonly dir: string;
   private readonly clock: Clock;
+  private readonly ttlMs: number;
 
   constructor(deps: { config: AppConfig; clock: Clock }) {
     this.file = deps.config.sessionsFile;
     this.dir = path.dirname(this.file);
     this.clock = deps.clock;
+    this.ttlMs = deps.config.auth.sessionTtlMs;
   }
 
   private async readAll(): Promise<SessionRecord[]> {
@@ -52,7 +54,15 @@ export class FsSessionStore implements SessionStore {
   }
 
   async userIdFor(token: string): Promise<string | null> {
-    return (await this.readAll()).find((s) => s.token === token)?.userId ?? null;
+    const all = await this.readAll();
+    const record = all.find((s) => s.token === token);
+    if (!record) return null;
+    // Reject (and prune) sessions older than the configured lifetime.
+    if (Date.parse(record.createdAt) + this.ttlMs <= Date.parse(this.clock.isoNow())) {
+      await this.write(all.filter((s) => s.token !== token));
+      return null;
+    }
+    return record.userId;
   }
 
   async destroy(token: string): Promise<void> {

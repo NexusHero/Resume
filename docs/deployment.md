@@ -28,14 +28,16 @@ docker run -p 4178:4178 \
 
 Resolved from the environment (see `server/src/config.ts`):
 
-| Variable                               | Default   | Purpose                                                     |
-| -------------------------------------- | --------- | ----------------------------------------------------------- |
-| `PORT`                                 | `4178`    | HTTP port.                                                  |
-| `STORE`                                | `fs`      | `sql` uses Postgres; otherwise JSON files under `archive/`. |
-| `DATABASE_URL`                         | —         | Postgres connection string (required when `STORE=sql`).     |
-| `CORS_ORIGINS`                         | _(empty)_ | Comma-separated browser origins allowed to call the API.    |
-| `LLM_PROVIDER`                         | `claude`  | Active model provider for cover letters.                    |
-| `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` | —         | Provider keys (server-side; never in the client).           |
+| Variable                               | Default   | Purpose                                                                                  |
+| -------------------------------------- | --------- | ---------------------------------------------------------------------------------------- |
+| `PORT`                                 | `4178`    | HTTP port.                                                                               |
+| `STORE`                                | `fs`      | `sql` uses Postgres; otherwise JSON files under `archive/`.                              |
+| `DATABASE_URL`                         | —         | Postgres connection string (required when `STORE=sql`).                                  |
+| `CORS_ORIGINS`                         | _(empty)_ | Comma-separated browser origins allowed to call the API.                                 |
+| `COOKIE_SECURE`                        | _(off)_   | `true` sends the session cookie Secure (HTTPS-only). Auto-on when `NODE_ENV=production`. |
+| `SESSION_TTL_DAYS`                     | `30`      | Server-side session lifetime; older sessions are rejected.                               |
+| `LLM_PROVIDER`                         | `claude`  | Active model provider for cover letters.                                                 |
+| `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` | —         | Provider keys (server-side; never in the client).                                        |
 
 ## Notes
 
@@ -44,8 +46,9 @@ Resolved from the environment (see `server/src/config.ts`):
   archive are file-backed under `/app/archive` — mount a volume so they survive a
   redeploy. (A SQL-backed user/session store is a tracked follow-up.)
 - **TLS / cookies:** terminate TLS at a reverse proxy and serve the app over
-  HTTPS so the `httpOnly` session cookie is only sent over an encrypted channel.
-  Setting the cookie `Secure` flag from the app is a tracked follow-up.
+  HTTPS. The `httpOnly` session cookie is sent `Secure` automatically in
+  production (`NODE_ENV=production`) or with `COOKIE_SECURE=true`. Server-side
+  sessions expire after `SESSION_TTL_DAYS`.
 - **Migrations:** `migrate()` runs idempotent `CREATE TABLE IF NOT EXISTS`
   statements on boot. A versioned migration tool is a follow-up for schema
   evolution.

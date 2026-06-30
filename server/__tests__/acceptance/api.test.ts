@@ -14,10 +14,13 @@ import { LlmController } from '../../src/http/llm-controller';
 import { MandateController } from '../../src/http/mandate-controller';
 import { TalentController } from '../../src/http/talent-controller';
 import { PlacementController } from '../../src/http/placement-controller';
+import { AuthController } from '../../src/http/auth-controller';
 import { LlmService } from '../../src/services/llm-service';
 import { MandateService } from '../../src/services/mandate-service';
 import { TalentService } from '../../src/services/talent-service';
 import { PlacementService } from '../../src/services/placement-service';
+import { AuthService } from '../../src/services/auth-service';
+import { MemorySessionStore } from '../../src/adapters/memory-session-store';
 import { CoverLetterService } from '../../src/services/cover-letter-service';
 import { AnthropicLlmProvider } from '../../src/adapters/anthropic-llm-provider';
 import { GeminiLlmProvider } from '../../src/adapters/gemini-llm-provider';
@@ -32,6 +35,8 @@ import {
   InMemoryMandateRepository,
   InMemoryTalentRepository,
   InMemoryPlacementRepository,
+  InMemoryUserRepository,
+  fakePasswordHasher,
   FakePdfRenderer,
   FakePdfMerger,
   FakeVersioner,
@@ -112,6 +117,16 @@ function makeApp(): Express {
       idGenerator: new SequenceIdGenerator('placement'),
     }),
   });
+  const authController = new AuthController({
+    authService: new AuthService({
+      userRepository: new InMemoryUserRepository(),
+      sessionStore: new MemorySessionStore(),
+      passwordHasher: fakePasswordHasher,
+      clock: new FixedClock(),
+      idGenerator: new SequenceIdGenerator('user'),
+    }),
+    config,
+  });
   return createApp({
     applicationController: controller,
     jobController,
@@ -121,6 +136,7 @@ function makeApp(): Express {
     mandateController,
     talentController,
     placementController,
+    authController,
     config,
     logger: noopLogger,
   });
@@ -381,6 +397,80 @@ describe('REST API /api/v1', () => {
     const res = await request(app).delete('/api/v1/placements/nope');
     expect(res.status).toBe(404);
     expect(res.body).toMatchObject({ status: 404 });
+  });
+
+  it('Auth_RegisterThenMe_ReturnsUserAndSetsCookie', async () => {
+    const agent = request.agent(app);
+    const reg = await agent
+      .post('/api/v1/auth/register')
+      .send({ email: 'a@example.com', password: 'supersecret' });
+    expect(reg.status).toBe(201);
+    expect(reg.body.user).toMatchObject({ id: 'user1', email: 'a@example.com' });
+    expect(reg.headers['set-cookie']).toBeDefined();
+    const me = await agent.get('/api/v1/auth/me');
+    expect(me.body.user).toMatchObject({ email: 'a@example.com' });
+  });
+
+  it('Auth_MeWithoutSession_ReturnsNull', async () => {
+    const res = await request(app).get('/api/v1/auth/me');
+    expect(res.status).toBe(200);
+    expect(res.body.user).toBeNull();
+  });
+
+  it('Auth_RegisterShortPassword_Returns400', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/register')
+      .send({ email: 'd@example.com', password: 'short' });
+    expect(res.status).toBe(400);
+  });
+
+  it('Auth_RegisterDuplicate_Returns409', async () => {
+    await request(app)
+      .post('/api/v1/auth/register')
+      .send({ email: 'dup@example.com', password: 'supersecret' });
+    const res = await request(app)
+      .post('/api/v1/auth/register')
+      .send({ email: 'dup@example.com', password: 'supersecret' });
+    expect(res.status).toBe(409);
+  });
+
+  it('Auth_LoginValid_ReturnsUserAndSession', async () => {
+    await request(app)
+      .post('/api/v1/auth/register')
+      .send({ email: 'e@example.com', password: 'supersecret' });
+    const res = await request(app)
+      .post('/api/v1/auth/login')
+      .send({ email: 'e@example.com', password: 'supersecret' });
+    expect(res.status).toBe(200);
+    expect(res.body.user).toMatchObject({ email: 'e@example.com' });
+    expect(res.headers['set-cookie']).toBeDefined();
+  });
+
+  it('Auth_LoginWrongPassword_Returns401', async () => {
+    await request(app)
+      .post('/api/v1/auth/register')
+      .send({ email: 'b@example.com', password: 'supersecret' });
+    const res = await request(app)
+      .post('/api/v1/auth/login')
+      .send({ email: 'b@example.com', password: 'wrongpass' });
+    expect(res.status).toBe(401);
+  });
+
+  it('Auth_LoginThenLogout_ClearsSession', async () => {
+    const agent = request.agent(app);
+    await agent
+      .post('/api/v1/auth/register')
+      .send({ email: 'c@example.com', password: 'supersecret' });
+    const out = await agent.post('/api/v1/auth/logout');
+    expect(out.status).toBe(204);
+    const me = await agent.get('/api/v1/auth/me');
+    expect(me.body.user).toBeNull();
+  });
+
+  it('Auth_Providers_ReturnsAvailabilityFlags', async () => {
+    const res = await request(app).get('/api/v1/auth/providers');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ google: false, linkedin: false });
   });
 
   it('Cors_Preflight_Returns204', async () => {

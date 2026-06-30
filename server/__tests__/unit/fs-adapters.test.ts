@@ -10,7 +10,9 @@ import { FsSavedSearchRepository } from '../../src/adapters/fs-saved-search-repo
 import { FsMandateRepository } from '../../src/adapters/fs-mandate-repository';
 import { FsTalentRepository } from '../../src/adapters/fs-talent-repository';
 import { FsPlacementRepository } from '../../src/adapters/fs-placement-repository';
+import { FsUserRepository } from '../../src/adapters/fs-user-repository';
 import type { Application, AuditEvent } from '../../src/domain/application';
+import type { User } from '../../src/domain/user';
 import type { SavedSearch } from '../../src/domain/saved-search';
 import type { Mandate } from '../../src/domain/mandate';
 import type { Talent } from '../../src/domain/talent';
@@ -29,6 +31,7 @@ function tmpConfig(): AppConfig {
     mandatesFile: path.join(storeDir, 'mandates.json'),
     talentsFile: path.join(storeDir, 'talents.json'),
     placementsFile: path.join(storeDir, 'placements.json'),
+    usersFile: path.join(storeDir, 'users.json'),
     staticDir: rootDir,
     versionedPaths: ['bewerbungen'],
     candidateProfile: { skills: [] },
@@ -46,8 +49,45 @@ function tmpConfig(): AppConfig {
     },
     store: 'fs',
     databaseUrl: '',
+    auth: {
+      sessionCookieName: 'myjob_session',
+      google: { enabled: false },
+      linkedin: { enabled: false },
+    },
   };
 }
+
+const user = (id: string, email: string): User => ({
+  id,
+  email,
+  passwordHash: 'scrypt$salt$key',
+  createdAt: '2026-06-25T10:00:00.000Z',
+});
+
+describe('FsUserRepository', () => {
+  it('Repository_NoFile_FindsNothing', async () => {
+    const repo = new FsUserRepository({ config: tmpConfig() });
+    expect(await repo.findByEmail('a@example.com')).toBeNull();
+    expect(await repo.findById('u1')).toBeNull();
+  });
+
+  it('Repository_AddThenFind_RoundTrips', async () => {
+    const repo = new FsUserRepository({ config: tmpConfig() });
+    await repo.add(user('u1', 'a@example.com'));
+    expect(await repo.findByEmail('a@example.com')).toMatchObject({ id: 'u1' });
+    expect(await repo.findById('u1')).toMatchObject({ email: 'a@example.com' });
+    expect(await repo.findByEmail('none@example.com')).toBeNull();
+  });
+
+  it('Repository_MalformedOrNonArrayFile_FindsNothing', async () => {
+    const config = tmpConfig();
+    await fs.mkdir(config.storeDir, { recursive: true });
+    await fs.writeFile(config.usersFile, 'not json');
+    expect(await new FsUserRepository({ config }).findByEmail('a@example.com')).toBeNull();
+    await fs.writeFile(config.usersFile, '{"x":1}');
+    expect(await new FsUserRepository({ config }).findById('u1')).toBeNull();
+  });
+});
 
 const app = (id: string, company = 'Aurora'): Application => ({
   id,

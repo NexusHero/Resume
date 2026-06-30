@@ -180,6 +180,38 @@ test.describe('UI acceptance — the suite renders in English', () => {
     await expect(page.getByRole('button', { name: /Talent Pool/ })).toBeVisible();
   });
 
+  test('Recruiting_Settings_LoadsProvidersAndSwitchesModel', async ({ page }) => {
+    await page.route('**/api/v1/auth/me', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id: 'user1', email: 'me@example.de' } }),
+      }),
+    );
+    let current = 'claude';
+    await page.route('**/api/v1/settings/llm', (route) => {
+      if (route.request().method() === 'PUT') {
+        current = JSON.parse(route.request().postData() || '{}').provider;
+      }
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          current,
+          providers: [
+            { id: 'claude', label: 'Claude (Anthropic)', available: true },
+            { id: 'gemini', label: 'Gemini (Google)', available: false },
+          ],
+        }),
+      });
+    });
+    await page.goto('/design/myjob/ui_kits/recruiting/index.html');
+    await page.getByRole('button', { name: /Settings/ }).click();
+    await expect(page.locator('main')).toContainText('Claude (Anthropic)');
+    await expect(page.locator('main')).toContainText('Gemini (Google)');
+    // switch the active model to Gemini → the backend is asked to switch
+    await page.locator('input[type="radio"]').nth(1).check();
+    await expect.poll(() => current).toBe('gemini');
+  });
+
   test('Karriere_Jobsuche_FetchesJobsFromApiAndCreatesApplication', async ({ page }) => {
     // The Jobsuche now fetches live from the REST API; stub it so the flow is
     // deterministic regardless of which job boards are configured on the server.

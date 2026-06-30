@@ -1,4 +1,5 @@
 import express, { type Express, type Request, type Response, type NextFunction } from 'express';
+import { rateLimit } from 'express-rate-limit';
 import type { AppConfig } from '../config';
 import type { Logger } from '../ports/logger';
 import type { ApplicationController } from './application-controller';
@@ -58,8 +59,17 @@ export function createApp(deps: AppDeps): Express {
 
   const api = express.Router();
   api.get('/health', (_req, res) => res.json({ status: 'ok' }));
-  api.post('/auth/register', asyncHandler(auth.register));
-  api.post('/auth/login', asyncHandler(auth.login));
+
+  // Throttle the credential endpoints against brute-force / account-creation abuse.
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    validate: false,
+  });
+  api.post('/auth/register', authLimiter, asyncHandler(auth.register));
+  api.post('/auth/login', authLimiter, asyncHandler(auth.login));
   api.post('/auth/logout', asyncHandler(auth.logout));
   api.get('/auth/me', asyncHandler(auth.me));
   api.get('/auth/providers', asyncHandler(auth.providersInfo));

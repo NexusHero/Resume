@@ -26,20 +26,21 @@ export class PlacementService {
     this.ids = deps.idGenerator;
   }
 
-  list(): Promise<Placement[]> {
-    return this.repo.list();
+  list(ownerId: string): Promise<Placement[]> {
+    return this.repo.list(ownerId);
   }
 
-  async get(id: string): Promise<Placement> {
-    const placement = await this.repo.findById(id);
+  async get(ownerId: string, id: string): Promise<Placement> {
+    const placement = await this.repo.findById(ownerId, id);
     if (!placement) throw new NotFoundError(`Placement ${id} not found`);
     return placement;
   }
 
-  async create(input: CreatePlacementInput): Promise<Placement> {
+  async create(ownerId: string, input: CreatePlacementInput): Promise<Placement> {
     const now = this.clock.isoNow();
     const placement: Placement = {
       id: this.ids.next(),
+      ownerId,
       candidateName: input.candidateName,
       candidateRole: input.candidateRole,
       client: input.client,
@@ -53,15 +54,15 @@ export class PlacementService {
     return placement;
   }
 
-  async update(id: string, patch: UpdatePlacementInput): Promise<Placement> {
-    const existing = await this.get(id);
+  async update(ownerId: string, id: string, patch: UpdatePlacementInput): Promise<Placement> {
+    const existing = await this.get(ownerId, id);
     const updated: Placement = { ...existing, ...patch, updatedAt: this.clock.isoNow() };
     await this.repo.update(updated);
     return updated;
   }
 
-  async remove(id: string): Promise<void> {
-    const removed = await this.repo.remove(id);
+  async remove(ownerId: string, id: string): Promise<void> {
+    const removed = await this.repo.remove(ownerId, id);
     if (!removed) throw new NotFoundError(`Placement ${id} not found`);
   }
 }

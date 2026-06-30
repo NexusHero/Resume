@@ -15,7 +15,7 @@ import { FsMandateRepository } from './adapters/fs-mandate-repository';
 import { FsTalentRepository } from './adapters/fs-talent-repository';
 import { FsPlacementRepository } from './adapters/fs-placement-repository';
 import { FsUserRepository } from './adapters/fs-user-repository';
-import { MemorySessionStore } from './adapters/memory-session-store';
+import { FsSessionStore } from './adapters/fs-session-store';
 import { ScryptPasswordHasher } from './adapters/scrypt-password-hasher';
 import { createPersistence } from './adapters/persistence-factory';
 import type { Db } from './adapters/sql/db';
@@ -68,7 +68,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     talentRepository: asClass(FsTalentRepository).singleton(),
     placementRepository: asClass(FsPlacementRepository).singleton(),
     userRepository: asClass(FsUserRepository).singleton(),
-    sessionStore: asClass(MemorySessionStore).singleton(),
+    sessionStore: asClass(FsSessionStore).singleton(),
     passwordHasher: asClass(ScryptPasswordHasher).singleton(),
     pdfArchive: asClass(FsPdfArchive).singleton(),
     // Git versioning only makes sense for the file store; with Postgres there are

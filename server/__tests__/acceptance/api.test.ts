@@ -221,182 +221,219 @@ describe('REST API /api/v1', () => {
     expect(res.body).toMatchObject({ title: 'Not Found' });
   });
 
-  it('Mandates_GetEmpty_ReturnsArray', async () => {
-    const res = await request(app).get('/api/v1/mandates');
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual([]);
-  });
-
-  it('Mandates_PostValid_Creates201', async () => {
-    const res = await request(app)
-      .post('/api/v1/mandates')
-      .send({ client: 'Aurora', role: 'C++ Engineer', location: 'Berlin' });
-    expect(res.status).toBe(201);
-    expect(res.body.mandate).toMatchObject({
-      id: 'mandate1',
-      client: 'Aurora',
-      role: 'C++ Engineer',
-      priority: 'medium',
-      status: 'active',
+  // Recruiting endpoints are owner-scoped: every request runs under an
+  // authenticated session, so each test drives a logged-in supertest agent.
+  describe('Recruiting (owner-scoped)', () => {
+    let agent: ReturnType<typeof request.agent>;
+    beforeEach(async () => {
+      agent = request.agent(app);
+      await agent
+        .post('/api/v1/auth/register')
+        .send({ email: 'recruiter@example.com', password: 'correct horse battery' });
     });
-  });
 
-  it('Mandates_PostMissingClient_Returns400Problem', async () => {
-    const res = await request(app)
-      .post('/api/v1/mandates')
-      .send({ role: 'C++ Engineer', location: 'Berlin' });
-    expect(res.status).toBe(400);
-    expect(res.headers['content-type']).toMatch(/application\/problem\+json/);
-    expect(res.body).toMatchObject({ title: 'Validation failed', status: 400 });
-  });
-
-  it('Mandates_PatchExisting_Updates', async () => {
-    const created = await request(app)
-      .post('/api/v1/mandates')
-      .send({ client: 'Aurora', role: 'C++ Engineer', location: 'Berlin' });
-    const id = created.body.mandate.id;
-    const res = await request(app).patch(`/api/v1/mandates/${id}`).send({ status: 'paused' });
-    expect(res.status).toBe(200);
-    expect(res.body.mandate.status).toBe('paused');
-  });
-
-  it('Mandates_PatchUnknown_Returns404Problem', async () => {
-    const res = await request(app).patch('/api/v1/mandates/nope').send({ status: 'closed' });
-    expect(res.status).toBe(404);
-    expect(res.body).toMatchObject({ status: 404, title: 'NotFoundError' });
-  });
-
-  it('Mandates_DeleteExisting_Returns204', async () => {
-    const created = await request(app)
-      .post('/api/v1/mandates')
-      .send({ client: 'Aurora', role: 'C++ Engineer', location: 'Berlin' });
-    const id = created.body.mandate.id;
-    const res = await request(app).delete(`/api/v1/mandates/${id}`);
-    expect(res.status).toBe(204);
-    const list = await request(app).get('/api/v1/mandates');
-    expect(list.body).toEqual([]);
-  });
-
-  it('Mandates_DeleteUnknown_Returns404Problem', async () => {
-    const res = await request(app).delete('/api/v1/mandates/nope');
-    expect(res.status).toBe(404);
-    expect(res.body).toMatchObject({ status: 404 });
-  });
-
-  it('Talents_GetEmpty_ReturnsArray', async () => {
-    const res = await request(app).get('/api/v1/talents');
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual([]);
-  });
-
-  it('Talents_PostValid_Creates201', async () => {
-    const res = await request(app)
-      .post('/api/v1/talents')
-      .send({ name: 'Lena Brandt', role: 'Product Designer', skills: ['Figma'] });
-    expect(res.status).toBe(201);
-    expect(res.body.talent).toMatchObject({
-      id: 'talent1',
-      name: 'Lena Brandt',
-      role: 'Product Designer',
-      skills: ['Figma'],
+    it('Mandates_Unauthenticated_Returns401', async () => {
+      const res = await request(app).get('/api/v1/mandates');
+      expect(res.status).toBe(401);
+      expect(res.body).toMatchObject({ status: 401 });
     });
-  });
 
-  it('Talents_PostMissingName_Returns400Problem', async () => {
-    const res = await request(app).post('/api/v1/talents').send({ role: 'Designer' });
-    expect(res.status).toBe(400);
-    expect(res.headers['content-type']).toMatch(/application\/problem\+json/);
-    expect(res.body).toMatchObject({ title: 'Validation failed', status: 400 });
-  });
-
-  it('Talents_PatchExisting_Updates', async () => {
-    const created = await request(app).post('/api/v1/talents').send({ name: 'Lena Brandt' });
-    const id = created.body.talent.id;
-    const res = await request(app)
-      .patch(`/api/v1/talents/${id}`)
-      .send({ availability: 'immediately' });
-    expect(res.status).toBe(200);
-    expect(res.body.talent.availability).toBe('immediately');
-  });
-
-  it('Talents_PatchUnknown_Returns404Problem', async () => {
-    const res = await request(app).patch('/api/v1/talents/nope').send({ role: 'x' });
-    expect(res.status).toBe(404);
-    expect(res.body).toMatchObject({ status: 404, title: 'NotFoundError' });
-  });
-
-  it('Talents_DeleteExisting_Returns204', async () => {
-    const created = await request(app).post('/api/v1/talents').send({ name: 'Lena Brandt' });
-    const id = created.body.talent.id;
-    const res = await request(app).delete(`/api/v1/talents/${id}`);
-    expect(res.status).toBe(204);
-    const list = await request(app).get('/api/v1/talents');
-    expect(list.body).toEqual([]);
-  });
-
-  it('Talents_DeleteUnknown_Returns404Problem', async () => {
-    const res = await request(app).delete('/api/v1/talents/nope');
-    expect(res.status).toBe(404);
-    expect(res.body).toMatchObject({ status: 404 });
-  });
-
-  it('Placements_GetEmpty_ReturnsArray', async () => {
-    const res = await request(app).get('/api/v1/placements');
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual([]);
-  });
-
-  it('Placements_PostValid_Creates201', async () => {
-    const res = await request(app)
-      .post('/api/v1/placements')
-      .send({ candidateName: 'Mara Vogel', client: 'Aurora', fee: '19.000 €' });
-    expect(res.status).toBe(201);
-    expect(res.body.placement).toMatchObject({
-      id: 'placement1',
-      candidateName: 'Mara Vogel',
-      client: 'Aurora',
-      status: 'probation',
+    it('Mandates_GetEmpty_ReturnsArray', async () => {
+      const res = await agent.get('/api/v1/mandates');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
     });
-  });
 
-  it('Placements_PostMissingClient_Returns400Problem', async () => {
-    const res = await request(app).post('/api/v1/placements').send({ candidateName: 'Mara' });
-    expect(res.status).toBe(400);
-    expect(res.headers['content-type']).toMatch(/application\/problem\+json/);
-    expect(res.body).toMatchObject({ title: 'Validation failed', status: 400 });
-  });
+    it('Mandates_PostValid_Creates201', async () => {
+      const res = await agent
+        .post('/api/v1/mandates')
+        .send({ client: 'Aurora', role: 'C++ Engineer', location: 'Berlin' });
+      expect(res.status).toBe(201);
+      expect(res.body.mandate).toMatchObject({
+        id: 'mandate1',
+        client: 'Aurora',
+        role: 'C++ Engineer',
+        priority: 'medium',
+        status: 'active',
+      });
+    });
 
-  it('Placements_PatchExisting_Updates', async () => {
-    const created = await request(app)
-      .post('/api/v1/placements')
-      .send({ candidateName: 'Mara Vogel', client: 'Aurora' });
-    const id = created.body.placement.id;
-    const res = await request(app).patch(`/api/v1/placements/${id}`).send({ status: 'paid' });
-    expect(res.status).toBe(200);
-    expect(res.body.placement.status).toBe('paid');
-  });
+    it('Mandates_PostMissingClient_Returns400Problem', async () => {
+      const res = await agent
+        .post('/api/v1/mandates')
+        .send({ role: 'C++ Engineer', location: 'Berlin' });
+      expect(res.status).toBe(400);
+      expect(res.headers['content-type']).toMatch(/application\/problem\+json/);
+      expect(res.body).toMatchObject({ title: 'Validation failed', status: 400 });
+    });
 
-  it('Placements_PatchUnknown_Returns404Problem', async () => {
-    const res = await request(app).patch('/api/v1/placements/nope').send({ status: 'paid' });
-    expect(res.status).toBe(404);
-    expect(res.body).toMatchObject({ status: 404, title: 'NotFoundError' });
-  });
+    it('Mandates_PatchExisting_Updates', async () => {
+      const created = await agent
+        .post('/api/v1/mandates')
+        .send({ client: 'Aurora', role: 'C++ Engineer', location: 'Berlin' });
+      const id = created.body.mandate.id;
+      const res = await agent.patch(`/api/v1/mandates/${id}`).send({ status: 'paused' });
+      expect(res.status).toBe(200);
+      expect(res.body.mandate.status).toBe('paused');
+    });
 
-  it('Placements_DeleteExisting_Returns204', async () => {
-    const created = await request(app)
-      .post('/api/v1/placements')
-      .send({ candidateName: 'Mara Vogel', client: 'Aurora' });
-    const id = created.body.placement.id;
-    const res = await request(app).delete(`/api/v1/placements/${id}`);
-    expect(res.status).toBe(204);
-    const list = await request(app).get('/api/v1/placements');
-    expect(list.body).toEqual([]);
-  });
+    it('Mandates_PatchUnknown_Returns404Problem', async () => {
+      const res = await agent.patch('/api/v1/mandates/nope').send({ status: 'closed' });
+      expect(res.status).toBe(404);
+      expect(res.body).toMatchObject({ status: 404, title: 'NotFoundError' });
+    });
 
-  it('Placements_DeleteUnknown_Returns404Problem', async () => {
-    const res = await request(app).delete('/api/v1/placements/nope');
-    expect(res.status).toBe(404);
-    expect(res.body).toMatchObject({ status: 404 });
+    it('Mandates_DeleteExisting_Returns204', async () => {
+      const created = await agent
+        .post('/api/v1/mandates')
+        .send({ client: 'Aurora', role: 'C++ Engineer', location: 'Berlin' });
+      const id = created.body.mandate.id;
+      const res = await agent.delete(`/api/v1/mandates/${id}`);
+      expect(res.status).toBe(204);
+      const list = await agent.get('/api/v1/mandates');
+      expect(list.body).toEqual([]);
+    });
+
+    it('Mandates_DeleteUnknown_Returns404Problem', async () => {
+      const res = await agent.delete('/api/v1/mandates/nope');
+      expect(res.status).toBe(404);
+      expect(res.body).toMatchObject({ status: 404 });
+    });
+
+    it('Mandates_AnotherOwner_CannotSeeOrMutate', async () => {
+      const created = await agent
+        .post('/api/v1/mandates')
+        .send({ client: 'Aurora', role: 'C++ Engineer', location: 'Berlin' });
+      const id = created.body.mandate.id;
+
+      const intruder = request.agent(app);
+      await intruder
+        .post('/api/v1/auth/register')
+        .send({ email: 'intruder@example.com', password: 'another good passphrase' });
+
+      // The intruder sees an empty list and cannot reach the other owner's row.
+      expect((await intruder.get('/api/v1/mandates')).body).toEqual([]);
+      expect(
+        (await intruder.patch(`/api/v1/mandates/${id}`).send({ status: 'paused' })).status,
+      ).toBe(404);
+      expect((await intruder.delete(`/api/v1/mandates/${id}`)).status).toBe(404);
+      // The owner's row is untouched.
+      expect((await agent.get('/api/v1/mandates')).body).toHaveLength(1);
+    });
+
+    it('Talents_GetEmpty_ReturnsArray', async () => {
+      const res = await agent.get('/api/v1/talents');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
+    });
+
+    it('Talents_PostValid_Creates201', async () => {
+      const res = await agent
+        .post('/api/v1/talents')
+        .send({ name: 'Lena Brandt', role: 'Product Designer', skills: ['Figma'] });
+      expect(res.status).toBe(201);
+      expect(res.body.talent).toMatchObject({
+        id: 'talent1',
+        name: 'Lena Brandt',
+        role: 'Product Designer',
+        skills: ['Figma'],
+      });
+    });
+
+    it('Talents_PostMissingName_Returns400Problem', async () => {
+      const res = await agent.post('/api/v1/talents').send({ role: 'Designer' });
+      expect(res.status).toBe(400);
+      expect(res.headers['content-type']).toMatch(/application\/problem\+json/);
+      expect(res.body).toMatchObject({ title: 'Validation failed', status: 400 });
+    });
+
+    it('Talents_PatchExisting_Updates', async () => {
+      const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+      const id = created.body.talent.id;
+      const res = await agent.patch(`/api/v1/talents/${id}`).send({ availability: 'immediately' });
+      expect(res.status).toBe(200);
+      expect(res.body.talent.availability).toBe('immediately');
+    });
+
+    it('Talents_PatchUnknown_Returns404Problem', async () => {
+      const res = await agent.patch('/api/v1/talents/nope').send({ role: 'x' });
+      expect(res.status).toBe(404);
+      expect(res.body).toMatchObject({ status: 404, title: 'NotFoundError' });
+    });
+
+    it('Talents_DeleteExisting_Returns204', async () => {
+      const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+      const id = created.body.talent.id;
+      const res = await agent.delete(`/api/v1/talents/${id}`);
+      expect(res.status).toBe(204);
+      const list = await agent.get('/api/v1/talents');
+      expect(list.body).toEqual([]);
+    });
+
+    it('Talents_DeleteUnknown_Returns404Problem', async () => {
+      const res = await agent.delete('/api/v1/talents/nope');
+      expect(res.status).toBe(404);
+      expect(res.body).toMatchObject({ status: 404 });
+    });
+
+    it('Placements_GetEmpty_ReturnsArray', async () => {
+      const res = await agent.get('/api/v1/placements');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
+    });
+
+    it('Placements_PostValid_Creates201', async () => {
+      const res = await agent
+        .post('/api/v1/placements')
+        .send({ candidateName: 'Mara Vogel', client: 'Aurora', fee: '19.000 €' });
+      expect(res.status).toBe(201);
+      expect(res.body.placement).toMatchObject({
+        id: 'placement1',
+        candidateName: 'Mara Vogel',
+        client: 'Aurora',
+        status: 'probation',
+      });
+    });
+
+    it('Placements_PostMissingClient_Returns400Problem', async () => {
+      const res = await agent.post('/api/v1/placements').send({ candidateName: 'Mara' });
+      expect(res.status).toBe(400);
+      expect(res.headers['content-type']).toMatch(/application\/problem\+json/);
+      expect(res.body).toMatchObject({ title: 'Validation failed', status: 400 });
+    });
+
+    it('Placements_PatchExisting_Updates', async () => {
+      const created = await agent
+        .post('/api/v1/placements')
+        .send({ candidateName: 'Mara Vogel', client: 'Aurora' });
+      const id = created.body.placement.id;
+      const res = await agent.patch(`/api/v1/placements/${id}`).send({ status: 'paid' });
+      expect(res.status).toBe(200);
+      expect(res.body.placement.status).toBe('paid');
+    });
+
+    it('Placements_PatchUnknown_Returns404Problem', async () => {
+      const res = await agent.patch('/api/v1/placements/nope').send({ status: 'paid' });
+      expect(res.status).toBe(404);
+      expect(res.body).toMatchObject({ status: 404, title: 'NotFoundError' });
+    });
+
+    it('Placements_DeleteExisting_Returns204', async () => {
+      const created = await agent
+        .post('/api/v1/placements')
+        .send({ candidateName: 'Mara Vogel', client: 'Aurora' });
+      const id = created.body.placement.id;
+      const res = await agent.delete(`/api/v1/placements/${id}`);
+      expect(res.status).toBe(204);
+      const list = await agent.get('/api/v1/placements');
+      expect(list.body).toEqual([]);
+    });
+
+    it('Placements_DeleteUnknown_Returns404Problem', async () => {
+      const res = await agent.delete('/api/v1/placements/nope');
+      expect(res.status).toBe(404);
+      expect(res.body).toMatchObject({ status: 404 });
+    });
   });
 
   it('Auth_RegisterThenMe_ReturnsUserAndSetsCookie', async () => {

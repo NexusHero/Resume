@@ -3,6 +3,7 @@ import { z } from 'zod';
 /** A candidate the Vermittler represents — a member of the talent pool. */
 export interface Talent {
   id: string;
+  ownerId: string;
   name: string;
   role: string;
   headline: string;

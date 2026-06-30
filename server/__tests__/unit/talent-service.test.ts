@@ -3,6 +3,8 @@ import { createTalentSchema, updateTalentSchema } from '../../src/domain/talent'
 import { NotFoundError } from '../../src/domain/errors';
 import { InMemoryTalentRepository, FixedClock, SequenceIdGenerator } from '../support/fakes';
 
+const OWNER = 'owner1';
+
 function makeService() {
   const repo = new InMemoryTalentRepository();
   const service = new TalentService({
@@ -18,9 +20,10 @@ const validInput = { name: 'Lena Brandt', role: 'Product Designer' };
 describe('TalentService', () => {
   it('Create_PersistsWithIdDefaultsAndTimestamps', async () => {
     const { service, repo } = makeService();
-    const created = await service.create(createTalentSchema.parse(validInput));
+    const created = await service.create(OWNER, createTalentSchema.parse(validInput));
     expect(created).toMatchObject({
       id: 'talent1',
+      ownerId: OWNER,
       name: 'Lena Brandt',
       role: 'Product Designer',
       skills: [],
@@ -33,33 +36,43 @@ describe('TalentService', () => {
   it('Create_KeepsProvidedSkills', async () => {
     const { service } = makeService();
     const created = await service.create(
+      OWNER,
       createTalentSchema.parse({ name: 'Marco', skills: ['Go', 'AWS'] }),
     );
     expect(created.skills).toEqual(['Go', 'AWS']);
   });
 
-  it('List_ReturnsAll', async () => {
+  it('List_ReturnsOnlyOwnRows', async () => {
     const { service } = makeService();
-    await service.create(createTalentSchema.parse({ name: 'A' }));
-    await service.create(createTalentSchema.parse({ name: 'B' }));
-    expect(await service.list()).toHaveLength(2);
+    await service.create(OWNER, createTalentSchema.parse({ name: 'A' }));
+    await service.create(OWNER, createTalentSchema.parse({ name: 'B' }));
+    await service.create('other', createTalentSchema.parse({ name: 'C' }));
+    expect(await service.list(OWNER)).toHaveLength(2);
+    expect(await service.list('other')).toHaveLength(1);
   });
 
   it('Get_Existing_Returns', async () => {
     const { service } = makeService();
-    const created = await service.create(createTalentSchema.parse(validInput));
-    expect(await service.get(created.id)).toMatchObject({ id: created.id });
+    const created = await service.create(OWNER, createTalentSchema.parse(validInput));
+    expect(await service.get(OWNER, created.id)).toMatchObject({ id: created.id });
+  });
+
+  it('Get_OtherOwner_ThrowsNotFound', async () => {
+    const { service } = makeService();
+    const created = await service.create(OWNER, createTalentSchema.parse(validInput));
+    await expect(service.get('other', created.id)).rejects.toBeInstanceOf(NotFoundError);
   });
 
   it('Get_Unknown_ThrowsNotFound', async () => {
     const { service } = makeService();
-    await expect(service.get('nope')).rejects.toBeInstanceOf(NotFoundError);
+    await expect(service.get(OWNER, 'nope')).rejects.toBeInstanceOf(NotFoundError);
   });
 
   it('Update_Existing_AppliesPatchAndBumpsUpdatedAt', async () => {
     const { service } = makeService();
-    const created = await service.create(createTalentSchema.parse(validInput));
+    const created = await service.create(OWNER, createTalentSchema.parse(validInput));
     const updated = await service.update(
+      OWNER,
       created.id,
       updateTalentSchema.parse({ availability: 'immediately' }),
     );
@@ -68,18 +81,26 @@ describe('TalentService', () => {
 
   it('Update_Unknown_ThrowsNotFound', async () => {
     const { service } = makeService();
-    await expect(service.update('nope', { role: 'x' })).rejects.toBeInstanceOf(NotFoundError);
+    await expect(service.update(OWNER, 'nope', { role: 'x' })).rejects.toBeInstanceOf(
+      NotFoundError,
+    );
   });
 
   it('Remove_Existing_Deletes', async () => {
     const { service, repo } = makeService();
-    const created = await service.create(createTalentSchema.parse(validInput));
-    await service.remove(created.id);
+    const created = await service.create(OWNER, createTalentSchema.parse(validInput));
+    await service.remove(OWNER, created.id);
     expect(repo.talents).toHaveLength(0);
+  });
+
+  it('Remove_OtherOwner_ThrowsNotFound', async () => {
+    const { service } = makeService();
+    const created = await service.create(OWNER, createTalentSchema.parse(validInput));
+    await expect(service.remove('other', created.id)).rejects.toBeInstanceOf(NotFoundError);
   });
 
   it('Remove_Unknown_ThrowsNotFound', async () => {
     const { service } = makeService();
-    await expect(service.remove('nope')).rejects.toBeInstanceOf(NotFoundError);
+    await expect(service.remove(OWNER, 'nope')).rejects.toBeInstanceOf(NotFoundError);
   });
 });

@@ -9,6 +9,7 @@ export type MandateStatus = (typeof MANDATE_STATUSES)[number];
 /** A client search mandate — the Vermittler's core work item. */
 export interface Mandate {
   id: string;
+  ownerId: string;
   client: string;
   role: string;
   location: string;

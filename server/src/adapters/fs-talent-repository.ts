@@ -14,7 +14,7 @@ export class FsTalentRepository implements TalentRepository {
     this.dir = path.dirname(this.file);
   }
 
-  async list(): Promise<Talent[]> {
+  private async readAll(): Promise<Talent[]> {
     try {
       const raw = await fs.readFile(this.file, 'utf8');
       const data = JSON.parse(raw);
@@ -24,28 +24,31 @@ export class FsTalentRepository implements TalentRepository {
     }
   }
 
-  async findById(id: string): Promise<Talent | null> {
-    const all = await this.list();
-    return all.find((t) => t.id === id) ?? null;
+  async list(ownerId: string): Promise<Talent[]> {
+    return (await this.readAll()).filter((t) => t.ownerId === ownerId);
+  }
+
+  async findById(ownerId: string, id: string): Promise<Talent | null> {
+    return (await this.readAll()).find((t) => t.ownerId === ownerId && t.id === id) ?? null;
   }
 
   async add(talent: Talent): Promise<void> {
-    const all = await this.list();
+    const all = await this.readAll();
     all.push(talent);
     await this.write(all);
   }
 
   async update(talent: Talent): Promise<void> {
-    const all = await this.list();
+    const all = await this.readAll();
     const i = all.findIndex((t) => t.id === talent.id);
     if (i < 0) all.push(talent);
     else all[i] = talent;
     await this.write(all);
   }
 
-  async remove(id: string): Promise<boolean> {
-    const all = await this.list();
-    const next = all.filter((t) => t.id !== id);
+  async remove(ownerId: string, id: string): Promise<boolean> {
+    const all = await this.readAll();
+    const next = all.filter((t) => !(t.ownerId === ownerId && t.id === id));
     if (next.length === all.length) return false;
     await this.write(next);
     return true;

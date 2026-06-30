@@ -14,7 +14,7 @@ export class FsPlacementRepository implements PlacementRepository {
     this.dir = path.dirname(this.file);
   }
 
-  async list(): Promise<Placement[]> {
+  private async readAll(): Promise<Placement[]> {
     try {
       const raw = await fs.readFile(this.file, 'utf8');
       const data = JSON.parse(raw);
@@ -24,28 +24,31 @@ export class FsPlacementRepository implements PlacementRepository {
     }
   }
 
-  async findById(id: string): Promise<Placement | null> {
-    const all = await this.list();
-    return all.find((p) => p.id === id) ?? null;
+  async list(ownerId: string): Promise<Placement[]> {
+    return (await this.readAll()).filter((p) => p.ownerId === ownerId);
+  }
+
+  async findById(ownerId: string, id: string): Promise<Placement | null> {
+    return (await this.readAll()).find((p) => p.ownerId === ownerId && p.id === id) ?? null;
   }
 
   async add(placement: Placement): Promise<void> {
-    const all = await this.list();
+    const all = await this.readAll();
     all.push(placement);
     await this.write(all);
   }
 
   async update(placement: Placement): Promise<void> {
-    const all = await this.list();
+    const all = await this.readAll();
     const i = all.findIndex((p) => p.id === placement.id);
     if (i < 0) all.push(placement);
     else all[i] = placement;
     await this.write(all);
   }
 
-  async remove(id: string): Promise<boolean> {
-    const all = await this.list();
-    const next = all.filter((p) => p.id !== id);
+  async remove(ownerId: string, id: string): Promise<boolean> {
+    const all = await this.readAll();
+    const next = all.filter((p) => !(p.ownerId === ownerId && p.id === id));
     if (next.length === all.length) return false;
     await this.write(next);
     return true;

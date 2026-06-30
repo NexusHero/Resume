@@ -136,11 +136,11 @@ export class InMemorySavedSearchRepository implements SavedSearchRepository {
 
 export class InMemoryMandateRepository implements MandateRepository {
   mandates: Mandate[] = [];
-  async list(): Promise<Mandate[]> {
-    return this.mandates.map((m) => ({ ...m }));
+  async list(ownerId: string): Promise<Mandate[]> {
+    return this.mandates.filter((m) => m.ownerId === ownerId).map((m) => ({ ...m }));
   }
-  async findById(id: string): Promise<Mandate | null> {
-    return this.mandates.find((m) => m.id === id) ?? null;
+  async findById(ownerId: string, id: string): Promise<Mandate | null> {
+    return this.mandates.find((m) => m.ownerId === ownerId && m.id === id) ?? null;
   }
   async add(mandate: Mandate): Promise<void> {
     this.mandates.push(mandate);
@@ -150,20 +150,20 @@ export class InMemoryMandateRepository implements MandateRepository {
     if (i < 0) this.mandates.push(mandate);
     else this.mandates[i] = mandate;
   }
-  async remove(id: string): Promise<boolean> {
+  async remove(ownerId: string, id: string): Promise<boolean> {
     const before = this.mandates.length;
-    this.mandates = this.mandates.filter((m) => m.id !== id);
+    this.mandates = this.mandates.filter((m) => !(m.ownerId === ownerId && m.id === id));
     return this.mandates.length < before;
   }
 }
 
 export class InMemoryTalentRepository implements TalentRepository {
   talents: Talent[] = [];
-  async list(): Promise<Talent[]> {
-    return this.talents.map((t) => ({ ...t }));
+  async list(ownerId: string): Promise<Talent[]> {
+    return this.talents.filter((t) => t.ownerId === ownerId).map((t) => ({ ...t }));
   }
-  async findById(id: string): Promise<Talent | null> {
-    return this.talents.find((t) => t.id === id) ?? null;
+  async findById(ownerId: string, id: string): Promise<Talent | null> {
+    return this.talents.find((t) => t.ownerId === ownerId && t.id === id) ?? null;
   }
   async add(talent: Talent): Promise<void> {
     this.talents.push(talent);
@@ -173,20 +173,20 @@ export class InMemoryTalentRepository implements TalentRepository {
     if (i < 0) this.talents.push(talent);
     else this.talents[i] = talent;
   }
-  async remove(id: string): Promise<boolean> {
+  async remove(ownerId: string, id: string): Promise<boolean> {
     const before = this.talents.length;
-    this.talents = this.talents.filter((t) => t.id !== id);
+    this.talents = this.talents.filter((t) => !(t.ownerId === ownerId && t.id === id));
     return this.talents.length < before;
   }
 }
 
 export class InMemoryPlacementRepository implements PlacementRepository {
   placements: Placement[] = [];
-  async list(): Promise<Placement[]> {
-    return this.placements.map((p) => ({ ...p }));
+  async list(ownerId: string): Promise<Placement[]> {
+    return this.placements.filter((p) => p.ownerId === ownerId).map((p) => ({ ...p }));
   }
-  async findById(id: string): Promise<Placement | null> {
-    return this.placements.find((p) => p.id === id) ?? null;
+  async findById(ownerId: string, id: string): Promise<Placement | null> {
+    return this.placements.find((p) => p.ownerId === ownerId && p.id === id) ?? null;
   }
   async add(placement: Placement): Promise<void> {
     this.placements.push(placement);
@@ -196,9 +196,9 @@ export class InMemoryPlacementRepository implements PlacementRepository {
     if (i < 0) this.placements.push(placement);
     else this.placements[i] = placement;
   }
-  async remove(id: string): Promise<boolean> {
+  async remove(ownerId: string, id: string): Promise<boolean> {
     const before = this.placements.length;
-    this.placements = this.placements.filter((p) => p.id !== id);
+    this.placements = this.placements.filter((p) => !(p.ownerId === ownerId && p.id === id));
     return this.placements.length < before;
   }
 }

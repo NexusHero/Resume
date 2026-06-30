@@ -1,5 +1,6 @@
-import type { Request, Response } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import { registerSchema, loginSchema } from '../domain/user';
+import { UnauthorizedError } from '../domain/errors';
 import type { AuthService } from '../services/auth-service';
 import type { AppConfig } from '../config';
 
@@ -70,5 +71,16 @@ export class AuthController {
 
   providersInfo = async (_req: Request, res: Response): Promise<void> => {
     res.json(this.providers);
+  };
+
+  /**
+   * Guard for owner-scoped routes: resolves the session cookie to a user and
+   * stamps `req.userId`. Rejects with 401 when no valid session is present.
+   */
+  requireAuth = async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
+    const user = await this.service.currentUser(readCookie(req, this.cookieName));
+    if (!user) throw new UnauthorizedError();
+    (req as Request & { userId?: string }).userId = user.id;
+    next();
   };
 }

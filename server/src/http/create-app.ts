@@ -84,18 +84,21 @@ export function createApp(deps: AppDeps): Express {
   api.post('/searches', asyncHandler(s.create));
   api.delete('/searches/:id', asyncHandler(s.remove));
   api.get('/searches/:id/run', asyncHandler(s.run));
-  api.get('/mandates', asyncHandler(m.list));
-  api.post('/mandates', asyncHandler(m.create));
-  api.patch('/mandates/:id', asyncHandler(m.update));
-  api.delete('/mandates/:id', asyncHandler(m.remove));
-  api.get('/talents', asyncHandler(t.list));
-  api.post('/talents', asyncHandler(t.create));
-  api.patch('/talents/:id', asyncHandler(t.update));
-  api.delete('/talents/:id', asyncHandler(t.remove));
-  api.get('/placements', asyncHandler(p.list));
-  api.post('/placements', asyncHandler(p.create));
-  api.patch('/placements/:id', asyncHandler(p.update));
-  api.delete('/placements/:id', asyncHandler(p.remove));
+  // Recruiting endpoints are owner-scoped: every request must carry a valid
+  // session, and the resolved user id scopes the data it can see and mutate.
+  const requireAuth = asyncHandler(auth.requireAuth);
+  api.get('/mandates', requireAuth, asyncHandler(m.list));
+  api.post('/mandates', requireAuth, asyncHandler(m.create));
+  api.patch('/mandates/:id', requireAuth, asyncHandler(m.update));
+  api.delete('/mandates/:id', requireAuth, asyncHandler(m.remove));
+  api.get('/talents', requireAuth, asyncHandler(t.list));
+  api.post('/talents', requireAuth, asyncHandler(t.create));
+  api.patch('/talents/:id', requireAuth, asyncHandler(t.update));
+  api.delete('/talents/:id', requireAuth, asyncHandler(t.remove));
+  api.get('/placements', requireAuth, asyncHandler(p.list));
+  api.post('/placements', requireAuth, asyncHandler(p.create));
+  api.patch('/placements/:id', requireAuth, asyncHandler(p.update));
+  api.delete('/placements/:id', requireAuth, asyncHandler(p.remove));
   api.get('/settings/llm', asyncHandler(llm.settings));
   api.put('/settings/llm', asyncHandler(llm.setProvider));
   api.post('/cover-letter', asyncHandler(llm.generateCoverLetter));

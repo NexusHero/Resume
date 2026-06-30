@@ -5,7 +5,9 @@ const WS = window.MyJobDesignSystem_f3658e;
 function Dashboard({ me, apps, vkpis, clients, mandates, onOpenTalent, onOpenPipeline, onOpenMandate }) {
   const mine = apps.filter((a) => a.talentId === 'me');
   const nextSteps = mine.filter((a) => a.status === 'interview' || a.status === 'offer');
-  const clientName = (id) => (clients.find((c) => c.id === id) || {}).name || '';
+  // Live mandates carry the client name directly; the sample shape carries a
+  // clientId resolved against the clients list. Prefer the name, fall back.
+  const clientName = (m) => m.client || (clients.find((c) => c.id === m.clientId) || {}).name || '';
   const topMandates = mandates.filter((m) => m.status === 'active').slice(0, 4);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
@@ -29,7 +31,7 @@ function Dashboard({ me, apps, vkpis, clients, mandates, onOpenTalent, onOpenPip
               <span style={{ width: '36px', height: '36px', borderRadius: 'var(--radius-md)', background: 'var(--ink-900)', color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><WS.Icon name="briefcase" size={16} /></span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-heading)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.role}</div>
-                <div style={{ fontSize: '11.5px', color: 'var(--text-soft)', marginTop: '1px' }}>{clientName(m.clientId)} · {m.submitted} proposed</div>
+                <div style={{ fontSize: '11.5px', color: 'var(--text-soft)', marginTop: '1px' }}>{clientName(m)} · {m.submitted} proposed</div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 600, color: 'var(--accent-strong)' }}>{m.fee}</div>

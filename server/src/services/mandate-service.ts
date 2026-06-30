@@ -22,20 +22,21 @@ export class MandateService {
     this.ids = deps.idGenerator;
   }
 
-  list(): Promise<Mandate[]> {
-    return this.repo.list();
+  list(ownerId: string): Promise<Mandate[]> {
+    return this.repo.list(ownerId);
   }
 
-  async get(id: string): Promise<Mandate> {
-    const mandate = await this.repo.findById(id);
+  async get(ownerId: string, id: string): Promise<Mandate> {
+    const mandate = await this.repo.findById(ownerId, id);
     if (!mandate) throw new NotFoundError(`Mandate ${id} not found`);
     return mandate;
   }
 
-  async create(input: CreateMandateInput): Promise<Mandate> {
+  async create(ownerId: string, input: CreateMandateInput): Promise<Mandate> {
     const now = this.clock.isoNow();
     const mandate: Mandate = {
       id: this.ids.next(),
+      ownerId,
       client: input.client,
       role: input.role,
       location: input.location,
@@ -53,15 +54,15 @@ export class MandateService {
     return mandate;
   }
 
-  async update(id: string, patch: UpdateMandateInput): Promise<Mandate> {
-    const existing = await this.get(id);
+  async update(ownerId: string, id: string, patch: UpdateMandateInput): Promise<Mandate> {
+    const existing = await this.get(ownerId, id);
     const updated: Mandate = { ...existing, ...patch, updatedAt: this.clock.isoNow() };
     await this.repo.update(updated);
     return updated;
   }
 
-  async remove(id: string): Promise<void> {
-    const removed = await this.repo.remove(id);
+  async remove(ownerId: string, id: string): Promise<void> {
+    const removed = await this.repo.remove(ownerId, id);
     if (!removed) throw new NotFoundError(`Mandate ${id} not found`);
   }
 }

@@ -22,20 +22,21 @@ export class TalentService {
     this.ids = deps.idGenerator;
   }
 
-  list(): Promise<Talent[]> {
-    return this.repo.list();
+  list(ownerId: string): Promise<Talent[]> {
+    return this.repo.list(ownerId);
   }
 
-  async get(id: string): Promise<Talent> {
-    const talent = await this.repo.findById(id);
+  async get(ownerId: string, id: string): Promise<Talent> {
+    const talent = await this.repo.findById(ownerId, id);
     if (!talent) throw new NotFoundError(`Talent ${id} not found`);
     return talent;
   }
 
-  async create(input: CreateTalentInput): Promise<Talent> {
+  async create(ownerId: string, input: CreateTalentInput): Promise<Talent> {
     const now = this.clock.isoNow();
     const talent: Talent = {
       id: this.ids.next(),
+      ownerId,
       name: input.name,
       role: input.role,
       headline: input.headline,
@@ -52,15 +53,15 @@ export class TalentService {
     return talent;
   }
 
-  async update(id: string, patch: UpdateTalentInput): Promise<Talent> {
-    const existing = await this.get(id);
+  async update(ownerId: string, id: string, patch: UpdateTalentInput): Promise<Talent> {
+    const existing = await this.get(ownerId, id);
     const updated: Talent = { ...existing, ...patch, updatedAt: this.clock.isoNow() };
     await this.repo.update(updated);
     return updated;
   }
 
-  async remove(id: string): Promise<void> {
-    const removed = await this.repo.remove(id);
+  async remove(ownerId: string, id: string): Promise<void> {
+    const removed = await this.repo.remove(ownerId, id);
     if (!removed) throw new NotFoundError(`Talent ${id} not found`);
   }
 }

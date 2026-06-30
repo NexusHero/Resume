@@ -80,7 +80,7 @@ function NavSection({ section, active, onNav, badges }) {
 
 function RecruitRail({ active, onNav, me, talentCount, search, onSearch, title, subtitle, badges = {}, actions, children }) {
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--surface-app)' }}>
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--app-bg)' }}>
       <aside style={{
         width: 'var(--app-nav-width)', flexShrink: 0, display: 'flex', flexDirection: 'column',
         background: 'linear-gradient(165deg, var(--ink-850) 0%, var(--ink-900) 100%)',

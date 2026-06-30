@@ -1,7 +1,7 @@
 /* ============================================================
    COLORS — base palette + semantic aliases
    myJob design system. Two structural worlds:
-     • INK   — the dark app shell / sidebar / nav
+     • INK   — the dark app shell / sidebar / structural dark
      • PAPER — the light working surfaces (lists, cards, sheets)
    Three accents (Blueprint / Signal / Graphite) swap via themes.css.
    The product default accent is BLUEPRINT (trust, calm, institutional).
@@ -141,6 +141,10 @@
   --surface-card:   var(--paper);
   --surface-subtle: var(--paper-subtle);
   --surface-sunk:   var(--paper-sunk);
+
+  /* App-shell background. One token for the working canvas; dark mode
+     overrides it with an accent glow (see modes.css). */
+  --app-bg: var(--surface-app);
 
   /* Borders */
   --border:        var(--neutral-200);

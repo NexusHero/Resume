@@ -18,6 +18,13 @@
   --surface-subtle: #0f1626;
   --surface-sunk:   #1b2438;
 
+  /* App-shell background: the working canvas + ONE accent glow (rides the
+     accent, so it's amber under data-theme="signal"). The only decorative
+     gradient in the product. */
+  --app-bg:
+    radial-gradient(115% 72% at 88% -12%, color-mix(in srgb, var(--accent) 13%, transparent) 0%, transparent 50%),
+    linear-gradient(180deg, #0b1220 0%, #080d17 100%);
+
   /* ---- Text inverts ---- */
   --text-heading: #f4f7fb;
   --text-body:    #e3e9f2;

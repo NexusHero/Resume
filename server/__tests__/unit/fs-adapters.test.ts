@@ -9,10 +9,12 @@ import { FsPdfArchive } from '../../src/adapters/fs-pdf-archive';
 import { FsSavedSearchRepository } from '../../src/adapters/fs-saved-search-repository';
 import { FsMandateRepository } from '../../src/adapters/fs-mandate-repository';
 import { FsTalentRepository } from '../../src/adapters/fs-talent-repository';
+import { FsPlacementRepository } from '../../src/adapters/fs-placement-repository';
 import type { Application, AuditEvent } from '../../src/domain/application';
 import type { SavedSearch } from '../../src/domain/saved-search';
 import type { Mandate } from '../../src/domain/mandate';
 import type { Talent } from '../../src/domain/talent';
+import type { Placement } from '../../src/domain/placement';
 
 function tmpConfig(): AppConfig {
   const rootDir = mkdtempSync(path.join(os.tmpdir(), 'resume-'));
@@ -26,6 +28,7 @@ function tmpConfig(): AppConfig {
     savedSearchesFile: path.join(storeDir, 'saved-searches.json'),
     mandatesFile: path.join(storeDir, 'mandates.json'),
     talentsFile: path.join(storeDir, 'talents.json'),
+    placementsFile: path.join(storeDir, 'placements.json'),
     staticDir: rootDir,
     versionedPaths: ['bewerbungen'],
     candidateProfile: { skills: [] },
@@ -306,6 +309,67 @@ describe('FsTalentRepository', () => {
     await fs.mkdir(config.storeDir, { recursive: true });
     await fs.writeFile(config.talentsFile, 'not json');
     const repo = new FsTalentRepository({ config });
+    expect(await repo.list()).toEqual([]);
+  });
+});
+
+const placement = (id: string, candidateName = 'Mara Vogel'): Placement => ({
+  id,
+  candidateName,
+  candidateRole: 'Engineering Manager',
+  client: 'Aurora Systems GmbH',
+  start: '2026-07-01',
+  fee: '19.000 €',
+  status: 'invoiced',
+  createdAt: '2026-06-25T10:00:00.000Z',
+  updatedAt: '2026-06-25T10:00:00.000Z',
+});
+
+describe('FsPlacementRepository', () => {
+  it('Repository_NoFile_ListsEmpty', async () => {
+    const repo = new FsPlacementRepository({ config: tmpConfig() });
+    expect(await repo.list()).toEqual([]);
+  });
+
+  it('Repository_AddThenFind_RoundTrips', async () => {
+    const repo = new FsPlacementRepository({ config: tmpConfig() });
+    await repo.add(placement('p1'));
+    expect(await repo.findById('p1')).toMatchObject({ id: 'p1', candidateName: 'Mara Vogel' });
+    expect(await repo.findById('missing')).toBeNull();
+  });
+
+  it('Repository_UpdateExisting_Replaces', async () => {
+    const repo = new FsPlacementRepository({ config: tmpConfig() });
+    await repo.add(placement('p1'));
+    await repo.update({ ...placement('p1'), status: 'paid' });
+    expect(await repo.findById('p1')).toMatchObject({ status: 'paid' });
+  });
+
+  it('Repository_UpdateMissing_Inserts', async () => {
+    const repo = new FsPlacementRepository({ config: tmpConfig() });
+    await repo.update(placement('p9'));
+    expect(await repo.findById('p9')).toMatchObject({ id: 'p9' });
+  });
+
+  it('Repository_RemoveExisting_ReturnsTrueAndDeletes', async () => {
+    const repo = new FsPlacementRepository({ config: tmpConfig() });
+    await repo.add(placement('p1'));
+    expect(await repo.remove('p1')).toBe(true);
+    expect(await repo.list()).toEqual([]);
+  });
+
+  it('Repository_RemoveUnknown_ReturnsFalse', async () => {
+    const repo = new FsPlacementRepository({ config: tmpConfig() });
+    await repo.add(placement('p1'));
+    expect(await repo.remove('nope')).toBe(false);
+    expect(await repo.list()).toHaveLength(1);
+  });
+
+  it('Repository_MalformedFile_ListsEmpty', async () => {
+    const config = tmpConfig();
+    await fs.mkdir(config.storeDir, { recursive: true });
+    await fs.writeFile(config.placementsFile, 'not json');
+    const repo = new FsPlacementRepository({ config });
     expect(await repo.list()).toEqual([]);
   });
 });

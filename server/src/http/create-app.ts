@@ -8,6 +8,7 @@ import type { SavedSearchController } from './saved-search-controller';
 import type { LlmController } from './llm-controller';
 import type { MandateController } from './mandate-controller';
 import type { TalentController } from './talent-controller';
+import type { PlacementController } from './placement-controller';
 import { asyncHandler } from './async-handler';
 import { errorHandler, notFound } from './problem';
 
@@ -19,6 +20,7 @@ export interface AppDeps {
   llmController: LlmController;
   mandateController: MandateController;
   talentController: TalentController;
+  placementController: PlacementController;
   config: AppConfig;
   logger: Logger;
 }
@@ -44,6 +46,7 @@ export function createApp(deps: AppDeps): Express {
     llmController: llm,
     mandateController: m,
     talentController: t,
+    placementController: p,
   } = deps;
   const app = express();
 
@@ -71,6 +74,10 @@ export function createApp(deps: AppDeps): Express {
   api.post('/talents', asyncHandler(t.create));
   api.patch('/talents/:id', asyncHandler(t.update));
   api.delete('/talents/:id', asyncHandler(t.remove));
+  api.get('/placements', asyncHandler(p.list));
+  api.post('/placements', asyncHandler(p.create));
+  api.patch('/placements/:id', asyncHandler(p.update));
+  api.delete('/placements/:id', asyncHandler(p.remove));
   api.get('/settings/llm', asyncHandler(llm.settings));
   api.put('/settings/llm', asyncHandler(llm.setProvider));
   api.post('/cover-letter', asyncHandler(llm.generateCoverLetter));

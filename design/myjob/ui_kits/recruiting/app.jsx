@@ -13,6 +13,37 @@ const TITLES = {
   einstellungen: ['Settings', 'API key, AI framework & agentic mode'],
 };
 
+/**
+ * Loads a list resource from the API and tracks loading/error state. It does
+ * NOT fall back to sample data on failure — the recruiting views must only ever
+ * show real records, never fabricated ones. Returns { data, loading, error,
+ * reload } so views can render a loading, error (with retry), or empty state.
+ */
+function useResource(fetcher) {
+  const [data, setData] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(false);
+  const alive = React.useRef(true);
+  React.useEffect(() => () => { alive.current = false; }, []);
+  const reload = React.useCallback(() => {
+    setLoading(true);
+    setError(false);
+    return fetcher()
+      .then((list) => {
+        if (!alive.current) return;
+        setData(Array.isArray(list) ? list : []);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!alive.current) return;
+        setError(true);
+        setLoading(false);
+      });
+  }, [fetcher]);
+  React.useEffect(() => { reload(); }, [reload]);
+  return { data, loading, error, reload };
+}
+
 function Workspace({ onLogout }) {
   const [nav, setNav] = React.useState('uebersicht');
   const [search, setSearch] = React.useState('');
@@ -23,67 +54,35 @@ function Workspace({ onLogout }) {
   const [formKind, setFormKind] = React.useState(null);
   // The record being edited, as { kind, id, values } — null when not editing.
   const [editRecord, setEditRecord] = React.useState(null);
-  // Placements come from the live REST API; the sample array is the offline fallback.
-  const [placements, setPlacements] = React.useState(window.PLACEMENTS);
+  // Live data sources. Each tracks loading/error and never falls back to
+  // fabricated sample data — a recruiter must only ever see real records.
+  const listMandates = React.useCallback(() => window.RecruitApi.listMandates(), []);
+  const listTalents = React.useCallback(() => window.RecruitApi.listTalents(), []);
+  const listPlacements = React.useCallback(() => window.RecruitApi.listPlacements(), []);
+  const mandatesRes = useResource(listMandates);
+  const talentsRes = useResource(listTalents);
+  const placementsRes = useResource(listPlacements);
 
-  const reloadPlacements = React.useCallback(
-    () => window.RecruitApi.listPlacements().then(setPlacements).catch(() => {}),
-    [],
-  );
-  React.useEffect(() => {
-    let alive = true;
-    window.RecruitApi.listPlacements()
-      .then((list) => { if (alive) setPlacements(list); })
-      .catch(() => {}); // keep the offline sample on error (e.g. file://)
-    return () => { alive = false; };
-  }, []);
-
-  const addPlacement = () => setFormKind('placement');
-
-  // The talent pool comes from the live REST API; "me" (talent #1, with its
-  // dossier) stays the sample object and is always pinned first.
+  const mandates = mandatesRes.data;
+  const placements = placementsRes.data;
+  // "me" (the recruiter's own pinned profile) is the user's own data, not a
+  // fabricated candidate, so it stays pinned first in the pool.
   const me0 = window.TALENTS.find((t) => t.me);
-  const [talents, setTalents] = React.useState(window.TALENTS);
-  const reloadTalents = React.useCallback(
-    () =>
-      window.RecruitApi.listTalents()
-        .then((list) => setTalents([me0, ...list.filter((t) => !t.me)]))
-        .catch(() => {}),
-    [me0],
+  const talents = React.useMemo(
+    () => [me0, ...talentsRes.data.filter((t) => !t.me)],
+    [me0, talentsRes.data],
   );
-  React.useEffect(() => {
-    let alive = true;
-    window.RecruitApi.listTalents()
-      .then((list) => { if (alive) setTalents([me0, ...list.filter((t) => !t.me)]); })
-      .catch(() => {}); // keep the offline sample on error (e.g. file://)
-    return () => { alive = false; };
-  }, [me0]);
-
-  const addTalent = () => setFormKind('talent');
-
-  // Mandates come from the live REST API; the client-name-resolved sample is the
-  // offline fallback. MandateView groups by client name.
-  const [mandates, setMandates] = React.useState(window.SAMPLE_MANDATES);
-  const reloadMandates = React.useCallback(
-    () => window.RecruitApi.listMandates().then(setMandates).catch(() => {}),
-    [],
-  );
-  React.useEffect(() => {
-    let alive = true;
-    window.RecruitApi.listMandates()
-      .then((list) => { if (alive) setMandates(list); })
-      .catch(() => {}); // keep the offline sample on error (e.g. file://)
-    return () => { alive = false; };
-  }, []);
 
   const addMandate = () => setFormKind('mandate');
+  const addTalent = () => setFormKind('talent');
+  const addPlacement = () => setFormKind('placement');
 
   // The create form modal submits here; each returns the create promise so the
   // modal can show its busy state, then close on success or surface an error.
   const submitForm = (kind, values) => {
-    if (kind === 'mandate') return window.RecruitApi.createMandate(values).then(reloadMandates);
-    if (kind === 'talent') return window.RecruitApi.createTalent(values).then(reloadTalents);
-    return window.RecruitApi.createPlacement(values).then(reloadPlacements);
+    if (kind === 'mandate') return window.RecruitApi.createMandate(values).then(mandatesRes.reload);
+    if (kind === 'talent') return window.RecruitApi.createTalent(values).then(talentsRes.reload);
+    return window.RecruitApi.createPlacement(values).then(placementsRes.reload);
   };
 
   // Open the edit form for a record. Mandates already carry form-shaped fields;
@@ -104,9 +103,20 @@ function Workspace({ onLogout }) {
     });
 
   const submitEdit = ({ kind, id }, values) => {
-    if (kind === 'mandate') return window.RecruitApi.updateMandate(id, values).then(reloadMandates);
-    return window.RecruitApi.updatePlacement(id, values).then(reloadPlacements);
+    if (kind === 'mandate')
+      return window.RecruitApi.updateMandate(id, values).then(mandatesRes.reload);
+    return window.RecruitApi.updatePlacement(id, values).then(placementsRes.reload);
   };
+
+  // Render a view, or a loading / error (retry) state while its source resolves.
+  const withState = (res, node) =>
+    res.loading ? (
+      <window.LoadingState />
+    ) : res.error ? (
+      <window.ErrorState onRetry={res.reload} />
+    ) : (
+      node
+    );
 
   const apps = window.APPLICATIONS;
   const me = talents.find((t) => t.me);
@@ -151,15 +161,15 @@ function Workspace({ onLogout }) {
   } else {
     [title, subtitle] = TITLES[nav];
     if (nav === 'uebersicht') body = <window.Dashboard me={me} apps={apps} vkpis={vkpis} clients={window.CLIENTS} mandates={mandates} onOpenTalent={goTalent} onOpenPipeline={() => setNav('bewerbungen')} onOpenMandate={() => setNav('mandate')} />;
-    else if (nav === 'mandate') body = <window.MandateView mandates={mandates} onEdit={editMandate} />;
-    else if (nav === 'pool') body = <window.TalentGrid talents={talents} apps={apps} onOpen={goTalent} onAdd={addTalent} />;
+    else if (nav === 'mandate') body = withState(mandatesRes, <window.MandateView mandates={mandates} onEdit={editMandate} />);
+    else if (nav === 'pool') body = withState(talentsRes, <window.TalentGrid talents={talents} apps={apps} onOpen={goTalent} onAdd={addTalent} />);
     else if (nav === 'matching') body = <window.Matching talents={talents} />;
     else if (nav === 'bewerbungen') body = (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '100%' }}>
         <window.PipelineBoard apps={apps} talents={talents} onOpen={goTalent} />
       </div>
     );
-    else if (nav === 'platzierungen') body = <window.PlatzierungenView placements={placements} kpis={vkpis} onEdit={editPlacement} />;
+    else if (nav === 'platzierungen') body = withState(placementsRes, <window.PlatzierungenView placements={placements} kpis={vkpis} onEdit={editPlacement} />);
     else if (nav === 'berichte') body = <window.ReportsView clients={reportClients} mandates={mandates} placements={placements} apps={apps} kpis={vkpis} />;
     else if (nav === 'postfach') body = <window.Inbox messages={window.MESSAGES} apps={apps} talents={talents} onOpenTalent={goTalent} />;
     else if (nav === 'einstellungen') body = <window.SettingsView />;

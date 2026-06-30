@@ -13,6 +13,8 @@ import type { SavedSearch } from '../../src/domain/saved-search';
 import type { SavedSearchRepository } from '../../src/ports/saved-search-repository';
 import type { Mandate } from '../../src/domain/mandate';
 import type { MandateRepository } from '../../src/ports/mandate-repository';
+import type { Talent } from '../../src/domain/talent';
+import type { TalentRepository } from '../../src/ports/talent-repository';
 
 export class InMemoryApplicationRepository implements ApplicationRepository {
   apps: Application[] = [];
@@ -147,5 +149,28 @@ export class InMemoryMandateRepository implements MandateRepository {
     const before = this.mandates.length;
     this.mandates = this.mandates.filter((m) => m.id !== id);
     return this.mandates.length < before;
+  }
+}
+
+export class InMemoryTalentRepository implements TalentRepository {
+  talents: Talent[] = [];
+  async list(): Promise<Talent[]> {
+    return this.talents.map((t) => ({ ...t }));
+  }
+  async findById(id: string): Promise<Talent | null> {
+    return this.talents.find((t) => t.id === id) ?? null;
+  }
+  async add(talent: Talent): Promise<void> {
+    this.talents.push(talent);
+  }
+  async update(talent: Talent): Promise<void> {
+    const i = this.talents.findIndex((t) => t.id === talent.id);
+    if (i < 0) this.talents.push(talent);
+    else this.talents[i] = talent;
+  }
+  async remove(id: string): Promise<boolean> {
+    const before = this.talents.length;
+    this.talents = this.talents.filter((t) => t.id !== id);
+    return this.talents.length < before;
   }
 }

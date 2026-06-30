@@ -9,6 +9,7 @@ import type { AtsController } from './http/ats-controller';
 import type { SavedSearchController } from './http/saved-search-controller';
 import type { LlmController } from './http/llm-controller';
 import type { MandateController } from './http/mandate-controller';
+import type { TalentController } from './http/talent-controller';
 
 async function main(): Promise<void> {
   const config = loadConfig();
@@ -30,6 +31,7 @@ async function main(): Promise<void> {
     savedSearchController: container.resolve<SavedSearchController>('savedSearchController'),
     llmController: container.resolve<LlmController>('llmController'),
     mandateController: container.resolve<MandateController>('mandateController'),
+    talentController: container.resolve<TalentController>('talentController'),
     config,
     logger,
   });

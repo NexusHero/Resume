@@ -12,6 +12,7 @@ export interface AppConfig {
   historyFile: string;
   savedSearchesFile: string;
   mandatesFile: string;
+  talentsFile: string;
   staticDir: string;
   /** Repo-relative paths the Versioner stages on each change. */
   versionedPaths: string[];
@@ -88,6 +89,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     historyFile: path.join(storeDir, 'history.jsonl'),
     savedSearchesFile: path.join(storeDir, 'saved-searches.json'),
     mandatesFile: path.join(storeDir, 'mandates.json'),
+    talentsFile: path.join(storeDir, 'talents.json'),
     staticDir: rootDir,
     versionedPaths: ['archive/bewerbungen'],
     candidateProfile: CANDIDATE_PROFILE,

@@ -67,6 +67,28 @@ function App() {
     window.RecruitApi.createTalent({ name, role }).then(reloadTalents).catch(() => {});
   };
 
+  // Mandates come from the live REST API; the client-name-resolved sample is the
+  // offline fallback. MandateView groups by client name.
+  const [mandates, setMandates] = React.useState(window.SAMPLE_MANDATES);
+  const reloadMandates = React.useCallback(
+    () => window.RecruitApi.listMandates().then(setMandates).catch(() => {}),
+    [],
+  );
+  React.useEffect(() => {
+    let alive = true;
+    window.RecruitApi.listMandates()
+      .then((list) => { if (alive) setMandates(list); })
+      .catch(() => {}); // keep the offline sample on error (e.g. file://)
+    return () => { alive = false; };
+  }, []);
+
+  const addMandate = () => {
+    const client = window.prompt('Client');
+    if (!client) return;
+    const role = window.prompt('Role') || '';
+    window.RecruitApi.createMandate({ client, role }).then(reloadMandates).catch(() => {});
+  };
+
   const apps = window.APPLICATIONS;
   const me = talents.find((t) => t.me);
 
@@ -99,7 +121,7 @@ function App() {
   } else {
     [title, subtitle] = TITLES[nav];
     if (nav === 'uebersicht') body = <window.Dashboard me={me} apps={apps} vkpis={window.VERMITTLER_KPIS} clients={window.CLIENTS} mandates={window.MANDATES} onOpenTalent={goTalent} onOpenPipeline={() => setNav('bewerbungen')} onOpenMandate={() => setNav('mandate')} />;
-    else if (nav === 'mandate') body = <window.MandateView clients={window.CLIENTS} mandates={window.MANDATES} />;
+    else if (nav === 'mandate') body = <window.MandateView mandates={mandates} />;
     else if (nav === 'pool') body = <window.TalentGrid talents={talents} apps={apps} onOpen={goTalent} onAdd={addTalent} />;
     else if (nav === 'matching') body = <window.Matching talents={talents} />;
     else if (nav === 'bewerbungen') body = (
@@ -116,7 +138,7 @@ function App() {
   const actions = (!talent && (nav === 'bewerbungen' || nav === 'uebersicht'))
     ? <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="plus" size={15} />} onClick={() => setMappeFor(me)}>Add application</A.Button>
     : (!talent && nav === 'mandate')
-    ? <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="plus" size={15} />}>New mandate</A.Button>
+    ? <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="plus" size={15} />} onClick={addMandate}>New mandate</A.Button>
     : (!talent && nav === 'platzierungen')
     ? <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="plus" size={15} />} onClick={addPlacement}>Add placement</A.Button>
     : null;

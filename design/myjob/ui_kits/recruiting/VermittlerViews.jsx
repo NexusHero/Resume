@@ -17,19 +17,27 @@ function PrioPill({ p }) {
 const PLACEMENT_TONE = { 'Paid': 'hired', 'Invoiced': 'offer', 'Probation': 'interview' };
 
 /* ---------- Mandate: client search assignments ---------- */
-function MandateView({ clients, mandates }) {
+function MandateView({ mandates }) {
+  const order = [];
+  const byClient = new Map();
+  (mandates || []).forEach((m) => {
+    const key = m.client || '—';
+    if (!byClient.has(key)) {
+      byClient.set(key, []);
+      order.push(key);
+    }
+    byClient.get(key).push(m);
+  });
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {clients.map((k) => {
-        const ms = mandates.filter((m) => m.clientId === k.id);
-        if (ms.length === 0) return null;
+      {order.map((client) => {
+        const ms = byClient.get(client);
         return (
-          <VV.Card key={k.id} pad={false}>
+          <VV.Card key={client} pad={false}>
             <header style={{ display: 'flex', alignItems: 'center', gap: '13px', padding: '15px 18px', borderBottom: '1px solid var(--border)' }}>
               <span style={{ width: '40px', height: '40px', borderRadius: 'var(--radius-md)', background: 'var(--ink-900)', color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><VV.Icon name="building" size={19} /></span>
               <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 700, color: 'var(--text-heading)', letterSpacing: '-0.01em' }}>{k.name}</div>
-                <div style={{ fontSize: '12px', color: 'var(--text-soft)', marginTop: '1px' }}>{k.industry} · {k.location} · Client since {k.since}</div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 700, color: 'var(--text-heading)', letterSpacing: '-0.01em' }}>{client}</div>
               </div>
               <VV.Badge variant="subtle" size="sm">{ms.length} mandates</VV.Badge>
             </header>
@@ -56,6 +64,13 @@ function MandateView({ clients, mandates }) {
           </VV.Card>
         );
       })}
+      {order.length === 0 && (
+        <VV.Card>
+          <div style={{ padding: '40px', textAlign: 'center', fontSize: '13px', color: 'var(--text-soft)' }}>
+            No mandates yet.
+          </div>
+        </VV.Card>
+      )}
     </div>
   );
 }

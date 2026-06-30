@@ -1,169 +1,160 @@
-# Bewerbungs-Suite
+<div align="center">
 
-A self-contained job-application toolkit for **Suhay Sevinc** — an interactive CV and
-cover letter, a Bewerbungsmappe (application bundle) builder, a small REST API that
-renders/merges and version-controls sent applications, and the **myJob** recruiting
-design system (an ATS for HR & Vermittler, plus an applicant app).
+# myJob — Recruiting Suite
 
-Everything is plain HTML/CSS/React over a shared design-token layer. No framework build
-step for the pages themselves; Node is used only for PDF generation and the local server.
+**Run your desk on myJob.** Mandates, talent pool and placements in one calm
+workspace — from first sighting to booked fee. Plus an interactive CV, a cover-letter
+and Bewerbungsmappe builder, and a small REST API behind it all.
 
-## Screenshots
+[![CI](https://github.com/NexusHero/Resume/actions/workflows/ci.yml/badge.svg)](https://github.com/NexusHero/Resume/actions/workflows/ci.yml)
+![Node](https://img.shields.io/badge/node-%E2%89%A524-339933?logo=node.js&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
+![Tests](https://img.shields.io/badge/tests-300%2B%20·%2090%25%20coverage-success)
+![Built with AI](https://img.shields.io/badge/built%20with-Claude%20Code-d97706)
 
-**Launcher & interactive CV**
+</div>
 
-<p>
-  <img src="docs/images/launcher.png" alt="Launcher — the application suite home" width="44%" />
-  <img src="docs/images/cv.png" alt="Interactive CV — EN/DE toggle and accent themes" width="54%" />
-</p>
+---
 
-**myJob — recruiting workspace**
+![myJob — Workspace overview](docs/images/myjob-overview.png)
 
-![myJob — Overview](docs/images/myjob-overview.png)
+## What is this?
 
-![myJob — Mandates](docs/images/myjob-mandates.png)
+A recruiting product (**myJob**) plus the personal job-application toolkit it grew out of:
 
-![myJob — Talent Pool](docs/images/myjob-talent-pool.png)
+- **myJob Workspace** — an ATS for recruiters/agencies: **mandates** per client (fee &
+  deadline), a **talent pool**, **placements**, a dashboard and reports. Multi-user (each
+  recruiter owns their own data), authenticated, with GDPR export/erasure built in.
+- **Documents** — an interactive **CV** (EN/DE, accent themes, PDF export), a **cover
+  letter**, and a **Bewerbungsmappe** builder.
+- **REST API** — a TypeScript, hexagonal Node/Express backend (Zod, problem+json),
+  file-backed by default or Postgres via `STORE=sql`.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/images/myjob-mandates.png" alt="Mandates" /></td>
+    <td width="50%"><img src="docs/images/myjob-talent-pool.png" alt="Talent pool" /></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/images/myjob-placements.png" alt="Placements" /></td>
+    <td width="50%"><img src="docs/images/myjob-reports.png" alt="Reports" /></td>
+  </tr>
+</table>
+
+<div align="center"><img src="docs/images/myjob-login.png" alt="Branded login" width="92%" /></div>
 
 ## Quick start
 
 ```bash
-npm install            # one-time (Puppeteer + its Chromium, pdf-lib)
-npm run pdf            # render the CV/cover-letter PDFs + refresh builder & home
+npm install            # dependencies (server, build tools, Playwright)
+npm run build:web      # bundle the recruiting app (Vite)
 npm run serve          # serve the whole suite at http://localhost:4178
 ```
 
-Open **`index.html`** (the launcher) by double-click, or browse to
-`http://localhost:4178/` when the server is running.
+Then open the launcher at **`http://localhost:4178/`** and pick **myJob Workspace**, or go
+straight to `…/design/myjob/ui_kits/recruiting/dist/index.html`. Create an account on the
+login screen — the recruiting endpoints are owner-scoped, so your data is yours.
 
-## What's inside
+### With Docker (app + Postgres)
+
+```bash
+docker compose up --build      # app on Postgres at http://localhost:4178
+```
+
+See **[docs/deployment.md](docs/deployment.md)** for configuration (`STORE`, `DATABASE_URL`,
+`CORS_ORIGINS`, `COOKIE_SECURE`, `SESSION_TTL_DAYS`, LLM keys, …).
+
+## Feature highlights
+
+- **Recruiting core** — create/edit mandates, talents and placements through real forms;
+  dashboard KPIs and fee-per-client reports computed from your live data.
+- **Auth & multi-tenancy** — email/password accounts, opaque httpOnly sessions with
+  server-side expiry + `Secure` cookies, owner-scoped data per recruiter.
+- **GDPR/DSGVO** — one-click **data export** (JSON download) and **account erasure** that
+  wipes your records and sessions.
+- **AI cover letters** — `POST /api/v1/cover-letter` writes a tailored Anschreiben via
+  Claude or Gemini, switchable at runtime; deterministic template fallback when no key.
+- **Job search & ATS** — skill-matched two-tier search across job boards and a JobScan-style
+  gap analysis (`/api/v1/jobs`, `/api/v1/ats`).
+- **Hardened & honest** — CORS allow-list, baseline security headers, rate-limited
+  credentials, and **no fabricated data**: views show real records, a loading or an error
+  state — never silent sample data.
+
+## Develop with AI 🤖
+
+This repo is built **with** AI and set up to keep going that way — contributions via
+[**Claude Code**](https://claude.com/claude-code) are very welcome.
+
+The codebase is intentionally AI-friendly: small hexagonal modules, behaviour-named tests
+(`Subject_StateUnderTest_ExpectedBehaviour`), strict types, and CI gates that give an agent
+fast, honest feedback. Drive it with the built-in **skills / slash-commands**:
+
+| Skill              | Use it to…                                     |
+| ------------------ | ---------------------------------------------- |
+| `/analyze`         | static analysis + type-check before you commit |
+| `/test`            | run the full Jest + Playwright suite           |
+| `/review`          | review a PR (or your working diff) for bugs    |
+| `/security-review` | security pass over the pending changes         |
+| `/push`            | commit & push the current change               |
+
+A good first loop: describe the change, let the agent implement it, then run `/analyze`
+and `/test` until green and `/review` for a second pair of eyes. Every PR runs the same
+gates in CI (verify · e2e · integration · CodeQL · security), so green locally means green
+on GitHub.
+
+> New here? Open an issue describing what you want to build and tag it `good-first-task` —
+> the structure above makes it a clean target for an AI pair-programmer.
+
+## Tech stack
+
+| Layer       | Choice                                                               |
+| ----------- | -------------------------------------------------------------------- |
+| Backend     | Node ≥ 24, TypeScript (strict), Express, Zod, awilix DI (hexagonal)  |
+| Persistence | File-backed JSON (default) or Postgres via Drizzle (`STORE=sql`)     |
+| Frontend    | React, bundled with **Vite** (recruiting kit), shared design tokens  |
+| Tests       | Jest + supertest (unit/acceptance), Playwright (e2e), Postgres in CI |
+| Tooling     | ESLint, Prettier, Docker, GitHub Actions                             |
+
+## Project layout
 
 ```
 index.html                 ← launcher / home (generated)
 server/                    ← REST API + static server (TypeScript, hexagonal)
 design/
-  documents/               ← CV design system: tokens, components, styles.css, _ds_bundle.js, vendor
-    ui_kits/
-      cv/                  ← interactive CV (EN/DE, accent themes, PDF export)
-      cover-letter/        ← Anschreiben (theme switch, PDF export)
-      bewerbung/           ← Bewerbungsmappe builder (merge cover letter + CV + Zeugnisse)
-  myjob/                   ← myJob app design system (recruiting · bewerber · karriere · cv)
-assets/                    ← portrait (full + downscaled)
-archive/bewerbungen/       ← sent-application log + history + archived PDFs
-tools/                     ← build + PDF scripts (generate-pdf.js entry point)
+  documents/ui_kits/       ← interactive CV · cover letter · Bewerbungsmappe builder
+  myjob/ui_kits/
+    recruiting/            ← myJob Workspace (Vite-built → dist/)
+vite.config.ts             ← bundles the recruiting kit (no CDN, no runtime Babel)
+docs/                      ← architecture, deployment, roadmap, screenshots
+.github/workflows/ci.yml   ← verify · e2e · integration (Postgres) · commitlint
 ```
+
+## REST API (selected)
+
+Base path `/api/v1`. Recruiting endpoints require a session; the applicant tools are open.
+
+| Endpoint                                  | What it does                                |
+| ----------------------------------------- | ------------------------------------------- |
+| `POST /auth/register` · `/auth/login`     | create / sign in to an account              |
+| `GET·POST·PATCH·DELETE /mandates`         | client search mandates (owner-scoped)       |
+| `GET·POST·PATCH·DELETE /talents`          | the talent pool                             |
+| `GET·POST·PATCH·DELETE /placements`       | booked placements + fees                    |
+| `GET /account/export` · `DELETE /account` | GDPR data export / account erasure          |
+| `GET /jobs` · `POST /ats`                 | skill-matched job search · ATS gap analysis |
+| `POST /cover-letter` · `…/settings/llm`   | AI Anschreiben · switch Claude/Gemini       |
 
 ## npm scripts
 
-| Script                                        | What it does                                                                                                                                                                                       |
-| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run pdf`                                 | Renders `Lebenslauf-DE.pdf`, `Lebenslauf-EN.pdf`, `Anschreiben.pdf` (Puppeteer, A4, vector text), then rebuilds the Bewerbungsmappe builder (with CV + cover letter pre-loaded) and the home page. |
-| `npm run serve`                               | Local REST API + static server on `http://localhost:4178`. Serves all apps over http (so Safari/`file://` limits don't apply) and exposes the applications API.                                    |
-| `npm run sent -- "Firma" "Stelle" [pfad.pdf]` | Records a sent application: archives the PDF into `archive/bewerbungen/`, appends to `log.json` + `history.jsonl`, commits to git, and refreshes the home list.                                    |
-| `npm run home`                                | Regenerates `index.html` only.                                                                                                                                                                     |
+| Script                                  | What it does                                                   |
+| --------------------------------------- | -------------------------------------------------------------- |
+| `npm run serve`                         | REST API + static server on `http://localhost:4178`            |
+| `npm run build:web`                     | bundle the recruiting kit with Vite (→ `…/recruiting/dist`)    |
+| `npm test`                              | Jest unit + acceptance with coverage gate                      |
+| `npm run test:e2e`                      | Playwright UI acceptance (boots the server, builds the bundle) |
+| `npm run pdf`                           | render the CV / cover-letter PDFs and refresh the launcher     |
+| `npm run lint` · `npm run format:check` | ESLint · Prettier                                              |
 
-## REST API (`npm run serve`)
+## License
 
-The server is the external interface for automating application data; every change is
-appended to `archive/bewerbungen/history.jsonl` and committed to git.
-
-> Note: `npm run sent` / the `/api/build` archive currently writes under `archive/bewerbungen/`.
-
-- `GET  /api/applications` — list recorded applications
-- `GET  /api/history` — the audit trail
-- `POST /api/applications` — record an application (`{ firma, stelle, adresse, status, pdfBase64? }`)
-- `POST /api/build` — render the cover letter **with the entered recipient address**, merge
-  CV + attachments, archive + log + commit, and return the combined PDF
-- `PATCH /api/applications/:id` — update status (e.g. → "Gespräch")
-
-### Job search (`GET /api/v1/jobs`)
-
-Two-tier, skill-matched search across connected job boards. Each posting is scored
-against the candidate's skills; results split into strong fits (`match >= threshold`,
-default 80) and stretch / new-domain roles. With no query parameters it runs a
-pre-configured default search.
-
-`?q=`, `?city=`, `?country=`, `?threshold=` refine the search.
-
-**Live sources** are off by default (offline sample data is used). Enable them via env:
-
-| Env                               | Purpose                                                         |
-| --------------------------------- | --------------------------------------------------------------- |
-| `JOB_SOURCES`                     | comma list: `arbeitnow,bundesagentur,adzuna`                    |
-| `BA_API_KEY`                      | Bundesagentur key (defaults to the public `jobboerse-jobsuche`) |
-| `ADZUNA_APP_ID`, `ADZUNA_APP_KEY` | Adzuna credentials (required to enable Adzuna)                  |
-| `ADZUNA_COUNTRY`                  | Adzuna country code (default `de`)                              |
-
-```bash
-JOB_SOURCES=arbeitnow,bundesagentur npm run serve
-```
-
-### ATS gap analysis (`POST /api/v1/ats`)
-
-Paste a posting (`{ role?, text?, skills? }`, at least one) and get a JobScan-style
-report: coverage `score`, `matched` and `missing` keywords, and `recommendations`.
-
-### Saved searches (`/api/v1/searches`)
-
-- `GET /api/v1/searches` — list named searches
-- `POST /api/v1/searches` — store one (`{ name, q?, city?, country?, threshold? }`)
-- `DELETE /api/v1/searches/:id` — remove one
-- `GET /api/v1/searches/:id/run` — run it through the two-tier job search
-
-### Cover letters & LLM provider (`/api/v1/cover-letter`, `/api/v1/settings/llm`)
-
-`POST /api/v1/cover-letter` (`{ company, role, city?, skills? }`) generates a tailored
-German Anschreiben with the currently selected LLM provider, falling back to a
-deterministic template when no provider is configured. Switch providers at runtime
-via `GET`/`PUT /api/v1/settings/llm` (`{ provider: "claude" | "gemini" }`) — the
-Karriere app exposes this as the **KI-Modell** dialog in the top bar.
-
-Providers are off (template-only) until you supply a key:
-
-| Env                                 | Purpose                                                     |
-| ----------------------------------- | ----------------------------------------------------------- |
-| `LLM_PROVIDER`                      | default provider at startup: `claude` (default) or `gemini` |
-| `ANTHROPIC_API_KEY`                 | enables Claude                                              |
-| `ANTHROPIC_MODEL`                   | Claude model (default `claude-opus-4-8`)                    |
-| `GEMINI_API_KEY`                    | enables Gemini                                              |
-| `GEMINI_MODEL`                      | Gemini model (default `gemini-2.5-flash`)                   |
-| `CANDIDATE_NAME`, `CANDIDATE_TITLE` | who the letter is authored as                               |
-
-### Storage backend
-
-Defaults to JSON files under `archive/bewerbungen/`. Set `STORE=sql` with a
-`DATABASE_URL` to persist applications, the audit trail and saved searches in
-Postgres instead (tables are created on boot). In SQL mode the git versioner is
-disabled (there are no files to version).
-
-```bash
-STORE=sql DATABASE_URL=postgres://user:pass@host:5432/db npm run serve
-```
-
-A throwaway Postgres for local use:
-
-```bash
-docker run -d -e POSTGRES_PASSWORD=test -e POSTGRES_DB=resume -p 5432:5432 postgres:16-alpine
-```
-
-## myJob — Bewerbungstool (`design/myjob/`)
-
-A recruiting design system imported from a Claude Design project, built on the same token
-DNA. Two runnable apps:
-
-- **`design/myjob/ui_kits/recruiting/index.html`** — myJob Workspace, an ATS with two role
-  workflows you switch in the nav: **HR** (Pipeline · Stellen · Talente · Berichte ·
-  Postfach) and **Vermittler** (Mandate · Talent-Pool · Platzierungen · Berichte ·
-  Postfach), sharing a slide-in candidate detail with stage actions.
-- **`design/myjob/ui_kits/bewerber/index.html`** — myJob für Bewerber:innen: an applications
-  tracker and Bewerbungsmappe composer.
-
-These load React/Babel from a CDN and compile JSX at runtime, so **open them through the
-server** (`npm run serve` → linked from the launcher), not via `file://`.
-
-## Notes
-
-- Generated PDFs at the repo root are git-ignored (regenerate with `npm run pdf`);
-  archived application PDFs under `archive/bewerbungen/` are kept.
-- Accent themes (`data-theme="blueprint|signal|graphite"`) swap per subtree; the recruiting
-  funnel keeps a fixed status palette in every accent.
+See [LICENSE](LICENSE). The CV content and portrait are personal to Suhay Sevinc; the code
+and design system are free to learn from and build on.

@@ -29,6 +29,36 @@ test.describe('UI acceptance — the suite renders in English', () => {
     await expect(page.locator('main')).toContainText('Suhay Sevinc');
   });
 
+  test('Recruiting_Placements_RenderFromApi', async ({ page }) => {
+    // Stub the live placements endpoint with a candidate that is NOT in the
+    // offline sample, so a pass proves the view rendered API data.
+    await page.route('**/api/v1/placements', (route) => {
+      if (route.request().method() !== 'GET') return route.continue();
+      return route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify([
+          {
+            id: 'pl-api-1',
+            candidateName: 'Tobias Wirth',
+            candidateRole: 'Staff Engineer',
+            client: 'Helio GmbH',
+            start: '2026-08-01',
+            fee: '24.000 €',
+            status: 'paid',
+            createdAt: '2026-06-25T10:00:00.000Z',
+            updatedAt: '2026-06-25T10:00:00.000Z',
+          },
+        ]),
+      });
+    });
+    await page.goto('/design/myjob/ui_kits/recruiting/index.html');
+    await page.getByRole('button', { name: /Placements/ }).click();
+    await expect(page.locator('main')).toContainText('Tobias Wirth');
+    await expect(page.locator('main')).toContainText('Helio GmbH');
+    // the offline sample is replaced by the API data
+    await expect(page.locator('main')).not.toContainText('Mara Vogel');
+  });
+
   test('Karriere_Jobsuche_FetchesJobsFromApiAndCreatesApplication', async ({ page }) => {
     // The Jobsuche now fetches live from the REST API; stub it so the flow is
     // deterministic regardless of which job boards are configured on the server.

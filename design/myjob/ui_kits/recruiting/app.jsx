@@ -19,6 +19,27 @@ function App() {
   const [openTalent, setOpenTalent] = React.useState(null);
   const [mappeFor, setMappeFor] = React.useState(null);
   const [editing, setEditing] = React.useState(null);
+  // Placements come from the live REST API; the sample array is the offline fallback.
+  const [placements, setPlacements] = React.useState(window.PLACEMENTS);
+
+  const reloadPlacements = React.useCallback(
+    () => window.RecruitApi.listPlacements().then(setPlacements).catch(() => {}),
+    [],
+  );
+  React.useEffect(() => {
+    let alive = true;
+    window.RecruitApi.listPlacements()
+      .then((list) => { if (alive) setPlacements(list); })
+      .catch(() => {}); // keep the offline sample on error (e.g. file://)
+    return () => { alive = false; };
+  }, []);
+
+  const addPlacement = () => {
+    const candidateName = window.prompt('Candidate name');
+    if (!candidateName) return;
+    const client = window.prompt('Client') || '';
+    window.RecruitApi.createPlacement({ candidateName, client }).then(reloadPlacements).catch(() => {});
+  };
 
   const talents = window.TALENTS;
   const apps = window.APPLICATIONS;
@@ -61,8 +82,8 @@ function App() {
         <window.PipelineBoard apps={apps} talents={talents} onOpen={goTalent} />
       </div>
     );
-    else if (nav === 'platzierungen') body = <window.PlatzierungenView placements={window.PLACEMENTS} kpis={window.VERMITTLER_KPIS} />;
-    else if (nav === 'berichte') body = <window.ReportsView clients={window.CLIENTS} mandates={window.MANDATES} placements={window.PLACEMENTS} apps={apps} kpis={window.VERMITTLER_KPIS} />;
+    else if (nav === 'platzierungen') body = <window.PlatzierungenView placements={placements} kpis={window.VERMITTLER_KPIS} />;
+    else if (nav === 'berichte') body = <window.ReportsView clients={window.CLIENTS} mandates={window.MANDATES} placements={placements} apps={apps} kpis={window.VERMITTLER_KPIS} />;
     else if (nav === 'postfach') body = <window.Inbox messages={window.MESSAGES} apps={apps} talents={talents} onOpenTalent={goTalent} />;
     else if (nav === 'einstellungen') body = <window.SettingsView />;
   }
@@ -71,6 +92,8 @@ function App() {
     ? <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="plus" size={15} />} onClick={() => setMappeFor(me)}>Add application</A.Button>
     : (!talent && nav === 'mandate')
     ? <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="plus" size={15} />}>New mandate</A.Button>
+    : (!talent && nav === 'platzierungen')
+    ? <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="plus" size={15} />} onClick={addPlacement}>Add placement</A.Button>
     : null;
 
   return (

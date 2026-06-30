@@ -210,9 +210,9 @@ test.describe('UI acceptance — the suite renders in English', () => {
     const main = page.locator('main');
     // greeting counts the live active mandates (exactly one)
     await expect(main).toContainText('1 active mandates');
-    // the active-mandates card shows the live client, not the sample (Aurora)
+    // the active-mandates card shows the live mandate's client and role
     await expect(main).toContainText('Helio GmbH');
-    await expect(main).not.toContainText('Aurora Systems GmbH');
+    await expect(main).toContainText('Principal Platform Engineer');
     // the Fees KPI sums the live placement fee (24.000 € → "24 T€")
     await expect(main).toContainText('24 T€');
   });

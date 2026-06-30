@@ -60,13 +60,13 @@ function Dashboard({ me, apps, vkpis, clients, mandates, onOpenTalent, onOpenPip
 }
 
 /* ---------- Talents grid ---------- */
-function TalentGrid({ talents, apps, onOpen }) {
+function TalentGrid({ talents, apps, onOpen, onAdd }) {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>{talents.length} talents</span>
         <span style={{ flex: 1 }} />
-        <WS.Button size="sm" variant="outline" iconLeft={<WS.Icon name="plus" size={14} />}>Add talent</WS.Button>
+        <WS.Button size="sm" variant="outline" iconLeft={<WS.Icon name="plus" size={14} />} onClick={onAdd}>Add talent</WS.Button>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
         {talents.map((t) => {

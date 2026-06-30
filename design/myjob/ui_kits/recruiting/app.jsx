@@ -41,7 +41,32 @@ function App() {
     window.RecruitApi.createPlacement({ candidateName, client }).then(reloadPlacements).catch(() => {});
   };
 
-  const talents = window.TALENTS;
+  // The talent pool comes from the live REST API; "me" (talent #1, with its
+  // dossier) stays the sample object and is always pinned first.
+  const me0 = window.TALENTS.find((t) => t.me);
+  const [talents, setTalents] = React.useState(window.TALENTS);
+  const reloadTalents = React.useCallback(
+    () =>
+      window.RecruitApi.listTalents()
+        .then((list) => setTalents([me0, ...list.filter((t) => !t.me)]))
+        .catch(() => {}),
+    [me0],
+  );
+  React.useEffect(() => {
+    let alive = true;
+    window.RecruitApi.listTalents()
+      .then((list) => { if (alive) setTalents([me0, ...list.filter((t) => !t.me)]); })
+      .catch(() => {}); // keep the offline sample on error (e.g. file://)
+    return () => { alive = false; };
+  }, [me0]);
+
+  const addTalent = () => {
+    const name = window.prompt('Talent name');
+    if (!name) return;
+    const role = window.prompt('Role') || '';
+    window.RecruitApi.createTalent({ name, role }).then(reloadTalents).catch(() => {});
+  };
+
   const apps = window.APPLICATIONS;
   const me = talents.find((t) => t.me);
 
@@ -75,7 +100,7 @@ function App() {
     [title, subtitle] = TITLES[nav];
     if (nav === 'uebersicht') body = <window.Dashboard me={me} apps={apps} vkpis={window.VERMITTLER_KPIS} clients={window.CLIENTS} mandates={window.MANDATES} onOpenTalent={goTalent} onOpenPipeline={() => setNav('bewerbungen')} onOpenMandate={() => setNav('mandate')} />;
     else if (nav === 'mandate') body = <window.MandateView clients={window.CLIENTS} mandates={window.MANDATES} />;
-    else if (nav === 'pool') body = <window.TalentGrid talents={talents} apps={apps} onOpen={goTalent} />;
+    else if (nav === 'pool') body = <window.TalentGrid talents={talents} apps={apps} onOpen={goTalent} onAdd={addTalent} />;
     else if (nav === 'matching') body = <window.Matching talents={talents} />;
     else if (nav === 'bewerbungen') body = (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '100%' }}>

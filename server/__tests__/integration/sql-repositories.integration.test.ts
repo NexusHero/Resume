@@ -6,11 +6,15 @@ import { SqlSavedSearchRepository } from '../../src/adapters/sql/sql-saved-searc
 import { SqlMandateRepository } from '../../src/adapters/sql/sql-mandate-repository';
 import { SqlTalentRepository } from '../../src/adapters/sql/sql-talent-repository';
 import { SqlPlacementRepository } from '../../src/adapters/sql/sql-placement-repository';
+import { SqlUserRepository } from '../../src/adapters/sql/sql-user-repository';
+import { SqlSessionStore } from '../../src/adapters/sql/sql-session-store';
+import { loadConfig } from '../../src/config';
 import type { Application, AuditEvent } from '../../src/domain/application';
 import type { SavedSearch } from '../../src/domain/saved-search';
 import type { Mandate } from '../../src/domain/mandate';
 import type { Talent } from '../../src/domain/talent';
 import type { Placement } from '../../src/domain/placement';
+import type { User } from '../../src/domain/user';
 
 /**
  * Real-Postgres integration. Skipped unless DATABASE_URL is set, so the default
@@ -37,8 +41,15 @@ suite('SQL repositories (real Postgres)', () => {
 
   beforeEach(async () => {
     await pool.query(
-      'TRUNCATE applications, audit_events, saved_searches, mandates, talents, placements RESTART IDENTITY',
+      'TRUNCATE applications, audit_events, saved_searches, mandates, talents, placements, users, sessions RESTART IDENTITY',
     );
+  });
+
+  const user = (id: string, email = `${id}@example.com`): User => ({
+    id,
+    email,
+    passwordHash: 'scrypt$salt$key',
+    createdAt: '2026-06-25T10:00:00.000Z',
   });
 
   const mandate = (id: string, ownerId = 'owner1', client = 'Aurora'): Mandate => ({
@@ -191,5 +202,46 @@ suite('SQL repositories (real Postgres)', () => {
     expect(await repo.findById('owner1', 'p1')).toMatchObject({ status: 'paid' });
     expect(await repo.remove('owner1', 'p1')).toBe(true);
     expect(await repo.list('owner1')).toEqual([]);
+  });
+
+  it('Users_CrudRoundTrips', async () => {
+    const repo = new SqlUserRepository({ db });
+    await repo.add(user('u1', 'a@example.com'));
+    expect(await repo.findByEmail('a@example.com')).toEqual(user('u1', 'a@example.com'));
+    expect(await repo.findById('u1')).toMatchObject({ id: 'u1' });
+    expect(await repo.findByEmail('none@example.com')).toBeNull();
+    expect(await repo.remove('u1')).toBe(true);
+    expect(await repo.remove('u1')).toBe(false);
+    expect(await repo.findById('u1')).toBeNull();
+  });
+
+  it('Sessions_CreateLookupDestroy_RespectExpiry', async () => {
+    let nowIso = '2026-01-01T00:00:00.000Z';
+    const clock = {
+      isoNow: () => nowIso,
+      now: () => new Date(nowIso),
+      today: () => nowIso.slice(0, 10),
+    };
+    const config = loadConfig({}); // 30-day TTL
+    const store = new SqlSessionStore({ db, clock, config });
+
+    const a1 = await store.create('u1');
+    const a2 = await store.create('u1');
+    const b1 = await store.create('u2');
+    expect(await store.userIdFor(a1)).toBe('u1');
+
+    // destroyForUser removes only that user's sessions
+    await store.destroyForUser('u1');
+    expect(await store.userIdFor(a1)).toBeNull();
+    expect(await store.userIdFor(a2)).toBeNull();
+    expect(await store.userIdFor(b1)).toBe('u2');
+
+    // expiry: a session past the TTL is rejected and pruned
+    const old = await store.create('u3');
+    nowIso = '2026-03-01T00:00:00.000Z'; // > 30 days later
+    expect(await store.userIdFor(old)).toBeNull();
+
+    await store.destroy(b1);
+    expect(await store.userIdFor(b1)).toBeNull();
   });
 });

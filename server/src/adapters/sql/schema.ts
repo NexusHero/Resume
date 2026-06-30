@@ -1,5 +1,20 @@
 import { pgTable, text, serial, integer, jsonb } from 'drizzle-orm/pg-core';
 
+/** Registered accounts (mirrors domain `User`). */
+export const users = pgTable('users', {
+  id: text('id').primaryKey(),
+  email: text('email').notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
+  createdAt: text('created_at').notNull(),
+});
+
+/** Opaque server-side sessions: a token maps to a user id, with a creation time. */
+export const sessions = pgTable('sessions', {
+  token: text('token').primaryKey(),
+  userId: text('user_id').notNull(),
+  createdAt: text('created_at').notNull(),
+});
+
 /** Recorded job applications (mirrors domain `Application`). */
 export const applications = pgTable('applications', {
   id: text('id').primaryKey(),

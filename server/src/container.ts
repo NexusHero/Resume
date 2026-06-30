@@ -11,8 +11,6 @@ import { createLogger } from './adapters/pino-logger';
 import { SystemClock } from './adapters/system-clock';
 import { RandomIdGenerator } from './adapters/random-id-generator';
 import { FsPdfArchive } from './adapters/fs-pdf-archive';
-import { FsUserRepository } from './adapters/fs-user-repository';
-import { FsSessionStore } from './adapters/fs-session-store';
 import { ScryptPasswordHasher } from './adapters/scrypt-password-hasher';
 import { createPersistence } from './adapters/persistence-factory';
 import type { Db } from './adapters/sql/db';
@@ -50,7 +48,7 @@ import { AccountController } from './http/account-controller';
 /** Composition root: wires every port to its production adapter (no decorators). */
 export function buildContainer(config: AppConfig = loadConfig(), db?: Db): AwilixContainer {
   const container = createContainer({ injectionMode: InjectionMode.PROXY });
-  const persistence = createPersistence({ config, db });
+  const persistence = createPersistence({ config, clock: new SystemClock(), db });
   container.register({
     config: asValue(config),
     candidateProfile: asValue(config.candidateProfile),
@@ -66,8 +64,10 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     mandateRepository: asValue(persistence.mandateRepository),
     talentRepository: asValue(persistence.talentRepository),
     placementRepository: asValue(persistence.placementRepository),
-    userRepository: asClass(FsUserRepository).singleton(),
-    sessionStore: asClass(FsSessionStore).singleton(),
+    // Auth persistence follows the same store switch: file-backed by default,
+    // Postgres when STORE=sql (so sessions/users survive a multi-instance deploy).
+    userRepository: asValue(persistence.userRepository),
+    sessionStore: asValue(persistence.sessionStore),
     passwordHasher: asClass(ScryptPasswordHasher).singleton(),
     pdfArchive: asClass(FsPdfArchive).singleton(),
     // Git versioning only makes sense for the file store; with Postgres there are

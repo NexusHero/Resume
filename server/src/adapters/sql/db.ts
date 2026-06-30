@@ -13,6 +13,18 @@ export function createDb(databaseUrl: string): { db: Db; pool: Pool } {
 /** Create the tables if they do not exist. Idempotent; run on boot. */
 export async function migrate(pool: Pool): Promise<void> {
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id text PRIMARY KEY,
+      email text NOT NULL UNIQUE,
+      password_hash text NOT NULL,
+      created_at text NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS sessions (
+      token text PRIMARY KEY,
+      user_id text NOT NULL,
+      created_at text NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS sessions_user_id_idx ON sessions (user_id);
     CREATE TABLE IF NOT EXISTS applications (
       id text PRIMARY KEY,
       date text NOT NULL,

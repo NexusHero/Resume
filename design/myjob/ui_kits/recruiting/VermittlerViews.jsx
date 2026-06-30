@@ -17,7 +17,7 @@ function PrioPill({ p }) {
 const PLACEMENT_TONE = { 'Paid': 'hired', 'Invoiced': 'offer', 'Probation': 'interview' };
 
 /* ---------- Mandate: client search assignments ---------- */
-function MandateView({ mandates }) {
+function MandateView({ mandates, onEdit }) {
   const order = [];
   const byClient = new Map();
   (mandates || []).forEach((m) => {
@@ -42,7 +42,7 @@ function MandateView({ mandates }) {
               <VV.Badge variant="subtle" size="sm">{ms.length} mandates</VV.Badge>
             </header>
             {ms.map((m) => (
-              <div key={m.id} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.5fr) 96px 104px 116px 116px', alignItems: 'center', gap: '14px', padding: '13px 18px', borderBottom: '1px solid var(--border)' }}>
+              <div key={m.id} onClick={onEdit ? () => onEdit(m) : undefined} role={onEdit ? 'button' : undefined} title={onEdit ? 'Edit mandate' : undefined} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.5fr) 96px 104px 116px 116px', alignItems: 'center', gap: '14px', padding: '13px 18px', borderBottom: '1px solid var(--border)', cursor: onEdit ? 'pointer' : 'default' }}>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-heading)' }}>{m.role}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', marginTop: '2px' }}><VV.Icon name="pin" size={11} />{m.location}</div>
@@ -76,7 +76,7 @@ function MandateView({ mandates }) {
 }
 
 /* ---------- Platzierungen: booked placements + fees ---------- */
-function PlatzierungenView({ placements, kpis }) {
+function PlatzierungenView({ placements, kpis, onEdit }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px' }}>
@@ -87,7 +87,7 @@ function PlatzierungenView({ placements, kpis }) {
           <span>Talent</span><span>Client · Role</span><span>Start</span><span>Fee</span><span style={{ textAlign: 'right' }}>Status</span>
         </div>
         {placements.map((p) => (
-          <div key={p.id} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.4fr) minmax(0,1.2fr) 110px 110px 110px', gap: '14px', alignItems: 'center', padding: '13px 18px', borderBottom: '1px solid var(--border)' }}>
+          <div key={p.id} onClick={onEdit ? () => onEdit(p) : undefined} role={onEdit ? 'button' : undefined} title={onEdit ? 'Edit placement' : undefined} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.4fr) minmax(0,1.2fr) 110px 110px 110px', gap: '14px', alignItems: 'center', padding: '13px 18px', borderBottom: '1px solid var(--border)', cursor: onEdit ? 'pointer' : 'default' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '11px', minWidth: 0 }}>
               <VV.Avatar name={p.candName} size="sm" />
               <span style={{ fontFamily: 'var(--font-display)', fontSize: '13.5px', fontWeight: 700, color: 'var(--text-heading)' }}>{p.candName}</span>

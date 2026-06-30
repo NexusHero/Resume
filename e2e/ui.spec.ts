@@ -208,6 +208,57 @@ test.describe('UI acceptance — the suite renders in English', () => {
     await expect(page.locator('main')).toContainText('Principal Platform Engineer');
   });
 
+  test('Recruiting_EditMandate_FormUpdatesRow', async ({ page }) => {
+    // Clicking a mandate opens the edit form pre-filled; saving PATCHes it and
+    // the list reloads with the new status.
+    const mandate = {
+      id: 'ma1',
+      client: 'Helio GmbH',
+      role: 'Principal Platform Engineer',
+      location: 'Hamburg',
+      fee: '24%',
+      feeValue: '31.000 €',
+      deadline: '2026-09-01',
+      priority: 'high',
+      status: 'active',
+      submitted: 3,
+      interviews: 1,
+      createdAt: '2026-06-30T10:00:00.000Z',
+      updatedAt: '2026-06-30T10:00:00.000Z',
+    };
+    await page.route('**/api/v1/mandates', (route) =>
+      route.fulfill({ contentType: 'application/json', body: JSON.stringify([mandate]) }),
+    );
+    await page.route('**/api/v1/mandates/ma1', (route) => {
+      const body = JSON.parse(route.request().postData() || '{}');
+      mandate.status = body.status || mandate.status;
+      return route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ mandate }),
+      });
+    });
+    await page.route('**/api/v1/auth/me', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id: 'user1', email: 'me@example.de' } }),
+      }),
+    );
+    await page.goto('/design/myjob/ui_kits/recruiting/index.html');
+    await page.getByRole('button', { name: /Mandates/ }).click();
+    const main = page.locator('main');
+    await expect(main).toContainText('active');
+
+    // open the edit form pre-filled, change the status, save
+    await main.getByText('Principal Platform Engineer').click();
+    await expect(page.getByText('Edit mandate')).toBeVisible();
+    await expect(page.getByLabel('Client', { exact: true })).toHaveValue('Helio GmbH');
+    await page.getByLabel('Status', { exact: true }).selectOption('paused');
+    await page.getByRole('button', { name: 'Save changes' }).click();
+
+    await expect(page.getByRole('button', { name: 'Save changes' })).toBeHidden();
+    await expect(main).toContainText('paused');
+  });
+
   test('Recruiting_Dashboard_KpisAndMandatesReflectLiveData', async ({ page }) => {
     // The Übersicht (default view) must aggregate the live mandates/placements,
     // not the static sample — so KPIs and the active-mandates card track the

@@ -7,6 +7,8 @@ const RECORD_FORMS = {
   mandate: {
     title: 'New mandate',
     subtitle: 'Open a client search mandate',
+    editTitle: 'Edit mandate',
+    editSubmitLabel: 'Save changes',
     icon: 'briefcase',
     submitLabel: 'Create mandate',
     fields: [
@@ -39,6 +41,8 @@ const RECORD_FORMS = {
   placement: {
     title: 'Add placement',
     subtitle: 'Record a booked placement',
+    editTitle: 'Edit placement',
+    editSubmitLabel: 'Save changes',
     icon: 'award',
     submitLabel: 'Add placement',
     fields: [
@@ -52,12 +56,14 @@ const RECORD_FORMS = {
   },
 };
 
-function RecordFormModal({ kind, onClose, onSubmit }) {
+function RecordFormModal({ kind, record, onClose, onSubmit }) {
   const form = RECORD_FORMS[kind];
+  const editing = record != null;
   const [values, setValues] = React.useState(() => {
     const init = {};
     form.fields.forEach((f) => {
-      init[f.name] = f.default != null ? f.default : '';
+      const fromRecord = record ? record[f.name] : undefined;
+      init[f.name] = fromRecord != null ? fromRecord : f.default != null ? f.default : '';
     });
     return init;
   });
@@ -90,7 +96,7 @@ function RecordFormModal({ kind, onClose, onSubmit }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '13px', padding: '18px 22px', borderBottom: '1px solid var(--border)' }}>
           <span style={{ width: '38px', height: '38px', borderRadius: 'var(--radius-md)', background: 'var(--accent)', color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><RF.Icon name={form.icon} size={18} /></span>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)' }}>{form.title}</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)' }}>{editing ? form.editTitle : form.title}</div>
             <div style={{ fontSize: '12.5px', color: 'var(--text-soft)' }}>{form.subtitle}</div>
           </div>
           <RF.IconButton icon="x" label="Close" variant="ghost" type="button" onClick={onClose} />
@@ -112,7 +118,7 @@ function RecordFormModal({ kind, onClose, onSubmit }) {
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', padding: '14px 22px', borderTop: '1px solid var(--border)', background: 'var(--surface-subtle)' }}>
           <RF.Button variant="ghost" type="button" disabled={busy} onClick={onClose}>Cancel</RF.Button>
-          <RF.Button variant="primary" type="submit" disabled={busy}>{busy ? 'Saving…' : form.submitLabel}</RF.Button>
+          <RF.Button variant="primary" type="submit" disabled={busy}>{busy ? 'Saving…' : editing ? form.editSubmitLabel : form.submitLabel}</RF.Button>
         </div>
       </form>
     </>

@@ -21,6 +21,8 @@ function Workspace({ onLogout }) {
   const [editing, setEditing] = React.useState(null);
   // Which create form is open ('mandate' | 'talent' | 'placement' | null).
   const [formKind, setFormKind] = React.useState(null);
+  // The record being edited, as { kind, id, values } — null when not editing.
+  const [editRecord, setEditRecord] = React.useState(null);
   // Placements come from the live REST API; the sample array is the offline fallback.
   const [placements, setPlacements] = React.useState(window.PLACEMENTS);
 
@@ -84,6 +86,28 @@ function Workspace({ onLogout }) {
     return window.RecruitApi.createPlacement(values).then(reloadPlacements);
   };
 
+  // Open the edit form for a record. Mandates already carry form-shaped fields;
+  // placements come from the view in their mapped UI shape, so map them back.
+  const editMandate = (m) => setEditRecord({ kind: 'mandate', id: m.id, values: m });
+  const editPlacement = (p) =>
+    setEditRecord({
+      kind: 'placement',
+      id: p.id,
+      values: {
+        candidateName: p.candName,
+        candidateRole: p.candRole,
+        client: p.client,
+        start: p.start,
+        fee: p.fee,
+        status: String(p.status || '').toLowerCase(),
+      },
+    });
+
+  const submitEdit = ({ kind, id }, values) => {
+    if (kind === 'mandate') return window.RecruitApi.updateMandate(id, values).then(reloadMandates);
+    return window.RecruitApi.updatePlacement(id, values).then(reloadPlacements);
+  };
+
   const apps = window.APPLICATIONS;
   const me = talents.find((t) => t.me);
 
@@ -127,7 +151,7 @@ function Workspace({ onLogout }) {
   } else {
     [title, subtitle] = TITLES[nav];
     if (nav === 'uebersicht') body = <window.Dashboard me={me} apps={apps} vkpis={vkpis} clients={window.CLIENTS} mandates={mandates} onOpenTalent={goTalent} onOpenPipeline={() => setNav('bewerbungen')} onOpenMandate={() => setNav('mandate')} />;
-    else if (nav === 'mandate') body = <window.MandateView mandates={mandates} />;
+    else if (nav === 'mandate') body = <window.MandateView mandates={mandates} onEdit={editMandate} />;
     else if (nav === 'pool') body = <window.TalentGrid talents={talents} apps={apps} onOpen={goTalent} onAdd={addTalent} />;
     else if (nav === 'matching') body = <window.Matching talents={talents} />;
     else if (nav === 'bewerbungen') body = (
@@ -135,7 +159,7 @@ function Workspace({ onLogout }) {
         <window.PipelineBoard apps={apps} talents={talents} onOpen={goTalent} />
       </div>
     );
-    else if (nav === 'platzierungen') body = <window.PlatzierungenView placements={placements} kpis={vkpis} />;
+    else if (nav === 'platzierungen') body = <window.PlatzierungenView placements={placements} kpis={vkpis} onEdit={editPlacement} />;
     else if (nav === 'berichte') body = <window.ReportsView clients={reportClients} mandates={mandates} placements={placements} apps={apps} kpis={vkpis} />;
     else if (nav === 'postfach') body = <window.Inbox messages={window.MESSAGES} apps={apps} talents={talents} onOpenTalent={goTalent} />;
     else if (nav === 'einstellungen') body = <window.SettingsView />;
@@ -158,6 +182,14 @@ function Workspace({ onLogout }) {
           kind={formKind}
           onClose={() => setFormKind(null)}
           onSubmit={(values) => submitForm(formKind, values)}
+        />
+      )}
+      {editRecord && (
+        <window.RecordFormModal
+          kind={editRecord.kind}
+          record={editRecord.values}
+          onClose={() => setEditRecord(null)}
+          onSubmit={(values) => submitEdit(editRecord, values)}
         />
       )}
     </window.RecruitRail>

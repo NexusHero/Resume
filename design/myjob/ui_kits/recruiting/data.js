@@ -126,4 +126,61 @@ const VERMITTLER_KPIS = [
   { label: 'Fees Q2', value: '128 T€', delta: '+18%', dir: 'up', icon: 'trend' },
 ];
 
-Object.assign(window, { STAGES_ORDER, STAGE_LABELS, TALENTS, APPLICATIONS, JOBS, MESSAGES, KPIS, CLIENTS, MANDATES, PLACEMENTS, VERMITTLER_KPIS });
+/* ============================================================
+   Live backend wiring. The recruiting views read from the REST API
+   (server/src) instead of the sample data above. Base URL is same-origin
+   when served by the app server; override via window.RECRUIT_API.
+   The sample arrays above stay as an offline fallback (e.g. file://).
+   ============================================================ */
+const RECRUIT_API_BASE = (typeof window !== 'undefined' && window.RECRUIT_API) || '/api/v1';
+
+const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+
+async function _jsonOrThrow(res) {
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+/* Backend Placement → the shape PlatzierungenView/ReportsView render. */
+function mapPlacement(p) {
+  return {
+    id: p.id,
+    candName: p.candidateName,
+    candRole: p.candidateRole,
+    client: p.client,
+    start: p.start,
+    fee: p.fee,
+    status: cap(p.status),
+  };
+}
+
+/* A sample (or UI) placement → the POST body the API expects. */
+function toPlacementCreate(p) {
+  return {
+    candidateName: p.candName || p.candidateName || '',
+    candidateRole: p.candRole || p.candidateRole || '',
+    client: p.client || '',
+    start: p.start || '',
+    fee: p.fee || '',
+    status: (p.status || 'probation').toLowerCase(),
+  };
+}
+
+const RecruitApi = {
+  async listPlacements() {
+    const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/placements`));
+    return Array.isArray(data) ? data.map(mapPlacement) : [];
+  },
+  async createPlacement(input) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/placements`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(toPlacementCreate(input)),
+      }),
+    );
+    return mapPlacement(data.placement);
+  },
+};
+
+Object.assign(window, { STAGES_ORDER, STAGE_LABELS, TALENTS, APPLICATIONS, JOBS, MESSAGES, KPIS, CLIENTS, MANDATES, PLACEMENTS, VERMITTLER_KPIS, RecruitApi });

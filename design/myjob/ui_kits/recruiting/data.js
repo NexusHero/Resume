@@ -206,7 +206,61 @@ function toTalentCreate(t) {
   };
 }
 
+/* Backend Mandate → the shape MandateView renders (client is already a name). */
+function mapMandate(m) {
+  return {
+    id: m.id,
+    client: m.client,
+    role: m.role,
+    location: m.location,
+    fee: m.fee,
+    feeValue: m.feeValue,
+    deadline: m.deadline,
+    priority: m.priority,
+    status: m.status,
+    submitted: m.submitted,
+    interviews: m.interviews,
+  };
+}
+
+/* A UI mandate → the POST body the API expects. */
+function toMandateCreate(m) {
+  return {
+    client: m.client || '',
+    role: m.role || '',
+    location: m.location || '',
+    fee: m.fee || '',
+    feeValue: m.feeValue || '',
+    deadline: m.deadline || '',
+    priority: m.priority || 'medium',
+    status: m.status || 'active',
+    submitted: m.submitted || 0,
+    interviews: m.interviews || 0,
+  };
+}
+
+/* The sample mandates with their client id resolved to a name — the offline
+   fallback shape that MandateView (which groups by client name) expects. */
+const SAMPLE_MANDATES = MANDATES.map((m) => ({
+  ...m,
+  client: (CLIENTS.find((c) => c.id === m.clientId) || {}).name || '—',
+}));
+
 const RecruitApi = {
+  async listMandates() {
+    const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/mandates`));
+    return Array.isArray(data) ? data.map(mapMandate) : [];
+  },
+  async createMandate(input) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/mandates`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(toMandateCreate(input)),
+      }),
+    );
+    return mapMandate(data.mandate);
+  },
   async listTalents() {
     const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/talents`));
     return Array.isArray(data) ? data.map(mapTalent) : [];
@@ -237,4 +291,4 @@ const RecruitApi = {
   },
 };
 
-Object.assign(window, { STAGES_ORDER, STAGE_LABELS, TALENTS, APPLICATIONS, JOBS, MESSAGES, KPIS, CLIENTS, MANDATES, PLACEMENTS, VERMITTLER_KPIS, RecruitApi });
+Object.assign(window, { STAGES_ORDER, STAGE_LABELS, TALENTS, APPLICATIONS, JOBS, MESSAGES, KPIS, CLIENTS, MANDATES, PLACEMENTS, VERMITTLER_KPIS, SAMPLE_MANDATES, RecruitApi });

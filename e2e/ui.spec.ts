@@ -90,6 +90,40 @@ test.describe('UI acceptance — the suite renders in English', () => {
     await expect(page.locator('main')).toContainText('Suhay Sevinc'); // pinned "me"
   });
 
+  test('Recruiting_Mandates_RenderFromApiGroupedByClient', async ({ page }) => {
+    // Stub the live mandates endpoint with a client/role not in the sample, so a
+    // pass proves MandateView grouped and rendered API data.
+    await page.route('**/api/v1/mandates', (route) => {
+      if (route.request().method() !== 'GET') return route.continue();
+      return route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify([
+          {
+            id: 'ma-api-1',
+            client: 'Helio GmbH',
+            role: 'Principal Platform Engineer',
+            location: 'Hamburg · Remote',
+            fee: '24%',
+            feeValue: '31.000 €',
+            deadline: '2026-09-01',
+            priority: 'high',
+            status: 'active',
+            submitted: 3,
+            interviews: 1,
+            createdAt: '2026-06-25T10:00:00.000Z',
+            updatedAt: '2026-06-25T10:00:00.000Z',
+          },
+        ]),
+      });
+    });
+    await page.goto('/design/myjob/ui_kits/recruiting/index.html');
+    await page.getByRole('button', { name: /Mandates/ }).click();
+    await expect(page.locator('main')).toContainText('Helio GmbH'); // client group header
+    await expect(page.locator('main')).toContainText('Principal Platform Engineer'); // mandate row
+    // the offline sample is replaced by the API data
+    await expect(page.locator('main')).not.toContainText('Aurora Systems GmbH');
+  });
+
   test('Karriere_Jobsuche_FetchesJobsFromApiAndCreatesApplication', async ({ page }) => {
     // The Jobsuche now fetches live from the REST API; stub it so the flow is
     // deterministic regardless of which job boards are configured on the server.

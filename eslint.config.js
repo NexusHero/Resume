@@ -11,8 +11,6 @@ module.exports = tseslint.config(
       'server/dist/**',
       'dist/**',
       'coverage/**',
-      'reports/**',
-      '.stryker-tmp/**',
       'design/**',
       '**/_ds_bundle.js',
       'assets/**',

@@ -9,8 +9,6 @@ node_modules/
 dist/
 core/dist/
 coverage/
-reports/
-.stryker-tmp/
 playwright-report/
 test-results/
 *.tsbuildinfo

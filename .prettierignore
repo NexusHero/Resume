@@ -3,8 +3,6 @@ node_modules
 dist
 server/dist
 coverage
-reports
-.stryker-tmp
 package-lock.json
 
 # Vendored / generated / design-system-owned assets (not hand-formatted here).

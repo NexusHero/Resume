@@ -62,6 +62,41 @@ jobs:
       - name: Run UI acceptance tests
         run: npm run test:e2e
 
+  # ── SQL integration tests against a real Postgres ───────────────────────
+  integration:
+    name: integration — Postgres
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: myjob
+          POSTGRES_PASSWORD: myjob
+          POSTGRES_DB: myjob
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U myjob"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run SQL integration tests
+        run: npx jest integration
+        env:
+          DATABASE_URL: postgres://myjob:myjob@localhost:5432/myjob
+
   # ── Conventional Commits on the PR ──────────────────────────────────────
   commitlint:
     name: commit messages

@@ -573,7 +573,20 @@ describe('REST API /api/v1', () => {
   it('Cors_Preflight_Returns204', async () => {
     const res = await request(app).options('/api/v1/applications');
     expect(res.status).toBe(204);
-    expect(res.headers['access-control-allow-origin']).toBe('*');
+  });
+
+  it('Cors_NoConfiguredOrigins_DoesNotEchoOrigin', async () => {
+    // The default app has no CORS allow-list → same-origin only, so a
+    // cross-origin browser never receives Access-Control-Allow-Origin.
+    const res = await request(app).get('/api/v1/health').set('Origin', 'https://evil.example');
+    expect(res.headers['access-control-allow-origin']).toBeUndefined();
+  });
+
+  it('SecurityHeaders_PresentOnEveryResponse', async () => {
+    const res = await request(app).get('/api/v1/health');
+    expect(res.headers['x-content-type-options']).toBe('nosniff');
+    expect(res.headers['x-frame-options']).toBe('SAMEORIGIN');
+    expect(res.headers['referrer-policy']).toBe('strict-origin-when-cross-origin');
   });
 
   it('Jobs_GetNoParams_RunsPreconfiguredSearchInTwoTiers', async () => {

@@ -57,6 +57,7 @@ function tmpConfig(): AppConfig {
       google: { enabled: false },
       linkedin: { enabled: false },
     },
+    security: { corsOrigins: [] },
   };
 }
 

@@ -35,6 +35,19 @@ export interface AppConfig {
   databaseUrl: string;
   /** Authentication wiring (session cookie + social-login availability). */
   auth: AuthConfig;
+  /** HTTP hardening (CORS allow-list). */
+  security: SecurityConfig;
+}
+
+/** Security configuration, resolved from the environment. */
+export interface SecurityConfig {
+  /**
+   * Browser origins allowed to call the API with credentials. Empty (the
+   * default) means same-origin only: no `Access-Control-Allow-Origin` header is
+   * sent, so cross-origin browsers are refused. Configure CORS_ORIGINS (a comma
+   * list) to open specific origins.
+   */
+  corsOrigins: string[];
 }
 
 /** Authentication configuration, resolved from the environment. */
@@ -146,6 +159,12 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       sessionCookieName: env.SESSION_COOKIE_NAME ?? 'myjob_session',
       google: { enabled: Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET) },
       linkedin: { enabled: Boolean(env.LINKEDIN_CLIENT_ID && env.LINKEDIN_CLIENT_SECRET) },
+    },
+    security: {
+      corsOrigins: (env.CORS_ORIGINS ?? '')
+        .split(',')
+        .map((o) => o.trim())
+        .filter(Boolean),
     },
   };
 }

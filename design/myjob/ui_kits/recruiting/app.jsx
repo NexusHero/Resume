@@ -13,7 +13,7 @@ const TITLES = {
   einstellungen: ['Settings', 'API key, AI framework & agentic mode'],
 };
 
-function App() {
+function Workspace({ onLogout }) {
   const [nav, setNav] = React.useState('uebersicht');
   const [search, setSearch] = React.useState('');
   const [openTalent, setOpenTalent] = React.useState(null);
@@ -105,7 +105,7 @@ function App() {
   // editor takes over the whole canvas
   if (editTalent) {
     return (
-      <window.RecruitRail active="pool" onNav={(n) => { setEditing(null); setOpenTalent(null); setNav(n); }} me={me} talentCount={talents.length} search={search} onSearch={setSearch} title={editTalent.me ? 'My documents' : editTalent.name} subtitle="Edit resume & cover letter" badges={badges}>
+      <window.RecruitRail active="pool" onNav={(n) => { setEditing(null); setOpenTalent(null); setNav(n); }} me={me} talentCount={talents.length} search={search} onSearch={setSearch} title={editTalent.me ? 'My documents' : editTalent.name} subtitle="Edit resume & cover letter" badges={badges} onLogout={onLogout}>
         <window.Editor talent={editTalent} onClose={() => setEditing(null)} onCreateMappe={() => { setMappeFor(editTalent); }} />
         {mappeFor && <window.MappeModal talent={mappeFor} onClose={() => setMappeFor(null)} />}
       </window.RecruitRail>
@@ -144,11 +144,46 @@ function App() {
     : null;
 
   return (
-    <window.RecruitRail active={talent ? 'pool' : nav} onNav={(n) => { setOpenTalent(null); setNav(n); }} me={me} talentCount={talents.length} search={search} onSearch={setSearch} title={title} subtitle={subtitle} badges={badges} actions={actions}>
+    <window.RecruitRail active={talent ? 'pool' : nav} onNav={(n) => { setOpenTalent(null); setNav(n); }} me={me} talentCount={talents.length} search={search} onSearch={setSearch} title={title} subtitle={subtitle} badges={badges} actions={actions} onLogout={onLogout}>
       {body}
       {mappeFor && <window.MappeModal talent={mappeFor} onClose={() => setMappeFor(null)} />}
     </window.RecruitRail>
   );
+}
+
+/* Auth gate: probe the session, then render either the login screen or the
+   workspace. The recruiting UI is only mounted once a user is present. */
+function App() {
+  const [auth, setAuth] = React.useState({ status: 'loading', user: null });
+  const [providers, setProviders] = React.useState({ google: false, linkedin: false });
+
+  React.useEffect(() => {
+    let alive = true;
+    window.RecruitApi.authProviders()
+      .then((p) => { if (alive) setProviders(p); })
+      .catch(() => {});
+    window.RecruitApi.authMe()
+      .then((user) => { if (alive) setAuth({ status: 'ready', user }); })
+      .catch(() => { if (alive) setAuth({ status: 'ready', user: null }); });
+    return () => { alive = false; };
+  }, []);
+
+  if (auth.status === 'loading') return null;
+  if (!auth.user) {
+    return (
+      <window.LoginScreen
+        providers={providers}
+        onAuthed={(user) => setAuth({ status: 'ready', user })}
+      />
+    );
+  }
+
+  const onLogout = () =>
+    window.RecruitApi.authLogout()
+      .catch(() => {})
+      .then(() => setAuth({ status: 'ready', user: null }));
+
+  return <Workspace onLogout={onLogout} />;
 }
 
 Object.assign(window, { App });

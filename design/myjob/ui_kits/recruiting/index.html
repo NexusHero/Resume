@@ -14,6 +14,7 @@
   @keyframes popIn { from { transform: translate(-50%, -50%) scale(0.96); opacity: 0; } to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
   *::-webkit-scrollbar { width: 10px; height: 10px; }
   *::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; border: 3px solid var(--surface-app); }
+  @media (max-width: 720px) { .auth-brand { display: none !important; } }
 </style>
 </head>
 <body>
@@ -32,6 +33,7 @@
   <script type="text/babel" src="MappeModal.jsx"></script>
   <script type="text/babel" src="Matching.jsx"></script>
   <script type="text/babel" src="SettingsView.jsx"></script>
+  <script type="text/babel" src="Login.jsx"></script>
   <script type="text/babel" src="app.jsx"></script>
   <script type="text/babel" data-presets="react">
     ReactDOM.createRoot(document.getElementById('root')).render(<window.App />);

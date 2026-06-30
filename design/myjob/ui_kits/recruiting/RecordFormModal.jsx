@@ -105,7 +105,7 @@ function RecordFormModal({ kind, record, onClose, onSubmit }) {
         <div style={{ flex: 1, overflowY: 'auto', padding: '20px 22px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', alignItems: 'start' }}>
           {form.fields.map((f) =>
             f.type === 'select' ? (
-              <RF.Select key={f.name} label={f.label} options={f.options} value={values[f.name]} onChange={(e) => set(f.name, e.target.value)} />
+              <RF.Select key={f.name} label={f.label} options={f.options} value={values[f.name]} onChange={(e) => set(f.name, e.target.value)} aria-label={f.label} />
             ) : (
               <RF.Input key={f.name} label={f.required ? `${f.label} *` : f.label} icon={f.icon} type={f.type || 'text'} placeholder={f.placeholder} value={values[f.name]} onChange={(e) => set(f.name, e.target.value)} aria-label={f.label} />
             ),

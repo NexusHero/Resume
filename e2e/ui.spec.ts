@@ -11,6 +11,12 @@ test.describe('UI acceptance — the suite renders in English', () => {
   });
 
   test('Recruiting_Loads_NavigationIsEnglish', async ({ page }) => {
+    await page.route('**/api/v1/auth/me', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id: 'user1', email: 'me@example.de' } }),
+      }),
+    );
     await page.goto('/design/myjob/ui_kits/recruiting/index.html');
     const nav = page.locator('nav');
     await expect(nav.locator('button').first()).toBeVisible();
@@ -23,6 +29,12 @@ test.describe('UI acceptance — the suite renders in English', () => {
   });
 
   test('Recruiting_OpenTalentPool_ShowsTalents', async ({ page }) => {
+    await page.route('**/api/v1/auth/me', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id: 'user1', email: 'me@example.de' } }),
+      }),
+    );
     await page.goto('/design/myjob/ui_kits/recruiting/index.html');
     await page.getByRole('button', { name: /Talent Pool/ }).click();
     await expect(page.locator('main')).toContainText('Add talent');
@@ -51,6 +63,12 @@ test.describe('UI acceptance — the suite renders in English', () => {
         ]),
       });
     });
+    await page.route('**/api/v1/auth/me', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id: 'user1', email: 'me@example.de' } }),
+      }),
+    );
     await page.goto('/design/myjob/ui_kits/recruiting/index.html');
     await page.getByRole('button', { name: /Placements/ }).click();
     await expect(page.locator('main')).toContainText('Tobias Wirth');
@@ -84,6 +102,12 @@ test.describe('UI acceptance — the suite renders in English', () => {
         ]),
       });
     });
+    await page.route('**/api/v1/auth/me', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id: 'user1', email: 'me@example.de' } }),
+      }),
+    );
     await page.goto('/design/myjob/ui_kits/recruiting/index.html');
     await page.getByRole('button', { name: /Talent Pool/ }).click();
     await expect(page.locator('main')).toContainText('Tobias Wirth'); // from the API
@@ -116,12 +140,78 @@ test.describe('UI acceptance — the suite renders in English', () => {
         ]),
       });
     });
+    await page.route('**/api/v1/auth/me', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id: 'user1', email: 'me@example.de' } }),
+      }),
+    );
     await page.goto('/design/myjob/ui_kits/recruiting/index.html');
     await page.getByRole('button', { name: /Mandates/ }).click();
     await expect(page.locator('main')).toContainText('Helio GmbH'); // client group header
     await expect(page.locator('main')).toContainText('Principal Platform Engineer'); // mandate row
     // the offline sample is replaced by the API data
     await expect(page.locator('main')).not.toContainText('Aurora Systems GmbH');
+  });
+
+  test('Recruiting_Login_SignsInAndShowsWorkspace', async ({ page }) => {
+    // No session → the branded login screen; after submit → the workspace.
+    await page.route('**/api/v1/auth/me', (route) =>
+      route.fulfill({ contentType: 'application/json', body: JSON.stringify({ user: null }) }),
+    );
+    await page.route('**/api/v1/auth/providers', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ google: false, linkedin: false }),
+      }),
+    );
+    await page.route('**/api/v1/auth/login', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id: 'user1', email: 'me@example.de' } }),
+      }),
+    );
+    await page.goto('/design/myjob/ui_kits/recruiting/index.html');
+    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
+    await page.getByPlaceholder('you@example.com').fill('me@example.de');
+    await page.getByPlaceholder('••••••••').fill('supersecret');
+    await page.locator('button[type="submit"]').click();
+    // signed in → the workspace navigation is shown
+    await expect(page.getByRole('button', { name: /Talent Pool/ })).toBeVisible();
+  });
+
+  test('Recruiting_Settings_LoadsProvidersAndSwitchesModel', async ({ page }) => {
+    await page.route('**/api/v1/auth/me', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id: 'user1', email: 'me@example.de' } }),
+      }),
+    );
+    let current = 'claude';
+    await page.route('**/api/v1/settings/llm', (route) => {
+      if (route.request().method() === 'PUT') {
+        current = JSON.parse(route.request().postData() || '{}').provider;
+      }
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          current,
+          providers: [
+            { id: 'claude', label: 'Claude (Anthropic)', available: true },
+            { id: 'gemini', label: 'Gemini (Google)', available: false },
+          ],
+        }),
+      });
+    });
+    await page.goto('/design/myjob/ui_kits/recruiting/index.html');
+    await page.getByRole('button', { name: /Settings/ }).click();
+    await expect(page.locator('main')).toContainText('Claude (Anthropic)');
+    await expect(page.locator('main')).toContainText('Gemini (Google)');
+    // switch the active model to Gemini → the backend is asked to switch.
+    // Use click (not check): the radio is controlled and only flips once the
+    // PUT resolves and state re-renders, which check() would race.
+    await page.locator('input[type="radio"]').nth(1).click();
+    await expect.poll(() => current).toBe('gemini');
   });
 
   test('Karriere_Jobsuche_FetchesJobsFromApiAndCreatesApplication', async ({ page }) => {

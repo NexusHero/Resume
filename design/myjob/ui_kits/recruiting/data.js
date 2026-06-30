@@ -247,6 +247,53 @@ const SAMPLE_MANDATES = MANDATES.map((m) => ({
 }));
 
 const RecruitApi = {
+  /* ---- Auth ---- */
+  async authMe() {
+    const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/auth/me`));
+    return data.user; // null when not signed in
+  },
+  async authProviders() {
+    try {
+      return await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/auth/providers`));
+    } catch {
+      return { google: false, linkedin: false };
+    }
+  },
+  async authLogin(email, password) {
+    const res = await fetch(`${RECRUIT_API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || 'Login failed');
+    return (await res.json()).user;
+  },
+  async authRegister(email, password) {
+    const res = await fetch(`${RECRUIT_API_BASE}/auth/register`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    if (!res.ok)
+      throw new Error((await res.json().catch(() => ({}))).detail || 'Could not create account');
+    return (await res.json()).user;
+  },
+  async authLogout() {
+    await fetch(`${RECRUIT_API_BASE}/auth/logout`, { method: 'POST' });
+  },
+  /* ---- LLM settings (active provider + availability) ---- */
+  async getLlmSettings() {
+    return _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/settings/llm`));
+  },
+  async setLlmProvider(provider) {
+    return _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/settings/llm`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ provider }),
+      }),
+    );
+  },
   async listMandates() {
     const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/mandates`));
     return Array.isArray(data) ? data.map(mapMandate) : [];

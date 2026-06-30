@@ -78,7 +78,7 @@ function NavSection({ section, active, onNav, badges }) {
   );
 }
 
-function RecruitRail({ active, onNav, me, talentCount, search, onSearch, title, subtitle, badges = {}, actions, children }) {
+function RecruitRail({ active, onNav, me, talentCount, search, onSearch, title, subtitle, badges = {}, actions, onLogout, children }) {
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--app-bg)' }}>
       <aside style={{
@@ -138,6 +138,9 @@ function RecruitRail({ active, onNav, me, talentCount, search, onSearch, title, 
               <span style={{ position: 'absolute', top: '-3px', right: '-3px', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--signal-500)', border: '2px solid var(--paper)' }} />
             </div>
             {actions}
+            {onLogout && (
+              <button onClick={onLogout} title="Log out" style={{ display: 'inline-flex', alignItems: 'center', background: 'var(--surface-card)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', padding: '7px 13px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '12.5px', fontWeight: 600, color: 'var(--text-soft)' }}>Log out</button>
+            )}
           </div>
         </header>
 

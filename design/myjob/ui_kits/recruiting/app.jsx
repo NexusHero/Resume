@@ -19,6 +19,8 @@ function Workspace({ onLogout }) {
   const [openTalent, setOpenTalent] = React.useState(null);
   const [mappeFor, setMappeFor] = React.useState(null);
   const [editing, setEditing] = React.useState(null);
+  // Which create form is open ('mandate' | 'talent' | 'placement' | null).
+  const [formKind, setFormKind] = React.useState(null);
   // Placements come from the live REST API; the sample array is the offline fallback.
   const [placements, setPlacements] = React.useState(window.PLACEMENTS);
 
@@ -34,12 +36,7 @@ function Workspace({ onLogout }) {
     return () => { alive = false; };
   }, []);
 
-  const addPlacement = () => {
-    const candidateName = window.prompt('Candidate name');
-    if (!candidateName) return;
-    const client = window.prompt('Client') || '';
-    window.RecruitApi.createPlacement({ candidateName, client }).then(reloadPlacements).catch(() => {});
-  };
+  const addPlacement = () => setFormKind('placement');
 
   // The talent pool comes from the live REST API; "me" (talent #1, with its
   // dossier) stays the sample object and is always pinned first.
@@ -60,12 +57,7 @@ function Workspace({ onLogout }) {
     return () => { alive = false; };
   }, [me0]);
 
-  const addTalent = () => {
-    const name = window.prompt('Talent name');
-    if (!name) return;
-    const role = window.prompt('Role') || '';
-    window.RecruitApi.createTalent({ name, role }).then(reloadTalents).catch(() => {});
-  };
+  const addTalent = () => setFormKind('talent');
 
   // Mandates come from the live REST API; the client-name-resolved sample is the
   // offline fallback. MandateView groups by client name.
@@ -82,11 +74,14 @@ function Workspace({ onLogout }) {
     return () => { alive = false; };
   }, []);
 
-  const addMandate = () => {
-    const client = window.prompt('Client');
-    if (!client) return;
-    const role = window.prompt('Role') || '';
-    window.RecruitApi.createMandate({ client, role }).then(reloadMandates).catch(() => {});
+  const addMandate = () => setFormKind('mandate');
+
+  // The create form modal submits here; each returns the create promise so the
+  // modal can show its busy state, then close on success or surface an error.
+  const submitForm = (kind, values) => {
+    if (kind === 'mandate') return window.RecruitApi.createMandate(values).then(reloadMandates);
+    if (kind === 'talent') return window.RecruitApi.createTalent(values).then(reloadTalents);
+    return window.RecruitApi.createPlacement(values).then(reloadPlacements);
   };
 
   const apps = window.APPLICATIONS;
@@ -158,6 +153,13 @@ function Workspace({ onLogout }) {
     <window.RecruitRail active={talent ? 'pool' : nav} onNav={(n) => { setOpenTalent(null); setNav(n); }} me={me} talentCount={talents.length} search={search} onSearch={setSearch} title={title} subtitle={subtitle} badges={badges} actions={actions} onLogout={onLogout}>
       {body}
       {mappeFor && <window.MappeModal talent={mappeFor} onClose={() => setMappeFor(null)} />}
+      {formKind && (
+        <window.RecordFormModal
+          kind={formKind}
+          onClose={() => setFormKind(null)}
+          onSubmit={(values) => submitForm(formKind, values)}
+        />
+      )}
     </window.RecruitRail>
   );
 }

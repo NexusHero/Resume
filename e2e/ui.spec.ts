@@ -154,6 +154,60 @@ test.describe('UI acceptance — the suite renders in English', () => {
     await expect(page.locator('main')).not.toContainText('Aurora Systems GmbH');
   });
 
+  test('Recruiting_NewMandate_FormCreatesAndShowsRow', async ({ page }) => {
+    // A real form (not window.prompt) creates the mandate via POST, then the
+    // list reloads from the API and shows the new row.
+    const mandates: Record<string, unknown>[] = [];
+    await page.route('**/api/v1/mandates', (route) => {
+      const req = route.request();
+      if (req.method() === 'POST') {
+        const body = JSON.parse(req.postData() || '{}');
+        const created = {
+          id: 'ma-new-1',
+          client: body.client,
+          role: body.role,
+          location: body.location,
+          fee: body.fee || '',
+          feeValue: body.feeValue || '',
+          deadline: body.deadline || '',
+          priority: body.priority || 'medium',
+          status: body.status || 'active',
+          submitted: 0,
+          interviews: 0,
+          createdAt: '2026-06-30T10:00:00.000Z',
+          updatedAt: '2026-06-30T10:00:00.000Z',
+        };
+        mandates.push(created);
+        return route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ mandate: created }),
+        });
+      }
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify(mandates) });
+    });
+    await page.route('**/api/v1/auth/me', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id: 'user1', email: 'me@example.de' } }),
+      }),
+    );
+    await page.goto('/design/myjob/ui_kits/recruiting/index.html');
+    await page.getByRole('button', { name: /Mandates/ }).click();
+    await expect(page.locator('main')).toContainText('No mandates yet.');
+
+    await page.getByRole('button', { name: 'New mandate' }).click();
+    await page.getByLabel('Client', { exact: true }).fill('Helio GmbH');
+    await page.getByLabel('Role', { exact: true }).fill('Principal Platform Engineer');
+    await page.getByLabel('Location', { exact: true }).fill('Hamburg · Remote');
+    await page.getByRole('button', { name: 'Create mandate' }).click();
+
+    // the form closed and the new mandate is listed
+    await expect(page.getByRole('button', { name: 'Create mandate' })).toBeHidden();
+    await expect(page.locator('main')).toContainText('Helio GmbH');
+    await expect(page.locator('main')).toContainText('Principal Platform Engineer');
+  });
+
   test('Recruiting_Dashboard_KpisAndMandatesReflectLiveData', async ({ page }) => {
     // The Übersicht (default view) must aggregate the live mandates/placements,
     // not the static sample — so KPIs and the active-mandates card track the

@@ -12,10 +12,14 @@ test.describe('UI acceptance — the suite renders in English', () => {
 
   test('Recruiting_Loads_NavigationIsEnglish', async ({ page }) => {
     await page.goto('/design/myjob/ui_kits/recruiting/index.html');
-    const nav = page.locator('nav button');
-    await expect(nav.first()).toBeVisible();
-    await expect(nav).toContainText(['Overview', 'Talent Pool', 'Applications']);
-    await expect(page.locator('nav')).not.toContainText('Übersicht');
+    const nav = page.locator('nav');
+    await expect(nav.locator('button').first()).toBeVisible();
+    // The unified recruiting nav renders these destinations in English.
+    await expect(nav).toContainText('Workspace');
+    await expect(nav).toContainText('Talent Pool');
+    await expect(nav).toContainText('Applications');
+    // No German leaked into the navigation.
+    await expect(nav).not.toContainText('Übersicht');
   });
 
   test('Recruiting_OpenTalentPool_ShowsTalents', async ({ page }) => {

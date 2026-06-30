@@ -1,6 +1,9 @@
 import type { Application, AuditEvent } from '../../domain/application';
 import type { SavedSearch } from '../../domain/saved-search';
-import { applications, auditEvents, savedSearches } from './schema';
+import type { Mandate, MandatePriority, MandateStatus } from '../../domain/mandate';
+import type { Talent } from '../../domain/talent';
+import type { Placement, PlacementStatus } from '../../domain/placement';
+import { applications, auditEvents, savedSearches, mandates, talents, placements } from './schema';
 
 type ApplicationRow = typeof applications.$inferSelect;
 type ApplicationInsert = typeof applications.$inferInsert;
@@ -8,6 +11,12 @@ type AuditRow = typeof auditEvents.$inferSelect;
 type AuditInsert = typeof auditEvents.$inferInsert;
 type SavedSearchRow = typeof savedSearches.$inferSelect;
 type SavedSearchInsert = typeof savedSearches.$inferInsert;
+type MandateRow = typeof mandates.$inferSelect;
+type MandateInsert = typeof mandates.$inferInsert;
+type TalentRow = typeof talents.$inferSelect;
+type TalentInsert = typeof talents.$inferInsert;
+type PlacementRow = typeof placements.$inferSelect;
+type PlacementInsert = typeof placements.$inferInsert;
 
 // Postgres stores absent optional values as NULL; the domain uses `undefined`.
 const orUndef = <T>(v: T | null): T | undefined => v ?? undefined;
@@ -85,5 +94,109 @@ export function savedSearchToRow(search: SavedSearch): SavedSearchInsert {
     name: search.name,
     query: search.query,
     createdAt: search.createdAt,
+  };
+}
+
+export function rowToMandate(row: MandateRow): Mandate {
+  return {
+    id: row.id,
+    ownerId: row.ownerId,
+    client: row.client,
+    role: row.role,
+    location: row.location,
+    fee: row.fee,
+    feeValue: row.feeValue,
+    deadline: row.deadline,
+    priority: row.priority as MandatePriority,
+    status: row.status as MandateStatus,
+    submitted: row.submitted,
+    interviews: row.interviews,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export function mandateToRow(mandate: Mandate): MandateInsert {
+  return {
+    id: mandate.id,
+    ownerId: mandate.ownerId,
+    client: mandate.client,
+    role: mandate.role,
+    location: mandate.location,
+    fee: mandate.fee,
+    feeValue: mandate.feeValue,
+    deadline: mandate.deadline,
+    priority: mandate.priority,
+    status: mandate.status,
+    submitted: mandate.submitted,
+    interviews: mandate.interviews,
+    createdAt: mandate.createdAt,
+    updatedAt: mandate.updatedAt,
+  };
+}
+
+export function rowToTalent(row: TalentRow): Talent {
+  return {
+    id: row.id,
+    ownerId: row.ownerId,
+    name: row.name,
+    role: row.role,
+    headline: row.headline,
+    location: row.location,
+    email: row.email,
+    phone: row.phone,
+    availability: row.availability,
+    salary: row.salary,
+    skills: row.skills,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export function talentToRow(talent: Talent): TalentInsert {
+  return {
+    id: talent.id,
+    ownerId: talent.ownerId,
+    name: talent.name,
+    role: talent.role,
+    headline: talent.headline,
+    location: talent.location,
+    email: talent.email,
+    phone: talent.phone,
+    availability: talent.availability,
+    salary: talent.salary,
+    skills: talent.skills,
+    createdAt: talent.createdAt,
+    updatedAt: talent.updatedAt,
+  };
+}
+
+export function rowToPlacement(row: PlacementRow): Placement {
+  return {
+    id: row.id,
+    ownerId: row.ownerId,
+    candidateName: row.candidateName,
+    candidateRole: row.candidateRole,
+    client: row.client,
+    start: row.start,
+    fee: row.fee,
+    status: row.status as PlacementStatus,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export function placementToRow(placement: Placement): PlacementInsert {
+  return {
+    id: placement.id,
+    ownerId: placement.ownerId,
+    candidateName: placement.candidateName,
+    candidateRole: placement.candidateRole,
+    client: placement.client,
+    start: placement.start,
+    fee: placement.fee,
+    status: placement.status,
+    createdAt: placement.createdAt,
+    updatedAt: placement.updatedAt,
   };
 }

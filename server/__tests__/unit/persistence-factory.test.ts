@@ -1,7 +1,13 @@
 import { createPersistence } from '../../src/adapters/persistence-factory';
 import { FsApplicationRepository } from '../../src/adapters/fs-application-repository';
+import { FsMandateRepository } from '../../src/adapters/fs-mandate-repository';
+import { FsTalentRepository } from '../../src/adapters/fs-talent-repository';
+import { FsPlacementRepository } from '../../src/adapters/fs-placement-repository';
 import { SqlApplicationRepository } from '../../src/adapters/sql/sql-application-repository';
 import { SqlSavedSearchRepository } from '../../src/adapters/sql/sql-saved-search-repository';
+import { SqlMandateRepository } from '../../src/adapters/sql/sql-mandate-repository';
+import { SqlTalentRepository } from '../../src/adapters/sql/sql-talent-repository';
+import { SqlPlacementRepository } from '../../src/adapters/sql/sql-placement-repository';
 import { loadConfig } from '../../src/config';
 import type { Db } from '../../src/adapters/sql/db';
 
@@ -11,12 +17,18 @@ describe('createPersistence', () => {
   it('DefaultStore_UsesFileAdapters', () => {
     const p = createPersistence({ config: loadConfig({}) });
     expect(p.applicationRepository).toBeInstanceOf(FsApplicationRepository);
+    expect(p.mandateRepository).toBeInstanceOf(FsMandateRepository);
+    expect(p.talentRepository).toBeInstanceOf(FsTalentRepository);
+    expect(p.placementRepository).toBeInstanceOf(FsPlacementRepository);
   });
 
   it('SqlStoreWithDb_UsesSqlAdapters', () => {
     const p = createPersistence({ config: loadConfig({ STORE: 'sql' }), db: fakeDb });
     expect(p.applicationRepository).toBeInstanceOf(SqlApplicationRepository);
     expect(p.savedSearchRepository).toBeInstanceOf(SqlSavedSearchRepository);
+    expect(p.mandateRepository).toBeInstanceOf(SqlMandateRepository);
+    expect(p.talentRepository).toBeInstanceOf(SqlTalentRepository);
+    expect(p.placementRepository).toBeInstanceOf(SqlPlacementRepository);
   });
 
   it('SqlStoreWithoutDb_Throws', () => {

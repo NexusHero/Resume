@@ -11,9 +11,6 @@ import { createLogger } from './adapters/pino-logger';
 import { SystemClock } from './adapters/system-clock';
 import { RandomIdGenerator } from './adapters/random-id-generator';
 import { FsPdfArchive } from './adapters/fs-pdf-archive';
-import { FsMandateRepository } from './adapters/fs-mandate-repository';
-import { FsTalentRepository } from './adapters/fs-talent-repository';
-import { FsPlacementRepository } from './adapters/fs-placement-repository';
 import { FsUserRepository } from './adapters/fs-user-repository';
 import { FsSessionStore } from './adapters/fs-session-store';
 import { ScryptPasswordHasher } from './adapters/scrypt-password-hasher';
@@ -62,11 +59,11 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     applicationRepository: asValue(persistence.applicationRepository),
     auditLog: asValue(persistence.auditLog),
     savedSearchRepository: asValue(persistence.savedSearchRepository),
-    // Recruiting persistence is file-backed for now; a SQL adapter is a tracked
-    // follow-up (the default 'fs' store powers the offline app and CI).
-    mandateRepository: asClass(FsMandateRepository).singleton(),
-    talentRepository: asClass(FsTalentRepository).singleton(),
-    placementRepository: asClass(FsPlacementRepository).singleton(),
+    // Recruiting persistence follows the same store switch as the rest: file-backed
+    // by default (offline app, dev, CI), Postgres when STORE=sql.
+    mandateRepository: asValue(persistence.mandateRepository),
+    talentRepository: asValue(persistence.talentRepository),
+    placementRepository: asValue(persistence.placementRepository),
     userRepository: asClass(FsUserRepository).singleton(),
     sessionStore: asClass(FsSessionStore).singleton(),
     passwordHasher: asClass(ScryptPasswordHasher).singleton(),

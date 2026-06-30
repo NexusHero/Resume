@@ -15,6 +15,8 @@ import type { Mandate } from '../../src/domain/mandate';
 import type { MandateRepository } from '../../src/ports/mandate-repository';
 import type { Talent } from '../../src/domain/talent';
 import type { TalentRepository } from '../../src/ports/talent-repository';
+import type { Placement } from '../../src/domain/placement';
+import type { PlacementRepository } from '../../src/ports/placement-repository';
 
 export class InMemoryApplicationRepository implements ApplicationRepository {
   apps: Application[] = [];
@@ -172,5 +174,28 @@ export class InMemoryTalentRepository implements TalentRepository {
     const before = this.talents.length;
     this.talents = this.talents.filter((t) => t.id !== id);
     return this.talents.length < before;
+  }
+}
+
+export class InMemoryPlacementRepository implements PlacementRepository {
+  placements: Placement[] = [];
+  async list(): Promise<Placement[]> {
+    return this.placements.map((p) => ({ ...p }));
+  }
+  async findById(id: string): Promise<Placement | null> {
+    return this.placements.find((p) => p.id === id) ?? null;
+  }
+  async add(placement: Placement): Promise<void> {
+    this.placements.push(placement);
+  }
+  async update(placement: Placement): Promise<void> {
+    const i = this.placements.findIndex((p) => p.id === placement.id);
+    if (i < 0) this.placements.push(placement);
+    else this.placements[i] = placement;
+  }
+  async remove(id: string): Promise<boolean> {
+    const before = this.placements.length;
+    this.placements = this.placements.filter((p) => p.id !== id);
+    return this.placements.length < before;
   }
 }

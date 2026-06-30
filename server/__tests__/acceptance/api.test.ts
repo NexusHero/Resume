@@ -13,9 +13,11 @@ import { SavedSearchService } from '../../src/services/saved-search-service';
 import { LlmController } from '../../src/http/llm-controller';
 import { MandateController } from '../../src/http/mandate-controller';
 import { TalentController } from '../../src/http/talent-controller';
+import { PlacementController } from '../../src/http/placement-controller';
 import { LlmService } from '../../src/services/llm-service';
 import { MandateService } from '../../src/services/mandate-service';
 import { TalentService } from '../../src/services/talent-service';
+import { PlacementService } from '../../src/services/placement-service';
 import { CoverLetterService } from '../../src/services/cover-letter-service';
 import { AnthropicLlmProvider } from '../../src/adapters/anthropic-llm-provider';
 import { GeminiLlmProvider } from '../../src/adapters/gemini-llm-provider';
@@ -29,6 +31,7 @@ import {
   InMemorySavedSearchRepository,
   InMemoryMandateRepository,
   InMemoryTalentRepository,
+  InMemoryPlacementRepository,
   FakePdfRenderer,
   FakePdfMerger,
   FakeVersioner,
@@ -102,6 +105,13 @@ function makeApp(): Express {
       idGenerator: new SequenceIdGenerator('talent'),
     }),
   });
+  const placementController = new PlacementController({
+    placementService: new PlacementService({
+      placementRepository: new InMemoryPlacementRepository(),
+      clock: new FixedClock(),
+      idGenerator: new SequenceIdGenerator('placement'),
+    }),
+  });
   return createApp({
     applicationController: controller,
     jobController,
@@ -110,6 +120,7 @@ function makeApp(): Express {
     llmController,
     mandateController,
     talentController,
+    placementController,
     config,
     logger: noopLogger,
   });
@@ -309,6 +320,65 @@ describe('REST API /api/v1', () => {
 
   it('Talents_DeleteUnknown_Returns404Problem', async () => {
     const res = await request(app).delete('/api/v1/talents/nope');
+    expect(res.status).toBe(404);
+    expect(res.body).toMatchObject({ status: 404 });
+  });
+
+  it('Placements_GetEmpty_ReturnsArray', async () => {
+    const res = await request(app).get('/api/v1/placements');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([]);
+  });
+
+  it('Placements_PostValid_Creates201', async () => {
+    const res = await request(app)
+      .post('/api/v1/placements')
+      .send({ candidateName: 'Mara Vogel', client: 'Aurora', fee: '19.000 €' });
+    expect(res.status).toBe(201);
+    expect(res.body.placement).toMatchObject({
+      id: 'placement1',
+      candidateName: 'Mara Vogel',
+      client: 'Aurora',
+      status: 'probation',
+    });
+  });
+
+  it('Placements_PostMissingClient_Returns400Problem', async () => {
+    const res = await request(app).post('/api/v1/placements').send({ candidateName: 'Mara' });
+    expect(res.status).toBe(400);
+    expect(res.headers['content-type']).toMatch(/application\/problem\+json/);
+    expect(res.body).toMatchObject({ title: 'Validation failed', status: 400 });
+  });
+
+  it('Placements_PatchExisting_Updates', async () => {
+    const created = await request(app)
+      .post('/api/v1/placements')
+      .send({ candidateName: 'Mara Vogel', client: 'Aurora' });
+    const id = created.body.placement.id;
+    const res = await request(app).patch(`/api/v1/placements/${id}`).send({ status: 'paid' });
+    expect(res.status).toBe(200);
+    expect(res.body.placement.status).toBe('paid');
+  });
+
+  it('Placements_PatchUnknown_Returns404Problem', async () => {
+    const res = await request(app).patch('/api/v1/placements/nope').send({ status: 'paid' });
+    expect(res.status).toBe(404);
+    expect(res.body).toMatchObject({ status: 404, title: 'NotFoundError' });
+  });
+
+  it('Placements_DeleteExisting_Returns204', async () => {
+    const created = await request(app)
+      .post('/api/v1/placements')
+      .send({ candidateName: 'Mara Vogel', client: 'Aurora' });
+    const id = created.body.placement.id;
+    const res = await request(app).delete(`/api/v1/placements/${id}`);
+    expect(res.status).toBe(204);
+    const list = await request(app).get('/api/v1/placements');
+    expect(list.body).toEqual([]);
+  });
+
+  it('Placements_DeleteUnknown_Returns404Problem', async () => {
+    const res = await request(app).delete('/api/v1/placements/nope');
     expect(res.status).toBe(404);
     expect(res.body).toMatchObject({ status: 404 });
   });

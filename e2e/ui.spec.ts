@@ -277,6 +277,78 @@ test.describe('UI acceptance — the suite renders in English', () => {
     await expect.poll(() => current).toBe('gemini');
   });
 
+  test('Recruiting_Settings_ExportsAccountData', async ({ page }) => {
+    await page.route('**/api/v1/auth/me', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id: 'user1', email: 'me@example.de' } }),
+      }),
+    );
+    await page.route('**/api/v1/settings/llm', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ current: '', providers: [] }),
+      }),
+    );
+    await page.route('**/api/v1/account/export', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          exportedAt: '2026-06-30T12:00:00.000Z',
+          account: { id: 'user1', email: 'me@example.de' },
+          mandates: [],
+          talents: [],
+          placements: [],
+        }),
+      }),
+    );
+    await page.goto('/design/myjob/ui_kits/recruiting/index.html');
+    await page.getByRole('button', { name: /Settings/ }).click();
+    await expect(page.locator('main')).toContainText('Data & privacy');
+    // clicking Export triggers a JSON file download
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('button', { name: 'Export' }).click(),
+    ]);
+    expect(download.suggestedFilename()).toBe('myjob-export.json');
+  });
+
+  test('Recruiting_Settings_DeleteAccountReturnsToLogin', async ({ page }) => {
+    let deleted = false;
+    await page.route('**/api/v1/auth/me', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ user: deleted ? null : { id: 'user1', email: 'me@example.de' } }),
+      }),
+    );
+    await page.route('**/api/v1/auth/providers', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ google: false, linkedin: false }),
+      }),
+    );
+    await page.route('**/api/v1/settings/llm', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ current: '', providers: [] }),
+      }),
+    );
+    await page.route('**/api/v1/account', (route) => {
+      if (route.request().method() === 'DELETE') {
+        deleted = true;
+        return route.fulfill({ status: 204, body: '' });
+      }
+      return route.continue();
+    });
+    await page.goto('/design/myjob/ui_kits/recruiting/index.html');
+    await page.getByRole('button', { name: /Settings/ }).click();
+    // two-step confirm before the destructive call
+    await page.getByRole('button', { name: 'Delete account' }).click();
+    await page.getByRole('button', { name: 'Confirm delete' }).click();
+    // erasure ends the session → the app reloads to the login screen
+    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
+  });
+
   test('Karriere_Jobsuche_FetchesJobsFromApiAndCreatesApplication', async ({ page }) => {
     // The Jobsuche now fetches live from the REST API; stub it so the flow is
     // deterministic regardless of which job boards are configured on the server.

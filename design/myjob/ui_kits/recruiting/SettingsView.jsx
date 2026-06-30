@@ -64,6 +64,82 @@ function ProviderRow({ p, active, onActivate, saved, onSave, onRemove }) {
   );
 }
 
+/* Data & privacy (DSGVO): export everything you own, or erase your account. */
+function DataPrivacyCard() {
+  const [busy, setBusy] = React.useState(''); // '' | 'export' | 'delete'
+  const [error, setError] = React.useState('');
+  const [confirm, setConfirm] = React.useState(false);
+
+  const exportData = () => {
+    setBusy('export');
+    setError('');
+    window.RecruitApi.exportAccount()
+      .then((data) => {
+        // Offer the payload as a downloadable JSON file.
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'myjob-export.json';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      })
+      .catch(() => setError('Could not export your data. Please try again.'))
+      .finally(() => setBusy(''));
+  };
+
+  const deleteAccount = () => {
+    setBusy('delete');
+    setError('');
+    window.RecruitApi.deleteAccount()
+      .then(() => {
+        // The session is gone server-side; re-probe sends us to the login screen.
+        window.location.reload();
+      })
+      .catch(() => {
+        setError('Could not delete your account. Please try again.');
+        setBusy('');
+        setConfirm(false);
+      });
+  };
+
+  return (
+    <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '22px 24px' }}>
+      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>Data &amp; privacy</h2>
+      <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Your GDPR rights: take a copy of everything you store here, or erase your account for good.</div>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', padding: '16px 0', borderBottom: '1px solid var(--border)', marginTop: '8px' }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-heading)' }}>Export my data</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-soft)', marginTop: '1px' }}>Download your account, mandates, talents and placements as JSON.</div>
+        </div>
+        <SV.Button size="sm" variant="outline" disabled={busy !== ''} onClick={exportData}>
+          {busy === 'export' ? 'Preparing…' : 'Export'}
+        </SV.Button>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', padding: '16px 0' }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-heading)' }}>Delete my account</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-soft)', marginTop: '1px' }}>Permanently erases your account and all data you own. This cannot be undone.</div>
+        </div>
+        {confirm ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+            <button type="button" onClick={() => setConfirm(false)} disabled={busy !== ''} style={{ cursor: 'pointer', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', color: 'var(--text-muted)', fontSize: '12.5px', padding: '7px 12px' }}>Cancel</button>
+            <button type="button" onClick={deleteAccount} disabled={busy !== ''} style={{ cursor: 'pointer', background: 'var(--danger)', border: '1px solid var(--danger)', borderRadius: 'var(--radius-md)', color: '#fff', fontWeight: 600, fontSize: '12.5px', padding: '7px 12px' }}>{busy === 'delete' ? 'Deleting…' : 'Confirm delete'}</button>
+          </div>
+        ) : (
+          <button type="button" onClick={() => setConfirm(true)} style={{ cursor: 'pointer', background: 'none', border: '1px solid var(--status-rejected-border)', borderRadius: 'var(--radius-md)', color: 'var(--danger)', fontWeight: 600, fontSize: '12.5px', padding: '7px 12px', flexShrink: 0 }}>Delete account</button>
+        )}
+      </div>
+
+      {error && <div role="alert" style={{ fontSize: '12.5px', color: 'var(--danger)', marginTop: '4px' }}>{error}</div>}
+    </div>
+  );
+}
+
 function SettingsView() {
   const [settings, setSettings] = React.useState(null); // { current, providers }
   const [keys, setKeys] = React.useState({});
@@ -99,7 +175,7 @@ function SettingsView() {
   const removeKey = (id) => { storeKey(id, ''); setKeys((k) => { const n = { ...k }; delete n[id]; return n; }); };
 
   return (
-    <div style={{ maxWidth: '780px' }}>
+    <div style={{ maxWidth: '780px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
       <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '22px 24px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
           <div style={{ flex: 1 }}>
@@ -126,6 +202,8 @@ function SettingsView() {
           <span>Keys are kept in this browser and sent over an encrypted channel only when generating. The active model is stored on the server. Remove a key any time to revoke access.</span>
         </div>
       </div>
+
+      <DataPrivacyCard />
     </div>
   );
 }

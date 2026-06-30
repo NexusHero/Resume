@@ -15,11 +15,13 @@ import { MandateController } from '../../src/http/mandate-controller';
 import { TalentController } from '../../src/http/talent-controller';
 import { PlacementController } from '../../src/http/placement-controller';
 import { AuthController } from '../../src/http/auth-controller';
+import { AccountController } from '../../src/http/account-controller';
 import { LlmService } from '../../src/services/llm-service';
 import { MandateService } from '../../src/services/mandate-service';
 import { TalentService } from '../../src/services/talent-service';
 import { PlacementService } from '../../src/services/placement-service';
 import { AuthService } from '../../src/services/auth-service';
+import { AccountService } from '../../src/services/account-service';
 import { MemorySessionStore } from '../../src/adapters/memory-session-store';
 import { CoverLetterService } from '../../src/services/cover-letter-service';
 import { AnthropicLlmProvider } from '../../src/adapters/anthropic-llm-provider';
@@ -96,35 +98,53 @@ function makeApp(): Express {
       logger: noopLogger,
     }),
   });
+  // Shared repositories so the account (DSGVO) endpoints observe the same data
+  // the recruiting endpoints write, and erasure affects the same auth state.
+  const mandateRepository = new InMemoryMandateRepository();
+  const talentRepository = new InMemoryTalentRepository();
+  const placementRepository = new InMemoryPlacementRepository();
+  const userRepository = new InMemoryUserRepository();
+  const sessionStore = new MemorySessionStore();
   const mandateController = new MandateController({
     mandateService: new MandateService({
-      mandateRepository: new InMemoryMandateRepository(),
+      mandateRepository,
       clock: new FixedClock(),
       idGenerator: new SequenceIdGenerator('mandate'),
     }),
   });
   const talentController = new TalentController({
     talentService: new TalentService({
-      talentRepository: new InMemoryTalentRepository(),
+      talentRepository,
       clock: new FixedClock(),
       idGenerator: new SequenceIdGenerator('talent'),
     }),
   });
   const placementController = new PlacementController({
     placementService: new PlacementService({
-      placementRepository: new InMemoryPlacementRepository(),
+      placementRepository,
       clock: new FixedClock(),
       idGenerator: new SequenceIdGenerator('placement'),
     }),
   });
   const authController = new AuthController({
     authService: new AuthService({
-      userRepository: new InMemoryUserRepository(),
-      sessionStore: new MemorySessionStore(),
+      userRepository,
+      sessionStore,
       passwordHasher: fakePasswordHasher,
       clock: new FixedClock(),
       idGenerator: new SequenceIdGenerator('user'),
     }),
+    config,
+  });
+  const accountController = new AccountController({
+    accountService: new AccountService({
+      userRepository,
+      mandateRepository,
+      talentRepository,
+      placementRepository,
+      sessionStore,
+    }),
+    clock: new FixedClock(),
     config,
   });
   return createApp({
@@ -137,6 +157,7 @@ function makeApp(): Express {
     talentController,
     placementController,
     authController,
+    accountController,
     config,
     logger: noopLogger,
   });
@@ -433,6 +454,45 @@ describe('REST API /api/v1', () => {
       const res = await agent.delete('/api/v1/placements/nope');
       expect(res.status).toBe(404);
       expect(res.body).toMatchObject({ status: 404 });
+    });
+
+    it('AccountExport_Unauthenticated_Returns401', async () => {
+      const res = await request(app).get('/api/v1/account/export');
+      expect(res.status).toBe(401);
+    });
+
+    it('AccountExport_ReturnsOwnedDataAsDownload', async () => {
+      await agent
+        .post('/api/v1/mandates')
+        .send({ client: 'Aurora', role: 'C++', location: 'Berlin' });
+      await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+      await agent
+        .post('/api/v1/placements')
+        .send({ candidateName: 'Mara Vogel', client: 'Aurora' });
+      const res = await agent.get('/api/v1/account/export');
+      expect(res.status).toBe(200);
+      expect(res.headers['content-disposition']).toMatch(/myjob-export\.json/);
+      expect(res.body.account).toMatchObject({ email: 'recruiter@example.com' });
+      expect(res.body.mandates).toHaveLength(1);
+      expect(res.body.talents).toHaveLength(1);
+      expect(res.body.placements).toHaveLength(1);
+      expect(typeof res.body.exportedAt).toBe('string');
+    });
+
+    it('AccountDelete_ErasesDataAndEndsSession', async () => {
+      await agent
+        .post('/api/v1/mandates')
+        .send({ client: 'Aurora', role: 'C++', location: 'Berlin' });
+      const del = await agent.delete('/api/v1/account');
+      expect(del.status).toBe(204);
+      // the session is gone — /auth/me now reports no user
+      expect((await agent.get('/api/v1/auth/me')).body).toEqual({ user: null });
+      // and a fresh recruiter with the same email starts with no inherited data
+      const reborn = request.agent(app);
+      await reborn
+        .post('/api/v1/auth/register')
+        .send({ email: 'recruiter@example.com', password: 'correct horse battery' });
+      expect((await reborn.get('/api/v1/mandates')).body).toEqual([]);
     });
   });
 

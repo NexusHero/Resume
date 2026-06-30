@@ -214,6 +214,11 @@ export class InMemoryUserRepository implements UserRepository {
   async add(user: User): Promise<void> {
     this.users.push(user);
   }
+  async remove(id: string): Promise<boolean> {
+    const before = this.users.length;
+    this.users = this.users.filter((u) => u.id !== id);
+    return this.users.length < before;
+  }
 }
 
 /** A deterministic, fast hasher for tests — NOT for production use. */

@@ -37,7 +37,19 @@ export class FsUserRepository implements UserRepository {
   async add(user: User): Promise<void> {
     const all = await this.list();
     all.push(user);
+    await this.write(all);
+  }
+
+  async remove(id: string): Promise<boolean> {
+    const all = await this.list();
+    const next = all.filter((u) => u.id !== id);
+    if (next.length === all.length) return false;
+    await this.write(next);
+    return true;
+  }
+
+  private async write(users: User[]): Promise<void> {
     await fs.mkdir(this.dir, { recursive: true });
-    await fs.writeFile(this.file, JSON.stringify(all, null, 2) + '\n');
+    await fs.writeFile(this.file, JSON.stringify(users, null, 2) + '\n');
   }
 }

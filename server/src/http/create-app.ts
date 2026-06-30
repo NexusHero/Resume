@@ -11,6 +11,7 @@ import type { MandateController } from './mandate-controller';
 import type { TalentController } from './talent-controller';
 import type { PlacementController } from './placement-controller';
 import type { AuthController } from './auth-controller';
+import type { AccountController } from './account-controller';
 import { asyncHandler } from './async-handler';
 import { errorHandler, notFound } from './problem';
 
@@ -24,6 +25,7 @@ export interface AppDeps {
   talentController: TalentController;
   placementController: PlacementController;
   authController: AuthController;
+  accountController: AccountController;
   config: AppConfig;
   logger: Logger;
 }
@@ -51,6 +53,7 @@ export function createApp(deps: AppDeps): Express {
     talentController: t,
     placementController: p,
     authController: auth,
+    accountController: account,
   } = deps;
   const app = express();
 
@@ -99,6 +102,9 @@ export function createApp(deps: AppDeps): Express {
   api.post('/placements', requireAuth, asyncHandler(p.create));
   api.patch('/placements/:id', requireAuth, asyncHandler(p.update));
   api.delete('/placements/:id', requireAuth, asyncHandler(p.remove));
+  // DSGVO: export everything the recruiter owns, or erase the account entirely.
+  api.get('/account/export', requireAuth, asyncHandler(account.export));
+  api.delete('/account', requireAuth, asyncHandler(account.remove));
   api.get('/settings/llm', asyncHandler(llm.settings));
   api.put('/settings/llm', asyncHandler(llm.setProvider));
   api.post('/cover-letter', asyncHandler(llm.generateCoverLetter));

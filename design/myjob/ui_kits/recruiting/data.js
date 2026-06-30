@@ -281,6 +281,15 @@ const RecruitApi = {
   async authLogout() {
     await fetch(`${RECRUIT_API_BASE}/auth/logout`, { method: 'POST' });
   },
+  /* ---- Account (DSGVO) ---- */
+  async exportAccount() {
+    // The full owner-scoped payload (account + mandates/talents/placements).
+    return _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/account/export`));
+  },
+  async deleteAccount() {
+    const res = await fetch(`${RECRUIT_API_BASE}/account`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+  },
   /* ---- LLM settings (active provider + availability) ---- */
   async getLlmSettings() {
     return _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/settings/llm`));

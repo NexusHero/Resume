@@ -90,6 +90,21 @@ describe('FsUserRepository', () => {
     await fs.writeFile(config.usersFile, '{"x":1}');
     expect(await new FsUserRepository({ config }).findById('u1')).toBeNull();
   });
+
+  it('Repository_RemoveExisting_DeletesAndReturnsTrue', async () => {
+    const repo = new FsUserRepository({ config: tmpConfig() });
+    await repo.add(user('u1', 'a@example.com'));
+    await repo.add(user('u2', 'b@example.com'));
+    expect(await repo.remove('u1')).toBe(true);
+    expect(await repo.findById('u1')).toBeNull();
+    expect(await repo.findById('u2')).toMatchObject({ id: 'u2' }); // others kept
+  });
+
+  it('Repository_RemoveUnknown_ReturnsFalse', async () => {
+    const repo = new FsUserRepository({ config: tmpConfig() });
+    await repo.add(user('u1', 'a@example.com'));
+    expect(await repo.remove('nope')).toBe(false);
+  });
 });
 
 const fixedClock = new FixedClock();
@@ -118,6 +133,17 @@ describe('FsSessionStore', () => {
     const token = await store.create('u1');
     await store.destroy(token);
     expect(await store.userIdFor(token)).toBeNull();
+  });
+
+  it('DestroyForUser_RemovesAllOfThatUsersSessions', async () => {
+    const store = new FsSessionStore({ config: tmpConfig(), clock: fixedClock });
+    const a1 = await store.create('u1');
+    const b1 = await store.create('u2');
+    await store.destroyForUser('u1');
+    expect(await store.userIdFor(a1)).toBeNull();
+    expect(await store.userIdFor(b1)).toBe('u2');
+    await store.destroyForUser('absent'); // no rows match — no throw, no change
+    expect(await store.userIdFor(b1)).toBe('u2');
   });
 
   it('Destroy_UnknownToken_NoOp', async () => {

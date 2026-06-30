@@ -22,4 +22,10 @@ export class MemorySessionStore implements SessionStore {
   async destroy(token: string): Promise<void> {
     this.sessions.delete(token);
   }
+
+  async destroyForUser(userId: string): Promise<void> {
+    for (const [token, owner] of this.sessions) {
+      if (owner === userId) this.sessions.delete(token);
+    }
+  }
 }

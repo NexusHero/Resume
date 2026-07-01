@@ -4,6 +4,13 @@ module.exports = {
   testEnvironment: 'node',
   roots: ['<rootDir>/server'],
   testMatch: ['**/__tests__/**/*.test.ts'],
+  // Transpile-only: skip ts-jest's per-suite type-checking of the whole import
+  // graph (the dominant cost — it made every suite pay ~40s and drove the CI
+  // run to ~9 min). Type safety is not lost: `npm run typecheck` (tsc) is a
+  // separate, required CI gate that checks the whole project once.
+  transform: {
+    '^.+\\.ts$': ['ts-jest', { isolatedModules: true }],
+  },
   collectCoverageFrom: [
     'server/src/**/*.ts',
     // Composition root and genuinely side-effecting adapters (real Chromium,

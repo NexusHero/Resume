@@ -3,6 +3,7 @@ import { saveDocumentsSchema } from '../domain/talent-documents';
 import { aiSuggestSchema } from '../domain/document-ai';
 import { parseRequestSchema } from '../domain/document-parse';
 import { atsRequestSchema } from '../domain/ats-ai';
+import { pitchRequestSchema } from '../domain/candidate-pitch';
 import type { DocumentService } from '../services/document-service';
 import type { DocumentAiService } from '../services/document-ai-service';
 import { currentUserId } from './current-user';
@@ -84,5 +85,15 @@ export class DocumentController {
       jobText,
     );
     res.json({ ats: result });
+  };
+
+  pitch = async (req: Request, res: Response): Promise<void> => {
+    const { mandateContext } = pitchRequestSchema.parse(req.body);
+    const pitch = await this.ai.pitchForMandate(
+      currentUserId(req),
+      req.params.id as string,
+      mandateContext,
+    );
+    res.json({ pitch });
   };
 }

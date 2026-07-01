@@ -610,6 +610,32 @@ describe('REST API /api/v1', () => {
       expect(res.status).toBe(400);
     });
 
+    it('DocumentsPitch_ReturnsShortProfile', async () => {
+      const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+      const id = created.body.talent.id as string;
+      await agent.put(`/api/v1/talents/${id}/documents`).send({
+        contact: { name: 'Lena Brandt', role: 'Product Designer' },
+        resume: { skillGroups: [{ label: 'Tools', items: ['Figma'] }] },
+      });
+      // no LLM key in tests → deterministic fallback assembles it from the facts
+      const res = await agent
+        .post(`/api/v1/talents/${id}/documents/pitch`)
+        .send({ mandateContext: 'UX Lead gesucht' });
+      expect(res.status).toBe(200);
+      expect(res.body.pitch.provider).toBe('template');
+      expect(res.body.pitch.headline).toContain('Lena Brandt');
+      expect(Array.isArray(res.body.pitch.paragraphs)).toBe(true);
+      expect(res.body.pitch.paragraphs.length).toBeGreaterThan(0);
+    });
+
+    it('DocumentsPitch_NoBody_UsesEmptyContext', async () => {
+      const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+      const id = created.body.talent.id as string;
+      const res = await agent.post(`/api/v1/talents/${id}/documents/pitch`).send({});
+      expect(res.status).toBe(200);
+      expect(res.body.pitch.provider).toBe('template');
+    });
+
     it('Dossier_Get_ReturnsPdf', async () => {
       const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
       const id = created.body.talent.id as string;

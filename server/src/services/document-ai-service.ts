@@ -16,6 +16,13 @@ import {
   normalizeAts,
 } from '../domain/ats-ai';
 import {
+  type CandidatePitch,
+  pitchPrompt,
+  pitchResultSchema,
+  fallbackPitch,
+  normalizePitch,
+} from '../domain/candidate-pitch';
+import {
   type DocumentContact,
   type ResumeContent,
   saveDocumentsSchema,
@@ -190,5 +197,47 @@ export class DocumentAiService {
     }
 
     return { ...fallbackAts(documents, jobText), provider: 'template' };
+  }
+
+  /**
+   * Draft a "why this candidate" short profile a recruiter presents to the
+   * client, optionally tailored to a mandate/job context. The LLM returns a
+   * headline, a few paragraphs and highlight bullets; without a provider, a
+   * deterministic fallback assembles an honest profile from the talent's facts.
+   */
+  async pitchForMandate(
+    ownerId: string,
+    talentId: string,
+    mandateContext: string,
+  ): Promise<CandidatePitch & { provider: LlmProviderId | 'template' }> {
+    const documents = await this.documents.get(ownerId, talentId); // 404s on unknown talent
+    const resolved = await this.resolveProvider(ownerId);
+
+    if (resolved) {
+      try {
+        const built = pitchPrompt(documents, mandateContext);
+        const reply = await resolved.provider.generate({
+          system: built.system,
+          prompt: built.prompt,
+          maxTokens: 700,
+          ...(resolved.apiKey ? { apiKey: resolved.apiKey } : {}),
+        });
+        const json = extractJson(reply);
+        const parsed = pitchResultSchema.safeParse(json);
+        if (parsed.success) {
+          const pitch = normalizePitch(parsed.data);
+          if (pitch.headline || pitch.paragraphs.length) {
+            return { ...pitch, provider: resolved.provider.id };
+          }
+        }
+      } catch (err) {
+        this.logger.warn(
+          { err: err instanceof Error ? err.message : String(err) },
+          'candidate pitch failed, falling back',
+        );
+      }
+    }
+
+    return { ...fallbackPitch(documents, mandateContext), provider: 'template' };
   }
 }

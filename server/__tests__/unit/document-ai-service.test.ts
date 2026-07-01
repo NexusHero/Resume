@@ -206,3 +206,83 @@ describe('DocumentAiService.scoreAgainstJob', () => {
     );
   });
 });
+
+describe('DocumentAiService.pitchForMandate', () => {
+  const PITCH_JSON = JSON.stringify({
+    headline: 'Starke Designerin für euer Team',
+    paragraphs: ['Lena überzeugt durch …', 'Ihre Stationen zeigen …'],
+    highlights: ['Design Systems', 'Prototyping'],
+  });
+
+  it('Pitch_WithProvider_ReturnsNormalizedResult', async () => {
+    const c = ctx({ available: true, generate: async () => '```json\n' + PITCH_JSON + '\n```' });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+    const res = await c.service.pitchForMandate(OWNER, 't1', 'UX Lead gesucht');
+    expect(res.provider).toBe('claude');
+    expect(res.headline).toContain('Designerin');
+    expect(res.paragraphs).toHaveLength(2);
+    expect(res.highlights).toEqual(['Design Systems', 'Prototyping']);
+  });
+
+  it('Pitch_EmptyLlmResult_FallsBack', async () => {
+    const c = ctx({
+      available: true,
+      generate: async () => JSON.stringify({ headline: '', paragraphs: [], highlights: [] }),
+    });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+    const res = await c.service.pitchForMandate(OWNER, 't1', '');
+    expect(res.provider).toBe('template');
+    expect(res.headline).toContain('Designer');
+  });
+
+  it('Pitch_NoProvider_FallsBackToFacts', async () => {
+    const c = ctx();
+    await c.talents.add(talent('t1'));
+    const res = await c.service.pitchForMandate(OWNER, 't1', 'any mandate');
+    expect(res.provider).toBe('template');
+    expect(res.paragraphs.length).toBeGreaterThan(0);
+  });
+
+  it('Pitch_ProviderThrows_FallsBack', async () => {
+    const c = ctx({
+      available: true,
+      generate: async () => {
+        throw new Error('boom');
+      },
+    });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+    const res = await c.service.pitchForMandate(OWNER, 't1', '');
+    expect(res.provider).toBe('template');
+  });
+
+  it('Pitch_MalformedJson_FallsBack', async () => {
+    const c = ctx({ available: true, generate: async () => 'not json' });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+    const res = await c.service.pitchForMandate(OWNER, 't1', '');
+    expect(res.provider).toBe('template');
+  });
+
+  it('Pitch_HeadlineOnly_UsesProviderResult', async () => {
+    const c = ctx({
+      available: true,
+      generate: async () =>
+        JSON.stringify({ headline: '', paragraphs: ['Ein starker Absatz.'], highlights: [] }),
+    });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+    const res = await c.service.pitchForMandate(OWNER, 't1', '');
+    expect(res.provider).toBe('claude');
+    expect(res.paragraphs).toEqual(['Ein starker Absatz.']);
+  });
+
+  it('Pitch_UnknownTalent_Throws404', async () => {
+    const c = ctx();
+    await expect(c.service.pitchForMandate(OWNER, 'missing', '')).rejects.toBeInstanceOf(
+      NotFoundError,
+    );
+  });
+});

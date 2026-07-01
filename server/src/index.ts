@@ -14,6 +14,7 @@ import type { PlacementController } from './http/placement-controller';
 import type { CandidacyController } from './http/candidacy-controller';
 import type { RetentionController } from './http/retention-controller';
 import type { MatchController } from './http/match-controller';
+import type { MatchAiController } from './http/match-ai-controller';
 import type { UsageController } from './http/usage-controller';
 import type { ComplianceController } from './http/compliance-controller';
 import type { ForecastController } from './http/forecast-controller';
@@ -49,6 +50,7 @@ async function main(): Promise<void> {
     candidacyController: container.resolve<CandidacyController>('candidacyController'),
     retentionController: container.resolve<RetentionController>('retentionController'),
     matchController: container.resolve<MatchController>('matchController'),
+    matchAiController: container.resolve<MatchAiController>('matchAiController'),
     usageController: container.resolve<UsageController>('usageController'),
     complianceController: container.resolve<ComplianceController>('complianceController'),
     forecastController: container.resolve<ForecastController>('forecastController'),

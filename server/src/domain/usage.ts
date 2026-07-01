@@ -8,6 +8,7 @@ export const USAGE_FEATURES = [
   'pitch', // draft a candidate pitch for a mandate
   'outreach', // draft a first-contact message
   'coverLetter', // generate a tailored Anschreiben
+  'matchExplain', // explain why a candidate fits a mandate
 ] as const;
 export type UsageFeature = (typeof USAGE_FEATURES)[number];
 

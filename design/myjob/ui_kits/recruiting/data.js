@@ -399,6 +399,22 @@ const RecruitApi = {
     // directly in a new tab / used as a download link.
     return `${RECRUIT_API_BASE}/talents/${talentId}/documents/pdf`;
   },
+  talentDossierPdfUrl(talentId, recipient = {}) {
+    const q = new URLSearchParams();
+    for (const [k, v] of Object.entries(recipient)) if (v) q.set(k, v);
+    const qs = q.toString();
+    return `${RECRUIT_API_BASE}/talents/${talentId}/dossier/pdf${qs ? `?${qs}` : ''}`;
+  },
+  async suggestDocument(talentId, action, target = {}) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/documents/ai`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ action, ...target }),
+      }),
+    );
+    return data.suggestion; // { action, text?, paragraphs?, provider }
+  },
   async listPlacements() {
     const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/placements`));
     return Array.isArray(data) ? data.map(mapPlacement) : [];

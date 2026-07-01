@@ -3,10 +3,20 @@
 const MM = window.MyJobDesignSystem_f3658e;
 
 function MappeModal({ talent, onClose }) {
-  const [picked, setPicked] = React.useState(() => new Set(talent.attachments.map((a) => a.id)));
+  const attachments = talent.attachments || [];
+  const [picked, setPicked] = React.useState(() => new Set(attachments.map((a) => a.id)));
   const [letter, setLetter] = React.useState(true);
   const toggle = (id) => setPicked((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const count = (talent.resume ? 1 : 0) + (letter ? 1 : 0) + picked.size;
+
+  // Recipient the cover letter is addressed to; drives the generated dossier.
+  const [rcpt, setRcpt] = React.useState({ company: '', subject: '', contact: '', plzOrt: '' });
+  const setR = (k, v) => setRcpt((s) => ({ ...s, [k]: v }));
+  const canPersist = !!talent.id && talent.id !== 'me';
+  const createDossier = () => {
+    if (canPersist) window.open(window.RecruitApi.talentDossierPdfUrl(talent.id, rcpt), '_blank');
+    onClose();
+  };
 
   return (
     <>
@@ -27,10 +37,10 @@ function MappeModal({ talent, onClose }) {
           {/* left: recipient */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '13px' }}>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Recipient</div>
-            <MM.Input label="Company" icon="building" defaultValue="Aurora Systems GmbH" />
-            <MM.Input label="Position" icon="briefcase" defaultValue="Senior C++ Engineer" />
-            <MM.Input label="Contact person" icon="user" defaultValue="Personalabteilung" />
-            <MM.Input label="ZIP & city" icon="pin" defaultValue="10115 Berlin" />
+            <MM.Input label="Company" icon="building" value={rcpt.company} onChange={(e) => setR('company', e.target.value)} placeholder="Aurora Systems GmbH" />
+            <MM.Input label="Position" icon="briefcase" value={rcpt.subject} onChange={(e) => setR('subject', e.target.value)} placeholder="Senior C++ Engineer" />
+            <MM.Input label="Contact person" icon="user" value={rcpt.contact} onChange={(e) => setR('contact', e.target.value)} placeholder="Personalabteilung" />
+            <MM.Input label="ZIP & city" icon="pin" value={rcpt.plzOrt} onChange={(e) => setR('plzOrt', e.target.value)} placeholder="10115 Berlin" />
           </div>
 
           {/* right: contents */}
@@ -59,7 +69,7 @@ function MappeModal({ talent, onClose }) {
 
             {/* attachments to link */}
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginTop: '2px' }}>Link attachments</div>
-            {talent.attachments.map((a) => {
+            {attachments.map((a) => {
               const on = picked.has(a.id);
               return (
                 <label key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '11px', padding: '10px 13px', border: `1px solid ${on ? 'var(--accent-border)' : 'var(--border)'}`, borderRadius: 'var(--radius-md)', background: on ? 'var(--accent-soft)' : 'var(--surface-card)', cursor: 'pointer' }}>
@@ -79,7 +89,7 @@ function MappeModal({ talent, onClose }) {
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)' }}>{count} Dokumente · 1 PDF</span>
           <div style={{ display: 'flex', gap: '10px' }}>
             <MM.Button variant="ghost" onClick={onClose}>Cancel</MM.Button>
-            <MM.Button variant="primary" iconRight={<MM.Icon name="arrowRight" size={15} />} onClick={onClose}>Send dossier</MM.Button>
+            <MM.Button variant="primary" iconRight={<MM.Icon name="arrowRight" size={15} />} onClick={createDossier}>Create dossier</MM.Button>
           </div>
         </div>
       </div>

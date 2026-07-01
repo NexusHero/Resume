@@ -54,8 +54,13 @@ export interface LetterContent {
   gruss: string;
 }
 
-/** The shared look — accent colour trio, font and scale (matches the editor). */
+/** Layout templates for the printed documents. */
+export type DocumentTemplate = 'classic' | 'modern' | 'compact';
+export const documentTemplates: DocumentTemplate[] = ['classic', 'modern', 'compact'];
+
+/** The shared look — layout template, accent colour trio, font and scale. */
 export interface DocumentStyle {
+  template: DocumentTemplate;
   accent: string;
   strong: string;
   onDark: string;
@@ -124,6 +129,7 @@ const letterSchema = z.object({
 });
 
 const styleSchema = z.object({
+  template: z.enum(['classic', 'modern', 'compact']).default('classic'),
   accent: z.string().default('#2A6FDB'),
   strong: z.string().default('#1d4ed8'),
   onDark: z.string().default('#7aa7f5'),
@@ -141,6 +147,7 @@ export const emptyContact: DocumentContact = {
 };
 
 export const defaultStyle: DocumentStyle = {
+  template: 'classic',
   accent: '#2A6FDB',
   strong: '#1d4ed8',
   onDark: '#7aa7f5',

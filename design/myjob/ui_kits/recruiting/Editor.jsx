@@ -180,20 +180,21 @@ function Editor({ talent, onClose, onCreateMappe }) {
      and only applied on “Übernehmen” (or discarded on “Verwerfen”). ---- */
   const [gen, setGen] = React.useState(false);
   const [pending, setPending] = React.useState(null);
-  const runAI = () => {
+  const runAI = async () => {
     setGen(true);
-    setTimeout(() => {
-      if (doc === 'lebenslauf') {
-        setPending({ kind: 'summary', value: 'Senior Software Engineer (M.Sc.) mit 7+ Jahren in C++ und C#/.NET, Echtzeit- und verteilten Systemen. Bewährt in sicherheitskritischen Branchen (Verteidigung, Lasertechnik); Fokus auf Systemarchitektur, DevOps (CI/CD) und Clean Code.' });
-      } else {
-        setPending({ kind: 'letter', value: [
-          'mit großem Interesse bewerbe ich mich auf Ihre ausgeschriebene Position. Als Software Engineer (M.Sc.) mit über 7 Jahren Erfahrung in C++ und C#/.NET bringe ich genau das Profil mit, das Sie suchen.',
-          'Aktuell entwickle ich bei der Rheinmetall Air Defence AG in Zürich Steuersoftware für das Oerlikon Skynex®-System. Zuvor habe ich bei TRUMPF über fünf Jahre Visionsysteme, Microservices und CI/CD-Pipelines gestaltet.',
-          'Gerne zeige ich Ihnen in einem persönlichen Gespräch, wie ich mit moderner C++-Entwicklung und Systemarchitektur einen unmittelbaren Beitrag leiste.',
-        ] });
-      }
+    const action = doc === 'lebenslauf' ? 'summary' : 'letter';
+    try {
+      // The AI uses the candidate's own saved facts + the mandate/company on the
+      // letter; for the pinned demo talent (no server row) there is no endpoint.
+      const target = action === 'letter' ? { company: letter.firma, role: letter.betreff } : {};
+      const s = await window.RecruitApi.suggestDocument(talentId, action, target);
+      if (s.action === 'summary') setPending({ kind: 'summary', value: s.text });
+      else setPending({ kind: 'letter', value: s.paragraphs });
+    } catch {
+      setPending(null);
+    } finally {
       setGen(false);
-    }, 1100);
+    }
   };
   const acceptAI = () => {
     if (pending && pending.kind === 'summary') setResume((s) => ({ ...s, summary: pending.value }));
@@ -202,8 +203,8 @@ function Editor({ talent, onClose, onCreateMappe }) {
   };
   const cancelAI = () => setPending(null);
 
-  /* live CV customization: accent colour, font family, size */
-  const [cfg, setCfg] = React.useState({ accent: '#2A6FDB', strong: '#1d4ed8', onDark: '#7aa7f5', font: 'var(--font-display)', size: 1 });
+  /* live CV customization: template, accent colour, font family, size */
+  const [cfg, setCfg] = React.useState({ template: 'classic', accent: '#2A6FDB', strong: '#1d4ed8', onDark: '#7aa7f5', font: 'var(--font-display)', size: 1 });
 
   /* ---- Persistence: load the stored documents on open, then autosave edits.
      The pinned demo "me" talent has no server row, so it stays local-only. ---- */
@@ -390,6 +391,11 @@ function Editor({ talent, onClose, onCreateMappe }) {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '8px 16px', borderBottom: '1px solid var(--border)', flexShrink: 0, flexWrap: 'wrap' }}>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Stil</span>
+            <div style={{ display: 'flex', gap: '4px', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-sm)', padding: '3px' }}>
+              {[['classic', 'Classic'], ['modern', 'Modern'], ['compact', 'Compact']].map(([id, label]) => (
+                <button key={id} onClick={() => setCfg((c) => ({ ...c, template: id }))} style={{ border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: cfg.template === id ? 600 : 500, padding: '4px 9px', borderRadius: '4px', background: cfg.template === id ? 'var(--surface-card)' : 'transparent', color: cfg.template === id ? 'var(--text-heading)' : 'var(--text-muted)' }}>{label}</button>
+              ))}
+            </div>
             <div style={{ display: 'flex', gap: '6px' }}>
               {ED_ACCENTS.map((a, i) => <span key={i} onClick={() => setCfg((c) => ({ ...c, accent: a.accent, strong: a.strong, onDark: a.onDark }))} style={{ width: '22px', height: '22px', borderRadius: '6px', cursor: 'pointer', background: a.accent, border: `2px solid ${cfg.accent === a.accent ? 'var(--text-heading)' : 'transparent'}` }} />)}
             </div>

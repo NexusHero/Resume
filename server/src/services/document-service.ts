@@ -90,4 +90,38 @@ export class DocumentService {
     const documents = await this.get(ownerId, talentId);
     return this.pdf.renderHtml(documentsToHtml(documents));
   }
+
+  /**
+   * Assemble a Bewerbungsmappe (dossier): the saved documents rendered as one
+   * PDF, with the cover letter addressed to a concrete recipient (the mandate /
+   * company chosen in the editor). Empty recipient fields keep the saved value.
+   */
+  async renderDossierPdf(
+    ownerId: string,
+    talentId: string,
+    recipient: DossierRecipient,
+  ): Promise<Buffer> {
+    const documents = await this.get(ownerId, talentId);
+    const merged: TalentDocuments = {
+      ...documents,
+      letter: {
+        ...documents.letter,
+        firma: recipient.company || documents.letter.firma,
+        ansprechpartner: recipient.contactName || documents.letter.ansprechpartner,
+        strasse: recipient.street || documents.letter.strasse,
+        plzOrt: recipient.postalCodeCity || documents.letter.plzOrt,
+        betreff: recipient.subject || documents.letter.betreff,
+      },
+    };
+    return this.pdf.renderHtml(documentsToHtml(merged));
+  }
+}
+
+/** The recipient a dossier's cover letter is addressed to. */
+export interface DossierRecipient {
+  company?: string;
+  contactName?: string;
+  street?: string;
+  postalCodeCity?: string;
+  subject?: string;
 }

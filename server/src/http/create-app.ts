@@ -11,6 +11,7 @@ import type { MandateController } from './mandate-controller';
 import type { TalentController } from './talent-controller';
 import type { PlacementController } from './placement-controller';
 import type { DocumentController } from './document-controller';
+import type { AttachmentController } from './attachment-controller';
 import type { AuthController } from './auth-controller';
 import type { AccountController } from './account-controller';
 import type { PasswordResetController } from './password-reset-controller';
@@ -28,6 +29,7 @@ export interface AppDeps {
   talentController: TalentController;
   placementController: PlacementController;
   documentController: DocumentController;
+  attachmentController: AttachmentController;
   authController: AuthController;
   accountController: AccountController;
   passwordResetController: PasswordResetController;
@@ -47,6 +49,7 @@ export function createApp(deps: AppDeps): Express {
     talentController: t,
     placementController: p,
     documentController: docs,
+    attachmentController: att,
     authController: auth,
     accountController: account,
     passwordResetController: passwordReset,
@@ -105,6 +108,11 @@ export function createApp(deps: AppDeps): Express {
   api.get('/talents/:id/documents/pdf', requireAuth, asyncHandler(docs.pdf));
   api.post('/talents/:id/documents/ai', requireAuth, asyncHandler(docs.aiSuggest));
   api.get('/talents/:id/dossier/pdf', requireAuth, asyncHandler(docs.dossier));
+  // Talent attachments (files uploaded base64; owner-scoped).
+  api.get('/talents/:id/attachments', requireAuth, asyncHandler(att.list));
+  api.post('/talents/:id/attachments', requireAuth, asyncHandler(att.upload));
+  api.get('/attachments/:id', requireAuth, asyncHandler(att.download));
+  api.delete('/attachments/:id', requireAuth, asyncHandler(att.remove));
   api.get('/placements', requireAuth, asyncHandler(p.list));
   api.post('/placements', requireAuth, asyncHandler(p.create));
   api.patch('/placements/:id', requireAuth, asyncHandler(p.update));

@@ -405,6 +405,27 @@ const RecruitApi = {
     const qs = q.toString();
     return `${RECRUIT_API_BASE}/talents/${talentId}/dossier/pdf${qs ? `?${qs}` : ''}`;
   },
+  /* ---- Attachments (files stored server-side per talent) ---- */
+  async listAttachments(talentId) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/attachments`),
+    );
+    return Array.isArray(data) ? data : [];
+  },
+  async uploadAttachment(talentId, { name, contentType, dataBase64 }) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/attachments`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name, contentType, dataBase64 }),
+      }),
+    );
+    return data.attachment;
+  },
+  async deleteAttachment(attachmentId) {
+    const res = await fetch(`${RECRUIT_API_BASE}/attachments/${attachmentId}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+  },
   async suggestDocument(talentId, action, target = {}) {
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/documents/ai`, {

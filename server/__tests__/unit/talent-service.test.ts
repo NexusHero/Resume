@@ -4,6 +4,7 @@ import { NotFoundError } from '../../src/domain/errors';
 import {
   InMemoryTalentRepository,
   InMemoryDocumentRepository,
+  InMemoryAttachmentStore,
   FixedClock,
   SequenceIdGenerator,
 } from '../support/fakes';
@@ -13,13 +14,15 @@ const OWNER = 'owner1';
 function makeService() {
   const repo = new InMemoryTalentRepository();
   const documents = new InMemoryDocumentRepository();
+  const attachments = new InMemoryAttachmentStore();
   const service = new TalentService({
     talentRepository: repo,
     documentRepository: documents,
+    attachmentStore: attachments,
     clock: new FixedClock(),
     idGenerator: new SequenceIdGenerator('talent'),
   });
-  return { service, repo, documents };
+  return { service, repo, documents, attachments };
 }
 
 const validInput = { name: 'Lena Brandt', role: 'Product Designer' };

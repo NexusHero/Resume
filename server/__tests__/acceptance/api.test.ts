@@ -15,6 +15,7 @@ import { MandateController } from '../../src/http/mandate-controller';
 import { TalentController } from '../../src/http/talent-controller';
 import { PlacementController } from '../../src/http/placement-controller';
 import { DocumentController } from '../../src/http/document-controller';
+import { AttachmentController } from '../../src/http/attachment-controller';
 import { AuthController } from '../../src/http/auth-controller';
 import { AccountController } from '../../src/http/account-controller';
 import { PasswordResetController } from '../../src/http/password-reset-controller';
@@ -24,6 +25,7 @@ import { TalentService } from '../../src/services/talent-service';
 import { PlacementService } from '../../src/services/placement-service';
 import { DocumentService } from '../../src/services/document-service';
 import { DocumentAiService } from '../../src/services/document-ai-service';
+import { AttachmentService } from '../../src/services/attachment-service';
 import { AuthService } from '../../src/services/auth-service';
 import { AccountService } from '../../src/services/account-service';
 import { PasswordResetService } from '../../src/services/password-reset-service';
@@ -43,6 +45,7 @@ import {
   InMemoryTalentRepository,
   InMemoryPlacementRepository,
   InMemoryDocumentRepository,
+  InMemoryAttachmentStore,
   InMemoryUserRepository,
   InMemoryApiKeyStore,
   InMemoryPasswordResetTokenStore,
@@ -119,6 +122,7 @@ function makeApp(
   const talentRepository = new InMemoryTalentRepository();
   const placementRepository = new InMemoryPlacementRepository();
   const documentRepository = new InMemoryDocumentRepository();
+  const attachmentStore = new InMemoryAttachmentStore();
   const userRepository = new InMemoryUserRepository();
   const sessionStore = new MemorySessionStore();
   const passwordResetTokenStore =
@@ -135,14 +139,25 @@ function makeApp(
     talentService: new TalentService({
       talentRepository,
       documentRepository,
+      attachmentStore,
       clock: new FixedClock(),
       idGenerator: new SequenceIdGenerator('talent'),
+    }),
+  });
+  const attachmentController = new AttachmentController({
+    attachmentService: new AttachmentService({
+      attachmentStore,
+      talentRepository,
+      clock: new FixedClock(),
+      idGenerator: new SequenceIdGenerator('att'),
     }),
   });
   const documentService = new DocumentService({
     documentRepository,
     talentRepository,
+    attachmentStore,
     pdfRenderer: new FakePdfRenderer(),
+    pdfMerger: new FakePdfMerger(),
     clock: new FixedClock(),
   });
   const documentController = new DocumentController({
@@ -178,6 +193,7 @@ function makeApp(
       talentRepository,
       placementRepository,
       documentRepository,
+      attachmentStore,
       sessionStore,
       passwordResetTokenStore,
     }),
@@ -205,6 +221,7 @@ function makeApp(
     talentController,
     placementController,
     documentController,
+    attachmentController,
     authController,
     accountController,
     passwordResetController,
@@ -567,6 +584,65 @@ describe('REST API /api/v1', () => {
     it('Dossier_UnknownTalent_Returns404', async () => {
       const res = await agent.get('/api/v1/talents/missing/dossier/pdf');
       expect(res.status).toBe(404);
+    });
+
+    it('Attachments_UploadListDownloadDelete_RoundTrips', async () => {
+      const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+      const id = created.body.talent.id as string;
+      const dataBase64 = Buffer.from('%PDF-1.4 ref').toString('base64');
+
+      const up = await agent
+        .post(`/api/v1/talents/${id}/attachments`)
+        .send({ name: 'Zeugnis.pdf', dataBase64 });
+      expect(up.status).toBe(201);
+      const attId = up.body.attachment.id as string;
+      expect(up.body.attachment).toMatchObject({ name: 'Zeugnis.pdf', talentId: id });
+
+      const list = await agent.get(`/api/v1/talents/${id}/attachments`);
+      expect(list.body).toHaveLength(1);
+
+      const dl = await agent.get(`/api/v1/attachments/${attId}`);
+      expect(dl.status).toBe(200);
+      expect(dl.headers['content-type']).toMatch(/application\/pdf/);
+
+      expect((await agent.delete(`/api/v1/attachments/${attId}`)).status).toBe(204);
+      expect((await agent.get(`/api/v1/talents/${id}/attachments`)).body).toHaveLength(0);
+    });
+
+    it('Attachments_Upload_MissingFile_Returns400', async () => {
+      const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+      const id = created.body.talent.id as string;
+      const res = await agent.post(`/api/v1/talents/${id}/attachments`).send({ name: 'x.pdf' });
+      expect(res.status).toBe(400);
+    });
+
+    it('Attachments_Unauthenticated_Returns401', async () => {
+      const res = await request(app).get('/api/v1/talents/x/attachments');
+      expect(res.status).toBe(401);
+    });
+
+    it('Dossier_WithAttachment_ReturnsMergedPdf', async () => {
+      const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+      const id = created.body.talent.id as string;
+      const up = await agent
+        .post(`/api/v1/talents/${id}/attachments`)
+        .send({ name: 'Zeugnis.pdf', dataBase64: Buffer.from('%PDF ref').toString('base64') });
+      const res = await agent.get(
+        `/api/v1/talents/${id}/dossier/pdf?attachments=${up.body.attachment.id}`,
+      );
+      expect(res.status).toBe(200);
+      expect(res.headers['content-type']).toMatch(/application\/pdf/);
+    });
+
+    it('Attachments_DeletingTalent_CascadesAttachments', async () => {
+      const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+      const id = created.body.talent.id as string;
+      const up = await agent
+        .post(`/api/v1/talents/${id}/attachments`)
+        .send({ name: 'x.pdf', dataBase64: Buffer.from('%PDF').toString('base64') });
+      await agent.delete(`/api/v1/talents/${id}`);
+      const res = await agent.get(`/api/v1/attachments/${up.body.attachment.id}`);
+      expect(res.status).toBe(404); // cascaded away
     });
 
     it('Placements_GetEmpty_ReturnsArray', async () => {

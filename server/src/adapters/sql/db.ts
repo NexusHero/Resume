@@ -124,5 +124,16 @@ export async function migrate(pool: Pool): Promise<void> {
       PRIMARY KEY (owner_id, talent_id)
     );
     CREATE INDEX IF NOT EXISTS talent_documents_owner_id_idx ON talent_documents (owner_id);
+    CREATE TABLE IF NOT EXISTS attachments (
+      id text PRIMARY KEY,
+      owner_id text NOT NULL,
+      talent_id text NOT NULL,
+      name text NOT NULL,
+      content_type text NOT NULL,
+      size integer NOT NULL,
+      data text NOT NULL,
+      created_at text NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS attachments_owner_talent_idx ON attachments (owner_id, talent_id);
   `);
 }

@@ -9,13 +9,17 @@ import { documentsToHtml } from '../domain/documents-html';
 import { NotFoundError } from '../domain/errors';
 import type { DocumentRepository } from '../ports/document-repository';
 import type { TalentRepository } from '../ports/talent-repository';
+import type { AttachmentStore } from '../ports/attachment-store';
 import type { PdfRenderer } from '../ports/pdf-renderer';
+import type { PdfMerger } from '../ports/pdf-merger';
 import type { Clock } from '../ports/clock';
 
 export interface DocumentServiceDeps {
   documentRepository: DocumentRepository;
   talentRepository: TalentRepository;
+  attachmentStore: AttachmentStore;
   pdfRenderer: PdfRenderer;
+  pdfMerger: PdfMerger;
   clock: Clock;
 }
 
@@ -28,13 +32,17 @@ export interface DocumentServiceDeps {
 export class DocumentService {
   private readonly docs: DocumentRepository;
   private readonly talents: TalentRepository;
+  private readonly attachments: AttachmentStore;
   private readonly pdf: PdfRenderer;
+  private readonly merger: PdfMerger;
   private readonly clock: Clock;
 
   constructor(deps: DocumentServiceDeps) {
     this.docs = deps.documentRepository;
     this.talents = deps.talentRepository;
+    this.attachments = deps.attachmentStore;
     this.pdf = deps.pdfRenderer;
+    this.merger = deps.pdfMerger;
     this.clock = deps.clock;
   }
 
@@ -100,6 +108,7 @@ export class DocumentService {
     ownerId: string,
     talentId: string,
     recipient: DossierRecipient,
+    attachmentIds: string[] = [],
   ): Promise<Buffer> {
     const documents = await this.get(ownerId, talentId);
     const merged: TalentDocuments = {
@@ -113,7 +122,16 @@ export class DocumentService {
         betreff: recipient.subject || documents.letter.betreff,
       },
     };
-    return this.pdf.renderHtml(documentsToHtml(merged));
+    const mainPdf = await this.pdf.renderHtml(documentsToHtml(merged));
+    if (!attachmentIds.length) return mainPdf;
+
+    // Append the selected PDF attachments after the resume + cover letter.
+    const parts = [mainPdf];
+    for (const id of attachmentIds) {
+      const blob = await this.attachments.get(ownerId, id);
+      if (blob && blob.attachment.contentType === 'application/pdf') parts.push(blob.bytes);
+    }
+    return parts.length > 1 ? this.merger.merge(parts, { title: 'Bewerbungsmappe' }) : mainPdf;
   }
 }
 

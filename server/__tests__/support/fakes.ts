@@ -19,6 +19,8 @@ import type { Placement } from '../../src/domain/placement';
 import type { PlacementRepository } from '../../src/ports/placement-repository';
 import type { TalentDocuments } from '../../src/domain/talent-documents';
 import type { DocumentRepository } from '../../src/ports/document-repository';
+import type { Attachment } from '../../src/domain/attachment';
+import type { AttachmentBlob, AttachmentStore } from '../../src/ports/attachment-store';
 import type { User } from '../../src/domain/user';
 import type { UserRepository } from '../../src/ports/user-repository';
 import type { PasswordHasher } from '../../src/ports/password-hasher';
@@ -233,6 +235,38 @@ export class InMemoryDocumentRepository implements DocumentRepository {
   }
   async removeForOwner(ownerId: string): Promise<void> {
     this.documents = this.documents.filter((d) => d.ownerId !== ownerId);
+  }
+}
+
+export class InMemoryAttachmentStore implements AttachmentStore {
+  blobs: AttachmentBlob[] = [];
+  async add(attachment: Attachment, bytes: Buffer): Promise<void> {
+    this.blobs.push({ attachment, bytes });
+  }
+  async list(ownerId: string, talentId: string): Promise<Attachment[]> {
+    return this.blobs
+      .filter((b) => b.attachment.ownerId === ownerId && b.attachment.talentId === talentId)
+      .map((b) => b.attachment);
+  }
+  async get(ownerId: string, id: string): Promise<AttachmentBlob | null> {
+    return (
+      this.blobs.find((b) => b.attachment.ownerId === ownerId && b.attachment.id === id) ?? null
+    );
+  }
+  async remove(ownerId: string, id: string): Promise<boolean> {
+    const before = this.blobs.length;
+    this.blobs = this.blobs.filter(
+      (b) => !(b.attachment.ownerId === ownerId && b.attachment.id === id),
+    );
+    return this.blobs.length < before;
+  }
+  async removeForTalent(ownerId: string, talentId: string): Promise<void> {
+    this.blobs = this.blobs.filter(
+      (b) => !(b.attachment.ownerId === ownerId && b.attachment.talentId === talentId),
+    );
+  }
+  async removeForOwner(ownerId: string): Promise<void> {
+    this.blobs = this.blobs.filter((b) => b.attachment.ownerId !== ownerId);
   }
 }
 

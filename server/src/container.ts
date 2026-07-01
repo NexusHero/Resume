@@ -35,6 +35,7 @@ import { TalentService } from './services/talent-service';
 import { PlacementService } from './services/placement-service';
 import { DocumentService } from './services/document-service';
 import { DocumentAiService } from './services/document-ai-service';
+import { AttachmentService } from './services/attachment-service';
 import { AuthService } from './services/auth-service';
 import { AccountService } from './services/account-service';
 import { PasswordResetService } from './services/password-reset-service';
@@ -47,6 +48,7 @@ import { MandateController } from './http/mandate-controller';
 import { TalentController } from './http/talent-controller';
 import { PlacementController } from './http/placement-controller';
 import { DocumentController } from './http/document-controller';
+import { AttachmentController } from './http/attachment-controller';
 import { AuthController } from './http/auth-controller';
 import { AccountController } from './http/account-controller';
 import { PasswordResetController } from './http/password-reset-controller';
@@ -71,6 +73,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     talentRepository: asValue(persistence.talentRepository),
     placementRepository: asValue(persistence.placementRepository),
     documentRepository: asValue(persistence.documentRepository),
+    attachmentStore: asValue(persistence.attachmentStore),
     // Auth persistence follows the same store switch: file-backed by default,
     // Postgres when STORE=sql (so sessions/users survive a multi-instance deploy).
     userRepository: asValue(persistence.userRepository),
@@ -114,6 +117,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     placementService: asClass(PlacementService).singleton(),
     documentService: asClass(DocumentService).singleton(),
     documentAiService: asClass(DocumentAiService).singleton(),
+    attachmentService: asClass(AttachmentService).singleton(),
     authService: asClass(AuthService).singleton(),
     accountService: asClass(AccountService).singleton(),
     passwordResetService: asClass(PasswordResetService).singleton(),
@@ -126,6 +130,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     talentController: asClass(TalentController).singleton(),
     placementController: asClass(PlacementController).singleton(),
     documentController: asClass(DocumentController).singleton(),
+    attachmentController: asClass(AttachmentController).singleton(),
     authController: asClass(AuthController).singleton(),
     accountController: asClass(AccountController).singleton(),
     passwordResetController: asClass(PasswordResetController).singleton(),

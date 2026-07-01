@@ -5,6 +5,7 @@ import type { Talent } from '../../domain/talent';
 import type { Placement, PlacementStatus } from '../../domain/placement';
 import type { User } from '../../domain/user';
 import type { TalentDocuments } from '../../domain/talent-documents';
+import type { Attachment } from '../../domain/attachment';
 import {
   applications,
   auditEvents,
@@ -14,6 +15,7 @@ import {
   placements,
   users,
   talentDocuments,
+  attachments,
 } from './schema';
 
 type ApplicationRow = typeof applications.$inferSelect;
@@ -32,6 +34,8 @@ type UserRow = typeof users.$inferSelect;
 type UserInsert = typeof users.$inferInsert;
 type TalentDocumentsRow = typeof talentDocuments.$inferSelect;
 type TalentDocumentsInsert = typeof talentDocuments.$inferInsert;
+type AttachmentRow = typeof attachments.$inferSelect;
+type AttachmentInsert = typeof attachments.$inferInsert;
 
 // Postgres stores absent optional values as NULL; the domain uses `undefined`.
 const orUndef = <T>(v: T | null): T | undefined => v ?? undefined;
@@ -255,5 +259,30 @@ export function talentDocumentsToRow(documents: TalentDocuments): TalentDocument
     letter: documents.letter,
     style: documents.style,
     updatedAt: documents.updatedAt,
+  };
+}
+
+export function rowToAttachment(row: AttachmentRow): Attachment {
+  return {
+    id: row.id,
+    ownerId: row.ownerId,
+    talentId: row.talentId,
+    name: row.name,
+    contentType: row.contentType,
+    size: row.size,
+    createdAt: row.createdAt,
+  };
+}
+
+export function attachmentToRow(attachment: Attachment, dataBase64: string): AttachmentInsert {
+  return {
+    id: attachment.id,
+    ownerId: attachment.ownerId,
+    talentId: attachment.talentId,
+    name: attachment.name,
+    contentType: attachment.contentType,
+    size: attachment.size,
+    data: dataBase64,
+    createdAt: attachment.createdAt,
   };
 }

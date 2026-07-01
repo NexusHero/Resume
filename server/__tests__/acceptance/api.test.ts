@@ -588,6 +588,28 @@ describe('REST API /api/v1', () => {
       expect(res.status).toBe(400);
     });
 
+    it('DocumentsAts_JobText_ReturnsScore', async () => {
+      const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+      const id = created.body.talent.id as string;
+      await agent
+        .put(`/api/v1/talents/${id}/documents`)
+        .send({ resume: { skillGroups: [{ label: 'Tools', items: ['Figma'] }] } });
+      const res = await agent
+        .post(`/api/v1/talents/${id}/documents/ats`)
+        .send({ jobText: 'We need a designer skilled in Figma.' });
+      expect(res.status).toBe(200);
+      expect(res.body.ats.provider).toBe('template');
+      expect(typeof res.body.ats.score).toBe('number');
+      expect(res.body.ats.matched).toContain('Figma');
+    });
+
+    it('DocumentsAts_MissingJobText_Returns400', async () => {
+      const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+      const id = created.body.talent.id as string;
+      const res = await agent.post(`/api/v1/talents/${id}/documents/ats`).send({});
+      expect(res.status).toBe(400);
+    });
+
     it('Dossier_Get_ReturnsPdf', async () => {
       const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
       const id = created.body.talent.id as string;

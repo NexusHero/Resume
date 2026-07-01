@@ -159,3 +159,50 @@ describe('DocumentAiService.parse', () => {
     await expect(c.service.parse(OWNER, 'missing', 'x')).rejects.toBeInstanceOf(NotFoundError);
   });
 });
+
+describe('DocumentAiService.scoreAgainstJob', () => {
+  const ATS_JSON = JSON.stringify({
+    score: 82,
+    matched: ['C++'],
+    missing: ['Kubernetes'],
+    suggestions: ['Add Kubernetes experience'],
+  });
+
+  it('Score_WithProvider_ReturnsNormalizedResult', async () => {
+    const c = ctx({ available: true, generate: async () => ATS_JSON });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+    const res = await c.service.scoreAgainstJob(OWNER, 't1', 'C++ role, Kubernetes a plus');
+    expect(res.provider).toBe('claude');
+    expect(res.score).toBe(82);
+    expect(res.missing).toEqual(['Kubernetes']);
+  });
+
+  it('Score_ClampsOutOfRangeScore', async () => {
+    const c = ctx({
+      available: true,
+      generate: async () =>
+        JSON.stringify({ score: 140, matched: [], missing: [], suggestions: [] }),
+    });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+    const res = await c.service.scoreAgainstJob(OWNER, 't1', 'job');
+    expect(res.score).toBe(100);
+  });
+
+  it('Score_NoProvider_FallsBackToKeywordOverlap', async () => {
+    const c = ctx();
+    await c.talents.add(talent('t1'));
+    const res = await c.service.scoreAgainstJob(OWNER, 't1', 'any job text');
+    expect(res.provider).toBe('template');
+    expect(typeof res.score).toBe('number');
+    expect(Array.isArray(res.suggestions)).toBe(true);
+  });
+
+  it('Score_UnknownTalent_Throws404', async () => {
+    const c = ctx();
+    await expect(c.service.scoreAgainstJob(OWNER, 'missing', 'job')).rejects.toBeInstanceOf(
+      NotFoundError,
+    );
+  });
+});

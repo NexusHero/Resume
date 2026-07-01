@@ -264,6 +264,22 @@ function Editor({ talent, onClose, onCreateMappe }) {
     setParsing(false);
   };
 
+  /* ---- ATS check: score the résumé against a pasted job ad ---- */
+  const [atsOpen, setAtsOpen] = React.useState(false);
+  const [jobText, setJobText] = React.useState('');
+  const [ats, setAts] = React.useState(null);
+  const [scoring, setScoring] = React.useState(false);
+  const runAts = async () => {
+    if (!jobText.trim() || !canPersist) return;
+    setScoring(true);
+    try {
+      setAts(await window.RecruitApi.atsScore(talentId, jobText));
+    } catch {
+      /* ignore */
+    }
+    setScoring(false);
+  };
+
   const seg = (id, label) => (
     <button onClick={() => setDoc(id)} style={{ flex: 1, padding: '8px 10px', border: 'none', cursor: 'pointer', borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600, background: doc === id ? 'var(--surface-card)' : 'transparent', color: doc === id ? 'var(--text-heading)' : 'var(--text-soft)', boxShadow: doc === id ? 'var(--shadow-xs)' : 'none' }}>{label}</button>
   );
@@ -290,6 +306,14 @@ function Editor({ talent, onClose, onCreateMappe }) {
         )}
         {canPersist && (
           <button
+            onClick={() => setAtsOpen(true)}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', padding: '4px 12px' }}
+          >
+            <ED.Icon name="search" size={13} /> ATS check
+          </button>
+        )}
+        {canPersist && (
+          <button
             onClick={() => window.open(window.RecruitApi.talentDocumentsPdfUrl(talentId), '_blank')}
             style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', padding: '4px 12px' }}
           >
@@ -309,6 +333,46 @@ function Editor({ talent, onClose, onCreateMappe }) {
               <ED.Button variant="ghost" onClick={() => setImporting(false)}>Cancel</ED.Button>
               <ED.Button variant="primary" disabled={parsing || !importText.trim()} onClick={runImport}>{parsing ? 'Parsing…' : 'Parse & fill'}</ED.Button>
             </div>
+          </div>
+        </>
+      )}
+
+      {atsOpen && (
+        <>
+          <div onClick={() => setAtsOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(8,11,18,0.45)', backdropFilter: 'blur(2px)', zIndex: 60 }} />
+          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 61, width: 'min(680px, 92vw)', maxHeight: '88vh', overflowY: 'auto', background: 'var(--surface-card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-lg)', padding: '22px' }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)', marginBottom: '4px' }}>ATS match check</div>
+            <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginBottom: '12px' }}>Paste the job ad — the AI scores this résumé against it and suggests fixes.</div>
+            <textarea value={jobText} onChange={(e) => setJobText(e.target.value)} rows={7} placeholder="Paste the job description…" style={{ width: '100%', resize: 'vertical', padding: '11px 13px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', color: 'var(--text-heading)', fontFamily: 'var(--font-body)', fontSize: '13px', outline: 'none' }} />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
+              <ED.Button variant="ghost" onClick={() => setAtsOpen(false)}>Close</ED.Button>
+              <ED.Button variant="primary" disabled={scoring || !jobText.trim()} onClick={runAts}>{scoring ? 'Analyzing…' : 'Analyze'}</ED.Button>
+            </div>
+            {ats && (
+              <div style={{ marginTop: '18px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
+                  <span style={{ fontFamily: 'var(--font-display)', fontSize: '30px', fontWeight: 700, color: ats.score >= 75 ? 'var(--positive, #1F8A5B)' : ats.score >= 50 ? 'var(--accent-strong)' : 'var(--danger)' }}>{ats.score}</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>/ 100 match</span>
+                </div>
+                {ats.matched && ats.matched.length > 0 && (
+                  <div style={{ marginTop: '10px' }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '5px' }}>Matched</div>
+                    <div>{ats.matched.map((m, i) => <span key={i} style={{ display: 'inline-block', background: 'var(--accent-soft)', color: 'var(--accent-strong)', borderRadius: '4px', padding: '2px 8px', margin: '0 5px 5px 0', fontSize: '12px' }}>{m}</span>)}</div>
+                  </div>
+                )}
+                {ats.missing && ats.missing.length > 0 && (
+                  <div style={{ marginTop: '8px' }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '5px' }}>Missing</div>
+                    <div>{ats.missing.map((m, i) => <span key={i} style={{ display: 'inline-block', background: 'var(--danger-soft)', color: 'var(--danger)', borderRadius: '4px', padding: '2px 8px', margin: '0 5px 5px 0', fontSize: '12px' }}>{m}</span>)}</div>
+                  </div>
+                )}
+                {ats.suggestions && ats.suggestions.length > 0 && (
+                  <ul style={{ margin: '10px 0 0', paddingLeft: '18px', fontSize: '13px', color: 'var(--text-body)' }}>
+                    {ats.suggestions.map((s, i) => <li key={i} style={{ margin: '3px 0' }}>{s}</li>)}
+                  </ul>
+                )}
+              </div>
+            )}
           </div>
         </>
       )}

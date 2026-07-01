@@ -9,6 +9,13 @@ import {
 } from '../domain/document-ai';
 import { parsePrompt, extractJson, fallbackParsed } from '../domain/document-parse';
 import {
+  type AtsScore,
+  atsPrompt,
+  atsResultSchema,
+  fallbackAts,
+  normalizeAts,
+} from '../domain/ats-ai';
+import {
   type DocumentContact,
   type ResumeContent,
   saveDocumentsSchema,
@@ -147,5 +154,41 @@ export class DocumentAiService {
     };
     const validated = saveDocumentsSchema.parse({ contact: source.contact, resume: source.resume });
     return { contact: validated.contact, resume: validated.resume, provider };
+  }
+
+  /**
+   * Score the talent's résumé against a pasted job ad. The LLM returns a match
+   * rate plus matched/missing keywords and concrete fixes; without a provider,
+   * a deterministic keyword-overlap fallback keeps it usable.
+   */
+  async scoreAgainstJob(
+    ownerId: string,
+    talentId: string,
+    jobText: string,
+  ): Promise<AtsScore & { provider: LlmProviderId | 'template' }> {
+    const documents = await this.documents.get(ownerId, talentId); // 404s on unknown talent
+    const resolved = await this.resolveProvider(ownerId);
+
+    if (resolved) {
+      try {
+        const built = atsPrompt(documents, jobText);
+        const reply = await resolved.provider.generate({
+          system: built.system,
+          prompt: built.prompt,
+          maxTokens: 900,
+          ...(resolved.apiKey ? { apiKey: resolved.apiKey } : {}),
+        });
+        const json = extractJson(reply);
+        const parsed = atsResultSchema.safeParse(json);
+        if (parsed.success) return { ...normalizeAts(parsed.data), provider: resolved.provider.id };
+      } catch (err) {
+        this.logger.warn(
+          { err: err instanceof Error ? err.message : String(err) },
+          'ATS scoring failed, falling back',
+        );
+      }
+    }
+
+    return { ...fallbackAts(documents, jobText), provider: 'template' };
   }
 }

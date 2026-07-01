@@ -446,6 +446,16 @@ const RecruitApi = {
     );
     return data.parsed; // { contact, resume, provider }
   },
+  async atsScore(talentId, jobText) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/documents/ats`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ jobText }),
+      }),
+    );
+    return data.ats; // { score, matched, missing, suggestions, provider }
+  },
   async listPlacements() {
     const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/placements`));
     return Array.isArray(data) ? data.map(mapPlacement) : [];

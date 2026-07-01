@@ -10,6 +10,7 @@ export const USAGE_FEATURES = [
   'coverLetter', // generate a tailored Anschreiben
   'matchExplain', // explain why a candidate fits a mandate
   'interviewKit', // generate an interview kit for a candidate + mandate
+  'candidatePrep', // candidate-facing interview preparation pack
 ] as const;
 export type UsageFeature = (typeof USAGE_FEATURES)[number];
 

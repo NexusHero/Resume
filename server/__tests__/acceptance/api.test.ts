@@ -1116,6 +1116,43 @@ describe('REST API /api/v1', () => {
       expect(res.status).toBe(401);
     });
 
+    // --- Candidate preparation pack ---
+    it('Prep_ReturnsGroundedPackFromJobAd', async () => {
+      const m = await agent.post('/api/v1/mandates').send({
+        client: 'Google',
+        role: 'Frontend Engineer',
+        location: 'Berlin',
+        jobText: 'Frontend Engineer (m/w/d)\n- React erforderlich\n- Führerschein erforderlich',
+      });
+      const t = await agent.post('/api/v1/talents').send({ name: 'Lena', skills: ['React'] });
+      // The prep reads the candidate's dossier — give them one with React.
+      await agent.put(`/api/v1/talents/${t.body.talent.id}/documents`).send({
+        resume: { skillGroups: [{ label: 'Frontend', items: ['React'] }] },
+      });
+      const res = await agent
+        .post(`/api/v1/mandates/${m.body.mandate.id}/candidates/${t.body.talent.id}/prep`)
+        .send({});
+      expect(res.status).toBe(200);
+      const prep = res.body.prep;
+      expect(prep.provider).toBe('template'); // no LLM in CI
+      expect(prep.companyLabel).toBe('US Big Tech'); // Google → curated archetype
+      expect(prep.obligations.some((o: string) => o.includes('Führerschein'))).toBe(true);
+      expect(prep.strengths).toContain('React');
+      expect(prep.likelyQuestions.length).toBeGreaterThan(0);
+      expect(prep.candidateQuestions.length).toBeGreaterThan(0);
+    });
+
+    it('Prep_UnknownMandate_Returns404', async () => {
+      const { talentId } = await seedMandateAndTalent();
+      const res = await agent.post(`/api/v1/mandates/nope/candidates/${talentId}/prep`).send({});
+      expect(res.status).toBe(404);
+    });
+
+    it('Prep_Unauthenticated_Returns401', async () => {
+      const res = await request(app).post('/api/v1/mandates/x/candidates/y/prep').send({});
+      expect(res.status).toBe(401);
+    });
+
     // --- AI usage counter ---
     it('Usage_Authenticated_ReturnsZeroedSummaryForNewUser', async () => {
       const res = await agent.get('/api/v1/settings/usage');

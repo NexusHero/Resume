@@ -472,6 +472,16 @@ const RecruitApi = {
     );
     return data.kit; // { focus, questions[], scorecard[], provider }
   },
+  async candidatePrep(mandateId, talentId) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/mandates/${mandateId}/candidates/${talentId}/prep`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({}),
+      }),
+    );
+    return data.prep; // { companyLabel, formats, obligations, requirementChecks, strengths, likelyQuestions, starAnswers, candidateQuestions, provider }
+  },
   async updateCandidacy(id, patch) {
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/candidacies/${id}`, {

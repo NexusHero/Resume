@@ -8,6 +8,7 @@ import {
   InMemoryDocumentRepository,
   InMemoryApiKeyStore,
   InMemoryUsageMeter,
+  InMemoryInterviewObservationRepository,
   FakePdfRenderer,
   FakePdfTextExtractor,
   FixedClock,
@@ -73,16 +74,18 @@ function ctx(stub: ProviderStub = {}, pdfText: string | Error = '') {
     defaultProvider: 'claude',
     logger: noopLogger,
   });
+  const observations = new InMemoryInterviewObservationRepository();
   const service = new DocumentAiService({
     documentService,
     llmService: llm,
     apiKeyStore: keys,
     pdfTextExtractor,
     usageMeter,
+    interviewObservationRepository: observations,
     clock: new FixedClock(),
     logger: noopLogger,
   });
-  return { service, talents, keys, usageMeter, getUsedKey: () => usedKey };
+  return { service, talents, keys, usageMeter, observations, getUsedKey: () => usedKey };
 }
 
 describe('DocumentAiService', () => {
@@ -585,6 +588,30 @@ describe('DocumentAiService.candidatePrep', () => {
     expect(res.provider).toBe('template');
     expect(res.likelyQuestions.length).toBeGreaterThan(0);
     expect(res.companyLabel).toBe('US Big Tech');
+  });
+
+  it('ObservationsOverrideArchetypeConfidence', async () => {
+    const c = ctx();
+    await c.talents.add(talent('t1'));
+    // three recorded observations of 'google' (mandate.client) → observed profile
+    for (let i = 0; i < 3; i++) {
+      await c.observations.add({
+        id: `o${i}`,
+        ownerId: OWNER,
+        companyKey: 'google',
+        company: 'Google',
+        mandateId: 'm1',
+        talentId: '',
+        rounds: 5,
+        formats: ['coding'],
+        difficulty: 'high',
+        notes: '',
+        at: '2026-07-01T10:00:00.000Z',
+      });
+    }
+    const res = await c.service.candidatePrep(OWNER, OWNER, 't1', mandate, ad);
+    expect(res.companySource).toBe('observed');
+    expect(res.companyConfidence).toBe('medium');
   });
 
   it('UnknownTalent_Throws404', async () => {

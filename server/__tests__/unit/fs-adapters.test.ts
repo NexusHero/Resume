@@ -18,6 +18,7 @@ import { FsSessionStore } from '../../src/adapters/fs-session-store';
 import { FsPasswordResetTokenStore } from '../../src/adapters/fs-password-reset-token-store';
 import { FsApiKeyStore } from '../../src/adapters/fs-api-key-store';
 import { FsUsageMeter } from '../../src/adapters/fs-usage-meter';
+import { FsInterviewObservationRepository } from '../../src/adapters/fs-interview-observation-repository';
 import { SecretCipher } from '../../src/adapters/secret-cipher';
 import { FixedClock } from '../support/fakes';
 import type { Application, AuditEvent } from '../../src/domain/application';
@@ -50,6 +51,7 @@ function tmpConfig(): AppConfig {
     passwordResetTokensFile: path.join(storeDir, 'password-reset-tokens.json'),
     apiKeysFile: path.join(storeDir, 'api-keys.json'),
     usageFile: path.join(storeDir, 'usage.json'),
+    interviewObservationsFile: path.join(storeDir, 'interview-observations.json'),
     staticDir: rootDir,
     versionedPaths: ['bewerbungen'],
     candidateProfile: { skills: [] },
@@ -348,6 +350,47 @@ describe('FsUsageMeter', () => {
     // valid JSON that isn't an array is also treated as empty
     await fs.writeFile(config.usageFile, '{"x":1}');
     expect(await new FsUsageMeter({ config }).list('u1')).toEqual([]);
+  });
+});
+
+describe('FsInterviewObservationRepository', () => {
+  const obs = (id: string, ownerId: string, companyKey: string, at: string) => ({
+    id,
+    ownerId,
+    companyKey,
+    company: companyKey,
+    mandateId: 'm1',
+    talentId: 't1',
+    rounds: 3,
+    formats: ['coding' as const],
+    difficulty: 'high' as const,
+    notes: '',
+    at,
+  });
+
+  it('NoFile_ListsEmpty', async () => {
+    const repo = new FsInterviewObservationRepository({ config: tmpConfig() });
+    expect(await repo.listForCompany('team', 'google')).toEqual([]);
+  });
+
+  it('AddThenListForCompany_ScopedAndNewestFirst', async () => {
+    const repo = new FsInterviewObservationRepository({ config: tmpConfig() });
+    await repo.add(obs('o1', 'team', 'google', '2026-07-01T10:00:00.000Z'));
+    await repo.add(obs('o2', 'team', 'google', '2026-07-02T10:00:00.000Z'));
+    await repo.add(obs('o3', 'team', 'sap', '2026-07-01T10:00:00.000Z'));
+    await repo.add(obs('o4', 'other', 'google', '2026-07-03T10:00:00.000Z'));
+    const google = await repo.listForCompany('team', 'google');
+    expect(google.map((o) => o.id)).toEqual(['o2', 'o1']); // newest first, scoped
+    expect(await repo.list('team')).toHaveLength(3);
+  });
+
+  it('MalformedFile_TreatedAsEmpty', async () => {
+    const config = tmpConfig();
+    await fs.mkdir(config.storeDir, { recursive: true });
+    await fs.writeFile(config.interviewObservationsFile, 'not json');
+    expect(await new FsInterviewObservationRepository({ config }).list('team')).toEqual([]);
+    await fs.writeFile(config.interviewObservationsFile, '{"x":1}');
+    expect(await new FsInterviewObservationRepository({ config }).list('team')).toEqual([]);
   });
 });
 

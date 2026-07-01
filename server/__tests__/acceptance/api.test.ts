@@ -21,6 +21,7 @@ import { MatchAiController } from '../../src/http/match-ai-controller';
 import { UsageController } from '../../src/http/usage-controller';
 import { ComplianceController } from '../../src/http/compliance-controller';
 import { ForecastController } from '../../src/http/forecast-controller';
+import { ObservationController } from '../../src/http/observation-controller';
 import { DocumentController } from '../../src/http/document-controller';
 import { AttachmentController } from '../../src/http/attachment-controller';
 import { AuthController } from '../../src/http/auth-controller';
@@ -36,6 +37,7 @@ import { RetentionService } from '../../src/services/retention-service';
 import { MatchService } from '../../src/services/match-service';
 import { UsageService } from '../../src/services/usage-service';
 import { ForecastService } from '../../src/services/forecast-service';
+import { InterviewObservationService } from '../../src/services/interview-observation-service';
 import { DocumentService } from '../../src/services/document-service';
 import { DocumentAiService } from '../../src/services/document-ai-service';
 import { AttachmentService } from '../../src/services/attachment-service';
@@ -65,6 +67,7 @@ import {
   InMemoryUserRepository,
   InMemoryApiKeyStore,
   InMemoryUsageMeter,
+  InMemoryInterviewObservationRepository,
   InMemoryPasswordResetTokenStore,
   RecordingMailer,
   fakePasswordHasher,
@@ -222,12 +225,14 @@ function makeApp(
     pdfMerger: new FakePdfMerger(),
     clock: new FixedClock(),
   });
+  const interviewObservationRepository = new InMemoryInterviewObservationRepository();
   const documentAiService = new DocumentAiService({
     documentService,
     llmService,
     apiKeyStore,
     pdfTextExtractor: new FakePdfTextExtractor('Extracted CV text from PDF.'),
     usageMeter,
+    interviewObservationRepository,
     clock: new FixedClock(),
     logger: noopLogger,
   });
@@ -239,6 +244,14 @@ function makeApp(
   const complianceController = new ComplianceController();
   const forecastController = new ForecastController({
     forecastService: new ForecastService({ mandateRepository, candidacyRepository }),
+  });
+  const observationController = new ObservationController({
+    interviewObservationService: new InterviewObservationService({
+      interviewObservationRepository,
+      mandateRepository,
+      clock: new FixedClock(),
+      idGenerator: new SequenceIdGenerator('obs'),
+    }),
   });
   const placementController = new PlacementController({ placementService });
   const authController = new AuthController({
@@ -296,6 +309,7 @@ function makeApp(
     usageController,
     complianceController,
     forecastController,
+    observationController,
     documentController,
     attachmentController,
     authController,
@@ -1150,6 +1164,60 @@ describe('REST API /api/v1', () => {
 
     it('Prep_Unauthenticated_Returns401', async () => {
       const res = await request(app).post('/api/v1/mandates/x/candidates/y/prep').send({});
+      expect(res.status).toBe(401);
+    });
+
+    // --- Interview-observation flywheel ---
+    it('Observations_RecordThenAggregate', async () => {
+      const m = await agent
+        .post('/api/v1/mandates')
+        .send({ client: 'Trumpf SE + Co. KG', role: 'C++ Engineer', location: 'Ditzingen' });
+      const mid = m.body.mandate.id;
+      // no observations yet
+      let res = await agent.get(`/api/v1/mandates/${mid}/observations`);
+      expect(res.status).toBe(200);
+      expect(res.body.profile).toBeNull();
+      // record three
+      for (let i = 0; i < 3; i++) {
+        const rec = await agent
+          .post(`/api/v1/mandates/${mid}/observations`)
+          .send({ rounds: 3, formats: ['fachgespraech', 'presentation'], difficulty: 'medium' });
+        expect(rec.status).toBe(201);
+      }
+      res = await agent.get(`/api/v1/mandates/${mid}/observations`);
+      expect(res.body.profile.sampleSize).toBe(3);
+      expect(res.body.profile.confidence).toBe('medium');
+      expect(res.body.profile.formats[0].format).toBe('fachgespraech');
+    });
+
+    it('Observations_FeedIntoPrepAndRaiseConfidence', async () => {
+      const m = await agent
+        .post('/api/v1/mandates')
+        .send({ client: 'Nischenfirma AG', role: 'Engineer', location: 'Berlin' });
+      const mid = m.body.mandate.id;
+      const t = await agent.post('/api/v1/talents').send({ name: 'Max' });
+      // Baseline: unknown company → low-confidence default archetype
+      let prep = await agent
+        .post(`/api/v1/mandates/${mid}/candidates/${t.body.talent.id}/prep`)
+        .send({});
+      expect(prep.body.prep.companySource).toBe('archetype');
+      expect(prep.body.prep.companyConfidence).toBe('low');
+      // Record three observations → prep now reflects observed reality
+      for (let i = 0; i < 3; i++) {
+        await agent
+          .post(`/api/v1/mandates/${mid}/observations`)
+          .send({ rounds: 2, formats: ['case'], difficulty: 'high' });
+      }
+      prep = await agent
+        .post(`/api/v1/mandates/${mid}/candidates/${t.body.talent.id}/prep`)
+        .send({});
+      expect(prep.body.prep.companySource).toBe('observed');
+      expect(prep.body.prep.companyConfidence).toBe('medium');
+      expect(prep.body.prep.formats[0]).toBe('Case-Interview'); // observed leads
+    });
+
+    it('Observations_Unauthenticated_Returns401', async () => {
+      const res = await request(app).post('/api/v1/mandates/x/observations').send({});
       expect(res.status).toBe(401);
     });
 

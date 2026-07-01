@@ -482,6 +482,21 @@ const RecruitApi = {
     );
     return data.prep; // { companyLabel, formats, obligations, requirementChecks, strengths, likelyQuestions, starAnswers, candidateQuestions, provider }
   },
+  /* ---- Interview-observation flywheel ---- */
+  async companyKnowledge(mandateId) {
+    // { company, profile: { sampleSize, formats[], typicalRounds, difficulty, confidence } | null, observations[] }
+    return _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/mandates/${mandateId}/observations`));
+  },
+  async recordObservation(mandateId, input) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/mandates/${mandateId}/observations`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input), // { talentId?, rounds, formats[], difficulty, notes }
+      }),
+    );
+    return data.observation;
+  },
   async updateCandidacy(id, patch) {
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/candidacies/${id}`, {

@@ -3,6 +3,17 @@
    pool, move stage, remove). Takes over the canvas like the talent profile. */
 const MP = window.MyJobDesignSystem_f3658e;
 
+const MP_FORMATS = [
+  { id: 'coding', label: 'Coding-Challenge' },
+  { id: 'system_design', label: 'System-Design' },
+  { id: 'case', label: 'Case-Interview' },
+  { id: 'fachgespraech', label: 'Fachgespräch' },
+  { id: 'assessment_center', label: 'Assessment-Center' },
+  { id: 'behavioral', label: 'Verhaltensfragen' },
+  { id: 'take_home', label: 'Take-Home-Aufgabe' },
+  { id: 'presentation', label: 'Fachpräsentation' },
+];
+
 const MP_STAGES = [
   { id: 'sourced', label: 'Sourced', color: '#64748b' },
   { id: 'screening', label: 'Screening', color: '#2A6FDB' },
@@ -67,6 +78,7 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
   const [explains, setExplains] = React.useState({}); // talentId -> { loading, open, data }
   const [interview, setInterview] = React.useState(null); // { name, loading, data } | null
   const [prep, setPrep] = React.useState(null); // { name, loading, data } | null
+  const [knowledge, setKnowledge] = React.useState(null); // { open, loading, data, form, saving } | null
 
   const load = React.useCallback(() => {
     setError(false);
@@ -135,6 +147,33 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
       setInterview({ name, loading: false, data: null, error: true });
     }
   };
+  const emptyObsForm = { rounds: 2, formats: [], difficulty: 'medium', notes: '' };
+  const openKnowledge = async () => {
+    setKnowledge({ open: true, loading: true, data: null, form: { ...emptyObsForm }, saving: false });
+    try {
+      const data = await window.RecruitApi.companyKnowledge(mandate.id);
+      setKnowledge((k) => ({ ...k, loading: false, data }));
+    } catch {
+      setKnowledge((k) => ({ ...k, loading: false, data: null, error: true }));
+    }
+  };
+  const toggleObsFormat = (fid) => {
+    setKnowledge((k) => {
+      const has = k.form.formats.includes(fid);
+      const formats = has ? k.form.formats.filter((x) => x !== fid) : [...k.form.formats, fid];
+      return { ...k, form: { ...k.form, formats } };
+    });
+  };
+  const saveObservation = async () => {
+    setKnowledge((k) => ({ ...k, saving: true }));
+    try {
+      await window.RecruitApi.recordObservation(mandate.id, knowledge.form);
+      const data = await window.RecruitApi.companyKnowledge(mandate.id);
+      setKnowledge((k) => ({ ...k, saving: false, data, form: { ...emptyObsForm } }));
+    } catch {
+      setKnowledge((k) => ({ ...k, saving: false }));
+    }
+  };
   const openPrep = async (talentId, name) => {
     setPrep({ name, loading: true, data: null });
     try {
@@ -167,6 +206,7 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
           <MP.Icon name="arrowLeft" size={14} /> Back to mandates
         </button>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
+          <MP.Button variant="outline" size="sm" iconLeft={<MP.Icon name="users" size={15} />} onClick={openKnowledge}>Firmen-Wissen</MP.Button>
           <MP.Button variant="outline" size="sm" iconLeft={<MP.Icon name="zap" size={15} />} onClick={openMatch}>Find matches</MP.Button>
           <MP.Button variant="primary" size="sm" iconLeft={<MP.Icon name="plus" size={15} />} onClick={openAdd}>Add candidate</MP.Button>
         </div>
@@ -491,6 +531,78 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
               <MP.Button variant="ghost" onClick={() => setPrep(null)}>Close</MP.Button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {knowledge && (
+        <>
+          <div onClick={() => setKnowledge(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(8,11,18,0.5)', backdropFilter: 'blur(2px)', zIndex: 70 }} />
+          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 71, width: 'min(600px, 95vw)', maxHeight: '88vh', display: 'flex', flexDirection: 'column', background: 'var(--surface-card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-lg)', padding: '22px' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '2px' }}>
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)' }}>Firmen-Wissen</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-soft)' }}>{mandate.client}</span>
+            </div>
+            <div style={{ fontSize: '11.5px', color: 'var(--text-soft)', marginBottom: '10px' }}>Echte Interview-Erfahrungen eures Teams. Je mehr ihr festhaltet, desto sicherer wird die Vorbereitung.</div>
+
+            <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Aggregated knowledge */}
+              {knowledge.loading ? (
+                <div style={{ padding: '18px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Lädt…</div>
+              ) : !knowledge.data || !knowledge.data.profile ? (
+                <div style={{ padding: '14px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '12.5px', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-md)' }}>Noch keine Beobachtungen — die Vorbereitung nutzt bis dahin den Firmen-Archetyp.</div>
+              ) : (
+                <div style={{ background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '12px 14px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: 'var(--text-heading)' }}>{knowledge.data.profile.sampleSize} Beobachtung{knowledge.data.profile.sampleSize === 1 ? '' : 'en'}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9.5px', color: 'var(--accent-strong)', background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '1px 7px' }}>Confidence: {knowledge.data.profile.confidence}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', marginLeft: 'auto' }}>~{knowledge.data.profile.typicalRounds} Runden · {knowledge.data.profile.difficulty}</span>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {knowledge.data.profile.formats.map((f) => (
+                      <span key={f.format} style={{ fontSize: '11.5px', color: 'var(--text-body)', background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '3px 10px' }}>{f.label} · {f.count}×</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Capture form */}
+              <div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '9px' }}>Interview-Erfahrung festhalten</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '11px' }}>
+                  {MP_FORMATS.map((f) => {
+                    const on = knowledge.form.formats.includes(f.id);
+                    return (
+                      <button key={f.id} onClick={() => toggleObsFormat(f.id)} style={{ cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '11px', padding: '4px 10px', borderRadius: 'var(--radius-pill)', border: `1px solid ${on ? 'var(--accent)' : 'var(--border-strong)'}`, background: on ? 'var(--accent-soft)' : 'var(--surface-card)', color: on ? 'var(--accent-strong)' : 'var(--text-soft)' }}>{f.label}</button>
+                    );
+                  })}
+                </div>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-soft)' }}>
+                    Runden
+                    <input type="number" min="0" max="20" value={knowledge.form.rounds} onChange={(e) => setKnowledge((k) => ({ ...k, form: { ...k.form, rounds: Number(e.target.value) } }))} style={{ width: '52px', padding: '5px 8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', color: 'var(--text-heading)', fontFamily: 'var(--font-mono)', fontSize: '12px' }} />
+                  </label>
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-soft)' }}>
+                    Schwierigkeit
+                    <select value={knowledge.form.difficulty} onChange={(e) => setKnowledge((k) => ({ ...k, form: { ...k.form, difficulty: e.target.value } }))} style={{ padding: '5px 8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', color: 'var(--text-heading)', fontFamily: 'var(--font-mono)', fontSize: '12px', cursor: 'pointer' }}>
+                      <option value="low">low</option>
+                      <option value="medium">medium</option>
+                      <option value="high">high</option>
+                    </select>
+                  </label>
+                </div>
+                <input value={knowledge.form.notes} onChange={(e) => setKnowledge((k) => ({ ...k, form: { ...k.form, notes: e.target.value } }))} placeholder="Notiz (optional) — z. B. gefragte Themen" style={{ width: '100%', marginTop: '10px', padding: '8px 11px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', color: 'var(--text-heading)', fontFamily: 'var(--font-body)', fontSize: '12.5px', outline: 'none', boxSizing: 'border-box' }} />
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '11px' }}>
+                  <MP.Button variant="primary" size="sm" iconLeft={<MP.Icon name="plus" size={14} />} disabled={knowledge.saving || knowledge.form.formats.length === 0} onClick={saveObservation}>
+                    {knowledge.saving ? 'Speichert…' : 'Festhalten'}
+                  </MP.Button>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+              <MP.Button variant="ghost" onClick={() => setKnowledge(null)}>Close</MP.Button>
             </div>
           </div>
         </>

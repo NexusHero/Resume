@@ -56,6 +56,12 @@ import {
 import { companyInterviewProfile } from '../domain/company-archetype';
 import { extractRequirements } from '../domain/job-requirements';
 import {
+  aggregateObservations,
+  applyObserved,
+  companyKeyOf,
+} from '../domain/interview-observation';
+import type { InterviewObservationRepository } from '../ports/interview-observation-repository';
+import {
   type DocumentContact,
   type ResumeContent,
   saveDocumentsSchema,
@@ -97,6 +103,7 @@ export interface DocumentAiServiceDeps {
   apiKeyStore: ApiKeyStore;
   pdfTextExtractor: PdfTextExtractor;
   usageMeter: UsageMeter;
+  interviewObservationRepository: InterviewObservationRepository;
   clock: Clock;
   logger: Logger;
 }
@@ -113,6 +120,7 @@ export class DocumentAiService {
   private readonly keys: ApiKeyStore;
   private readonly pdfText: PdfTextExtractor;
   private readonly usage: UsageMeter;
+  private readonly observations: InterviewObservationRepository;
   private readonly clock: Clock;
   private readonly logger: Logger;
 
@@ -122,6 +130,7 @@ export class DocumentAiService {
     this.keys = deps.apiKeyStore;
     this.pdfText = deps.pdfTextExtractor;
     this.usage = deps.usageMeter;
+    this.observations = deps.interviewObservationRepository;
     this.clock = deps.clock;
     this.logger = deps.logger;
   }
@@ -502,7 +511,14 @@ export class DocumentAiService {
     jobText: string,
   ): Promise<CandidatePrep & { provider: LlmProviderId | 'template' }> {
     const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
-    const company = companyInterviewProfile(mandate.client ?? '', mandate.role, jobText);
+    // Blend real observations of this company over the archetype guess (flywheel).
+    const observed = aggregateObservations(
+      await this.observations.listForCompany(scope, companyKeyOf(mandate.client ?? '')),
+    );
+    const company = applyObserved(
+      companyInterviewProfile(mandate.client ?? '', mandate.role, jobText),
+      observed,
+    );
     const requirements = extractRequirements(jobText);
     const base = fallbackPrep(documents, mandate, company, requirements, jobText);
     const resolved = await this.resolveProvider(userId);

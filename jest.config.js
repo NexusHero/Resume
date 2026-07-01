@@ -46,6 +46,7 @@ module.exports = {
     '!server/src/adapters/sql/sql-document-repository.ts',
     '!server/src/adapters/sql/sql-attachment-store.ts',
     '!server/src/adapters/sql/sql-usage-meter.ts',
+    '!server/src/adapters/sql/sql-interview-observation-repository.ts',
   ],
   coverageDirectory: 'coverage',
   coverageThreshold: {

@@ -33,6 +33,8 @@ import type { ApiKeyStore } from '../../src/ports/api-key-store';
 import type { LlmProviderId } from '../../src/ports/llm-provider';
 import type { UsageMeter } from '../../src/ports/usage-meter';
 import type { UsageEvent } from '../../src/domain/usage';
+import type { InterviewObservationRepository } from '../../src/ports/interview-observation-repository';
+import type { InterviewObservation } from '../../src/domain/interview-observation';
 
 export class InMemoryApplicationRepository implements ApplicationRepository {
   apps: Application[] = [];
@@ -429,6 +431,21 @@ export class InMemoryUsageMeter implements UsageMeter {
   }
   async removeForOwner(ownerId: string): Promise<void> {
     this.events = this.events.filter((e) => e.ownerId !== ownerId);
+  }
+}
+
+export class InMemoryInterviewObservationRepository implements InterviewObservationRepository {
+  rows: InterviewObservation[] = [];
+  async add(observation: InterviewObservation): Promise<void> {
+    this.rows.push(observation);
+  }
+  async listForCompany(ownerId: string, companyKey: string): Promise<InterviewObservation[]> {
+    return this.rows
+      .filter((o) => o.ownerId === ownerId && o.companyKey === companyKey)
+      .sort((a, b) => b.at.localeCompare(a.at));
+  }
+  async list(ownerId: string): Promise<InterviewObservation[]> {
+    return this.rows.filter((o) => o.ownerId === ownerId).sort((a, b) => b.at.localeCompare(a.at));
   }
 }
 

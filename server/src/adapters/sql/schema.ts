@@ -161,6 +161,21 @@ export const candidacies = pgTable('candidacies', {
   updatedAt: text('updated_at').notNull(),
 });
 
+/** Recorded interview experiences (mirrors domain `InterviewObservation`). Team-scoped. */
+export const interviewObservations = pgTable('interview_observations', {
+  id: text('id').primaryKey(),
+  ownerId: text('owner_id').notNull(),
+  companyKey: text('company_key').notNull(),
+  company: text('company').notNull(),
+  mandateId: text('mandate_id').notNull(),
+  talentId: text('talent_id').notNull(),
+  rounds: integer('rounds').notNull(),
+  formats: jsonb('formats').$type<string[]>().notNull(),
+  difficulty: text('difficulty').notNull(),
+  notes: text('notes').notNull(),
+  at: text('at').notNull(),
+});
+
 /** Append-only meter of LLM calls (mirrors domain `UsageEvent`). Per user. */
 export const usageEvents = pgTable('usage_events', {
   seq: serial('seq').primaryKey(),

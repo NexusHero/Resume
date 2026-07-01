@@ -1,14 +1,18 @@
 import type { Request, Response } from 'express';
 import { saveDocumentsSchema } from '../domain/talent-documents';
+import { aiSuggestSchema } from '../domain/document-ai';
 import type { DocumentService } from '../services/document-service';
+import type { DocumentAiService } from '../services/document-ai-service';
 import { currentUserId } from './current-user';
 
 /** A talent's resume + cover-letter documents under /api/v1/talents/:id/documents. */
 export class DocumentController {
   private readonly service: DocumentService;
+  private readonly ai: DocumentAiService;
 
-  constructor(deps: { documentService: DocumentService }) {
+  constructor(deps: { documentService: DocumentService; documentAiService: DocumentAiService }) {
     this.service = deps.documentService;
+    this.ai = deps.documentAiService;
   }
 
   get = async (req: Request, res: Response): Promise<void> => {
@@ -28,5 +32,14 @@ export class DocumentController {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="documents-${talentId}.pdf"`);
     res.send(buffer);
+  };
+
+  aiSuggest = async (req: Request, res: Response): Promise<void> => {
+    const { action, role, company } = aiSuggestSchema.parse(req.body);
+    const suggestion = await this.ai.suggest(currentUserId(req), req.params.id as string, action, {
+      role,
+      company,
+    });
+    res.json({ suggestion });
   };
 }

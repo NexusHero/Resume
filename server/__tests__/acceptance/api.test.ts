@@ -23,6 +23,7 @@ import { MandateService } from '../../src/services/mandate-service';
 import { TalentService } from '../../src/services/talent-service';
 import { PlacementService } from '../../src/services/placement-service';
 import { DocumentService } from '../../src/services/document-service';
+import { DocumentAiService } from '../../src/services/document-ai-service';
 import { AuthService } from '../../src/services/auth-service';
 import { AccountService } from '../../src/services/account-service';
 import { PasswordResetService } from '../../src/services/password-reset-service';
@@ -138,12 +139,19 @@ function makeApp(
       idGenerator: new SequenceIdGenerator('talent'),
     }),
   });
+  const documentService = new DocumentService({
+    documentRepository,
+    talentRepository,
+    pdfRenderer: new FakePdfRenderer(),
+    clock: new FixedClock(),
+  });
   const documentController = new DocumentController({
-    documentService: new DocumentService({
-      documentRepository,
-      talentRepository,
-      pdfRenderer: new FakePdfRenderer(),
-      clock: new FixedClock(),
+    documentService,
+    documentAiService: new DocumentAiService({
+      documentService,
+      llmService,
+      apiKeyStore: new InMemoryApiKeyStore(),
+      logger: noopLogger,
     }),
   });
   const placementController = new PlacementController({
@@ -502,6 +510,44 @@ describe('REST API /api/v1', () => {
     it('DocumentsPdf_UnknownTalent_Returns404', async () => {
       const res = await agent.get('/api/v1/talents/missing/documents/pdf');
       expect(res.status).toBe(404);
+    });
+
+    it('DocumentsAi_Summary_ReturnsSuggestion', async () => {
+      const created = await agent
+        .post('/api/v1/talents')
+        .send({ name: 'Lena Brandt', role: 'Designer' });
+      const id = created.body.talent.id as string;
+      // No LLM key configured in tests → deterministic template fallback.
+      const res = await agent
+        .post(`/api/v1/talents/${id}/documents/ai`)
+        .send({ action: 'summary' });
+      expect(res.status).toBe(200);
+      expect(res.body.suggestion.provider).toBe('template');
+      expect(typeof res.body.suggestion.text).toBe('string');
+    });
+
+    it('DocumentsAi_Letter_ReturnsParagraphs', async () => {
+      const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+      const id = created.body.talent.id as string;
+      const res = await agent
+        .post(`/api/v1/talents/${id}/documents/ai`)
+        .send({ action: 'letter', role: 'Lead Designer', company: 'Helio' });
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body.suggestion.paragraphs)).toBe(true);
+    });
+
+    it('DocumentsAi_BadAction_Returns400', async () => {
+      const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+      const id = created.body.talent.id as string;
+      const res = await agent.post(`/api/v1/talents/${id}/documents/ai`).send({ action: 'nope' });
+      expect(res.status).toBe(400);
+    });
+
+    it('DocumentsAi_Unauthenticated_Returns401', async () => {
+      const res = await request(app)
+        .post('/api/v1/talents/x/documents/ai')
+        .send({ action: 'summary' });
+      expect(res.status).toBe(401);
     });
 
     it('Placements_GetEmpty_ReturnsArray', async () => {

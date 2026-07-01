@@ -34,6 +34,7 @@ import { MandateService } from './services/mandate-service';
 import { TalentService } from './services/talent-service';
 import { PlacementService } from './services/placement-service';
 import { DocumentService } from './services/document-service';
+import { DocumentAiService } from './services/document-ai-service';
 import { AuthService } from './services/auth-service';
 import { AccountService } from './services/account-service';
 import { PasswordResetService } from './services/password-reset-service';
@@ -112,6 +113,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     talentService: asClass(TalentService).singleton(),
     placementService: asClass(PlacementService).singleton(),
     documentService: asClass(DocumentService).singleton(),
+    documentAiService: asClass(DocumentAiService).singleton(),
     authService: asClass(AuthService).singleton(),
     accountService: asClass(AccountService).singleton(),
     passwordResetService: asClass(PasswordResetService).singleton(),

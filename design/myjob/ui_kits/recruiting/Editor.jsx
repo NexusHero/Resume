@@ -180,20 +180,21 @@ function Editor({ talent, onClose, onCreateMappe }) {
      and only applied on “Übernehmen” (or discarded on “Verwerfen”). ---- */
   const [gen, setGen] = React.useState(false);
   const [pending, setPending] = React.useState(null);
-  const runAI = () => {
+  const runAI = async () => {
     setGen(true);
-    setTimeout(() => {
-      if (doc === 'lebenslauf') {
-        setPending({ kind: 'summary', value: 'Senior Software Engineer (M.Sc.) mit 7+ Jahren in C++ und C#/.NET, Echtzeit- und verteilten Systemen. Bewährt in sicherheitskritischen Branchen (Verteidigung, Lasertechnik); Fokus auf Systemarchitektur, DevOps (CI/CD) und Clean Code.' });
-      } else {
-        setPending({ kind: 'letter', value: [
-          'mit großem Interesse bewerbe ich mich auf Ihre ausgeschriebene Position. Als Software Engineer (M.Sc.) mit über 7 Jahren Erfahrung in C++ und C#/.NET bringe ich genau das Profil mit, das Sie suchen.',
-          'Aktuell entwickle ich bei der Rheinmetall Air Defence AG in Zürich Steuersoftware für das Oerlikon Skynex®-System. Zuvor habe ich bei TRUMPF über fünf Jahre Visionsysteme, Microservices und CI/CD-Pipelines gestaltet.',
-          'Gerne zeige ich Ihnen in einem persönlichen Gespräch, wie ich mit moderner C++-Entwicklung und Systemarchitektur einen unmittelbaren Beitrag leiste.',
-        ] });
-      }
+    const action = doc === 'lebenslauf' ? 'summary' : 'letter';
+    try {
+      // The AI uses the candidate's own saved facts + the mandate/company on the
+      // letter; for the pinned demo talent (no server row) there is no endpoint.
+      const target = action === 'letter' ? { company: letter.firma, role: letter.betreff } : {};
+      const s = await window.RecruitApi.suggestDocument(talentId, action, target);
+      if (s.action === 'summary') setPending({ kind: 'summary', value: s.text });
+      else setPending({ kind: 'letter', value: s.paragraphs });
+    } catch {
+      setPending(null);
+    } finally {
       setGen(false);
-    }, 1100);
+    }
   };
   const acceptAI = () => {
     if (pending && pending.kind === 'summary') setResume((s) => ({ ...s, summary: pending.value }));

@@ -151,11 +151,19 @@ function makeApp(
       idGenerator: new SequenceIdGenerator('talent'),
     }),
   });
+  // Shared so candidacies auto-booked when a card reaches 'placed' land in the
+  // same placements the placement endpoints serve.
+  const placementService = new PlacementService({
+    placementRepository,
+    clock: new FixedClock(),
+    idGenerator: new SequenceIdGenerator('placement'),
+  });
   const candidacyController = new CandidacyController({
     candidacyService: new CandidacyService({
       candidacyRepository,
       mandateRepository,
       talentRepository,
+      placementService,
       clock: new FixedClock(),
       idGenerator: new SequenceIdGenerator('cand'),
     }),
@@ -186,13 +194,7 @@ function makeApp(
       logger: noopLogger,
     }),
   });
-  const placementController = new PlacementController({
-    placementService: new PlacementService({
-      placementRepository,
-      clock: new FixedClock(),
-      idGenerator: new SequenceIdGenerator('placement'),
-    }),
-  });
+  const placementController = new PlacementController({ placementService });
   const authController = new AuthController({
     authService: new AuthService({
       userRepository,
@@ -922,6 +924,29 @@ describe('REST API /api/v1', () => {
       expect(res.status).toBe(204);
       const board = await agent.get(`/api/v1/mandates/${mandateId}/candidacies`);
       expect(board.body).toEqual([]);
+    });
+
+    it('Pipeline_MoveToPlaced_BooksPlacementAndSyncsCounters', async () => {
+      const { mandateId, talentId } = await seedMandateAndTalent();
+      const created = await agent
+        .post(`/api/v1/mandates/${mandateId}/candidacies`)
+        .send({ talentId, stage: 'interview' });
+      // interview stage → counters reflect the board
+      let mandates = await agent.get('/api/v1/mandates');
+      let m = mandates.body.find((x) => x.id === mandateId);
+      expect(m.submitted).toBe(1);
+      expect(m.interviews).toBe(1);
+      // move to placed → a placement is booked from talent + mandate
+      await agent
+        .patch(`/api/v1/candidacies/${created.body.candidacy.id}`)
+        .send({ stage: 'placed' });
+      const placements = await agent.get('/api/v1/placements');
+      expect(placements.body).toHaveLength(1);
+      expect(placements.body[0]).toMatchObject({ candidateName: 'Lena Brandt', client: 'Aurora' });
+      mandates = await agent.get('/api/v1/mandates');
+      m = mandates.body.find((x) => x.id === mandateId);
+      expect(m.submitted).toBe(1);
+      expect(m.interviews).toBe(1); // placed still counts as reached-interview
     });
 
     it('Pipeline_DeletingMandate_CascadesCandidacies', async () => {

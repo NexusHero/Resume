@@ -148,10 +148,10 @@ function Workspace({ onLogout }) {
   const pipelineMandate = openPipeline && mandates.find((m) => m.id === openPipeline);
   if (pipelineMandate) {
     return (
-      <window.RecruitRail active="mandate" onNav={(n) => { setOpenPipeline(null); setNav(n); }} me={me} talentCount={talents.length} search={search} onSearch={setSearch} title={`${pipelineMandate.role} · Pipeline`} subtitle={pipelineMandate.client} badges={badges} onLogout={onLogout}>
+      <window.RecruitRail active="mandate" onNav={(n) => { setOpenPipeline(null); mandatesRes.reload(); setNav(n); }} me={me} talentCount={talents.length} search={search} onSearch={setSearch} title={`${pipelineMandate.role} · Pipeline`} subtitle={pipelineMandate.client} badges={badges} onLogout={onLogout}>
         <window.MandatePipeline
           mandate={pipelineMandate}
-          onBack={() => setOpenPipeline(null)}
+          onBack={() => { setOpenPipeline(null); mandatesRes.reload(); }}
           onOpenTalent={(id) => { setOpenPipeline(null); goTalent(id); }}
         />
       </window.RecruitRail>

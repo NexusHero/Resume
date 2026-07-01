@@ -1,9 +1,11 @@
 import { CandidacyService } from '../../src/services/candidacy-service';
+import { PlacementService } from '../../src/services/placement-service';
 import { NotFoundError, ConflictError } from '../../src/domain/errors';
 import {
   InMemoryCandidacyRepository,
   InMemoryMandateRepository,
   InMemoryTalentRepository,
+  InMemoryPlacementRepository,
   FixedClock,
   SequenceIdGenerator,
 } from '../support/fakes';
@@ -49,14 +51,21 @@ function ctx() {
   const candidacies = new InMemoryCandidacyRepository();
   const mandates = new InMemoryMandateRepository();
   const talents = new InMemoryTalentRepository();
+  const placements = new InMemoryPlacementRepository();
+  const placementService = new PlacementService({
+    placementRepository: placements,
+    clock: new FixedClock(),
+    idGenerator: new SequenceIdGenerator('placement'),
+  });
   const service = new CandidacyService({
     candidacyRepository: candidacies,
     mandateRepository: mandates,
     talentRepository: talents,
+    placementService,
     clock: new FixedClock(),
     idGenerator: new SequenceIdGenerator('cand'),
   });
-  return { service, candidacies, mandates, talents };
+  return { service, candidacies, mandates, talents, placements };
 }
 
 describe('CandidacyService', () => {
@@ -166,6 +175,87 @@ describe('CandidacyService', () => {
     await expect(c.service.update(OWNER, 'missing', { stage: 'offer' })).rejects.toBeInstanceOf(
       NotFoundError,
     );
+  });
+
+  it('Update_ToPlaced_BooksPlacementFromFacts', async () => {
+    const c = ctx();
+    await c.mandates.add(mandate('m1'));
+    await c.talents.add(talent('t1'));
+    const card = await c.service.add(OWNER, 'm1', { talentId: 't1', stage: 'offer', note: '' });
+    await c.service.update(OWNER, card.id, { stage: 'placed' });
+    const placements = await c.placements.list(OWNER);
+    expect(placements).toHaveLength(1);
+    expect(placements[0]).toMatchObject({
+      candidateName: 'Talent t1',
+      client: 'Acme',
+      status: 'probation',
+    });
+  });
+
+  it('Update_ToPlaced_OrphanedTalent_SkipsBooking', async () => {
+    const c = ctx();
+    await c.mandates.add(mandate('m1'));
+    await c.talents.add(talent('t1'));
+    const card = await c.service.add(OWNER, 'm1', { talentId: 't1', stage: 'offer', note: '' });
+    await c.talents.remove(OWNER, 't1'); // orphan the candidacy before it's placed
+    await c.service.update(OWNER, card.id, { stage: 'placed' });
+    expect(await c.placements.list(OWNER)).toEqual([]);
+  });
+
+  it('Update_PlacedTwice_DoesNotDoubleBook', async () => {
+    const c = ctx();
+    await c.mandates.add(mandate('m1'));
+    await c.talents.add(talent('t1'));
+    const card = await c.service.add(OWNER, 'm1', { talentId: 't1', stage: 'offer', note: '' });
+    await c.service.update(OWNER, card.id, { stage: 'placed' });
+    await c.service.update(OWNER, card.id, { note: 'signed' }); // still placed, no new booking
+    expect(await c.placements.list(OWNER)).toHaveLength(1);
+  });
+
+  it('Update_PlacedAgainAfterMovingOut_BooksOnceMore', async () => {
+    const c = ctx();
+    await c.mandates.add(mandate('m1'));
+    await c.talents.add(talent('t1'));
+    const card = await c.service.add(OWNER, 'm1', { talentId: 't1', stage: 'offer', note: '' });
+    await c.service.update(OWNER, card.id, { stage: 'placed' });
+    await c.service.update(OWNER, card.id, { stage: 'offer' });
+    await c.service.update(OWNER, card.id, { stage: 'placed' });
+    expect(await c.placements.list(OWNER)).toHaveLength(2);
+  });
+
+  it('MandateCounters_TrackBoardStages', async () => {
+    const c = ctx();
+    await c.mandates.add(mandate('m1'));
+    await c.talents.add(talent('t1'));
+    await c.talents.add(talent('t2'));
+    await c.talents.add(talent('t3'));
+    // sourced does not count as submitted; screening does
+    await c.service.add(OWNER, 'm1', { talentId: 't1', stage: 'sourced', note: '' });
+    const cardB = await c.service.add(OWNER, 'm1', {
+      talentId: 't2',
+      stage: 'screening',
+      note: '',
+    });
+    await c.service.add(OWNER, 'm1', { talentId: 't3', stage: 'interview', note: '' });
+    let m = await c.mandates.findById(OWNER, 'm1');
+    expect(m?.submitted).toBe(2); // screening + interview
+    expect(m?.interviews).toBe(1); // interview only
+    // advancing t2 to interview bumps interviews
+    await c.service.update(OWNER, cardB.id, { stage: 'interview' });
+    m = await c.mandates.findById(OWNER, 'm1');
+    expect(m?.interviews).toBe(2);
+  });
+
+  it('MandateCounters_DecrementOnRemove', async () => {
+    const c = ctx();
+    await c.mandates.add(mandate('m1'));
+    await c.talents.add(talent('t1'));
+    const card = await c.service.add(OWNER, 'm1', { talentId: 't1', stage: 'interview', note: '' });
+    expect((await c.mandates.findById(OWNER, 'm1'))?.interviews).toBe(1);
+    await c.service.remove(OWNER, card.id);
+    const m = await c.mandates.findById(OWNER, 'm1');
+    expect(m?.submitted).toBe(0);
+    expect(m?.interviews).toBe(0);
   });
 
   it('Remove_DropsCandidacy', async () => {

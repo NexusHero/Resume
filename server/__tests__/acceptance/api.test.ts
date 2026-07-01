@@ -14,6 +14,7 @@ import { LlmController } from '../../src/http/llm-controller';
 import { MandateController } from '../../src/http/mandate-controller';
 import { TalentController } from '../../src/http/talent-controller';
 import { PlacementController } from '../../src/http/placement-controller';
+import { DocumentController } from '../../src/http/document-controller';
 import { AuthController } from '../../src/http/auth-controller';
 import { AccountController } from '../../src/http/account-controller';
 import { PasswordResetController } from '../../src/http/password-reset-controller';
@@ -21,6 +22,7 @@ import { LlmService } from '../../src/services/llm-service';
 import { MandateService } from '../../src/services/mandate-service';
 import { TalentService } from '../../src/services/talent-service';
 import { PlacementService } from '../../src/services/placement-service';
+import { DocumentService } from '../../src/services/document-service';
 import { AuthService } from '../../src/services/auth-service';
 import { AccountService } from '../../src/services/account-service';
 import { PasswordResetService } from '../../src/services/password-reset-service';
@@ -39,6 +41,7 @@ import {
   InMemoryMandateRepository,
   InMemoryTalentRepository,
   InMemoryPlacementRepository,
+  InMemoryDocumentRepository,
   InMemoryUserRepository,
   InMemoryApiKeyStore,
   InMemoryPasswordResetTokenStore,
@@ -114,6 +117,7 @@ function makeApp(
   const mandateRepository = new InMemoryMandateRepository();
   const talentRepository = new InMemoryTalentRepository();
   const placementRepository = new InMemoryPlacementRepository();
+  const documentRepository = new InMemoryDocumentRepository();
   const userRepository = new InMemoryUserRepository();
   const sessionStore = new MemorySessionStore();
   const passwordResetTokenStore =
@@ -129,8 +133,16 @@ function makeApp(
   const talentController = new TalentController({
     talentService: new TalentService({
       talentRepository,
+      documentRepository,
       clock: new FixedClock(),
       idGenerator: new SequenceIdGenerator('talent'),
+    }),
+  });
+  const documentController = new DocumentController({
+    documentService: new DocumentService({
+      documentRepository,
+      talentRepository,
+      clock: new FixedClock(),
     }),
   });
   const placementController = new PlacementController({
@@ -156,6 +168,7 @@ function makeApp(
       mandateRepository,
       talentRepository,
       placementRepository,
+      documentRepository,
       sessionStore,
       passwordResetTokenStore,
     }),
@@ -182,6 +195,7 @@ function makeApp(
     mandateController,
     talentController,
     placementController,
+    documentController,
     authController,
     accountController,
     passwordResetController,
@@ -422,6 +436,53 @@ describe('REST API /api/v1', () => {
       const res = await agent.delete('/api/v1/talents/nope');
       expect(res.status).toBe(404);
       expect(res.body).toMatchObject({ status: 404 });
+    });
+
+    it('Documents_Unauthenticated_Returns401', async () => {
+      const res = await request(app).get('/api/v1/talents/whatever/documents');
+      expect(res.status).toBe(401);
+    });
+
+    it('Documents_UnknownTalent_Returns404', async () => {
+      const res = await agent.get('/api/v1/talents/missing/documents');
+      expect(res.status).toBe(404);
+      expect(res.body).toMatchObject({ status: 404 });
+    });
+
+    it('Documents_GetBeforeSave_SeedsContactFromTalent', async () => {
+      const created = await agent
+        .post('/api/v1/talents')
+        .send({ name: 'Lena Brandt', email: 'lena@x.de' });
+      const id = created.body.talent.id as string;
+      const res = await agent.get(`/api/v1/talents/${id}/documents`);
+      expect(res.status).toBe(200);
+      expect(res.body.documents.contact).toMatchObject({ name: 'Lena Brandt', email: 'lena@x.de' });
+      expect(res.body.documents.resume.experience).toEqual([]);
+    });
+
+    it('Documents_PutThenGet_RoundTrips', async () => {
+      const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+      const id = created.body.talent.id as string;
+      const put = await agent.put(`/api/v1/talents/${id}/documents`).send({
+        resume: { summary: 'Great designer.' },
+        letter: { betreff: 'Bewerbung als Designerin', absaetze: ['Absatz.'] },
+        style: { accent: '#1F8A5B' },
+      });
+      expect(put.status).toBe(200);
+      expect(put.body.documents.resume.summary).toBe('Great designer.');
+
+      const get = await agent.get(`/api/v1/talents/${id}/documents`);
+      expect(get.body.documents.letter.absaetze).toEqual(['Absatz.']);
+      expect(get.body.documents.style.accent).toBe('#1F8A5B');
+    });
+
+    it('Documents_DeletedTalent_GetReturns404', async () => {
+      const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+      const id = created.body.talent.id as string;
+      await agent.put(`/api/v1/talents/${id}/documents`).send({ resume: { summary: 'x' } });
+      await agent.delete(`/api/v1/talents/${id}`);
+      const res = await agent.get(`/api/v1/talents/${id}/documents`);
+      expect(res.status).toBe(404);
     });
 
     it('Placements_GetEmpty_ReturnsArray', async () => {

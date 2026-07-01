@@ -3,6 +3,7 @@ import { FsApplicationRepository } from '../../src/adapters/fs-application-repos
 import { FsMandateRepository } from '../../src/adapters/fs-mandate-repository';
 import { FsTalentRepository } from '../../src/adapters/fs-talent-repository';
 import { FsPlacementRepository } from '../../src/adapters/fs-placement-repository';
+import { FsDocumentRepository } from '../../src/adapters/fs-document-repository';
 import { FsUserRepository } from '../../src/adapters/fs-user-repository';
 import { FsSessionStore } from '../../src/adapters/fs-session-store';
 import { FsPasswordResetTokenStore } from '../../src/adapters/fs-password-reset-token-store';
@@ -11,6 +12,7 @@ import { SqlSavedSearchRepository } from '../../src/adapters/sql/sql-saved-searc
 import { SqlMandateRepository } from '../../src/adapters/sql/sql-mandate-repository';
 import { SqlTalentRepository } from '../../src/adapters/sql/sql-talent-repository';
 import { SqlPlacementRepository } from '../../src/adapters/sql/sql-placement-repository';
+import { SqlDocumentRepository } from '../../src/adapters/sql/sql-document-repository';
 import { SqlUserRepository } from '../../src/adapters/sql/sql-user-repository';
 import { SqlSessionStore } from '../../src/adapters/sql/sql-session-store';
 import { SqlPasswordResetTokenStore } from '../../src/adapters/sql/sql-password-reset-token-store';
@@ -30,6 +32,7 @@ describe('createPersistence', () => {
     expect(p.mandateRepository).toBeInstanceOf(FsMandateRepository);
     expect(p.talentRepository).toBeInstanceOf(FsTalentRepository);
     expect(p.placementRepository).toBeInstanceOf(FsPlacementRepository);
+    expect(p.documentRepository).toBeInstanceOf(FsDocumentRepository);
     expect(p.userRepository).toBeInstanceOf(FsUserRepository);
     expect(p.sessionStore).toBeInstanceOf(FsSessionStore);
     expect(p.passwordResetTokenStore).toBeInstanceOf(FsPasswordResetTokenStore);
@@ -43,6 +46,7 @@ describe('createPersistence', () => {
     expect(p.mandateRepository).toBeInstanceOf(SqlMandateRepository);
     expect(p.talentRepository).toBeInstanceOf(SqlTalentRepository);
     expect(p.placementRepository).toBeInstanceOf(SqlPlacementRepository);
+    expect(p.documentRepository).toBeInstanceOf(SqlDocumentRepository);
     expect(p.userRepository).toBeInstanceOf(SqlUserRepository);
     expect(p.sessionStore).toBeInstanceOf(SqlSessionStore);
     expect(p.passwordResetTokenStore).toBeInstanceOf(SqlPasswordResetTokenStore);

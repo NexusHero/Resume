@@ -10,6 +10,7 @@ import { FsSavedSearchRepository } from '../../src/adapters/fs-saved-search-repo
 import { FsMandateRepository } from '../../src/adapters/fs-mandate-repository';
 import { FsTalentRepository } from '../../src/adapters/fs-talent-repository';
 import { FsPlacementRepository } from '../../src/adapters/fs-placement-repository';
+import { FsDocumentRepository } from '../../src/adapters/fs-document-repository';
 import { FsUserRepository } from '../../src/adapters/fs-user-repository';
 import { FsSessionStore } from '../../src/adapters/fs-session-store';
 import { FsPasswordResetTokenStore } from '../../src/adapters/fs-password-reset-token-store';
@@ -36,6 +37,7 @@ function tmpConfig(): AppConfig {
     mandatesFile: path.join(storeDir, 'mandates.json'),
     talentsFile: path.join(storeDir, 'talents.json'),
     placementsFile: path.join(storeDir, 'placements.json'),
+    documentsFile: path.join(storeDir, 'documents.json'),
     usersFile: path.join(storeDir, 'users.json'),
     sessionsFile: path.join(storeDir, 'sessions.json'),
     passwordResetTokensFile: path.join(storeDir, 'password-reset-tokens.json'),
@@ -668,5 +670,80 @@ describe('FsPlacementRepository', () => {
     await fs.writeFile(config.placementsFile, 'not json');
     const repo = new FsPlacementRepository({ config });
     expect(await repo.list(OWNER)).toEqual([]);
+  });
+});
+
+describe('FsDocumentRepository', () => {
+  const OWNER = 'owner1';
+  const docs = (talentId: string, ownerId = OWNER, summary = 'A designer.') => ({
+    ownerId,
+    talentId,
+    contact: { name: 'Lena', role: 'Designer', email: '', phone: '', location: '', linkedin: '' },
+    resume: { summary, experience: [], education: [], skillGroups: [] },
+    letter: {
+      firma: '',
+      ansprechpartner: '',
+      strasse: '',
+      plzOrt: '',
+      betreff: '',
+      anrede: '',
+      absaetze: [],
+      gruss: '',
+    },
+    style: {
+      accent: '#2A6FDB',
+      strong: '#1d4ed8',
+      onDark: '#7aa7f5',
+      font: 'var(--font-display)',
+      size: 1,
+    },
+    updatedAt: '2026-06-25T10:00:00.000Z',
+  });
+
+  it('Repository_SaveGet_RoundTrips', async () => {
+    const repo = new FsDocumentRepository({ config: tmpConfig() });
+    await repo.save(docs('t1'));
+    expect(await repo.get(OWNER, 't1')).toMatchObject({ resume: { summary: 'A designer.' } });
+    expect(await repo.get(OWNER, 'missing')).toBeNull();
+  });
+
+  it('Repository_Save_OverwritesByOwnerAndTalent', async () => {
+    const repo = new FsDocumentRepository({ config: tmpConfig() });
+    await repo.save(docs('t1', OWNER, 'first'));
+    await repo.save(docs('t1', OWNER, 'second'));
+    expect((await repo.get(OWNER, 't1'))?.resume.summary).toBe('second');
+  });
+
+  it('Repository_Get_IsOwnerScoped', async () => {
+    const repo = new FsDocumentRepository({ config: tmpConfig() });
+    await repo.save(docs('t1', OWNER));
+    expect(await repo.get('intruder', 't1')).toBeNull();
+  });
+
+  it('Repository_RemoveForTalent_DropsOnlyThatSet', async () => {
+    const repo = new FsDocumentRepository({ config: tmpConfig() });
+    await repo.save(docs('t1'));
+    await repo.save(docs('t2'));
+    await repo.removeForTalent(OWNER, 't1');
+    expect(await repo.get(OWNER, 't1')).toBeNull();
+    expect(await repo.get(OWNER, 't2')).not.toBeNull();
+  });
+
+  it('Repository_RemoveForOwner_DropsAllOwnerSets', async () => {
+    const repo = new FsDocumentRepository({ config: tmpConfig() });
+    await repo.save(docs('t1', OWNER));
+    await repo.save(docs('t2', OWNER));
+    await repo.save(docs('t3', 'other'));
+    await repo.removeForOwner(OWNER);
+    expect(await repo.get(OWNER, 't1')).toBeNull();
+    expect(await repo.get('other', 't3')).not.toBeNull();
+  });
+
+  it('Repository_MalformedFile_GetsNull', async () => {
+    const config = tmpConfig();
+    await fs.mkdir(config.storeDir, { recursive: true });
+    await fs.writeFile(config.documentsFile, 'not json');
+    const repo = new FsDocumentRepository({ config });
+    expect(await repo.get(OWNER, 't1')).toBeNull();
   });
 });

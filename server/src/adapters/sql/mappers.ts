@@ -4,6 +4,7 @@ import type { Mandate, MandatePriority, MandateStatus } from '../../domain/manda
 import type { Talent } from '../../domain/talent';
 import type { Placement, PlacementStatus } from '../../domain/placement';
 import type { User } from '../../domain/user';
+import type { TalentDocuments } from '../../domain/talent-documents';
 import {
   applications,
   auditEvents,
@@ -12,6 +13,7 @@ import {
   talents,
   placements,
   users,
+  talentDocuments,
 } from './schema';
 
 type ApplicationRow = typeof applications.$inferSelect;
@@ -28,6 +30,8 @@ type PlacementRow = typeof placements.$inferSelect;
 type PlacementInsert = typeof placements.$inferInsert;
 type UserRow = typeof users.$inferSelect;
 type UserInsert = typeof users.$inferInsert;
+type TalentDocumentsRow = typeof talentDocuments.$inferSelect;
+type TalentDocumentsInsert = typeof talentDocuments.$inferInsert;
 
 // Postgres stores absent optional values as NULL; the domain uses `undefined`.
 const orUndef = <T>(v: T | null): T | undefined => v ?? undefined;
@@ -227,5 +231,29 @@ export function userToRow(user: User): UserInsert {
     email: user.email,
     passwordHash: user.passwordHash,
     createdAt: user.createdAt,
+  };
+}
+
+export function rowToTalentDocuments(row: TalentDocumentsRow): TalentDocuments {
+  return {
+    ownerId: row.ownerId,
+    talentId: row.talentId,
+    contact: row.contact,
+    resume: row.resume,
+    letter: row.letter,
+    style: row.style,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export function talentDocumentsToRow(documents: TalentDocuments): TalentDocumentsInsert {
+  return {
+    ownerId: documents.ownerId,
+    talentId: documents.talentId,
+    contact: documents.contact,
+    resume: documents.resume,
+    letter: documents.letter,
+    style: documents.style,
+    updatedAt: documents.updatedAt,
   };
 }

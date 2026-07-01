@@ -1,4 +1,10 @@
 import { pgTable, text, serial, integer, jsonb, primaryKey } from 'drizzle-orm/pg-core';
+import type {
+  DocumentContact,
+  ResumeContent,
+  LetterContent,
+  DocumentStyle,
+} from '../../domain/talent-documents';
 
 /** Registered accounts (mirrors domain `User`). */
 export const users = pgTable('users', {
@@ -110,6 +116,21 @@ export const talents = pgTable('talents', {
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 });
+
+/** A talent's document set (resume + cover letter + style). One row per (owner, talent). */
+export const talentDocuments = pgTable(
+  'talent_documents',
+  {
+    ownerId: text('owner_id').notNull(),
+    talentId: text('talent_id').notNull(),
+    contact: jsonb('contact').$type<DocumentContact>().notNull(),
+    resume: jsonb('resume').$type<ResumeContent>().notNull(),
+    letter: jsonb('letter').$type<LetterContent>().notNull(),
+    style: jsonb('style').$type<DocumentStyle>().notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => ({ pk: primaryKey({ columns: [t.ownerId, t.talentId] }) }),
+);
 
 /** Booked placements (mirrors domain `Placement`). Owner-scoped per recruiter. */
 export const placements = pgTable('placements', {

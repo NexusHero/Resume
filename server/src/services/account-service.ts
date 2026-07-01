@@ -6,6 +6,7 @@ import type { UserRepository } from '../ports/user-repository';
 import type { MandateRepository } from '../ports/mandate-repository';
 import type { TalentRepository } from '../ports/talent-repository';
 import type { PlacementRepository } from '../ports/placement-repository';
+import type { DocumentRepository } from '../ports/document-repository';
 import type { SessionStore } from '../ports/session-store';
 import type { PasswordResetTokenStore } from '../ports/password-reset-token-store';
 
@@ -14,6 +15,7 @@ export interface AccountServiceDeps {
   mandateRepository: MandateRepository;
   talentRepository: TalentRepository;
   placementRepository: PlacementRepository;
+  documentRepository: DocumentRepository;
   sessionStore: SessionStore;
   passwordResetTokenStore: PasswordResetTokenStore;
 }
@@ -36,6 +38,7 @@ export class AccountService {
   private readonly mandates: MandateRepository;
   private readonly talents: TalentRepository;
   private readonly placements: PlacementRepository;
+  private readonly documents: DocumentRepository;
   private readonly sessions: SessionStore;
   private readonly resetTokens: PasswordResetTokenStore;
 
@@ -44,6 +47,7 @@ export class AccountService {
     this.mandates = deps.mandateRepository;
     this.talents = deps.talentRepository;
     this.placements = deps.placementRepository;
+    this.documents = deps.documentRepository;
     this.sessions = deps.sessionStore;
     this.resetTokens = deps.passwordResetTokenStore;
   }
@@ -74,6 +78,7 @@ export class AccountService {
     await this.removeAll(this.mandates, ownerId, await this.mandates.list(ownerId));
     await this.removeAll(this.talents, ownerId, await this.talents.list(ownerId));
     await this.removeAll(this.placements, ownerId, await this.placements.list(ownerId));
+    await this.documents.removeForOwner(ownerId);
     await this.sessions.destroyForUser(ownerId);
     await this.resetTokens.destroyForUser(ownerId);
     await this.users.remove(ownerId);

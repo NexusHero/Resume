@@ -95,9 +95,10 @@ export function prepPrompt(
     .filter(Boolean);
   return {
     system:
-      'Du bist Karriere-Coach und bereitest eine:n Bewerber:in auf ein konkretes Vorstellungs' +
-      'gespräch vor. Ziel: die Person bekommt den Job. Nutze NUR die gegebenen Fakten (Profil, ' +
-      'Firmentyp, Anzeige) — erfinde nichts, keine erfundenen Firmen-Details. Gib AUSSCHLIESSLICH ' +
+      'Du bist Karriere-Coach und bereitest eine:n Bewerber:in auf ein konkretes ' +
+      'Vorstellungsgespräch vor. Ziel: die Person bekommt den Job. Nutze NUR die gegebenen ' +
+      'Fakten (Profil, Firmentyp, Anzeige) — erfinde nichts, keine erfundenen Firmen-Details. ' +
+      'Gib AUSSCHLIESSLICH ' +
       'gültiges JSON in genau diesem Schema zurück (keine Markdown-Fences): ' +
       '{"likelyQuestions":[{"category":"","question":"","why":""}],"starAnswers":[{"competency":"",' +
       '"prompt":"","scaffold":""}],"candidateQuestions":[""]}. likelyQuestions = 4–6 erwartbare ' +

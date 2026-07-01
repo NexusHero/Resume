@@ -205,6 +205,70 @@ function TeamCard() {
   );
 }
 
+/* ComplianceCard — DSGVO retention review (admin only): candidates due for
+   review, with a per-row Anonymize action. Never auto-deletes. */
+function ComplianceCard() {
+  const [isAdmin, setIsAdmin] = React.useState(null); // null = unknown
+  const [items, setItems] = React.useState(null); // null = loading
+  const [busy, setBusy] = React.useState('');
+
+  React.useEffect(() => {
+    let alive = true;
+    window.RecruitApi.authMe()
+      .then((me) => { if (alive) setIsAdmin(!!(me && me.roles && me.roles.includes('admin'))); })
+      .catch(() => { if (alive) setIsAdmin(false); });
+    window.RecruitApi.retentionReport()
+      .then((r) => { if (alive) setItems(r); })
+      .catch(() => { if (alive) setItems([]); }); // 403 for non-admins
+    return () => { alive = false; };
+  }, []);
+
+  const anonymize = async (item) => {
+    if (busy) return;
+    // eslint-disable-next-line no-alert
+    if (!window.confirm(`Anonymize ${item.name}? This clears personal data and removes attachments. This cannot be undone.`)) return;
+    setBusy(item.talentId);
+    try {
+      await window.RecruitApi.anonymizeTalent(item.talentId);
+      setItems((xs) => xs.filter((x) => x.talentId !== item.talentId));
+    } catch { /* ignore */ }
+    setBusy('');
+  };
+
+  if (isAdmin === false) return null; // compliance is admin-only
+
+  return (
+    <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '22px 24px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+        <div style={{ flex: 1 }}>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>Data retention (DSGVO)</h2>
+          <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Candidates with no active pipeline for a while. Nothing is deleted automatically — review and anonymize when appropriate.</div>
+        </div>
+        {items && <span style={{ flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '4px 10px' }}>{items.length} due</span>}
+      </div>
+
+      {items === null ? (
+        <div style={{ padding: '28px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Loading…</div>
+      ) : items.length === 0 ? (
+        <div style={{ padding: '22px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Nothing due for review. 🎉</div>
+      ) : (
+        <div style={{ marginTop: '12px' }}>
+          {items.map((it) => (
+            <div key={it.talentId} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto auto', gap: '14px', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-heading)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{it.name}</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>{it.role || '—'}</div>
+              </div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11.5px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{it.inactiveDays}d inactive</div>
+              <button type="button" onClick={() => anonymize(it)} disabled={busy === it.talentId} style={{ cursor: busy ? 'default' : 'pointer', border: '1px solid var(--danger)', borderRadius: 'var(--radius-pill)', background: 'none', color: 'var(--danger)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '4px 12px' }}>{busy === it.talentId ? 'Anonymizing…' : 'Anonymize'}</button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SettingsView() {
   const [settings, setSettings] = React.useState(null); // { current, providers }
   const [keys, setKeys] = React.useState({});
@@ -276,6 +340,7 @@ function SettingsView() {
       </div>
 
       <TeamCard />
+      <ComplianceCard />
       <DataPrivacyCard />
     </div>
   );

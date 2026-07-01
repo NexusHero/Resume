@@ -205,15 +205,62 @@ function Editor({ talent, onClose, onCreateMappe }) {
   /* live CV customization: accent colour, font family, size */
   const [cfg, setCfg] = React.useState({ accent: '#2A6FDB', strong: '#1d4ed8', onDark: '#7aa7f5', font: 'var(--font-display)', size: 1 });
 
+  /* ---- Persistence: load the stored documents on open, then autosave edits.
+     The pinned demo "me" talent has no server row, so it stays local-only. ---- */
+  const talentId = talent.id;
+  const canPersist = !!talentId && talentId !== 'me';
+  const [saveState, setSaveState] = React.useState('idle'); // idle | saving | saved | error
+  const loadedRef = React.useRef(false);
+  const saveTimer = React.useRef(null);
+
+  React.useEffect(() => {
+    let alive = true;
+    loadedRef.current = false;
+    if (!canPersist) { loadedRef.current = true; return; }
+    window.RecruitApi.getTalentDocuments(talentId)
+      .then((d) => {
+        if (!alive || !d) return;
+        if (d.contact) setContact((s) => ({ ...s, ...d.contact }));
+        if (d.resume) setResume(d.resume);
+        if (d.letter) setLetter(d.letter);
+        if (d.style) setCfg(d.style);
+      })
+      .catch(() => {})
+      .finally(() => { if (alive) loadedRef.current = true; });
+    return () => { alive = false; };
+  }, [talentId]);
+
+  React.useEffect(() => {
+    if (!canPersist || !loadedRef.current) return;
+    setSaveState('saving');
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      window.RecruitApi.saveTalentDocuments(talentId, { contact, resume, letter, style: cfg })
+        .then(() => setSaveState('saved'))
+        .catch(() => setSaveState('error'));
+    }, 800);
+    return () => clearTimeout(saveTimer.current);
+  }, [contact, resume, letter, cfg]);
+
+  const saveLabel = { saving: 'Saving…', saved: 'Saved', error: 'Not saved' };
+
   const seg = (id, label) => (
     <button onClick={() => setDoc(id)} style={{ flex: 1, padding: '8px 10px', border: 'none', cursor: 'pointer', borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600, background: doc === id ? 'var(--surface-card)' : 'transparent', color: doc === id ? 'var(--text-heading)' : 'var(--text-soft)', boxShadow: doc === id ? 'var(--shadow-xs)' : 'none' }}>{label}</button>
   );
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '14px' }}>
-      <button onClick={onClose} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', alignSelf: 'flex-start', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)', padding: 0 }}>
-        <ED.Icon name="arrowLeft" size={14} /> Back to profile
-      </button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', alignSelf: 'flex-start' }}>
+        <button onClick={onClose} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)', padding: 0 }}>
+          <ED.Icon name="arrowLeft" size={14} /> Back to profile
+        </button>
+        {canPersist && saveState !== 'idle' && (
+          <span role="status" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: saveState === 'error' ? 'var(--danger)' : 'var(--text-soft)' }}>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: saveState === 'saved' ? 'var(--positive, #1F8A5B)' : saveState === 'error' ? 'var(--danger)' : 'var(--text-muted)' }} />
+            {saveLabel[saveState]}
+          </span>
+        )}
+      </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: '20px', flex: 1, minHeight: 0, minWidth: 0 }}>
         {/* LEFT — form */}

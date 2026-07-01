@@ -7,9 +7,13 @@ import { pitchRequestSchema } from '../domain/candidate-pitch';
 import { outreachRequestSchema } from '../domain/outreach';
 import type { DocumentService } from '../services/document-service';
 import type { DocumentAiService } from '../services/document-ai-service';
-import { currentUserId } from './current-user';
+import { currentScope, currentUserId } from './current-user';
 
-/** A talent's resume + cover-letter documents under /api/v1/talents/:id/documents. */
+/**
+ * A talent's resume + cover-letter documents under /api/v1/talents/:id/documents.
+ * Documents belong to the shared team (`currentScope`); the AI helpers also take
+ * the caller's own `currentUserId` so they use that recruiter's personal LLM key.
+ */
 export class DocumentController {
   private readonly service: DocumentService;
   private readonly ai: DocumentAiService;
@@ -20,19 +24,19 @@ export class DocumentController {
   }
 
   get = async (req: Request, res: Response): Promise<void> => {
-    const documents = await this.service.get(currentUserId(req), req.params.id as string);
+    const documents = await this.service.get(currentScope(req), req.params.id as string);
     res.json({ documents });
   };
 
   save = async (req: Request, res: Response): Promise<void> => {
     const input = saveDocumentsSchema.parse(req.body);
-    const documents = await this.service.save(currentUserId(req), req.params.id as string, input);
+    const documents = await this.service.save(currentScope(req), req.params.id as string, input);
     res.json({ documents });
   };
 
   pdf = async (req: Request, res: Response): Promise<void> => {
     const talentId = req.params.id as string;
-    const buffer = await this.service.renderPdf(currentUserId(req), talentId);
+    const buffer = await this.service.renderPdf(currentScope(req), talentId);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="documents-${talentId}.pdf"`);
     res.send(buffer);
@@ -47,7 +51,7 @@ export class DocumentController {
       .map((s) => s.trim())
       .filter(Boolean);
     const buffer = await this.service.renderDossierPdf(
-      currentUserId(req),
+      currentScope(req),
       talentId,
       {
         company: str(q.company),
@@ -65,29 +69,43 @@ export class DocumentController {
 
   aiSuggest = async (req: Request, res: Response): Promise<void> => {
     const { action, role, company } = aiSuggestSchema.parse(req.body);
-    const suggestion = await this.ai.suggest(currentUserId(req), req.params.id as string, action, {
-      role,
-      company,
-    });
+    const suggestion = await this.ai.suggest(
+      currentScope(req),
+      currentUserId(req),
+      req.params.id as string,
+      action,
+      { role, company },
+    );
     res.json({ suggestion });
   };
 
   parse = async (req: Request, res: Response): Promise<void> => {
     const { text } = parseRequestSchema.parse(req.body);
-    const parsed = await this.ai.parse(currentUserId(req), req.params.id as string, text);
+    const parsed = await this.ai.parse(
+      currentScope(req),
+      currentUserId(req),
+      req.params.id as string,
+      text,
+    );
     res.json({ parsed });
   };
 
   parsePdf = async (req: Request, res: Response): Promise<void> => {
     const { dataBase64 } = parsePdfRequestSchema.parse(req.body);
     const pdf = Buffer.from(dataBase64, 'base64');
-    const parsed = await this.ai.parsePdf(currentUserId(req), req.params.id as string, pdf);
+    const parsed = await this.ai.parsePdf(
+      currentScope(req),
+      currentUserId(req),
+      req.params.id as string,
+      pdf,
+    );
     res.json({ parsed });
   };
 
   ats = async (req: Request, res: Response): Promise<void> => {
     const { jobText } = atsRequestSchema.parse(req.body);
     const result = await this.ai.scoreAgainstJob(
+      currentScope(req),
       currentUserId(req),
       req.params.id as string,
       jobText,
@@ -98,6 +116,7 @@ export class DocumentController {
   pitch = async (req: Request, res: Response): Promise<void> => {
     const { mandateContext } = pitchRequestSchema.parse(req.body);
     const pitch = await this.ai.pitchForMandate(
+      currentScope(req),
       currentUserId(req),
       req.params.id as string,
       mandateContext,
@@ -107,7 +126,12 @@ export class DocumentController {
 
   outreach = async (req: Request, res: Response): Promise<void> => {
     const opts = outreachRequestSchema.parse(req.body);
-    const message = await this.ai.outreach(currentUserId(req), req.params.id as string, opts);
+    const message = await this.ai.outreach(
+      currentScope(req),
+      currentUserId(req),
+      req.params.id as string,
+      opts,
+    );
     res.json({ message });
   };
 }

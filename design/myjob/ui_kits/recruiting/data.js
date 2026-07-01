@@ -250,7 +250,21 @@ const RecruitApi = {
   /* ---- Auth ---- */
   async authMe() {
     const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/auth/me`));
-    return data.user; // null when not signed in
+    return data.user; // null when not signed in; { id, email, roles, createdAt }
+  },
+  async listMembers() {
+    const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/members`));
+    return Array.isArray(data) ? data : []; // [{ id, email, roles, createdAt }]
+  },
+  async setMemberRoles(id, roles) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/members/${id}/roles`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ roles }),
+      }),
+    );
+    return data.member;
   },
   async authProviders() {
     try {

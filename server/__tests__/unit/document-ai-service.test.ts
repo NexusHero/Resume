@@ -74,12 +74,12 @@ describe('DocumentAiService', () => {
     await c.talents.add(talent('t1'));
     await c.keys.set(OWNER, 'claude', 'sk-user');
 
-    const summary = await c.service.suggest(OWNER, 't1', 'summary');
+    const summary = await c.service.suggest(OWNER, OWNER, 't1', 'summary');
     expect(summary.provider).toBe('claude');
     expect(summary.text).toContain('AI PARA ONE');
     expect(c.getUsedKey()).toBe('sk-user');
 
-    const letter = await c.service.suggest(OWNER, 't1', 'letter', { role: 'X' });
+    const letter = await c.service.suggest(OWNER, OWNER, 't1', 'letter', { role: 'X' });
     expect(letter.paragraphs).toEqual(['AI PARA ONE.', 'AI PARA TWO.', 'AI PARA THREE.']);
   });
 
@@ -87,11 +87,11 @@ describe('DocumentAiService', () => {
     const c = ctx(); // provider.available=false and no user key → no provider
     await c.talents.add(talent('t1'));
 
-    const summary = await c.service.suggest(OWNER, 't1', 'summary');
+    const summary = await c.service.suggest(OWNER, OWNER, 't1', 'summary');
     expect(summary.provider).toBe('template');
     expect(summary.text).toContain('Designer'); // deterministic fallback
 
-    const letter = await c.service.suggest(OWNER, 't1', 'letter', { company: 'Helio' });
+    const letter = await c.service.suggest(OWNER, OWNER, 't1', 'letter', { company: 'Helio' });
     expect(letter.provider).toBe('template');
     expect(letter.paragraphs).toHaveLength(3);
     expect(letter.paragraphs?.[0]).toContain('Helio');
@@ -105,13 +105,13 @@ describe('DocumentAiService', () => {
       },
     });
     await c.talents.add(talent('t1'));
-    const res = await c.service.suggest(OWNER, 't1', 'summary');
+    const res = await c.service.suggest(OWNER, OWNER, 't1', 'summary');
     expect(res.provider).toBe('template');
   });
 
   it('Suggest_UnknownTalent_Throws404', async () => {
     const c = ctx();
-    await expect(c.service.suggest(OWNER, 'missing', 'summary')).rejects.toBeInstanceOf(
+    await expect(c.service.suggest(OWNER, OWNER, 'missing', 'summary')).rejects.toBeInstanceOf(
       NotFoundError,
     );
   });
@@ -131,7 +131,7 @@ describe('DocumentAiService.parse', () => {
     const c = ctx({ available: true, generate: async () => '```json\n' + RESUME_JSON + '\n```' });
     await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
-    const parsed = await c.service.parse(OWNER, 't1', 'raw cv text');
+    const parsed = await c.service.parse(OWNER, OWNER, 't1', 'raw cv text');
     expect(parsed.provider).toBe('claude');
     expect(parsed.contact.name).toBe('Max Mustermann');
     expect(parsed.resume.summary).toBe('Senior Engineer.');
@@ -143,7 +143,7 @@ describe('DocumentAiService.parse', () => {
   it('Parse_NoProvider_FallsBackToRawSummary', async () => {
     const c = ctx(); // provider unavailable + no key
     await c.talents.add(talent('t1'));
-    const parsed = await c.service.parse(OWNER, 't1', 'My whole CV as text');
+    const parsed = await c.service.parse(OWNER, OWNER, 't1', 'My whole CV as text');
     expect(parsed.provider).toBe('template');
     expect(parsed.resume.summary).toContain('My whole CV as text');
   });
@@ -152,14 +152,16 @@ describe('DocumentAiService.parse', () => {
     const c = ctx({ available: true, generate: async () => 'not json at all' });
     await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
-    const parsed = await c.service.parse(OWNER, 't1', 'the cv');
+    const parsed = await c.service.parse(OWNER, OWNER, 't1', 'the cv');
     expect(parsed.provider).toBe('template');
     expect(parsed.resume.summary).toContain('the cv');
   });
 
   it('Parse_UnknownTalent_Throws404', async () => {
     const c = ctx();
-    await expect(c.service.parse(OWNER, 'missing', 'x')).rejects.toBeInstanceOf(NotFoundError);
+    await expect(c.service.parse(OWNER, OWNER, 'missing', 'x')).rejects.toBeInstanceOf(
+      NotFoundError,
+    );
   });
 });
 
@@ -177,7 +179,7 @@ describe('DocumentAiService.parsePdf', () => {
     );
     await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
-    const parsed = await c.service.parsePdf(OWNER, 't1', PDF);
+    const parsed = await c.service.parsePdf(OWNER, OWNER, 't1', PDF);
     expect(parsed.provider).toBe('claude');
     expect(parsed.contact.name).toBe('Max Mustermann');
     expect(parsed.extractedChars).toBeGreaterThan(0);
@@ -186,7 +188,7 @@ describe('DocumentAiService.parsePdf', () => {
   it('ParsePdf_NoProvider_KeepsExtractedTextAsSummary', async () => {
     const c = ctx({}, 'Product Designer with 8 years of experience.');
     await c.talents.add(talent('t1'));
-    const parsed = await c.service.parsePdf(OWNER, 't1', PDF);
+    const parsed = await c.service.parsePdf(OWNER, OWNER, 't1', PDF);
     expect(parsed.provider).toBe('template');
     expect(parsed.resume.summary).toContain('Product Designer');
     expect(parsed.extractedChars).toBeGreaterThan(0);
@@ -196,7 +198,7 @@ describe('DocumentAiService.parsePdf', () => {
     const c = ctx({ available: true, generate: async () => 'unused' }, '   ');
     await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
-    const parsed = await c.service.parsePdf(OWNER, 't1', PDF);
+    const parsed = await c.service.parsePdf(OWNER, OWNER, 't1', PDF);
     expect(parsed.provider).toBe('template');
     expect(parsed.extractedChars).toBe(0);
     expect(parsed.resume.summary).toBe('');
@@ -205,14 +207,16 @@ describe('DocumentAiService.parsePdf', () => {
   it('ParsePdf_ExtractorThrows_ReturnsEmpty', async () => {
     const c = ctx({}, new Error('corrupt pdf'));
     await c.talents.add(talent('t1'));
-    const parsed = await c.service.parsePdf(OWNER, 't1', PDF);
+    const parsed = await c.service.parsePdf(OWNER, OWNER, 't1', PDF);
     expect(parsed.provider).toBe('template');
     expect(parsed.extractedChars).toBe(0);
   });
 
   it('ParsePdf_UnknownTalent_Throws404', async () => {
     const c = ctx();
-    await expect(c.service.parsePdf(OWNER, 'missing', PDF)).rejects.toBeInstanceOf(NotFoundError);
+    await expect(c.service.parsePdf(OWNER, OWNER, 'missing', PDF)).rejects.toBeInstanceOf(
+      NotFoundError,
+    );
   });
 });
 
@@ -228,7 +232,7 @@ describe('DocumentAiService.scoreAgainstJob', () => {
     const c = ctx({ available: true, generate: async () => ATS_JSON });
     await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
-    const res = await c.service.scoreAgainstJob(OWNER, 't1', 'C++ role, Kubernetes a plus');
+    const res = await c.service.scoreAgainstJob(OWNER, OWNER, 't1', 'C++ role, Kubernetes a plus');
     expect(res.provider).toBe('claude');
     expect(res.score).toBe(82);
     expect(res.missing).toEqual(['Kubernetes']);
@@ -242,14 +246,14 @@ describe('DocumentAiService.scoreAgainstJob', () => {
     });
     await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
-    const res = await c.service.scoreAgainstJob(OWNER, 't1', 'job');
+    const res = await c.service.scoreAgainstJob(OWNER, OWNER, 't1', 'job');
     expect(res.score).toBe(100);
   });
 
   it('Score_NoProvider_FallsBackToKeywordOverlap', async () => {
     const c = ctx();
     await c.talents.add(talent('t1'));
-    const res = await c.service.scoreAgainstJob(OWNER, 't1', 'any job text');
+    const res = await c.service.scoreAgainstJob(OWNER, OWNER, 't1', 'any job text');
     expect(res.provider).toBe('template');
     expect(typeof res.score).toBe('number');
     expect(Array.isArray(res.suggestions)).toBe(true);
@@ -257,7 +261,7 @@ describe('DocumentAiService.scoreAgainstJob', () => {
 
   it('Score_UnknownTalent_Throws404', async () => {
     const c = ctx();
-    await expect(c.service.scoreAgainstJob(OWNER, 'missing', 'job')).rejects.toBeInstanceOf(
+    await expect(c.service.scoreAgainstJob(OWNER, OWNER, 'missing', 'job')).rejects.toBeInstanceOf(
       NotFoundError,
     );
   });
@@ -274,7 +278,7 @@ describe('DocumentAiService.pitchForMandate', () => {
     const c = ctx({ available: true, generate: async () => '```json\n' + PITCH_JSON + '\n```' });
     await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
-    const res = await c.service.pitchForMandate(OWNER, 't1', 'UX Lead gesucht');
+    const res = await c.service.pitchForMandate(OWNER, OWNER, 't1', 'UX Lead gesucht');
     expect(res.provider).toBe('claude');
     expect(res.headline).toContain('Designerin');
     expect(res.paragraphs).toHaveLength(2);
@@ -288,7 +292,7 @@ describe('DocumentAiService.pitchForMandate', () => {
     });
     await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
-    const res = await c.service.pitchForMandate(OWNER, 't1', '');
+    const res = await c.service.pitchForMandate(OWNER, OWNER, 't1', '');
     expect(res.provider).toBe('template');
     expect(res.headline).toContain('Designer');
   });
@@ -296,7 +300,7 @@ describe('DocumentAiService.pitchForMandate', () => {
   it('Pitch_NoProvider_FallsBackToFacts', async () => {
     const c = ctx();
     await c.talents.add(talent('t1'));
-    const res = await c.service.pitchForMandate(OWNER, 't1', 'any mandate');
+    const res = await c.service.pitchForMandate(OWNER, OWNER, 't1', 'any mandate');
     expect(res.provider).toBe('template');
     expect(res.paragraphs.length).toBeGreaterThan(0);
   });
@@ -310,7 +314,7 @@ describe('DocumentAiService.pitchForMandate', () => {
     });
     await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
-    const res = await c.service.pitchForMandate(OWNER, 't1', '');
+    const res = await c.service.pitchForMandate(OWNER, OWNER, 't1', '');
     expect(res.provider).toBe('template');
   });
 
@@ -318,7 +322,7 @@ describe('DocumentAiService.pitchForMandate', () => {
     const c = ctx({ available: true, generate: async () => 'not json' });
     await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
-    const res = await c.service.pitchForMandate(OWNER, 't1', '');
+    const res = await c.service.pitchForMandate(OWNER, OWNER, 't1', '');
     expect(res.provider).toBe('template');
   });
 
@@ -330,14 +334,14 @@ describe('DocumentAiService.pitchForMandate', () => {
     });
     await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
-    const res = await c.service.pitchForMandate(OWNER, 't1', '');
+    const res = await c.service.pitchForMandate(OWNER, OWNER, 't1', '');
     expect(res.provider).toBe('claude');
     expect(res.paragraphs).toEqual(['Ein starker Absatz.']);
   });
 
   it('Pitch_UnknownTalent_Throws404', async () => {
     const c = ctx();
-    await expect(c.service.pitchForMandate(OWNER, 'missing', '')).rejects.toBeInstanceOf(
+    await expect(c.service.pitchForMandate(OWNER, OWNER, 'missing', '')).rejects.toBeInstanceOf(
       NotFoundError,
     );
   });
@@ -358,7 +362,7 @@ describe('DocumentAiService.outreach', () => {
     const c = ctx({ available: true, generate: async () => '```json\n' + json + '\n```' });
     await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
-    const res = await c.service.outreach(OWNER, 't1', opts());
+    const res = await c.service.outreach(OWNER, OWNER, 't1', opts());
     expect(res.provider).toBe('claude');
     expect(res.subject).toBe('Spannende Rolle');
     expect(res.body).toContain('Hallo Lena');
@@ -369,7 +373,7 @@ describe('DocumentAiService.outreach', () => {
     const c = ctx({ available: true, generate: async () => json });
     await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
-    const res = await c.service.outreach(OWNER, 't1', opts({ channel: 'linkedin' }));
+    const res = await c.service.outreach(OWNER, OWNER, 't1', opts({ channel: 'linkedin' }));
     expect(res.provider).toBe('claude');
     expect(res.subject).toBe('');
     expect(res.body).toBe('Kurze DM');
@@ -382,7 +386,7 @@ describe('DocumentAiService.outreach', () => {
     });
     await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
-    const res = await c.service.outreach(OWNER, 't1', opts());
+    const res = await c.service.outreach(OWNER, OWNER, 't1', opts());
     expect(res.provider).toBe('template');
     expect(res.body.length).toBeGreaterThan(0);
   });
@@ -396,7 +400,7 @@ describe('DocumentAiService.outreach', () => {
     });
     await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
-    const res = await c.service.outreach(OWNER, 't1', opts({ audience: 'client' }));
+    const res = await c.service.outreach(OWNER, OWNER, 't1', opts({ audience: 'client' }));
     expect(res.provider).toBe('template');
     expect(res.body).toContain('Lena');
   });
@@ -404,13 +408,13 @@ describe('DocumentAiService.outreach', () => {
   it('Outreach_NoProvider_FallsBack', async () => {
     const c = ctx();
     await c.talents.add(talent('t1'));
-    const res = await c.service.outreach(OWNER, 't1', opts());
+    const res = await c.service.outreach(OWNER, OWNER, 't1', opts());
     expect(res.provider).toBe('template');
   });
 
   it('Outreach_UnknownTalent_Throws404', async () => {
     const c = ctx();
-    await expect(c.service.outreach(OWNER, 'missing', opts())).rejects.toBeInstanceOf(
+    await expect(c.service.outreach(OWNER, OWNER, 'missing', opts())).rejects.toBeInstanceOf(
       NotFoundError,
     );
   });

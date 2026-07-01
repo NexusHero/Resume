@@ -122,6 +122,89 @@ function DataPrivacyCard() {
   );
 }
 
+const TEAM_ROLES = ['admin', 'recruiter'];
+
+function RoleBadge({ role }) {
+  const admin = role === 'admin';
+  return (
+    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: admin ? 'var(--accent-strong)' : 'var(--text-soft)', background: admin ? 'var(--accent-soft)' : 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '1px 8px', marginRight: '5px' }}>{role}</span>
+  );
+}
+
+/* TeamCard — who's on the team and (for admins) which roles they hold. */
+function TeamCard() {
+  const [me, setMe] = React.useState(null);
+  const [members, setMembers] = React.useState(null); // null = loading, [] = none/forbidden
+  const [note, setNote] = React.useState('');
+
+  const load = React.useCallback(() => {
+    window.RecruitApi.authMe().then(setMe).catch(() => {});
+    // Non-admins get 403 → treat as no manageable list.
+    window.RecruitApi.listMembers().then(setMembers).catch(() => setMembers([]));
+  }, []);
+  React.useEffect(() => load(), [load]);
+
+  const isAdmin = !!(me && me.roles && me.roles.includes('admin'));
+
+  const toggleRole = async (member, role) => {
+    if (!isAdmin) return;
+    const has = member.roles.includes(role);
+    const next = has ? member.roles.filter((r) => r !== role) : [...member.roles, role];
+    if (next.length === 0) return; // a member keeps at least one role
+    setNote('');
+    try {
+      const updated = await window.RecruitApi.setMemberRoles(member.id, next);
+      setMembers((ms) => ms.map((m) => (m.id === member.id ? updated : m)));
+    } catch {
+      setNote('Could not update roles — the team must keep at least one admin.');
+      load();
+    }
+  };
+
+  return (
+    <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '22px 24px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+        <div style={{ flex: 1 }}>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>Team & roles</h2>
+          <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Everyone on this instance shares one workspace. {isAdmin ? 'As an admin you can change roles.' : 'Only admins can change roles.'}</div>
+        </div>
+        {me && <span style={{ flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>You: {me.roles.join(', ')}</span>}
+      </div>
+
+      {isAdmin && members && members.length > 0 ? (
+        <div style={{ marginTop: '14px' }}>
+          {members.map((m) => (
+            <div key={m.id} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', gap: '14px', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-heading)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.email}{me && m.id === me.id && <span style={{ color: 'var(--text-soft)', fontWeight: 400 }}> (you)</span>}</div>
+              </div>
+              <div style={{ display: 'flex', gap: '14px', justifyContent: 'flex-end' }}>
+                {TEAM_ROLES.map((role) => (
+                  <label key={role} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', color: m.roles.includes(role) ? 'var(--text-heading)' : 'var(--text-soft)', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={m.roles.includes(role)} onChange={() => toggleRole(m, role)} /> {role}
+                  </label>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {me && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
+              <span style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-heading)' }}>{me.email}</span>
+              <span style={{ marginLeft: 'auto' }}>{me.roles.map((r) => <RoleBadge key={r} role={r} />)}</span>
+            </div>
+          )}
+          {!isAdmin && <div style={{ fontSize: '12.5px', color: 'var(--text-soft)' }}>Contact an admin to change team roles.</div>}
+        </div>
+      )}
+
+      {note && <div role="alert" style={{ fontSize: '12.5px', color: 'var(--danger)', marginTop: '10px' }}>{note}</div>}
+    </div>
+  );
+}
+
 function SettingsView() {
   const [settings, setSettings] = React.useState(null); // { current, providers }
   const [keys, setKeys] = React.useState({});
@@ -192,6 +275,7 @@ function SettingsView() {
         </div>
       </div>
 
+      <TeamCard />
       <DataPrivacyCard />
     </div>
   );

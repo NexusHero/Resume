@@ -114,6 +114,9 @@ function makeApp(
     defaultProvider: config.llm.provider,
     logger: noopLogger,
   });
+  // Shared so per-user LLM keys set via /settings are seen by the AI helpers and
+  // erased with the account.
+  const apiKeyStore = new InMemoryApiKeyStore();
   const llmController = new LlmController({
     llmService,
     coverLetterService: new CoverLetterService({
@@ -121,7 +124,7 @@ function makeApp(
       candidate: config.candidate,
       logger: noopLogger,
     }),
-    apiKeyStore: new InMemoryApiKeyStore(),
+    apiKeyStore,
   });
   // Shared repositories so the account (DSGVO) endpoints observe the same data
   // the recruiting endpoints write, and erasure affects the same auth state.
@@ -192,7 +195,7 @@ function makeApp(
     documentAiService: new DocumentAiService({
       documentService,
       llmService,
-      apiKeyStore: new InMemoryApiKeyStore(),
+      apiKeyStore,
       pdfTextExtractor: new FakePdfTextExtractor('Extracted CV text from PDF.'),
       logger: noopLogger,
     }),
@@ -214,9 +217,7 @@ function makeApp(
       mandateRepository,
       talentRepository,
       placementRepository,
-      documentRepository,
-      attachmentStore,
-      candidacyRepository,
+      apiKeyStore,
       sessionStore,
       passwordResetTokenStore,
     }),
@@ -417,25 +418,24 @@ describe('REST API /api/v1', () => {
       expect(res.body).toMatchObject({ status: 404 });
     });
 
-    it('Mandates_AnotherOwner_CannotSeeOrMutate', async () => {
+    it('Mandates_SharedAcrossTeam_VisibleAndMutableByOtherMembers', async () => {
       const created = await agent
         .post('/api/v1/mandates')
         .send({ client: 'Aurora', role: 'C++ Engineer', location: 'Berlin' });
       const id = created.body.mandate.id;
 
-      const intruder = request.agent(app);
-      await intruder
+      const teammate = request.agent(app);
+      await teammate
         .post('/api/v1/auth/register')
-        .send({ email: 'intruder@example.com', password: 'another good passphrase' });
+        .send({ email: 'teammate@example.com', password: 'another good passphrase' });
 
-      // The intruder sees an empty list and cannot reach the other owner's row.
-      expect((await intruder.get('/api/v1/mandates')).body).toEqual([]);
+      // The whole instance is one team, so the teammate sees and can work the
+      // same shared mandate.
+      expect((await teammate.get('/api/v1/mandates')).body).toHaveLength(1);
       expect(
-        (await intruder.patch(`/api/v1/mandates/${id}`).send({ status: 'paused' })).status,
-      ).toBe(404);
-      expect((await intruder.delete(`/api/v1/mandates/${id}`)).status).toBe(404);
-      // The owner's row is untouched.
-      expect((await agent.get('/api/v1/mandates')).body).toHaveLength(1);
+        (await teammate.patch(`/api/v1/mandates/${id}`).send({ status: 'paused' })).status,
+      ).toBe(200);
+      expect((await agent.get('/api/v1/mandates')).body[0].status).toBe('paused');
     });
 
     it('Talents_GetEmpty_ReturnsArray', async () => {
@@ -1050,7 +1050,7 @@ describe('REST API /api/v1', () => {
       expect(typeof res.body.exportedAt).toBe('string');
     });
 
-    it('AccountDelete_ErasesDataAndEndsSession', async () => {
+    it('AccountDelete_EndsSession_ButLeavesTeamData', async () => {
       await agent
         .post('/api/v1/mandates')
         .send({ client: 'Aurora', role: 'C++', location: 'Berlin' });
@@ -1058,12 +1058,12 @@ describe('REST API /api/v1', () => {
       expect(del.status).toBe(204);
       // the session is gone — /auth/me now reports no user
       expect((await agent.get('/api/v1/auth/me')).body).toEqual({ user: null });
-      // and a fresh recruiter with the same email starts with no inherited data
-      const reborn = request.agent(app);
-      await reborn
+      // the team's shared data survives one member leaving: a new member sees it
+      const teammate = request.agent(app);
+      await teammate
         .post('/api/v1/auth/register')
-        .send({ email: 'recruiter@example.com', password: 'correct horse battery' });
-      expect((await reborn.get('/api/v1/mandates')).body).toEqual([]);
+        .send({ email: 'teammate@example.com', password: 'correct horse battery' });
+      expect((await teammate.get('/api/v1/mandates')).body).toHaveLength(1);
     });
   });
 

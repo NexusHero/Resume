@@ -153,6 +153,29 @@ function FormGroup({ title, children, onAdd }) {
   );
 }
 
+/**
+ * Grounding self-check banner. The server flags factual claims in an AI draft
+ * that the candidate's CV + the mandate do not support (a fabricated skill, an
+ * inflated "12 Jahre Erfahrung"). We surface those so the recruiter verifies
+ * before sending — trust over speed.
+ */
+function GroundingWarning({ grounding }) {
+  if (!grounding || grounding.grounded || !grounding.unsupported?.length) return null;
+  const label = (u) => (u.kind === 'number' ? `Zahl „${u.text}“` : `Skill „${u.text}“`);
+  const n = grounding.unsupported.length;
+  return (
+    <div style={{ marginTop: '14px', border: '1px solid var(--warning-border, #e6b800)', background: 'var(--warning-soft, rgba(230,184,0,0.10))', borderRadius: 'var(--radius-md)', padding: '11px 13px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '7px', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 600, color: 'var(--warning-strong, #8a6d00)', marginBottom: '6px' }}>
+        <ED.Icon name="alert" size={12} />{n} {n === 1 ? 'nicht belegte Angabe' : 'nicht belegte Angaben'}
+      </div>
+      <div style={{ fontSize: '12.5px', lineHeight: 1.5, color: 'var(--text-body)' }}>
+        Diese Angaben stehen so nicht im Lebenslauf / Mandat — bitte vor dem Versand prüfen:{' '}
+        {grounding.unsupported.map((u) => label(u)).join(', ')}.
+      </div>
+    </div>
+  );
+}
+
 function Editor({ talent, onClose, onCreateMappe }) {
   const [doc, setDoc] = React.useState('lebenslauf');
   const previewRef = React.useRef(null);
@@ -538,6 +561,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
                     {pitch.highlights.map((h, i) => <li key={i} style={{ margin: '3px 0' }}>{h}</li>)}
                   </ul>
                 )}
+                <GroundingWarning grounding={pitch.grounding} />
               </div>
             )}
           </div>
@@ -589,6 +613,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
                     <div style={{ fontSize: '13px', color: 'var(--text-heading)', marginBottom: '8px' }}><strong>Betreff:</strong> {outMsg.subject}</div>
                   )}
                   <div style={{ whiteSpace: 'pre-wrap', fontSize: '13px', lineHeight: 1.55, color: 'var(--text-body)' }}>{outMsg.body}</div>
+                  <GroundingWarning grounding={outMsg.grounding} />
                 </div>
               )}
             </div>

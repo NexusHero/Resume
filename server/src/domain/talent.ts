@@ -15,6 +15,30 @@ export interface Talent {
   skills: string[];
   createdAt: string; // ISO 8601
   updatedAt: string; // ISO 8601
+  /** When the candidate's personal data was anonymized (DSGVO), if ever. */
+  anonymizedAt?: string; // ISO 8601
+}
+
+/** The label a talent's identifying fields are replaced with once anonymized. */
+export const ANONYMIZED_NAME = 'Anonymisiert';
+
+/**
+ * Strip a talent's personal data (DSGVO): clear identifying fields, keep the
+ * non-identifying role and skills for aggregate stats, and stamp anonymizedAt.
+ */
+export function anonymizeTalent(talent: Talent, at: string): Talent {
+  return {
+    ...talent,
+    name: ANONYMIZED_NAME,
+    headline: '',
+    location: '',
+    email: '',
+    phone: '',
+    availability: '',
+    salary: '',
+    anonymizedAt: at,
+    updatedAt: at,
+  };
 }
 
 /** POST /api/v1/talents — add a candidate to the pool. */

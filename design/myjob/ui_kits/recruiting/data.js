@@ -266,6 +266,17 @@ const RecruitApi = {
     );
     return data.member;
   },
+  async retentionReport(days) {
+    const q = Number.isFinite(days) ? `?days=${days}` : '';
+    const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/retention/report${q}`));
+    return Array.isArray(data) ? data : []; // [{ talentId, name, role, lastActivity, inactiveDays }]
+  },
+  async anonymizeTalent(talentId) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/anonymize`, { method: 'POST' }),
+    );
+    return data.talent;
+  },
   async authProviders() {
     try {
       return await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/auth/providers`));

@@ -99,9 +99,11 @@ export async function migrate(pool: Pool): Promise<void> {
       salary text NOT NULL,
       skills jsonb NOT NULL,
       created_at text NOT NULL,
-      updated_at text NOT NULL
+      updated_at text NOT NULL,
+      anonymized_at text
     );
     CREATE INDEX IF NOT EXISTS talents_owner_id_idx ON talents (owner_id);
+    ALTER TABLE talents ADD COLUMN IF NOT EXISTS anonymized_at text;
     CREATE TABLE IF NOT EXISTS placements (
       id text PRIMARY KEY,
       owner_id text NOT NULL,

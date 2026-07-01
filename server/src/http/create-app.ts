@@ -11,6 +11,7 @@ import type { MandateController } from './mandate-controller';
 import type { TalentController } from './talent-controller';
 import type { PlacementController } from './placement-controller';
 import type { CandidacyController } from './candidacy-controller';
+import type { RetentionController } from './retention-controller';
 import type { DocumentController } from './document-controller';
 import type { AttachmentController } from './attachment-controller';
 import type { AuthController } from './auth-controller';
@@ -31,6 +32,7 @@ export interface AppDeps {
   talentController: TalentController;
   placementController: PlacementController;
   candidacyController: CandidacyController;
+  retentionController: RetentionController;
   documentController: DocumentController;
   attachmentController: AttachmentController;
   authController: AuthController;
@@ -53,6 +55,7 @@ export function createApp(deps: AppDeps): Express {
     talentController: t,
     placementController: p,
     candidacyController: cand,
+    retentionController: retention,
     documentController: docs,
     attachmentController: att,
     authController: auth,
@@ -114,6 +117,9 @@ export function createApp(deps: AppDeps): Express {
   api.get('/talents/:id/candidacies', requireAuth, asyncHandler(cand.forTalent));
   api.patch('/candidacies/:id', requireAuth, asyncHandler(cand.update));
   api.delete('/candidacies/:id', requireAuth, asyncHandler(cand.remove));
+  // DSGVO retention (admin-only, enforced in the controller via Authorizer).
+  api.get('/retention/report', requireAuth, asyncHandler(retention.report));
+  api.post('/talents/:id/anonymize', requireAuth, asyncHandler(retention.anonymize));
   // A talent's resume + cover-letter documents (owner-scoped).
   api.get('/talents/:id/documents', requireAuth, asyncHandler(docs.get));
   api.put('/talents/:id/documents', requireAuth, asyncHandler(docs.save));

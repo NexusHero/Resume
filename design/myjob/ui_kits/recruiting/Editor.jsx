@@ -245,21 +245,52 @@ function Editor({ talent, onClose, onCreateMappe }) {
 
   const saveLabel = { saving: 'Saving…', saved: 'Saved', error: 'Not saved' };
 
-  /* ---- Import: paste a CV, let the AI parse it into structured fields ---- */
+  /* ---- Import: paste a CV or upload a PDF, let the AI parse it into fields ---- */
   const [importing, setImporting] = React.useState(false);
   const [importText, setImportText] = React.useState('');
   const [parsing, setParsing] = React.useState(false);
+  const [importHint, setImportHint] = React.useState('');
+  const pdfInputRef = React.useRef(null);
+  const applyParsed = (parsed) => {
+    if (parsed.contact) setContact((s) => ({ ...s, ...parsed.contact }));
+    if (parsed.resume) setResume(parsed.resume);
+  };
   const runImport = async () => {
     if (!importText.trim() || !canPersist) return;
     setParsing(true);
+    setImportHint('');
     try {
-      const parsed = await window.RecruitApi.parseDocument(talentId, importText);
-      if (parsed.contact) setContact((s) => ({ ...s, ...parsed.contact }));
-      if (parsed.resume) setResume(parsed.resume);
+      applyParsed(await window.RecruitApi.parseDocument(talentId, importText));
       setImporting(false);
       setImportText('');
     } catch {
       /* ignore parse error */
+    }
+    setParsing(false);
+  };
+  const runImportPdf = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file || !canPersist) return;
+    setParsing(true);
+    setImportHint('');
+    try {
+      const dataBase64 = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(String(r.result).split(',')[1] || '');
+        r.onerror = rej;
+        r.readAsDataURL(file);
+      });
+      const parsed = await window.RecruitApi.parseDocumentPdf(talentId, dataBase64);
+      if (parsed.extractedChars === 0) {
+        // scanned/image-only PDF — no text layer to read
+        setImportHint('No text found in this PDF (scanned image?). Paste the text instead.');
+      } else {
+        applyParsed(parsed);
+        setImporting(false);
+      }
+    } catch {
+      setImportHint('Could not read that PDF. Try pasting the text instead.');
     }
     setParsing(false);
   };
@@ -365,8 +396,16 @@ function Editor({ talent, onClose, onCreateMappe }) {
           <div onClick={() => setImporting(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(8,11,18,0.45)', backdropFilter: 'blur(2px)', zIndex: 60 }} />
           <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 61, width: 'min(680px, 92vw)', background: 'var(--surface-card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-lg)', padding: '22px' }}>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)', marginBottom: '4px' }}>Import a CV</div>
-            <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginBottom: '12px' }}>Paste the résumé text — the AI extracts profile, experience and skills into the editor.</div>
-            <textarea value={importText} onChange={(e) => setImportText(e.target.value)} rows={10} placeholder="Paste CV text here…" style={{ width: '100%', resize: 'vertical', padding: '11px 13px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', color: 'var(--text-heading)', fontFamily: 'var(--font-body)', fontSize: '13px', outline: 'none' }} />
+            <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginBottom: '12px' }}>Upload a PDF or paste the résumé text — the AI extracts profile, experience and skills into the editor.</div>
+            <input ref={pdfInputRef} type="file" accept="application/pdf,.pdf" onChange={runImportPdf} style={{ display: 'none' }} />
+            <div style={{ marginBottom: '12px' }}>
+              <button onClick={() => pdfInputRef.current && pdfInputRef.current.click()} disabled={parsing} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'none', border: '1px dashed var(--border-strong)', borderRadius: 'var(--radius-md)', cursor: parsing ? 'default' : 'pointer', fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-soft)', padding: '10px 16px', width: '100%', justifyContent: 'center' }}>
+                <ED.Icon name="upload" size={14} /> {parsing ? 'Reading…' : 'Upload a PDF'}
+              </button>
+            </div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'center', margin: '0 0 10px' }}>or paste text</div>
+            <textarea value={importText} onChange={(e) => setImportText(e.target.value)} rows={9} placeholder="Paste CV text here…" style={{ width: '100%', resize: 'vertical', padding: '11px 13px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', color: 'var(--text-heading)', fontFamily: 'var(--font-body)', fontSize: '13px', outline: 'none' }} />
+            {importHint && <div style={{ marginTop: '10px', fontSize: '12px', color: 'var(--danger)' }}>{importHint}</div>}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '14px' }}>
               <ED.Button variant="ghost" onClick={() => setImporting(false)}>Cancel</ED.Button>
               <ED.Button variant="primary" disabled={parsing || !importText.trim()} onClick={runImport}>{parsing ? 'Parsing…' : 'Parse & fill'}</ED.Button>

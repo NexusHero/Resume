@@ -108,6 +108,7 @@ export function createApp(deps: AppDeps): Express {
   api.get('/talents/:id/documents/pdf', requireAuth, asyncHandler(docs.pdf));
   api.post('/talents/:id/documents/ai', requireAuth, asyncHandler(docs.aiSuggest));
   api.post('/talents/:id/documents/parse', requireAuth, asyncHandler(docs.parse));
+  api.post('/talents/:id/documents/parse-pdf', requireAuth, asyncHandler(docs.parsePdf));
   api.post('/talents/:id/documents/ats', requireAuth, asyncHandler(docs.ats));
   api.post('/talents/:id/documents/pitch', requireAuth, asyncHandler(docs.pitch));
   api.get('/talents/:id/dossier/pdf', requireAuth, asyncHandler(docs.dossier));

@@ -7,6 +7,15 @@ export const parseRequestSchema = z.object({
 export type ParseRequestInput = z.infer<typeof parseRequestSchema>;
 
 /**
+ * POST /api/v1/talents/:id/documents/parse-pdf — a CV uploaded as a base64 PDF
+ * (JSON-only API, same cap as attachments: ~15 MB raw → ~20 MB base64).
+ */
+export const parsePdfRequestSchema = z.object({
+  dataBase64: z.string().min(1, 'file is required').max(21_000_000),
+});
+export type ParsePdfRequestInput = z.infer<typeof parsePdfRequestSchema>;
+
+/**
  * Prompt + helpers for turning a pasted CV (plain text) into our structured
  * resume model. The LLM is asked to return strict JSON; the service validates
  * it against the documents schema, so a malformed reply falls back safely.

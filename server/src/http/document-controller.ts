@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import { saveDocumentsSchema } from '../domain/talent-documents';
 import { aiSuggestSchema } from '../domain/document-ai';
-import { parseRequestSchema } from '../domain/document-parse';
+import { parseRequestSchema, parsePdfRequestSchema } from '../domain/document-parse';
 import { atsRequestSchema } from '../domain/ats-ai';
 import { pitchRequestSchema } from '../domain/candidate-pitch';
 import type { DocumentService } from '../services/document-service';
@@ -74,6 +74,13 @@ export class DocumentController {
   parse = async (req: Request, res: Response): Promise<void> => {
     const { text } = parseRequestSchema.parse(req.body);
     const parsed = await this.ai.parse(currentUserId(req), req.params.id as string, text);
+    res.json({ parsed });
+  };
+
+  parsePdf = async (req: Request, res: Response): Promise<void> => {
+    const { dataBase64 } = parsePdfRequestSchema.parse(req.body);
+    const pdf = Buffer.from(dataBase64, 'base64');
+    const parsed = await this.ai.parsePdf(currentUserId(req), req.params.id as string, pdf);
     res.json({ parsed });
   };
 

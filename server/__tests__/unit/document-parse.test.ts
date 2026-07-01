@@ -1,6 +1,17 @@
-import { parsePrompt, extractJson, fallbackParsed } from '../../src/domain/document-parse';
+import {
+  parsePrompt,
+  extractJson,
+  fallbackParsed,
+  parsePdfRequestSchema,
+} from '../../src/domain/document-parse';
 
 describe('document-parse', () => {
+  it('ParsePdfRequest_RequiresNonEmptyData', () => {
+    expect(parsePdfRequestSchema.safeParse({ dataBase64: 'AAAA' }).success).toBe(true);
+    expect(parsePdfRequestSchema.safeParse({ dataBase64: '' }).success).toBe(false);
+    expect(parsePdfRequestSchema.safeParse({}).success).toBe(false);
+  });
+
   it('ParsePrompt_AsksForStrictJsonWithSchema', () => {
     const { system, prompt } = parsePrompt('Max Mustermann, C++ Engineer');
     expect(system).toContain('JSON');

@@ -4,6 +4,7 @@ import type { AuditLog } from '../../src/ports/audit-log';
 import type { PdfArchive } from '../../src/ports/pdf-archive';
 import type { CoverLetterOptions, PdfRenderer } from '../../src/ports/pdf-renderer';
 import type { PdfMerger } from '../../src/ports/pdf-merger';
+import type { PdfTextExtractor } from '../../src/ports/pdf-text-extractor';
 import type { Versioner } from '../../src/ports/versioner';
 import type { Clock } from '../../src/ports/clock';
 import type { IdGenerator } from '../../src/ports/id-generator';
@@ -84,6 +85,17 @@ export class FakePdfRenderer implements PdfRenderer {
 export class FakePdfMerger implements PdfMerger {
   async merge(parts: Buffer[]): Promise<Buffer> {
     return Buffer.concat(parts);
+  }
+}
+
+/** Returns canned text (or a preset error) instead of running pdf.js. */
+export class FakePdfTextExtractor implements PdfTextExtractor {
+  lastPdf?: Buffer;
+  constructor(private readonly text: string | Error = '') {}
+  async extract(pdf: Buffer): Promise<string> {
+    this.lastPdf = pdf;
+    if (this.text instanceof Error) throw this.text;
+    return this.text;
   }
 }
 

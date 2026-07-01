@@ -53,6 +53,7 @@ import {
   fakePasswordHasher,
   FakePdfRenderer,
   FakePdfMerger,
+  FakePdfTextExtractor,
   FakeVersioner,
   FixedClock,
   SequenceIdGenerator,
@@ -166,6 +167,7 @@ function makeApp(
       documentService,
       llmService,
       apiKeyStore: new InMemoryApiKeyStore(),
+      pdfTextExtractor: new FakePdfTextExtractor('Extracted CV text from PDF.'),
       logger: noopLogger,
     }),
   });
@@ -585,6 +587,27 @@ describe('REST API /api/v1', () => {
       const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
       const id = created.body.talent.id as string;
       const res = await agent.post(`/api/v1/talents/${id}/documents/parse`).send({});
+      expect(res.status).toBe(400);
+    });
+
+    it('DocumentsParsePdf_Base64_ReturnsStructuredResume', async () => {
+      const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+      const id = created.body.talent.id as string;
+      const dataBase64 = Buffer.from('%PDF-1.4 fake').toString('base64');
+      const res = await agent
+        .post(`/api/v1/talents/${id}/documents/parse-pdf`)
+        .send({ dataBase64 });
+      expect(res.status).toBe(200);
+      // no LLM key → fallback keeps the (fake-)extracted text as the summary
+      expect(res.body.parsed.provider).toBe('template');
+      expect(res.body.parsed.resume.summary).toContain('Extracted CV text');
+      expect(res.body.parsed.extractedChars).toBeGreaterThan(0);
+    });
+
+    it('DocumentsParsePdf_MissingFile_Returns400', async () => {
+      const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+      const id = created.body.talent.id as string;
+      const res = await agent.post(`/api/v1/talents/${id}/documents/parse-pdf`).send({});
       expect(res.status).toBe(400);
     });
 

@@ -29,6 +29,7 @@ import {
 } from '../domain/talent-documents';
 import type { LlmProvider, LlmProviderId } from '../ports/llm-provider';
 import type { ApiKeyStore } from '../ports/api-key-store';
+import type { PdfTextExtractor } from '../ports/pdf-text-extractor';
 import type { Logger } from '../ports/logger';
 import type { DocumentService } from './document-service';
 import type { LlmService } from './llm-service';
@@ -49,10 +50,16 @@ export interface ParsedDocument {
   provider: LlmProviderId | 'template';
 }
 
+/** A CV parsed from an uploaded PDF; `extractedChars` is 0 for a scanned PDF. */
+export interface ParsedPdfDocument extends ParsedDocument {
+  extractedChars: number;
+}
+
 export interface DocumentAiServiceDeps {
   documentService: DocumentService;
   llmService: LlmService;
   apiKeyStore: ApiKeyStore;
+  pdfTextExtractor: PdfTextExtractor;
   logger: Logger;
 }
 
@@ -66,12 +73,14 @@ export class DocumentAiService {
   private readonly documents: DocumentService;
   private readonly llm: LlmService;
   private readonly keys: ApiKeyStore;
+  private readonly pdfText: PdfTextExtractor;
   private readonly logger: Logger;
 
   constructor(deps: DocumentAiServiceDeps) {
     this.documents = deps.documentService;
     this.llm = deps.llmService;
     this.keys = deps.apiKeyStore;
+    this.pdfText = deps.pdfTextExtractor;
     this.logger = deps.logger;
   }
 
@@ -161,6 +170,39 @@ export class DocumentAiService {
     };
     const validated = saveDocumentsSchema.parse({ contact: source.contact, resume: source.resume });
     return { contact: validated.contact, resume: validated.resume, provider };
+  }
+
+  /**
+   * Parse a CV uploaded as a PDF: extract its text layer, then run the same
+   * text-parsing path. A scanned/image-only PDF has no text (`extractedChars`
+   * 0) — we return an empty structured set rather than call the LLM on nothing,
+   * so the UI can prompt the user to paste the text instead.
+   */
+  async parsePdf(ownerId: string, talentId: string, pdf: Buffer): Promise<ParsedPdfDocument> {
+    await this.documents.get(ownerId, talentId); // 404s on unknown talent
+
+    let text = '';
+    try {
+      text = await this.pdfText.extract(pdf);
+    } catch (err) {
+      this.logger.warn(
+        { err: err instanceof Error ? err.message : String(err) },
+        'PDF text extraction failed',
+      );
+    }
+
+    if (!text.trim()) {
+      const empty = saveDocumentsSchema.parse({});
+      return {
+        contact: empty.contact,
+        resume: empty.resume,
+        provider: 'template',
+        extractedChars: 0,
+      };
+    }
+
+    const parsed = await this.parse(ownerId, talentId, text.slice(0, 50_000));
+    return { ...parsed, extractedChars: text.length };
   }
 
   /**

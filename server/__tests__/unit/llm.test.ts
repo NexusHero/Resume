@@ -5,8 +5,13 @@ import { CoverLetterService } from '../../src/services/cover-letter-service';
 import { coverLetterTemplate, coverLetterPrompt } from '../../src/domain/cover-letter';
 import { ValidationError } from '../../src/domain/errors';
 import type { HttpFetch } from '../../src/ports/http-fetch';
-import type { LlmProvider } from '../../src/ports/llm-provider';
-import { noopLogger } from '../support/fakes';
+import type { LlmGenerateResult, LlmProvider } from '../../src/ports/llm-provider';
+import { noopLogger, InMemoryUsageMeter, FixedClock } from '../support/fakes';
+
+/** A generate() result with the given text and token usage (defaults to zero). */
+function result(text: string, inputTokens = 0, outputTokens = 0): LlmGenerateResult {
+  return { text, usage: { inputTokens, outputTokens } };
+}
 
 function fakeHttp(
   body: unknown,
@@ -33,14 +38,16 @@ describe('AnthropicLlmProvider', () => {
     const { http, calls } = fakeHttp({
       content: [{ type: 'text', text: 'Sehr geehrtes Team …' }],
       stop_reason: 'end_turn',
+      usage: { input_tokens: 120, output_tokens: 340 },
     });
     const provider = new AnthropicLlmProvider({
       httpFetch: http,
       config: { apiKey: 'sk-test', model: 'claude-opus-4-8' },
     });
-    const text = await provider.generate({ system: 'sys', prompt: 'write it', maxTokens: 700 });
+    const result = await provider.generate({ system: 'sys', prompt: 'write it', maxTokens: 700 });
 
-    expect(text).toBe('Sehr geehrtes Team …');
+    expect(result.text).toBe('Sehr geehrtes Team …');
+    expect(result.usage).toEqual({ inputTokens: 120, outputTokens: 340 });
     expect(provider.available).toBe(true);
     const init = calls[0]!.init as {
       method: string;
@@ -77,14 +84,16 @@ describe('GeminiLlmProvider', () => {
   it('Generate_PostsContentsAndExtractsText', async () => {
     const { http, calls } = fakeHttp({
       candidates: [{ content: { parts: [{ text: 'Hallo Welt' }] } }],
+      usageMetadata: { promptTokenCount: 12, candidatesTokenCount: 34 },
     });
     const provider = new GeminiLlmProvider({
       httpFetch: http,
       config: { apiKey: 'g-key', model: 'gemini-2.5-flash' },
     });
-    const text = await provider.generate({ system: 'sys', prompt: 'hi' });
+    const result = await provider.generate({ system: 'sys', prompt: 'hi' });
 
-    expect(text).toBe('Hallo Welt');
+    expect(result.text).toBe('Hallo Welt');
+    expect(result.usage).toEqual({ inputTokens: 12, outputTokens: 34 });
     expect(calls[0]!.url).toContain('gemini-2.5-flash:generateContent');
     expect(calls[0]!.url).toContain('key=g-key');
   });
@@ -95,13 +104,13 @@ describe('LlmService', () => {
     id: 'claude',
     label: 'Claude',
     available: true,
-    generate: async () => 'c',
+    generate: async () => result('c'),
   };
   const gemini: LlmProvider = {
     id: 'gemini',
     label: 'Gemini',
     available: false,
-    generate: async () => 'g',
+    generate: async () => result('g'),
   };
 
   it('Settings_ReportsCurrentAndAvailability', () => {
@@ -153,19 +162,30 @@ describe('LlmService', () => {
 });
 
 describe('CoverLetterService', () => {
+  const build = (llm: LlmService, usageMeter = new InMemoryUsageMeter()) => ({
+    svc: new CoverLetterService({
+      llmService: llm,
+      candidate,
+      usageMeter,
+      clock: new FixedClock(),
+      logger: noopLogger,
+    }),
+    usageMeter,
+  });
+
   it('Generate_UsesActiveProvider', async () => {
     const provider: LlmProvider = {
       id: 'claude',
       label: 'Claude',
       available: true,
-      generate: async () => 'LLM letter',
+      generate: async () => result('LLM letter'),
     };
     const llm = new LlmService({
       providers: [provider],
       defaultProvider: 'claude',
       logger: noopLogger,
     });
-    const svc = new CoverLetterService({ llmService: llm, candidate, logger: noopLogger });
+    const { svc } = build(llm);
     const out = await svc.generate(req);
     expect(out).toEqual({ text: 'LLM letter', provider: 'claude' });
   });
@@ -175,14 +195,14 @@ describe('CoverLetterService', () => {
       id: 'claude',
       label: 'Claude',
       available: false,
-      generate: async () => 'unused',
+      generate: async () => result('unused'),
     };
     const llm = new LlmService({
       providers: [provider],
       defaultProvider: 'claude',
       logger: noopLogger,
     });
-    const svc = new CoverLetterService({ llmService: llm, candidate, logger: noopLogger });
+    const { svc } = build(llm);
     const out = await svc.generate(req);
     expect(out.provider).toBe('template');
     expect(out.text).toContain('Celonis');
@@ -197,7 +217,7 @@ describe('CoverLetterService', () => {
       available: false, // no server credentials
       generate: async (input) => {
         usedKey = input.apiKey;
-        return 'user-key letter';
+        return result('user-key letter');
       },
     };
     const llm = new LlmService({
@@ -205,10 +225,51 @@ describe('CoverLetterService', () => {
       defaultProvider: 'claude',
       logger: noopLogger,
     });
-    const svc = new CoverLetterService({ llmService: llm, candidate, logger: noopLogger });
+    const { svc } = build(llm);
     const out = await svc.generate(req, { provider: 'claude', apiKey: 'sk-user' });
     expect(out).toEqual({ text: 'user-key letter', provider: 'claude' });
     expect(usedKey).toBe('sk-user');
+  });
+
+  it('Generate_WithUserId_MetersTheCall', async () => {
+    const provider: LlmProvider = {
+      id: 'claude',
+      label: 'Claude',
+      available: true,
+      generate: async () => result('LLM letter', 40, 90),
+    };
+    const llm = new LlmService({
+      providers: [provider],
+      defaultProvider: 'claude',
+      logger: noopLogger,
+    });
+    const { svc, usageMeter } = build(llm);
+    await svc.generate(req, undefined, 'user-1');
+    const events = await usageMeter.list('user-1');
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      provider: 'claude',
+      feature: 'coverLetter',
+      inputTokens: 40,
+      outputTokens: 90,
+    });
+  });
+
+  it('Generate_WithoutUserId_DoesNotMeter', async () => {
+    const provider: LlmProvider = {
+      id: 'claude',
+      label: 'Claude',
+      available: true,
+      generate: async () => result('LLM letter', 40, 90),
+    };
+    const llm = new LlmService({
+      providers: [provider],
+      defaultProvider: 'claude',
+      logger: noopLogger,
+    });
+    const { svc, usageMeter } = build(llm);
+    await svc.generate(req);
+    expect(usageMeter.events).toHaveLength(0);
   });
 
   it('Generate_FallsBackToTemplateWhenProviderThrows', async () => {
@@ -225,7 +286,7 @@ describe('CoverLetterService', () => {
       defaultProvider: 'gemini',
       logger: noopLogger,
     });
-    const svc = new CoverLetterService({ llmService: llm, candidate, logger: noopLogger });
+    const { svc } = build(llm);
     const out = await svc.generate(req);
     expect(out.provider).toBe('template');
   });

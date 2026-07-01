@@ -1,4 +1,9 @@
-import type { LlmGenerateInput, LlmProvider, LlmProviderId } from '../ports/llm-provider';
+import type {
+  LlmGenerateInput,
+  LlmGenerateResult,
+  LlmProvider,
+  LlmProviderId,
+} from '../ports/llm-provider';
 import type { HttpFetch } from '../ports/http-fetch';
 
 const ENDPOINT = 'https://api.anthropic.com/v1/messages';
@@ -12,6 +17,7 @@ export interface AnthropicConfig {
 interface AnthropicResponse {
   content?: { type: string; text?: string }[];
   stop_reason?: string;
+  usage?: { input_tokens?: number; output_tokens?: number };
 }
 
 /**
@@ -38,7 +44,7 @@ export class AnthropicLlmProvider implements LlmProvider {
     return Boolean(this.apiKey);
   }
 
-  async generate(input: LlmGenerateInput): Promise<string> {
+  async generate(input: LlmGenerateInput): Promise<LlmGenerateResult> {
     const res = await this.http(ENDPOINT, {
       method: 'POST',
       headers: {
@@ -61,6 +67,12 @@ export class AnthropicLlmProvider implements LlmProvider {
       .join('')
       .trim();
     if (!text) throw new Error('Anthropic returned no text');
-    return text;
+    return {
+      text,
+      usage: {
+        inputTokens: body.usage?.input_tokens ?? 0,
+        outputTokens: body.usage?.output_tokens ?? 0,
+      },
+    };
   }
 }

@@ -7,6 +7,7 @@ import {
   InMemoryApiKeyStore,
   InMemoryUserRepository,
   InMemoryPasswordResetTokenStore,
+  InMemoryUsageMeter,
 } from '../support/fakes';
 import type { Mandate } from '../../src/domain/mandate';
 import type { Talent } from '../../src/domain/talent';
@@ -25,6 +26,7 @@ function makeService() {
   const userRepository = new InMemoryUserRepository();
   const sessionStore = new MemorySessionStore();
   const passwordResetTokenStore = new InMemoryPasswordResetTokenStore();
+  const usageMeter = new InMemoryUsageMeter();
   const service = new AccountService({
     mandateRepository,
     talentRepository,
@@ -33,6 +35,7 @@ function makeService() {
     userRepository,
     sessionStore,
     passwordResetTokenStore,
+    usageMeter,
   });
   return {
     service,
@@ -43,6 +46,7 @@ function makeService() {
     userRepository,
     sessionStore,
     passwordResetTokenStore,
+    usageMeter,
   };
 }
 
@@ -132,6 +136,14 @@ describe('AccountService', () => {
     await ctx.apiKeyStore.set(USER, 'claude', 'sk-personal');
     const token = await ctx.sessionStore.create(USER);
     await ctx.passwordResetTokenStore.create(USER);
+    await ctx.usageMeter.record({
+      ownerId: USER,
+      provider: 'claude',
+      feature: 'ats',
+      inputTokens: 10,
+      outputTokens: 5,
+      at: TS,
+    });
 
     await ctx.service.erase(USER);
 
@@ -140,6 +152,7 @@ describe('AccountService', () => {
     expect(await ctx.sessionStore.userIdFor(token)).toBeNull();
     expect(ctx.passwordResetTokenStore.tokens).toEqual([]);
     expect(await ctx.apiKeyStore.providersFor(USER)).toEqual([]); // personal keys erased
+    expect(await ctx.usageMeter.list(USER)).toEqual([]); // usage history erased
     // the shared team workspace stays
     expect(await ctx.mandateRepository.list(TEAM)).toHaveLength(1);
   });

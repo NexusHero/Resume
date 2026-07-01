@@ -38,6 +38,7 @@ import { PlacementService } from './services/placement-service';
 import { CandidacyService } from './services/candidacy-service';
 import { RetentionService } from './services/retention-service';
 import { MatchService } from './services/match-service';
+import { UsageService } from './services/usage-service';
 import { DocumentService } from './services/document-service';
 import { DocumentAiService } from './services/document-ai-service';
 import { AttachmentService } from './services/attachment-service';
@@ -56,6 +57,7 @@ import { PlacementController } from './http/placement-controller';
 import { CandidacyController } from './http/candidacy-controller';
 import { RetentionController } from './http/retention-controller';
 import { MatchController } from './http/match-controller';
+import { UsageController } from './http/usage-controller';
 import { DocumentController } from './http/document-controller';
 import { AttachmentController } from './http/attachment-controller';
 import { AuthController } from './http/auth-controller';
@@ -91,6 +93,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     sessionStore: asValue(persistence.sessionStore),
     passwordResetTokenStore: asValue(persistence.passwordResetTokenStore),
     apiKeyStore: asValue(persistence.apiKeyStore),
+    usageMeter: asValue(persistence.usageMeter),
     passwordHasher: asClass(ScryptPasswordHasher).singleton(),
     // Transactional email: console by default, SMTP (nodemailer) when configured.
     mailer: asFunction(({ config: c, logger }) => createMailer({ config: c, logger })).singleton(),
@@ -131,6 +134,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     candidacyService: asClass(CandidacyService).singleton(),
     retentionService: asClass(RetentionService).singleton(),
     matchService: asClass(MatchService).singleton(),
+    usageService: asClass(UsageService).singleton(),
     documentService: asClass(DocumentService).singleton(),
     documentAiService: asClass(DocumentAiService).singleton(),
     attachmentService: asClass(AttachmentService).singleton(),
@@ -149,6 +153,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     candidacyController: asClass(CandidacyController).singleton(),
     retentionController: asClass(RetentionController).singleton(),
     matchController: asClass(MatchController).singleton(),
+    usageController: asClass(UsageController).singleton(),
     documentController: asClass(DocumentController).singleton(),
     attachmentController: asClass(AttachmentController).singleton(),
     authController: asClass(AuthController).singleton(),

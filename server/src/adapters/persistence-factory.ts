@@ -12,6 +12,7 @@ import type { UserRepository } from '../ports/user-repository';
 import type { SessionStore } from '../ports/session-store';
 import type { PasswordResetTokenStore } from '../ports/password-reset-token-store';
 import type { ApiKeyStore } from '../ports/api-key-store';
+import type { UsageMeter } from '../ports/usage-meter';
 import type { Clock } from '../ports/clock';
 import { FsApplicationRepository } from './fs-application-repository';
 import { FsAuditLog } from './fs-audit-log';
@@ -26,6 +27,7 @@ import { FsUserRepository } from './fs-user-repository';
 import { FsSessionStore } from './fs-session-store';
 import { FsPasswordResetTokenStore } from './fs-password-reset-token-store';
 import { FsApiKeyStore } from './fs-api-key-store';
+import { FsUsageMeter } from './fs-usage-meter';
 import { SecretCipher } from './secret-cipher';
 import { SqlApplicationRepository } from './sql/sql-application-repository';
 import { SqlAuditLog } from './sql/sql-audit-log';
@@ -40,6 +42,7 @@ import { SqlUserRepository } from './sql/sql-user-repository';
 import { SqlSessionStore } from './sql/sql-session-store';
 import { SqlPasswordResetTokenStore } from './sql/sql-password-reset-token-store';
 import { SqlApiKeyStore } from './sql/sql-api-key-store';
+import { SqlUsageMeter } from './sql/sql-usage-meter';
 import type { Db } from './sql/db';
 
 /** The storage ports, resolved to one backend. */
@@ -57,6 +60,7 @@ export interface Persistence {
   sessionStore: SessionStore;
   passwordResetTokenStore: PasswordResetTokenStore;
   apiKeyStore: ApiKeyStore;
+  usageMeter: UsageMeter;
 }
 
 /**
@@ -83,6 +87,7 @@ export function createPersistence(deps: { config: AppConfig; clock: Clock; db?: 
       sessionStore: new SqlSessionStore({ db, clock, config }),
       passwordResetTokenStore: new SqlPasswordResetTokenStore({ db, clock, config }),
       apiKeyStore: new SqlApiKeyStore({ db, secretCipher }),
+      usageMeter: new SqlUsageMeter({ db }),
     };
   }
   return {
@@ -99,5 +104,6 @@ export function createPersistence(deps: { config: AppConfig; clock: Clock; db?: 
     sessionStore: new FsSessionStore({ config, clock }),
     passwordResetTokenStore: new FsPasswordResetTokenStore({ config, clock }),
     apiKeyStore: new FsApiKeyStore({ config, secretCipher }),
+    usageMeter: new FsUsageMeter({ config }),
   };
 }

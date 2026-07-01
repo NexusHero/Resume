@@ -35,10 +35,13 @@ import {
   type ResumeContent,
   saveDocumentsSchema,
 } from '../domain/talent-documents';
-import type { LlmProvider, LlmProviderId } from '../ports/llm-provider';
+import type { LlmProvider, LlmProviderId, TokenUsage } from '../ports/llm-provider';
 import type { ApiKeyStore } from '../ports/api-key-store';
 import type { PdfTextExtractor } from '../ports/pdf-text-extractor';
+import type { UsageMeter } from '../ports/usage-meter';
+import type { Clock } from '../ports/clock';
 import type { Logger } from '../ports/logger';
+import { type UsageFeature, toUsageEvent } from '../domain/usage';
 import type { DocumentService } from './document-service';
 import type { LlmService } from './llm-service';
 
@@ -68,6 +71,8 @@ export interface DocumentAiServiceDeps {
   llmService: LlmService;
   apiKeyStore: ApiKeyStore;
   pdfTextExtractor: PdfTextExtractor;
+  usageMeter: UsageMeter;
+  clock: Clock;
   logger: Logger;
 }
 
@@ -82,6 +87,8 @@ export class DocumentAiService {
   private readonly llm: LlmService;
   private readonly keys: ApiKeyStore;
   private readonly pdfText: PdfTextExtractor;
+  private readonly usage: UsageMeter;
+  private readonly clock: Clock;
   private readonly logger: Logger;
 
   constructor(deps: DocumentAiServiceDeps) {
@@ -89,7 +96,30 @@ export class DocumentAiService {
     this.llm = deps.llmService;
     this.keys = deps.apiKeyStore;
     this.pdfText = deps.pdfTextExtractor;
+    this.usage = deps.usageMeter;
+    this.clock = deps.clock;
     this.logger = deps.logger;
+  }
+
+  /**
+   * Record what a generation cost against the caller's account. Metering must
+   * never break the feature it measures, so a store failure is logged and
+   * swallowed rather than propagated.
+   */
+  private async meter(
+    userId: string,
+    provider: LlmProviderId,
+    feature: UsageFeature,
+    usage: TokenUsage,
+  ): Promise<void> {
+    try {
+      await this.usage.record(toUsageEvent(userId, provider, feature, usage, this.clock.isoNow()));
+    } catch (err) {
+      this.logger.warn(
+        { feature, err: err instanceof Error ? err.message : String(err) },
+        'usage metering failed',
+      );
+    }
   }
 
   private async resolveProvider(
@@ -118,12 +148,13 @@ export class DocumentAiService {
         const { provider, apiKey } = resolved;
         const built =
           action === 'summary' ? summaryPrompt(documents) : letterPrompt(documents, target);
-        const text = await provider.generate({
+        const { text, usage } = await provider.generate({
           system: built.system,
           prompt: built.prompt,
           maxTokens: action === 'summary' ? 300 : 700,
           ...(apiKey ? { apiKey } : {}),
         });
+        await this.meter(userId, provider.id, 'suggest', usage);
         return action === 'summary'
           ? { action, text: text.trim(), provider: provider.id }
           : { action, paragraphs: toParagraphs(text), provider: provider.id };
@@ -160,12 +191,13 @@ export class DocumentAiService {
     if (resolved) {
       try {
         const built = parsePrompt(text);
-        const reply = await resolved.provider.generate({
+        const { text: reply, usage } = await resolved.provider.generate({
           system: built.system,
           prompt: built.prompt,
           maxTokens: 1500,
           ...(resolved.apiKey ? { apiKey: resolved.apiKey } : {}),
         });
+        await this.meter(userId, resolved.provider.id, 'parse', usage);
         raw = extractJson(reply);
         if (raw) provider = resolved.provider.id;
       } catch (err) {
@@ -241,12 +273,13 @@ export class DocumentAiService {
     if (resolved) {
       try {
         const built = atsPrompt(documents, jobText);
-        const reply = await resolved.provider.generate({
+        const { text: reply, usage } = await resolved.provider.generate({
           system: built.system,
           prompt: built.prompt,
           maxTokens: 900,
           ...(resolved.apiKey ? { apiKey: resolved.apiKey } : {}),
         });
+        await this.meter(userId, resolved.provider.id, 'ats', usage);
         const json = extractJson(reply);
         const parsed = atsResultSchema.safeParse(json);
         if (parsed.success) return { ...normalizeAts(parsed.data), provider: resolved.provider.id };
@@ -279,12 +312,13 @@ export class DocumentAiService {
     if (resolved) {
       try {
         const built = pitchPrompt(documents, mandateContext);
-        const reply = await resolved.provider.generate({
+        const { text: reply, usage } = await resolved.provider.generate({
           system: built.system,
           prompt: built.prompt,
           maxTokens: 700,
           ...(resolved.apiKey ? { apiKey: resolved.apiKey } : {}),
         });
+        await this.meter(userId, resolved.provider.id, 'pitch', usage);
         const json = extractJson(reply);
         const parsed = pitchResultSchema.safeParse(json);
         if (parsed.success) {
@@ -322,12 +356,13 @@ export class DocumentAiService {
     if (resolved) {
       try {
         const built = outreachPrompt(documents, opts);
-        const reply = await resolved.provider.generate({
+        const { text: reply, usage } = await resolved.provider.generate({
           system: built.system,
           prompt: built.prompt,
           maxTokens: 700,
           ...(resolved.apiKey ? { apiKey: resolved.apiKey } : {}),
         });
+        await this.meter(userId, resolved.provider.id, 'outreach', usage);
         const json = extractJson(reply);
         const parsed = outreachResultSchema.safeParse(json);
         if (parsed.success) {

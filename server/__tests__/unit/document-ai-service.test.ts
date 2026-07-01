@@ -2,11 +2,12 @@ import { DocumentAiService } from '../../src/services/document-ai-service';
 import { DocumentService } from '../../src/services/document-service';
 import { LlmService } from '../../src/services/llm-service';
 import { NotFoundError } from '../../src/domain/errors';
-import type { LlmProvider } from '../../src/ports/llm-provider';
+import type { LlmGenerateInput, LlmProvider, LlmProviderId } from '../../src/ports/llm-provider';
 import {
   InMemoryTalentRepository,
   InMemoryDocumentRepository,
   InMemoryApiKeyStore,
+  InMemoryUsageMeter,
   FakePdfRenderer,
   FakePdfTextExtractor,
   FixedClock,
@@ -31,10 +32,22 @@ const talent = (id: string): Talent => ({
   updatedAt: '2026-06-25T10:00:00.000Z',
 });
 
-function ctx(providerOverrides: Partial<LlmProvider> = {}, pdfText: string | Error = '') {
+/**
+ * A provider stub whose `generate` returns just the text (the token usage is
+ * filled in by ctx), so the many test cases below stay terse.
+ */
+interface ProviderStub {
+  id?: LlmProviderId;
+  label?: string;
+  available?: boolean;
+  generate?: (input: LlmGenerateInput) => Promise<string>;
+}
+
+function ctx(stub: ProviderStub = {}, pdfText: string | Error = '') {
   const talents = new InMemoryTalentRepository();
   const documents = new InMemoryDocumentRepository();
   const keys = new InMemoryApiKeyStore();
+  const usageMeter = new InMemoryUsageMeter();
   const pdfTextExtractor = new FakePdfTextExtractor(pdfText);
   const documentService = new DocumentService({
     documentRepository: documents,
@@ -44,14 +57,16 @@ function ctx(providerOverrides: Partial<LlmProvider> = {}, pdfText: string | Err
   });
   let usedKey: string | undefined;
   const provider: LlmProvider = {
-    id: 'claude',
-    label: 'Claude',
-    available: false,
+    id: stub.id ?? 'claude',
+    label: stub.label ?? 'Claude',
+    available: stub.available ?? false,
     generate: async (input) => {
       usedKey = input.apiKey;
-      return 'AI PARA ONE.\n\nAI PARA TWO.\n\nAI PARA THREE.';
+      const text = stub.generate
+        ? await stub.generate(input)
+        : 'AI PARA ONE.\n\nAI PARA TWO.\n\nAI PARA THREE.';
+      return { text, usage: { inputTokens: 5, outputTokens: 7 } };
     },
-    ...providerOverrides,
   };
   const llm = new LlmService({
     providers: [provider],
@@ -63,9 +78,11 @@ function ctx(providerOverrides: Partial<LlmProvider> = {}, pdfText: string | Err
     llmService: llm,
     apiKeyStore: keys,
     pdfTextExtractor,
+    usageMeter,
+    clock: new FixedClock(),
     logger: noopLogger,
   });
-  return { service, talents, keys, getUsedKey: () => usedKey };
+  return { service, talents, keys, usageMeter, getUsedKey: () => usedKey };
 }
 
 describe('DocumentAiService', () => {
@@ -114,6 +131,37 @@ describe('DocumentAiService', () => {
     await expect(c.service.suggest(OWNER, OWNER, 'missing', 'summary')).rejects.toBeInstanceOf(
       NotFoundError,
     );
+  });
+
+  it('Suggest_WithProvider_MetersUsageAgainstTheUser', async () => {
+    const c = ctx({ available: true });
+    await c.talents.add(talent('t1'));
+    await c.service.suggest(OWNER, OWNER, 't1', 'summary');
+    const events = await c.usageMeter.list(OWNER);
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      provider: 'claude',
+      feature: 'suggest',
+      inputTokens: 5,
+      outputTokens: 7,
+    });
+  });
+
+  it('Suggest_Fallback_DoesNotMeter', async () => {
+    const c = ctx(); // no provider → template fallback, no LLM call
+    await c.talents.add(talent('t1'));
+    await c.service.suggest(OWNER, OWNER, 't1', 'summary');
+    expect(c.usageMeter.events).toHaveLength(0);
+  });
+
+  it('Suggest_MeteringFailure_DoesNotBreakTheSuggestion', async () => {
+    const c = ctx({ available: true });
+    c.usageMeter.record = async () => {
+      throw new Error('meter down');
+    };
+    await c.talents.add(talent('t1'));
+    const res = await c.service.suggest(OWNER, OWNER, 't1', 'summary');
+    expect(res.provider).toBe('claude'); // succeeds despite the meter throwing
   });
 });
 

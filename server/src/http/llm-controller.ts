@@ -83,6 +83,6 @@ export class LlmController {
       const apiKey = await this.keys.get(userId, provider);
       if (apiKey) override = { provider, apiKey };
     }
-    res.json(await this.coverLetter.generate(input, override));
+    res.json(await this.coverLetter.generate(input, override, userId ?? undefined));
   };
 }

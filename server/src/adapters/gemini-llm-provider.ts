@@ -1,4 +1,9 @@
-import type { LlmGenerateInput, LlmProvider, LlmProviderId } from '../ports/llm-provider';
+import type {
+  LlmGenerateInput,
+  LlmGenerateResult,
+  LlmProvider,
+  LlmProviderId,
+} from '../ports/llm-provider';
 import type { HttpFetch } from '../ports/http-fetch';
 
 const BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
@@ -10,6 +15,7 @@ export interface GeminiConfig {
 
 interface GeminiResponse {
   candidates?: { content?: { parts?: { text?: string }[] } }[];
+  usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number };
 }
 
 /**
@@ -34,7 +40,7 @@ export class GeminiLlmProvider implements LlmProvider {
     return Boolean(this.apiKey);
   }
 
-  async generate(input: LlmGenerateInput): Promise<string> {
+  async generate(input: LlmGenerateInput): Promise<LlmGenerateResult> {
     const url = `${BASE}/${encodeURIComponent(this.model)}:generateContent?key=${encodeURIComponent(input.apiKey ?? this.apiKey)}`;
     const res = await this.http(url, {
       method: 'POST',
@@ -52,6 +58,12 @@ export class GeminiLlmProvider implements LlmProvider {
       .join('')
       .trim();
     if (!text) throw new Error('Gemini returned no text');
-    return text;
+    return {
+      text,
+      usage: {
+        inputTokens: body.usageMetadata?.promptTokenCount ?? 0,
+        outputTokens: body.usageMetadata?.candidatesTokenCount ?? 0,
+      },
+    };
   }
 }

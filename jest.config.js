@@ -45,6 +45,7 @@ module.exports = {
     '!server/src/adapters/sql/sql-api-key-store.ts',
     '!server/src/adapters/sql/sql-document-repository.ts',
     '!server/src/adapters/sql/sql-attachment-store.ts',
+    '!server/src/adapters/sql/sql-usage-meter.ts',
   ],
   coverageDirectory: 'coverage',
   coverageThreshold: {

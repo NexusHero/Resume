@@ -31,6 +31,8 @@ import type { PasswordResetTokenStore } from '../../src/ports/password-reset-tok
 import type { Mailer, MailMessage } from '../../src/ports/mailer';
 import type { ApiKeyStore } from '../../src/ports/api-key-store';
 import type { LlmProviderId } from '../../src/ports/llm-provider';
+import type { UsageMeter } from '../../src/ports/usage-meter';
+import type { UsageEvent } from '../../src/domain/usage';
 
 export class InMemoryApplicationRepository implements ApplicationRepository {
   apps: Application[] = [];
@@ -414,6 +416,19 @@ export class InMemoryApiKeyStore implements ApiKeyStore {
   }
   async providersFor(ownerId: string): Promise<LlmProviderId[]> {
     return this.keys.filter((k) => k.ownerId === ownerId).map((k) => k.provider);
+  }
+}
+
+export class InMemoryUsageMeter implements UsageMeter {
+  events: UsageEvent[] = [];
+  async record(event: UsageEvent): Promise<void> {
+    this.events.push(event);
+  }
+  async list(ownerId: string): Promise<UsageEvent[]> {
+    return this.events.filter((e) => e.ownerId === ownerId);
+  }
+  async removeForOwner(ownerId: string): Promise<void> {
+    this.events = this.events.filter((e) => e.ownerId !== ownerId);
   }
 }
 

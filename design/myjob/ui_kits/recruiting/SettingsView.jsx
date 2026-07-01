@@ -269,6 +269,92 @@ function ComplianceCard() {
   );
 }
 
+/* UsageCard — the signed-in user's AI consumption: requests, tokens and a
+   rough USD cost, with a per-feature breakdown. Usage is per user because API
+   keys (and quota) are per user. */
+const USAGE_FEATURE_LABELS = {
+  suggest: 'Document assist',
+  parse: 'CV parsing',
+  ats: 'ATS scoring',
+  pitch: 'Candidate pitch',
+  outreach: 'Outreach',
+  coverLetter: 'Cover letter',
+};
+
+function formatTokens(n) {
+  const v = Number(n) || 0;
+  if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
+  if (v >= 1_000) return `${(v / 1_000).toFixed(1)}k`;
+  return String(v);
+}
+
+function formatCost(usd) {
+  const v = Number(usd) || 0;
+  if (v === 0) return '$0.00';
+  return v < 0.01 ? `$${v.toFixed(4)}` : `$${v.toFixed(2)}`;
+}
+
+function UsageStat({ label, value }) {
+  return (
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', fontWeight: 700, color: 'var(--text-heading)', letterSpacing: '-0.01em' }}>{value}</div>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--text-soft)', marginTop: '2px' }}>{label}</div>
+    </div>
+  );
+}
+
+function UsageCard() {
+  const [usage, setUsage] = React.useState(null); // null = loading
+  const [error, setError] = React.useState(false);
+
+  React.useEffect(() => {
+    let alive = true;
+    window.RecruitApi.getUsage()
+      .then((u) => { if (alive) setUsage(u); })
+      .catch(() => { if (alive) setError(true); });
+    return () => { alive = false; };
+  }, []);
+
+  return (
+    <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '22px 24px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+        <div style={{ flex: 1 }}>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>AI usage</h2>
+          <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>What your account has spent on AI so far. The cost is an estimate from public list prices, not a bill.</div>
+        </div>
+      </div>
+
+      {error ? (
+        <div style={{ padding: '22px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Could not load usage.</div>
+      ) : usage === null ? (
+        <div style={{ padding: '28px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Loading…</div>
+      ) : usage.requests === 0 ? (
+        <div style={{ padding: '22px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>No AI usage yet. Generating a pitch, ATS score or cover letter will show up here.</div>
+      ) : (
+        <>
+          <div style={{ display: 'flex', gap: '18px', marginTop: '16px', padding: '14px 16px', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
+            <UsageStat label="Requests" value={usage.requests} />
+            <UsageStat label="Tokens" value={formatTokens(usage.totalTokens)} />
+            <UsageStat label="Est. cost" value={formatCost(usage.costUsd)} />
+          </div>
+
+          {usage.byFeature && usage.byFeature.length > 0 && (
+            <div style={{ marginTop: '14px' }}>
+              {usage.byFeature.map((f) => (
+                <div key={f.feature} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto auto', gap: '14px', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-heading)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{USAGE_FEATURE_LABELS[f.feature] || f.feature}</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11.5px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{f.requests}× · {formatTokens(f.totalTokens)} tok</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11.5px', color: 'var(--text-soft)', whiteSpace: 'nowrap', minWidth: '58px', textAlign: 'right' }}>{formatCost(f.costUsd)}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 function SettingsView() {
   const [settings, setSettings] = React.useState(null); // { current, providers }
   const [keys, setKeys] = React.useState({});
@@ -339,6 +425,7 @@ function SettingsView() {
         </div>
       </div>
 
+      <UsageCard />
       <TeamCard />
       <ComplianceCard />
       <DataPrivacyCard />

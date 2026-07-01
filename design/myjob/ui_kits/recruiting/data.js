@@ -334,6 +334,11 @@ const RecruitApi = {
     const res = await fetch(`${RECRUIT_API_BASE}/account`, { method: 'DELETE' });
     if (!res.ok) throw new Error(`API ${res.status}`);
   },
+  /* ---- AI usage counter (per-user requests / tokens / cost) ---- */
+  async getUsage() {
+    // { requests, inputTokens, outputTokens, totalTokens, costUsd, byProvider[], byFeature[] }
+    return _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/settings/usage`));
+  },
   /* ---- LLM settings (active provider + availability) ---- */
   async getLlmSettings() {
     return _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/settings/llm`));

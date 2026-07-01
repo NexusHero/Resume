@@ -3,18 +3,51 @@
 const MM = window.MyJobDesignSystem_f3658e;
 
 function MappeModal({ talent, onClose }) {
-  const attachments = talent.attachments || [];
-  const [picked, setPicked] = React.useState(() => new Set(attachments.map((a) => a.id)));
+  const canPersist = !!talent.id && talent.id !== 'me';
+  const [attachments, setAttachments] = React.useState(talent.attachments || []);
+  const [picked, setPicked] = React.useState(() => new Set());
   const [letter, setLetter] = React.useState(true);
+  const [busy, setBusy] = React.useState(false);
   const toggle = (id) => setPicked((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
-  const count = (talent.resume ? 1 : 0) + (letter ? 1 : 0) + picked.size;
+  const count = 1 + (letter ? 1 : 0) + picked.size;
+
+  // Load the talent's persisted attachments (server-backed talents only).
+  React.useEffect(() => {
+    let alive = true;
+    if (!canPersist) return;
+    window.RecruitApi.listAttachments(talent.id)
+      .then((list) => { if (alive) { setAttachments(list); setPicked(new Set(list.map((a) => a.id))); } })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [talent.id]);
+
+  const onUpload = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file || !canPersist) return;
+    setBusy(true);
+    try {
+      const dataBase64 = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(String(r.result).split(',')[1] || '');
+        r.onerror = rej;
+        r.readAsDataURL(file);
+      });
+      const att = await window.RecruitApi.uploadAttachment(talent.id, { name: file.name, contentType: file.type || 'application/pdf', dataBase64 });
+      setAttachments((s) => [...s, att]);
+      setPicked((s) => new Set(s).add(att.id));
+    } catch { /* ignore upload error */ }
+    setBusy(false);
+  };
 
   // Recipient the cover letter is addressed to; drives the generated dossier.
   const [rcpt, setRcpt] = React.useState({ company: '', subject: '', contact: '', plzOrt: '' });
   const setR = (k, v) => setRcpt((s) => ({ ...s, [k]: v }));
-  const canPersist = !!talent.id && talent.id !== 'me';
   const createDossier = () => {
-    if (canPersist) window.open(window.RecruitApi.talentDossierPdfUrl(talent.id, rcpt), '_blank');
+    if (canPersist) {
+      const url = window.RecruitApi.talentDossierPdfUrl(talent.id, { ...rcpt, attachments: [...picked].join(',') });
+      window.open(url, '_blank');
+    }
     onClose();
   };
 
@@ -68,15 +101,27 @@ function MappeModal({ talent, onClose }) {
             </label>
 
             {/* attachments to link */}
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginTop: '2px' }}>Link attachments</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '2px' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Attachments</span>
+              {canPersist && (
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: busy ? 'wait' : 'pointer', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--accent-strong)' }}>
+                  <MM.Icon name="plus" size={13} /> {busy ? 'Uploading…' : 'Upload PDF'}
+                  <input type="file" accept="application/pdf" onChange={onUpload} disabled={busy} style={{ display: 'none' }} />
+                </label>
+              )}
+            </div>
+            {attachments.length === 0 && (
+              <div style={{ fontSize: '12px', color: 'var(--text-soft)' }}>No attachments yet.</div>
+            )}
             {attachments.map((a) => {
               const on = picked.has(a.id);
+              const kb = a.size ? `${Math.max(1, Math.round(a.size / 1024))} KB` : (a.tag || '');
               return (
                 <label key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '11px', padding: '10px 13px', border: `1px solid ${on ? 'var(--accent-border)' : 'var(--border)'}`, borderRadius: 'var(--radius-md)', background: on ? 'var(--accent-soft)' : 'var(--surface-card)', cursor: 'pointer' }}>
                   <MM.Checkbox checked={on} onChange={() => toggle(a.id)} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-heading)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.name}</div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-soft)' }}>{a.tag}</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-soft)' }}>{kb}</div>
                   </div>
                 </label>
               );

@@ -264,6 +264,106 @@ test.describe('UI acceptance — the suite renders in English', () => {
     expect(puts.some((b) => b.includes('E2E-MARKER-NAME'))).toBe(true);
   });
 
+  test('Recruiting_Mappe_UploadsAttachmentAndLists', async ({ page }) => {
+    await page.route('**/api/v1/auth/me', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id: 'user1', email: 'me@example.de' } }),
+      }),
+    );
+    await page.route('**/api/v1/talents', (route) => {
+      if (route.request().method() !== 'GET') return route.continue();
+      return route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify([
+          {
+            id: 't-api-1',
+            name: 'Tobias Wirth',
+            role: 'Staff Engineer',
+            headline: '',
+            location: 'Hamburg',
+            email: '',
+            phone: '',
+            availability: '',
+            salary: '',
+            skills: [],
+            createdAt: '2026-06-25T10:00:00.000Z',
+            updatedAt: '2026-06-25T10:00:00.000Z',
+          },
+        ]),
+      });
+    });
+    await page.route('**/api/v1/talents/t-api-1/documents', (route) => {
+      const body = {
+        documents: {
+          contact: {
+            name: 'Tobias Wirth',
+            role: '',
+            email: '',
+            phone: '',
+            location: '',
+            linkedin: '',
+          },
+          resume: { summary: '', experience: [], education: [], skillGroups: [] },
+          letter: {
+            firma: '',
+            ansprechpartner: '',
+            strasse: '',
+            plzOrt: '',
+            betreff: '',
+            anrede: '',
+            absaetze: [''],
+            gruss: '',
+          },
+          style: {
+            template: 'classic',
+            accent: '#2A6FDB',
+            strong: '#1d4ed8',
+            onDark: '#7aa7f5',
+            font: 'var(--font-display)',
+            size: 1,
+          },
+          updatedAt: '2026-06-25T10:00:00.000Z',
+        },
+      };
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify(body) });
+    });
+    await page.route('**/api/v1/talents/t-api-1/attachments', (route) => {
+      if (route.request().method() === 'GET') {
+        return route.fulfill({ contentType: 'application/json', body: JSON.stringify([]) });
+      }
+      return route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          attachment: {
+            id: 'att-1',
+            name: 'Zeugnis.pdf',
+            contentType: 'application/pdf',
+            size: 2048,
+            talentId: 't-api-1',
+          },
+        }),
+      });
+    });
+
+    await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
+    await page.getByRole('button', { name: /Talent Pool/ }).click();
+    await page.getByText('Tobias Wirth').first().click();
+    await page
+      .getByRole('button', { name: /Create resume|Edit resume/ })
+      .first()
+      .click();
+    await page.getByRole('button', { name: /To dossier/ }).click();
+    // upload a PDF via the hidden file input in the Mappe modal
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'Zeugnis.pdf',
+      mimeType: 'application/pdf',
+      buffer: Buffer.from('%PDF-1.4 test'),
+    });
+    // the uploaded attachment now appears in the dossier contents
+    await expect(page.getByText('Zeugnis.pdf')).toBeVisible({ timeout: 10000 });
+  });
+
   test('Recruiting_Mandates_RenderFromApiGroupedByClient', async ({ page }) => {
     // Stub the live mandates endpoint with a client/role not in the sample, so a
     // pass proves MandateView grouped and rendered API data.

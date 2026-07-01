@@ -98,12 +98,12 @@ describe('match domain', () => {
       });
     });
 
-    it('MatchesSkillsMentionedInJob', () => {
-      const t = talent({ role: 'Designer', skills: ['React', 'TypeScript', 'Node'] });
-      // role 'Designer' does not appear → no role bonus; 2 of 3 skills matched
-      const { score, matched } = scoreTalent(t, null, 'We need React and Node developers');
-      expect(matched.sort()).toEqual(['Node', 'React']);
-      expect(score).toBe(67); // round(2/3 * 100)
+    it('MatchesRelatedSkillsSemantically', () => {
+      const t = talent({ role: 'Designer', skills: ['React', 'TypeScript', 'COBOL'] });
+      // React matches exactly; TypeScript via the frontend cluster; COBOL is unrelated
+      const { score, matched } = scoreTalent(t, null, 'We need React developers');
+      expect(matched.sort()).toEqual(['React', 'TypeScript']);
+      expect(score).toBe(67); // 2 of 3 skills
     });
 
     it('AddsRoleBonusWhenRoleWordAppearsInJob', () => {

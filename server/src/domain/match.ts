@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { Talent } from './talent';
 import type { TalentDocuments } from './talent-documents';
 import { tokenize } from './ats-ai';
+import { jobClusters, skillMatchesJob } from './skill-semantics';
 
 /** POST /api/v1/mandates/:id/match — rank the pool against a mandate. */
 export const matchRequestSchema = z.object({
@@ -52,12 +53,11 @@ export function scoreTalent(
 ): { score: number; matched: string[] } {
   const skills = candidateSkills(talent, documents);
   const jobTokens = tokenize(jobText);
-  const matched = skills.filter((s) => {
-    const t = s.toLowerCase();
-    return jobTokens.has(t) || [...jobTokens].some((jt) => t.includes(jt));
-  });
+  const clusters = jobClusters(jobTokens);
+  // Semantic match: exact, ontology-cluster (React ↔ Vue), or fuzzy (Node.js ↔ NodeJS).
+  const matched = skills.filter((s) => skillMatchesJob(s, jobTokens, clusters));
   const base = skills.length ? matched.length / skills.length : 0;
-  const roleHit = [...tokenize(talent.role)].some((rt) => jobTokens.has(rt)) ? 0.15 : 0;
+  const roleHit = skillMatchesJob(talent.role, jobTokens, clusters) ? 0.15 : 0;
   const score = Math.min(100, Math.round((base + roleHit) * 100));
   return { score, matched: [...new Set(matched)] };
 }

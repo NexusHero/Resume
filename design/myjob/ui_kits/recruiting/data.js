@@ -367,6 +367,43 @@ const RecruitApi = {
     const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/talents`));
     return Array.isArray(data) ? data.map(mapTalent) : [];
   },
+  // --- Recruiting pipeline (candidacies) ---
+  async mandateCandidacies(mandateId) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/mandates/${mandateId}/candidacies`),
+    );
+    return Array.isArray(data) ? data : []; // [{ id, talentId, stage, note, order, talent }]
+  },
+  async talentCandidacies(talentId) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/candidacies`),
+    );
+    return Array.isArray(data) ? data : []; // [{ id, mandateId, stage, mandate }]
+  },
+  async addCandidacy(mandateId, { talentId, stage, note } = {}) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/mandates/${mandateId}/candidacies`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ talentId, stage, note }),
+      }),
+    );
+    return data.candidacy;
+  },
+  async updateCandidacy(id, patch) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/candidacies/${id}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(patch), // { stage?, note?, order? }
+      }),
+    );
+    return data.candidacy;
+  },
+  async removeCandidacy(id) {
+    const res = await fetch(`${RECRUIT_API_BASE}/candidacies/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+  },
   async createTalent(input) {
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/talents`, {

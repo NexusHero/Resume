@@ -48,6 +48,7 @@ function Workspace({ onLogout }) {
   const [nav, setNav] = React.useState('uebersicht');
   const [search, setSearch] = React.useState('');
   const [openTalent, setOpenTalent] = React.useState(null);
+  const [openPipeline, setOpenPipeline] = React.useState(null); // mandate id whose pipeline is open
   const [mappeFor, setMappeFor] = React.useState(null);
   const [editing, setEditing] = React.useState(null);
   // Which create form is open ('mandate' | 'talent' | 'placement' | null).
@@ -137,10 +138,25 @@ function Workspace({ onLogout }) {
 
   const goTalent = (id) => setOpenTalent(id);
   const back = () => setOpenTalent(null);
+  const goPipeline = (m) => setOpenPipeline(m.id);
 
   const talent = openTalent && talents.find((t) => t.id === openTalent);
   const talentApps = (id) => apps.filter((a) => a.talentId === id);
   const editTalent = editing && talents.find((t) => t.id === editing);
+
+  // a mandate's pipeline board takes over the whole canvas
+  const pipelineMandate = openPipeline && mandates.find((m) => m.id === openPipeline);
+  if (pipelineMandate) {
+    return (
+      <window.RecruitRail active="mandate" onNav={(n) => { setOpenPipeline(null); setNav(n); }} me={me} talentCount={talents.length} search={search} onSearch={setSearch} title={`${pipelineMandate.role} · Pipeline`} subtitle={pipelineMandate.client} badges={badges} onLogout={onLogout}>
+        <window.MandatePipeline
+          mandate={pipelineMandate}
+          onBack={() => setOpenPipeline(null)}
+          onOpenTalent={(id) => { setOpenPipeline(null); goTalent(id); }}
+        />
+      </window.RecruitRail>
+    );
+  }
 
   // editor takes over the whole canvas
   if (editTalent) {
@@ -161,7 +177,7 @@ function Workspace({ onLogout }) {
   } else {
     [title, subtitle] = TITLES[nav];
     if (nav === 'uebersicht') body = <window.Dashboard me={me} apps={apps} vkpis={vkpis} clients={window.CLIENTS} mandates={mandates} onOpenTalent={goTalent} onOpenPipeline={() => setNav('bewerbungen')} onOpenMandate={() => setNav('mandate')} />;
-    else if (nav === 'mandate') body = withState(mandatesRes, <window.MandateView mandates={mandates} onEdit={editMandate} />);
+    else if (nav === 'mandate') body = withState(mandatesRes, <window.MandateView mandates={mandates} onEdit={editMandate} onOpenPipeline={goPipeline} />);
     else if (nav === 'pool') body = withState(talentsRes, <window.TalentGrid talents={talents} apps={apps} onOpen={goTalent} onAdd={addTalent} />);
     else if (nav === 'matching') body = <window.Matching talents={talents} />;
     else if (nav === 'bewerbungen') body = (

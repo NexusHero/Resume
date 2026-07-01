@@ -467,3 +467,91 @@ describe('DocumentAiService.outreach', () => {
     );
   });
 });
+
+describe('DocumentAiService.explainMatch', () => {
+  const mandate = { role: 'Engineer', location: 'Berlin', client: 'Acme' };
+
+  it('WithProvider_ReturnsReasonsAndMeters', async () => {
+    const json = JSON.stringify({ summary: 'Passt gut.', reasons: ['Starke Skills', 'Erfahrung'] });
+    const c = ctx({ available: true, generate: async () => json });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+    const res = await c.service.explainMatch(OWNER, OWNER, 't1', mandate);
+    expect(res.provider).toBe('claude');
+    expect(res.summary).toBe('Passt gut.');
+    expect(res.reasons).toEqual(['Starke Skills', 'Erfahrung']);
+    expect((await c.usageMeter.list(OWNER)).some((e) => e.feature === 'matchExplain')).toBe(true);
+  });
+
+  it('NoProvider_FallsBackToDeterministicReasons', async () => {
+    const c = ctx();
+    await c.talents.add(talent('t1'));
+    const res = await c.service.explainMatch(OWNER, OWNER, 't1', mandate);
+    expect(res.provider).toBe('template');
+    expect(res.reasons.length).toBeGreaterThan(0);
+  });
+
+  it('EmptyLlmReasons_FallsBack', async () => {
+    const c = ctx({
+      available: true,
+      generate: async () => JSON.stringify({ summary: 'x', reasons: [] }),
+    });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+    const res = await c.service.explainMatch(OWNER, OWNER, 't1', mandate);
+    expect(res.provider).toBe('template');
+  });
+
+  it('UnknownTalent_Throws404', async () => {
+    const c = ctx();
+    await expect(c.service.explainMatch(OWNER, OWNER, 'missing', mandate)).rejects.toBeInstanceOf(
+      NotFoundError,
+    );
+  });
+});
+
+describe('DocumentAiService.interviewKit', () => {
+  const mandate = { role: 'Engineer', location: 'Berlin', client: 'Acme' };
+
+  it('WithProvider_ReturnsKitAndMeters', async () => {
+    const json = JSON.stringify({
+      focus: 'Fachtiefe prüfen',
+      questions: [{ category: 'Fachlich', question: 'Erzählen Sie von X', lookFor: 'Details' }],
+      scorecard: ['Fachtiefe', 'Motivation'],
+    });
+    const c = ctx({ available: true, generate: async () => json });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+    const res = await c.service.interviewKit(OWNER, OWNER, 't1', mandate);
+    expect(res.provider).toBe('claude');
+    expect(res.focus).toBe('Fachtiefe prüfen');
+    expect(res.questions).toHaveLength(1);
+    expect((await c.usageMeter.list(OWNER)).some((e) => e.feature === 'interviewKit')).toBe(true);
+  });
+
+  it('NoProvider_FallsBackToTemplateKit', async () => {
+    const c = ctx();
+    await c.talents.add(talent('t1'));
+    const res = await c.service.interviewKit(OWNER, OWNER, 't1', mandate);
+    expect(res.provider).toBe('template');
+    expect(res.questions.length).toBeGreaterThan(0);
+  });
+
+  it('EmptyLlmQuestions_FallsBack', async () => {
+    const c = ctx({
+      available: true,
+      generate: async () => JSON.stringify({ focus: 'x', questions: [], scorecard: [] }),
+    });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+    const res = await c.service.interviewKit(OWNER, OWNER, 't1', mandate);
+    expect(res.provider).toBe('template');
+  });
+
+  it('UnknownTalent_Throws404', async () => {
+    const c = ctx();
+    await expect(c.service.interviewKit(OWNER, OWNER, 'missing', mandate)).rejects.toBeInstanceOf(
+      NotFoundError,
+    );
+  });
+});

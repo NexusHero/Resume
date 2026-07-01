@@ -17,6 +17,7 @@ import { PlacementController } from '../../src/http/placement-controller';
 import { CandidacyController } from '../../src/http/candidacy-controller';
 import { RetentionController } from '../../src/http/retention-controller';
 import { MatchController } from '../../src/http/match-controller';
+import { MatchAiController } from '../../src/http/match-ai-controller';
 import { UsageController } from '../../src/http/usage-controller';
 import { ComplianceController } from '../../src/http/compliance-controller';
 import { ForecastController } from '../../src/http/forecast-controller';
@@ -221,18 +222,17 @@ function makeApp(
     pdfMerger: new FakePdfMerger(),
     clock: new FixedClock(),
   });
-  const documentController = new DocumentController({
+  const documentAiService = new DocumentAiService({
     documentService,
-    documentAiService: new DocumentAiService({
-      documentService,
-      llmService,
-      apiKeyStore,
-      pdfTextExtractor: new FakePdfTextExtractor('Extracted CV text from PDF.'),
-      usageMeter,
-      clock: new FixedClock(),
-      logger: noopLogger,
-    }),
+    llmService,
+    apiKeyStore,
+    pdfTextExtractor: new FakePdfTextExtractor('Extracted CV text from PDF.'),
+    usageMeter,
+    clock: new FixedClock(),
+    logger: noopLogger,
   });
+  const documentController = new DocumentController({ documentService, documentAiService });
+  const matchAiController = new MatchAiController({ mandateRepository, documentAiService });
   const usageController = new UsageController({
     usageService: new UsageService({ usageMeter }),
   });
@@ -292,6 +292,7 @@ function makeApp(
     candidacyController,
     retentionController,
     matchController,
+    matchAiController,
     usageController,
     complianceController,
     forecastController,
@@ -1050,6 +1051,55 @@ describe('REST API /api/v1', () => {
 
     it('Match_Unauthenticated_Returns401', async () => {
       const res = await request(app).post('/api/v1/mandates/x/match').send({});
+      expect(res.status).toBe(401);
+    });
+
+    // --- Explainable match (why this candidate fits) ---
+    it('Explain_ReturnsGroundedReasons', async () => {
+      const { mandateId, talentId } = await seedMandateAndTalent();
+      const res = await agent
+        .post(`/api/v1/mandates/${mandateId}/candidates/${talentId}/explain`)
+        .send({});
+      expect(res.status).toBe(200);
+      // no LLM configured in CI → deterministic template, but always usable
+      expect(res.body.explanation.provider).toBe('template');
+      expect(Array.isArray(res.body.explanation.reasons)).toBe(true);
+      expect(res.body.explanation.reasons.length).toBeGreaterThan(0);
+    });
+
+    it('Explain_UnknownMandate_Returns404', async () => {
+      const { talentId } = await seedMandateAndTalent();
+      const res = await agent.post(`/api/v1/mandates/nope/candidates/${talentId}/explain`).send({});
+      expect(res.status).toBe(404);
+    });
+
+    it('Explain_Unauthenticated_Returns401', async () => {
+      const res = await request(app).post('/api/v1/mandates/x/candidates/y/explain').send({});
+      expect(res.status).toBe(401);
+    });
+
+    // --- Interview kit ---
+    it('InterviewKit_ReturnsQuestionsAndScorecard', async () => {
+      const { mandateId, talentId } = await seedMandateAndTalent();
+      const res = await agent
+        .post(`/api/v1/mandates/${mandateId}/candidates/${talentId}/interview-kit`)
+        .send({});
+      expect(res.status).toBe(200);
+      expect(res.body.kit.provider).toBe('template'); // no LLM in CI
+      expect(res.body.kit.questions.length).toBeGreaterThan(0);
+      expect(res.body.kit.scorecard.length).toBeGreaterThan(0);
+    });
+
+    it('InterviewKit_UnknownMandate_Returns404', async () => {
+      const { talentId } = await seedMandateAndTalent();
+      const res = await agent
+        .post(`/api/v1/mandates/nope/candidates/${talentId}/interview-kit`)
+        .send({});
+      expect(res.status).toBe(404);
+    });
+
+    it('InterviewKit_Unauthenticated_Returns401', async () => {
+      const res = await request(app).post('/api/v1/mandates/x/candidates/y/interview-kit').send({});
       expect(res.status).toBe(401);
     });
 

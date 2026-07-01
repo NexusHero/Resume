@@ -13,6 +13,7 @@ import type { PlacementController } from './placement-controller';
 import type { CandidacyController } from './candidacy-controller';
 import type { RetentionController } from './retention-controller';
 import type { MatchController } from './match-controller';
+import type { MatchAiController } from './match-ai-controller';
 import type { UsageController } from './usage-controller';
 import type { ComplianceController } from './compliance-controller';
 import type { ForecastController } from './forecast-controller';
@@ -38,6 +39,7 @@ export interface AppDeps {
   candidacyController: CandidacyController;
   retentionController: RetentionController;
   matchController: MatchController;
+  matchAiController: MatchAiController;
   usageController: UsageController;
   complianceController: ComplianceController;
   forecastController: ForecastController;
@@ -65,6 +67,7 @@ export function createApp(deps: AppDeps): Express {
     candidacyController: cand,
     retentionController: retention,
     matchController: match,
+    matchAiController: matchAi,
     usageController: usage,
     complianceController: compliance,
     forecastController: forecast,
@@ -125,6 +128,17 @@ export function createApp(deps: AppDeps): Express {
   api.delete('/talents/:id', requireAuth, asyncHandler(t.remove));
   // Recruiting pipeline: talents in a mandate's stages (owner-scoped).
   api.post('/mandates/:id/match', requireAuth, asyncHandler(match.match));
+  // AI on top of matching: explain a candidate's fit for the mandate.
+  api.post(
+    '/mandates/:id/candidates/:talentId/explain',
+    requireAuth,
+    asyncHandler(matchAi.explain),
+  );
+  api.post(
+    '/mandates/:id/candidates/:talentId/interview-kit',
+    requireAuth,
+    asyncHandler(matchAi.interviewKit),
+  );
   api.get('/mandates/:id/candidacies', requireAuth, asyncHandler(cand.board));
   api.post('/mandates/:id/candidacies', requireAuth, asyncHandler(cand.add));
   api.get('/talents/:id/candidacies', requireAuth, asyncHandler(cand.forTalent));

@@ -279,6 +279,8 @@ const USAGE_FEATURE_LABELS = {
   pitch: 'Candidate pitch',
   outreach: 'Outreach',
   coverLetter: 'Cover letter',
+  matchExplain: 'Match explanation',
+  interviewKit: 'Interview kit',
 };
 
 function formatTokens(n) {

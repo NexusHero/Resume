@@ -31,6 +31,22 @@ import {
   normalizeOutreach,
 } from '../domain/outreach';
 import {
+  type MandateContext,
+  type MatchExplanation,
+  explainPrompt,
+  explanationResultSchema,
+  fallbackExplanation,
+  matchedForMandate,
+  normalizeExplanation,
+} from '../domain/match-explain';
+import {
+  type InterviewKit,
+  interviewKitPrompt,
+  interviewKitResultSchema,
+  fallbackInterviewKit,
+  normalizeInterviewKit,
+} from '../domain/interview-kit';
+import {
   type DocumentContact,
   type ResumeContent,
   saveDocumentsSchema,
@@ -378,5 +394,87 @@ export class DocumentAiService {
     }
 
     return { ...fallbackOutreach(documents, opts), provider: 'template' };
+  }
+
+  /**
+   * Explain why a candidate fits a mandate — a short, grounded justification
+   * shown next to the shortlist. The deterministic skill overlap is always
+   * computed; the LLM turns it into readable reasons when available, otherwise
+   * a template assembles honest reasons from the same facts.
+   */
+  async explainMatch(
+    scope: string,
+    userId: string,
+    talentId: string,
+    mandate: MandateContext,
+  ): Promise<MatchExplanation & { provider: LlmProviderId | 'template' }> {
+    const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
+    const matchedSkills = matchedForMandate(documents, mandate);
+    const resolved = await this.resolveProvider(userId);
+
+    if (resolved && documents) {
+      try {
+        const built = explainPrompt(documents, mandate, matchedSkills);
+        const { text: reply, usage } = await resolved.provider.generate({
+          system: built.system,
+          prompt: built.prompt,
+          maxTokens: 500,
+          ...(resolved.apiKey ? { apiKey: resolved.apiKey } : {}),
+        });
+        await this.meter(userId, resolved.provider.id, 'matchExplain', usage);
+        const parsed = explanationResultSchema.safeParse(extractJson(reply));
+        if (parsed.success) {
+          const explanation = normalizeExplanation(parsed.data, matchedSkills);
+          if (explanation.reasons.length) return { ...explanation, provider: resolved.provider.id };
+        }
+      } catch (err) {
+        this.logger.warn(
+          { err: err instanceof Error ? err.message : String(err) },
+          'match explanation failed, falling back',
+        );
+      }
+    }
+
+    return { ...fallbackExplanation(documents, mandate, matchedSkills), provider: 'template' };
+  }
+
+  /**
+   * Build an interview kit (tailored questions + scorecard) for a candidate
+   * against a mandate. LLM when available, deterministic template otherwise —
+   * so the recruiter always walks in prepared.
+   */
+  async interviewKit(
+    scope: string,
+    userId: string,
+    talentId: string,
+    mandate: MandateContext,
+  ): Promise<InterviewKit & { provider: LlmProviderId | 'template' }> {
+    const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
+    const resolved = await this.resolveProvider(userId);
+
+    if (resolved) {
+      try {
+        const built = interviewKitPrompt(documents, mandate);
+        const { text: reply, usage } = await resolved.provider.generate({
+          system: built.system,
+          prompt: built.prompt,
+          maxTokens: 900,
+          ...(resolved.apiKey ? { apiKey: resolved.apiKey } : {}),
+        });
+        await this.meter(userId, resolved.provider.id, 'interviewKit', usage);
+        const parsed = interviewKitResultSchema.safeParse(extractJson(reply));
+        if (parsed.success) {
+          const kit = normalizeInterviewKit(parsed.data);
+          if (kit.questions.length) return { ...kit, provider: resolved.provider.id };
+        }
+      } catch (err) {
+        this.logger.warn(
+          { err: err instanceof Error ? err.message : String(err) },
+          'interview kit failed, falling back',
+        );
+      }
+    }
+
+    return { ...fallbackInterviewKit(documents, mandate), provider: 'template' };
   }
 }

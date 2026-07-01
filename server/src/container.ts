@@ -58,6 +58,7 @@ import { PlacementController } from './http/placement-controller';
 import { CandidacyController } from './http/candidacy-controller';
 import { RetentionController } from './http/retention-controller';
 import { MatchController } from './http/match-controller';
+import { MatchAiController } from './http/match-ai-controller';
 import { UsageController } from './http/usage-controller';
 import { ComplianceController } from './http/compliance-controller';
 import { ForecastController } from './http/forecast-controller';
@@ -157,6 +158,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     candidacyController: asClass(CandidacyController).singleton(),
     retentionController: asClass(RetentionController).singleton(),
     matchController: asClass(MatchController).singleton(),
+    matchAiController: asClass(MatchAiController).singleton(),
     usageController: asClass(UsageController).singleton(),
     complianceController: asClass(ComplianceController).singleton(),
     forecastController: asClass(ForecastController).singleton(),

@@ -38,13 +38,22 @@ export class DocumentController {
     const talentId = req.params.id as string;
     const q = req.query;
     const str = (v: unknown): string | undefined => (typeof v === 'string' ? v : undefined);
-    const buffer = await this.service.renderDossierPdf(currentUserId(req), talentId, {
-      company: str(q.company),
-      contactName: str(q.contact),
-      street: str(q.street),
-      postalCodeCity: str(q.plzOrt),
-      subject: str(q.subject),
-    });
+    const attachmentIds = (str(q.attachments) ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const buffer = await this.service.renderDossierPdf(
+      currentUserId(req),
+      talentId,
+      {
+        company: str(q.company),
+        contactName: str(q.contact),
+        street: str(q.street),
+        postalCodeCity: str(q.plzOrt),
+        subject: str(q.subject),
+      },
+      attachmentIds,
+    );
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="dossier-${talentId}.pdf"`);
     res.send(buffer);

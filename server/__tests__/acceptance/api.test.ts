@@ -155,7 +155,9 @@ function makeApp(
   const documentService = new DocumentService({
     documentRepository,
     talentRepository,
+    attachmentStore,
     pdfRenderer: new FakePdfRenderer(),
+    pdfMerger: new FakePdfMerger(),
     clock: new FixedClock(),
   });
   const documentController = new DocumentController({
@@ -617,6 +619,19 @@ describe('REST API /api/v1', () => {
     it('Attachments_Unauthenticated_Returns401', async () => {
       const res = await request(app).get('/api/v1/talents/x/attachments');
       expect(res.status).toBe(401);
+    });
+
+    it('Dossier_WithAttachment_ReturnsMergedPdf', async () => {
+      const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+      const id = created.body.talent.id as string;
+      const up = await agent
+        .post(`/api/v1/talents/${id}/attachments`)
+        .send({ name: 'Zeugnis.pdf', dataBase64: Buffer.from('%PDF ref').toString('base64') });
+      const res = await agent.get(
+        `/api/v1/talents/${id}/dossier/pdf?attachments=${up.body.attachment.id}`,
+      );
+      expect(res.status).toBe(200);
+      expect(res.headers['content-type']).toMatch(/application\/pdf/);
     });
 
     it('Attachments_DeletingTalent_CascadesAttachments', async () => {

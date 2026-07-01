@@ -3,7 +3,9 @@ import { NotFoundError } from '../../src/domain/errors';
 import {
   InMemoryTalentRepository,
   InMemoryDocumentRepository,
+  InMemoryAttachmentStore,
   FakePdfRenderer,
+  FakePdfMerger,
   FixedClock,
 } from '../support/fakes';
 import type { Talent } from '../../src/domain/talent';
@@ -73,14 +75,17 @@ const input: SaveDocumentsInput = {
 function ctx() {
   const talents = new InMemoryTalentRepository();
   const documents = new InMemoryDocumentRepository();
+  const attachments = new InMemoryAttachmentStore();
   const pdf = new FakePdfRenderer();
   const service = new DocumentService({
     documentRepository: documents,
     talentRepository: talents,
+    attachmentStore: attachments,
     pdfRenderer: pdf,
+    pdfMerger: new FakePdfMerger(),
     clock: new FixedClock(),
   });
-  return { service, talents, documents, pdf };
+  return { service, talents, documents, attachments, pdf };
 }
 
 describe('DocumentService', () => {
@@ -161,6 +166,47 @@ describe('DocumentService', () => {
     await c.service.save(OWNER, 't1', input);
     await c.service.renderDossierPdf(OWNER, 't1', {});
     expect(c.pdf.lastHtml).toContain('Aurora Systems GmbH'); // saved value kept
+  });
+
+  it('RenderDossierPdf_AppendsSelectedPdfAttachments', async () => {
+    const c = ctx();
+    await c.talents.add(talent('t1'));
+    await c.service.save(OWNER, 't1', input);
+    await c.attachments.add(
+      {
+        id: 'a1',
+        ownerId: OWNER,
+        talentId: 't1',
+        name: 'Zeugnis.pdf',
+        contentType: 'application/pdf',
+        size: 5,
+        createdAt: 'now',
+      },
+      Buffer.from('ATTACHMENT-BYTES'),
+    );
+    // FakePdfRenderer.renderHtml → 'pdf:<len>'; FakePdfMerger concatenates parts.
+    const pdf = await c.service.renderDossierPdf(OWNER, 't1', {}, ['a1']);
+    expect(pdf.toString()).toContain('ATTACHMENT-BYTES'); // attachment merged in
+  });
+
+  it('RenderDossierPdf_SkipsNonPdfAttachments', async () => {
+    const c = ctx();
+    await c.talents.add(talent('t1'));
+    await c.service.save(OWNER, 't1', input);
+    await c.attachments.add(
+      {
+        id: 'a1',
+        ownerId: OWNER,
+        talentId: 't1',
+        name: 'photo.png',
+        contentType: 'image/png',
+        size: 5,
+        createdAt: 'now',
+      },
+      Buffer.from('PNG-BYTES'),
+    );
+    const pdf = await c.service.renderDossierPdf(OWNER, 't1', {}, ['a1']);
+    expect(pdf.toString()).not.toContain('PNG-BYTES'); // non-PDF not merged
   });
 
   it('Get_UnknownTalent_Throws404', async () => {

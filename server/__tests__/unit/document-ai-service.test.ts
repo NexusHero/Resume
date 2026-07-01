@@ -342,3 +342,76 @@ describe('DocumentAiService.pitchForMandate', () => {
     );
   });
 });
+
+describe('DocumentAiService.outreach', () => {
+  const opts = (over: Partial<Parameters<DocumentAiService['outreach']>[2]> = {}) => ({
+    audience: 'candidate' as const,
+    channel: 'email' as const,
+    tone: '',
+    mandateContext: '',
+    recruiterName: '',
+    ...over,
+  });
+
+  it('Outreach_WithProvider_ReturnsNormalizedMessage', async () => {
+    const json = JSON.stringify({ subject: 'Spannende Rolle', body: 'Hallo Lena, …' });
+    const c = ctx({ available: true, generate: async () => '```json\n' + json + '\n```' });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+    const res = await c.service.outreach(OWNER, 't1', opts());
+    expect(res.provider).toBe('claude');
+    expect(res.subject).toBe('Spannende Rolle');
+    expect(res.body).toContain('Hallo Lena');
+  });
+
+  it('Outreach_LinkedIn_DropsSubjectEvenIfProvided', async () => {
+    const json = JSON.stringify({ subject: 'sollte weg', body: 'Kurze DM' });
+    const c = ctx({ available: true, generate: async () => json });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+    const res = await c.service.outreach(OWNER, 't1', opts({ channel: 'linkedin' }));
+    expect(res.provider).toBe('claude');
+    expect(res.subject).toBe('');
+    expect(res.body).toBe('Kurze DM');
+  });
+
+  it('Outreach_EmptyBody_FallsBack', async () => {
+    const c = ctx({
+      available: true,
+      generate: async () => JSON.stringify({ subject: 'x', body: '' }),
+    });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+    const res = await c.service.outreach(OWNER, 't1', opts());
+    expect(res.provider).toBe('template');
+    expect(res.body.length).toBeGreaterThan(0);
+  });
+
+  it('Outreach_ProviderThrows_FallsBack', async () => {
+    const c = ctx({
+      available: true,
+      generate: async () => {
+        throw new Error('boom');
+      },
+    });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+    const res = await c.service.outreach(OWNER, 't1', opts({ audience: 'client' }));
+    expect(res.provider).toBe('template');
+    expect(res.body).toContain('Lena');
+  });
+
+  it('Outreach_NoProvider_FallsBack', async () => {
+    const c = ctx();
+    await c.talents.add(talent('t1'));
+    const res = await c.service.outreach(OWNER, 't1', opts());
+    expect(res.provider).toBe('template');
+  });
+
+  it('Outreach_UnknownTalent_Throws404', async () => {
+    const c = ctx();
+    await expect(c.service.outreach(OWNER, 'missing', opts())).rejects.toBeInstanceOf(
+      NotFoundError,
+    );
+  });
+});

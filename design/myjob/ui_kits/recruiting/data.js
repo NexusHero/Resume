@@ -476,6 +476,16 @@ const RecruitApi = {
     );
     return data.pitch; // { headline, paragraphs, highlights, provider }
   },
+  async outreachMessage(talentId, opts = {}) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/documents/outreach`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(opts), // { audience, channel, tone, mandateContext, recruiterName }
+      }),
+    );
+    return data.message; // { subject, body, provider }
+  },
   async listPlacements() {
     const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/placements`));
     return Array.isArray(data) ? data.map(mapPlacement) : [];

@@ -4,6 +4,7 @@ import { aiSuggestSchema } from '../domain/document-ai';
 import { parseRequestSchema, parsePdfRequestSchema } from '../domain/document-parse';
 import { atsRequestSchema } from '../domain/ats-ai';
 import { pitchRequestSchema } from '../domain/candidate-pitch';
+import { outreachRequestSchema } from '../domain/outreach';
 import type { DocumentService } from '../services/document-service';
 import type { DocumentAiService } from '../services/document-ai-service';
 import { currentUserId } from './current-user';
@@ -102,5 +103,11 @@ export class DocumentController {
       mandateContext,
     );
     res.json({ pitch });
+  };
+
+  outreach = async (req: Request, res: Response): Promise<void> => {
+    const opts = outreachRequestSchema.parse(req.body);
+    const message = await this.ai.outreach(currentUserId(req), req.params.id as string, opts);
+    res.json({ message });
   };
 }

@@ -659,6 +659,40 @@ describe('REST API /api/v1', () => {
       expect(res.body.pitch.provider).toBe('template');
     });
 
+    it('DocumentsOutreach_CandidateEmail_ReturnsSubjectAndBody', async () => {
+      const created = await agent
+        .post('/api/v1/talents')
+        .send({ name: 'Lena Brandt', role: 'Product Designer' });
+      const id = created.body.talent.id as string;
+      const res = await agent
+        .post(`/api/v1/talents/${id}/documents/outreach`)
+        .send({ audience: 'candidate', channel: 'email', mandateContext: 'UX Lead' });
+      expect(res.status).toBe(200);
+      expect(res.body.message.provider).toBe('template');
+      expect(res.body.message.subject.length).toBeGreaterThan(0);
+      expect(res.body.message.body.length).toBeGreaterThan(0);
+    });
+
+    it('DocumentsOutreach_LinkedIn_HasNoSubject', async () => {
+      const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+      const id = created.body.talent.id as string;
+      const res = await agent
+        .post(`/api/v1/talents/${id}/documents/outreach`)
+        .send({ audience: 'client', channel: 'linkedin' });
+      expect(res.status).toBe(200);
+      expect(res.body.message.subject).toBe('');
+      expect(res.body.message.body.length).toBeGreaterThan(0);
+    });
+
+    it('DocumentsOutreach_InvalidChannel_Returns400', async () => {
+      const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+      const id = created.body.talent.id as string;
+      const res = await agent
+        .post(`/api/v1/talents/${id}/documents/outreach`)
+        .send({ channel: 'sms' });
+      expect(res.status).toBe(400);
+    });
+
     it('Dossier_Get_ReturnsPdf', async () => {
       const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
       const id = created.body.talent.id as string;

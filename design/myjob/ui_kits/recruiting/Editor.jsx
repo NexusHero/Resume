@@ -341,6 +341,55 @@ function Editor({ talent, onClose, onCreateMappe }) {
     }
   };
 
+  /* ---- Outreach: first-contact message (to candidate or client, email/LinkedIn) ---- */
+  const [outreachOpen, setOutreachOpen] = React.useState(false);
+  const [outAudience, setOutAudience] = React.useState('candidate'); // candidate | client
+  const [outChannel, setOutChannel] = React.useState('email'); // email | linkedin
+  const [outTone, setOutTone] = React.useState('');
+  const [outContext, setOutContext] = React.useState('');
+  const [outMsg, setOutMsg] = React.useState(null);
+  const [outBusy, setOutBusy] = React.useState(false);
+  const [outCopied, setOutCopied] = React.useState(false);
+  const runOutreach = async () => {
+    if (!canPersist) return;
+    setOutBusy(true);
+    setOutCopied(false);
+    try {
+      setOutMsg(
+        await window.RecruitApi.outreachMessage(talentId, {
+          audience: outAudience,
+          channel: outChannel,
+          tone: outTone,
+          mandateContext: outContext,
+        }),
+      );
+    } catch {
+      /* ignore */
+    }
+    setOutBusy(false);
+  };
+  const copyOutreach = async () => {
+    if (!outMsg) return;
+    const text = [outMsg.subject && `Betreff: ${outMsg.subject}`, outMsg.body]
+      .filter(Boolean)
+      .join('\n\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      setOutCopied(true);
+      setTimeout(() => setOutCopied(false), 1800);
+    } catch {
+      /* clipboard unavailable */
+    }
+  };
+  const openOutreachMail = () => {
+    if (!outMsg) return;
+    const to = outChannel === 'email' && outAudience === 'candidate' ? contact.email || '' : '';
+    const url = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(
+      outMsg.subject || '',
+    )}&body=${encodeURIComponent(outMsg.body || '')}`;
+    window.open(url, '_blank');
+  };
+
   const seg = (id, label) => (
     <button onClick={() => setDoc(id)} style={{ flex: 1, padding: '8px 10px', border: 'none', cursor: 'pointer', borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600, background: doc === id ? 'var(--surface-card)' : 'transparent', color: doc === id ? 'var(--text-heading)' : 'var(--text-soft)', boxShadow: doc === id ? 'var(--shadow-xs)' : 'none' }}>{label}</button>
   );
@@ -379,6 +428,14 @@ function Editor({ talent, onClose, onCreateMappe }) {
             style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', padding: '4px 12px' }}
           >
             <ED.Icon name="briefcase" size={13} /> Pitch
+          </button>
+        )}
+        {canPersist && (
+          <button
+            onClick={() => setOutreachOpen(true)}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', padding: '4px 12px' }}
+          >
+            <ED.Icon name="send" size={13} /> Outreach
           </button>
         )}
         {canPersist && (
@@ -486,6 +543,58 @@ function Editor({ talent, onClose, onCreateMappe }) {
           </div>
         </>
       )}
+
+      {outreachOpen && (() => {
+        const pill = (active, onClick, label) => (
+          <button onClick={onClick} style={{ flex: 1, padding: '7px 10px', border: 'none', cursor: 'pointer', borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, background: active ? 'var(--surface-card)' : 'transparent', color: active ? 'var(--text-heading)' : 'var(--text-soft)', boxShadow: active ? 'var(--shadow-xs)' : 'none' }}>{label}</button>
+        );
+        const toggle = (children) => (
+          <div style={{ display: 'flex', gap: '4px', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-md)', padding: '4px' }}>{children}</div>
+        );
+        return (
+          <>
+            <div onClick={() => setOutreachOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(8,11,18,0.45)', backdropFilter: 'blur(2px)', zIndex: 60 }} />
+            <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 61, width: 'min(680px, 92vw)', maxHeight: '88vh', overflowY: 'auto', background: 'var(--surface-card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-lg)', padding: '22px' }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)', marginBottom: '4px' }}>Outreach message</div>
+              <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginBottom: '14px' }}>Draft the first-contact message — to the candidate (sourcing) or to a client (presenting the candidate), as an email or a LinkedIn DM.</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+                <div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '5px' }}>To</div>
+                  {toggle(<>{pill(outAudience === 'candidate', () => setOutAudience('candidate'), 'Candidate')}{pill(outAudience === 'client', () => setOutAudience('client'), 'Client')}</>)}
+                </div>
+                <div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '5px' }}>Channel</div>
+                  {toggle(<>{pill(outChannel === 'email', () => setOutChannel('email'), 'Email')}{pill(outChannel === 'linkedin', () => setOutChannel('linkedin'), 'LinkedIn')}</>)}
+                </div>
+              </div>
+              <input value={outTone} onChange={(e) => setOutTone(e.target.value)} placeholder="Tone (optional), e.g. locker/Du or förmlich/Sie" style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', color: 'var(--text-heading)', fontFamily: 'var(--font-body)', fontSize: '13px', outline: 'none', marginBottom: '10px' }} />
+              <textarea value={outContext} onChange={(e) => setOutContext(e.target.value)} rows={4} placeholder="Mandate / role context (optional)…" style={{ width: '100%', resize: 'vertical', padding: '11px 13px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', color: 'var(--text-heading)', fontFamily: 'var(--font-body)', fontSize: '13px', outline: 'none' }} />
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
+                <ED.Button variant="ghost" onClick={() => setOutreachOpen(false)}>Close</ED.Button>
+                <ED.Button variant="primary" disabled={outBusy} onClick={runOutreach}>{outBusy ? 'Drafting…' : outMsg ? 'Regenerate' : 'Generate'}</ED.Button>
+              </div>
+              {outMsg && (
+                <div style={{ marginTop: '18px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', marginBottom: '10px' }}>
+                    {outChannel === 'email' && (
+                      <button onClick={openOutreachMail} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', padding: '4px 12px' }}>
+                        <ED.Icon name="send" size={13} /> Open in email
+                      </button>
+                    )}
+                    <button onClick={copyOutreach} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', padding: '4px 12px' }}>
+                      <ED.Icon name={outCopied ? 'check' : 'fileText'} size={13} /> {outCopied ? 'Copied' : 'Copy'}
+                    </button>
+                  </div>
+                  {outMsg.subject && (
+                    <div style={{ fontSize: '13px', color: 'var(--text-heading)', marginBottom: '8px' }}><strong>Betreff:</strong> {outMsg.subject}</div>
+                  )}
+                  <div style={{ whiteSpace: 'pre-wrap', fontSize: '13px', lineHeight: 1.55, color: 'var(--text-body)' }}>{outMsg.body}</div>
+                </div>
+              )}
+            </div>
+          </>
+        );
+      })()}
 
       <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: '20px', flex: 1, minHeight: 0, minWidth: 0 }}>
         {/* LEFT — form */}

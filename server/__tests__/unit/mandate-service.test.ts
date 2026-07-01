@@ -1,18 +1,25 @@
 import { MandateService } from '../../src/services/mandate-service';
 import { createMandateSchema, updateMandateSchema } from '../../src/domain/mandate';
 import { NotFoundError } from '../../src/domain/errors';
-import { InMemoryMandateRepository, FixedClock, SequenceIdGenerator } from '../support/fakes';
+import {
+  InMemoryMandateRepository,
+  InMemoryCandidacyRepository,
+  FixedClock,
+  SequenceIdGenerator,
+} from '../support/fakes';
 
 const OWNER = 'owner1';
 
 function makeService() {
   const repo = new InMemoryMandateRepository();
+  const candidacies = new InMemoryCandidacyRepository();
   const service = new MandateService({
     mandateRepository: repo,
+    candidacyRepository: candidacies,
     clock: new FixedClock(),
     idGenerator: new SequenceIdGenerator('mandate'),
   });
-  return { service, repo };
+  return { service, repo, candidacies };
 }
 
 const validInput = {

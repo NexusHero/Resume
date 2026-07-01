@@ -18,6 +18,8 @@ import type { Talent } from '../../src/domain/talent';
 import type { TalentRepository } from '../../src/ports/talent-repository';
 import type { Placement } from '../../src/domain/placement';
 import type { PlacementRepository } from '../../src/ports/placement-repository';
+import type { Candidacy } from '../../src/domain/candidacy';
+import type { CandidacyRepository } from '../../src/ports/candidacy-repository';
 import type { TalentDocuments } from '../../src/domain/talent-documents';
 import type { DocumentRepository } from '../../src/ports/document-repository';
 import type { Attachment } from '../../src/domain/attachment';
@@ -225,6 +227,61 @@ export class InMemoryPlacementRepository implements PlacementRepository {
     const before = this.placements.length;
     this.placements = this.placements.filter((p) => !(p.ownerId === ownerId && p.id === id));
     return this.placements.length < before;
+  }
+}
+
+export class InMemoryCandidacyRepository implements CandidacyRepository {
+  candidacies: Candidacy[] = [];
+  async listForMandate(ownerId: string, mandateId: string): Promise<Candidacy[]> {
+    return this.candidacies
+      .filter((c) => c.ownerId === ownerId && c.mandateId === mandateId)
+      .map((c) => ({ ...c }));
+  }
+  async listForTalent(ownerId: string, talentId: string): Promise<Candidacy[]> {
+    return this.candidacies
+      .filter((c) => c.ownerId === ownerId && c.talentId === talentId)
+      .map((c) => ({ ...c }));
+  }
+  async findById(ownerId: string, id: string): Promise<Candidacy | null> {
+    return this.candidacies.find((c) => c.ownerId === ownerId && c.id === id) ?? null;
+  }
+  async findByMandateAndTalent(
+    ownerId: string,
+    mandateId: string,
+    talentId: string,
+  ): Promise<Candidacy | null> {
+    return (
+      this.candidacies.find(
+        (c) => c.ownerId === ownerId && c.mandateId === mandateId && c.talentId === talentId,
+      ) ?? null
+    );
+  }
+  async add(candidacy: Candidacy): Promise<void> {
+    this.candidacies.push(candidacy);
+  }
+  async update(candidacy: Candidacy): Promise<void> {
+    const i = this.candidacies.findIndex(
+      (c) => c.ownerId === candidacy.ownerId && c.id === candidacy.id,
+    );
+    if (i >= 0) this.candidacies[i] = candidacy;
+  }
+  async remove(ownerId: string, id: string): Promise<boolean> {
+    const before = this.candidacies.length;
+    this.candidacies = this.candidacies.filter((c) => !(c.ownerId === ownerId && c.id === id));
+    return this.candidacies.length < before;
+  }
+  async removeForTalent(ownerId: string, talentId: string): Promise<void> {
+    this.candidacies = this.candidacies.filter(
+      (c) => !(c.ownerId === ownerId && c.talentId === talentId),
+    );
+  }
+  async removeForMandate(ownerId: string, mandateId: string): Promise<void> {
+    this.candidacies = this.candidacies.filter(
+      (c) => !(c.ownerId === ownerId && c.mandateId === mandateId),
+    );
+  }
+  async removeForOwner(ownerId: string): Promise<void> {
+    this.candidacies = this.candidacies.filter((c) => c.ownerId !== ownerId);
   }
 }
 

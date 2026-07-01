@@ -11,6 +11,7 @@ import './RecruitRail.jsx';
 import './PipelineBoard.jsx';
 import './Workspace.jsx';
 import './VermittlerViews.jsx';
+import './MandatePipeline.jsx';
 import './TalentProfile.jsx';
 import './Editor.jsx';
 import './MappeModal.jsx';

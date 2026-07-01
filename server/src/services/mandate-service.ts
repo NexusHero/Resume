@@ -1,11 +1,13 @@
 import { type Mandate, type CreateMandateInput, type UpdateMandateInput } from '../domain/mandate';
 import { NotFoundError } from '../domain/errors';
 import type { MandateRepository } from '../ports/mandate-repository';
+import type { CandidacyRepository } from '../ports/candidacy-repository';
 import type { Clock } from '../ports/clock';
 import type { IdGenerator } from '../ports/id-generator';
 
 export interface MandateServiceDeps {
   mandateRepository: MandateRepository;
+  candidacyRepository: CandidacyRepository;
   clock: Clock;
   idGenerator: IdGenerator;
 }
@@ -13,11 +15,13 @@ export interface MandateServiceDeps {
 /** CRUD for client search mandates. */
 export class MandateService {
   private readonly repo: MandateRepository;
+  private readonly candidacies: CandidacyRepository;
   private readonly clock: Clock;
   private readonly ids: IdGenerator;
 
   constructor(deps: MandateServiceDeps) {
     this.repo = deps.mandateRepository;
+    this.candidacies = deps.candidacyRepository;
     this.clock = deps.clock;
     this.ids = deps.idGenerator;
   }
@@ -64,5 +68,7 @@ export class MandateService {
   async remove(ownerId: string, id: string): Promise<void> {
     const removed = await this.repo.remove(ownerId, id);
     if (!removed) throw new NotFoundError(`Mandate ${id} not found`);
+    // Cascade: the mandate's pipeline candidacies go with it.
+    await this.candidacies.removeForMandate(ownerId, id);
   }
 }

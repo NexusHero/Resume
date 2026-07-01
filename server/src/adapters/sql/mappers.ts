@@ -3,6 +3,7 @@ import type { SavedSearch } from '../../domain/saved-search';
 import type { Mandate, MandatePriority, MandateStatus } from '../../domain/mandate';
 import type { Talent } from '../../domain/talent';
 import type { Placement, PlacementStatus } from '../../domain/placement';
+import type { Candidacy, CandidacyStage } from '../../domain/candidacy';
 import type { User } from '../../domain/user';
 import type { TalentDocuments } from '../../domain/talent-documents';
 import type { Attachment } from '../../domain/attachment';
@@ -13,6 +14,7 @@ import {
   mandates,
   talents,
   placements,
+  candidacies,
   users,
   talentDocuments,
   attachments,
@@ -30,6 +32,8 @@ type TalentRow = typeof talents.$inferSelect;
 type TalentInsert = typeof talents.$inferInsert;
 type PlacementRow = typeof placements.$inferSelect;
 type PlacementInsert = typeof placements.$inferInsert;
+type CandidacyRow = typeof candidacies.$inferSelect;
+type CandidacyInsert = typeof candidacies.$inferInsert;
 type UserRow = typeof users.$inferSelect;
 type UserInsert = typeof users.$inferInsert;
 type TalentDocumentsRow = typeof talentDocuments.$inferSelect;
@@ -217,6 +221,34 @@ export function placementToRow(placement: Placement): PlacementInsert {
     status: placement.status,
     createdAt: placement.createdAt,
     updatedAt: placement.updatedAt,
+  };
+}
+
+export function rowToCandidacy(row: CandidacyRow): Candidacy {
+  return {
+    id: row.id,
+    ownerId: row.ownerId,
+    mandateId: row.mandateId,
+    talentId: row.talentId,
+    stage: row.stage as CandidacyStage,
+    note: row.note,
+    order: row.order,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export function candidacyToRow(candidacy: Candidacy): CandidacyInsert {
+  return {
+    id: candidacy.id,
+    ownerId: candidacy.ownerId,
+    mandateId: candidacy.mandateId,
+    talentId: candidacy.talentId,
+    stage: candidacy.stage,
+    note: candidacy.note,
+    order: candidacy.order,
+    createdAt: candidacy.createdAt,
+    updatedAt: candidacy.updatedAt,
   };
 }
 

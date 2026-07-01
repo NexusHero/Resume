@@ -10,6 +10,7 @@ import type { LlmController } from './llm-controller';
 import type { MandateController } from './mandate-controller';
 import type { TalentController } from './talent-controller';
 import type { PlacementController } from './placement-controller';
+import type { CandidacyController } from './candidacy-controller';
 import type { DocumentController } from './document-controller';
 import type { AttachmentController } from './attachment-controller';
 import type { AuthController } from './auth-controller';
@@ -28,6 +29,7 @@ export interface AppDeps {
   mandateController: MandateController;
   talentController: TalentController;
   placementController: PlacementController;
+  candidacyController: CandidacyController;
   documentController: DocumentController;
   attachmentController: AttachmentController;
   authController: AuthController;
@@ -48,6 +50,7 @@ export function createApp(deps: AppDeps): Express {
     mandateController: m,
     talentController: t,
     placementController: p,
+    candidacyController: cand,
     documentController: docs,
     attachmentController: att,
     authController: auth,
@@ -102,6 +105,12 @@ export function createApp(deps: AppDeps): Express {
   api.post('/talents', requireAuth, asyncHandler(t.create));
   api.patch('/talents/:id', requireAuth, asyncHandler(t.update));
   api.delete('/talents/:id', requireAuth, asyncHandler(t.remove));
+  // Recruiting pipeline: talents in a mandate's stages (owner-scoped).
+  api.get('/mandates/:id/candidacies', requireAuth, asyncHandler(cand.board));
+  api.post('/mandates/:id/candidacies', requireAuth, asyncHandler(cand.add));
+  api.get('/talents/:id/candidacies', requireAuth, asyncHandler(cand.forTalent));
+  api.patch('/candidacies/:id', requireAuth, asyncHandler(cand.update));
+  api.delete('/candidacies/:id', requireAuth, asyncHandler(cand.remove));
   // A talent's resume + cover-letter documents (owner-scoped).
   api.get('/talents/:id/documents', requireAuth, asyncHandler(docs.get));
   api.put('/talents/:id/documents', requireAuth, asyncHandler(docs.save));

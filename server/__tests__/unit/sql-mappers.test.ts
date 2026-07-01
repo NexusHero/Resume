@@ -11,6 +11,8 @@ import {
   talentToRow,
   rowToPlacement,
   placementToRow,
+  rowToCandidacy,
+  candidacyToRow,
   rowToUser,
   userToRow,
   rowToTalentDocuments,
@@ -23,6 +25,7 @@ import type { SavedSearch } from '../../src/domain/saved-search';
 import type { Mandate } from '../../src/domain/mandate';
 import type { Talent } from '../../src/domain/talent';
 import type { Placement } from '../../src/domain/placement';
+import type { Candidacy } from '../../src/domain/candidacy';
 import type { User } from '../../src/domain/user';
 import type { TalentDocuments } from '../../src/domain/talent-documents';
 import type { Attachment } from '../../src/domain/attachment';
@@ -206,6 +209,25 @@ describe('placement mappers', () => {
     };
     expect(rowToPlacement(placementToRow(placement) as Required<typeof placement>)).toEqual(
       placement,
+    );
+  });
+});
+
+describe('candidacy mappers', () => {
+  it('Candidacy_RoundTrips_PreservingOwner', () => {
+    const candidacy: Candidacy = {
+      id: 'c1',
+      ownerId: 'owner1',
+      mandateId: 'm1',
+      talentId: 't1',
+      stage: 'interview',
+      note: 'strong on system design',
+      order: 2,
+      createdAt: '2026-06-25T10:00:00.000Z',
+      updatedAt: '2026-06-25T10:00:00.000Z',
+    };
+    expect(rowToCandidacy(candidacyToRow(candidacy) as Required<typeof candidacy>)).toEqual(
+      candidacy,
     );
   });
 });

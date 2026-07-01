@@ -135,5 +135,18 @@ export async function migrate(pool: Pool): Promise<void> {
       created_at text NOT NULL
     );
     CREATE INDEX IF NOT EXISTS attachments_owner_talent_idx ON attachments (owner_id, talent_id);
+    CREATE TABLE IF NOT EXISTS candidacies (
+      id text PRIMARY KEY,
+      owner_id text NOT NULL,
+      mandate_id text NOT NULL,
+      talent_id text NOT NULL,
+      stage text NOT NULL,
+      note text NOT NULL,
+      "order" integer NOT NULL,
+      created_at text NOT NULL,
+      updated_at text NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS candidacies_owner_mandate_idx ON candidacies (owner_id, mandate_id);
+    CREATE INDEX IF NOT EXISTS candidacies_owner_talent_idx ON candidacies (owner_id, talent_id);
   `);
 }

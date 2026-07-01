@@ -17,7 +17,7 @@ function PrioPill({ p }) {
 const PLACEMENT_TONE = { 'Paid': 'hired', 'Invoiced': 'offer', 'Probation': 'interview' };
 
 /* ---------- Mandate: client search assignments ---------- */
-function MandateView({ mandates, onEdit }) {
+function MandateView({ mandates, onEdit, onOpenPipeline }) {
   const order = [];
   const byClient = new Map();
   (mandates || []).forEach((m) => {
@@ -57,6 +57,15 @@ function MandateView({ mandates, onEdit }) {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end' }}>
                   <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: m.status === 'active' ? 'var(--success)' : 'var(--text-soft)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{m.status}</span>
+                  {onOpenPipeline && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onOpenPipeline(m); }}
+                      title="Open pipeline"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-soft)', padding: '3px 9px' }}
+                    >
+                      <VV.Icon name="briefcase" size={12} /> Pipeline
+                    </button>
+                  )}
                   <VV.Icon name="chevronRight" size={15} style={{ color: 'var(--text-soft)' }} />
                 </div>
               </div>

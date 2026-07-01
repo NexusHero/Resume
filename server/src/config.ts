@@ -14,6 +14,7 @@ export interface AppConfig {
   mandatesFile: string;
   talentsFile: string;
   placementsFile: string;
+  candidaciesFile: string;
   documentsFile: string;
   attachmentsFile: string;
   attachmentsDir: string;
@@ -150,6 +151,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     mandatesFile: path.join(storeDir, 'mandates.json'),
     talentsFile: path.join(storeDir, 'talents.json'),
     placementsFile: path.join(storeDir, 'placements.json'),
+    candidaciesFile: path.join(storeDir, 'candidacies.json'),
     documentsFile: path.join(storeDir, 'documents.json'),
     attachmentsFile: path.join(storeDir, 'attachments.json'),
     attachmentsDir: path.join(storeDir, 'attachments'),

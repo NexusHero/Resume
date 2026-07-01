@@ -5,6 +5,7 @@ import {
   InMemoryTalentRepository,
   InMemoryDocumentRepository,
   InMemoryAttachmentStore,
+  InMemoryCandidacyRepository,
   FixedClock,
   SequenceIdGenerator,
 } from '../support/fakes';
@@ -15,14 +16,16 @@ function makeService() {
   const repo = new InMemoryTalentRepository();
   const documents = new InMemoryDocumentRepository();
   const attachments = new InMemoryAttachmentStore();
+  const candidacies = new InMemoryCandidacyRepository();
   const service = new TalentService({
     talentRepository: repo,
     documentRepository: documents,
     attachmentStore: attachments,
+    candidacyRepository: candidacies,
     clock: new FixedClock(),
     idGenerator: new SequenceIdGenerator('talent'),
   });
-  return { service, repo, documents, attachments };
+  return { service, repo, documents, attachments, candidacies };
 }
 
 const validInput = { name: 'Lena Brandt', role: 'Product Designer' };

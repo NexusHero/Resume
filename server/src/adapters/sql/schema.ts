@@ -144,6 +144,19 @@ export const talentDocuments = pgTable(
   (t) => ({ pk: primaryKey({ columns: [t.ownerId, t.talentId] }) }),
 );
 
+/** Pipeline candidacies (talent ↔ mandate links with a stage). Owner-scoped. */
+export const candidacies = pgTable('candidacies', {
+  id: text('id').primaryKey(),
+  ownerId: text('owner_id').notNull(),
+  mandateId: text('mandate_id').notNull(),
+  talentId: text('talent_id').notNull(),
+  stage: text('stage').notNull(),
+  note: text('note').notNull(),
+  order: integer('order').notNull(),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
 /** Booked placements (mirrors domain `Placement`). Owner-scoped per recruiter. */
 export const placements = pgTable('placements', {
   id: text('id').primaryKey(),

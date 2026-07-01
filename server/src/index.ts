@@ -13,6 +13,7 @@ import type { TalentController } from './http/talent-controller';
 import type { PlacementController } from './http/placement-controller';
 import type { CandidacyController } from './http/candidacy-controller';
 import type { RetentionController } from './http/retention-controller';
+import type { MatchController } from './http/match-controller';
 import type { DocumentController } from './http/document-controller';
 import type { AttachmentController } from './http/attachment-controller';
 import type { AuthController } from './http/auth-controller';
@@ -44,6 +45,7 @@ async function main(): Promise<void> {
     placementController: container.resolve<PlacementController>('placementController'),
     candidacyController: container.resolve<CandidacyController>('candidacyController'),
     retentionController: container.resolve<RetentionController>('retentionController'),
+    matchController: container.resolve<MatchController>('matchController'),
     documentController: container.resolve<DocumentController>('documentController'),
     attachmentController: container.resolve<AttachmentController>('attachmentController'),
     authController: container.resolve<AuthController>('authController'),

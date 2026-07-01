@@ -16,6 +16,7 @@ import { TalentController } from '../../src/http/talent-controller';
 import { PlacementController } from '../../src/http/placement-controller';
 import { CandidacyController } from '../../src/http/candidacy-controller';
 import { RetentionController } from '../../src/http/retention-controller';
+import { MatchController } from '../../src/http/match-controller';
 import { DocumentController } from '../../src/http/document-controller';
 import { AttachmentController } from '../../src/http/attachment-controller';
 import { AuthController } from '../../src/http/auth-controller';
@@ -28,6 +29,7 @@ import { TalentService } from '../../src/services/talent-service';
 import { PlacementService } from '../../src/services/placement-service';
 import { CandidacyService } from '../../src/services/candidacy-service';
 import { RetentionService } from '../../src/services/retention-service';
+import { MatchService } from '../../src/services/match-service';
 import { DocumentService } from '../../src/services/document-service';
 import { DocumentAiService } from '../../src/services/document-ai-service';
 import { AttachmentService } from '../../src/services/attachment-service';
@@ -186,6 +188,14 @@ function makeApp(
     }),
     authorizer: new RoleAuthorizer(),
   });
+  const matchController = new MatchController({
+    matchService: new MatchService({
+      mandateRepository,
+      talentRepository,
+      documentRepository,
+      candidacyRepository,
+    }),
+  });
   const attachmentController = new AttachmentController({
     attachmentService: new AttachmentService({
       attachmentStore,
@@ -262,6 +272,7 @@ function makeApp(
     placementController,
     candidacyController,
     retentionController,
+    matchController,
     documentController,
     attachmentController,
     authController,
@@ -980,6 +991,43 @@ describe('REST API /api/v1', () => {
 
     it('Pipeline_Unauthenticated_Returns401', async () => {
       const res = await request(app).get('/api/v1/mandates/x/candidacies');
+      expect(res.status).toBe(401);
+    });
+
+    // --- Mandate → shortlist matching ---
+    it('Match_RanksPoolByFit', async () => {
+      const { mandateId } = await seedMandateAndTalent();
+      await agent
+        .post('/api/v1/talents')
+        .send({ name: 'Ada React', role: 'Engineer', skills: ['React', 'TypeScript'] });
+      await agent.post('/api/v1/talents').send({ name: 'Old Cobol', skills: ['COBOL'] });
+      const res = await agent
+        .post(`/api/v1/mandates/${mandateId}/match`)
+        .send({ jobText: 'We want React and TypeScript', limit: 5 });
+      expect(res.status).toBe(200);
+      const top = res.body.matches[0];
+      expect(top.name).toBe('Ada React');
+      expect(top.matched).toEqual(expect.arrayContaining(['React', 'TypeScript']));
+      expect(top.inPipeline).toBe(false);
+    });
+
+    it('Match_EmptyJobText_MatchesOnMandate', async () => {
+      const { mandateId } = await seedMandateAndTalent();
+      await agent
+        .post('/api/v1/talents')
+        .send({ name: 'C Plus', role: 'C++ Engineer', skills: ['C++'] });
+      const res = await agent.post(`/api/v1/mandates/${mandateId}/match`).send({});
+      expect(res.status).toBe(200);
+      expect(res.body.matches.length).toBeGreaterThan(0);
+    });
+
+    it('Match_UnknownMandate_Returns404', async () => {
+      const res = await agent.post('/api/v1/mandates/nope/match').send({ jobText: 'x' });
+      expect(res.status).toBe(404);
+    });
+
+    it('Match_Unauthenticated_Returns401', async () => {
+      const res = await request(app).post('/api/v1/mandates/x/match').send({});
       expect(res.status).toBe(401);
     });
 

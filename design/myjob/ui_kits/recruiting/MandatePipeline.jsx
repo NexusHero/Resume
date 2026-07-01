@@ -58,6 +58,10 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
   const [error, setError] = React.useState(false);
   const [adding, setAdding] = React.useState(false);
   const [pool, setPool] = React.useState([]);
+  const [matching, setMatching] = React.useState(false);
+  const [matchQuery, setMatchQuery] = React.useState('');
+  const [matches, setMatches] = React.useState(null); // null = not run yet
+  const [matchLoading, setMatchLoading] = React.useState(false);
 
   const load = React.useCallback(() => {
     setError(false);
@@ -79,6 +83,24 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
       load();
     } catch { /* ignore (e.g. duplicate) */ }
   };
+  const openMatch = () => { setMatching(true); setMatches(null); setMatchQuery(''); };
+  const runMatch = async () => {
+    setMatchLoading(true);
+    try {
+      setMatches(await window.RecruitApi.matchMandate(mandate.id, { jobText: matchQuery, limit: 12 }));
+    } catch {
+      setMatches([]);
+    } finally {
+      setMatchLoading(false);
+    }
+  };
+  const addFromMatch = async (talentId) => {
+    try {
+      await window.RecruitApi.addCandidacy(mandate.id, { talentId });
+      setMatches((ms) => (ms || []).map((m) => (m.talentId === talentId ? { ...m, inPipeline: true } : m)));
+      load();
+    } catch { /* ignore (e.g. duplicate) */ }
+  };
   const moveCard = async (card, stage) => {
     setCards((cs) => cs.map((c) => (c.id === card.id ? { ...c, stage } : c)));
     try { await window.RecruitApi.updateCandidacy(card.id, { stage }); } catch { load(); }
@@ -94,7 +116,8 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
         <button onClick={onBack} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)', padding: 0 }}>
           <MP.Icon name="arrowLeft" size={14} /> Back to mandates
         </button>
-        <div style={{ marginLeft: 'auto' }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
+          <MP.Button variant="outline" size="sm" iconLeft={<MP.Icon name="zap" size={15} />} onClick={openMatch}>Find matches</MP.Button>
           <MP.Button variant="primary" size="sm" iconLeft={<MP.Icon name="plus" size={15} />} onClick={openAdd}>Add candidate</MP.Button>
         </div>
       </div>
@@ -157,6 +180,65 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
               <MP.Button variant="ghost" onClick={() => setAdding(false)}>Close</MP.Button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {matching && (
+        <>
+          <div onClick={() => setMatching(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(8,11,18,0.45)', backdropFilter: 'blur(2px)', zIndex: 60 }} />
+          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 61, width: 'min(600px, 94vw)', maxHeight: '84vh', display: 'flex', flexDirection: 'column', background: 'var(--surface-card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-lg)', padding: '22px' }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)', marginBottom: '4px' }}>Find matches</div>
+            <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginBottom: '14px' }}>Rank the talent pool for <strong>{mandate.role}</strong>. Leave the ad empty to match on the mandate itself, or paste a job ad to sharpen the ranking.</div>
+            <MP.Textarea
+              rows={4}
+              placeholder={`Optional: paste the job ad for “${mandate.role}” to rank against its requirements…`}
+              value={matchQuery}
+              onChange={(e) => setMatchQuery(e.target.value)}
+              aria-label="Job ad text"
+            />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
+              <MP.Button variant="primary" size="sm" iconLeft={<MP.Icon name="zap" size={15} />} disabled={matchLoading} onClick={runMatch}>
+                {matchLoading ? 'Ranking…' : matches === null ? 'Rank pool' : 'Re-rank'}
+              </MP.Button>
+            </div>
+
+            <div style={{ marginTop: '14px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {matches !== null && matches.length === 0 && (
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-soft)', padding: '8px 0' }}>No candidates in the pool yet.</div>
+              )}
+              {(matches || []).map((mm) => (
+                <div key={mm.talentId} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 11px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--surface-card)' }}>
+                  <MP.Avatar name={mm.name} size="xs" />
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <button
+                      onClick={() => onOpenTalent(mm.talentId)}
+                      style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font-display)', fontSize: '13px', fontWeight: 700, color: 'var(--text-heading)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}
+                    >
+                      {mm.name}
+                    </button>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+                      {mm.role && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-soft)' }}>{mm.role}</span>}
+                      {(mm.matched || []).slice(0, 4).map((sk) => (
+                        <span key={sk} style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--accent-strong)', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-pill)', padding: '1px 7px' }}>{sk}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <MP.MatchIndicator value={mm.score} variant="chip" />
+                  {mm.inPipeline ? (
+                    <span style={{ flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-soft)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <MP.Icon name="check" size={12} /> In pipeline
+                    </span>
+                  ) : (
+                    <MP.Button variant="outline" size="sm" onClick={() => addFromMatch(mm.talentId)}>Add</MP.Button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+              <MP.Button variant="ghost" onClick={() => setMatching(false)}>Close</MP.Button>
             </div>
           </div>
         </>

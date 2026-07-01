@@ -415,6 +415,17 @@ const RecruitApi = {
     );
     return data.candidacy;
   },
+  async matchMandate(mandateId, { jobText = '', limit = 10 } = {}) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/mandates/${mandateId}/match`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ jobText, limit }),
+      }),
+    );
+    // [{ talentId, name, role, location, score, matched, inPipeline }] sorted by fit
+    return Array.isArray(data.matches) ? data.matches : [];
+  },
   async updateCandidacy(id, patch) {
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/candidacies/${id}`, {

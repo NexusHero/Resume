@@ -15,6 +15,11 @@ export const CANDIDACY_STAGES = [
 export const candidacyStageSchema = z.enum(CANDIDACY_STAGES);
 export type CandidacyStage = (typeof CANDIDACY_STAGES)[number];
 
+/** Stages that count as "submitted to the client" (advanced past the longlist). */
+export const SUBMITTED_STAGES: CandidacyStage[] = ['screening', 'interview', 'offer', 'placed'];
+/** Stages that count as having reached an interview. */
+export const INTERVIEW_STAGES: CandidacyStage[] = ['interview', 'offer', 'placed'];
+
 /**
  * A talent's candidacy for one mandate — the link that turns a loose talent
  * pool + separate mandates into a pipeline. Owner-scoped; unique per

@@ -39,4 +39,21 @@ export class MatchAiController {
     );
     res.json({ explanation });
   };
+
+  /** POST /mandates/:id/candidates/:talentId/interview-kit — tailored questions + scorecard. */
+  interviewKit = async (req: Request, res: Response): Promise<void> => {
+    const scope = currentScope(req);
+    const mandate = await this.mandateOr404(scope, req.params.id as string);
+    const kit = await this.ai.interviewKit(
+      scope,
+      currentUserId(req),
+      req.params.talentId as string,
+      {
+        role: mandate.role,
+        location: mandate.location,
+        client: mandate.client,
+      },
+    );
+    res.json({ kit });
+  };
 }

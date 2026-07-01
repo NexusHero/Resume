@@ -65,6 +65,7 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
   const [agg, setAgg] = React.useState(null); // null = not run yet
   const [aggLoading, setAggLoading] = React.useState(false);
   const [explains, setExplains] = React.useState({}); // talentId -> { loading, open, data }
+  const [interview, setInterview] = React.useState(null); // { name, loading, data } | null
 
   const load = React.useCallback(() => {
     setError(false);
@@ -122,6 +123,15 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
         ...e,
         [talentId]: { loading: false, open: true, data: { summary: 'Konnte keine Begründung laden.', reasons: [] } },
       }));
+    }
+  };
+  const openInterview = async (talentId, name) => {
+    setInterview({ name, loading: true, data: null });
+    try {
+      const data = await window.RecruitApi.interviewKit(mandate.id, talentId);
+      setInterview({ name, loading: false, data });
+    } catch {
+      setInterview({ name, loading: false, data: null, error: true });
     }
   };
   const addFromMatch = async (talentId) => {
@@ -288,6 +298,9 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
                       <button onClick={() => toggleExplain(mm.talentId)} title="Warum passt dieser Kandidat?" style={{ flexShrink: 0, cursor: 'pointer', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '10.5px', padding: '4px 9px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                         <MP.Icon name="zap" size={12} /> {exp && exp.open ? 'Warum ▲' : 'Warum ▾'}
                       </button>
+                      <button onClick={() => openInterview(mm.talentId, mm.name)} title="Interview-Kit erstellen" style={{ flexShrink: 0, cursor: 'pointer', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '10.5px', padding: '4px 9px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <MP.Icon name="message" size={12} /> Interview
+                      </button>
                       <MP.MatchIndicator value={mm.score} variant="chip" />
                       {mm.inPipeline ? (
                         <span style={{ flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-soft)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
@@ -320,6 +333,57 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
               <MP.Button variant="ghost" onClick={() => setMatching(false)}>Close</MP.Button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {interview && (
+        <>
+          <div onClick={() => setInterview(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(8,11,18,0.5)', backdropFilter: 'blur(2px)', zIndex: 70 }} />
+          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 71, width: 'min(640px, 94vw)', maxHeight: '86vh', display: 'flex', flexDirection: 'column', background: 'var(--surface-card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-lg)', padding: '22px' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '4px' }}>
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)' }}>Interview-Kit</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-soft)' }}>{interview.name} · {mandate.role}</span>
+            </div>
+
+            {interview.loading ? (
+              <div style={{ padding: '28px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Leitfaden wird erstellt…</div>
+            ) : !interview.data ? (
+              <div style={{ padding: '22px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Konnte das Interview-Kit nicht laden.</div>
+            ) : (
+              <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '10px' }}>
+                {interview.data.focus && (
+                  <div style={{ fontSize: '12.5px', color: 'var(--text-heading)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '10px 12px' }}>
+                    <strong>Fokus:</strong> {interview.data.focus}
+                  </div>
+                )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {interview.data.questions.map((q, i) => (
+                    <div key={i} style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '11px 12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '4px' }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9.5px', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--accent-strong)', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-pill)', padding: '2px 8px' }}>{q.category}</span>
+                      </div>
+                      <div style={{ fontSize: '13px', color: 'var(--text-heading)', lineHeight: 1.45 }}>{q.question}</div>
+                      {q.lookFor && <div style={{ fontSize: '11.5px', color: 'var(--text-soft)', marginTop: '3px' }}>→ Achte auf: {q.lookFor}</div>}
+                    </div>
+                  ))}
+                </div>
+                {interview.data.scorecard.length > 0 && (
+                  <div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '7px' }}>Scorecard</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {interview.data.scorecard.map((s, i) => (
+                        <span key={i} style={{ fontSize: '11.5px', color: 'var(--text-soft)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '3px 10px' }}>{s}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+              <MP.Button variant="ghost" onClick={() => setInterview(null)}>Close</MP.Button>
             </div>
           </div>
         </>

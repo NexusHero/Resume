@@ -457,6 +457,19 @@ const RecruitApi = {
     );
     return data.explanation; // { summary, reasons[], matchedSkills[], provider }
   },
+  async interviewKit(mandateId, talentId) {
+    const data = await _jsonOrThrow(
+      await fetch(
+        `${RECRUIT_API_BASE}/mandates/${mandateId}/candidates/${talentId}/interview-kit`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({}),
+        },
+      ),
+    );
+    return data.kit; // { focus, questions[], scorecard[], provider }
+  },
   async updateCandidacy(id, patch) {
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/candidacies/${id}`, {

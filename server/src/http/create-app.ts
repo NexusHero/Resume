@@ -134,6 +134,11 @@ export function createApp(deps: AppDeps): Express {
     requireAuth,
     asyncHandler(matchAi.explain),
   );
+  api.post(
+    '/mandates/:id/candidates/:talentId/interview-kit',
+    requireAuth,
+    asyncHandler(matchAi.interviewKit),
+  );
   api.get('/mandates/:id/candidacies', requireAuth, asyncHandler(cand.board));
   api.post('/mandates/:id/candidacies', requireAuth, asyncHandler(cand.add));
   api.get('/talents/:id/candidacies', requireAuth, asyncHandler(cand.forTalent));

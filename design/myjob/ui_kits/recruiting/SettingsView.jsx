@@ -280,6 +280,7 @@ const USAGE_FEATURE_LABELS = {
   outreach: 'Outreach',
   coverLetter: 'Cover letter',
   matchExplain: 'Match explanation',
+  interviewKit: 'Interview kit',
 };
 
 function formatTokens(n) {

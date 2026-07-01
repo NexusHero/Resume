@@ -1078,6 +1078,31 @@ describe('REST API /api/v1', () => {
       expect(res.status).toBe(401);
     });
 
+    // --- Interview kit ---
+    it('InterviewKit_ReturnsQuestionsAndScorecard', async () => {
+      const { mandateId, talentId } = await seedMandateAndTalent();
+      const res = await agent
+        .post(`/api/v1/mandates/${mandateId}/candidates/${talentId}/interview-kit`)
+        .send({});
+      expect(res.status).toBe(200);
+      expect(res.body.kit.provider).toBe('template'); // no LLM in CI
+      expect(res.body.kit.questions.length).toBeGreaterThan(0);
+      expect(res.body.kit.scorecard.length).toBeGreaterThan(0);
+    });
+
+    it('InterviewKit_UnknownMandate_Returns404', async () => {
+      const { talentId } = await seedMandateAndTalent();
+      const res = await agent
+        .post(`/api/v1/mandates/nope/candidates/${talentId}/interview-kit`)
+        .send({});
+      expect(res.status).toBe(404);
+    });
+
+    it('InterviewKit_Unauthenticated_Returns401', async () => {
+      const res = await request(app).post('/api/v1/mandates/x/candidates/y/interview-kit').send({});
+      expect(res.status).toBe(401);
+    });
+
     // --- AI usage counter ---
     it('Usage_Authenticated_ReturnsZeroedSummaryForNewUser', async () => {
       const res = await agent.get('/api/v1/settings/usage');

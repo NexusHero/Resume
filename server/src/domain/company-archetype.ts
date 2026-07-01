@@ -31,8 +31,8 @@ export interface InterviewStyle {
 export interface CompanyProfile {
   archetype: ArchetypeKey;
   label: string;
-  /** Where the classification came from — a curated name or an inferred archetype. */
-  source: 'curated' | 'archetype';
+  /** Where the classification came from — real observations, a curated name, or an inferred archetype. */
+  source: 'observed' | 'curated' | 'archetype';
   confidence: 'low' | 'medium' | 'high';
   style: InterviewStyle;
 }

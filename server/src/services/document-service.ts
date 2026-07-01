@@ -5,14 +5,17 @@ import {
   emptyResume,
   emptyLetter,
 } from '../domain/talent-documents';
+import { documentsToHtml } from '../domain/documents-html';
 import { NotFoundError } from '../domain/errors';
 import type { DocumentRepository } from '../ports/document-repository';
 import type { TalentRepository } from '../ports/talent-repository';
+import type { PdfRenderer } from '../ports/pdf-renderer';
 import type { Clock } from '../ports/clock';
 
 export interface DocumentServiceDeps {
   documentRepository: DocumentRepository;
   talentRepository: TalentRepository;
+  pdfRenderer: PdfRenderer;
   clock: Clock;
 }
 
@@ -25,11 +28,13 @@ export interface DocumentServiceDeps {
 export class DocumentService {
   private readonly docs: DocumentRepository;
   private readonly talents: TalentRepository;
+  private readonly pdf: PdfRenderer;
   private readonly clock: Clock;
 
   constructor(deps: DocumentServiceDeps) {
     this.docs = deps.documentRepository;
     this.talents = deps.talentRepository;
+    this.pdf = deps.pdfRenderer;
     this.clock = deps.clock;
   }
 
@@ -78,5 +83,11 @@ export class DocumentService {
     };
     await this.docs.save(documents);
     return documents;
+  }
+
+  /** Render the talent's saved documents (resume + cover letter) to a PDF. */
+  async renderPdf(ownerId: string, talentId: string): Promise<Buffer> {
+    const documents = await this.get(ownerId, talentId);
+    return this.pdf.renderHtml(documentsToHtml(documents));
   }
 }

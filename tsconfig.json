@@ -3,6 +3,9 @@
     "target": "ES2022",
     "module": "CommonJS",
     "moduleResolution": "Node",
+    // TS 6 deprecates node10 resolution (removed in TS 7). We stay on CommonJS
+    // with extensionless imports for now; nodenext migration is a follow-up.
+    "ignoreDeprecations": "6.0",
     "rootDir": "server/src",
     "outDir": "server/dist",
     "lib": ["ES2022"],

@@ -377,6 +377,28 @@ const RecruitApi = {
     );
     return mapTalent(data.talent);
   },
+  /* ---- Talent documents (resume + cover letter, stored server-side) ---- */
+  async getTalentDocuments(talentId) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/documents`),
+    );
+    return data.documents; // { contact, resume, letter, style, updatedAt }
+  },
+  async saveTalentDocuments(talentId, documents) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/documents`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(documents),
+      }),
+    );
+    return data.documents;
+  },
+  talentDocumentsPdfUrl(talentId) {
+    // Same-origin GET — the session cookie authorises it, so it can be opened
+    // directly in a new tab / used as a download link.
+    return `${RECRUIT_API_BASE}/talents/${talentId}/documents/pdf`;
+  },
   async listPlacements() {
     const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/placements`));
     return Array.isArray(data) ? data.map(mapPlacement) : [];

@@ -175,6 +175,95 @@ test.describe('UI acceptance — the suite renders in English', () => {
     await expect(page.locator('main')).toContainText('Suhay Sevinc'); // pinned "me"
   });
 
+  test('Recruiting_Editor_LoadsAndAutosavesDocuments', async ({ page }) => {
+    await page.route('**/api/v1/auth/me', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id: 'user1', email: 'me@example.de' } }),
+      }),
+    );
+    await page.route('**/api/v1/talents', (route) => {
+      if (route.request().method() !== 'GET') return route.continue();
+      return route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify([
+          {
+            id: 't-api-1',
+            name: 'Tobias Wirth',
+            role: 'Staff Engineer',
+            headline: '',
+            location: 'Hamburg',
+            email: 'tobias@example.de',
+            phone: '',
+            availability: '',
+            salary: '',
+            skills: [],
+            createdAt: '2026-06-25T10:00:00.000Z',
+            updatedAt: '2026-06-25T10:00:00.000Z',
+          },
+        ]),
+      });
+    });
+    let loaded = false;
+    const puts: string[] = [];
+    await page.route('**/api/v1/talents/t-api-1/documents', (route) => {
+      const body = {
+        documents: {
+          contact: {
+            name: 'Tobias Wirth',
+            role: 'Staff Engineer',
+            email: '',
+            phone: '',
+            location: '',
+            linkedin: '',
+          },
+          resume: { summary: '', experience: [], education: [], skillGroups: [] },
+          letter: {
+            firma: '',
+            ansprechpartner: '',
+            strasse: '',
+            plzOrt: '',
+            betreff: '',
+            anrede: 'Sehr geehrte Damen und Herren,',
+            absaetze: [''],
+            gruss: 'Mit freundlichen Grüßen',
+          },
+          style: {
+            accent: '#2A6FDB',
+            strong: '#1d4ed8',
+            onDark: '#7aa7f5',
+            font: 'var(--font-display)',
+            size: 1,
+          },
+          updatedAt: '2026-06-25T10:00:00.000Z',
+        },
+      };
+      if (route.request().method() === 'GET') {
+        loaded = true;
+        return route.fulfill({ contentType: 'application/json', body: JSON.stringify(body) });
+      }
+      puts.push(route.request().postData() || '');
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify(body) });
+    });
+
+    await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
+    await page.getByRole('button', { name: /Talent Pool/ }).click();
+    await page.getByText('Tobias Wirth').first().click();
+    await page
+      .getByRole('button', { name: /Create resume|Edit resume/ })
+      .first()
+      .click();
+    // opening the editor loads the stored documents
+    await expect.poll(() => loaded).toBe(true);
+    // editing a field autosaves it (debounced) to the server
+    const field = page.locator('main').getByRole('textbox').first();
+    await field.fill('E2E-MARKER-NAME');
+    await expect(page.locator('main').getByRole('status')).toContainText('Saved', {
+      timeout: 10000,
+    });
+    expect(puts.some((b) => b.includes('E2E-MARKER-NAME'))).toBe(true);
+  });
+
   test('Recruiting_Mandates_RenderFromApiGroupedByClient', async ({ page }) => {
     // Stub the live mandates endpoint with a client/role not in the sample, so a
     // pass proves MandateView grouped and rendered API data.

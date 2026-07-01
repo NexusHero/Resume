@@ -1,6 +1,11 @@
 import { DocumentService } from '../../src/services/document-service';
 import { NotFoundError } from '../../src/domain/errors';
-import { InMemoryTalentRepository, InMemoryDocumentRepository, FixedClock } from '../support/fakes';
+import {
+  InMemoryTalentRepository,
+  InMemoryDocumentRepository,
+  FakePdfRenderer,
+  FixedClock,
+} from '../support/fakes';
 import type { Talent } from '../../src/domain/talent';
 import type { SaveDocumentsInput } from '../../src/domain/talent-documents';
 
@@ -68,12 +73,14 @@ const input: SaveDocumentsInput = {
 function ctx() {
   const talents = new InMemoryTalentRepository();
   const documents = new InMemoryDocumentRepository();
+  const pdf = new FakePdfRenderer();
   const service = new DocumentService({
     documentRepository: documents,
     talentRepository: talents,
+    pdfRenderer: pdf,
     clock: new FixedClock(),
   });
-  return { service, talents, documents };
+  return { service, talents, documents, pdf };
 }
 
 describe('DocumentService', () => {
@@ -116,6 +123,22 @@ describe('DocumentService', () => {
     });
     expect((await c.service.get(OWNER, 't1')).resume.summary).toBe('Updated.');
     expect(c.documents.documents).toHaveLength(1);
+  });
+
+  it('RenderPdf_BuildsHtmlFromSavedDocuments', async () => {
+    const c = ctx();
+    await c.talents.add(talent('t1'));
+    await c.service.save(OWNER, 't1', input);
+    const pdf = await c.service.renderPdf(OWNER, 't1');
+    expect(pdf.length).toBeGreaterThan(0);
+    // the rendered HTML carries the saved content
+    expect(c.pdf.lastHtml).toContain('Designer with 8 years of experience.');
+    expect(c.pdf.lastHtml).toContain('Absatz eins.');
+  });
+
+  it('RenderPdf_UnknownTalent_Throws404', async () => {
+    const c = ctx();
+    await expect(c.service.renderPdf(OWNER, 'missing')).rejects.toBeInstanceOf(NotFoundError);
   });
 
   it('Get_UnknownTalent_Throws404', async () => {

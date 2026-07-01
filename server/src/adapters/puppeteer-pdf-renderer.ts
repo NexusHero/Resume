@@ -115,6 +115,24 @@ export class PuppeteerPdfRenderer implements PdfRenderer {
     }
   }
 
+  async renderHtml(html: string): Promise<Buffer> {
+    const browser = await this.browser();
+    const page = await browser.newPage();
+    try {
+      await page.setContent(html, { waitUntil: 'load', timeout: 60000 });
+      await page.evaluate(async () => {
+        try {
+          await document.fonts.ready;
+        } catch {
+          /* fonts API unavailable */
+        }
+      });
+      return await this.toPdf(page);
+    } finally {
+      await page.close();
+    }
+  }
+
   async close(): Promise<void> {
     if (this.browserPromise) {
       const browser = await this.browserPromise;

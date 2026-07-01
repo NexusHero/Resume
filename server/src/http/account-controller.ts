@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import type { AccountService } from '../services/account-service';
 import type { Clock } from '../ports/clock';
 import type { AppConfig } from '../config';
-import { currentUserId } from './current-user';
+import { currentUserId, currentScope } from './current-user';
 
 /**
  * DSGVO account endpoints under /api/v1/account: export everything the
@@ -20,7 +20,11 @@ export class AccountController {
   }
 
   export = async (req: Request, res: Response): Promise<void> => {
-    const data = await this.service.exportFor(currentUserId(req), this.clock.isoNow());
+    const data = await this.service.exportFor(
+      currentUserId(req),
+      currentScope(req),
+      this.clock.isoNow(),
+    );
     // Offer it as a download — a portable JSON file the recruiter can keep.
     res.setHeader('Content-Disposition', 'attachment; filename="myjob-export.json"');
     res.json(data);

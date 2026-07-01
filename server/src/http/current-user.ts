@@ -26,3 +26,15 @@ export function currentRoles(req: Request): Role[] {
 export function currentPrincipal(req: Request): AuthPrincipal {
   return { id: currentUserId(req), roles: currentRoles(req) };
 }
+
+/**
+ * The owner scope for **shared team data** (mandates, talents, pipeline, …).
+ * The whole instance is one team, so recruiting records are owned by the team,
+ * not the individual — every member sees the same pool. (Auth is still per
+ * user; only the *data ownership* is the team.) Later multi-org work makes this
+ * read the user's org membership instead of a constant.
+ */
+export const TEAM_SCOPE = 'team';
+export function currentScope(_req: Request): string {
+  return TEAM_SCOPE;
+}

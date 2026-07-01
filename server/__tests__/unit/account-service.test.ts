@@ -4,9 +4,7 @@ import {
   InMemoryMandateRepository,
   InMemoryTalentRepository,
   InMemoryPlacementRepository,
-  InMemoryDocumentRepository,
-  InMemoryAttachmentStore,
-  InMemoryCandidacyRepository,
+  InMemoryApiKeyStore,
   InMemoryUserRepository,
   InMemoryPasswordResetTokenStore,
 } from '../support/fakes';
@@ -15,16 +13,15 @@ import type { Talent } from '../../src/domain/talent';
 import type { Placement } from '../../src/domain/placement';
 import type { User } from '../../src/domain/user';
 
-const OWNER = 'owner1';
+const USER = 'user1';
+const TEAM = 'team';
 const TS = '2026-06-30T12:00:00.000Z';
 
 function makeService() {
   const mandateRepository = new InMemoryMandateRepository();
   const talentRepository = new InMemoryTalentRepository();
   const placementRepository = new InMemoryPlacementRepository();
-  const documentRepository = new InMemoryDocumentRepository();
-  const attachmentStore = new InMemoryAttachmentStore();
-  const candidacyRepository = new InMemoryCandidacyRepository();
+  const apiKeyStore = new InMemoryApiKeyStore();
   const userRepository = new InMemoryUserRepository();
   const sessionStore = new MemorySessionStore();
   const passwordResetTokenStore = new InMemoryPasswordResetTokenStore();
@@ -32,9 +29,7 @@ function makeService() {
     mandateRepository,
     talentRepository,
     placementRepository,
-    documentRepository,
-    attachmentStore,
-    candidacyRepository,
+    apiKeyStore,
     userRepository,
     sessionStore,
     passwordResetTokenStore,
@@ -44,16 +39,14 @@ function makeService() {
     mandateRepository,
     talentRepository,
     placementRepository,
-    documentRepository,
-    attachmentStore,
-    candidacyRepository,
+    apiKeyStore,
     userRepository,
     sessionStore,
     passwordResetTokenStore,
   };
 }
 
-const mandate = (id: string, ownerId = OWNER): Mandate => ({
+const mandate = (id: string, ownerId = TEAM): Mandate => ({
   id,
   ownerId,
   client: 'Aurora',
@@ -70,7 +63,7 @@ const mandate = (id: string, ownerId = OWNER): Mandate => ({
   updatedAt: TS,
 });
 
-const talent = (id: string, ownerId = OWNER): Talent => ({
+const talent = (id: string, ownerId = TEAM): Talent => ({
   id,
   ownerId,
   name: 'Lena',
@@ -86,7 +79,7 @@ const talent = (id: string, ownerId = OWNER): Talent => ({
   updatedAt: TS,
 });
 
-const placement = (id: string, ownerId = OWNER): Placement => ({
+const placement = (id: string, ownerId = TEAM): Placement => ({
   id,
   ownerId,
   candidateName: 'Mara',
@@ -108,18 +101,17 @@ const user = (id: string): User => ({
 });
 
 describe('AccountService', () => {
-  it('ExportFor_ReturnsOnlyOwnedDataWithAccountAndTimestamp', async () => {
+  it('ExportFor_ReturnsAccountPlusTeamWorkspace', async () => {
     const ctx = makeService();
-    await ctx.userRepository.add(user(OWNER));
+    await ctx.userRepository.add(user(USER));
     await ctx.mandateRepository.add(mandate('m1'));
-    await ctx.mandateRepository.add(mandate('m2', 'other'));
     await ctx.talentRepository.add(talent('t1'));
     await ctx.placementRepository.add(placement('p1'));
 
-    const result = await ctx.service.exportFor(OWNER, TS);
+    const result = await ctx.service.exportFor(USER, TEAM, TS);
 
     expect(result.exportedAt).toBe(TS);
-    expect(result.account).toMatchObject({ id: OWNER, email: 'owner1@example.com' });
+    expect(result.account).toMatchObject({ id: USER, email: 'user1@example.com' });
     expect(result.account).not.toHaveProperty('passwordHash'); // never leak the hash
     expect(result.mandates).toHaveLength(1);
     expect(result.talents).toHaveLength(1);
@@ -128,31 +120,28 @@ describe('AccountService', () => {
 
   it('ExportFor_UnknownAccount_ReturnsNullAccount', async () => {
     const ctx = makeService();
-    const result = await ctx.service.exportFor(OWNER, TS);
+    const result = await ctx.service.exportFor(USER, TEAM, TS);
     expect(result.account).toBeNull();
     expect(result.mandates).toEqual([]);
   });
 
-  it('Erase_RemovesOwnedDataSessionsAndAccount_LeavesOthers', async () => {
+  it('Erase_RemovesPersonalFootprint_LeavesTeamData', async () => {
     const ctx = makeService();
-    await ctx.userRepository.add(user(OWNER));
-    await ctx.mandateRepository.add(mandate('m1'));
-    await ctx.mandateRepository.add(mandate('m2', 'other'));
-    await ctx.talentRepository.add(talent('t1'));
-    await ctx.placementRepository.add(placement('p1'));
-    const token = await ctx.sessionStore.create(OWNER);
-    await ctx.passwordResetTokenStore.create(OWNER);
+    await ctx.userRepository.add(user(USER));
+    await ctx.mandateRepository.add(mandate('m1')); // team-owned
+    await ctx.apiKeyStore.set(USER, 'claude', 'sk-personal');
+    const token = await ctx.sessionStore.create(USER);
+    await ctx.passwordResetTokenStore.create(USER);
 
-    await ctx.service.erase(OWNER);
+    await ctx.service.erase(USER);
 
-    expect(await ctx.mandateRepository.list(OWNER)).toEqual([]);
-    expect(await ctx.talentRepository.list(OWNER)).toEqual([]);
-    expect(await ctx.placementRepository.list(OWNER)).toEqual([]);
-    expect(await ctx.userRepository.findById(OWNER)).toBeNull();
+    // the person's own footprint is gone
+    expect(await ctx.userRepository.findById(USER)).toBeNull();
     expect(await ctx.sessionStore.userIdFor(token)).toBeNull();
-    expect(ctx.passwordResetTokenStore.tokens).toEqual([]); // reset tokens erased too
-    // another recruiter's mandate is untouched
-    expect(await ctx.mandateRepository.list('other')).toHaveLength(1);
+    expect(ctx.passwordResetTokenStore.tokens).toEqual([]);
+    expect(await ctx.apiKeyStore.providersFor(USER)).toEqual([]); // personal keys erased
+    // the shared team workspace stays
+    expect(await ctx.mandateRepository.list(TEAM)).toHaveLength(1);
   });
 
   it('Erase_AlreadyGoneAccount_IsNoOp', async () => {

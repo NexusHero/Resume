@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import { createMandateSchema, updateMandateSchema } from '../domain/mandate';
 import type { MandateService } from '../services/mandate-service';
-import { currentUserId } from './current-user';
+import { currentScope } from './current-user';
 
 /** CRUD for client mandates under /api/v1/mandates. */
 export class MandateController {
@@ -12,23 +12,23 @@ export class MandateController {
   }
 
   list = async (req: Request, res: Response): Promise<void> => {
-    res.json(await this.service.list(currentUserId(req)));
+    res.json(await this.service.list(currentScope(req)));
   };
 
   create = async (req: Request, res: Response): Promise<void> => {
     const input = createMandateSchema.parse(req.body);
-    res.status(201).json({ mandate: await this.service.create(currentUserId(req), input) });
+    res.status(201).json({ mandate: await this.service.create(currentScope(req), input) });
   };
 
   update = async (req: Request, res: Response): Promise<void> => {
     const patch = updateMandateSchema.parse(req.body);
     res.json({
-      mandate: await this.service.update(currentUserId(req), req.params.id as string, patch),
+      mandate: await this.service.update(currentScope(req), req.params.id as string, patch),
     });
   };
 
   remove = async (req: Request, res: Response): Promise<void> => {
-    await this.service.remove(currentUserId(req), req.params.id as string);
+    await this.service.remove(currentScope(req), req.params.id as string);
     res.sendStatus(204);
   };
 }

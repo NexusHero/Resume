@@ -104,13 +104,14 @@ export class DocumentAiService {
   }
 
   async suggest(
-    ownerId: string,
+    scope: string,
+    userId: string,
     talentId: string,
     action: DocumentAiAction,
     target: DocumentAiTarget = {},
   ): Promise<DocumentAiSuggestion> {
-    const documents = await this.documents.get(ownerId, talentId); // 404s on unknown talent
-    const resolved = await this.resolveProvider(ownerId);
+    const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
+    const resolved = await this.resolveProvider(userId);
 
     if (resolved) {
       try {
@@ -145,9 +146,14 @@ export class DocumentAiService {
    * provider is available or the reply is unusable, the raw text is kept as the
    * summary so nothing is lost.
    */
-  async parse(ownerId: string, talentId: string, text: string): Promise<ParsedDocument> {
-    await this.documents.get(ownerId, talentId); // 404s on unknown talent
-    const resolved = await this.resolveProvider(ownerId);
+  async parse(
+    scope: string,
+    userId: string,
+    talentId: string,
+    text: string,
+  ): Promise<ParsedDocument> {
+    await this.documents.get(scope, talentId); // 404s on unknown talent
+    const resolved = await this.resolveProvider(userId);
 
     let raw: unknown = null;
     let provider: LlmProviderId | 'template' = 'template';
@@ -186,8 +192,13 @@ export class DocumentAiService {
    * 0) — we return an empty structured set rather than call the LLM on nothing,
    * so the UI can prompt the user to paste the text instead.
    */
-  async parsePdf(ownerId: string, talentId: string, pdf: Buffer): Promise<ParsedPdfDocument> {
-    await this.documents.get(ownerId, talentId); // 404s on unknown talent
+  async parsePdf(
+    scope: string,
+    userId: string,
+    talentId: string,
+    pdf: Buffer,
+  ): Promise<ParsedPdfDocument> {
+    await this.documents.get(scope, talentId); // 404s on unknown talent
 
     let text = '';
     try {
@@ -209,7 +220,7 @@ export class DocumentAiService {
       };
     }
 
-    const parsed = await this.parse(ownerId, talentId, text.slice(0, 50_000));
+    const parsed = await this.parse(scope, userId, talentId, text.slice(0, 50_000));
     return { ...parsed, extractedChars: text.length };
   }
 
@@ -219,12 +230,13 @@ export class DocumentAiService {
    * a deterministic keyword-overlap fallback keeps it usable.
    */
   async scoreAgainstJob(
-    ownerId: string,
+    scope: string,
+    userId: string,
     talentId: string,
     jobText: string,
   ): Promise<AtsScore & { provider: LlmProviderId | 'template' }> {
-    const documents = await this.documents.get(ownerId, talentId); // 404s on unknown talent
-    const resolved = await this.resolveProvider(ownerId);
+    const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
+    const resolved = await this.resolveProvider(userId);
 
     if (resolved) {
       try {
@@ -256,12 +268,13 @@ export class DocumentAiService {
    * deterministic fallback assembles an honest profile from the talent's facts.
    */
   async pitchForMandate(
-    ownerId: string,
+    scope: string,
+    userId: string,
     talentId: string,
     mandateContext: string,
   ): Promise<CandidatePitch & { provider: LlmProviderId | 'template' }> {
-    const documents = await this.documents.get(ownerId, talentId); // 404s on unknown talent
-    const resolved = await this.resolveProvider(ownerId);
+    const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
+    const resolved = await this.resolveProvider(userId);
 
     if (resolved) {
       try {
@@ -298,12 +311,13 @@ export class DocumentAiService {
    * provider, a deterministic fallback assembles a usable message.
    */
   async outreach(
-    ownerId: string,
+    scope: string,
+    userId: string,
     talentId: string,
     opts: OutreachOptions,
   ): Promise<OutreachMessage & { provider: LlmProviderId | 'template' }> {
-    const documents = await this.documents.get(ownerId, talentId); // 404s on unknown talent
-    const resolved = await this.resolveProvider(ownerId);
+    const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
+    const resolved = await this.resolveProvider(userId);
 
     if (resolved) {
       try {

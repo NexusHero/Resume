@@ -21,6 +21,9 @@ export function documentsToHtml(documents: TalentDocuments): string {
   const strong = esc(style.strong);
   const font = esc(style.font).replace(/var\(--font-display\)|var\(--font-body\)/, 'Inter');
   const scale = Number.isFinite(style.size) ? style.size : 1;
+  // Backward-compatible: rows saved before templates existed default to classic.
+  const template =
+    style.template === 'modern' || style.template === 'compact' ? style.template : 'classic';
 
   const experience = resume.experience
     .map(
@@ -65,6 +68,19 @@ export function documentsToHtml(documents: TalentDocuments): string {
 
   const letterBody = letter.absaetze.map((p) => `<p>${esc(p)}</p>`).join('');
 
+  // Template-specific overrides layered on top of the shared base styles.
+  const templateCss =
+    template === 'modern'
+      ? `.resume h1 { color: ${accent}; font-size: ${(26 * scale).toFixed(2)}px; }
+         .contact { border-bottom-width: 3px; }
+         h2 { border-left: 3px solid ${accent}; padding-left: 8px; }`
+      : template === 'compact'
+        ? `@page { margin: 14mm 14mm; }
+           body { font-size: ${(9.5 * scale).toFixed(2)}px; line-height: 1.35; }
+           .entry { margin-bottom: 6px; }
+           h2 { margin: 10px 0 5px; }`
+        : '';
+
   return `<!DOCTYPE html>
 <html lang="de">
 <head>
@@ -94,9 +110,10 @@ export function documentsToHtml(documents: TalentDocuments): string {
   .cl-subject { font-weight: 700; color: #0f1626; margin-bottom: 14px; }
   .cl p { margin: 0 0 10px; }
   .cl-gruss { margin-top: 18px; }
+  ${templateCss}
 </style>
 </head>
-<body>
+<body class="tpl-${template}">
   <section class="page resume">
     <h1>${esc(contact.name)}</h1>
     <div class="role">${esc(contact.role)}</div>

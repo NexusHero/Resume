@@ -483,6 +483,7 @@ describe('REST API /api/v1', () => {
       const get = await agent.get(`/api/v1/talents/${id}/documents`);
       expect(get.body.documents.letter.absaetze).toEqual(['Absatz.']);
       expect(get.body.documents.style.accent).toBe('#1F8A5B');
+      expect(get.body.documents.style.template).toBe('classic'); // schema default
     });
 
     it('Documents_DeletedTalent_GetReturns404', async () => {

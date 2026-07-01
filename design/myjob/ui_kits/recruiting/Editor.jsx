@@ -203,8 +203,8 @@ function Editor({ talent, onClose, onCreateMappe }) {
   };
   const cancelAI = () => setPending(null);
 
-  /* live CV customization: accent colour, font family, size */
-  const [cfg, setCfg] = React.useState({ accent: '#2A6FDB', strong: '#1d4ed8', onDark: '#7aa7f5', font: 'var(--font-display)', size: 1 });
+  /* live CV customization: template, accent colour, font family, size */
+  const [cfg, setCfg] = React.useState({ template: 'classic', accent: '#2A6FDB', strong: '#1d4ed8', onDark: '#7aa7f5', font: 'var(--font-display)', size: 1 });
 
   /* ---- Persistence: load the stored documents on open, then autosave edits.
      The pinned demo "me" talent has no server row, so it stays local-only. ---- */
@@ -391,6 +391,11 @@ function Editor({ talent, onClose, onCreateMappe }) {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '8px 16px', borderBottom: '1px solid var(--border)', flexShrink: 0, flexWrap: 'wrap' }}>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Stil</span>
+            <div style={{ display: 'flex', gap: '4px', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-sm)', padding: '3px' }}>
+              {[['classic', 'Classic'], ['modern', 'Modern'], ['compact', 'Compact']].map(([id, label]) => (
+                <button key={id} onClick={() => setCfg((c) => ({ ...c, template: id }))} style={{ border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: cfg.template === id ? 600 : 500, padding: '4px 9px', borderRadius: '4px', background: cfg.template === id ? 'var(--surface-card)' : 'transparent', color: cfg.template === id ? 'var(--text-heading)' : 'var(--text-muted)' }}>{label}</button>
+              ))}
+            </div>
             <div style={{ display: 'flex', gap: '6px' }}>
               {ED_ACCENTS.map((a, i) => <span key={i} onClick={() => setCfg((c) => ({ ...c, accent: a.accent, strong: a.strong, onDark: a.onDark }))} style={{ width: '22px', height: '22px', borderRadius: '6px', cursor: 'pointer', background: a.accent, border: `2px solid ${cfg.accent === a.accent ? 'var(--text-heading)' : 'transparent'}` }} />)}
             </div>

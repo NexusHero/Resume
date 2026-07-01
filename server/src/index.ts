@@ -18,6 +18,7 @@ import type { MatchAiController } from './http/match-ai-controller';
 import type { UsageController } from './http/usage-controller';
 import type { ComplianceController } from './http/compliance-controller';
 import type { ForecastController } from './http/forecast-controller';
+import type { ObservationController } from './http/observation-controller';
 import type { DocumentController } from './http/document-controller';
 import type { AttachmentController } from './http/attachment-controller';
 import type { AuthController } from './http/auth-controller';
@@ -54,6 +55,7 @@ async function main(): Promise<void> {
     usageController: container.resolve<UsageController>('usageController'),
     complianceController: container.resolve<ComplianceController>('complianceController'),
     forecastController: container.resolve<ForecastController>('forecastController'),
+    observationController: container.resolve<ObservationController>('observationController'),
     documentController: container.resolve<DocumentController>('documentController'),
     attachmentController: container.resolve<AttachmentController>('attachmentController'),
     authController: container.resolve<AuthController>('authController'),

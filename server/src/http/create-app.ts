@@ -17,6 +17,7 @@ import type { MatchAiController } from './match-ai-controller';
 import type { UsageController } from './usage-controller';
 import type { ComplianceController } from './compliance-controller';
 import type { ForecastController } from './forecast-controller';
+import type { ObservationController } from './observation-controller';
 import type { DocumentController } from './document-controller';
 import type { AttachmentController } from './attachment-controller';
 import type { AuthController } from './auth-controller';
@@ -43,6 +44,7 @@ export interface AppDeps {
   usageController: UsageController;
   complianceController: ComplianceController;
   forecastController: ForecastController;
+  observationController: ObservationController;
   documentController: DocumentController;
   attachmentController: AttachmentController;
   authController: AuthController;
@@ -71,6 +73,7 @@ export function createApp(deps: AppDeps): Express {
     usageController: usage,
     complianceController: compliance,
     forecastController: forecast,
+    observationController: observations,
     documentController: docs,
     attachmentController: att,
     authController: auth,
@@ -140,6 +143,9 @@ export function createApp(deps: AppDeps): Express {
     asyncHandler(matchAi.interviewKit),
   );
   api.post('/mandates/:id/candidates/:talentId/prep', requireAuth, asyncHandler(matchAi.prep));
+  // Observation flywheel: record & read real interview experiences per company.
+  api.get('/mandates/:id/observations', requireAuth, asyncHandler(observations.forMandate));
+  api.post('/mandates/:id/observations', requireAuth, asyncHandler(observations.record));
   api.get('/mandates/:id/candidacies', requireAuth, asyncHandler(cand.board));
   api.post('/mandates/:id/candidacies', requireAuth, asyncHandler(cand.add));
   api.get('/talents/:id/candidacies', requireAuth, asyncHandler(cand.forTalent));

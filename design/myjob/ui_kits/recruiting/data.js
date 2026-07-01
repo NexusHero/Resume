@@ -220,6 +220,7 @@ function mapMandate(m) {
     status: m.status,
     submitted: m.submitted,
     interviews: m.interviews,
+    jobText: m.jobText || '',
   };
 }
 
@@ -236,6 +237,7 @@ function toMandateCreate(m) {
     status: m.status || 'active',
     submitted: m.submitted || 0,
     interviews: m.interviews || 0,
+    jobText: m.jobText || '',
   };
 }
 

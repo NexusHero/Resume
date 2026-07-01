@@ -20,6 +20,7 @@ const RECORD_FORMS = {
       { name: 'deadline', label: 'Deadline', placeholder: 'YYYY-MM-DD' },
       { name: 'priority', label: 'Priority', type: 'select', options: ['high', 'medium', 'low'], default: 'medium' },
       { name: 'status', label: 'Status', type: 'select', options: ['active', 'paused', 'closed'], default: 'active' },
+      { name: 'jobText', label: 'Job ad (Stellenanzeige)', type: 'textarea', full: true, rows: 5, placeholder: 'Paste the job posting — powers matching, ATS score, AGG check and candidate prep' },
     ],
   },
   talent: {
@@ -106,6 +107,8 @@ function RecordFormModal({ kind, record, onClose, onSubmit }) {
           {form.fields.map((f) =>
             f.type === 'select' ? (
               <RF.Select key={f.name} label={f.label} options={f.options} value={values[f.name]} onChange={(e) => set(f.name, e.target.value)} aria-label={f.label} />
+            ) : f.type === 'textarea' ? (
+              <RF.Textarea key={f.name} label={f.label} rows={f.rows || 4} placeholder={f.placeholder} value={values[f.name]} onChange={(e) => set(f.name, e.target.value)} aria-label={f.label} wrapStyle={f.full ? { gridColumn: '1 / -1' } : undefined} />
             ) : (
               <RF.Input key={f.name} label={f.required ? `${f.label} *` : f.label} icon={f.icon} type={f.type || 'text'} placeholder={f.placeholder} value={values[f.name]} onChange={(e) => set(f.name, e.target.value)} aria-label={f.label} />
             ),

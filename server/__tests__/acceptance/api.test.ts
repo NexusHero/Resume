@@ -423,6 +423,19 @@ describe('REST API /api/v1', () => {
       });
     });
 
+    it('Mandates_StoresAndReturnsJobText', async () => {
+      const ad =
+        'Senior C++ Engineer (m/w/d)\nAnforderungen: C++20, gRPC, verhandlungssicheres Deutsch.';
+      const created = await agent
+        .post('/api/v1/mandates')
+        .send({ client: 'Aurora', role: 'C++ Engineer', location: 'Berlin', jobText: ad });
+      expect(created.body.mandate.jobText).toBe(ad);
+      const list = await agent.get('/api/v1/mandates');
+      expect(list.body.find((m: { id: string }) => m.id === created.body.mandate.id).jobText).toBe(
+        ad,
+      );
+    });
+
     it('Mandates_PostMissingClient_Returns400Problem', async () => {
       const res = await agent
         .post('/api/v1/mandates')

@@ -98,6 +98,7 @@ export const mandates = pgTable('mandates', {
   status: text('status').notNull(),
   submitted: integer('submitted').notNull(),
   interviews: integer('interviews').notNull(),
+  jobText: text('job_text').notNull().default(''),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 });

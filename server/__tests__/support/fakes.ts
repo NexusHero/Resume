@@ -65,12 +65,17 @@ export class InMemoryPdfArchive implements PdfArchive {
 
 export class FakePdfRenderer implements PdfRenderer {
   lastCoverLetter?: CoverLetterOptions;
+  lastHtml?: string;
   async renderCv(): Promise<Buffer> {
     return Buffer.from('cv');
   }
   async renderCoverLetter(options: CoverLetterOptions): Promise<Buffer> {
     this.lastCoverLetter = options;
     return Buffer.from('letter');
+  }
+  async renderHtml(html: string): Promise<Buffer> {
+    this.lastHtml = html;
+    return Buffer.from('pdf:' + html.length);
   }
 }
 

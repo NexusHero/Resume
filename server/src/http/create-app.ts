@@ -102,6 +102,7 @@ export function createApp(deps: AppDeps): Express {
   // A talent's resume + cover-letter documents (owner-scoped).
   api.get('/talents/:id/documents', requireAuth, asyncHandler(docs.get));
   api.put('/talents/:id/documents', requireAuth, asyncHandler(docs.save));
+  api.get('/talents/:id/documents/pdf', requireAuth, asyncHandler(docs.pdf));
   api.get('/placements', requireAuth, asyncHandler(p.list));
   api.post('/placements', requireAuth, asyncHandler(p.create));
   api.patch('/placements/:id', requireAuth, asyncHandler(p.update));

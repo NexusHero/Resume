@@ -21,4 +21,12 @@ export class DocumentController {
     const documents = await this.service.save(currentUserId(req), req.params.id as string, input);
     res.json({ documents });
   };
+
+  pdf = async (req: Request, res: Response): Promise<void> => {
+    const talentId = req.params.id as string;
+    const buffer = await this.service.renderPdf(currentUserId(req), talentId);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="documents-${talentId}.pdf"`);
+    res.send(buffer);
+  };
 }

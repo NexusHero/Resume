@@ -142,6 +142,7 @@ function makeApp(
     documentService: new DocumentService({
       documentRepository,
       talentRepository,
+      pdfRenderer: new FakePdfRenderer(),
       clock: new FixedClock(),
     }),
   });
@@ -482,6 +483,24 @@ describe('REST API /api/v1', () => {
       await agent.put(`/api/v1/talents/${id}/documents`).send({ resume: { summary: 'x' } });
       await agent.delete(`/api/v1/talents/${id}`);
       const res = await agent.get(`/api/v1/talents/${id}/documents`);
+      expect(res.status).toBe(404);
+    });
+
+    it('DocumentsPdf_Get_ReturnsPdf', async () => {
+      const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+      const id = created.body.talent.id as string;
+      const res = await agent.get(`/api/v1/talents/${id}/documents/pdf`);
+      expect(res.status).toBe(200);
+      expect(res.headers['content-type']).toMatch(/application\/pdf/);
+    });
+
+    it('DocumentsPdf_Unauthenticated_Returns401', async () => {
+      const res = await request(app).get('/api/v1/talents/x/documents/pdf');
+      expect(res.status).toBe(401);
+    });
+
+    it('DocumentsPdf_UnknownTalent_Returns404', async () => {
+      const res = await agent.get('/api/v1/talents/missing/documents/pdf');
       expect(res.status).toBe(404);
     });
 

@@ -260,6 +260,14 @@ function Editor({ talent, onClose, onCreateMappe }) {
             {saveLabel[saveState]}
           </span>
         )}
+        {canPersist && (
+          <button
+            onClick={() => window.open(window.RecruitApi.talentDocumentsPdfUrl(talentId), '_blank')}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', padding: '4px 12px' }}
+          >
+            <ED.Icon name="download" size={13} /> PDF
+          </button>
+        )}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: '20px', flex: 1, minHeight: 0, minWidth: 0 }}>

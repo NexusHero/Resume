@@ -11,7 +11,6 @@
     "start": "node server/dist/index.js",
     "build": "tsc -p tsconfig.json",
     "pdf": "node tools/generate-pdf.js",
-    "home": "node tools/build-home.js",
     "sent": "node tools/log-application.js",
     "lint": "eslint .",
     "format": "prettier --write .",

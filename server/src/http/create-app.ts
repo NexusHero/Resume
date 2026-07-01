@@ -115,11 +115,15 @@ export function createApp(deps: AppDeps): Express {
 
   app.use('/api/v1', api);
 
-  // Static web UIs (CV, cover letter, myJob). Served after the API routes.
-  // The Vite-built recruiting kit gets a strict CSP; the CDN-loading legacy
-  // kits are left untouched (a global CSP would break them).
+  // The app opens directly on the recruiting Workspace — there is no launcher.
+  app.get('/', (_req, res) => res.redirect(302, `${RECRUITING_KIT_PREFIX}/index.html`));
+
+  // Static web UIs (the recruiting Workspace + the CV / cover-letter print
+  // templates behind PDF export). Served after the API routes. The Vite-built
+  // recruiting kit gets a strict CSP; the CDN-loading print templates are left
+  // untouched (a global CSP would break them).
   app.use(RECRUITING_KIT_PREFIX, recruitingCsp);
-  app.use(express.static(deps.config.staticDir, { index: 'index.html' }));
+  app.use(express.static(deps.config.staticDir, { index: false }));
 
   app.use(errorHandler(deps.logger));
   return app;

@@ -783,10 +783,11 @@ describe('REST API /api/v1', () => {
     expect(res.status).toBe(404);
   });
 
-  it('Static_GetRoot_ServesLauncher', async () => {
+  it('Static_GetRoot_RedirectsToWorkspace', async () => {
+    // The app opens directly on the recruiting Workspace — there is no launcher.
     const res = await request(app).get('/');
-    expect(res.status).toBe(200);
-    expect(res.text).toMatch(/<!DOCTYPE html>/i);
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe('/design/myjob/ui_kits/recruiting/dist/index.html');
   });
 
   it('LlmSettings_Get_ReturnsProvidersAndCurrent', async () => {

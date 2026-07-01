@@ -3,6 +3,7 @@ import { NotFoundError } from '../domain/errors';
 import type { TalentRepository } from '../ports/talent-repository';
 import type { DocumentRepository } from '../ports/document-repository';
 import type { AttachmentStore } from '../ports/attachment-store';
+import type { CandidacyRepository } from '../ports/candidacy-repository';
 import type { Clock } from '../ports/clock';
 import type { IdGenerator } from '../ports/id-generator';
 
@@ -10,6 +11,7 @@ export interface TalentServiceDeps {
   talentRepository: TalentRepository;
   documentRepository: DocumentRepository;
   attachmentStore: AttachmentStore;
+  candidacyRepository: CandidacyRepository;
   clock: Clock;
   idGenerator: IdGenerator;
 }
@@ -19,6 +21,7 @@ export class TalentService {
   private readonly repo: TalentRepository;
   private readonly documents: DocumentRepository;
   private readonly attachments: AttachmentStore;
+  private readonly candidacies: CandidacyRepository;
   private readonly clock: Clock;
   private readonly ids: IdGenerator;
 
@@ -26,6 +29,7 @@ export class TalentService {
     this.repo = deps.talentRepository;
     this.documents = deps.documentRepository;
     this.attachments = deps.attachmentStore;
+    this.candidacies = deps.candidacyRepository;
     this.clock = deps.clock;
     this.ids = deps.idGenerator;
   }
@@ -71,8 +75,9 @@ export class TalentService {
   async remove(ownerId: string, id: string): Promise<void> {
     const removed = await this.repo.remove(ownerId, id);
     if (!removed) throw new NotFoundError(`Talent ${id} not found`);
-    // Cascade: a talent's documents and attachments go with it.
+    // Cascade: a talent's documents, attachments and candidacies go with it.
     await this.documents.removeForTalent(ownerId, id);
     await this.attachments.removeForTalent(ownerId, id);
+    await this.candidacies.removeForTalent(ownerId, id);
   }
 }

@@ -10,6 +10,7 @@ import { FsSavedSearchRepository } from '../../src/adapters/fs-saved-search-repo
 import { FsMandateRepository } from '../../src/adapters/fs-mandate-repository';
 import { FsTalentRepository } from '../../src/adapters/fs-talent-repository';
 import { FsPlacementRepository } from '../../src/adapters/fs-placement-repository';
+import { FsCandidacyRepository } from '../../src/adapters/fs-candidacy-repository';
 import { FsDocumentRepository } from '../../src/adapters/fs-document-repository';
 import { FsAttachmentStore } from '../../src/adapters/fs-attachment-store';
 import { FsUserRepository } from '../../src/adapters/fs-user-repository';
@@ -24,6 +25,7 @@ import type { SavedSearch } from '../../src/domain/saved-search';
 import type { Mandate } from '../../src/domain/mandate';
 import type { Talent } from '../../src/domain/talent';
 import type { Placement } from '../../src/domain/placement';
+import type { Candidacy } from '../../src/domain/candidacy';
 
 function tmpConfig(): AppConfig {
   const rootDir = mkdtempSync(path.join(os.tmpdir(), 'resume-'));
@@ -38,6 +40,7 @@ function tmpConfig(): AppConfig {
     mandatesFile: path.join(storeDir, 'mandates.json'),
     talentsFile: path.join(storeDir, 'talents.json'),
     placementsFile: path.join(storeDir, 'placements.json'),
+    candidaciesFile: path.join(storeDir, 'candidacies.json'),
     documentsFile: path.join(storeDir, 'documents.json'),
     attachmentsFile: path.join(storeDir, 'attachments.json'),
     attachmentsDir: path.join(storeDir, 'attachments'),
@@ -805,5 +808,92 @@ describe('FsAttachmentStore', () => {
     await store.removeForOwner(OWNER);
     expect(await store.get(OWNER, 'a2')).toBeNull();
     expect(await store.get('other', 'a3')).not.toBeNull();
+  });
+});
+
+describe('FsCandidacyRepository', () => {
+  const OWNER = 'owner1';
+  const candidacy = (
+    id: string,
+    mandateId = 'm1',
+    talentId = 't1',
+    ownerId = OWNER,
+  ): Candidacy => ({
+    id,
+    ownerId,
+    mandateId,
+    talentId,
+    stage: 'sourced',
+    note: '',
+    order: 0,
+    createdAt: '2026-06-25T10:00:00.000Z',
+    updatedAt: '2026-06-25T10:00:00.000Z',
+  });
+
+  it('Repository_NoFile_ListsEmpty', async () => {
+    const repo = new FsCandidacyRepository({ config: tmpConfig() });
+    expect(await repo.listForMandate(OWNER, 'm1')).toEqual([]);
+    expect(await repo.listForTalent(OWNER, 't1')).toEqual([]);
+    expect(await repo.findById(OWNER, 'c1')).toBeNull();
+    expect(await repo.findByMandateAndTalent(OWNER, 'm1', 't1')).toBeNull();
+  });
+
+  it('Repository_AddThenQuery_RoundTrips', async () => {
+    const repo = new FsCandidacyRepository({ config: tmpConfig() });
+    await repo.add(candidacy('c1'));
+    expect(await repo.findById(OWNER, 'c1')).toMatchObject({ id: 'c1', mandateId: 'm1' });
+    expect(await repo.findByMandateAndTalent(OWNER, 'm1', 't1')).toMatchObject({ id: 'c1' });
+    expect(await repo.listForMandate(OWNER, 'm1')).toHaveLength(1);
+    expect(await repo.listForTalent(OWNER, 't1')).toHaveLength(1);
+  });
+
+  it('Repository_ScopesToOwner', async () => {
+    const repo = new FsCandidacyRepository({ config: tmpConfig() });
+    await repo.add(candidacy('c1'));
+    await repo.add(candidacy('c2', 'm1', 't1', 'other'));
+    expect(await repo.listForMandate(OWNER, 'm1')).toHaveLength(1);
+    expect(await repo.findById(OWNER, 'c2')).toBeNull();
+  });
+
+  it('Repository_UpdateExisting_Replaces', async () => {
+    const repo = new FsCandidacyRepository({ config: tmpConfig() });
+    await repo.add(candidacy('c1'));
+    await repo.update({ ...candidacy('c1'), stage: 'offer' });
+    expect(await repo.findById(OWNER, 'c1')).toMatchObject({ stage: 'offer' });
+  });
+
+  it('Repository_UpdateMissing_NoOp', async () => {
+    const repo = new FsCandidacyRepository({ config: tmpConfig() });
+    await repo.update(candidacy('c9'));
+    expect(await repo.findById(OWNER, 'c9')).toBeNull();
+  });
+
+  it('Repository_RemoveExisting_ReturnsTrue', async () => {
+    const repo = new FsCandidacyRepository({ config: tmpConfig() });
+    await repo.add(candidacy('c1'));
+    expect(await repo.remove(OWNER, 'c1')).toBe(true);
+    expect(await repo.remove(OWNER, 'c1')).toBe(false);
+  });
+
+  it('Repository_RemoveForTalentMandateOwner_DropMatching', async () => {
+    const repo = new FsCandidacyRepository({ config: tmpConfig() });
+    await repo.add(candidacy('c1', 'm1', 't1'));
+    await repo.add(candidacy('c2', 'm2', 't1'));
+    await repo.add(candidacy('c3', 'm1', 't2'));
+    await repo.removeForTalent(OWNER, 't1');
+    expect(await repo.listForTalent(OWNER, 't1')).toEqual([]);
+    expect(await repo.findById(OWNER, 'c3')).not.toBeNull();
+    await repo.removeForMandate(OWNER, 'm1');
+    expect(await repo.findById(OWNER, 'c3')).toBeNull();
+    await repo.add(candidacy('c4'));
+    await repo.removeForOwner(OWNER);
+    expect(await repo.listForMandate(OWNER, 'm1')).toEqual([]);
+  });
+
+  it('Repository_MalformedFile_ListsEmpty', async () => {
+    const config = tmpConfig();
+    await fs.mkdir(config.storeDir, { recursive: true });
+    await fs.writeFile(config.candidaciesFile, 'not json');
+    expect(await new FsCandidacyRepository({ config }).listForMandate(OWNER, 'm1')).toEqual([]);
   });
 });

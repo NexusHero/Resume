@@ -34,6 +34,7 @@ import { CoverLetterService } from './services/cover-letter-service';
 import { MandateService } from './services/mandate-service';
 import { TalentService } from './services/talent-service';
 import { PlacementService } from './services/placement-service';
+import { CandidacyService } from './services/candidacy-service';
 import { DocumentService } from './services/document-service';
 import { DocumentAiService } from './services/document-ai-service';
 import { AttachmentService } from './services/attachment-service';
@@ -48,6 +49,7 @@ import { LlmController } from './http/llm-controller';
 import { MandateController } from './http/mandate-controller';
 import { TalentController } from './http/talent-controller';
 import { PlacementController } from './http/placement-controller';
+import { CandidacyController } from './http/candidacy-controller';
 import { DocumentController } from './http/document-controller';
 import { AttachmentController } from './http/attachment-controller';
 import { AuthController } from './http/auth-controller';
@@ -73,6 +75,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     mandateRepository: asValue(persistence.mandateRepository),
     talentRepository: asValue(persistence.talentRepository),
     placementRepository: asValue(persistence.placementRepository),
+    candidacyRepository: asValue(persistence.candidacyRepository),
     documentRepository: asValue(persistence.documentRepository),
     attachmentStore: asValue(persistence.attachmentStore),
     // Auth persistence follows the same store switch: file-backed by default,
@@ -117,6 +120,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     mandateService: asClass(MandateService).singleton(),
     talentService: asClass(TalentService).singleton(),
     placementService: asClass(PlacementService).singleton(),
+    candidacyService: asClass(CandidacyService).singleton(),
     documentService: asClass(DocumentService).singleton(),
     documentAiService: asClass(DocumentAiService).singleton(),
     attachmentService: asClass(AttachmentService).singleton(),
@@ -131,6 +135,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     mandateController: asClass(MandateController).singleton(),
     talentController: asClass(TalentController).singleton(),
     placementController: asClass(PlacementController).singleton(),
+    candidacyController: asClass(CandidacyController).singleton(),
     documentController: asClass(DocumentController).singleton(),
     attachmentController: asClass(AttachmentController).singleton(),
     authController: asClass(AuthController).singleton(),

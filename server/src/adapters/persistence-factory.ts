@@ -5,6 +5,7 @@ import type { SavedSearchRepository } from '../ports/saved-search-repository';
 import type { MandateRepository } from '../ports/mandate-repository';
 import type { TalentRepository } from '../ports/talent-repository';
 import type { PlacementRepository } from '../ports/placement-repository';
+import type { CandidacyRepository } from '../ports/candidacy-repository';
 import type { DocumentRepository } from '../ports/document-repository';
 import type { AttachmentStore } from '../ports/attachment-store';
 import type { UserRepository } from '../ports/user-repository';
@@ -18,6 +19,7 @@ import { FsSavedSearchRepository } from './fs-saved-search-repository';
 import { FsMandateRepository } from './fs-mandate-repository';
 import { FsTalentRepository } from './fs-talent-repository';
 import { FsPlacementRepository } from './fs-placement-repository';
+import { FsCandidacyRepository } from './fs-candidacy-repository';
 import { FsDocumentRepository } from './fs-document-repository';
 import { FsAttachmentStore } from './fs-attachment-store';
 import { FsUserRepository } from './fs-user-repository';
@@ -31,6 +33,7 @@ import { SqlSavedSearchRepository } from './sql/sql-saved-search-repository';
 import { SqlMandateRepository } from './sql/sql-mandate-repository';
 import { SqlTalentRepository } from './sql/sql-talent-repository';
 import { SqlPlacementRepository } from './sql/sql-placement-repository';
+import { SqlCandidacyRepository } from './sql/sql-candidacy-repository';
 import { SqlDocumentRepository } from './sql/sql-document-repository';
 import { SqlAttachmentStore } from './sql/sql-attachment-store';
 import { SqlUserRepository } from './sql/sql-user-repository';
@@ -47,6 +50,7 @@ export interface Persistence {
   mandateRepository: MandateRepository;
   talentRepository: TalentRepository;
   placementRepository: PlacementRepository;
+  candidacyRepository: CandidacyRepository;
   documentRepository: DocumentRepository;
   attachmentStore: AttachmentStore;
   userRepository: UserRepository;
@@ -72,6 +76,7 @@ export function createPersistence(deps: { config: AppConfig; clock: Clock; db?: 
       mandateRepository: new SqlMandateRepository({ db }),
       talentRepository: new SqlTalentRepository({ db }),
       placementRepository: new SqlPlacementRepository({ db }),
+      candidacyRepository: new SqlCandidacyRepository({ db }),
       documentRepository: new SqlDocumentRepository({ db }),
       attachmentStore: new SqlAttachmentStore({ db }),
       userRepository: new SqlUserRepository({ db }),
@@ -87,6 +92,7 @@ export function createPersistence(deps: { config: AppConfig; clock: Clock; db?: 
     mandateRepository: new FsMandateRepository({ config }),
     talentRepository: new FsTalentRepository({ config }),
     placementRepository: new FsPlacementRepository({ config }),
+    candidacyRepository: new FsCandidacyRepository({ config }),
     documentRepository: new FsDocumentRepository({ config }),
     attachmentStore: new FsAttachmentStore({ config }),
     userRepository: new FsUserRepository({ config }),

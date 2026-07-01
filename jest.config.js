@@ -38,6 +38,7 @@ module.exports = {
     '!server/src/adapters/sql/sql-mandate-repository.ts',
     '!server/src/adapters/sql/sql-talent-repository.ts',
     '!server/src/adapters/sql/sql-placement-repository.ts',
+    '!server/src/adapters/sql/sql-candidacy-repository.ts',
     '!server/src/adapters/sql/sql-user-repository.ts',
     '!server/src/adapters/sql/sql-session-store.ts',
     '!server/src/adapters/sql/sql-password-reset-token-store.ts',

@@ -14,6 +14,7 @@ import { LlmController } from '../../src/http/llm-controller';
 import { MandateController } from '../../src/http/mandate-controller';
 import { TalentController } from '../../src/http/talent-controller';
 import { PlacementController } from '../../src/http/placement-controller';
+import { CandidacyController } from '../../src/http/candidacy-controller';
 import { DocumentController } from '../../src/http/document-controller';
 import { AttachmentController } from '../../src/http/attachment-controller';
 import { AuthController } from '../../src/http/auth-controller';
@@ -23,6 +24,7 @@ import { LlmService } from '../../src/services/llm-service';
 import { MandateService } from '../../src/services/mandate-service';
 import { TalentService } from '../../src/services/talent-service';
 import { PlacementService } from '../../src/services/placement-service';
+import { CandidacyService } from '../../src/services/candidacy-service';
 import { DocumentService } from '../../src/services/document-service';
 import { DocumentAiService } from '../../src/services/document-ai-service';
 import { AttachmentService } from '../../src/services/attachment-service';
@@ -44,6 +46,7 @@ import {
   InMemoryMandateRepository,
   InMemoryTalentRepository,
   InMemoryPlacementRepository,
+  InMemoryCandidacyRepository,
   InMemoryDocumentRepository,
   InMemoryAttachmentStore,
   InMemoryUserRepository,
@@ -122,6 +125,7 @@ function makeApp(
   const mandateRepository = new InMemoryMandateRepository();
   const talentRepository = new InMemoryTalentRepository();
   const placementRepository = new InMemoryPlacementRepository();
+  const candidacyRepository = new InMemoryCandidacyRepository();
   const documentRepository = new InMemoryDocumentRepository();
   const attachmentStore = new InMemoryAttachmentStore();
   const userRepository = new InMemoryUserRepository();
@@ -132,6 +136,7 @@ function makeApp(
   const mandateController = new MandateController({
     mandateService: new MandateService({
       mandateRepository,
+      candidacyRepository,
       clock: new FixedClock(),
       idGenerator: new SequenceIdGenerator('mandate'),
     }),
@@ -141,8 +146,18 @@ function makeApp(
       talentRepository,
       documentRepository,
       attachmentStore,
+      candidacyRepository,
       clock: new FixedClock(),
       idGenerator: new SequenceIdGenerator('talent'),
+    }),
+  });
+  const candidacyController = new CandidacyController({
+    candidacyService: new CandidacyService({
+      candidacyRepository,
+      mandateRepository,
+      talentRepository,
+      clock: new FixedClock(),
+      idGenerator: new SequenceIdGenerator('cand'),
     }),
   });
   const attachmentController = new AttachmentController({
@@ -196,6 +211,7 @@ function makeApp(
       placementRepository,
       documentRepository,
       attachmentStore,
+      candidacyRepository,
       sessionStore,
       passwordResetTokenStore,
     }),
@@ -222,6 +238,7 @@ function makeApp(
     mandateController,
     talentController,
     placementController,
+    candidacyController,
     documentController,
     attachmentController,
     authController,
@@ -827,6 +844,97 @@ describe('REST API /api/v1', () => {
       const res = await agent.delete('/api/v1/placements/nope');
       expect(res.status).toBe(404);
       expect(res.body).toMatchObject({ status: 404 });
+    });
+
+    // --- Recruiting pipeline (candidacies) ---
+    const seedMandateAndTalent = async (): Promise<{ mandateId: string; talentId: string }> => {
+      const m = await agent
+        .post('/api/v1/mandates')
+        .send({ client: 'Aurora', role: 'C++ Engineer', location: 'Berlin' });
+      const t = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt', role: 'Engineer' });
+      return { mandateId: m.body.mandate.id, talentId: t.body.talent.id };
+    };
+
+    it('Pipeline_AddTalentToMandate_Creates201WithCard', async () => {
+      const { mandateId, talentId } = await seedMandateAndTalent();
+      const res = await agent
+        .post(`/api/v1/mandates/${mandateId}/candidacies`)
+        .send({ talentId, stage: 'screening', note: 'strong' });
+      expect(res.status).toBe(201);
+      expect(res.body.candidacy).toMatchObject({
+        mandateId,
+        talentId,
+        stage: 'screening',
+        note: 'strong',
+        order: 0,
+      });
+      expect(res.body.candidacy.talent).toMatchObject({ name: 'Lena Brandt' });
+    });
+
+    it('Pipeline_Board_ReturnsCards', async () => {
+      const { mandateId, talentId } = await seedMandateAndTalent();
+      await agent.post(`/api/v1/mandates/${mandateId}/candidacies`).send({ talentId });
+      const res = await agent.get(`/api/v1/mandates/${mandateId}/candidacies`);
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveLength(1);
+      expect(res.body[0]).toMatchObject({ talentId, stage: 'sourced' });
+    });
+
+    it('Pipeline_DuplicateTalent_Returns409', async () => {
+      const { mandateId, talentId } = await seedMandateAndTalent();
+      await agent.post(`/api/v1/mandates/${mandateId}/candidacies`).send({ talentId });
+      const res = await agent.post(`/api/v1/mandates/${mandateId}/candidacies`).send({ talentId });
+      expect(res.status).toBe(409);
+      expect(res.body).toMatchObject({ status: 409 });
+    });
+
+    it('Pipeline_AddToUnknownMandate_Returns404', async () => {
+      const { talentId } = await seedMandateAndTalent();
+      const res = await agent.post('/api/v1/mandates/nope/candidacies').send({ talentId });
+      expect(res.status).toBe(404);
+    });
+
+    it('Pipeline_MoveStage_Updates', async () => {
+      const { mandateId, talentId } = await seedMandateAndTalent();
+      const created = await agent
+        .post(`/api/v1/mandates/${mandateId}/candidacies`)
+        .send({ talentId });
+      const id = created.body.candidacy.id;
+      const res = await agent.patch(`/api/v1/candidacies/${id}`).send({ stage: 'offer' });
+      expect(res.status).toBe(200);
+      expect(res.body.candidacy.stage).toBe('offer');
+    });
+
+    it('Pipeline_ForTalent_ListsMandates', async () => {
+      const { mandateId, talentId } = await seedMandateAndTalent();
+      await agent.post(`/api/v1/mandates/${mandateId}/candidacies`).send({ talentId });
+      const res = await agent.get(`/api/v1/talents/${talentId}/candidacies`);
+      expect(res.status).toBe(200);
+      expect(res.body[0].mandate).toMatchObject({ client: 'Aurora' });
+    });
+
+    it('Pipeline_Remove_Returns204', async () => {
+      const { mandateId, talentId } = await seedMandateAndTalent();
+      const created = await agent
+        .post(`/api/v1/mandates/${mandateId}/candidacies`)
+        .send({ talentId });
+      const res = await agent.delete(`/api/v1/candidacies/${created.body.candidacy.id}`);
+      expect(res.status).toBe(204);
+      const board = await agent.get(`/api/v1/mandates/${mandateId}/candidacies`);
+      expect(board.body).toEqual([]);
+    });
+
+    it('Pipeline_DeletingMandate_CascadesCandidacies', async () => {
+      const { mandateId, talentId } = await seedMandateAndTalent();
+      await agent.post(`/api/v1/mandates/${mandateId}/candidacies`).send({ talentId });
+      await agent.delete(`/api/v1/mandates/${mandateId}`);
+      const forTalent = await agent.get(`/api/v1/talents/${talentId}/candidacies`);
+      expect(forTalent.body).toEqual([]);
+    });
+
+    it('Pipeline_Unauthenticated_Returns401', async () => {
+      const res = await request(app).get('/api/v1/mandates/x/candidacies');
+      expect(res.status).toBe(401);
     });
 
     it('AccountExport_Unauthenticated_Returns401', async () => {

@@ -1,4 +1,37 @@
-import { pgTable, text, serial, integer, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, text, serial, integer, jsonb, primaryKey } from 'drizzle-orm/pg-core';
+
+/** Registered accounts (mirrors domain `User`). */
+export const users = pgTable('users', {
+  id: text('id').primaryKey(),
+  email: text('email').notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
+  createdAt: text('created_at').notNull(),
+});
+
+/** Opaque server-side sessions: a token maps to a user id, with a creation time. */
+export const sessions = pgTable('sessions', {
+  token: text('token').primaryKey(),
+  userId: text('user_id').notNull(),
+  createdAt: text('created_at').notNull(),
+});
+
+/** One-time, expiring password-reset tokens: an opaque token maps to a user id. */
+export const passwordResetTokens = pgTable('password_reset_tokens', {
+  token: text('token').primaryKey(),
+  userId: text('user_id').notNull(),
+  createdAt: text('created_at').notNull(),
+});
+
+/** Per-user LLM API keys, encrypted at rest. PK is (owner_id, provider). */
+export const apiKeys = pgTable(
+  'api_keys',
+  {
+    ownerId: text('owner_id').notNull(),
+    provider: text('provider').notNull(),
+    value: text('value').notNull(),
+  },
+  (t) => ({ pk: primaryKey({ columns: [t.ownerId, t.provider] }) }),
+);
 
 /** Recorded job applications (mirrors domain `Application`). */
 export const applications = pgTable('applications', {

@@ -3,7 +3,16 @@ import type { SavedSearch } from '../../domain/saved-search';
 import type { Mandate, MandatePriority, MandateStatus } from '../../domain/mandate';
 import type { Talent } from '../../domain/talent';
 import type { Placement, PlacementStatus } from '../../domain/placement';
-import { applications, auditEvents, savedSearches, mandates, talents, placements } from './schema';
+import type { User } from '../../domain/user';
+import {
+  applications,
+  auditEvents,
+  savedSearches,
+  mandates,
+  talents,
+  placements,
+  users,
+} from './schema';
 
 type ApplicationRow = typeof applications.$inferSelect;
 type ApplicationInsert = typeof applications.$inferInsert;
@@ -17,6 +26,8 @@ type TalentRow = typeof talents.$inferSelect;
 type TalentInsert = typeof talents.$inferInsert;
 type PlacementRow = typeof placements.$inferSelect;
 type PlacementInsert = typeof placements.$inferInsert;
+type UserRow = typeof users.$inferSelect;
+type UserInsert = typeof users.$inferInsert;
 
 // Postgres stores absent optional values as NULL; the domain uses `undefined`.
 const orUndef = <T>(v: T | null): T | undefined => v ?? undefined;
@@ -198,5 +209,23 @@ export function placementToRow(placement: Placement): PlacementInsert {
     status: placement.status,
     createdAt: placement.createdAt,
     updatedAt: placement.updatedAt,
+  };
+}
+
+export function rowToUser(row: UserRow): User {
+  return {
+    id: row.id,
+    email: row.email,
+    passwordHash: row.passwordHash,
+    createdAt: row.createdAt,
+  };
+}
+
+export function userToRow(user: User): UserInsert {
+  return {
+    id: user.id,
+    email: user.email,
+    passwordHash: user.passwordHash,
+    createdAt: user.createdAt,
   };
 }

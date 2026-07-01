@@ -1,7 +1,7 @@
 /**
- * Generate print-ready PDFs from the self-contained HTML pages, then refresh
- * the Bewerbungsmappe builder (with CV + cover letter pre-loaded) and the
- * home page.
+ * Generate print-ready PDFs from the self-contained CV and cover-letter print
+ * templates (design/documents/ui_kits/{cv,cover-letter}) — the same templates
+ * the Workspace's PDF export renders.
  *
  *   npm run pdf
  *
@@ -10,11 +10,12 @@
 const fs = require('fs');
 const path = require('path');
 const { launch, renderCV, renderCoverLetter } = require('./render');
-const { buildBuilder } = require('./build-builder');
-const { buildHome } = require('./build-home');
 
 const ROOT = path.join(__dirname, '..');
-const write = (name, buf) => { fs.writeFileSync(path.join(ROOT, name), buf); console.log('  ✓', name); };
+const write = (name, buf) => {
+  fs.writeFileSync(path.join(ROOT, name), buf);
+  console.log('  ✓', name);
+};
 
 (async () => {
   const browser = await launch();
@@ -26,16 +27,7 @@ const write = (name, buf) => { fs.writeFileSync(path.join(ROOT, name), buf); con
     await browser.close();
   }
 
-  const builderPath = await buildBuilder([
-    { name: 'Anschreiben.pdf', bytes: fs.readFileSync(path.join(ROOT, 'Anschreiben.pdf')) },
-    { name: 'Lebenslauf-DE.pdf', bytes: fs.readFileSync(path.join(ROOT, 'Lebenslauf-DE.pdf')) },
-  ]);
-  console.log('  ✓ Builder aktualisiert (' + path.relative(ROOT, builderPath) + ')');
-
-  buildHome();
-  console.log('  ✓ Startseite aktualisiert (index.html)');
-
-  console.log('\nFertig. Öffne index.html als Einstieg, oder starte die API mit "npm run serve".');
+  console.log('\nFertig. Starte die App mit "npm run serve" (öffnet direkt den Workspace).');
 })().catch((err) => {
   console.error('PDF-Erzeugung fehlgeschlagen:', err);
   process.exit(1);

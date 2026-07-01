@@ -5,6 +5,7 @@ import {
   InMemoryTalentRepository,
   InMemoryPlacementRepository,
   InMemoryUserRepository,
+  InMemoryPasswordResetTokenStore,
 } from '../support/fakes';
 import type { Mandate } from '../../src/domain/mandate';
 import type { Talent } from '../../src/domain/talent';
@@ -20,12 +21,14 @@ function makeService() {
   const placementRepository = new InMemoryPlacementRepository();
   const userRepository = new InMemoryUserRepository();
   const sessionStore = new MemorySessionStore();
+  const passwordResetTokenStore = new InMemoryPasswordResetTokenStore();
   const service = new AccountService({
     mandateRepository,
     talentRepository,
     placementRepository,
     userRepository,
     sessionStore,
+    passwordResetTokenStore,
   });
   return {
     service,
@@ -34,6 +37,7 @@ function makeService() {
     placementRepository,
     userRepository,
     sessionStore,
+    passwordResetTokenStore,
   };
 }
 
@@ -124,6 +128,7 @@ describe('AccountService', () => {
     await ctx.talentRepository.add(talent('t1'));
     await ctx.placementRepository.add(placement('p1'));
     const token = await ctx.sessionStore.create(OWNER);
+    await ctx.passwordResetTokenStore.create(OWNER);
 
     await ctx.service.erase(OWNER);
 
@@ -132,6 +137,7 @@ describe('AccountService', () => {
     expect(await ctx.placementRepository.list(OWNER)).toEqual([]);
     expect(await ctx.userRepository.findById(OWNER)).toBeNull();
     expect(await ctx.sessionStore.userIdFor(token)).toBeNull();
+    expect(ctx.passwordResetTokenStore.tokens).toEqual([]); // reset tokens erased too
     // another recruiter's mandate is untouched
     expect(await ctx.mandateRepository.list('other')).toHaveLength(1);
   });

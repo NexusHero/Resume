@@ -51,9 +51,9 @@ npm run build:web      # bundle the recruiting app (Vite)
 npm run serve          # serve the whole suite at http://localhost:4178
 ```
 
-Then open the launcher at **`http://localhost:4178/`** and pick **myJob Workspace**, or go
-straight to `…/design/myjob/ui_kits/recruiting/dist/index.html`. Create an account on the
-login screen — the recruiting endpoints are owner-scoped, so your data is yours.
+Then open **`http://localhost:4178/`** — it opens straight into the **myJob Workspace**.
+Create an account on the login screen — the recruiting endpoints are owner-scoped, so your
+data is yours.
 
 ### With Docker (app + Postgres)
 
@@ -118,10 +118,10 @@ on GitHub.
 ## Project layout
 
 ```
-index.html                 ← launcher / home (generated)
 server/                    ← REST API + static server (TypeScript, hexagonal)
+                              (root `/` opens straight into the Workspace)
 design/
-  documents/ui_kits/       ← interactive CV · cover letter · Bewerbungsmappe builder
+  documents/ui_kits/       ← CV · cover-letter print templates (behind PDF export)
   myjob/ui_kits/
     recruiting/            ← myJob Workspace (Vite-built → dist/)
 vite.config.ts             ← bundles the recruiting kit (no CDN, no runtime Babel)
@@ -131,7 +131,8 @@ docs/                      ← architecture, deployment, roadmap, screenshots
 
 ## REST API (selected)
 
-Base path `/api/v1`. Recruiting endpoints require a session; the applicant tools are open.
+Base path `/api/v1`. Recruiting endpoints require a session; job search and cover-letter
+generation are open.
 
 | Endpoint                                  | What it does                                |
 | ----------------------------------------- | ------------------------------------------- |
@@ -151,7 +152,7 @@ Base path `/api/v1`. Recruiting endpoints require a session; the applicant tools
 | `npm run build:web`                     | bundle the recruiting kit with Vite (→ `…/recruiting/dist`)    |
 | `npm test`                              | Jest unit + acceptance with coverage gate                      |
 | `npm run test:e2e`                      | Playwright UI acceptance (boots the server, builds the bundle) |
-| `npm run pdf`                           | render the CV / cover-letter PDFs and refresh the launcher     |
+| `npm run pdf`                           | render the CV / cover-letter PDFs from the print templates     |
 | `npm run lint` · `npm run format:check` | ESLint · Prettier                                              |
 
 ## License

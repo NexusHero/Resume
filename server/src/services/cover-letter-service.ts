@@ -36,12 +36,27 @@ export class CoverLetterService {
     this.logger = deps.logger;
   }
 
-  async generate(req: CoverLetterRequest): Promise<CoverLetterResult> {
-    const provider = this.llm.active();
+  /**
+   * @param override an optional per-user key for a provider — used in preference
+   *   to the server's env credentials, so a recruiter can generate with their own
+   *   key even when no server key is configured.
+   */
+  async generate(
+    req: CoverLetterRequest,
+    override?: { provider: LlmProviderId; apiKey: string },
+  ): Promise<CoverLetterResult> {
+    // With a user key, use that provider regardless of server availability;
+    // otherwise the currently selected provider, if it has server credentials.
+    const provider = override ? this.llm.get(override.provider) : this.llm.active();
     if (provider) {
       try {
         const { system, prompt } = coverLetterPrompt(req, this.candidate);
-        const text = await provider.generate({ system, prompt, maxTokens: 700 });
+        const text = await provider.generate({
+          system,
+          prompt,
+          maxTokens: 700,
+          ...(override ? { apiKey: override.apiKey } : {}),
+        });
         return { text, provider: provider.id };
       } catch (err) {
         this.logger.warn(

@@ -16,12 +16,14 @@ import { TalentController } from '../../src/http/talent-controller';
 import { PlacementController } from '../../src/http/placement-controller';
 import { AuthController } from '../../src/http/auth-controller';
 import { AccountController } from '../../src/http/account-controller';
+import { PasswordResetController } from '../../src/http/password-reset-controller';
 import { LlmService } from '../../src/services/llm-service';
 import { MandateService } from '../../src/services/mandate-service';
 import { TalentService } from '../../src/services/talent-service';
 import { PlacementService } from '../../src/services/placement-service';
 import { AuthService } from '../../src/services/auth-service';
 import { AccountService } from '../../src/services/account-service';
+import { PasswordResetService } from '../../src/services/password-reset-service';
 import { MemorySessionStore } from '../../src/adapters/memory-session-store';
 import { CoverLetterService } from '../../src/services/cover-letter-service';
 import { AnthropicLlmProvider } from '../../src/adapters/anthropic-llm-provider';
@@ -38,6 +40,9 @@ import {
   InMemoryTalentRepository,
   InMemoryPlacementRepository,
   InMemoryUserRepository,
+  InMemoryApiKeyStore,
+  InMemoryPasswordResetTokenStore,
+  RecordingMailer,
   fakePasswordHasher,
   FakePdfRenderer,
   FakePdfMerger,
@@ -47,7 +52,13 @@ import {
   noopLogger,
 } from '../support/fakes';
 
-function makeApp(config = loadConfig({})): Express {
+function makeApp(
+  config = loadConfig({}),
+  opts: {
+    mailer?: RecordingMailer;
+    passwordResetTokenStore?: InMemoryPasswordResetTokenStore;
+  } = {},
+): Express {
   const service = new ApplicationService({
     applicationRepository: new InMemoryApplicationRepository(),
     auditLog: new InMemoryAuditLog(),
@@ -96,6 +107,7 @@ function makeApp(config = loadConfig({})): Express {
       candidate: config.candidate,
       logger: noopLogger,
     }),
+    apiKeyStore: new InMemoryApiKeyStore(),
   });
   // Shared repositories so the account (DSGVO) endpoints observe the same data
   // the recruiting endpoints write, and erasure affects the same auth state.
@@ -104,6 +116,9 @@ function makeApp(config = loadConfig({})): Express {
   const placementRepository = new InMemoryPlacementRepository();
   const userRepository = new InMemoryUserRepository();
   const sessionStore = new MemorySessionStore();
+  const passwordResetTokenStore =
+    opts.passwordResetTokenStore ?? new InMemoryPasswordResetTokenStore();
+  const mailer = opts.mailer ?? new RecordingMailer();
   const mandateController = new MandateController({
     mandateService: new MandateService({
       mandateRepository,
@@ -142,9 +157,21 @@ function makeApp(config = loadConfig({})): Express {
       talentRepository,
       placementRepository,
       sessionStore,
+      passwordResetTokenStore,
     }),
     clock: new FixedClock(),
     config,
+  });
+  const passwordResetController = new PasswordResetController({
+    passwordResetService: new PasswordResetService({
+      userRepository,
+      sessionStore,
+      passwordResetTokenStore,
+      passwordHasher: fakePasswordHasher,
+      mailer,
+      logger: noopLogger,
+      config,
+    }),
   });
   return createApp({
     applicationController: controller,
@@ -157,6 +184,7 @@ function makeApp(config = loadConfig({})): Express {
     placementController,
     authController,
     accountController,
+    passwordResetController,
     config,
     logger: noopLogger,
   });
@@ -569,6 +597,61 @@ describe('REST API /api/v1', () => {
     expect(res.body).toEqual({ google: false, linkedin: false });
   });
 
+  it('PasswordReset_FullFlow_EmailsLinkThenSetsNewPassword', async () => {
+    const mailer = new RecordingMailer();
+    const tokens = new InMemoryPasswordResetTokenStore();
+    const resetApp = makeApp(loadConfig({}), { mailer, passwordResetTokenStore: tokens });
+    await request(resetApp)
+      .post('/api/v1/auth/register')
+      .send({ email: 'reset@example.com', password: 'old-password' });
+
+    const req = await request(resetApp)
+      .post('/api/v1/auth/password-reset/request')
+      .send({ email: 'reset@example.com' });
+    expect(req.status).toBe(202);
+    expect(mailer.sent).toHaveLength(1);
+    const token = tokens.tokens[0]!.token;
+
+    const confirm = await request(resetApp)
+      .post('/api/v1/auth/password-reset/confirm')
+      .send({ token, password: 'new-password' });
+    expect(confirm.status).toBe(204);
+
+    // old password no longer works, new one does
+    const oldLogin = await request(resetApp)
+      .post('/api/v1/auth/login')
+      .send({ email: 'reset@example.com', password: 'old-password' });
+    expect(oldLogin.status).toBe(401);
+    const newLogin = await request(resetApp)
+      .post('/api/v1/auth/login')
+      .send({ email: 'reset@example.com', password: 'new-password' });
+    expect(newLogin.status).toBe(200);
+  });
+
+  it('PasswordReset_UnknownEmail_Returns202_NoEmail', async () => {
+    const mailer = new RecordingMailer();
+    const resetApp = makeApp(loadConfig({}), { mailer });
+    const res = await request(resetApp)
+      .post('/api/v1/auth/password-reset/request')
+      .send({ email: 'ghost@example.com' });
+    expect(res.status).toBe(202); // never reveals that the account is unknown
+    expect(mailer.sent).toEqual([]);
+  });
+
+  it('PasswordReset_BadToken_Returns401', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/password-reset/confirm')
+      .send({ token: 'not-a-real-token', password: 'new-password' });
+    expect(res.status).toBe(401);
+  });
+
+  it('PasswordReset_ShortPassword_Returns400', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/password-reset/confirm')
+      .send({ token: 'whatever', password: 'short' });
+    expect(res.status).toBe(400);
+  });
+
   it('Auth_DefaultConfig_SessionCookieNotSecure', async () => {
     const res = await request(app)
       .post('/api/v1/auth/register')
@@ -700,10 +783,11 @@ describe('REST API /api/v1', () => {
     expect(res.status).toBe(404);
   });
 
-  it('Static_GetRoot_ServesLauncher', async () => {
+  it('Static_GetRoot_RedirectsToWorkspace', async () => {
+    // The app opens directly on the recruiting Workspace — there is no launcher.
     const res = await request(app).get('/');
-    expect(res.status).toBe(200);
-    expect(res.text).toMatch(/<!DOCTYPE html>/i);
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe('/design/myjob/ui_kits/recruiting/dist/index.html');
   });
 
   it('LlmSettings_Get_ReturnsProvidersAndCurrent', async () => {
@@ -738,6 +822,42 @@ describe('REST API /api/v1', () => {
     expect(res.status).toBe(200);
     expect(res.body.provider).toBe('template'); // no keys → deterministic template
     expect(res.body.text).toContain('Celonis');
+  });
+
+  it('ApiKeys_Unauthenticated_Returns401', async () => {
+    expect((await request(app).get('/api/v1/settings/keys')).status).toBe(401);
+    expect((await request(app).put('/api/v1/settings/keys/claude').send({ key: 'x' })).status).toBe(
+      401,
+    );
+  });
+
+  it('ApiKeys_SetStatusRemove_Flow', async () => {
+    const agent = request.agent(app);
+    await agent
+      .post('/api/v1/auth/register')
+      .send({ email: 'keys@example.com', password: 'correct horse battery' });
+
+    expect((await agent.get('/api/v1/settings/keys')).body).toEqual({
+      claude: false,
+      gemini: false,
+    });
+    expect((await agent.put('/api/v1/settings/keys/claude').send({ key: 'sk-ant-x' })).status).toBe(
+      204,
+    );
+    expect((await agent.get('/api/v1/settings/keys')).body).toEqual({
+      claude: true,
+      gemini: false,
+    });
+    expect((await agent.delete('/api/v1/settings/keys/claude')).status).toBe(204);
+    expect((await agent.get('/api/v1/settings/keys')).body.claude).toBe(false);
+  });
+
+  it('ApiKeys_UnknownProvider_Returns400', async () => {
+    const agent = request.agent(app);
+    await agent
+      .post('/api/v1/auth/register')
+      .send({ email: 'keys2@example.com', password: 'correct horse battery' });
+    expect((await agent.put('/api/v1/settings/keys/openai').send({ key: 'x' })).status).toBe(400);
   });
 
   it('CoverLetter_PostMissingCompany_Returns400', async () => {

@@ -16,7 +16,6 @@ const ROOT = path.join(__dirname, '..');
 const DIR = path.join(ROOT, 'archive', 'bewerbungen');
 const LOG = path.join(DIR, 'log.json');
 const HIST = path.join(DIR, 'history.jsonl');
-const { buildHome } = require('./build-home');
 
 function ensure() { fs.mkdirSync(DIR, { recursive: true }); }
 
@@ -87,9 +86,8 @@ function addApplication(data) {
   log.push(entry);
   writeLog(log);
   appendHistory({ action: 'create', id, by: entry.source, data: { firma: entry.firma, stelle: entry.stelle, adresse: entry.adresse, status: entry.status, pdf: entry.pdf } });
-  buildHome();
   const hash = gitCommit(`bewerbung: erfasst ${entry.firma}${entry.stelle ? ' — ' + entry.stelle : ''}`,
-    ['bewerbungen/log.json', 'bewerbungen/history.jsonl', 'index.html', pdfRel].filter(Boolean));
+    ['bewerbungen/log.json', 'bewerbungen/history.jsonl', pdfRel].filter(Boolean));
   if (hash) { entry.commit = hash; appendHistory({ action: 'commit', id, commit: hash }); }
   return entry;
 }
@@ -106,9 +104,8 @@ function updateApplication(id, patch, source = 'cli') {
   log[i].updatedAt = new Date().toISOString();
   writeLog(log);
   appendHistory({ action: 'update', id, by: source, changed });
-  buildHome();
   const hash = gitCommit(`bewerbung: aktualisiert ${log[i].firma} (${Object.keys(changed).join(', ')})`,
-    ['bewerbungen/log.json', 'bewerbungen/history.jsonl', 'index.html']);
+    ['bewerbungen/log.json', 'bewerbungen/history.jsonl']);
   if (hash) appendHistory({ action: 'commit', id, commit: hash });
   return log[i];
 }

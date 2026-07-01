@@ -44,7 +44,7 @@ export class PuppeteerPdfRenderer implements PdfRenderer {
     const browser = await this.browser();
     const page = await browser.newPage();
     try {
-      await page.goto(this.fileUrl('ui_kits/cv/index.html'), {
+      await page.goto(this.fileUrl('design/documents/ui_kits/cv/index.html'), {
         waitUntil: 'networkidle0',
         timeout: 60000,
       });
@@ -70,7 +70,7 @@ export class PuppeteerPdfRenderer implements PdfRenderer {
     const browser = await this.browser();
     const page = await browser.newPage();
     try {
-      await page.goto(this.fileUrl('ui_kits/cover-letter/index.html'), {
+      await page.goto(this.fileUrl('design/documents/ui_kits/cover-letter/index.html'), {
         waitUntil: 'networkidle0',
         timeout: 60000,
       });

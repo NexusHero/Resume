@@ -11,12 +11,15 @@ import {
   talentToRow,
   rowToPlacement,
   placementToRow,
+  rowToUser,
+  userToRow,
 } from '../../src/adapters/sql/mappers';
 import type { Application, AuditEvent } from '../../src/domain/application';
 import type { SavedSearch } from '../../src/domain/saved-search';
 import type { Mandate } from '../../src/domain/mandate';
 import type { Talent } from '../../src/domain/talent';
 import type { Placement } from '../../src/domain/placement';
+import type { User } from '../../src/domain/user';
 
 describe('application mappers', () => {
   it('Application_RoundTrips_PreservingNullAndUndefined', () => {
@@ -166,6 +169,18 @@ describe('talent mappers', () => {
       updatedAt: '2026-06-25T10:00:00.000Z',
     };
     expect(rowToTalent(talentToRow(talent) as Required<typeof talent>)).toEqual(talent);
+  });
+});
+
+describe('user mappers', () => {
+  it('User_RoundTrips', () => {
+    const user: User = {
+      id: 'u1',
+      email: 'a@example.com',
+      passwordHash: 'scrypt$salt$key',
+      createdAt: '2026-06-25T10:00:00.000Z',
+    };
+    expect(rowToUser(userToRow(user) as Required<typeof user>)).toEqual(user);
   });
 });
 

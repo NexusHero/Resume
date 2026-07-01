@@ -40,6 +40,12 @@ export class FsUserRepository implements UserRepository {
     await this.write(all);
   }
 
+  async updatePassword(id: string, passwordHash: string): Promise<void> {
+    const all = await this.list();
+    const next = all.map((u) => (u.id === id ? { ...u, passwordHash } : u));
+    await this.write(next);
+  }
+
   async remove(id: string): Promise<boolean> {
     const all = await this.list();
     const next = all.filter((u) => u.id !== id);

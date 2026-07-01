@@ -1,13 +1,22 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('UI acceptance — the suite renders in English', () => {
-  test('Launcher_Loads_ShowsEnglishEntryPoints', async ({ page }) => {
+  test('Root_Opens_RecruitingWorkspace', async ({ page }) => {
+    // The app opens directly on the recruiting Workspace — the old launcher is
+    // gone, so hitting the root redirects straight into the kit.
+    await page.route('**/api/v1/auth/me', (route) =>
+      route.fulfill({ contentType: 'application/json', body: JSON.stringify({ user: null }) }),
+    );
+    await page.route('**/api/v1/auth/providers', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ google: false, linkedin: false }),
+      }),
+    );
     await page.goto('/');
-    await expect(page.locator('body')).toContainText('Application Suite');
-    await expect(page.locator('body')).toContainText('myJob Workspace');
-    await expect(page.locator('body')).toContainText('myJob for applicants');
-    // No German leaked into the launcher.
-    await expect(page.locator('body')).not.toContainText('Bewerbungs-Suite');
+    await expect(page).toHaveURL(/\/design\/myjob\/ui_kits\/recruiting\/dist\/index\.html$/);
+    // Not signed in → the branded Workspace login screen.
+    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
   });
 
   test('Recruiting_Loads_NavigationIsEnglish', async ({ page }) => {
@@ -400,6 +409,34 @@ test.describe('UI acceptance — the suite renders in English', () => {
     await expect(page.getByRole('button', { name: /Talent Pool/ })).toBeVisible();
   });
 
+  test('Recruiting_PasswordReset_SetsNewPasswordFromTokenLink', async ({ page }) => {
+    // Opened from the emailed link (?reset_token) → the set-new-password form.
+    await page.route('**/api/v1/auth/me', (route) =>
+      route.fulfill({ contentType: 'application/json', body: JSON.stringify({ user: null }) }),
+    );
+    await page.route('**/api/v1/auth/providers', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ google: false, linkedin: false }),
+      }),
+    );
+    let confirmBody: unknown = null;
+    await page.route('**/api/v1/auth/password-reset/confirm', (route) => {
+      confirmBody = JSON.parse(route.request().postData() || '{}');
+      route.fulfill({ status: 204, body: '' });
+    });
+    await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html?reset_token=tok-from-email');
+    await expect(page.getByRole('heading', { name: 'Choose a new password' })).toBeVisible();
+    const passwords = page.getByPlaceholder('••••••••');
+    await passwords.nth(0).fill('brand-new-password');
+    await passwords.nth(1).fill('brand-new-password');
+    await page.locator('button[type="submit"]').click();
+    // back to login with a success notice; the token was forwarded to the API
+    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
+    await expect(page.getByRole('status')).toContainText('password has been reset');
+    expect(confirmBody).toEqual({ token: 'tok-from-email', password: 'brand-new-password' });
+  });
+
   test('Recruiting_Settings_LoadsProvidersAndSwitchesModel', async ({ page }) => {
     await page.route('**/api/v1/auth/me', (route) =>
       route.fulfill({
@@ -507,106 +544,5 @@ test.describe('UI acceptance — the suite renders in English', () => {
     await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible({
       timeout: 15000,
     });
-  });
-
-  test('Karriere_Jobsuche_FetchesJobsFromApiAndCreatesApplication', async ({ page }) => {
-    // The Jobsuche now fetches live from the REST API; stub it so the flow is
-    // deterministic regardless of which job boards are configured on the server.
-    await page.route('**/api/v1/jobs**', (route) =>
-      route.fulfill({
-        contentType: 'application/json',
-        body: JSON.stringify({
-          threshold: 80,
-          counts: { total: 1, top: 1, more: 0 },
-          top: [
-            {
-              id: 'j1',
-              company: 'Celonis',
-              role: 'Senior C++ Engineer',
-              city: 'München',
-              country: 'Deutschland',
-              mode: 'hybrid',
-              salary: '85.000 – 98.000 €',
-              posted: '2026-06-26',
-              skills: ['C++', 'gRPC'],
-              snippet: 'Kerngeschäftslogik der Process-Mining-Engine.',
-              source: 'Bundesagentur für Arbeit',
-              url: 'https://careers.celonis.com/job/123',
-              match: 94,
-              matchedSkills: ['C++', 'gRPC'],
-              missingSkills: [],
-            },
-          ],
-          more: [],
-        }),
-      }),
-    );
-    // Cover letter is generated via the backend when the create dialog opens.
-    await page.route('**/api/v1/cover-letter', (route) =>
-      route.fulfill({
-        contentType: 'application/json',
-        body: JSON.stringify({ text: 'Sehr geehrtes Team von Celonis, …', provider: 'template' }),
-      }),
-    );
-
-    await page.goto('/design/myjob/ui_kits/karriere/index.html');
-    await page.getByRole('button', { name: /Jobsuche/ }).click();
-    const main = page.locator('main');
-    // search filters + source chips derived from the API results
-    await expect(main).toContainText('Suchbegriffe');
-    await expect(main).toContainText('Quellen');
-    // the fetched posting is listed, source-attributed, with its match score
-    await expect(main).toContainText('Senior C++ Engineer');
-    await expect(main).toContainText('via Bundesagentur für Arbeit');
-    await expect(main).toContainText('94%');
-    // open the posting → the real apply link is present
-    await page.getByText('Senior C++ Engineer').first().click();
-    await expect(page.getByRole('link', { name: /Stellenausschreibung öffnen/ })).toHaveAttribute(
-      'href',
-      'https://careers.celonis.com/job/123',
-    );
-    // build an application from it (sending is for later)
-    await page.getByRole('button', { name: 'Bewerbung erstellen' }).click();
-    await expect(page.locator('body')).toContainText('Unterlagen für die Mappe');
-    await expect(page.getByRole('button', { name: 'Vormerken' })).toBeVisible();
-  });
-
-  test('Karriere_Settings_SwitchesLlmProvider', async ({ page }) => {
-    await page.route('**/api/v1/jobs**', (route) =>
-      route.fulfill({
-        contentType: 'application/json',
-        body: JSON.stringify({
-          threshold: 80,
-          counts: { total: 0, top: 0, more: 0 },
-          top: [],
-          more: [],
-        }),
-      }),
-    );
-    let current = 'claude';
-    await page.route('**/api/v1/settings/llm', (route) => {
-      if (route.request().method() === 'PUT')
-        current = JSON.parse(route.request().postData() || '{}').provider;
-      route.fulfill({
-        contentType: 'application/json',
-        body: JSON.stringify({
-          current,
-          providers: [
-            { id: 'claude', label: 'Claude (Anthropic)', available: true },
-            { id: 'gemini', label: 'Gemini (Google)', available: true },
-          ],
-        }),
-      });
-    });
-
-    await page.goto('/design/myjob/ui_kits/karriere/index.html');
-    await page.getByRole('button', { name: /KI-Modell wählen/ }).click();
-    const dialog = page.locator('body');
-    await expect(dialog).toContainText('KI-Modell');
-    await expect(dialog).toContainText('Claude');
-    await expect(dialog).toContainText('Gemini');
-    await page.getByText('Gemini', { exact: true }).click();
-    // the backend was asked to switch
-    await expect.poll(() => current).toBe('gemini');
   });
 });

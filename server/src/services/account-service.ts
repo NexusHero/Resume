@@ -7,6 +7,7 @@ import type { MandateRepository } from '../ports/mandate-repository';
 import type { TalentRepository } from '../ports/talent-repository';
 import type { PlacementRepository } from '../ports/placement-repository';
 import type { SessionStore } from '../ports/session-store';
+import type { PasswordResetTokenStore } from '../ports/password-reset-token-store';
 
 export interface AccountServiceDeps {
   userRepository: UserRepository;
@@ -14,6 +15,7 @@ export interface AccountServiceDeps {
   talentRepository: TalentRepository;
   placementRepository: PlacementRepository;
   sessionStore: SessionStore;
+  passwordResetTokenStore: PasswordResetTokenStore;
 }
 
 /** Everything the signed-in recruiter owns — the DSGVO data-portability payload. */
@@ -35,6 +37,7 @@ export class AccountService {
   private readonly talents: TalentRepository;
   private readonly placements: PlacementRepository;
   private readonly sessions: SessionStore;
+  private readonly resetTokens: PasswordResetTokenStore;
 
   constructor(deps: AccountServiceDeps) {
     this.users = deps.userRepository;
@@ -42,6 +45,7 @@ export class AccountService {
     this.talents = deps.talentRepository;
     this.placements = deps.placementRepository;
     this.sessions = deps.sessionStore;
+    this.resetTokens = deps.passwordResetTokenStore;
   }
 
   /** Gather every owner-scoped record plus the account profile. `at` is the request time. */
@@ -63,14 +67,15 @@ export class AccountService {
 
   /**
    * Erase the account and all data it owns: recruiting records first, then every
-   * session for the user, then the account itself. Idempotent — erasing an
-   * already-gone account simply removes nothing.
+   * session and outstanding password-reset token for the user, then the account
+   * itself. Idempotent — erasing an already-gone account simply removes nothing.
    */
   async erase(ownerId: string): Promise<void> {
     await this.removeAll(this.mandates, ownerId, await this.mandates.list(ownerId));
     await this.removeAll(this.talents, ownerId, await this.talents.list(ownerId));
     await this.removeAll(this.placements, ownerId, await this.placements.list(ownerId));
     await this.sessions.destroyForUser(ownerId);
+    await this.resetTokens.destroyForUser(ownerId);
     await this.users.remove(ownerId);
   }
 

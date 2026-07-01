@@ -1,25 +1,7 @@
 /* SettingsView — AI models & API keys. The active model is wired to the live
-   /settings/llm endpoint; per-provider API keys use a secured (masked, reveal,
-   remove) flow and are kept in this browser. Mirrors the Elliott Wave Analyzer
-   settings UX, rebranded to myJob. English-only. */
+   /settings/llm endpoint; per-provider API keys are stored encrypted on the
+   server (PUT/DELETE /settings/keys/:provider) — never in the browser. English-only. */
 const SV = window.MyJobDesignSystem_f3658e;
-const SV_KEY = (id) => `myjob.apikey.${id}`;
-
-function loadKey(id) {
-  try {
-    return localStorage.getItem(SV_KEY(id)) || '';
-  } catch (e) {
-    return '';
-  }
-}
-function storeKey(id, value) {
-  try {
-    if (value) localStorage.setItem(SV_KEY(id), value);
-    else localStorage.removeItem(SV_KEY(id));
-  } catch (e) {
-    /* ignore */
-  }
-}
 
 function ProviderRow({ p, active, onActivate, saved, onSave, onRemove }) {
   const [draft, setDraft] = React.useState('');
@@ -40,8 +22,8 @@ function ProviderRow({ p, active, onActivate, saved, onSave, onRemove }) {
 
       {saved ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)' }}>{'•'.repeat(14) + saved.slice(-4)}</span>
-          <span style={{ fontSize: '11px', color: 'var(--text-soft)' }}>Hidden — never shown again</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)' }}>{'•'.repeat(18)}</span>
+          <span style={{ fontSize: '11px', color: 'var(--text-soft)' }}>Stored securely on the server</span>
         </div>
       ) : (
         <div style={{ display: 'flex', gap: '8px', minWidth: 0 }}>
@@ -153,15 +135,14 @@ function SettingsView() {
     return () => { alive = false; };
   }, []);
 
+  // Which providers have a key stored on the server (booleans, never the keys).
   React.useEffect(() => {
-    if (!settings) return;
-    const next = {};
-    settings.providers.forEach((p) => {
-      const v = loadKey(p.id);
-      if (v) next[p.id] = v;
-    });
-    setKeys(next);
-  }, [settings]);
+    let alive = true;
+    window.RecruitApi.getApiKeyStatus()
+      .then((status) => { if (alive) setKeys(status); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
 
   const activate = (id) => {
     if (busy) return;
@@ -171,8 +152,16 @@ function SettingsView() {
       .catch(() => {})
       .finally(() => setBusy(false));
   };
-  const saveKey = (id, value) => { storeKey(id, value); setKeys((k) => ({ ...k, [id]: value })); };
-  const removeKey = (id) => { storeKey(id, ''); setKeys((k) => { const n = { ...k }; delete n[id]; return n; }); };
+  const saveKey = (id, value) => {
+    window.RecruitApi.setApiKey(id, value)
+      .then(() => setKeys((k) => ({ ...k, [id]: true })))
+      .catch(() => {});
+  };
+  const removeKey = (id) => {
+    window.RecruitApi.removeApiKey(id)
+      .then(() => setKeys((k) => ({ ...k, [id]: false })))
+      .catch(() => {});
+  };
 
   return (
     <div style={{ maxWidth: '780px', display: 'flex', flexDirection: 'column', gap: '18px' }}>

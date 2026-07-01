@@ -138,6 +138,18 @@ describe('LlmService', () => {
     svc.setProvider('gemini'); // unavailable
     expect(svc.active()).toBeNull();
   });
+
+  it('Get_ReturnsProviderRegardlessOfAvailability_CurrentReflectsSelection', () => {
+    const svc = new LlmService({
+      providers: [claude, gemini],
+      defaultProvider: 'claude',
+      logger: noopLogger,
+    });
+    expect(svc.currentProvider()).toBe('claude');
+    expect(svc.get('gemini')).toBe(gemini); // unavailable but still returned for user-key callers
+    svc.setProvider('gemini');
+    expect(svc.currentProvider()).toBe('gemini');
+  });
 });
 
 describe('CoverLetterService', () => {
@@ -175,6 +187,28 @@ describe('CoverLetterService', () => {
     expect(out.provider).toBe('template');
     expect(out.text).toContain('Celonis');
     expect(out.text).toContain('Suhay Sevinc');
+  });
+
+  it('Generate_WithOverride_UsesUserKeyAndProviderEvenWhenServerUnavailable', async () => {
+    let usedKey: string | undefined;
+    const provider: LlmProvider = {
+      id: 'claude',
+      label: 'Claude',
+      available: false, // no server credentials
+      generate: async (input) => {
+        usedKey = input.apiKey;
+        return 'user-key letter';
+      },
+    };
+    const llm = new LlmService({
+      providers: [provider],
+      defaultProvider: 'claude',
+      logger: noopLogger,
+    });
+    const svc = new CoverLetterService({ llmService: llm, candidate, logger: noopLogger });
+    const out = await svc.generate(req, { provider: 'claude', apiKey: 'sk-user' });
+    expect(out).toEqual({ text: 'user-key letter', provider: 'claude' });
+    expect(usedKey).toBe('sk-user');
   });
 
   it('Generate_FallsBackToTemplateWhenProviderThrows', async () => {

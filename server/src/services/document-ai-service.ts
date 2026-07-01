@@ -47,6 +47,15 @@ import {
   normalizeInterviewKit,
 } from '../domain/interview-kit';
 import {
+  type CandidatePrep,
+  prepPrompt,
+  prepResultSchema,
+  fallbackPrep,
+  mergePrep,
+} from '../domain/candidate-prep';
+import { companyInterviewProfile } from '../domain/company-archetype';
+import { extractRequirements } from '../domain/job-requirements';
+import {
   type DocumentContact,
   type ResumeContent,
   saveDocumentsSchema,
@@ -476,5 +485,50 @@ export class DocumentAiService {
     }
 
     return { ...fallbackInterviewKit(documents, mandate), provider: 'template' };
+  }
+
+  /**
+   * Candidate-facing interview preparation. The grounded parts (company style,
+   * obligations from the ad, requirement coverage, matching strengths) are
+   * computed deterministically; the LLM only refines the coaching narrative
+   * (likely questions, STAR scaffolds, questions to ask). Falls back to a fully
+   * deterministic pack when no provider is configured.
+   */
+  async candidatePrep(
+    scope: string,
+    userId: string,
+    talentId: string,
+    mandate: MandateContext,
+    jobText: string,
+  ): Promise<CandidatePrep & { provider: LlmProviderId | 'template' }> {
+    const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
+    const company = companyInterviewProfile(mandate.client ?? '', mandate.role, jobText);
+    const requirements = extractRequirements(jobText);
+    const base = fallbackPrep(documents, mandate, company, requirements, jobText);
+    const resolved = await this.resolveProvider(userId);
+
+    if (resolved && documents) {
+      try {
+        const built = prepPrompt(documents, mandate, company, base.strengths);
+        const { text: reply, usage } = await resolved.provider.generate({
+          system: built.system,
+          prompt: built.prompt,
+          maxTokens: 1200,
+          ...(resolved.apiKey ? { apiKey: resolved.apiKey } : {}),
+        });
+        await this.meter(userId, resolved.provider.id, 'candidatePrep', usage);
+        const parsed = prepResultSchema.safeParse(extractJson(reply));
+        if (parsed.success) {
+          return { ...mergePrep(base, parsed.data), provider: resolved.provider.id };
+        }
+      } catch (err) {
+        this.logger.warn(
+          { err: err instanceof Error ? err.message : String(err) },
+          'candidate prep failed, falling back',
+        );
+      }
+    }
+
+    return { ...base, provider: 'template' };
   }
 }

@@ -220,6 +220,7 @@ function mapMandate(m) {
     status: m.status,
     submitted: m.submitted,
     interviews: m.interviews,
+    jobText: m.jobText || '',
   };
 }
 
@@ -236,6 +237,7 @@ function toMandateCreate(m) {
     status: m.status || 'active',
     submitted: m.submitted || 0,
     interviews: m.interviews || 0,
+    jobText: m.jobText || '',
   };
 }
 
@@ -469,6 +471,16 @@ const RecruitApi = {
       ),
     );
     return data.kit; // { focus, questions[], scorecard[], provider }
+  },
+  async candidatePrep(mandateId, talentId) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/mandates/${mandateId}/candidates/${talentId}/prep`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({}),
+      }),
+    );
+    return data.prep; // { companyLabel, formats, obligations, requirementChecks, strengths, likelyQuestions, starAnswers, candidateQuestions, provider }
   },
   async updateCandidacy(id, patch) {
     const data = await _jsonOrThrow(

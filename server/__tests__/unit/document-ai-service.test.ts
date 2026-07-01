@@ -555,3 +555,42 @@ describe('DocumentAiService.interviewKit', () => {
     );
   });
 });
+
+describe('DocumentAiService.candidatePrep', () => {
+  const mandate = { role: 'Engineer', location: 'Berlin', client: 'Google' };
+  const ad = 'Frontend Engineer\n- React erforderlich\n- Führerschein erforderlich';
+
+  it('WithProvider_MergesRefinementAndMeters', async () => {
+    const json = JSON.stringify({
+      likelyQuestions: [{ category: 'Fachlich', question: 'React?', why: 'relevant' }],
+      starAnswers: [{ competency: 'React', prompt: 'P', scaffold: 'Situation: ...' }],
+      candidateQuestions: ['Wie ist das Team?'],
+    });
+    const c = ctx({ available: true, generate: async () => json });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+    const res = await c.service.candidatePrep(OWNER, OWNER, 't1', mandate, ad);
+    expect(res.provider).toBe('claude');
+    expect(res.likelyQuestions[0]?.question).toBe('React?');
+    // grounded parts computed by us regardless of the LLM
+    expect(res.companyLabel).toBe('US Big Tech');
+    expect(res.obligations.some((o) => o.includes('Führerschein'))).toBe(true);
+    expect((await c.usageMeter.list(OWNER)).some((e) => e.feature === 'candidatePrep')).toBe(true);
+  });
+
+  it('NoProvider_FallsBackToDeterministicPack', async () => {
+    const c = ctx();
+    await c.talents.add(talent('t1'));
+    const res = await c.service.candidatePrep(OWNER, OWNER, 't1', mandate, ad);
+    expect(res.provider).toBe('template');
+    expect(res.likelyQuestions.length).toBeGreaterThan(0);
+    expect(res.companyLabel).toBe('US Big Tech');
+  });
+
+  it('UnknownTalent_Throws404', async () => {
+    const c = ctx();
+    await expect(
+      c.service.candidatePrep(OWNER, OWNER, 'missing', mandate, ad),
+    ).rejects.toBeInstanceOf(NotFoundError);
+  });
+});

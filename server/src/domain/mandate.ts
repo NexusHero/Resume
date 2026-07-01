@@ -20,6 +20,8 @@ export interface Mandate {
   status: MandateStatus;
   submitted: number;
   interviews: number;
+  /** The job ad text — the employer's own requirements for this role. */
+  jobText: string;
   createdAt: string; // ISO 8601
   updatedAt: string; // ISO 8601
 }
@@ -36,6 +38,7 @@ export const createMandateSchema = z.object({
   status: z.enum(MANDATE_STATUSES).default('active'),
   submitted: z.number().int().min(0).default(0),
   interviews: z.number().int().min(0).default(0),
+  jobText: z.string().max(50_000).default(''),
 });
 export type CreateMandateInput = z.infer<typeof createMandateSchema>;
 
@@ -52,6 +55,7 @@ export const updateMandateSchema = z
     status: z.enum(MANDATE_STATUSES),
     submitted: z.number().int().min(0),
     interviews: z.number().int().min(0),
+    jobText: z.string().max(50_000),
   })
   .partial();
 export type UpdateMandateInput = z.infer<typeof updateMandateSchema>;

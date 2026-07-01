@@ -66,6 +66,7 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
   const [aggLoading, setAggLoading] = React.useState(false);
   const [explains, setExplains] = React.useState({}); // talentId -> { loading, open, data }
   const [interview, setInterview] = React.useState(null); // { name, loading, data } | null
+  const [prep, setPrep] = React.useState(null); // { name, loading, data } | null
 
   const load = React.useCallback(() => {
     setError(false);
@@ -132,6 +133,15 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
       setInterview({ name, loading: false, data });
     } catch {
       setInterview({ name, loading: false, data: null, error: true });
+    }
+  };
+  const openPrep = async (talentId, name) => {
+    setPrep({ name, loading: true, data: null });
+    try {
+      const data = await window.RecruitApi.candidatePrep(mandate.id, talentId);
+      setPrep({ name, loading: false, data });
+    } catch {
+      setPrep({ name, loading: false, data: null, error: true });
     }
   };
   const addFromMatch = async (talentId) => {
@@ -301,6 +311,9 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
                       <button onClick={() => openInterview(mm.talentId, mm.name)} title="Interview-Kit erstellen" style={{ flexShrink: 0, cursor: 'pointer', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '10.5px', padding: '4px 9px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                         <MP.Icon name="message" size={12} /> Interview
                       </button>
+                      <button onClick={() => openPrep(mm.talentId, mm.name)} title="Bewerber-Vorbereitung erstellen" style={{ flexShrink: 0, cursor: 'pointer', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '10.5px', padding: '4px 9px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <MP.Icon name="award" size={12} /> Prep
+                      </button>
                       <MP.MatchIndicator value={mm.score} variant="chip" />
                       {mm.inPipeline ? (
                         <span style={{ flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-soft)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
@@ -388,6 +401,111 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
           </div>
         </>
       )}
+
+      {prep && (
+        <>
+          <div onClick={() => setPrep(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(8,11,18,0.5)', backdropFilter: 'blur(2px)', zIndex: 70 }} />
+          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 71, width: 'min(680px, 95vw)', maxHeight: '88vh', display: 'flex', flexDirection: 'column', background: 'var(--surface-card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-lg)', padding: '22px' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '2px' }}>
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)' }}>Bewerber-Vorbereitung</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-soft)' }}>{prep.name} · {mandate.role}</span>
+            </div>
+            <div style={{ fontSize: '11.5px', color: 'var(--text-soft)', marginBottom: '8px' }}>Zum Teilen mit dem Kandidaten. Firmenangaben sind Einschätzungen — vor dem Gespräch prüfen.</div>
+
+            {prep.loading ? (
+              <div style={{ padding: '28px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Vorbereitung wird erstellt…</div>
+            ) : !prep.data ? (
+              <div style={{ padding: '22px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Konnte die Vorbereitung nicht laden.</div>
+            ) : (
+              <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '6px' }}>
+                {/* Company style with provenance */}
+                <div style={{ background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '12px 14px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--text-heading)' }}>Interview-Stil: {prep.data.companyLabel}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9.5px', color: 'var(--text-soft)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '1px 7px' }}>{prep.data.companySource} · {prep.data.companyConfidence}</span>
+                  </div>
+                  <ul style={{ margin: 0, paddingLeft: '16px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    {prep.data.formats.map((f, i) => <li key={i} style={{ fontSize: '12px', color: 'var(--text-soft)' }}>{f}</li>)}
+                  </ul>
+                  <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '5px' }}>{prep.data.rounds}</div>
+                </div>
+
+                {prep.data.obligations.length > 0 && (
+                  <PrepSection title="Auflagen (aus der Anzeige)" items={prep.data.obligations} tone="var(--danger)" MP={MP} />
+                )}
+                {prep.data.processHints.length > 0 && (
+                  <PrepSection title="Prozess-Hinweise" items={prep.data.processHints} MP={MP} />
+                )}
+
+                {prep.data.requirementChecks.length > 0 && (
+                  <div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '7px' }}>Anforderungen abgleichen</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                      {prep.data.requirementChecks.map((c, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '12.5px' }}>
+                          <MP.Icon name={c.covered ? 'check' : 'alert'} size={13} style={{ marginTop: '1px', color: c.covered ? 'var(--status-hired-strong)' : 'var(--status-offer-strong, #D97757)' }} />
+                          <span style={{ color: 'var(--text-body)' }}>{c.text}{!c.covered && <span style={{ color: 'var(--text-soft)' }}> — im Profil belegen</span>}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {prep.data.strengths.length > 0 && (
+                  <div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '7px' }}>Deine Stärken für diese Stelle</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {prep.data.strengths.map((s, i) => <span key={i} style={{ fontSize: '11.5px', color: 'var(--accent-strong)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '3px 10px' }}>{s}</span>)}
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '7px' }}>Womit du rechnen solltest</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {prep.data.likelyQuestions.map((q, i) => (
+                      <div key={i} style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '10px 12px' }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9.5px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--accent-strong)' }}>{q.category}</span>
+                        <div style={{ fontSize: '12.5px', color: 'var(--text-heading)', marginTop: '2px' }}>{q.question}</div>
+                        {q.why && <div style={{ fontSize: '11px', color: 'var(--text-soft)', marginTop: '2px' }}>{q.why}</div>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '7px' }}>Antwort-Gerüste (STAR)</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {prep.data.starAnswers.map((s, i) => (
+                      <div key={i} style={{ background: 'var(--surface-sunk)', borderRadius: 'var(--radius-md)', padding: '10px 12px' }}>
+                        <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-heading)' }}>{s.prompt}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-soft)', marginTop: '3px', lineHeight: 1.5 }}>{s.scaffold}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <PrepSection title="Fragen, die du stellen solltest" items={prep.data.candidateQuestions} MP={MP} />
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+              <MP.Button variant="ghost" onClick={() => setPrep(null)}>Close</MP.Button>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function PrepSection({ title, items, tone, MP }) {
+  return (
+    <div>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: tone || 'var(--text-muted)', marginBottom: '7px' }}>{title}</div>
+      <ul style={{ margin: 0, paddingLeft: '16px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+        {items.map((it, i) => <li key={i} style={{ fontSize: '12.5px', color: 'var(--text-body)', lineHeight: 1.45 }}>{it}</li>)}
+      </ul>
     </div>
   );
 }

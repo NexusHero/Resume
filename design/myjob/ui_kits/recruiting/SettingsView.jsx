@@ -281,6 +281,7 @@ const USAGE_FEATURE_LABELS = {
   coverLetter: 'Cover letter',
   matchExplain: 'Match explanation',
   interviewKit: 'Interview kit',
+  candidatePrep: 'Candidate prep',
 };
 
 function formatTokens(n) {

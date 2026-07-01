@@ -51,6 +51,7 @@ export class MandateService {
       status: input.status,
       submitted: input.submitted,
       interviews: input.interviews,
+      jobText: input.jobText,
       createdAt: now,
       updatedAt: now,
     };

@@ -134,6 +134,7 @@ export function rowToMandate(row: MandateRow): Mandate {
     status: row.status as MandateStatus,
     submitted: row.submitted,
     interviews: row.interviews,
+    jobText: row.jobText,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -153,6 +154,7 @@ export function mandateToRow(mandate: Mandate): MandateInsert {
     status: mandate.status,
     submitted: mandate.submitted,
     interviews: mandate.interviews,
+    jobText: mandate.jobText,
     createdAt: mandate.createdAt,
     updatedAt: mandate.updatedAt,
   };

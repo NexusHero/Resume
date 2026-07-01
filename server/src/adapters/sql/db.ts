@@ -82,10 +82,12 @@ export async function migrate(pool: Pool): Promise<void> {
       status text NOT NULL,
       submitted integer NOT NULL,
       interviews integer NOT NULL,
+      job_text text NOT NULL DEFAULT '',
       created_at text NOT NULL,
       updated_at text NOT NULL
     );
     CREATE INDEX IF NOT EXISTS mandates_owner_id_idx ON mandates (owner_id);
+    ALTER TABLE mandates ADD COLUMN IF NOT EXISTS job_text text NOT NULL DEFAULT '';
     CREATE TABLE IF NOT EXISTS talents (
       id text PRIMARY KEY,
       owner_id text NOT NULL,

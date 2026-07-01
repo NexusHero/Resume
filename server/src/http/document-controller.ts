@@ -1,6 +1,8 @@
 import type { Request, Response } from 'express';
 import { saveDocumentsSchema } from '../domain/talent-documents';
 import { aiSuggestSchema } from '../domain/document-ai';
+import { parseRequestSchema } from '../domain/document-parse';
+import { atsRequestSchema } from '../domain/ats-ai';
 import type { DocumentService } from '../services/document-service';
 import type { DocumentAiService } from '../services/document-ai-service';
 import { currentUserId } from './current-user';
@@ -66,5 +68,21 @@ export class DocumentController {
       company,
     });
     res.json({ suggestion });
+  };
+
+  parse = async (req: Request, res: Response): Promise<void> => {
+    const { text } = parseRequestSchema.parse(req.body);
+    const parsed = await this.ai.parse(currentUserId(req), req.params.id as string, text);
+    res.json({ parsed });
+  };
+
+  ats = async (req: Request, res: Response): Promise<void> => {
+    const { jobText } = atsRequestSchema.parse(req.body);
+    const result = await this.ai.scoreAgainstJob(
+      currentUserId(req),
+      req.params.id as string,
+      jobText,
+    );
+    res.json({ ats: result });
   };
 }

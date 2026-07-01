@@ -113,3 +113,96 @@ describe('DocumentAiService', () => {
     );
   });
 });
+
+describe('DocumentAiService.parse', () => {
+  const RESUME_JSON = JSON.stringify({
+    contact: { name: 'Max Mustermann', role: 'C++ Engineer' },
+    resume: {
+      summary: 'Senior Engineer.',
+      experience: [{ role: 'Dev', company: 'Acme', period: '2020—', bullets: ['Shipped X'] }],
+      skillGroups: [{ label: 'Lang', items: ['C++'] }],
+    },
+  });
+
+  it('Parse_WithProvider_ReturnsValidatedStructure', async () => {
+    const c = ctx({ available: true, generate: async () => '```json\n' + RESUME_JSON + '\n```' });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+    const parsed = await c.service.parse(OWNER, 't1', 'raw cv text');
+    expect(parsed.provider).toBe('claude');
+    expect(parsed.contact.name).toBe('Max Mustermann');
+    expect(parsed.resume.summary).toBe('Senior Engineer.');
+    expect(parsed.resume.experience[0]).toMatchObject({ company: 'Acme', bullets: ['Shipped X'] });
+    // schema fills defaults for omitted fields
+    expect(parsed.resume.education).toEqual([]);
+  });
+
+  it('Parse_NoProvider_FallsBackToRawSummary', async () => {
+    const c = ctx(); // provider unavailable + no key
+    await c.talents.add(talent('t1'));
+    const parsed = await c.service.parse(OWNER, 't1', 'My whole CV as text');
+    expect(parsed.provider).toBe('template');
+    expect(parsed.resume.summary).toContain('My whole CV as text');
+  });
+
+  it('Parse_MalformedJson_FallsBack', async () => {
+    const c = ctx({ available: true, generate: async () => 'not json at all' });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+    const parsed = await c.service.parse(OWNER, 't1', 'the cv');
+    expect(parsed.provider).toBe('template');
+    expect(parsed.resume.summary).toContain('the cv');
+  });
+
+  it('Parse_UnknownTalent_Throws404', async () => {
+    const c = ctx();
+    await expect(c.service.parse(OWNER, 'missing', 'x')).rejects.toBeInstanceOf(NotFoundError);
+  });
+});
+
+describe('DocumentAiService.scoreAgainstJob', () => {
+  const ATS_JSON = JSON.stringify({
+    score: 82,
+    matched: ['C++'],
+    missing: ['Kubernetes'],
+    suggestions: ['Add Kubernetes experience'],
+  });
+
+  it('Score_WithProvider_ReturnsNormalizedResult', async () => {
+    const c = ctx({ available: true, generate: async () => ATS_JSON });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+    const res = await c.service.scoreAgainstJob(OWNER, 't1', 'C++ role, Kubernetes a plus');
+    expect(res.provider).toBe('claude');
+    expect(res.score).toBe(82);
+    expect(res.missing).toEqual(['Kubernetes']);
+  });
+
+  it('Score_ClampsOutOfRangeScore', async () => {
+    const c = ctx({
+      available: true,
+      generate: async () =>
+        JSON.stringify({ score: 140, matched: [], missing: [], suggestions: [] }),
+    });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+    const res = await c.service.scoreAgainstJob(OWNER, 't1', 'job');
+    expect(res.score).toBe(100);
+  });
+
+  it('Score_NoProvider_FallsBackToKeywordOverlap', async () => {
+    const c = ctx();
+    await c.talents.add(talent('t1'));
+    const res = await c.service.scoreAgainstJob(OWNER, 't1', 'any job text');
+    expect(res.provider).toBe('template');
+    expect(typeof res.score).toBe('number');
+    expect(Array.isArray(res.suggestions)).toBe(true);
+  });
+
+  it('Score_UnknownTalent_Throws404', async () => {
+    const c = ctx();
+    await expect(c.service.scoreAgainstJob(OWNER, 'missing', 'job')).rejects.toBeInstanceOf(
+      NotFoundError,
+    );
+  });
+});

@@ -334,6 +334,11 @@ const RecruitApi = {
     const res = await fetch(`${RECRUIT_API_BASE}/account`, { method: 'DELETE' });
     if (!res.ok) throw new Error(`API ${res.status}`);
   },
+  /* ---- Weighted pipeline revenue forecast ---- */
+  async getForecast() {
+    // { totalWeighted, totalFaceValue, mandates: [{ client, role, feeValue, probability, weightedValue, candidacies, topStage }] }
+    return _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/forecast`));
+  },
   /* ---- AGG (anti-discrimination) compliance check ---- */
   async aggCheck(text) {
     // { findings[], riskLevel, hasGenderMarker, summary }

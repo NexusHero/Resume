@@ -19,6 +19,7 @@ import { RetentionController } from '../../src/http/retention-controller';
 import { MatchController } from '../../src/http/match-controller';
 import { UsageController } from '../../src/http/usage-controller';
 import { ComplianceController } from '../../src/http/compliance-controller';
+import { ForecastController } from '../../src/http/forecast-controller';
 import { DocumentController } from '../../src/http/document-controller';
 import { AttachmentController } from '../../src/http/attachment-controller';
 import { AuthController } from '../../src/http/auth-controller';
@@ -33,6 +34,7 @@ import { CandidacyService } from '../../src/services/candidacy-service';
 import { RetentionService } from '../../src/services/retention-service';
 import { MatchService } from '../../src/services/match-service';
 import { UsageService } from '../../src/services/usage-service';
+import { ForecastService } from '../../src/services/forecast-service';
 import { DocumentService } from '../../src/services/document-service';
 import { DocumentAiService } from '../../src/services/document-ai-service';
 import { AttachmentService } from '../../src/services/attachment-service';
@@ -235,6 +237,9 @@ function makeApp(
     usageService: new UsageService({ usageMeter }),
   });
   const complianceController = new ComplianceController();
+  const forecastController = new ForecastController({
+    forecastService: new ForecastService({ mandateRepository, candidacyRepository }),
+  });
   const placementController = new PlacementController({ placementService });
   const authController = new AuthController({
     authService: new AuthService({
@@ -289,6 +294,7 @@ function makeApp(
     matchController,
     usageController,
     complianceController,
+    forecastController,
     documentController,
     attachmentController,
     authController,
@@ -1089,6 +1095,33 @@ describe('REST API /api/v1', () => {
 
     it('Agg_Unauthenticated_Returns401', async () => {
       const res = await request(app).post('/api/v1/compliance/agg-check').send({ text: 'x' });
+      expect(res.status).toBe(401);
+    });
+
+    // --- Pipeline revenue forecast ---
+    it('Forecast_WeightsPipelineByStage', async () => {
+      const m = await agent.post('/api/v1/mandates').send({
+        client: 'Forecast Co',
+        role: 'Engineer',
+        location: 'Berlin',
+        feeValue: '10.000 €',
+      });
+      const t = await agent.post('/api/v1/talents').send({ name: 'Cand One' });
+      await agent
+        .post(`/api/v1/mandates/${m.body.mandate.id}/candidacies`)
+        .send({ talentId: t.body.talent.id, stage: 'offer' });
+      const res = await agent.get('/api/v1/forecast');
+      expect(res.status).toBe(200);
+      const row = res.body.mandates.find(
+        (x: { mandateId: string }) => x.mandateId === m.body.mandate.id,
+      );
+      expect(row.probability).toBe(0.7); // offer stage
+      expect(row.weightedValue).toBe(7000); // 10000 × 0.7
+      expect(res.body.totalWeighted).toBeGreaterThanOrEqual(7000);
+    });
+
+    it('Forecast_Unauthenticated_Returns401', async () => {
+      const res = await request(app).get('/api/v1/forecast');
       expect(res.status).toBe(401);
     });
 

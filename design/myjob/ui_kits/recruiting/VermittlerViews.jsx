@@ -121,6 +121,74 @@ function PlatzierungenView({ placements, kpis, onEdit }) {
 }
 
 /* ---------- Berichte: provision per client + mandate health + funnel ---------- */
+/* Candidacy-stage labels for the forecast (distinct from application stages). */
+const FORECAST_STAGE_LABELS = {
+  sourced: 'Sourced',
+  screening: 'Screening',
+  interview: 'Interview',
+  offer: 'Offer',
+  placed: 'Placed',
+  rejected: 'Rejected',
+};
+
+/* ForecastCard — weighted expected revenue across the live pipeline. Each
+   mandate's fee is weighted by the probability its pipeline yields a placement.
+   Self-fetching so it stays decoupled from the report props. */
+function ForecastCard() {
+  const [data, setData] = React.useState(null); // null = loading
+  const [error, setError] = React.useState(false);
+  const fmt = (n) => (Number(n) || 0).toLocaleString('de-DE');
+
+  React.useEffect(() => {
+    let alive = true;
+    window.RecruitApi.getForecast()
+      .then((d) => { if (alive) setData(d); })
+      .catch(() => { if (alive) setError(true); });
+    return () => { alive = false; };
+  }, []);
+
+  return (
+    <VV.Card title="Pipeline forecast" subtitle="Weighted expected revenue across live mandates">
+      {error ? (
+        <div style={{ padding: '18px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Could not load the forecast.</div>
+      ) : data === null ? (
+        <div style={{ padding: '22px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Loading…</div>
+      ) : data.mandates.length === 0 ? (
+        <div style={{ padding: '18px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>No candidates in any pipeline yet — the forecast fills as you add candidacies.</div>
+      ) : (
+        <>
+          <div style={{ display: 'flex', gap: '24px', marginBottom: '16px' }}>
+            <div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: '26px', fontWeight: 700, color: 'var(--accent-strong)', letterSpacing: '-0.02em' }}>{fmt(data.totalWeighted)} €</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--text-soft)', marginTop: '2px' }}>Weighted (expected)</div>
+            </div>
+            <div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: '26px', fontWeight: 700, color: 'var(--text-heading)', letterSpacing: '-0.02em' }}>{fmt(data.totalFaceValue)} €</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--text-soft)', marginTop: '2px' }}>Face value (if all fill)</div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '11px' }}>
+            {data.mandates.map((m) => (
+              <div key={m.mandateId} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', gap: '12px', alignItems: 'center' }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-heading)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.role} <span style={{ color: 'var(--text-soft)', fontWeight: 400 }}>· {m.client}</span></div>
+                  <div style={{ height: '7px', marginTop: '5px', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-pill)', overflow: 'hidden' }}>
+                    <div style={{ width: `${Math.round(m.probability * 100)}%`, height: '100%', background: 'var(--accent)', borderRadius: 'var(--radius-pill)' }} />
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12.5px', fontWeight: 600, color: 'var(--accent-strong)' }}>{fmt(m.weightedValue)} €</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-soft)', marginTop: '1px' }}>{Math.round(m.probability * 100)}% · {FORECAST_STAGE_LABELS[m.topStage] || m.topStage} · {m.candidacies}×</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </VV.Card>
+  );
+}
+
 function ReportsView({ clients, mandates, placements, apps, kpis }) {
   const feeNum = (s) => parseInt(String(s).replace(/[^0-9]/g, ''), 10) || 0;
   const perClient = clients.map((k) => ({
@@ -137,6 +205,7 @@ function ReportsView({ clients, mandates, placements, apps, kpis }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px' }}>
         {kpis.map((k, i) => <VV.StatCard key={i} {...k} />)}
       </div>
+      <ForecastCard />
       <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '16px' }}>
         <VV.Card title="Fees per client" subtitle="Booked placements Q2">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '13px' }}>

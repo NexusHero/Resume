@@ -39,6 +39,7 @@ import { CandidacyService } from './services/candidacy-service';
 import { RetentionService } from './services/retention-service';
 import { MatchService } from './services/match-service';
 import { UsageService } from './services/usage-service';
+import { ForecastService } from './services/forecast-service';
 import { DocumentService } from './services/document-service';
 import { DocumentAiService } from './services/document-ai-service';
 import { AttachmentService } from './services/attachment-service';
@@ -58,6 +59,8 @@ import { CandidacyController } from './http/candidacy-controller';
 import { RetentionController } from './http/retention-controller';
 import { MatchController } from './http/match-controller';
 import { UsageController } from './http/usage-controller';
+import { ComplianceController } from './http/compliance-controller';
+import { ForecastController } from './http/forecast-controller';
 import { DocumentController } from './http/document-controller';
 import { AttachmentController } from './http/attachment-controller';
 import { AuthController } from './http/auth-controller';
@@ -135,6 +138,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     retentionService: asClass(RetentionService).singleton(),
     matchService: asClass(MatchService).singleton(),
     usageService: asClass(UsageService).singleton(),
+    forecastService: asClass(ForecastService).singleton(),
     documentService: asClass(DocumentService).singleton(),
     documentAiService: asClass(DocumentAiService).singleton(),
     attachmentService: asClass(AttachmentService).singleton(),
@@ -154,6 +158,8 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     retentionController: asClass(RetentionController).singleton(),
     matchController: asClass(MatchController).singleton(),
     usageController: asClass(UsageController).singleton(),
+    complianceController: asClass(ComplianceController).singleton(),
+    forecastController: asClass(ForecastController).singleton(),
     documentController: asClass(DocumentController).singleton(),
     attachmentController: asClass(AttachmentController).singleton(),
     authController: asClass(AuthController).singleton(),

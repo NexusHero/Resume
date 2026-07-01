@@ -14,6 +14,8 @@ import type { CandidacyController } from './candidacy-controller';
 import type { RetentionController } from './retention-controller';
 import type { MatchController } from './match-controller';
 import type { UsageController } from './usage-controller';
+import type { ComplianceController } from './compliance-controller';
+import type { ForecastController } from './forecast-controller';
 import type { DocumentController } from './document-controller';
 import type { AttachmentController } from './attachment-controller';
 import type { AuthController } from './auth-controller';
@@ -37,6 +39,8 @@ export interface AppDeps {
   retentionController: RetentionController;
   matchController: MatchController;
   usageController: UsageController;
+  complianceController: ComplianceController;
+  forecastController: ForecastController;
   documentController: DocumentController;
   attachmentController: AttachmentController;
   authController: AuthController;
@@ -62,6 +66,8 @@ export function createApp(deps: AppDeps): Express {
     retentionController: retention,
     matchController: match,
     usageController: usage,
+    complianceController: compliance,
+    forecastController: forecast,
     documentController: docs,
     attachmentController: att,
     authController: auth,
@@ -155,6 +161,10 @@ export function createApp(deps: AppDeps): Express {
   api.delete('/account', requireAuth, asyncHandler(account.remove));
   // Per-user AI usage (requests, tokens, rough cost) for the settings card.
   api.get('/settings/usage', requireAuth, asyncHandler(usage.summary));
+  // AGG (anti-discrimination) language check for job ads / outreach text.
+  api.post('/compliance/agg-check', requireAuth, asyncHandler(compliance.aggCheck));
+  // Weighted pipeline revenue forecast across the team's live mandates.
+  api.get('/forecast', requireAuth, asyncHandler(forecast.get));
   api.get('/settings/llm', asyncHandler(llm.settings));
   api.put('/settings/llm', asyncHandler(llm.setProvider));
   // Per-user API keys are owner-scoped (encrypted server-side).

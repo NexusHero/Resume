@@ -1,0 +1,91 @@
+# Requirements — myJob Recruiting Suite
+
+Requirements captured **retroactively** from the shipped system, so that use cases
+([`use-cases.md`](use-cases.md)) and architecture decisions ([`adr/`](adr)) have a
+stable set of IDs to reference. This is a living catalogue: when behaviour changes,
+update the requirement and the ADR that motivated it.
+
+- **FR-nn** — functional requirement (what the system does).
+- **NFR-nn** — non-functional / quality requirement (how well it does it).
+
+Traceability: each requirement lists the primary **modules** that satisfy it and, where
+relevant, the **ADR** that shaped the approach. Use cases reference these IDs.
+
+---
+
+## 1. Functional requirements
+
+### Accounts, tenancy & access
+
+| ID    | Requirement                                                                                                                      | Realised in                                               |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| FR-01 | A user can register, sign in and sign out with email + password; sessions are opaque, httpOnly, server-side-expiring cookies.    | `auth-service`, `session-store`, `scrypt-password-hasher` |
+| FR-02 | A user can request and confirm a password reset via a one-time token.                                                            | `password-reset-service`, `password-reset-token-store`    |
+| FR-03 | Recruiting data (mandates, talents, placements, candidacies, observations) is **team-scoped**: every member of a team shares it. | `current-user`, all recruiting services (ADR-0010)        |
+| FR-04 | An admin can list team members and change their roles (RBAC); non-admins are refused role changes.                               | `members-service`, `role-authorizer` (ADR-0004)           |
+
+### Recruiting core
+
+| ID    | Requirement                                                                                                               | Realised in                                                |
+| ----- | ------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| FR-10 | CRUD for client **mandates** (fee, deadline, and the pasted job ad / Stellenanzeige).                                     | `mandate-service`, `domain/mandate`                        |
+| FR-11 | CRUD for the **talent pool**; each talent may carry structured resume documents and file attachments.                     | `talent-service`, `document-service`, `attachment-service` |
+| FR-12 | A **candidacy** links a talent to a mandate and moves through pipeline stages; reaching `placed` creates a **placement**. | `candidacy-service`, `placement-service`                   |
+| FR-13 | Mandate metrics (submitted / interviews) are derived from the pipeline, not stored twice.                                 | `candidacy-service`, `mandate-service`                     |
+| FR-14 | A revenue **forecast** is computed from open pipeline value weighted by stage probability.                                | `forecast-service`, `domain/forecast`                      |
+
+### Documents & PDF
+
+| ID    | Requirement                                                                                        | Realised in                                                   |
+| ----- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| FR-20 | A talent's CV, cover letter and style are editable structured documents, autosaved.                | `document-service`, `domain/talent-documents`                 |
+| FR-21 | The suite renders a candidate CV and a merged **Bewerbungsmappe / dossier** to vector-quality PDF. | `pdf-renderer`, `pdf-merger`, `document-service`              |
+| FR-22 | A pasted CV (text or PDF) is parsed into the structured resume model.                              | `document-ai-service`, `document-parse`, `pdf-text-extractor` |
+
+### AI assistance (the differentiator)
+
+| ID    | Requirement                                                                                                                                                                                         | Realised in                                                  | ADR  |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | ---- |
+| FR-30 | Every LLM feature must degrade to a deterministic template result when no key / provider is available, and never block on the LLM.                                                                  | `document-ai-service`, `llm-service`                         | 0005 |
+| FR-31 | LLM keys are per-user and encrypted at rest; every AI call is metered (requests / tokens / cost) per user and feature.                                                                              | `api-key-store`, `secret-cipher`, `usage-meter`              | 0005 |
+| FR-32 | The pool can be **ranked against a mandate** by skill fit; matches are addable to the pipeline.                                                                                                     | `match-service`, `domain/match`                              | 0007 |
+| FR-33 | A match can be **explained** ("Warum passt der Kandidat?") from CV + job evidence.                                                                                                                  | `document-ai-service`, `domain/match-explain`                | 0007 |
+| FR-34 | Skill inputs are **canonicalised** to a taxonomy so variants (React.js / ReactJS / react) unify before matching and display.                                                                        | `domain/skill-taxonomy`                                      | 0008 |
+| FR-35 | An **interview kit** (questions + scorecard) can be generated for a candidate/mandate.                                                                                                              | `document-ai-service`, `domain/interview-kit`                |      |
+| FR-36 | A **candidate prep kit** tailors gaps, employer Auflagen, STAR prompts and tuned questions from the job ad + a company archetype.                                                                   | `document-ai-service`, `candidate-prep`, `company-archetype` | 0006 |
+| FR-37 | A **client pitch** ("why this candidate") and **first-contact outreach** (candidate/client, email/LinkedIn) can be drafted.                                                                         | `document-ai-service`, `candidate-pitch`, `outreach`         |      |
+| FR-38 | Generated pitch and outreach text carries a **grounding self-check**: factual claims (numbers-with-unit, known skills) unsupported by the CV + mandate are flagged to the recruiter before sending. | `domain/grounding`, `document-ai-service`, Editor UI         | 0009 |
+| FR-39 | Company knowledge for prep comes from **first-party interview observations** captured after each interview, which override the curated archetype as evidence accrues.                               | `interview-observation-service`, `candidate-prep`            | 0006 |
+| FR-40 | An **ATS gap analysis** scores a CV against a pasted posting (matched / missing keywords + recommendations).                                                                                        | `ats-service`, `domain/ats-ai`                               |      |
+| FR-41 | An **AGG compliance check** flags potentially discriminatory phrasing in a job ad.                                                                                                                  | `compliance-controller`, `domain/agg-check`                  |      |
+
+### Job search
+
+| ID    | Requirement                                                                                              | Realised in                                  |
+| ----- | -------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| FR-50 | Skill-matched two-tier job search across pluggable job boards; one failing source is skipped, not fatal. | `job-search-service`, `composite-job-source` |
+| FR-51 | Named/saved searches can be stored and re-run.                                                           | `saved-search-service`                       |
+
+### Compliance (DSGVO/GDPR)
+
+| ID    | Requirement                                                                                            | Realised in                                  | ADR  |
+| ----- | ------------------------------------------------------------------------------------------------------ | -------------------------------------------- | ---- |
+| FR-60 | A user can export all their data as JSON and erase their account (records + sessions).                 | `account-service`, `retention-service`       |      |
+| FR-61 | An admin can run a **retention report** and **anonymise** talent records past their retention horizon. | `retention-service`, `compliance-controller` | 0006 |
+
+---
+
+## 2. Non-functional requirements
+
+| ID     | Quality         | Requirement                                                                                                               | Verified by                                 |
+| ------ | --------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| NFR-01 | Maintainability | Core logic stays **≥ 90 %** covered (branches/functions/lines/statements); hexagonal layering, dependencies point inward. | Jest coverage gate (CI)                     |
+| NFR-02 | Correctness     | Requests are zod-validated at the boundary; errors are RFC-9457 problem+json.                                             | acceptance (supertest) tests                |
+| NFR-03 | Type safety     | `npm run typecheck` is clean; no new `any` in shipped code.                                                               | CI typecheck                                |
+| NFR-04 | Persistence     | SQL adapters round-trip against real Postgres; the file store is the offline default.                                     | `DATABASE_URL`-gated integration tests (CI) |
+| NFR-05 | Trust / honesty | The UI never shows fabricated sample data — real records, a loading state, or an error. AI claims are grounded (FR-38).   | Playwright e2e; grounding unit tests        |
+| NFR-06 | Security        | CORS allow-list, baseline security headers, rate-limited credentials, encrypted secrets, no secrets in the repo.          | `security.ts`, CodeQL + security workflow   |
+| NFR-07 | Privacy (DSGVO) | First-party data only; no scraping of third-party review sites; retention + erasure paths exist.                          | ADR-0006; retention tests                   |
+| NFR-08 | Reproducibility | Matching / grounding / taxonomy are deterministic and offline (no model, no network in the hot path).                     | unit tests                                  |
+| NFR-09 | Consistency     | Conventional Commits (English); Prettier + ESLint clean.                                                                  | CI + git hooks                              |
+| NFR-10 | Portability     | Runs file-backed locally with no external services; Postgres is opt-in via `STORE=sql`.                                   | Docker compose; local `npm run serve`       |

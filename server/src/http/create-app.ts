@@ -14,6 +14,7 @@ import type { CandidacyController } from './candidacy-controller';
 import type { DocumentController } from './document-controller';
 import type { AttachmentController } from './attachment-controller';
 import type { AuthController } from './auth-controller';
+import type { MembersController } from './members-controller';
 import type { AccountController } from './account-controller';
 import type { PasswordResetController } from './password-reset-controller';
 import { asyncHandler } from './async-handler';
@@ -33,6 +34,7 @@ export interface AppDeps {
   documentController: DocumentController;
   attachmentController: AttachmentController;
   authController: AuthController;
+  membersController: MembersController;
   accountController: AccountController;
   passwordResetController: PasswordResetController;
   config: AppConfig;
@@ -54,6 +56,7 @@ export function createApp(deps: AppDeps): Express {
     documentController: docs,
     attachmentController: att,
     authController: auth,
+    membersController: members,
     accountController: account,
     passwordResetController: passwordReset,
   } = deps;
@@ -132,6 +135,9 @@ export function createApp(deps: AppDeps): Express {
   api.patch('/placements/:id', requireAuth, asyncHandler(p.update));
   api.delete('/placements/:id', requireAuth, asyncHandler(p.remove));
   // DSGVO: export everything the recruiter owns, or erase the account entirely.
+  // Team members (admin-only mutations enforced in the controller via Authorizer).
+  api.get('/members', requireAuth, asyncHandler(members.list));
+  api.patch('/members/:id/roles', requireAuth, asyncHandler(members.setRoles));
   api.get('/account/export', requireAuth, asyncHandler(account.export));
   api.delete('/account', requireAuth, asyncHandler(account.remove));
   api.get('/settings/llm', asyncHandler(llm.settings));

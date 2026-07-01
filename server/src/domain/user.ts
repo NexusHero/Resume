@@ -1,10 +1,20 @@
 import { z } from 'zod';
 
+/**
+ * Team roles a user can hold. Roles are a set — a person can be several at once
+ * (e.g. admin + recruiter). `admin` implies full access, including managing
+ * members and their roles; `recruiter` is the day-to-day worker.
+ */
+export const ROLES = ['admin', 'recruiter'] as const;
+export const roleSchema = z.enum(ROLES);
+export type Role = (typeof ROLES)[number];
+
 /** A registered account. `passwordHash` never leaves the server. */
 export interface User {
   id: string;
   email: string;
   passwordHash: string;
+  roles: Role[];
   createdAt: string; // ISO 8601
 }
 
@@ -12,12 +22,24 @@ export interface User {
 export interface UserView {
   id: string;
   email: string;
+  roles: Role[];
   createdAt: string;
 }
 
 export function toUserView(u: User): UserView {
-  return { id: u.id, email: u.email, createdAt: u.createdAt };
+  return { id: u.id, email: u.email, roles: u.roles, createdAt: u.createdAt };
 }
+
+/** True when the user holds the admin role. */
+export function isAdmin(u: { roles: Role[] }): boolean {
+  return u.roles.includes('admin');
+}
+
+/** PATCH /api/v1/members/:id/roles — set a member's roles (admin only). */
+export const setRolesSchema = z.object({
+  roles: z.array(roleSchema).min(1, 'at least one role is required'),
+});
+export type SetRolesInput = z.infer<typeof setRolesSchema>;
 
 const email = z
   .string()

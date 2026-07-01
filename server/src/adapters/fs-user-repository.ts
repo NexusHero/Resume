@@ -1,7 +1,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import type { AppConfig } from '../config';
-import type { User } from '../domain/user';
+import type { User, Role } from '../domain/user';
 import type { UserRepository } from '../ports/user-repository';
 
 /** File-backed repository: the JSON array in bewerbungen/users.json. */
@@ -18,7 +18,12 @@ export class FsUserRepository implements UserRepository {
     try {
       const raw = await fs.readFile(this.file, 'utf8');
       const data = JSON.parse(raw);
-      return Array.isArray(data) ? (data as User[]) : [];
+      if (!Array.isArray(data)) return [];
+      // Default roles for any legacy account written before roles existed.
+      return (data as User[]).map((u) => ({
+        ...u,
+        roles: Array.isArray(u.roles) && u.roles.length ? u.roles : ['recruiter'],
+      }));
     } catch {
       return [];
     }
@@ -43,6 +48,12 @@ export class FsUserRepository implements UserRepository {
   async updatePassword(id: string, passwordHash: string): Promise<void> {
     const all = await this.list();
     const next = all.map((u) => (u.id === id ? { ...u, passwordHash } : u));
+    await this.write(next);
+  }
+
+  async updateRoles(id: string, roles: Role[]): Promise<void> {
+    const all = await this.list();
+    const next = all.map((u) => (u.id === id ? { ...u, roles } : u));
     await this.write(next);
   }
 

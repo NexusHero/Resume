@@ -18,6 +18,7 @@ import { CandidacyController } from '../../src/http/candidacy-controller';
 import { DocumentController } from '../../src/http/document-controller';
 import { AttachmentController } from '../../src/http/attachment-controller';
 import { AuthController } from '../../src/http/auth-controller';
+import { MembersController } from '../../src/http/members-controller';
 import { AccountController } from '../../src/http/account-controller';
 import { PasswordResetController } from '../../src/http/password-reset-controller';
 import { LlmService } from '../../src/services/llm-service';
@@ -29,6 +30,7 @@ import { DocumentService } from '../../src/services/document-service';
 import { DocumentAiService } from '../../src/services/document-ai-service';
 import { AttachmentService } from '../../src/services/attachment-service';
 import { AuthService } from '../../src/services/auth-service';
+import { MembersService } from '../../src/services/members-service';
 import { AccountService } from '../../src/services/account-service';
 import { PasswordResetService } from '../../src/services/password-reset-service';
 import { MemorySessionStore } from '../../src/adapters/memory-session-store';
@@ -38,6 +40,7 @@ import { GeminiLlmProvider } from '../../src/adapters/gemini-llm-provider';
 import { nodeFetch } from '../../src/adapters/node-fetch';
 import { SampleJobSource } from '../../src/adapters/sample-job-source';
 import { KeywordSkillExtractor } from '../../src/adapters/keyword-skill-extractor';
+import { RoleAuthorizer } from '../../src/adapters/role-authorizer';
 import {
   InMemoryApplicationRepository,
   InMemoryAuditLog,
@@ -231,6 +234,10 @@ function makeApp(
       config,
     }),
   });
+  const membersController = new MembersController({
+    membersService: new MembersService({ userRepository }),
+    authorizer: new RoleAuthorizer(),
+  });
   return createApp({
     applicationController: controller,
     jobController,
@@ -244,6 +251,7 @@ function makeApp(
     documentController,
     attachmentController,
     authController,
+    membersController,
     accountController,
     passwordResetController,
     config,
@@ -959,6 +967,63 @@ describe('REST API /api/v1', () => {
 
     it('Pipeline_Unauthenticated_Returns401', async () => {
       const res = await request(app).get('/api/v1/mandates/x/candidacies');
+      expect(res.status).toBe(401);
+    });
+
+    // --- Team members / roles (the first-registered agent is the admin) ---
+    it('Members_AdminListsTeam_WithRoles', async () => {
+      const second = request.agent(app);
+      await second
+        .post('/api/v1/auth/register')
+        .send({ email: 'mate@example.com', password: 'correct horse battery' });
+      const res = await agent.get('/api/v1/members');
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveLength(2);
+      const admin = res.body.find((m: { email: string }) => m.email === 'recruiter@example.com');
+      const mate = res.body.find((m: { email: string }) => m.email === 'mate@example.com');
+      expect(admin.roles).toContain('admin');
+      expect(mate.roles).toEqual(['recruiter']);
+    });
+
+    it('Members_AdminPromotesMember', async () => {
+      const second = request.agent(app);
+      const reg = await second
+        .post('/api/v1/auth/register')
+        .send({ email: 'mate@example.com', password: 'correct horse battery' });
+      const id = reg.body.user.id as string;
+      const res = await agent
+        .patch(`/api/v1/members/${id}/roles`)
+        .send({ roles: ['recruiter', 'admin'] });
+      expect(res.status).toBe(200);
+      expect(res.body.member.roles).toEqual(['recruiter', 'admin']);
+    });
+
+    it('Members_RecruiterForbidden_Returns403', async () => {
+      const second = request.agent(app);
+      await second
+        .post('/api/v1/auth/register')
+        .send({ email: 'mate@example.com', password: 'correct horse battery' });
+      const res = await second.get('/api/v1/members');
+      expect(res.status).toBe(403);
+      expect(res.body).toMatchObject({ status: 403 });
+    });
+
+    it('Members_DemotingLastAdmin_Returns400', async () => {
+      const me = await agent.get('/api/v1/auth/me');
+      const id = me.body.user.id as string;
+      const res = await agent.patch(`/api/v1/members/${id}/roles`).send({ roles: ['recruiter'] });
+      expect(res.status).toBe(400);
+    });
+
+    it('Members_InvalidRole_Returns400', async () => {
+      const me = await agent.get('/api/v1/auth/me');
+      const id = me.body.user.id as string;
+      const res = await agent.patch(`/api/v1/members/${id}/roles`).send({ roles: ['wizard'] });
+      expect(res.status).toBe(400);
+    });
+
+    it('Members_Unauthenticated_Returns401', async () => {
+      const res = await request(app).get('/api/v1/members');
       expect(res.status).toBe(401);
     });
 

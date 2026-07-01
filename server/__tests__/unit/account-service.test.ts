@@ -103,6 +103,7 @@ const user = (id: string): User => ({
   id,
   email: `${id}@example.com`,
   passwordHash: 'scrypt$salt$key',
+  roles: ['recruiter'],
   createdAt: TS,
 });
 

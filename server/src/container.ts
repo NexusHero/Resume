@@ -25,6 +25,7 @@ import { nodeFetch } from './adapters/node-fetch';
 import { KeywordSkillExtractor } from './adapters/keyword-skill-extractor';
 import { AnthropicLlmProvider } from './adapters/anthropic-llm-provider';
 import { GeminiLlmProvider } from './adapters/gemini-llm-provider';
+import { RoleAuthorizer } from './adapters/role-authorizer';
 import { ApplicationService } from './services/application-service';
 import { JobSearchService } from './services/job-search-service';
 import { AtsService } from './services/ats-service';
@@ -39,6 +40,7 @@ import { DocumentService } from './services/document-service';
 import { DocumentAiService } from './services/document-ai-service';
 import { AttachmentService } from './services/attachment-service';
 import { AuthService } from './services/auth-service';
+import { MembersService } from './services/members-service';
 import { AccountService } from './services/account-service';
 import { PasswordResetService } from './services/password-reset-service';
 import { ApplicationController } from './http/application-controller';
@@ -53,6 +55,7 @@ import { CandidacyController } from './http/candidacy-controller';
 import { DocumentController } from './http/document-controller';
 import { AttachmentController } from './http/attachment-controller';
 import { AuthController } from './http/auth-controller';
+import { MembersController } from './http/members-controller';
 import { AccountController } from './http/account-controller';
 import { PasswordResetController } from './http/password-reset-controller';
 
@@ -96,6 +99,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
         : asClass(GitVersioner).singleton(),
     pdfRenderer: asClass(PuppeteerPdfRenderer).singleton(),
     pdfMerger: asClass(PdfLibMerger).singleton(),
+    authorizer: asClass(RoleAuthorizer).singleton(),
     pdfTextExtractor: asClass(PdfjsTextExtractor).singleton(),
     jobSource: asFunction(({ config: c, logger }) =>
       createJobSource({ config: c, logger, httpFetch: nodeFetch }),
@@ -125,6 +129,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     documentAiService: asClass(DocumentAiService).singleton(),
     attachmentService: asClass(AttachmentService).singleton(),
     authService: asClass(AuthService).singleton(),
+    membersService: asClass(MembersService).singleton(),
     accountService: asClass(AccountService).singleton(),
     passwordResetService: asClass(PasswordResetService).singleton(),
     applicationController: asClass(ApplicationController).singleton(),
@@ -139,6 +144,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     documentController: asClass(DocumentController).singleton(),
     attachmentController: asClass(AttachmentController).singleton(),
     authController: asClass(AuthController).singleton(),
+    membersController: asClass(MembersController).singleton(),
     accountController: asClass(AccountController).singleton(),
     passwordResetController: asClass(PasswordResetController).singleton(),
   });

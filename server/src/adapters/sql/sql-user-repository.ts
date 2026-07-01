@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import type { User } from '../../domain/user';
+import type { User, Role } from '../../domain/user';
 import type { UserRepository } from '../../ports/user-repository';
 import type { Db } from './db';
 import { users } from './schema';
@@ -11,6 +11,11 @@ export class SqlUserRepository implements UserRepository {
 
   constructor(deps: { db: Db }) {
     this.db = deps.db;
+  }
+
+  async list(): Promise<User[]> {
+    const rows = await this.db.select().from(users);
+    return rows.map(rowToUser);
   }
 
   async findByEmail(email: string): Promise<User | null> {
@@ -29,6 +34,10 @@ export class SqlUserRepository implements UserRepository {
 
   async updatePassword(id: string, passwordHash: string): Promise<void> {
     await this.db.update(users).set({ passwordHash }).where(eq(users.id, id));
+  }
+
+  async updateRoles(id: string, roles: Role[]): Promise<void> {
+    await this.db.update(users).set({ roles }).where(eq(users.id, id));
   }
 
   async remove(id: string): Promise<boolean> {

@@ -25,6 +25,7 @@ const user: User = {
   id: 'u1',
   email: 'recruiter@example.com',
   passwordHash: 'hashed:old-password',
+  roles: ['recruiter'],
   createdAt: TS,
 };
 

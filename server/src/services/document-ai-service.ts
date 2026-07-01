@@ -23,6 +23,14 @@ import {
   normalizePitch,
 } from '../domain/candidate-pitch';
 import {
+  type OutreachMessage,
+  type OutreachOptions,
+  outreachPrompt,
+  outreachResultSchema,
+  fallbackOutreach,
+  normalizeOutreach,
+} from '../domain/outreach';
+import {
   type DocumentContact,
   type ResumeContent,
   saveDocumentsSchema,
@@ -281,5 +289,45 @@ export class DocumentAiService {
     }
 
     return { ...fallbackPitch(documents, mandateContext), provider: 'template' };
+  }
+
+  /**
+   * Draft the first-contact outreach message for a talent — either to the
+   * candidate directly (sourcing) or to a client (presenting the candidate),
+   * as an email or a LinkedIn DM. The LLM returns {subject, body}; without a
+   * provider, a deterministic fallback assembles a usable message.
+   */
+  async outreach(
+    ownerId: string,
+    talentId: string,
+    opts: OutreachOptions,
+  ): Promise<OutreachMessage & { provider: LlmProviderId | 'template' }> {
+    const documents = await this.documents.get(ownerId, talentId); // 404s on unknown talent
+    const resolved = await this.resolveProvider(ownerId);
+
+    if (resolved) {
+      try {
+        const built = outreachPrompt(documents, opts);
+        const reply = await resolved.provider.generate({
+          system: built.system,
+          prompt: built.prompt,
+          maxTokens: 700,
+          ...(resolved.apiKey ? { apiKey: resolved.apiKey } : {}),
+        });
+        const json = extractJson(reply);
+        const parsed = outreachResultSchema.safeParse(json);
+        if (parsed.success) {
+          const message = normalizeOutreach(parsed.data, opts.channel);
+          if (message.body) return { ...message, provider: resolved.provider.id };
+        }
+      } catch (err) {
+        this.logger.warn(
+          { err: err instanceof Error ? err.message : String(err) },
+          'outreach draft failed, falling back',
+        );
+      }
+    }
+
+    return { ...fallbackOutreach(documents, opts), provider: 'template' };
   }
 }

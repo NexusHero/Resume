@@ -173,6 +173,7 @@ export function rowToTalent(row: TalentRow): Talent {
     skills: row.skills,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
+    anonymizedAt: orUndef(row.anonymizedAt),
   };
 }
 
@@ -191,6 +192,7 @@ export function talentToRow(talent: Talent): TalentInsert {
     skills: talent.skills,
     createdAt: talent.createdAt,
     updatedAt: talent.updatedAt,
+    anonymizedAt: talent.anonymizedAt ?? null,
   };
 }
 

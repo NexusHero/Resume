@@ -15,6 +15,7 @@ import { MandateController } from '../../src/http/mandate-controller';
 import { TalentController } from '../../src/http/talent-controller';
 import { PlacementController } from '../../src/http/placement-controller';
 import { CandidacyController } from '../../src/http/candidacy-controller';
+import { RetentionController } from '../../src/http/retention-controller';
 import { DocumentController } from '../../src/http/document-controller';
 import { AttachmentController } from '../../src/http/attachment-controller';
 import { AuthController } from '../../src/http/auth-controller';
@@ -26,6 +27,7 @@ import { MandateService } from '../../src/services/mandate-service';
 import { TalentService } from '../../src/services/talent-service';
 import { PlacementService } from '../../src/services/placement-service';
 import { CandidacyService } from '../../src/services/candidacy-service';
+import { RetentionService } from '../../src/services/retention-service';
 import { DocumentService } from '../../src/services/document-service';
 import { DocumentAiService } from '../../src/services/document-ai-service';
 import { AttachmentService } from '../../src/services/attachment-service';
@@ -174,6 +176,16 @@ function makeApp(
       idGenerator: new SequenceIdGenerator('cand'),
     }),
   });
+  const retentionController = new RetentionController({
+    retentionService: new RetentionService({
+      talentRepository,
+      candidacyRepository,
+      documentRepository,
+      attachmentStore,
+      clock: new FixedClock(),
+    }),
+    authorizer: new RoleAuthorizer(),
+  });
   const attachmentController = new AttachmentController({
     attachmentService: new AttachmentService({
       attachmentStore,
@@ -249,6 +261,7 @@ function makeApp(
     talentController,
     placementController,
     candidacyController,
+    retentionController,
     documentController,
     attachmentController,
     authController,
@@ -971,6 +984,44 @@ describe('REST API /api/v1', () => {
     });
 
     // --- Team members / roles (the first-registered agent is the admin) ---
+    // --- DSGVO retention (admin-only) ---
+    it('Retention_AdminAnonymizesCandidate', async () => {
+      const created = await agent
+        .post('/api/v1/talents')
+        .send({ name: 'Lena Brandt', email: 'lena@x.de', role: 'Designer' });
+      const id = created.body.talent.id as string;
+      const res = await agent.post(`/api/v1/talents/${id}/anonymize`);
+      expect(res.status).toBe(200);
+      expect(res.body.talent.name).toBe('Anonymisiert');
+      expect(res.body.talent.email).toBe('');
+      expect(res.body.talent.role).toBe('Designer'); // non-identifying kept
+      expect(typeof res.body.talent.anonymizedAt).toBe('string');
+    });
+
+    it('Retention_AdminGetsReport', async () => {
+      // no ?days → the default review window is used
+      expect((await agent.get('/api/v1/retention/report')).status).toBe(200);
+      // explicit ?days is honoured
+      const res = await agent.get('/api/v1/retention/report?days=0');
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+    });
+
+    it('Retention_RecruiterForbidden_Returns403', async () => {
+      const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+      const id = created.body.talent.id as string;
+      const recruiter = request.agent(app);
+      await recruiter
+        .post('/api/v1/auth/register')
+        .send({ email: 'mate@example.com', password: 'correct horse battery' });
+      expect((await recruiter.get('/api/v1/retention/report')).status).toBe(403);
+      expect((await recruiter.post(`/api/v1/talents/${id}/anonymize`)).status).toBe(403);
+    });
+
+    it('Retention_Unauthenticated_Returns401', async () => {
+      expect((await request(app).get('/api/v1/retention/report')).status).toBe(401);
+    });
+
     it('Members_AdminListsTeam_WithRoles', async () => {
       const second = request.agent(app);
       await second

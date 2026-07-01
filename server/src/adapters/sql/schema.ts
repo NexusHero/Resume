@@ -117,6 +117,7 @@ export const talents = pgTable('talents', {
   skills: jsonb('skills').$type<string[]>().notNull(),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
+  anonymizedAt: text('anonymized_at'),
 });
 
 /** Files attached to a talent (base64 bytes + metadata). Owner-scoped. */

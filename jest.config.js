@@ -39,6 +39,7 @@ module.exports = {
     '!server/src/adapters/sql/sql-session-store.ts',
     '!server/src/adapters/sql/sql-password-reset-token-store.ts',
     '!server/src/adapters/sql/sql-api-key-store.ts',
+    '!server/src/adapters/sql/sql-document-repository.ts',
   ],
   coverageDirectory: 'coverage',
   coverageThreshold: {

@@ -5,6 +5,7 @@ import type { SavedSearchRepository } from '../ports/saved-search-repository';
 import type { MandateRepository } from '../ports/mandate-repository';
 import type { TalentRepository } from '../ports/talent-repository';
 import type { PlacementRepository } from '../ports/placement-repository';
+import type { DocumentRepository } from '../ports/document-repository';
 import type { UserRepository } from '../ports/user-repository';
 import type { SessionStore } from '../ports/session-store';
 import type { PasswordResetTokenStore } from '../ports/password-reset-token-store';
@@ -16,6 +17,7 @@ import { FsSavedSearchRepository } from './fs-saved-search-repository';
 import { FsMandateRepository } from './fs-mandate-repository';
 import { FsTalentRepository } from './fs-talent-repository';
 import { FsPlacementRepository } from './fs-placement-repository';
+import { FsDocumentRepository } from './fs-document-repository';
 import { FsUserRepository } from './fs-user-repository';
 import { FsSessionStore } from './fs-session-store';
 import { FsPasswordResetTokenStore } from './fs-password-reset-token-store';
@@ -27,6 +29,7 @@ import { SqlSavedSearchRepository } from './sql/sql-saved-search-repository';
 import { SqlMandateRepository } from './sql/sql-mandate-repository';
 import { SqlTalentRepository } from './sql/sql-talent-repository';
 import { SqlPlacementRepository } from './sql/sql-placement-repository';
+import { SqlDocumentRepository } from './sql/sql-document-repository';
 import { SqlUserRepository } from './sql/sql-user-repository';
 import { SqlSessionStore } from './sql/sql-session-store';
 import { SqlPasswordResetTokenStore } from './sql/sql-password-reset-token-store';
@@ -41,6 +44,7 @@ export interface Persistence {
   mandateRepository: MandateRepository;
   talentRepository: TalentRepository;
   placementRepository: PlacementRepository;
+  documentRepository: DocumentRepository;
   userRepository: UserRepository;
   sessionStore: SessionStore;
   passwordResetTokenStore: PasswordResetTokenStore;
@@ -64,6 +68,7 @@ export function createPersistence(deps: { config: AppConfig; clock: Clock; db?: 
       mandateRepository: new SqlMandateRepository({ db }),
       talentRepository: new SqlTalentRepository({ db }),
       placementRepository: new SqlPlacementRepository({ db }),
+      documentRepository: new SqlDocumentRepository({ db }),
       userRepository: new SqlUserRepository({ db }),
       sessionStore: new SqlSessionStore({ db, clock, config }),
       passwordResetTokenStore: new SqlPasswordResetTokenStore({ db, clock, config }),
@@ -77,6 +82,7 @@ export function createPersistence(deps: { config: AppConfig; clock: Clock; db?: 
     mandateRepository: new FsMandateRepository({ config }),
     talentRepository: new FsTalentRepository({ config }),
     placementRepository: new FsPlacementRepository({ config }),
+    documentRepository: new FsDocumentRepository({ config }),
     userRepository: new FsUserRepository({ config }),
     sessionStore: new FsSessionStore({ config, clock }),
     passwordResetTokenStore: new FsPasswordResetTokenStore({ config, clock }),

@@ -1,18 +1,25 @@
 import { TalentService } from '../../src/services/talent-service';
 import { createTalentSchema, updateTalentSchema } from '../../src/domain/talent';
 import { NotFoundError } from '../../src/domain/errors';
-import { InMemoryTalentRepository, FixedClock, SequenceIdGenerator } from '../support/fakes';
+import {
+  InMemoryTalentRepository,
+  InMemoryDocumentRepository,
+  FixedClock,
+  SequenceIdGenerator,
+} from '../support/fakes';
 
 const OWNER = 'owner1';
 
 function makeService() {
   const repo = new InMemoryTalentRepository();
+  const documents = new InMemoryDocumentRepository();
   const service = new TalentService({
     talentRepository: repo,
+    documentRepository: documents,
     clock: new FixedClock(),
     idGenerator: new SequenceIdGenerator('talent'),
   });
-  return { service, repo };
+  return { service, repo, documents };
 }
 
 const validInput = { name: 'Lena Brandt', role: 'Product Designer' };
@@ -91,6 +98,37 @@ describe('TalentService', () => {
     const created = await service.create(OWNER, createTalentSchema.parse(validInput));
     await service.remove(OWNER, created.id);
     expect(repo.talents).toHaveLength(0);
+  });
+
+  it('Remove_Existing_CascadesDocuments', async () => {
+    const { service, documents } = makeService();
+    const created = await service.create(OWNER, createTalentSchema.parse(validInput));
+    documents.documents.push({
+      ownerId: OWNER,
+      talentId: created.id,
+      contact: { name: '', role: '', email: '', phone: '', location: '', linkedin: '' },
+      resume: { summary: 'keep me?', experience: [], education: [], skillGroups: [] },
+      letter: {
+        firma: '',
+        ansprechpartner: '',
+        strasse: '',
+        plzOrt: '',
+        betreff: '',
+        anrede: '',
+        absaetze: [],
+        gruss: '',
+      },
+      style: {
+        accent: '#2A6FDB',
+        strong: '#1d4ed8',
+        onDark: '#7aa7f5',
+        font: 'var(--font-display)',
+        size: 1,
+      },
+      updatedAt: '2026-06-25T10:00:00.000Z',
+    });
+    await service.remove(OWNER, created.id);
+    expect(documents.documents).toHaveLength(0);
   });
 
   it('Remove_OtherOwner_ThrowsNotFound', async () => {

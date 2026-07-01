@@ -14,6 +14,7 @@ export interface AppConfig {
   mandatesFile: string;
   talentsFile: string;
   placementsFile: string;
+  documentsFile: string;
   usersFile: string;
   sessionsFile: string;
   passwordResetTokensFile: string;
@@ -147,6 +148,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     mandatesFile: path.join(storeDir, 'mandates.json'),
     talentsFile: path.join(storeDir, 'talents.json'),
     placementsFile: path.join(storeDir, 'placements.json'),
+    documentsFile: path.join(storeDir, 'documents.json'),
     usersFile: path.join(storeDir, 'users.json'),
     sessionsFile: path.join(storeDir, 'sessions.json'),
     passwordResetTokensFile: path.join(storeDir, 'password-reset-tokens.json'),

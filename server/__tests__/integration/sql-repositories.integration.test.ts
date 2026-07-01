@@ -10,6 +10,7 @@ import { SqlUserRepository } from '../../src/adapters/sql/sql-user-repository';
 import { SqlSessionStore } from '../../src/adapters/sql/sql-session-store';
 import { SqlPasswordResetTokenStore } from '../../src/adapters/sql/sql-password-reset-token-store';
 import { SqlApiKeyStore } from '../../src/adapters/sql/sql-api-key-store';
+import { SqlDocumentRepository } from '../../src/adapters/sql/sql-document-repository';
 import { SecretCipher } from '../../src/adapters/secret-cipher';
 import { loadConfig } from '../../src/config';
 import type { Application, AuditEvent } from '../../src/domain/application';
@@ -18,6 +19,7 @@ import type { Mandate } from '../../src/domain/mandate';
 import type { Talent } from '../../src/domain/talent';
 import type { Placement } from '../../src/domain/placement';
 import type { User } from '../../src/domain/user';
+import type { TalentDocuments } from '../../src/domain/talent-documents';
 
 /**
  * Real-Postgres integration. Skipped unless DATABASE_URL is set, so the default
@@ -44,7 +46,7 @@ suite('SQL repositories (real Postgres)', () => {
 
   beforeEach(async () => {
     await pool.query(
-      'TRUNCATE applications, audit_events, saved_searches, mandates, talents, placements, users, sessions, password_reset_tokens, api_keys RESTART IDENTITY',
+      'TRUNCATE applications, audit_events, saved_searches, mandates, talents, placements, talent_documents, users, sessions, password_reset_tokens, api_keys RESTART IDENTITY',
     );
   });
 
@@ -301,5 +303,56 @@ suite('SQL repositories (real Postgres)', () => {
     expect(await store.remove('owner1', 'claude')).toBe(true);
     expect(await store.remove('owner1', 'claude')).toBe(false);
     expect(await store.get('owner1', 'claude')).toBeNull();
+  });
+
+  it('Documents_RoundTrips_OwnerScopedWithCascade', async () => {
+    const repo = new SqlDocumentRepository({ db });
+    const docs = (
+      talentId: string,
+      ownerId = 'owner1',
+      summary = 'A designer.',
+    ): TalentDocuments => ({
+      ownerId,
+      talentId,
+      contact: { name: 'Lena', role: 'Designer', email: '', phone: '', location: '', linkedin: '' },
+      resume: { summary, experience: [], education: [], skillGroups: [] },
+      letter: {
+        firma: '',
+        ansprechpartner: '',
+        strasse: '',
+        plzOrt: '',
+        betreff: '',
+        anrede: '',
+        absaetze: ['x'],
+        gruss: '',
+      },
+      style: {
+        accent: '#2A6FDB',
+        strong: '#1d4ed8',
+        onDark: '#7aa7f5',
+        font: 'var(--font-display)',
+        size: 1,
+      },
+      updatedAt: '2026-06-25T10:00:00.000Z',
+    });
+
+    await repo.save(docs('t1'));
+    await repo.save(docs('t2'));
+    await repo.save(docs('t1', 'other'));
+
+    expect(await repo.get('owner1', 't1')).toEqual(docs('t1'));
+    expect(await repo.get('owner2', 't1')).toBeNull(); // owner-scoped
+
+    // upsert overwrites by (owner, talent)
+    await repo.save(docs('t1', 'owner1', 'Updated.'));
+    expect((await repo.get('owner1', 't1'))?.resume.summary).toBe('Updated.');
+
+    await repo.removeForTalent('owner1', 't1');
+    expect(await repo.get('owner1', 't1')).toBeNull();
+    expect(await repo.get('owner1', 't2')).not.toBeNull();
+
+    await repo.removeForOwner('owner1');
+    expect(await repo.get('owner1', 't2')).toBeNull();
+    expect(await repo.get('other', 't1')).not.toBeNull(); // other owner untouched
   });
 });

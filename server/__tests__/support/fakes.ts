@@ -17,6 +17,8 @@ import type { Talent } from '../../src/domain/talent';
 import type { TalentRepository } from '../../src/ports/talent-repository';
 import type { Placement } from '../../src/domain/placement';
 import type { PlacementRepository } from '../../src/ports/placement-repository';
+import type { TalentDocuments } from '../../src/domain/talent-documents';
+import type { DocumentRepository } from '../../src/ports/document-repository';
 import type { User } from '../../src/domain/user';
 import type { UserRepository } from '../../src/ports/user-repository';
 import type { PasswordHasher } from '../../src/ports/password-hasher';
@@ -204,6 +206,28 @@ export class InMemoryPlacementRepository implements PlacementRepository {
     const before = this.placements.length;
     this.placements = this.placements.filter((p) => !(p.ownerId === ownerId && p.id === id));
     return this.placements.length < before;
+  }
+}
+
+export class InMemoryDocumentRepository implements DocumentRepository {
+  documents: TalentDocuments[] = [];
+  async get(ownerId: string, talentId: string): Promise<TalentDocuments | null> {
+    return this.documents.find((d) => d.ownerId === ownerId && d.talentId === talentId) ?? null;
+  }
+  async save(documents: TalentDocuments): Promise<void> {
+    const i = this.documents.findIndex(
+      (d) => d.ownerId === documents.ownerId && d.talentId === documents.talentId,
+    );
+    if (i < 0) this.documents.push(documents);
+    else this.documents[i] = documents;
+  }
+  async removeForTalent(ownerId: string, talentId: string): Promise<void> {
+    this.documents = this.documents.filter(
+      (d) => !(d.ownerId === ownerId && d.talentId === talentId),
+    );
+  }
+  async removeForOwner(ownerId: string): Promise<void> {
+    this.documents = this.documents.filter((d) => d.ownerId !== ownerId);
   }
 }
 

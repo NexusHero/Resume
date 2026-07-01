@@ -1,11 +1,13 @@
 import { type Talent, type CreateTalentInput, type UpdateTalentInput } from '../domain/talent';
 import { NotFoundError } from '../domain/errors';
 import type { TalentRepository } from '../ports/talent-repository';
+import type { DocumentRepository } from '../ports/document-repository';
 import type { Clock } from '../ports/clock';
 import type { IdGenerator } from '../ports/id-generator';
 
 export interface TalentServiceDeps {
   talentRepository: TalentRepository;
+  documentRepository: DocumentRepository;
   clock: Clock;
   idGenerator: IdGenerator;
 }
@@ -13,11 +15,13 @@ export interface TalentServiceDeps {
 /** CRUD for the talent pool. */
 export class TalentService {
   private readonly repo: TalentRepository;
+  private readonly documents: DocumentRepository;
   private readonly clock: Clock;
   private readonly ids: IdGenerator;
 
   constructor(deps: TalentServiceDeps) {
     this.repo = deps.talentRepository;
+    this.documents = deps.documentRepository;
     this.clock = deps.clock;
     this.ids = deps.idGenerator;
   }
@@ -63,5 +67,7 @@ export class TalentService {
   async remove(ownerId: string, id: string): Promise<void> {
     const removed = await this.repo.remove(ownerId, id);
     if (!removed) throw new NotFoundError(`Talent ${id} not found`);
+    // Cascade: a talent's documents go with it.
+    await this.documents.removeForTalent(ownerId, id);
   }
 }

@@ -4,6 +4,7 @@ import {
   InMemoryMandateRepository,
   InMemoryTalentRepository,
   InMemoryPlacementRepository,
+  InMemoryDocumentRepository,
   InMemoryUserRepository,
   InMemoryPasswordResetTokenStore,
 } from '../support/fakes';
@@ -19,6 +20,7 @@ function makeService() {
   const mandateRepository = new InMemoryMandateRepository();
   const talentRepository = new InMemoryTalentRepository();
   const placementRepository = new InMemoryPlacementRepository();
+  const documentRepository = new InMemoryDocumentRepository();
   const userRepository = new InMemoryUserRepository();
   const sessionStore = new MemorySessionStore();
   const passwordResetTokenStore = new InMemoryPasswordResetTokenStore();
@@ -26,6 +28,7 @@ function makeService() {
     mandateRepository,
     talentRepository,
     placementRepository,
+    documentRepository,
     userRepository,
     sessionStore,
     passwordResetTokenStore,
@@ -35,6 +38,7 @@ function makeService() {
     mandateRepository,
     talentRepository,
     placementRepository,
+    documentRepository,
     userRepository,
     sessionStore,
     passwordResetTokenStore,

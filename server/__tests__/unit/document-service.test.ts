@@ -1,0 +1,131 @@
+import { DocumentService } from '../../src/services/document-service';
+import { NotFoundError } from '../../src/domain/errors';
+import { InMemoryTalentRepository, InMemoryDocumentRepository, FixedClock } from '../support/fakes';
+import type { Talent } from '../../src/domain/talent';
+import type { SaveDocumentsInput } from '../../src/domain/talent-documents';
+
+const OWNER = 'owner1';
+
+const talent = (id: string, ownerId = OWNER): Talent => ({
+  id,
+  ownerId,
+  name: 'Lena Brandt',
+  role: 'Product Designer',
+  headline: '',
+  location: 'Leipzig',
+  email: 'lena@example.com',
+  phone: '+49 151 000',
+  availability: 'immediately',
+  salary: '64.000 €',
+  skills: ['Figma'],
+  createdAt: '2026-06-25T10:00:00.000Z',
+  updatedAt: '2026-06-25T10:00:00.000Z',
+});
+
+const input: SaveDocumentsInput = {
+  contact: {
+    name: 'Lena Brandt',
+    role: 'Senior Designer',
+    email: 'lena@example.com',
+    phone: '',
+    location: 'Leipzig',
+    linkedin: 'linkedin.com/in/lena',
+  },
+  resume: {
+    summary: 'Designer with 8 years of experience.',
+    experience: [
+      {
+        role: 'Designer',
+        company: 'Aurora',
+        period: '2020—',
+        location: 'Leipzig',
+        bullets: ['Led design system'],
+        skills: ['Figma'],
+      },
+    ],
+    education: [{ degree: 'B.A.', school: 'HfG', period: '2012—2016', note: '' }],
+    skillGroups: [{ label: 'Tools', items: ['Figma', 'Sketch'] }],
+  },
+  letter: {
+    firma: 'Aurora Systems GmbH',
+    ansprechpartner: 'Frau Vogel',
+    strasse: 'Hauptstr. 1',
+    plzOrt: '04109 Leipzig',
+    betreff: 'Bewerbung als Designerin',
+    anrede: 'Sehr geehrte Frau Vogel,',
+    absaetze: ['Absatz eins.', 'Absatz zwei.'],
+    gruss: 'Mit freundlichen Grüßen',
+  },
+  style: {
+    accent: '#1F8A5B',
+    strong: '#15734a',
+    onDark: '#6ee7b7',
+    font: 'var(--font-body)',
+    size: 1.1,
+  },
+};
+
+function ctx() {
+  const talents = new InMemoryTalentRepository();
+  const documents = new InMemoryDocumentRepository();
+  const service = new DocumentService({
+    documentRepository: documents,
+    talentRepository: talents,
+    clock: new FixedClock(),
+  });
+  return { service, talents, documents };
+}
+
+describe('DocumentService', () => {
+  it('Get_NoDocumentsYet_SeedsContactFromTalent', async () => {
+    const c = ctx();
+    await c.talents.add(talent('t1'));
+
+    const docs = await c.service.get(OWNER, 't1');
+
+    expect(docs.contact).toMatchObject({
+      name: 'Lena Brandt',
+      email: 'lena@example.com',
+      linkedin: '',
+    });
+    expect(docs.resume.experience).toEqual([]);
+    expect(docs.letter.anrede).toBe('Sehr geehrte Damen und Herren,');
+    expect(docs.style.accent).toBe('#2A6FDB');
+  });
+
+  it('Save_ThenGet_RoundTripsAndStampsUpdatedAt', async () => {
+    const c = ctx();
+    await c.talents.add(talent('t1'));
+
+    const saved = await c.service.save(OWNER, 't1', input);
+    expect(saved.updatedAt).toBe(new FixedClock().isoNow());
+
+    const loaded = await c.service.get(OWNER, 't1');
+    expect(loaded.resume.summary).toBe('Designer with 8 years of experience.');
+    expect(loaded.letter.absaetze).toEqual(['Absatz eins.', 'Absatz zwei.']);
+    expect(loaded.style.accent).toBe('#1F8A5B');
+  });
+
+  it('Save_OverwritesExisting', async () => {
+    const c = ctx();
+    await c.talents.add(talent('t1'));
+    await c.service.save(OWNER, 't1', input);
+    await c.service.save(OWNER, 't1', {
+      ...input,
+      resume: { ...input.resume, summary: 'Updated.' },
+    });
+    expect((await c.service.get(OWNER, 't1')).resume.summary).toBe('Updated.');
+    expect(c.documents.documents).toHaveLength(1);
+  });
+
+  it('Get_UnknownTalent_Throws404', async () => {
+    const c = ctx();
+    await expect(c.service.get(OWNER, 'missing')).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it('Save_ForeignOwnersTalent_Throws404', async () => {
+    const c = ctx();
+    await c.talents.add(talent('t1', 'other'));
+    await expect(c.service.save(OWNER, 't1', input)).rejects.toBeInstanceOf(NotFoundError);
+  });
+});

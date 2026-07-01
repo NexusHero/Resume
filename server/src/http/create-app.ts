@@ -10,6 +10,7 @@ import type { LlmController } from './llm-controller';
 import type { MandateController } from './mandate-controller';
 import type { TalentController } from './talent-controller';
 import type { PlacementController } from './placement-controller';
+import type { DocumentController } from './document-controller';
 import type { AuthController } from './auth-controller';
 import type { AccountController } from './account-controller';
 import type { PasswordResetController } from './password-reset-controller';
@@ -26,6 +27,7 @@ export interface AppDeps {
   mandateController: MandateController;
   talentController: TalentController;
   placementController: PlacementController;
+  documentController: DocumentController;
   authController: AuthController;
   accountController: AccountController;
   passwordResetController: PasswordResetController;
@@ -44,6 +46,7 @@ export function createApp(deps: AppDeps): Express {
     mandateController: m,
     talentController: t,
     placementController: p,
+    documentController: docs,
     authController: auth,
     accountController: account,
     passwordResetController: passwordReset,
@@ -96,6 +99,9 @@ export function createApp(deps: AppDeps): Express {
   api.post('/talents', requireAuth, asyncHandler(t.create));
   api.patch('/talents/:id', requireAuth, asyncHandler(t.update));
   api.delete('/talents/:id', requireAuth, asyncHandler(t.remove));
+  // A talent's resume + cover-letter documents (owner-scoped).
+  api.get('/talents/:id/documents', requireAuth, asyncHandler(docs.get));
+  api.put('/talents/:id/documents', requireAuth, asyncHandler(docs.save));
   api.get('/placements', requireAuth, asyncHandler(p.list));
   api.post('/placements', requireAuth, asyncHandler(p.create));
   api.patch('/placements/:id', requireAuth, asyncHandler(p.update));

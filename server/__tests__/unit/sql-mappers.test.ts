@@ -13,6 +13,8 @@ import {
   placementToRow,
   rowToUser,
   userToRow,
+  rowToTalentDocuments,
+  talentDocumentsToRow,
 } from '../../src/adapters/sql/mappers';
 import type { Application, AuditEvent } from '../../src/domain/application';
 import type { SavedSearch } from '../../src/domain/saved-search';
@@ -20,6 +22,7 @@ import type { Mandate } from '../../src/domain/mandate';
 import type { Talent } from '../../src/domain/talent';
 import type { Placement } from '../../src/domain/placement';
 import type { User } from '../../src/domain/user';
+import type { TalentDocuments } from '../../src/domain/talent-documents';
 
 describe('application mappers', () => {
   it('Application_RoundTrips_PreservingNullAndUndefined', () => {
@@ -201,5 +204,56 @@ describe('placement mappers', () => {
     expect(rowToPlacement(placementToRow(placement) as Required<typeof placement>)).toEqual(
       placement,
     );
+  });
+});
+
+describe('talent-documents mappers', () => {
+  it('TalentDocuments_RoundTrips_PreservingJsonbBlocks', () => {
+    const documents: TalentDocuments = {
+      ownerId: 'owner1',
+      talentId: 't1',
+      contact: {
+        name: 'Lena Brandt',
+        role: 'Designer',
+        email: 'lena@x.de',
+        phone: '',
+        location: 'Leipzig',
+        linkedin: 'linkedin.com/in/lena',
+      },
+      resume: {
+        summary: 'A designer.',
+        experience: [
+          {
+            role: 'Designer',
+            company: 'Aurora',
+            period: '2020—',
+            location: 'Leipzig',
+            bullets: ['x'],
+            skills: ['Figma'],
+          },
+        ],
+        education: [{ degree: 'B.A.', school: 'HfG', period: '2012—2016', note: '' }],
+        skillGroups: [{ label: 'Tools', items: ['Figma'] }],
+      },
+      letter: {
+        firma: 'Aurora',
+        ansprechpartner: '',
+        strasse: '',
+        plzOrt: '',
+        betreff: 'Bewerbung',
+        anrede: 'Sehr geehrte Damen und Herren,',
+        absaetze: ['Absatz.'],
+        gruss: 'Mit freundlichen Grüßen',
+      },
+      style: {
+        accent: '#1F8A5B',
+        strong: '#15734a',
+        onDark: '#6ee7b7',
+        font: 'var(--font-body)',
+        size: 1.1,
+      },
+      updatedAt: '2026-06-25T10:00:00.000Z',
+    };
+    expect(rowToTalentDocuments(talentDocumentsToRow(documents))).toEqual(documents);
   });
 });

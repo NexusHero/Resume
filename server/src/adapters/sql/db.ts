@@ -113,5 +113,16 @@ export async function migrate(pool: Pool): Promise<void> {
       updated_at text NOT NULL
     );
     CREATE INDEX IF NOT EXISTS placements_owner_id_idx ON placements (owner_id);
+    CREATE TABLE IF NOT EXISTS talent_documents (
+      owner_id text NOT NULL,
+      talent_id text NOT NULL,
+      contact jsonb NOT NULL,
+      resume jsonb NOT NULL,
+      letter jsonb NOT NULL,
+      style jsonb NOT NULL,
+      updated_at text NOT NULL,
+      PRIMARY KEY (owner_id, talent_id)
+    );
+    CREATE INDEX IF NOT EXISTS talent_documents_owner_id_idx ON talent_documents (owner_id);
   `);
 }

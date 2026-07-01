@@ -168,7 +168,7 @@ function TeamCard() {
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>Team & roles</h2>
           <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Everyone on this instance shares one workspace. {isAdmin ? 'As an admin you can change roles.' : 'Only admins can change roles.'}</div>
         </div>
-        {me && <span style={{ flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>You: {me.roles.join(', ')}</span>}
+        {me && <span style={{ flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>You: {(me.roles || []).join(', ')}</span>}
       </div>
 
       {isAdmin && members && members.length > 0 ? (
@@ -193,7 +193,7 @@ function TeamCard() {
           {me && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
               <span style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-heading)' }}>{me.email}</span>
-              <span style={{ marginLeft: 'auto' }}>{me.roles.map((r) => <RoleBadge key={r} role={r} />)}</span>
+              <span style={{ marginLeft: 'auto' }}>{(me.roles || []).map((r) => <RoleBadge key={r} role={r} />)}</span>
             </div>
           )}
           {!isAdmin && <div style={{ fontSize: '12.5px', color: 'var(--text-soft)' }}>Contact an admin to change team roles.</div>}

@@ -131,14 +131,14 @@ const styleSchema = z.object({
   size: z.number().default(1),
 });
 
-/** PUT /api/v1/talents/:id/documents — the whole editable set, all parts optional. */
-export const saveDocumentsSchema = z.object({
-  contact: contactSchema.default({}),
-  resume: resumeSchema.default({}),
-  letter: letterSchema.default({}),
-  style: styleSchema.default({}),
-});
-export type SaveDocumentsInput = z.infer<typeof saveDocumentsSchema>;
+export const emptyContact: DocumentContact = {
+  name: '',
+  role: '',
+  email: '',
+  phone: '',
+  location: '',
+  linkedin: '',
+};
 
 export const defaultStyle: DocumentStyle = {
   accent: '#2A6FDB',
@@ -165,3 +165,17 @@ export const emptyLetter: LetterContent = {
   absaetze: [''],
   gruss: 'Mit freundlichen Grüßen',
 };
+
+/**
+ * PUT /api/v1/talents/:id/documents — the whole editable set, all parts
+ * optional. An entirely-absent part falls back to its default; a partial part
+ * is filled in field-by-field by the sub-schemas' own defaults. (zod 4's
+ * `.default` takes the resolved output, hence the explicit fallbacks.)
+ */
+export const saveDocumentsSchema = z.object({
+  contact: contactSchema.default(emptyContact),
+  resume: resumeSchema.default(emptyResume),
+  letter: letterSchema.default(emptyLetter),
+  style: styleSchema.default(defaultStyle),
+});
+export type SaveDocumentsInput = z.infer<typeof saveDocumentsSchema>;

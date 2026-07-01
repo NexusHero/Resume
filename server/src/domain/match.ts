@@ -3,6 +3,7 @@ import type { Talent } from './talent';
 import type { TalentDocuments } from './talent-documents';
 import { tokenize } from './ats-ai';
 import { jobClusters, skillMatchesJob } from './skill-semantics';
+import { canonicalizeSkills } from './skill-taxonomy';
 
 /** POST /api/v1/mandates/:id/match — rank the pool against a mandate. */
 export const matchRequestSchema = z.object({
@@ -32,13 +33,8 @@ export function candidateSkills(talent: Talent, documents: TalentDocuments | nul
       ]
     : [];
   const all = [...talent.skills, ...fromDocs].map((s) => s.trim()).filter(Boolean);
-  // unique, keeping the first-seen casing for display
-  const byKey = new Map<string, string>();
-  for (const s of all) {
-    const key = s.toLowerCase();
-    if (!byKey.has(key)) byKey.set(key, s);
-  }
-  return [...byKey.values()];
+  // Canonicalize (React.js → React) and drop skills that collapse to the same form.
+  return canonicalizeSkills(all);
 }
 
 /**

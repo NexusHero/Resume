@@ -53,10 +53,11 @@ const docs = (over: Partial<TalentDocuments['resume']> = {}): TalentDocuments =>
 
 describe('match domain', () => {
   describe('candidateSkills', () => {
-    it('WithNullDocuments_ReturnsTalentSkills', () => {
+    it('WithNullDocuments_ReturnsCanonicalTalentSkills', () => {
+      // Node → Node.js via the taxonomy
       expect(candidateSkills(talent({ skills: ['React', 'Node'] }), null)).toEqual([
         'React',
-        'Node',
+        'Node.js',
       ]);
     });
 

@@ -390,6 +390,23 @@ describe('DocumentAiService.pitchForMandate', () => {
     expect(res.paragraphs).toEqual(['Ein starker Absatz.']);
   });
 
+  it('Pitch_FabricatedSkill_IsFlaggedByGrounding', async () => {
+    // Talent has no skills, so a Kubernetes claim in the pitch is unsupported.
+    const json = JSON.stringify({
+      headline: 'Cloud-Profi',
+      paragraphs: ['Erfahren mit Kubernetes und Docker.'],
+      highlights: [],
+    });
+    const c = ctx({ available: true, generate: async () => json });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+    const res = await c.service.pitchForMandate(OWNER, OWNER, 't1', '');
+    expect(res.grounding.grounded).toBe(false);
+    expect(res.grounding.unsupported.map((u) => u.text)).toEqual(
+      expect.arrayContaining(['kubernetes', 'docker']),
+    );
+  });
+
   it('Pitch_UnknownTalent_Throws404', async () => {
     const c = ctx();
     await expect(c.service.pitchForMandate(OWNER, OWNER, 'missing', '')).rejects.toBeInstanceOf(

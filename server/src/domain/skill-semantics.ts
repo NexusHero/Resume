@@ -50,6 +50,11 @@ export function trigramSimilarity(a: string, b: string): number {
   return (2 * shared) / (ga.size + gb.size);
 }
 
+/** Is this token a known skill in the ontology? (for grounding checks) */
+export function isKnownSkillToken(token: string): boolean {
+  return TOKEN_CLUSTER.has(token.toLowerCase());
+}
+
 /** The set of ontology clusters present in a job's tokens. */
 export function jobClusters(jobTokens: Set<string>): Set<number> {
   const out = new Set<number>();

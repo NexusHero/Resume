@@ -9,7 +9,7 @@ and Bewerbungsmappe builder, and a small REST API behind it all.
 [![CI](https://github.com/NexusHero/Resume/actions/workflows/ci.yml/badge.svg)](https://github.com/NexusHero/Resume/actions/workflows/ci.yml)
 ![Node](https://img.shields.io/badge/node-%E2%89%A524-339933?logo=node.js&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-300%2B%20·%2090%25%20coverage-success)
+![Tests](https://img.shields.io/badge/tests-760%2B%20·%2090%25%20coverage-success)
 ![Built with AI](https://img.shields.io/badge/built%20with-Claude%20Code-d97706)
 
 </div>
@@ -23,12 +23,21 @@ and Bewerbungsmappe builder, and a small REST API behind it all.
 A recruiting product (**myJob**) plus the personal job-application toolkit it grew out of:
 
 - **myJob Workspace** — an ATS for recruiters/agencies: **mandates** per client (fee &
-  deadline), a **talent pool**, **placements**, a dashboard and reports. Multi-user (each
-  recruiter owns their own data), authenticated, with GDPR export/erasure built in.
+  deadline), a **talent pool**, a candidacy **pipeline**, **placements**, a dashboard and
+  reports. Multi-user, authenticated, **team-scoped**, with GDPR export/erasure/retention
+  built in.
+- **AI assistance** — the differentiator: skill **matching** against a mandate, an
+  explainable "why this candidate", **interview kits**, **candidate prep**, client
+  **pitch** + **outreach**, ATS gap analysis and an AGG compliance check — every LLM
+  feature has a deterministic fallback and a **grounding self-check** over its output.
 - **Documents** — an interactive **CV** (EN/DE, accent themes, PDF export), a **cover
   letter**, and a **Bewerbungsmappe** builder.
 - **REST API** — a TypeScript, hexagonal Node/Express backend (Zod, problem+json),
   file-backed by default or Postgres via `STORE=sql`.
+
+New here on the architecture? Start with [docs/architecture.md](docs/architecture.md),
+the [requirements](docs/requirements.md), [use cases](docs/use-cases.md) and the
+[decision log](docs/adr).
 
 <table>
   <tr>
@@ -66,16 +75,25 @@ See **[docs/deployment.md](docs/deployment.md)** for configuration (`STORE`, `DA
 
 ## Feature highlights
 
-- **Recruiting core** — create/edit mandates, talents and placements through real forms;
-  dashboard KPIs and fee-per-client reports computed from your live data.
-- **Auth & multi-tenancy** — email/password accounts, opaque httpOnly sessions with
-  server-side expiry + `Secure` cookies, owner-scoped data per recruiter.
-- **GDPR/DSGVO** — one-click **data export** (JSON download) and **account erasure** that
-  wipes your records and sessions.
+- **Recruiting core** — create/edit mandates, talents, candidacies and placements through
+  real forms; a candidacy **pipeline** (reaching `placed` books a placement), dashboard
+  KPIs, a revenue **forecast** and fee-per-client reports computed from your live data.
+- **AI matching & prep** — rank the pool against a mandate by skill fit (skills
+  canonicalised to a taxonomy, matched semantically), explain _why_ a candidate fits,
+  generate **interview kits** and a **candidate prep kit** (gaps, employer Auflagen, STAR
+  prompts) tailored from the job ad + a company archetype and real interview observations.
+- **AI pitch & outreach, grounded** — draft a client pitch and first-contact outreach
+  (candidate/client, email/LinkedIn); a **grounding self-check** flags any claim
+  (inflated years, fabricated skill) the CV + mandate don't support, before you send.
+- **Auth, teams & RBAC** — email/password accounts, opaque httpOnly sessions with
+  server-side expiry + `Secure` cookies, **team-scoped** recruiting data and admin role
+  management. Per-user, encrypted LLM keys with per-feature **usage metering**.
+- **GDPR/DSGVO** — one-click **data export** (JSON) and **account erasure**; an admin
+  **retention report** + talent **anonymisation**. First-party data only — no scraping.
 - **AI cover letters** — `POST /api/v1/cover-letter` writes a tailored Anschreiben via
   Claude or Gemini, switchable at runtime; deterministic template fallback when no key.
-- **Job search & ATS** — skill-matched two-tier search across job boards and a JobScan-style
-  gap analysis (`/api/v1/jobs`, `/api/v1/ats`).
+- **Job search & ATS** — skill-matched two-tier search across job boards, a JobScan-style
+  gap analysis and an AGG compliance check (`/api/v1/jobs`, `/api/v1/ats`, `/compliance`).
 - **Hardened & honest** — CORS allow-list, baseline security headers, rate-limited
   credentials, and **no fabricated data**: views show real records, a loading or an error
   state — never silent sample data.
@@ -125,7 +143,7 @@ design/
   myjob/ui_kits/
     recruiting/            ← myJob Workspace (Vite-built → dist/)
 vite.config.ts             ← bundles the recruiting kit (no CDN, no runtime Babel)
-docs/                      ← architecture, deployment, roadmap, screenshots
+docs/                      ← architecture · requirements · use-cases · adr/ · roadmap
 .github/workflows/ci.yml   ← verify · e2e · integration (Postgres) · commitlint
 ```
 
@@ -134,15 +152,22 @@ docs/                      ← architecture, deployment, roadmap, screenshots
 Base path `/api/v1`. Recruiting endpoints require a session; job search and cover-letter
 generation are open.
 
-| Endpoint                                  | What it does                                |
-| ----------------------------------------- | ------------------------------------------- |
-| `POST /auth/register` · `/auth/login`     | create / sign in to an account              |
-| `GET·POST·PATCH·DELETE /mandates`         | client search mandates (owner-scoped)       |
-| `GET·POST·PATCH·DELETE /talents`          | the talent pool                             |
-| `GET·POST·PATCH·DELETE /placements`       | booked placements + fees                    |
-| `GET /account/export` · `DELETE /account` | GDPR data export / account erasure          |
-| `GET /jobs` · `POST /ats`                 | skill-matched job search · ATS gap analysis |
-| `POST /cover-letter` · `…/settings/llm`   | AI Anschreiben · switch Claude/Gemini       |
+| Endpoint                                                 | What it does                                          |
+| -------------------------------------------------------- | ----------------------------------------------------- |
+| `POST /auth/register` · `/auth/login`                    | create / sign in to an account                        |
+| `GET·POST·PATCH·DELETE /mandates`                        | client search mandates (team-scoped)                  |
+| `GET·POST·PATCH·DELETE /talents`                         | the talent pool                                       |
+| `POST /mandates/:id/match`                               | rank the pool against the mandate by skill fit        |
+| `… /mandates/:id/candidacies` · `PATCH /candidacies`     | the candidacy pipeline (→ placement on `placed`)      |
+| `GET·POST·PATCH·DELETE /placements` · `GET /forecast`    | booked placements + fees · revenue forecast           |
+| `POST /talents/:id/documents/pitch` · `…/outreach`       | AI client pitch · outreach (grounded)                 |
+| `POST /mandates/:id/candidates/:tid/prep`                | candidate prep kit (gaps · Auflagen · STAR)           |
+| `… /mandates/:id/observations`                           | capture interview observations (the flywheel)         |
+| `GET /account/export` · `DELETE /account`                | GDPR data export / account erasure                    |
+| `GET /retention/report` · `POST /talents/:id/anonymize`  | DSGVO retention report · anonymise a talent           |
+| `GET /members` · `PATCH /members/:id/roles`              | team members · RBAC role management (admin)           |
+| `GET /jobs` · `POST /ats` · `POST /compliance/agg-check` | job search · ATS gap · AGG compliance check           |
+| `POST /cover-letter` · `PUT /settings/llm` · `…/keys`    | AI Anschreiben · switch Claude/Gemini · per-user keys |
 
 ## npm scripts
 

@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { TalentDocuments } from './talent-documents';
 import { tokenize } from './ats-ai';
 import { jobClusters, skillMatchesJob } from './skill-semantics';
+import { canonicalizeSkills } from './skill-taxonomy';
 
 /**
  * "Why does this candidate fit?" — a short, grounded justification of a
@@ -31,12 +32,7 @@ export function documentSkills(documents: TalentDocuments | null): string[] {
   ]
     .map((s) => s.trim())
     .filter(Boolean);
-  const byKey = new Map<string, string>();
-  for (const s of all) {
-    const key = s.toLowerCase();
-    if (!byKey.has(key)) byKey.set(key, s);
-  }
-  return [...byKey.values()];
+  return canonicalizeSkills(all);
 }
 
 /** Which of the candidate's skills answer the mandate (semantic match). */

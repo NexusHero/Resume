@@ -55,6 +55,7 @@ import {
 } from '../domain/candidate-prep';
 import { companyInterviewProfile } from '../domain/company-archetype';
 import { extractRequirements } from '../domain/job-requirements';
+import { type GroundingReport, checkGrounding, groundingSource } from '../domain/grounding';
 import {
   aggregateObservations,
   applyObserved,
@@ -339,9 +340,20 @@ export class DocumentAiService {
     userId: string,
     talentId: string,
     mandateContext: string,
-  ): Promise<CandidatePitch & { provider: LlmProviderId | 'template' }> {
+  ): Promise<
+    CandidatePitch & { provider: LlmProviderId | 'template'; grounding: GroundingReport }
+  > {
     const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
     const resolved = await this.resolveProvider(userId);
+    const source = groundingSource(documents, mandateContext);
+    const withGrounding = <T extends CandidatePitch>(
+      pitch: T,
+      provider: LlmProviderId | 'template',
+    ) => ({
+      ...pitch,
+      provider,
+      grounding: checkGrounding([pitch.headline, ...pitch.paragraphs].join(' '), source),
+    });
 
     if (resolved) {
       try {
@@ -358,7 +370,7 @@ export class DocumentAiService {
         if (parsed.success) {
           const pitch = normalizePitch(parsed.data);
           if (pitch.headline || pitch.paragraphs.length) {
-            return { ...pitch, provider: resolved.provider.id };
+            return withGrounding(pitch, resolved.provider.id);
           }
         }
       } catch (err) {
@@ -369,7 +381,7 @@ export class DocumentAiService {
       }
     }
 
-    return { ...fallbackPitch(documents, mandateContext), provider: 'template' };
+    return withGrounding(fallbackPitch(documents, mandateContext), 'template');
   }
 
   /**
@@ -383,9 +395,17 @@ export class DocumentAiService {
     userId: string,
     talentId: string,
     opts: OutreachOptions,
-  ): Promise<OutreachMessage & { provider: LlmProviderId | 'template' }> {
+  ): Promise<
+    OutreachMessage & { provider: LlmProviderId | 'template'; grounding: GroundingReport }
+  > {
     const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
     const resolved = await this.resolveProvider(userId);
+    const source = groundingSource(documents, opts.mandateContext ?? '');
+    const withGrounding = (message: OutreachMessage, provider: LlmProviderId | 'template') => ({
+      ...message,
+      provider,
+      grounding: checkGrounding([message.subject, message.body].join(' '), source),
+    });
 
     if (resolved) {
       try {
@@ -401,7 +421,7 @@ export class DocumentAiService {
         const parsed = outreachResultSchema.safeParse(json);
         if (parsed.success) {
           const message = normalizeOutreach(parsed.data, opts.channel);
-          if (message.body) return { ...message, provider: resolved.provider.id };
+          if (message.body) return withGrounding(message, resolved.provider.id);
         }
       } catch (err) {
         this.logger.warn(
@@ -411,7 +431,7 @@ export class DocumentAiService {
       }
     }
 
-    return { ...fallbackOutreach(documents, opts), provider: 'template' };
+    return withGrounding(fallbackOutreach(documents, opts), 'template');
   }
 
   /**

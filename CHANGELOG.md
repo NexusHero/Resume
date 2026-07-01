@@ -8,6 +8,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+### Added
+
+- **KI-Qualität** — a **skill canonicalization taxonomy** (`domain/skill-taxonomy`) that
+  unifies variants (React.js / ReactJS / react → React) before matching and display, and a
+  **grounding self-check** (`domain/grounding`) that flags factual claims (numbers-with-unit,
+  known skills) in AI-drafted pitch/outreach the CV + mandate don't support — surfaced in the
+  Editor as a "nicht belegte Angaben" warning.
+- **Documentation set** — a retroactive [requirements](docs/requirements.md) catalogue
+  (FR/NFR), [use cases](docs/use-cases.md), and an [architecture decision log](docs/adr)
+  (ADR-0001…0010); `docs/architecture.md` refreshed to the current recruiting/AI suite; the
+  README's features + REST API surface brought current.
+
 ### Changed
 
 - **SOLID cleanup (`core/`)** — split PDF merging out of `PdfRenderer` into its own `PdfMerger`

@@ -58,6 +58,7 @@ import { CandidacyController } from './http/candidacy-controller';
 import { RetentionController } from './http/retention-controller';
 import { MatchController } from './http/match-controller';
 import { UsageController } from './http/usage-controller';
+import { ComplianceController } from './http/compliance-controller';
 import { DocumentController } from './http/document-controller';
 import { AttachmentController } from './http/attachment-controller';
 import { AuthController } from './http/auth-controller';
@@ -154,6 +155,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     retentionController: asClass(RetentionController).singleton(),
     matchController: asClass(MatchController).singleton(),
     usageController: asClass(UsageController).singleton(),
+    complianceController: asClass(ComplianceController).singleton(),
     documentController: asClass(DocumentController).singleton(),
     attachmentController: asClass(AttachmentController).singleton(),
     authController: asClass(AuthController).singleton(),

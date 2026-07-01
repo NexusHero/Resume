@@ -334,6 +334,17 @@ const RecruitApi = {
     const res = await fetch(`${RECRUIT_API_BASE}/account`, { method: 'DELETE' });
     if (!res.ok) throw new Error(`API ${res.status}`);
   },
+  /* ---- AGG (anti-discrimination) compliance check ---- */
+  async aggCheck(text) {
+    // { findings[], riskLevel, hasGenderMarker, summary }
+    return _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/compliance/agg-check`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ text }),
+      }),
+    );
+  },
   /* ---- AI usage counter (per-user requests / tokens / cost) ---- */
   async getUsage() {
     // { requests, inputTokens, outputTokens, totalTokens, costUsd, byProvider[], byFeature[] }

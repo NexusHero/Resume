@@ -62,6 +62,8 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
   const [matchQuery, setMatchQuery] = React.useState('');
   const [matches, setMatches] = React.useState(null); // null = not run yet
   const [matchLoading, setMatchLoading] = React.useState(false);
+  const [agg, setAgg] = React.useState(null); // null = not run yet
+  const [aggLoading, setAggLoading] = React.useState(false);
 
   const load = React.useCallback(() => {
     setError(false);
@@ -83,7 +85,17 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
       load();
     } catch { /* ignore (e.g. duplicate) */ }
   };
-  const openMatch = () => { setMatching(true); setMatches(null); setMatchQuery(''); };
+  const openMatch = () => { setMatching(true); setMatches(null); setAgg(null); setMatchQuery(''); };
+  const runAgg = async () => {
+    setAggLoading(true);
+    try {
+      setAgg(await window.RecruitApi.aggCheck(matchQuery));
+    } catch {
+      setAgg({ findings: [], riskLevel: 'none', hasGenderMarker: false, summary: 'Prüfung fehlgeschlagen.' });
+    } finally {
+      setAggLoading(false);
+    }
+  };
   const runMatch = async () => {
     setMatchLoading(true);
     try {
@@ -198,11 +210,38 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
               onChange={(e) => setMatchQuery(e.target.value)}
               aria-label="Job ad text"
             />
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '12px' }}>
+              <MP.Button variant="outline" size="sm" iconLeft={<MP.Icon name="alert" size={15} />} disabled={aggLoading} onClick={runAgg}>
+                {aggLoading ? 'Prüfe…' : 'AGG-Check'}
+              </MP.Button>
               <MP.Button variant="primary" size="sm" iconLeft={<MP.Icon name="zap" size={15} />} disabled={matchLoading} onClick={runMatch}>
                 {matchLoading ? 'Ranking…' : matches === null ? 'Rank pool' : 'Re-rank'}
               </MP.Button>
             </div>
+
+            {agg !== null && (() => {
+              const tone = agg.riskLevel === 'high' ? 'var(--danger)' : agg.riskLevel === 'medium' ? 'var(--status-offer-strong, #D97757)' : agg.riskLevel === 'low' ? 'var(--text-muted)' : 'var(--status-hired-strong)';
+              return (
+                <div style={{ marginTop: '12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '12px 14px', background: 'var(--surface-sunk)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: agg.findings.length ? '10px' : 0 }}>
+                    <MP.Icon name="alert" size={14} style={{ color: tone }} />
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: tone }}>AGG {agg.riskLevel}</span>
+                    <span style={{ fontSize: '12px', color: 'var(--text-soft)' }}>{agg.summary}</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {agg.findings.map((f, i) => (
+                      <div key={i} style={{ display: 'flex', gap: '9px', alignItems: 'flex-start' }}>
+                        <span style={{ flexShrink: 0, marginTop: '1px', fontFamily: 'var(--font-mono)', fontSize: '9.5px', fontWeight: 600, letterSpacing: '0.03em', textTransform: 'uppercase', color: f.severity === 'high' ? 'var(--danger)' : 'var(--text-soft)', background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '2px 7px' }}>{f.categoryLabel}</span>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: '12.5px', color: 'var(--text-heading)' }}><strong style={{ color: 'var(--danger)' }}>„{f.term}"</strong> — {f.issue}</div>
+                          <div style={{ fontSize: '11.5px', color: 'var(--text-soft)', marginTop: '1px' }}>{f.suggestion}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
 
             <div style={{ marginTop: '14px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {matches !== null && matches.length === 0 && (

@@ -18,6 +18,7 @@ import { CandidacyController } from '../../src/http/candidacy-controller';
 import { RetentionController } from '../../src/http/retention-controller';
 import { MatchController } from '../../src/http/match-controller';
 import { UsageController } from '../../src/http/usage-controller';
+import { ComplianceController } from '../../src/http/compliance-controller';
 import { DocumentController } from '../../src/http/document-controller';
 import { AttachmentController } from '../../src/http/attachment-controller';
 import { AuthController } from '../../src/http/auth-controller';
@@ -233,6 +234,7 @@ function makeApp(
   const usageController = new UsageController({
     usageService: new UsageService({ usageMeter }),
   });
+  const complianceController = new ComplianceController();
   const placementController = new PlacementController({ placementService });
   const authController = new AuthController({
     authService: new AuthService({
@@ -286,6 +288,7 @@ function makeApp(
     retentionController,
     matchController,
     usageController,
+    complianceController,
     documentController,
     attachmentController,
     authController,
@@ -1061,6 +1064,31 @@ describe('REST API /api/v1', () => {
 
     it('Usage_Unauthenticated_Returns401', async () => {
       const res = await request(app).get('/api/v1/settings/usage');
+      expect(res.status).toBe(401);
+    });
+
+    // --- AGG compliance check ---
+    it('Agg_FlagsDiscriminatoryWording', async () => {
+      const res = await agent
+        .post('/api/v1/compliance/agg-check')
+        .send({ text: 'Junges Team sucht männlichen Muttersprachler.' });
+      expect(res.status).toBe(200);
+      expect(res.body.riskLevel).toBe('high');
+      const categories = res.body.findings.map((f: { category: string }) => f.category);
+      expect(categories).toEqual(expect.arrayContaining(['geschlecht', 'herkunft', 'alter']));
+    });
+
+    it('Agg_CleanText_ReturnsNone', async () => {
+      const res = await agent
+        .post('/api/v1/compliance/agg-check')
+        .send({ text: 'Erfahrene Fachkraft (m/w/d) gesucht.' });
+      expect(res.status).toBe(200);
+      expect(res.body.riskLevel).toBe('none');
+      expect(res.body.findings).toEqual([]);
+    });
+
+    it('Agg_Unauthenticated_Returns401', async () => {
+      const res = await request(app).post('/api/v1/compliance/agg-check').send({ text: 'x' });
       expect(res.status).toBe(401);
     });
 

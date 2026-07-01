@@ -15,6 +15,7 @@ import type { CandidacyController } from './http/candidacy-controller';
 import type { RetentionController } from './http/retention-controller';
 import type { MatchController } from './http/match-controller';
 import type { UsageController } from './http/usage-controller';
+import type { ComplianceController } from './http/compliance-controller';
 import type { DocumentController } from './http/document-controller';
 import type { AttachmentController } from './http/attachment-controller';
 import type { AuthController } from './http/auth-controller';
@@ -48,6 +49,7 @@ async function main(): Promise<void> {
     retentionController: container.resolve<RetentionController>('retentionController'),
     matchController: container.resolve<MatchController>('matchController'),
     usageController: container.resolve<UsageController>('usageController'),
+    complianceController: container.resolve<ComplianceController>('complianceController'),
     documentController: container.resolve<DocumentController>('documentController'),
     attachmentController: container.resolve<AttachmentController>('attachmentController'),
     authController: container.resolve<AuthController>('authController'),

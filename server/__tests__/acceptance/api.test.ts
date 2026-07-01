@@ -551,6 +551,24 @@ describe('REST API /api/v1', () => {
       expect(res.status).toBe(401);
     });
 
+    it('Dossier_Get_ReturnsPdf', async () => {
+      const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+      const id = created.body.talent.id as string;
+      const res = await agent.get(`/api/v1/talents/${id}/dossier/pdf?company=Helio+GmbH`);
+      expect(res.status).toBe(200);
+      expect(res.headers['content-type']).toMatch(/application\/pdf/);
+    });
+
+    it('Dossier_Unauthenticated_Returns401', async () => {
+      const res = await request(app).get('/api/v1/talents/x/dossier/pdf');
+      expect(res.status).toBe(401);
+    });
+
+    it('Dossier_UnknownTalent_Returns404', async () => {
+      const res = await agent.get('/api/v1/talents/missing/dossier/pdf');
+      expect(res.status).toBe(404);
+    });
+
     it('Placements_GetEmpty_ReturnsArray', async () => {
       const res = await agent.get('/api/v1/placements');
       expect(res.status).toBe(200);

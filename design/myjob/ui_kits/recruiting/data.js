@@ -399,6 +399,12 @@ const RecruitApi = {
     // directly in a new tab / used as a download link.
     return `${RECRUIT_API_BASE}/talents/${talentId}/documents/pdf`;
   },
+  talentDossierPdfUrl(talentId, recipient = {}) {
+    const q = new URLSearchParams();
+    for (const [k, v] of Object.entries(recipient)) if (v) q.set(k, v);
+    const qs = q.toString();
+    return `${RECRUIT_API_BASE}/talents/${talentId}/dossier/pdf${qs ? `?${qs}` : ''}`;
+  },
   async suggestDocument(talentId, action, target = {}) {
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/documents/ai`, {

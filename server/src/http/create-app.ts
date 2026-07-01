@@ -104,6 +104,7 @@ export function createApp(deps: AppDeps): Express {
   api.put('/talents/:id/documents', requireAuth, asyncHandler(docs.save));
   api.get('/talents/:id/documents/pdf', requireAuth, asyncHandler(docs.pdf));
   api.post('/talents/:id/documents/ai', requireAuth, asyncHandler(docs.aiSuggest));
+  api.get('/talents/:id/dossier/pdf', requireAuth, asyncHandler(docs.dossier));
   api.get('/placements', requireAuth, asyncHandler(p.list));
   api.post('/placements', requireAuth, asyncHandler(p.create));
   api.patch('/placements/:id', requireAuth, asyncHandler(p.update));

@@ -141,6 +141,28 @@ describe('DocumentService', () => {
     await expect(c.service.renderPdf(OWNER, 'missing')).rejects.toBeInstanceOf(NotFoundError);
   });
 
+  it('RenderDossierPdf_AddressesLetterToRecipient', async () => {
+    const c = ctx();
+    await c.talents.add(talent('t1'));
+    await c.service.save(OWNER, 't1', input); // saved letter.firma = Aurora Systems GmbH
+    const pdf = await c.service.renderDossierPdf(OWNER, 't1', {
+      company: 'Helio GmbH',
+      subject: 'Bewerbung als Lead',
+    });
+    expect(pdf.length).toBeGreaterThan(0);
+    expect(c.pdf.lastHtml).toContain('Helio GmbH'); // recipient override
+    expect(c.pdf.lastHtml).toContain('Bewerbung als Lead');
+    expect(c.pdf.lastHtml).not.toContain('Aurora Systems GmbH'); // replaced
+  });
+
+  it('RenderDossierPdf_EmptyRecipient_KeepsSavedLetter', async () => {
+    const c = ctx();
+    await c.talents.add(talent('t1'));
+    await c.service.save(OWNER, 't1', input);
+    await c.service.renderDossierPdf(OWNER, 't1', {});
+    expect(c.pdf.lastHtml).toContain('Aurora Systems GmbH'); // saved value kept
+  });
+
   it('Get_UnknownTalent_Throws404', async () => {
     const c = ctx();
     await expect(c.service.get(OWNER, 'missing')).rejects.toBeInstanceOf(NotFoundError);

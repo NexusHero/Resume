@@ -19,6 +19,7 @@ import { GitVersioner } from './adapters/git-versioner';
 import { NoopVersioner } from './adapters/noop-versioner';
 import { PuppeteerPdfRenderer } from './adapters/puppeteer-pdf-renderer';
 import { PdfLibMerger } from './adapters/pdf-lib-merger';
+import { PdfjsTextExtractor } from './adapters/pdfjs-text-extractor';
 import { createJobSource } from './adapters/job-source-factory';
 import { nodeFetch } from './adapters/node-fetch';
 import { KeywordSkillExtractor } from './adapters/keyword-skill-extractor';
@@ -92,6 +93,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
         : asClass(GitVersioner).singleton(),
     pdfRenderer: asClass(PuppeteerPdfRenderer).singleton(),
     pdfMerger: asClass(PdfLibMerger).singleton(),
+    pdfTextExtractor: asClass(PdfjsTextExtractor).singleton(),
     jobSource: asFunction(({ config: c, logger }) =>
       createJobSource({ config: c, logger, httpFetch: nodeFetch }),
     ).singleton(),

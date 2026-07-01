@@ -1,8 +1,9 @@
 import type { Request, Response } from 'express';
 import { saveDocumentsSchema } from '../domain/talent-documents';
 import { aiSuggestSchema } from '../domain/document-ai';
-import { parseRequestSchema } from '../domain/document-parse';
+import { parseRequestSchema, parsePdfRequestSchema } from '../domain/document-parse';
 import { atsRequestSchema } from '../domain/ats-ai';
+import { pitchRequestSchema } from '../domain/candidate-pitch';
 import type { DocumentService } from '../services/document-service';
 import type { DocumentAiService } from '../services/document-ai-service';
 import { currentUserId } from './current-user';
@@ -76,6 +77,13 @@ export class DocumentController {
     res.json({ parsed });
   };
 
+  parsePdf = async (req: Request, res: Response): Promise<void> => {
+    const { dataBase64 } = parsePdfRequestSchema.parse(req.body);
+    const pdf = Buffer.from(dataBase64, 'base64');
+    const parsed = await this.ai.parsePdf(currentUserId(req), req.params.id as string, pdf);
+    res.json({ parsed });
+  };
+
   ats = async (req: Request, res: Response): Promise<void> => {
     const { jobText } = atsRequestSchema.parse(req.body);
     const result = await this.ai.scoreAgainstJob(
@@ -84,5 +92,15 @@ export class DocumentController {
       jobText,
     );
     res.json({ ats: result });
+  };
+
+  pitch = async (req: Request, res: Response): Promise<void> => {
+    const { mandateContext } = pitchRequestSchema.parse(req.body);
+    const pitch = await this.ai.pitchForMandate(
+      currentUserId(req),
+      req.params.id as string,
+      mandateContext,
+    );
+    res.json({ pitch });
   };
 }

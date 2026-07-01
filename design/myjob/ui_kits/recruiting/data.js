@@ -446,6 +446,16 @@ const RecruitApi = {
     );
     return data.parsed; // { contact, resume, provider }
   },
+  async parseDocumentPdf(talentId, dataBase64) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/documents/parse-pdf`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ dataBase64 }),
+      }),
+    );
+    return data.parsed; // { contact, resume, provider, extractedChars }
+  },
   async atsScore(talentId, jobText) {
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/documents/ats`, {
@@ -455,6 +465,16 @@ const RecruitApi = {
       }),
     );
     return data.ats; // { score, matched, missing, suggestions, provider }
+  },
+  async pitchCandidate(talentId, mandateContext = '') {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/documents/pitch`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ mandateContext }),
+      }),
+    );
+    return data.pitch; // { headline, paragraphs, highlights, provider }
   },
   async listPlacements() {
     const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/placements`));

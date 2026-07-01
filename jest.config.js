@@ -20,6 +20,9 @@ module.exports = {
     '!server/src/container.ts',
     '!server/src/adapters/puppeteer-pdf-renderer.ts',
     '!server/src/adapters/pdf-lib-merger.ts',
+    // Text extraction runs Mozilla's pdf.js against a real PDF binary — exercised
+    // by a manual/integration smoke, not unit-covered (the port has a fake).
+    '!server/src/adapters/pdfjs-text-extractor.ts',
     '!server/src/adapters/git-versioner.ts',
     '!server/src/adapters/pino-logger.ts',
     '!server/src/adapters/node-fetch.ts',

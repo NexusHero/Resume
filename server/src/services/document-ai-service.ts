@@ -16,12 +16,20 @@ import {
   normalizeAts,
 } from '../domain/ats-ai';
 import {
+  type CandidatePitch,
+  pitchPrompt,
+  pitchResultSchema,
+  fallbackPitch,
+  normalizePitch,
+} from '../domain/candidate-pitch';
+import {
   type DocumentContact,
   type ResumeContent,
   saveDocumentsSchema,
 } from '../domain/talent-documents';
 import type { LlmProvider, LlmProviderId } from '../ports/llm-provider';
 import type { ApiKeyStore } from '../ports/api-key-store';
+import type { PdfTextExtractor } from '../ports/pdf-text-extractor';
 import type { Logger } from '../ports/logger';
 import type { DocumentService } from './document-service';
 import type { LlmService } from './llm-service';
@@ -42,10 +50,16 @@ export interface ParsedDocument {
   provider: LlmProviderId | 'template';
 }
 
+/** A CV parsed from an uploaded PDF; `extractedChars` is 0 for a scanned PDF. */
+export interface ParsedPdfDocument extends ParsedDocument {
+  extractedChars: number;
+}
+
 export interface DocumentAiServiceDeps {
   documentService: DocumentService;
   llmService: LlmService;
   apiKeyStore: ApiKeyStore;
+  pdfTextExtractor: PdfTextExtractor;
   logger: Logger;
 }
 
@@ -59,12 +73,14 @@ export class DocumentAiService {
   private readonly documents: DocumentService;
   private readonly llm: LlmService;
   private readonly keys: ApiKeyStore;
+  private readonly pdfText: PdfTextExtractor;
   private readonly logger: Logger;
 
   constructor(deps: DocumentAiServiceDeps) {
     this.documents = deps.documentService;
     this.llm = deps.llmService;
     this.keys = deps.apiKeyStore;
+    this.pdfText = deps.pdfTextExtractor;
     this.logger = deps.logger;
   }
 
@@ -157,6 +173,39 @@ export class DocumentAiService {
   }
 
   /**
+   * Parse a CV uploaded as a PDF: extract its text layer, then run the same
+   * text-parsing path. A scanned/image-only PDF has no text (`extractedChars`
+   * 0) — we return an empty structured set rather than call the LLM on nothing,
+   * so the UI can prompt the user to paste the text instead.
+   */
+  async parsePdf(ownerId: string, talentId: string, pdf: Buffer): Promise<ParsedPdfDocument> {
+    await this.documents.get(ownerId, talentId); // 404s on unknown talent
+
+    let text = '';
+    try {
+      text = await this.pdfText.extract(pdf);
+    } catch (err) {
+      this.logger.warn(
+        { err: err instanceof Error ? err.message : String(err) },
+        'PDF text extraction failed',
+      );
+    }
+
+    if (!text.trim()) {
+      const empty = saveDocumentsSchema.parse({});
+      return {
+        contact: empty.contact,
+        resume: empty.resume,
+        provider: 'template',
+        extractedChars: 0,
+      };
+    }
+
+    const parsed = await this.parse(ownerId, talentId, text.slice(0, 50_000));
+    return { ...parsed, extractedChars: text.length };
+  }
+
+  /**
    * Score the talent's résumé against a pasted job ad. The LLM returns a match
    * rate plus matched/missing keywords and concrete fixes; without a provider,
    * a deterministic keyword-overlap fallback keeps it usable.
@@ -190,5 +239,47 @@ export class DocumentAiService {
     }
 
     return { ...fallbackAts(documents, jobText), provider: 'template' };
+  }
+
+  /**
+   * Draft a "why this candidate" short profile a recruiter presents to the
+   * client, optionally tailored to a mandate/job context. The LLM returns a
+   * headline, a few paragraphs and highlight bullets; without a provider, a
+   * deterministic fallback assembles an honest profile from the talent's facts.
+   */
+  async pitchForMandate(
+    ownerId: string,
+    talentId: string,
+    mandateContext: string,
+  ): Promise<CandidatePitch & { provider: LlmProviderId | 'template' }> {
+    const documents = await this.documents.get(ownerId, talentId); // 404s on unknown talent
+    const resolved = await this.resolveProvider(ownerId);
+
+    if (resolved) {
+      try {
+        const built = pitchPrompt(documents, mandateContext);
+        const reply = await resolved.provider.generate({
+          system: built.system,
+          prompt: built.prompt,
+          maxTokens: 700,
+          ...(resolved.apiKey ? { apiKey: resolved.apiKey } : {}),
+        });
+        const json = extractJson(reply);
+        const parsed = pitchResultSchema.safeParse(json);
+        if (parsed.success) {
+          const pitch = normalizePitch(parsed.data);
+          if (pitch.headline || pitch.paragraphs.length) {
+            return { ...pitch, provider: resolved.provider.id };
+          }
+        }
+      } catch (err) {
+        this.logger.warn(
+          { err: err instanceof Error ? err.message : String(err) },
+          'candidate pitch failed, falling back',
+        );
+      }
+    }
+
+    return { ...fallbackPitch(documents, mandateContext), provider: 'template' };
   }
 }

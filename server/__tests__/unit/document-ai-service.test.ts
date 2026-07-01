@@ -8,6 +8,7 @@ import {
   InMemoryDocumentRepository,
   InMemoryApiKeyStore,
   FakePdfRenderer,
+  FakePdfTextExtractor,
   FixedClock,
   noopLogger,
 } from '../support/fakes';
@@ -30,10 +31,11 @@ const talent = (id: string): Talent => ({
   updatedAt: '2026-06-25T10:00:00.000Z',
 });
 
-function ctx(providerOverrides: Partial<LlmProvider> = {}) {
+function ctx(providerOverrides: Partial<LlmProvider> = {}, pdfText: string | Error = '') {
   const talents = new InMemoryTalentRepository();
   const documents = new InMemoryDocumentRepository();
   const keys = new InMemoryApiKeyStore();
+  const pdfTextExtractor = new FakePdfTextExtractor(pdfText);
   const documentService = new DocumentService({
     documentRepository: documents,
     talentRepository: talents,
@@ -60,6 +62,7 @@ function ctx(providerOverrides: Partial<LlmProvider> = {}) {
     documentService,
     llmService: llm,
     apiKeyStore: keys,
+    pdfTextExtractor,
     logger: noopLogger,
   });
   return { service, talents, keys, getUsedKey: () => usedKey };
@@ -160,6 +163,59 @@ describe('DocumentAiService.parse', () => {
   });
 });
 
+describe('DocumentAiService.parsePdf', () => {
+  const PDF = Buffer.from('%PDF-1.4 fake');
+
+  it('ParsePdf_WithProvider_ExtractsThenParses', async () => {
+    const RESUME_JSON = JSON.stringify({
+      contact: { name: 'Max Mustermann', role: 'C++ Engineer' },
+      resume: { summary: 'Senior Engineer.' },
+    });
+    const c = ctx(
+      { available: true, generate: async () => RESUME_JSON },
+      'Max Mustermann — Senior C++ Engineer at Acme',
+    );
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+    const parsed = await c.service.parsePdf(OWNER, 't1', PDF);
+    expect(parsed.provider).toBe('claude');
+    expect(parsed.contact.name).toBe('Max Mustermann');
+    expect(parsed.extractedChars).toBeGreaterThan(0);
+  });
+
+  it('ParsePdf_NoProvider_KeepsExtractedTextAsSummary', async () => {
+    const c = ctx({}, 'Product Designer with 8 years of experience.');
+    await c.talents.add(talent('t1'));
+    const parsed = await c.service.parsePdf(OWNER, 't1', PDF);
+    expect(parsed.provider).toBe('template');
+    expect(parsed.resume.summary).toContain('Product Designer');
+    expect(parsed.extractedChars).toBeGreaterThan(0);
+  });
+
+  it('ParsePdf_ScannedPdf_NoText_ReturnsEmpty', async () => {
+    const c = ctx({ available: true, generate: async () => 'unused' }, '   ');
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+    const parsed = await c.service.parsePdf(OWNER, 't1', PDF);
+    expect(parsed.provider).toBe('template');
+    expect(parsed.extractedChars).toBe(0);
+    expect(parsed.resume.summary).toBe('');
+  });
+
+  it('ParsePdf_ExtractorThrows_ReturnsEmpty', async () => {
+    const c = ctx({}, new Error('corrupt pdf'));
+    await c.talents.add(talent('t1'));
+    const parsed = await c.service.parsePdf(OWNER, 't1', PDF);
+    expect(parsed.provider).toBe('template');
+    expect(parsed.extractedChars).toBe(0);
+  });
+
+  it('ParsePdf_UnknownTalent_Throws404', async () => {
+    const c = ctx();
+    await expect(c.service.parsePdf(OWNER, 'missing', PDF)).rejects.toBeInstanceOf(NotFoundError);
+  });
+});
+
 describe('DocumentAiService.scoreAgainstJob', () => {
   const ATS_JSON = JSON.stringify({
     score: 82,
@@ -202,6 +258,86 @@ describe('DocumentAiService.scoreAgainstJob', () => {
   it('Score_UnknownTalent_Throws404', async () => {
     const c = ctx();
     await expect(c.service.scoreAgainstJob(OWNER, 'missing', 'job')).rejects.toBeInstanceOf(
+      NotFoundError,
+    );
+  });
+});
+
+describe('DocumentAiService.pitchForMandate', () => {
+  const PITCH_JSON = JSON.stringify({
+    headline: 'Starke Designerin für euer Team',
+    paragraphs: ['Lena überzeugt durch …', 'Ihre Stationen zeigen …'],
+    highlights: ['Design Systems', 'Prototyping'],
+  });
+
+  it('Pitch_WithProvider_ReturnsNormalizedResult', async () => {
+    const c = ctx({ available: true, generate: async () => '```json\n' + PITCH_JSON + '\n```' });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+    const res = await c.service.pitchForMandate(OWNER, 't1', 'UX Lead gesucht');
+    expect(res.provider).toBe('claude');
+    expect(res.headline).toContain('Designerin');
+    expect(res.paragraphs).toHaveLength(2);
+    expect(res.highlights).toEqual(['Design Systems', 'Prototyping']);
+  });
+
+  it('Pitch_EmptyLlmResult_FallsBack', async () => {
+    const c = ctx({
+      available: true,
+      generate: async () => JSON.stringify({ headline: '', paragraphs: [], highlights: [] }),
+    });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+    const res = await c.service.pitchForMandate(OWNER, 't1', '');
+    expect(res.provider).toBe('template');
+    expect(res.headline).toContain('Designer');
+  });
+
+  it('Pitch_NoProvider_FallsBackToFacts', async () => {
+    const c = ctx();
+    await c.talents.add(talent('t1'));
+    const res = await c.service.pitchForMandate(OWNER, 't1', 'any mandate');
+    expect(res.provider).toBe('template');
+    expect(res.paragraphs.length).toBeGreaterThan(0);
+  });
+
+  it('Pitch_ProviderThrows_FallsBack', async () => {
+    const c = ctx({
+      available: true,
+      generate: async () => {
+        throw new Error('boom');
+      },
+    });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+    const res = await c.service.pitchForMandate(OWNER, 't1', '');
+    expect(res.provider).toBe('template');
+  });
+
+  it('Pitch_MalformedJson_FallsBack', async () => {
+    const c = ctx({ available: true, generate: async () => 'not json' });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+    const res = await c.service.pitchForMandate(OWNER, 't1', '');
+    expect(res.provider).toBe('template');
+  });
+
+  it('Pitch_HeadlineOnly_UsesProviderResult', async () => {
+    const c = ctx({
+      available: true,
+      generate: async () =>
+        JSON.stringify({ headline: '', paragraphs: ['Ein starker Absatz.'], highlights: [] }),
+    });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+    const res = await c.service.pitchForMandate(OWNER, 't1', '');
+    expect(res.provider).toBe('claude');
+    expect(res.paragraphs).toEqual(['Ein starker Absatz.']);
+  });
+
+  it('Pitch_UnknownTalent_Throws404', async () => {
+    const c = ctx();
+    await expect(c.service.pitchForMandate(OWNER, 'missing', '')).rejects.toBeInstanceOf(
       NotFoundError,
     );
   });

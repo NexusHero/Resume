@@ -53,6 +53,7 @@ import {
   fakePasswordHasher,
   FakePdfRenderer,
   FakePdfMerger,
+  FakePdfTextExtractor,
   FakeVersioner,
   FixedClock,
   SequenceIdGenerator,
@@ -166,6 +167,7 @@ function makeApp(
       documentService,
       llmService,
       apiKeyStore: new InMemoryApiKeyStore(),
+      pdfTextExtractor: new FakePdfTextExtractor('Extracted CV text from PDF.'),
       logger: noopLogger,
     }),
   });
@@ -588,6 +590,27 @@ describe('REST API /api/v1', () => {
       expect(res.status).toBe(400);
     });
 
+    it('DocumentsParsePdf_Base64_ReturnsStructuredResume', async () => {
+      const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+      const id = created.body.talent.id as string;
+      const dataBase64 = Buffer.from('%PDF-1.4 fake').toString('base64');
+      const res = await agent
+        .post(`/api/v1/talents/${id}/documents/parse-pdf`)
+        .send({ dataBase64 });
+      expect(res.status).toBe(200);
+      // no LLM key → fallback keeps the (fake-)extracted text as the summary
+      expect(res.body.parsed.provider).toBe('template');
+      expect(res.body.parsed.resume.summary).toContain('Extracted CV text');
+      expect(res.body.parsed.extractedChars).toBeGreaterThan(0);
+    });
+
+    it('DocumentsParsePdf_MissingFile_Returns400', async () => {
+      const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+      const id = created.body.talent.id as string;
+      const res = await agent.post(`/api/v1/talents/${id}/documents/parse-pdf`).send({});
+      expect(res.status).toBe(400);
+    });
+
     it('DocumentsAts_JobText_ReturnsScore', async () => {
       const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
       const id = created.body.talent.id as string;
@@ -608,6 +631,32 @@ describe('REST API /api/v1', () => {
       const id = created.body.talent.id as string;
       const res = await agent.post(`/api/v1/talents/${id}/documents/ats`).send({});
       expect(res.status).toBe(400);
+    });
+
+    it('DocumentsPitch_ReturnsShortProfile', async () => {
+      const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+      const id = created.body.talent.id as string;
+      await agent.put(`/api/v1/talents/${id}/documents`).send({
+        contact: { name: 'Lena Brandt', role: 'Product Designer' },
+        resume: { skillGroups: [{ label: 'Tools', items: ['Figma'] }] },
+      });
+      // no LLM key in tests → deterministic fallback assembles it from the facts
+      const res = await agent
+        .post(`/api/v1/talents/${id}/documents/pitch`)
+        .send({ mandateContext: 'UX Lead gesucht' });
+      expect(res.status).toBe(200);
+      expect(res.body.pitch.provider).toBe('template');
+      expect(res.body.pitch.headline).toContain('Lena Brandt');
+      expect(Array.isArray(res.body.pitch.paragraphs)).toBe(true);
+      expect(res.body.pitch.paragraphs.length).toBeGreaterThan(0);
+    });
+
+    it('DocumentsPitch_NoBody_UsesEmptyContext', async () => {
+      const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+      const id = created.body.talent.id as string;
+      const res = await agent.post(`/api/v1/talents/${id}/documents/pitch`).send({});
+      expect(res.status).toBe(200);
+      expect(res.body.pitch.provider).toBe('template');
     });
 
     it('Dossier_Get_ReturnsPdf', async () => {

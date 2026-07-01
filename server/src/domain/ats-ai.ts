@@ -43,7 +43,7 @@ export function atsPrompt(
   };
 }
 
-function tokenize(text: string): Set<string> {
+export function tokenize(text: string): Set<string> {
   return new Set(
     text
       .toLowerCase()

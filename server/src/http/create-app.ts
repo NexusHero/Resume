@@ -12,6 +12,7 @@ import type { TalentController } from './talent-controller';
 import type { PlacementController } from './placement-controller';
 import type { CandidacyController } from './candidacy-controller';
 import type { RetentionController } from './retention-controller';
+import type { MatchController } from './match-controller';
 import type { DocumentController } from './document-controller';
 import type { AttachmentController } from './attachment-controller';
 import type { AuthController } from './auth-controller';
@@ -33,6 +34,7 @@ export interface AppDeps {
   placementController: PlacementController;
   candidacyController: CandidacyController;
   retentionController: RetentionController;
+  matchController: MatchController;
   documentController: DocumentController;
   attachmentController: AttachmentController;
   authController: AuthController;
@@ -56,6 +58,7 @@ export function createApp(deps: AppDeps): Express {
     placementController: p,
     candidacyController: cand,
     retentionController: retention,
+    matchController: match,
     documentController: docs,
     attachmentController: att,
     authController: auth,
@@ -112,6 +115,7 @@ export function createApp(deps: AppDeps): Express {
   api.patch('/talents/:id', requireAuth, asyncHandler(t.update));
   api.delete('/talents/:id', requireAuth, asyncHandler(t.remove));
   // Recruiting pipeline: talents in a mandate's stages (owner-scoped).
+  api.post('/mandates/:id/match', requireAuth, asyncHandler(match.match));
   api.get('/mandates/:id/candidacies', requireAuth, asyncHandler(cand.board));
   api.post('/mandates/:id/candidacies', requireAuth, asyncHandler(cand.add));
   api.get('/talents/:id/candidacies', requireAuth, asyncHandler(cand.forTalent));

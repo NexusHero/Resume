@@ -66,7 +66,7 @@ function TalentGrid({ talents, apps, onOpen, onAdd }) {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>{talents.length} talents</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>{talents.length} {talents.length === 1 ? 'talent' : 'talents'}</span>
         <span style={{ flex: 1 }} />
         <WS.Button size="sm" variant="outline" iconLeft={<WS.Icon name="plus" size={14} />} onClick={onAdd}>Add talent</WS.Button>
       </div>
@@ -91,7 +91,7 @@ function TalentGrid({ talents, apps, onOpen, onAdd }) {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '12px', borderTop: '1px solid var(--border)' }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}><WS.Icon name="send" size={12} />{n} applications</span>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 600, color: t.score >= 80 ? 'var(--success)' : 'var(--text-muted)' }}>{t.score}%</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 600, color: t.score >= 80 ? 'var(--success)' : 'var(--text-muted)' }}>{t.score != null ? `${t.score}%` : '—'}</span>
               </div>
             </WS.Card>
           );

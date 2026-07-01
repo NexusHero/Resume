@@ -44,7 +44,35 @@ function useResource(fetcher) {
   return { data, loading, error, reload };
 }
 
-function Workspace({ onLogout }) {
+/**
+ * The recruiter's own pinned "me" profile, derived from the authenticated
+ * session — never from hardcoded sample data. A fresh account has no documents
+ * or applications yet, so those are empty; the views render honest empty states.
+ */
+function makeMeProfile(user) {
+  const local = String((user && user.email) || '').split('@')[0];
+  const name = local ? local.charAt(0).toUpperCase() + local.slice(1) : 'Me';
+  return {
+    id: (user && user.id) || 'me',
+    me: true,
+    name,
+    role: 'Recruiter',
+    headline: '',
+    location: '',
+    email: (user && user.email) || '',
+    phone: '',
+    linkedin: '',
+    availability: '',
+    salary: '',
+    score: null,
+    skills: [],
+    resume: null,
+    letter: null,
+    attachments: [],
+  };
+}
+
+function Workspace({ user, onLogout }) {
   const [nav, setNav] = React.useState('uebersicht');
   const [search, setSearch] = React.useState('');
   const [openTalent, setOpenTalent] = React.useState(null);
@@ -66,9 +94,9 @@ function Workspace({ onLogout }) {
 
   const mandates = mandatesRes.data;
   const placements = placementsRes.data;
-  // "me" (the recruiter's own pinned profile) is the user's own data, not a
-  // fabricated candidate, so it stays pinned first in the pool.
-  const me0 = window.TALENTS.find((t) => t.me);
+  // "me" (the recruiter's own pinned profile) comes from the signed-in session,
+  // not from fabricated sample data, so it stays pinned first in the pool.
+  const me0 = React.useMemo(() => makeMeProfile(user), [user]);
   const talents = React.useMemo(
     () => [me0, ...talentsRes.data.filter((t) => !t.me)],
     [me0, talentsRes.data],
@@ -119,7 +147,12 @@ function Workspace({ onLogout }) {
       node
     );
 
-  const apps = window.APPLICATIONS;
+  // Applications, clients and inbox messages have no live recruiting API yet, so
+  // a real (served) account shows honest empty states rather than sample data.
+  // The sample arrays in data.js remain only as an offline (file://) fallback.
+  const apps = [];
+  const clients = [];
+  const messages = [];
   const me = talents.find((t) => t.me);
 
   // Übersicht and Berichte run off the same live data the other views use, so
@@ -133,7 +166,7 @@ function Workspace({ onLogout }) {
     [mandates, placements],
   );
 
-  const unread = window.MESSAGES.filter((m) => m.unread).length;
+  const unread = messages.filter((m) => m.unread).length;
   const badges = { bewerbungen: apps.filter((a) => a.status !== 'rejected' && a.status !== 'hired').length, postfach: unread || undefined };
 
   const goTalent = (id) => setOpenTalent(id);
@@ -175,8 +208,10 @@ function Workspace({ onLogout }) {
     subtitle = 'Resume, attachments and applications';
     body = <window.TalentProfile talent={talent} apps={talentApps(talent.id)} onBack={back} onEdit={() => setEditing(talent.id)} onCreateMappe={() => setMappeFor(talent)} />;
   } else {
-    [title, subtitle] = TITLES[nav];
-    if (nav === 'uebersicht') body = <window.Dashboard me={me} apps={apps} vkpis={vkpis} clients={window.CLIENTS} mandates={mandates} onOpenTalent={goTalent} onOpenPipeline={() => setNav('bewerbungen')} onOpenMandate={() => setNav('mandate')} />;
+    // Guard against an unknown nav key — destructuring `undefined` here would
+    // white-screen the whole workspace.
+    [title, subtitle] = TITLES[nav] || TITLES.uebersicht;
+    if (nav === 'uebersicht') body = <window.Dashboard me={me} apps={apps} vkpis={vkpis} clients={clients} mandates={mandates} onOpenTalent={goTalent} onOpenPipeline={() => setNav('bewerbungen')} onOpenMandate={() => setNav('mandate')} />;
     else if (nav === 'mandate') body = withState(mandatesRes, <window.MandateView mandates={mandates} onEdit={editMandate} onOpenPipeline={goPipeline} />);
     else if (nav === 'pool') body = withState(talentsRes, <window.TalentGrid talents={talents} apps={apps} onOpen={goTalent} onAdd={addTalent} />);
     else if (nav === 'matching') body = <window.Matching talents={talents} />;
@@ -187,7 +222,7 @@ function Workspace({ onLogout }) {
     );
     else if (nav === 'platzierungen') body = withState(placementsRes, <window.PlatzierungenView placements={placements} kpis={vkpis} onEdit={editPlacement} />);
     else if (nav === 'berichte') body = <window.ReportsView clients={reportClients} mandates={mandates} placements={placements} apps={apps} kpis={vkpis} />;
-    else if (nav === 'postfach') body = <window.Inbox messages={window.MESSAGES} apps={apps} talents={talents} onOpenTalent={goTalent} />;
+    else if (nav === 'postfach') body = <window.Inbox messages={messages} apps={apps} talents={talents} onOpenTalent={goTalent} />;
     else if (nav === 'einstellungen') body = <window.SettingsView />;
   }
 
@@ -254,7 +289,7 @@ function App() {
       .catch(() => {})
       .then(() => setAuth({ status: 'ready', user: null }));
 
-  return <Workspace onLogout={onLogout} />;
+  return <Workspace user={auth.user} onLogout={onLogout} />;
 }
 
 Object.assign(window, { App });

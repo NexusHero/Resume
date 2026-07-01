@@ -138,9 +138,17 @@ function TeamCard() {
   const [note, setNote] = React.useState('');
 
   const load = React.useCallback(() => {
-    window.RecruitApi.authMe().then(setMe).catch(() => {});
-    // Non-admins get 403 → treat as no manageable list.
-    window.RecruitApi.listMembers().then(setMembers).catch(() => setMembers([]));
+    // Resolve the role first; the member list is admin-only, so only admins
+    // request it — non-admins never fire a call that would 403.
+    window.RecruitApi.authMe()
+      .then((who) => {
+        setMe(who);
+        if (who && who.roles && who.roles.includes('admin')) {
+          return window.RecruitApi.listMembers().then(setMembers).catch(() => setMembers([]));
+        }
+        setMembers([]);
+      })
+      .catch(() => setMembers([]));
   }, []);
   React.useEffect(() => load(), [load]);
 
@@ -214,12 +222,19 @@ function ComplianceCard() {
 
   React.useEffect(() => {
     let alive = true;
+    // The retention report is admin-only; resolve the role first and only fetch
+    // it for admins, so non-admins never fire a call that would 403.
     window.RecruitApi.authMe()
-      .then((me) => { if (alive) setIsAdmin(!!(me && me.roles && me.roles.includes('admin'))); })
-      .catch(() => { if (alive) setIsAdmin(false); });
-    window.RecruitApi.retentionReport()
-      .then((r) => { if (alive) setItems(r); })
-      .catch(() => { if (alive) setItems([]); }); // 403 for non-admins
+      .then((me) => {
+        const admin = !!(me && me.roles && me.roles.includes('admin'));
+        if (!alive) return;
+        setIsAdmin(admin);
+        if (!admin) { setItems([]); return; }
+        return window.RecruitApi.retentionReport()
+          .then((r) => { if (alive) setItems(r); })
+          .catch(() => { if (alive) setItems([]); });
+      })
+      .catch(() => { if (alive) { setIsAdmin(false); setItems([]); } });
     return () => { alive = false; };
   }, []);
 

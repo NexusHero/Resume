@@ -104,7 +104,7 @@ function RecruitRail({ active, onNav, me, talentCount, search, onSearch, title, 
         </div>
 
         {/* who I represent — the Vermittler scale, stated quietly */}
-        <button onClick={() => onNav('talente')} style={{
+        <button onClick={() => onNav('pool')} style={{
           margin: '4px 14px 10px', padding: '11px 13px', borderRadius: 'var(--radius-md)', cursor: 'pointer', textAlign: 'left',
           background: 'var(--sidebar-glass)', border: '1px solid var(--sidebar-border)', display: 'flex', alignItems: 'center', gap: '10px',
         }}>

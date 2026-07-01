@@ -436,6 +436,16 @@ const RecruitApi = {
     );
     return data.suggestion; // { action, text?, paragraphs?, provider }
   },
+  async parseDocument(talentId, text) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/documents/parse`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ text }),
+      }),
+    );
+    return data.parsed; // { contact, resume, provider }
+  },
   async listPlacements() {
     const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/placements`));
     return Array.isArray(data) ? data.map(mapPlacement) : [];

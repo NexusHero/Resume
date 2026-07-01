@@ -245,6 +245,25 @@ function Editor({ talent, onClose, onCreateMappe }) {
 
   const saveLabel = { saving: 'Saving…', saved: 'Saved', error: 'Not saved' };
 
+  /* ---- Import: paste a CV, let the AI parse it into structured fields ---- */
+  const [importing, setImporting] = React.useState(false);
+  const [importText, setImportText] = React.useState('');
+  const [parsing, setParsing] = React.useState(false);
+  const runImport = async () => {
+    if (!importText.trim() || !canPersist) return;
+    setParsing(true);
+    try {
+      const parsed = await window.RecruitApi.parseDocument(talentId, importText);
+      if (parsed.contact) setContact((s) => ({ ...s, ...parsed.contact }));
+      if (parsed.resume) setResume(parsed.resume);
+      setImporting(false);
+      setImportText('');
+    } catch {
+      /* ignore parse error */
+    }
+    setParsing(false);
+  };
+
   const seg = (id, label) => (
     <button onClick={() => setDoc(id)} style={{ flex: 1, padding: '8px 10px', border: 'none', cursor: 'pointer', borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600, background: doc === id ? 'var(--surface-card)' : 'transparent', color: doc === id ? 'var(--text-heading)' : 'var(--text-soft)', boxShadow: doc === id ? 'var(--shadow-xs)' : 'none' }}>{label}</button>
   );
@@ -263,6 +282,14 @@ function Editor({ talent, onClose, onCreateMappe }) {
         )}
         {canPersist && (
           <button
+            onClick={() => setImporting(true)}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', padding: '4px 12px' }}
+          >
+            <ED.Icon name="upload" size={13} /> Import CV
+          </button>
+        )}
+        {canPersist && (
+          <button
             onClick={() => window.open(window.RecruitApi.talentDocumentsPdfUrl(talentId), '_blank')}
             style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', padding: '4px 12px' }}
           >
@@ -270,6 +297,21 @@ function Editor({ talent, onClose, onCreateMappe }) {
           </button>
         )}
       </div>
+
+      {importing && (
+        <>
+          <div onClick={() => setImporting(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(8,11,18,0.45)', backdropFilter: 'blur(2px)', zIndex: 60 }} />
+          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 61, width: 'min(680px, 92vw)', background: 'var(--surface-card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-lg)', padding: '22px' }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)', marginBottom: '4px' }}>Import a CV</div>
+            <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginBottom: '12px' }}>Paste the résumé text — the AI extracts profile, experience and skills into the editor.</div>
+            <textarea value={importText} onChange={(e) => setImportText(e.target.value)} rows={10} placeholder="Paste CV text here…" style={{ width: '100%', resize: 'vertical', padding: '11px 13px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', color: 'var(--text-heading)', fontFamily: 'var(--font-body)', fontSize: '13px', outline: 'none' }} />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '14px' }}>
+              <ED.Button variant="ghost" onClick={() => setImporting(false)}>Cancel</ED.Button>
+              <ED.Button variant="primary" disabled={parsing || !importText.trim()} onClick={runImport}>{parsing ? 'Parsing…' : 'Parse & fill'}</ED.Button>
+            </div>
+          </div>
+        </>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: '20px', flex: 1, minHeight: 0, minWidth: 0 }}>
         {/* LEFT — form */}

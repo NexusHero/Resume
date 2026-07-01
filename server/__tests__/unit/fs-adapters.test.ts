@@ -17,6 +17,7 @@ import { FsUserRepository } from '../../src/adapters/fs-user-repository';
 import { FsSessionStore } from '../../src/adapters/fs-session-store';
 import { FsPasswordResetTokenStore } from '../../src/adapters/fs-password-reset-token-store';
 import { FsApiKeyStore } from '../../src/adapters/fs-api-key-store';
+import { FsUsageMeter } from '../../src/adapters/fs-usage-meter';
 import { SecretCipher } from '../../src/adapters/secret-cipher';
 import { FixedClock } from '../support/fakes';
 import type { Application, AuditEvent } from '../../src/domain/application';
@@ -48,6 +49,7 @@ function tmpConfig(): AppConfig {
     sessionsFile: path.join(storeDir, 'sessions.json'),
     passwordResetTokensFile: path.join(storeDir, 'password-reset-tokens.json'),
     apiKeysFile: path.join(storeDir, 'api-keys.json'),
+    usageFile: path.join(storeDir, 'usage.json'),
     staticDir: rootDir,
     versionedPaths: ['bewerbungen'],
     candidateProfile: { skills: [] },
@@ -293,6 +295,59 @@ describe('FsApiKeyStore', () => {
     await fs.writeFile(config.apiKeysFile, 'not json');
     const store = new FsApiKeyStore({ config, secretCipher: cipher() });
     expect(await store.get('owner1', 'claude')).toBeNull();
+  });
+});
+
+describe('FsUsageMeter', () => {
+  const event = (ownerId: string, over = {}) => ({
+    ownerId,
+    provider: 'claude' as const,
+    feature: 'ats' as const,
+    inputTokens: 100,
+    outputTokens: 50,
+    at: '2026-07-01T10:00:00.000Z',
+    ...over,
+  });
+
+  it('NoFile_ListsEmpty', async () => {
+    const meter = new FsUsageMeter({ config: tmpConfig() });
+    expect(await meter.list('u1')).toEqual([]);
+  });
+
+  it('Record_AppendsAndListScopesToOwner', async () => {
+    const meter = new FsUsageMeter({ config: tmpConfig() });
+    await meter.record(event('u1'));
+    await meter.record(event('u1', { feature: 'pitch' }));
+    await meter.record(event('u2'));
+    const u1 = await meter.list('u1');
+    expect(u1).toHaveLength(2);
+    expect(await meter.list('u2')).toHaveLength(1);
+  });
+
+  it('RemoveForOwner_DropsOnlyThatOwner', async () => {
+    const meter = new FsUsageMeter({ config: tmpConfig() });
+    await meter.record(event('u1'));
+    await meter.record(event('u2'));
+    await meter.removeForOwner('u1');
+    expect(await meter.list('u1')).toEqual([]);
+    expect(await meter.list('u2')).toHaveLength(1);
+  });
+
+  it('RemoveForOwner_UnknownOwner_IsNoOp', async () => {
+    const meter = new FsUsageMeter({ config: tmpConfig() });
+    await meter.record(event('u1'));
+    await meter.removeForOwner('ghost');
+    expect(await meter.list('u1')).toHaveLength(1);
+  });
+
+  it('MalformedFile_TreatedAsEmpty', async () => {
+    const config = tmpConfig();
+    await fs.mkdir(config.storeDir, { recursive: true });
+    await fs.writeFile(config.usageFile, 'not json');
+    expect(await new FsUsageMeter({ config }).list('u1')).toEqual([]);
+    // valid JSON that isn't an array is also treated as empty
+    await fs.writeFile(config.usageFile, '{"x":1}');
+    expect(await new FsUsageMeter({ config }).list('u1')).toEqual([]);
   });
 });
 

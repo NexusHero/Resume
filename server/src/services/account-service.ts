@@ -9,6 +9,7 @@ import type { PlacementRepository } from '../ports/placement-repository';
 import type { ApiKeyStore } from '../ports/api-key-store';
 import type { SessionStore } from '../ports/session-store';
 import type { PasswordResetTokenStore } from '../ports/password-reset-token-store';
+import type { UsageMeter } from '../ports/usage-meter';
 
 export interface AccountServiceDeps {
   userRepository: UserRepository;
@@ -18,6 +19,7 @@ export interface AccountServiceDeps {
   apiKeyStore: ApiKeyStore;
   sessionStore: SessionStore;
   passwordResetTokenStore: PasswordResetTokenStore;
+  usageMeter: UsageMeter;
 }
 
 /** The signed-in recruiter's DSGVO payload: their account plus the team workspace. */
@@ -45,6 +47,7 @@ export class AccountService {
   private readonly keys: ApiKeyStore;
   private readonly sessions: SessionStore;
   private readonly resetTokens: PasswordResetTokenStore;
+  private readonly usage: UsageMeter;
 
   constructor(deps: AccountServiceDeps) {
     this.users = deps.userRepository;
@@ -54,6 +57,7 @@ export class AccountService {
     this.keys = deps.apiKeyStore;
     this.sessions = deps.sessionStore;
     this.resetTokens = deps.passwordResetTokenStore;
+    this.usage = deps.usageMeter;
   }
 
   /** The caller's account plus the team workspace. `at` is the request time. */
@@ -84,6 +88,7 @@ export class AccountService {
     }
     await this.sessions.destroyForUser(userId);
     await this.resetTokens.destroyForUser(userId);
+    await this.usage.removeForOwner(userId);
     await this.users.remove(userId);
   }
 }

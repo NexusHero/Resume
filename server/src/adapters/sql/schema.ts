@@ -160,6 +160,17 @@ export const candidacies = pgTable('candidacies', {
   updatedAt: text('updated_at').notNull(),
 });
 
+/** Append-only meter of LLM calls (mirrors domain `UsageEvent`). Per user. */
+export const usageEvents = pgTable('usage_events', {
+  seq: serial('seq').primaryKey(),
+  ownerId: text('owner_id').notNull(),
+  provider: text('provider').notNull(),
+  feature: text('feature').notNull(),
+  inputTokens: integer('input_tokens').notNull(),
+  outputTokens: integer('output_tokens').notNull(),
+  at: text('at').notNull(),
+});
+
 /** Booked placements (mirrors domain `Placement`). Owner-scoped per recruiter. */
 export const placements = pgTable('placements', {
   id: text('id').primaryKey(),

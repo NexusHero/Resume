@@ -18,6 +18,18 @@ export interface LlmGenerateInput {
   apiKey?: string;
 }
 
+/** Tokens a single generation consumed, as reported by the provider. */
+export interface TokenUsage {
+  inputTokens: number;
+  outputTokens: number;
+}
+
+/** The result of a generation: the text plus the tokens it cost. */
+export interface LlmGenerateResult {
+  text: string;
+  usage: TokenUsage;
+}
+
 export interface LlmProvider {
   readonly id: LlmProviderId;
   /** Human-readable name shown in the provider picker. */
@@ -25,5 +37,5 @@ export interface LlmProvider {
   /** True only when credentials are configured — an unavailable provider must not be selected. */
   readonly available: boolean;
   /** Generate a completion. Throws on transport / API errors. */
-  generate(input: LlmGenerateInput): Promise<string>;
+  generate(input: LlmGenerateInput): Promise<LlmGenerateResult>;
 }

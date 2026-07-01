@@ -22,6 +22,7 @@ export interface AppConfig {
   sessionsFile: string;
   passwordResetTokensFile: string;
   apiKeysFile: string;
+  usageFile: string;
   staticDir: string;
   /** Repo-relative paths the Versioner stages on each change. */
   versionedPaths: string[];
@@ -159,6 +160,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     sessionsFile: path.join(storeDir, 'sessions.json'),
     passwordResetTokensFile: path.join(storeDir, 'password-reset-tokens.json'),
     apiKeysFile: path.join(storeDir, 'api-keys.json'),
+    usageFile: path.join(storeDir, 'usage.json'),
     staticDir: rootDir,
     versionedPaths: ['archive/bewerbungen'],
     candidateProfile: CANDIDATE_PROFILE,

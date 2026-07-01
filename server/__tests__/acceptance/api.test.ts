@@ -17,6 +17,7 @@ import { PlacementController } from '../../src/http/placement-controller';
 import { CandidacyController } from '../../src/http/candidacy-controller';
 import { RetentionController } from '../../src/http/retention-controller';
 import { MatchController } from '../../src/http/match-controller';
+import { UsageController } from '../../src/http/usage-controller';
 import { DocumentController } from '../../src/http/document-controller';
 import { AttachmentController } from '../../src/http/attachment-controller';
 import { AuthController } from '../../src/http/auth-controller';
@@ -30,6 +31,7 @@ import { PlacementService } from '../../src/services/placement-service';
 import { CandidacyService } from '../../src/services/candidacy-service';
 import { RetentionService } from '../../src/services/retention-service';
 import { MatchService } from '../../src/services/match-service';
+import { UsageService } from '../../src/services/usage-service';
 import { DocumentService } from '../../src/services/document-service';
 import { DocumentAiService } from '../../src/services/document-ai-service';
 import { AttachmentService } from '../../src/services/attachment-service';
@@ -58,6 +60,7 @@ import {
   InMemoryAttachmentStore,
   InMemoryUserRepository,
   InMemoryApiKeyStore,
+  InMemoryUsageMeter,
   InMemoryPasswordResetTokenStore,
   RecordingMailer,
   fakePasswordHasher,
@@ -121,11 +124,14 @@ function makeApp(
   // Shared so per-user LLM keys set via /settings are seen by the AI helpers and
   // erased with the account.
   const apiKeyStore = new InMemoryApiKeyStore();
+  const usageMeter = new InMemoryUsageMeter();
   const llmController = new LlmController({
     llmService,
     coverLetterService: new CoverLetterService({
       llmService,
       candidate: config.candidate,
+      usageMeter,
+      clock: new FixedClock(),
       logger: noopLogger,
     }),
     apiKeyStore,
@@ -219,8 +225,13 @@ function makeApp(
       llmService,
       apiKeyStore,
       pdfTextExtractor: new FakePdfTextExtractor('Extracted CV text from PDF.'),
+      usageMeter,
+      clock: new FixedClock(),
       logger: noopLogger,
     }),
+  });
+  const usageController = new UsageController({
+    usageService: new UsageService({ usageMeter }),
   });
   const placementController = new PlacementController({ placementService });
   const authController = new AuthController({
@@ -242,6 +253,7 @@ function makeApp(
       apiKeyStore,
       sessionStore,
       passwordResetTokenStore,
+      usageMeter,
     }),
     clock: new FixedClock(),
     config,
@@ -273,6 +285,7 @@ function makeApp(
     candidacyController,
     retentionController,
     matchController,
+    usageController,
     documentController,
     attachmentController,
     authController,
@@ -1028,6 +1041,26 @@ describe('REST API /api/v1', () => {
 
     it('Match_Unauthenticated_Returns401', async () => {
       const res = await request(app).post('/api/v1/mandates/x/match').send({});
+      expect(res.status).toBe(401);
+    });
+
+    // --- AI usage counter ---
+    it('Usage_Authenticated_ReturnsZeroedSummaryForNewUser', async () => {
+      const res = await agent.get('/api/v1/settings/usage');
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        requests: 0,
+        inputTokens: 0,
+        outputTokens: 0,
+        totalTokens: 0,
+        costUsd: 0,
+      });
+      expect(res.body.byProvider).toEqual([]);
+      expect(res.body.byFeature).toEqual([]);
+    });
+
+    it('Usage_Unauthenticated_Returns401', async () => {
+      const res = await request(app).get('/api/v1/settings/usage');
       expect(res.status).toBe(401);
     });
 

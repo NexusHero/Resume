@@ -100,6 +100,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     passwordResetTokenStore: asValue(persistence.passwordResetTokenStore),
     apiKeyStore: asValue(persistence.apiKeyStore),
     usageMeter: asValue(persistence.usageMeter),
+    interviewObservationRepository: asValue(persistence.interviewObservationRepository),
     passwordHasher: asClass(ScryptPasswordHasher).singleton(),
     // Transactional email: console by default, SMTP (nodemailer) when configured.
     mailer: asFunction(({ config: c, logger }) => createMailer({ config: c, logger })).singleton(),

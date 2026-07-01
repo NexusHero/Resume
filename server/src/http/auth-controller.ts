@@ -84,7 +84,9 @@ export class AuthController {
   requireAuth = async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
     const user = await this.service.currentUser(readCookie(req, this.cookieName));
     if (!user) throw new UnauthorizedError();
-    (req as Request & { userId?: string }).userId = user.id;
+    const r = req as Request & { userId?: string; roles?: typeof user.roles };
+    r.userId = user.id;
+    r.roles = user.roles;
     next();
   };
 

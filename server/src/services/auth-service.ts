@@ -45,10 +45,14 @@ export class AuthService {
   async register(input: RegisterInput): Promise<AuthResult> {
     const existing = await this.users.findByEmail(input.email);
     if (existing) throw new ConflictError('An account with this email already exists');
+    // Bootstrap: the very first account owns the team and becomes admin; every
+    // later sign-up joins as a recruiter (an admin can promote them).
+    const first = (await this.users.list()).length === 0;
     const user: User = {
       id: this.ids.next(),
       email: input.email,
       passwordHash: await this.hasher.hash(input.password),
+      roles: first ? ['admin', 'recruiter'] : ['recruiter'],
       createdAt: this.clock.isoNow(),
     };
     await this.users.add(user);

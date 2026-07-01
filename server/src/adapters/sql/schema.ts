@@ -5,12 +5,14 @@ import type {
   LetterContent,
   DocumentStyle,
 } from '../../domain/talent-documents';
+import type { Role } from '../../domain/user';
 
 /** Registered accounts (mirrors domain `User`). */
 export const users = pgTable('users', {
   id: text('id').primaryKey(),
   email: text('email').notNull().unique(),
   passwordHash: text('password_hash').notNull(),
+  roles: jsonb('roles').$type<Role[]>().notNull(),
   createdAt: text('created_at').notNull(),
 });
 

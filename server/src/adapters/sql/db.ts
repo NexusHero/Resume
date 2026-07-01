@@ -17,8 +17,10 @@ export async function migrate(pool: Pool): Promise<void> {
       id text PRIMARY KEY,
       email text NOT NULL UNIQUE,
       password_hash text NOT NULL,
+      roles jsonb NOT NULL DEFAULT '["recruiter"]'::jsonb,
       created_at text NOT NULL
     );
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS roles jsonb NOT NULL DEFAULT '["recruiter"]'::jsonb;
     CREATE TABLE IF NOT EXISTS sessions (
       token text PRIMARY KEY,
       user_id text NOT NULL,

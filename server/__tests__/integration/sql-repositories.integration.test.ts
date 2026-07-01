@@ -55,6 +55,7 @@ suite('SQL repositories (real Postgres)', () => {
     id,
     email,
     passwordHash: 'scrypt$salt$key',
+    roles: ['recruiter'],
     createdAt: '2026-06-25T10:00:00.000Z',
   });
 

@@ -187,6 +187,7 @@ describe('user mappers', () => {
       id: 'u1',
       email: 'a@example.com',
       passwordHash: 'scrypt$salt$key',
+      roles: ['admin', 'recruiter'],
       createdAt: '2026-06-25T10:00:00.000Z',
     };
     expect(rowToUser(userToRow(user) as Required<typeof user>)).toEqual(user);

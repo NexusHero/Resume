@@ -24,7 +24,7 @@ import type { TalentDocuments } from '../../src/domain/talent-documents';
 import type { DocumentRepository } from '../../src/ports/document-repository';
 import type { Attachment } from '../../src/domain/attachment';
 import type { AttachmentBlob, AttachmentStore } from '../../src/ports/attachment-store';
-import type { User } from '../../src/domain/user';
+import type { User, Role } from '../../src/domain/user';
 import type { UserRepository } from '../../src/ports/user-repository';
 import type { PasswordHasher } from '../../src/ports/password-hasher';
 import type { PasswordResetTokenStore } from '../../src/ports/password-reset-token-store';
@@ -341,6 +341,9 @@ export class InMemoryAttachmentStore implements AttachmentStore {
 
 export class InMemoryUserRepository implements UserRepository {
   users: User[] = [];
+  async list(): Promise<User[]> {
+    return this.users.map((u) => ({ ...u }));
+  }
   async findByEmail(email: string): Promise<User | null> {
     return this.users.find((u) => u.email === email) ?? null;
   }
@@ -352,6 +355,9 @@ export class InMemoryUserRepository implements UserRepository {
   }
   async updatePassword(id: string, passwordHash: string): Promise<void> {
     this.users = this.users.map((u) => (u.id === id ? { ...u, passwordHash } : u));
+  }
+  async updateRoles(id: string, roles: Role[]): Promise<void> {
+    this.users = this.users.map((u) => (u.id === id ? { ...u, roles } : u));
   }
   async remove(id: string): Promise<boolean> {
     const before = this.users.length;

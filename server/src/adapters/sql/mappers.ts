@@ -4,7 +4,7 @@ import type { Mandate, MandatePriority, MandateStatus } from '../../domain/manda
 import type { Talent } from '../../domain/talent';
 import type { Placement, PlacementStatus } from '../../domain/placement';
 import type { Candidacy, CandidacyStage } from '../../domain/candidacy';
-import type { User } from '../../domain/user';
+import type { User, Role } from '../../domain/user';
 import type { TalentDocuments } from '../../domain/talent-documents';
 import type { Attachment } from '../../domain/attachment';
 import {
@@ -257,6 +257,7 @@ export function rowToUser(row: UserRow): User {
     id: row.id,
     email: row.email,
     passwordHash: row.passwordHash,
+    roles: (Array.isArray(row.roles) && row.roles.length ? row.roles : ['recruiter']) as Role[],
     createdAt: row.createdAt,
   };
 }
@@ -266,6 +267,7 @@ export function userToRow(user: User): UserInsert {
     id: user.id,
     email: user.email,
     passwordHash: user.passwordHash,
+    roles: user.roles,
     createdAt: user.createdAt,
   };
 }

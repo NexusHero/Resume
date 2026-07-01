@@ -39,6 +39,16 @@ export class ConflictError extends DomainError {
   }
 }
 
+/** The caller is authenticated but lacks permission for the action (403). */
+export class ForbiddenError extends DomainError {
+  readonly status = 403;
+  readonly type = 'forbidden';
+
+  constructor(message = 'You are not allowed to do that') {
+    super(message);
+  }
+}
+
 /** The request payload failed validation (400). */
 export class ValidationError extends DomainError {
   readonly status = 400;

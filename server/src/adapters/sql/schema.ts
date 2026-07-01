@@ -117,6 +117,18 @@ export const talents = pgTable('talents', {
   updatedAt: text('updated_at').notNull(),
 });
 
+/** Files attached to a talent (base64 bytes + metadata). Owner-scoped. */
+export const attachments = pgTable('attachments', {
+  id: text('id').primaryKey(),
+  ownerId: text('owner_id').notNull(),
+  talentId: text('talent_id').notNull(),
+  name: text('name').notNull(),
+  contentType: text('content_type').notNull(),
+  size: integer('size').notNull(),
+  data: text('data').notNull(), // base64
+  createdAt: text('created_at').notNull(),
+});
+
 /** A talent's document set (resume + cover letter + style). One row per (owner, talent). */
 export const talentDocuments = pgTable(
   'talent_documents',

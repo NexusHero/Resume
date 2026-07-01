@@ -11,6 +11,7 @@ import { FsMandateRepository } from '../../src/adapters/fs-mandate-repository';
 import { FsTalentRepository } from '../../src/adapters/fs-talent-repository';
 import { FsPlacementRepository } from '../../src/adapters/fs-placement-repository';
 import { FsDocumentRepository } from '../../src/adapters/fs-document-repository';
+import { FsAttachmentStore } from '../../src/adapters/fs-attachment-store';
 import { FsUserRepository } from '../../src/adapters/fs-user-repository';
 import { FsSessionStore } from '../../src/adapters/fs-session-store';
 import { FsPasswordResetTokenStore } from '../../src/adapters/fs-password-reset-token-store';
@@ -38,6 +39,8 @@ function tmpConfig(): AppConfig {
     talentsFile: path.join(storeDir, 'talents.json'),
     placementsFile: path.join(storeDir, 'placements.json'),
     documentsFile: path.join(storeDir, 'documents.json'),
+    attachmentsFile: path.join(storeDir, 'attachments.json'),
+    attachmentsDir: path.join(storeDir, 'attachments'),
     usersFile: path.join(storeDir, 'users.json'),
     sessionsFile: path.join(storeDir, 'sessions.json'),
     passwordResetTokensFile: path.join(storeDir, 'password-reset-tokens.json'),
@@ -745,5 +748,62 @@ describe('FsDocumentRepository', () => {
     await fs.writeFile(config.documentsFile, 'not json');
     const repo = new FsDocumentRepository({ config });
     expect(await repo.get(OWNER, 't1')).toBeNull();
+  });
+});
+
+describe('FsAttachmentStore', () => {
+  const OWNER = 'owner1';
+  const att = (id: string, talentId = 't1', ownerId = OWNER, name = 'Zeugnis.pdf') => ({
+    id,
+    ownerId,
+    talentId,
+    name,
+    contentType: 'application/pdf',
+    size: 5,
+    createdAt: '2026-06-25T10:00:00.000Z',
+  });
+  const bytes = Buffer.from('%PDF-');
+
+  it('AddGet_RoundTripsBytesAndMeta', async () => {
+    const store = new FsAttachmentStore({ config: tmpConfig() });
+    await store.add(att('a1'), bytes);
+    const blob = await store.get(OWNER, 'a1');
+    expect(blob?.attachment).toMatchObject({ name: 'Zeugnis.pdf', talentId: 't1' });
+    expect(blob?.bytes.toString()).toBe('%PDF-');
+    expect(await store.get(OWNER, 'missing')).toBeNull();
+  });
+
+  it('Get_IsOwnerScoped', async () => {
+    const store = new FsAttachmentStore({ config: tmpConfig() });
+    await store.add(att('a1'), bytes);
+    expect(await store.get('intruder', 'a1')).toBeNull();
+  });
+
+  it('List_FiltersByOwnerAndTalent', async () => {
+    const store = new FsAttachmentStore({ config: tmpConfig() });
+    await store.add(att('a1', 't1'), bytes);
+    await store.add(att('a2', 't2'), bytes);
+    expect(await store.list(OWNER, 't1')).toHaveLength(1);
+  });
+
+  it('Remove_DeletesBytesAndMeta', async () => {
+    const store = new FsAttachmentStore({ config: tmpConfig() });
+    await store.add(att('a1'), bytes);
+    expect(await store.remove(OWNER, 'a1')).toBe(true);
+    expect(await store.remove(OWNER, 'a1')).toBe(false);
+    expect(await store.get(OWNER, 'a1')).toBeNull();
+  });
+
+  it('RemoveForTalentAndOwner_DropMatching', async () => {
+    const store = new FsAttachmentStore({ config: tmpConfig() });
+    await store.add(att('a1', 't1', OWNER), bytes);
+    await store.add(att('a2', 't2', OWNER), bytes);
+    await store.add(att('a3', 't1', 'other'), bytes);
+    await store.removeForTalent(OWNER, 't1');
+    expect(await store.get(OWNER, 'a1')).toBeNull();
+    expect(await store.get(OWNER, 'a2')).not.toBeNull();
+    await store.removeForOwner(OWNER);
+    expect(await store.get(OWNER, 'a2')).toBeNull();
+    expect(await store.get('other', 'a3')).not.toBeNull();
   });
 });

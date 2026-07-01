@@ -12,6 +12,7 @@ import type { MandateController } from './http/mandate-controller';
 import type { TalentController } from './http/talent-controller';
 import type { PlacementController } from './http/placement-controller';
 import type { DocumentController } from './http/document-controller';
+import type { AttachmentController } from './http/attachment-controller';
 import type { AuthController } from './http/auth-controller';
 import type { AccountController } from './http/account-controller';
 import type { PasswordResetController } from './http/password-reset-controller';
@@ -39,6 +40,7 @@ async function main(): Promise<void> {
     talentController: container.resolve<TalentController>('talentController'),
     placementController: container.resolve<PlacementController>('placementController'),
     documentController: container.resolve<DocumentController>('documentController'),
+    attachmentController: container.resolve<AttachmentController>('attachmentController'),
     authController: container.resolve<AuthController>('authController'),
     accountController: container.resolve<AccountController>('accountController'),
     passwordResetController: container.resolve<PasswordResetController>('passwordResetController'),

@@ -11,6 +11,7 @@ import { SqlSessionStore } from '../../src/adapters/sql/sql-session-store';
 import { SqlPasswordResetTokenStore } from '../../src/adapters/sql/sql-password-reset-token-store';
 import { SqlApiKeyStore } from '../../src/adapters/sql/sql-api-key-store';
 import { SqlDocumentRepository } from '../../src/adapters/sql/sql-document-repository';
+import { SqlAttachmentStore } from '../../src/adapters/sql/sql-attachment-store';
 import { SecretCipher } from '../../src/adapters/secret-cipher';
 import { loadConfig } from '../../src/config';
 import type { Application, AuditEvent } from '../../src/domain/application';
@@ -46,7 +47,7 @@ suite('SQL repositories (real Postgres)', () => {
 
   beforeEach(async () => {
     await pool.query(
-      'TRUNCATE applications, audit_events, saved_searches, mandates, talents, placements, talent_documents, users, sessions, password_reset_tokens, api_keys RESTART IDENTITY',
+      'TRUNCATE applications, audit_events, saved_searches, mandates, talents, placements, talent_documents, attachments, users, sessions, password_reset_tokens, api_keys RESTART IDENTITY',
     );
   });
 
@@ -354,5 +355,34 @@ suite('SQL repositories (real Postgres)', () => {
     await repo.removeForOwner('owner1');
     expect(await repo.get('owner1', 't2')).toBeNull();
     expect(await repo.get('other', 't1')).not.toBeNull(); // other owner untouched
+  });
+
+  it('Attachments_RoundTrips_BytesOwnerScopedWithCascade', async () => {
+    const store = new SqlAttachmentStore({ db });
+    const att = (id: string, talentId = 't1', ownerId = 'owner1') => ({
+      id,
+      ownerId,
+      talentId,
+      name: `${id}.pdf`,
+      contentType: 'application/pdf',
+      size: 5,
+      createdAt: '2026-06-25T10:00:00.000Z',
+    });
+    await store.add(att('a1'), Buffer.from('%PDF-'));
+    await store.add(att('a2', 't2'), Buffer.from('%PDF2'));
+    await store.add(att('a3', 't1', 'other'), Buffer.from('%PDF3'));
+
+    const blob = await store.get('owner1', 'a1');
+    expect(blob?.bytes.toString()).toBe('%PDF-');
+    expect(await store.get('owner2', 'a1')).toBeNull(); // owner-scoped
+    expect((await store.list('owner1', 't1')).map((a) => a.id)).toEqual(['a1']);
+
+    await store.removeForTalent('owner1', 't1');
+    expect(await store.get('owner1', 'a1')).toBeNull();
+    expect(await store.get('owner1', 'a2')).not.toBeNull();
+
+    await store.removeForOwner('owner1');
+    expect(await store.get('owner1', 'a2')).toBeNull();
+    expect(await store.get('other', 'a3')).not.toBeNull(); // other owner untouched
   });
 });

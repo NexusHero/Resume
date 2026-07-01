@@ -15,6 +15,8 @@ import {
   userToRow,
   rowToTalentDocuments,
   talentDocumentsToRow,
+  rowToAttachment,
+  attachmentToRow,
 } from '../../src/adapters/sql/mappers';
 import type { Application, AuditEvent } from '../../src/domain/application';
 import type { SavedSearch } from '../../src/domain/saved-search';
@@ -23,6 +25,7 @@ import type { Talent } from '../../src/domain/talent';
 import type { Placement } from '../../src/domain/placement';
 import type { User } from '../../src/domain/user';
 import type { TalentDocuments } from '../../src/domain/talent-documents';
+import type { Attachment } from '../../src/domain/attachment';
 
 describe('application mappers', () => {
   it('Application_RoundTrips_PreservingNullAndUndefined', () => {
@@ -255,5 +258,22 @@ describe('talent-documents mappers', () => {
       updatedAt: '2026-06-25T10:00:00.000Z',
     };
     expect(rowToTalentDocuments(talentDocumentsToRow(documents))).toEqual(documents);
+  });
+});
+
+describe('attachment mappers', () => {
+  it('Attachment_RoundTrips_MetadataAndCarriesBase64Data', () => {
+    const attachment: Attachment = {
+      id: 'a1',
+      ownerId: 'owner1',
+      talentId: 't1',
+      name: 'Zeugnis.pdf',
+      contentType: 'application/pdf',
+      size: 1234,
+      createdAt: '2026-06-25T10:00:00.000Z',
+    };
+    const row = attachmentToRow(attachment, 'ZGF0YQ==');
+    expect(row.data).toBe('ZGF0YQ==');
+    expect(rowToAttachment(row)).toEqual(attachment); // meta round-trips (no bytes)
   });
 });

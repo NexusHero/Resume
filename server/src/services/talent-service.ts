@@ -2,12 +2,14 @@ import { type Talent, type CreateTalentInput, type UpdateTalentInput } from '../
 import { NotFoundError } from '../domain/errors';
 import type { TalentRepository } from '../ports/talent-repository';
 import type { DocumentRepository } from '../ports/document-repository';
+import type { AttachmentStore } from '../ports/attachment-store';
 import type { Clock } from '../ports/clock';
 import type { IdGenerator } from '../ports/id-generator';
 
 export interface TalentServiceDeps {
   talentRepository: TalentRepository;
   documentRepository: DocumentRepository;
+  attachmentStore: AttachmentStore;
   clock: Clock;
   idGenerator: IdGenerator;
 }
@@ -16,12 +18,14 @@ export interface TalentServiceDeps {
 export class TalentService {
   private readonly repo: TalentRepository;
   private readonly documents: DocumentRepository;
+  private readonly attachments: AttachmentStore;
   private readonly clock: Clock;
   private readonly ids: IdGenerator;
 
   constructor(deps: TalentServiceDeps) {
     this.repo = deps.talentRepository;
     this.documents = deps.documentRepository;
+    this.attachments = deps.attachmentStore;
     this.clock = deps.clock;
     this.ids = deps.idGenerator;
   }
@@ -67,7 +71,8 @@ export class TalentService {
   async remove(ownerId: string, id: string): Promise<void> {
     const removed = await this.repo.remove(ownerId, id);
     if (!removed) throw new NotFoundError(`Talent ${id} not found`);
-    // Cascade: a talent's documents go with it.
+    // Cascade: a talent's documents and attachments go with it.
     await this.documents.removeForTalent(ownerId, id);
+    await this.attachments.removeForTalent(ownerId, id);
   }
 }

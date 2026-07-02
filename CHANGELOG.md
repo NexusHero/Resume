@@ -8,6 +8,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [1.0.0] - 2026-07-02
+
+The first stable release: the full recruiting workspace (mandates, talent pool,
+pipeline, placements, reports), the document editor with PDF/dossier export and
+AI assistance, team accounts with roles, DSGVO tooling — self-hosted fonts, no
+sample-data pretence, and every AI feature with an honest offline fallback.
+
 ### Added
 
 - **Skills that power Matching** — the Add-talent form takes comma-separated skills, and
@@ -24,12 +33,6 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
   Matching shows a "Sample postings" hint when no live job source is configured.
 - **Dated cover letter** — the exported PDF letter carries a "City, date" line whose locale
   follows the letter's language (German Anschreiben → German date), matching the preview.
-
-### Changed
-
-- **Inbox hidden** — the placeholder Inbox view is out of the navigation until it is wired
-  to a real mail source.
-
 - **Job-language AI output** — generated candidate-facing documents (pitch, outreach,
   cover letter, CV suggestions) follow the **language of the job ad / candidate material**
   (German posting → German application), detected deterministically offline
@@ -50,28 +53,6 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
   (FR/NFR), [use cases](docs/use-cases.md), and an [architecture decision log](docs/adr)
   (ADR-0001…0010); `docs/architecture.md` refreshed to the current recruiting/AI suite; the
   README's features + REST API surface brought current.
-
-### Changed
-
-- **Quality-audit pass (roadmap 0.9)** — a three-dimension review (clean code,
-  architecture conformance, UX walkthrough) plus the resulting fixes: real personal data
-  and dead sample constants removed from the shipped bundle; the talent profile now loads
-  the candidate's real documents/attachments instead of always claiming none exist; the
-  Matching manual-mode filter fixed; the remaining German UI chrome translated; the CV
-  parse prompt anglicized and the `suggest` feature made language-aware; the
-  `DocumentAiService` LLM scaffold collapsed into `runLlm()`/`generateAndMeter()`; five
-  duplicated `candidateFacts` builders unified; `Editor.jsx` split into focused modules;
-  scope/user naming drift and dead exports cleaned up. Branch coverage rose to ~91.5 %.
-
-- **SOLID cleanup (`core/`)** — split PDF merging out of `PdfRenderer` into its own `PdfMerger`
-  port + `PdfLibMerger` adapter (ISP), and moved `slug()` into `domain/slug.ts` (SRP). Pure
-  refactor, no behaviour change; branch coverage on the service rose to 100%.
-- **English end-to-end** — the launcher and the **myJob** apps (recruiting workspace + applicant
-  app) are now fully English (UI labels, sample data and copy). The CV / cover-letter pages keep
-  their EN/DE toggle.
-
-### Added
-
 - **UI acceptance tests** with **Playwright** (`npm run test:e2e`) — boot the real server and
   drive the launcher and the recruiting workspace in a browser; wired into CI.
 - Tag-triggered **release** builds a downloadable, runnable per-OS artifact (compiled
@@ -94,9 +75,29 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
   the first PlantUML system-context diagram.
 - **We now merge only via Pull Request — no direct pushes to `main`.**
 
+### Changed
+
+- **Inbox hidden** — the placeholder Inbox view is out of the navigation until it is wired
+  to a real mail source.
+- **Quality-audit pass (roadmap 0.9)** — a three-dimension review (clean code,
+  architecture conformance, UX walkthrough) plus the resulting fixes: real personal data
+  and dead sample constants removed from the shipped bundle; the talent profile now loads
+  the candidate's real documents/attachments instead of always claiming none exist; the
+  Matching manual-mode filter fixed; the remaining German UI chrome translated; the CV
+  parse prompt anglicized and the `suggest` feature made language-aware; the
+  `DocumentAiService` LLM scaffold collapsed into `runLlm()`/`generateAndMeter()`; five
+  duplicated `candidateFacts` builders unified; `Editor.jsx` split into focused modules;
+  scope/user naming drift and dead exports cleaned up. Branch coverage rose to ~91.5 %.
+- **SOLID cleanup (`core/`)** — split PDF merging out of `PdfRenderer` into its own `PdfMerger`
+  port + `PdfLibMerger` adapter (ISP), and moved `slug()` into `domain/slug.ts` (SRP). Pure
+  refactor, no behaviour change; branch coverage on the service rose to 100%.
+- **English end-to-end** — the launcher and the **myJob** apps (recruiting workspace + applicant
+  app) are now fully English (UI labels, sample data and copy). The CV / cover-letter pages keep
+  their EN/DE toggle.
+
 <!-- Add a new entry when cutting a release:
 
-## [1.0.0] - YYYY-MM-DD
+## [x.y.z] - YYYY-MM-DD
 
 ### Added
 ### Changed

@@ -28,6 +28,7 @@ import type { User, Role } from '../../src/domain/user';
 import type { UserRepository } from '../../src/ports/user-repository';
 import type { PasswordHasher } from '../../src/ports/password-hasher';
 import type { PasswordResetTokenStore } from '../../src/ports/password-reset-token-store';
+import type { EmailVerificationTokenStore } from '../../src/ports/email-verification-token-store';
 import type { Mailer, MailMessage } from '../../src/ports/mailer';
 import type { ApiKeyStore } from '../../src/ports/api-key-store';
 import type { LlmProviderId } from '../../src/ports/llm-provider';
@@ -363,10 +364,33 @@ export class InMemoryUserRepository implements UserRepository {
   async updateRoles(id: string, roles: Role[]): Promise<void> {
     this.users = this.users.map((u) => (u.id === id ? { ...u, roles } : u));
   }
+  async markVerified(id: string, at: string): Promise<void> {
+    this.users = this.users.map((u) => (u.id === id ? { ...u, verifiedAt: at } : u));
+  }
   async remove(id: string): Promise<boolean> {
     const before = this.users.length;
     this.users = this.users.filter((u) => u.id !== id);
     return this.users.length < before;
+  }
+}
+
+/** In-memory one-time email-verification tokens (deterministic tests). */
+export class InMemoryEmailVerificationTokenStore implements EmailVerificationTokenStore {
+  tokens: { token: string; userId: string }[] = [];
+  private seq = 0;
+  async create(userId: string): Promise<string> {
+    const token = `verify-token-${(this.seq += 1)}`;
+    this.tokens.push({ token, userId });
+    return token;
+  }
+  async consume(token: string): Promise<string | null> {
+    const record = this.tokens.find((t) => t.token === token);
+    if (!record) return null;
+    this.tokens = this.tokens.filter((t) => t.token !== token);
+    return record.userId;
+  }
+  async destroyForUser(userId: string): Promise<void> {
+    this.tokens = this.tokens.filter((t) => t.userId !== userId);
   }
 }
 

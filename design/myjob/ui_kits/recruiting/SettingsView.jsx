@@ -373,7 +373,43 @@ function UsageCard() {
   );
 }
 
-function SettingsView() {
+function EmailVerificationCard({ user }) {
+  const [state, setState] = React.useState('idle'); // idle | sending | sent | error
+  if (!user) return null;
+  const verified = !!user.verifiedAt;
+  const resend = () => {
+    setState('sending');
+    window.RecruitApi.requestEmailVerification()
+      .then(() => setState('sent'))
+      .catch(() => setState('error'));
+  };
+  return (
+    <div style={{ background: 'var(--surface-card)', border: `1px solid ${verified ? 'var(--border)' : 'var(--accent-border)'}`, borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '16px 24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <SV.Icon name={verified ? 'check' : 'mail'} size={16} style={{ color: verified ? 'var(--status-hired-strong)' : 'var(--accent-strong)', flexShrink: 0 }} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-heading)' }}>
+          {verified ? 'Email address confirmed' : 'Confirm your email address'}
+        </div>
+        <div style={{ fontSize: '12px', color: 'var(--text-soft)', marginTop: '1px' }}>
+          {verified
+            ? `${user.email} is verified.`
+            : state === 'sent'
+              ? `Sent — check ${user.email} and click the link.`
+              : state === 'error'
+                ? 'Could not send the email. Try again in a moment.'
+                : `We'll send a confirmation link to ${user.email}. Nothing is locked meanwhile.`}
+        </div>
+      </div>
+      {!verified && (
+        <SV.Button variant="outline" size="sm" disabled={state === 'sending'} onClick={resend}>
+          {state === 'sending' ? 'Sending…' : state === 'sent' ? 'Send again' : 'Send link'}
+        </SV.Button>
+      )}
+    </div>
+  );
+}
+
+function SettingsView({ user }) {
   const [settings, setSettings] = React.useState(null); // { current, providers }
   const [keys, setKeys] = React.useState({});
   const [busy, setBusy] = React.useState(false);
@@ -416,6 +452,7 @@ function SettingsView() {
 
   return (
     <div style={{ maxWidth: '780px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+      <EmailVerificationCard user={user} />
       <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '22px 24px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
           <div style={{ flex: 1 }}>

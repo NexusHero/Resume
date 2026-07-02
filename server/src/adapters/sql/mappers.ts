@@ -265,6 +265,7 @@ export function rowToUser(row: UserRow): User {
     passwordHash: row.passwordHash,
     roles: (Array.isArray(row.roles) && row.roles.length ? row.roles : ['recruiter']) as Role[],
     createdAt: row.createdAt,
+    ...(row.verifiedAt ? { verifiedAt: row.verifiedAt } : {}),
   };
 }
 
@@ -275,6 +276,7 @@ export function userToRow(user: User): UserInsert {
     passwordHash: user.passwordHash,
     roles: user.roles,
     createdAt: user.createdAt,
+    ...(user.verifiedAt ? { verifiedAt: user.verifiedAt } : {}),
   };
 }
 

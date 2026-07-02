@@ -9,6 +9,7 @@ import { SqlPlacementRepository } from '../../src/adapters/sql/sql-placement-rep
 import { SqlUserRepository } from '../../src/adapters/sql/sql-user-repository';
 import { SqlSessionStore } from '../../src/adapters/sql/sql-session-store';
 import { SqlPasswordResetTokenStore } from '../../src/adapters/sql/sql-password-reset-token-store';
+import { SqlEmailVerificationTokenStore } from '../../src/adapters/sql/sql-email-verification-token-store';
 import { SqlApiKeyStore } from '../../src/adapters/sql/sql-api-key-store';
 import { SqlDocumentRepository } from '../../src/adapters/sql/sql-document-repository';
 import { SqlAttachmentStore } from '../../src/adapters/sql/sql-attachment-store';
@@ -235,6 +236,32 @@ suite('SQL repositories (real Postgres)', () => {
     };
     const config = loadConfig({}); // 60-minute reset TTL
     const store = new SqlPasswordResetTokenStore({ db, clock, config });
+
+    const t1 = await store.create('u1');
+    expect(await store.consume(t1)).toBe('u1'); // single-use
+    expect(await store.consume(t1)).toBeNull(); // already consumed
+
+    // destroyForUser drops outstanding tokens
+    await store.create('u1');
+    await store.destroyForUser('u1');
+    const other = await store.create('u2');
+    expect(await store.consume(other)).toBe('u2');
+
+    // expiry: a token past the TTL is rejected
+    const old = await store.create('u3');
+    nowIso = '2026-01-01T02:00:00.000Z'; // > 60 minutes later
+    expect(await store.consume(old)).toBeNull();
+  });
+
+  it('EmailVerificationTokens_CreateConsumeDestroy_RespectExpiry', async () => {
+    let nowIso = '2026-01-01T00:00:00.000Z';
+    const clock = {
+      isoNow: () => nowIso,
+      now: () => new Date(nowIso),
+      today: () => nowIso.slice(0, 10),
+    };
+    const config = loadConfig({}); // 60-minute TTL (shared with reset tokens)
+    const store = new SqlEmailVerificationTokenStore({ db, clock, config });
 
     const t1 = await store.create('u1');
     expect(await store.consume(t1)).toBe('u1'); // single-use

@@ -42,6 +42,7 @@ import { DocumentService } from '../../src/services/document-service';
 import { DocumentAiService } from '../../src/services/document-ai-service';
 import { AttachmentService } from '../../src/services/attachment-service';
 import { AuthService } from '../../src/services/auth-service';
+import { EmailVerificationService } from '../../src/services/email-verification-service';
 import { MembersService } from '../../src/services/members-service';
 import { AccountService } from '../../src/services/account-service';
 import { PasswordResetService } from '../../src/services/password-reset-service';
@@ -69,6 +70,7 @@ import {
   InMemoryUsageMeter,
   InMemoryInterviewObservationRepository,
   InMemoryPasswordResetTokenStore,
+  InMemoryEmailVerificationTokenStore,
   RecordingMailer,
   fakePasswordHasher,
   FakePdfRenderer,
@@ -85,6 +87,7 @@ function makeApp(
   opts: {
     mailer?: RecordingMailer;
     passwordResetTokenStore?: InMemoryPasswordResetTokenStore;
+    emailVerificationTokenStore?: InMemoryEmailVerificationTokenStore;
   } = {},
 ): Express {
   const service = new ApplicationService({
@@ -256,6 +259,8 @@ function makeApp(
     }),
   });
   const placementController = new PlacementController({ placementService });
+  const emailVerificationTokenStore =
+    opts.emailVerificationTokenStore ?? new InMemoryEmailVerificationTokenStore();
   const authController = new AuthController({
     authService: new AuthService({
       userRepository,
@@ -263,6 +268,14 @@ function makeApp(
       passwordHasher: fakePasswordHasher,
       clock: new FixedClock(),
       idGenerator: new SequenceIdGenerator('user'),
+    }),
+    emailVerificationService: new EmailVerificationService({
+      userRepository,
+      emailVerificationTokenStore,
+      mailer,
+      logger: noopLogger,
+      clock: new FixedClock(),
+      config,
     }),
     config,
   });
@@ -1554,7 +1567,8 @@ describe('REST API /api/v1', () => {
       .post('/api/v1/auth/password-reset/request')
       .send({ email: 'reset@example.com' });
     expect(req.status).toBe(202);
-    expect(mailer.sent).toHaveLength(1);
+    // register fires a verification mail too, so filter for the reset one
+    expect(mailer.sent.filter((m) => m.subject.startsWith('Reset'))).toHaveLength(1);
     const token = tokens.tokens[0]!.token;
 
     const confirm = await request(resetApp)
@@ -1581,6 +1595,43 @@ describe('REST API /api/v1', () => {
       .send({ email: 'ghost@example.com' });
     expect(res.status).toBe(202); // never reveals that the account is unknown
     expect(mailer.sent).toEqual([]);
+  });
+
+  it('VerifyEmail_RequestThenConfirm_MarksAccountVerified', async () => {
+    const mailer = new RecordingMailer();
+    const tokens = new InMemoryEmailVerificationTokenStore();
+    const verifyApp = makeApp(loadConfig({}), { mailer, emailVerificationTokenStore: tokens });
+    const agent = request.agent(verifyApp);
+    await agent
+      .post('/api/v1/auth/register')
+      .send({ email: 'verify@example.com', password: 'supersecret' });
+
+    // Arrange: explicit resend (awaited server-side, unlike the register send)
+    const req = await agent.post('/api/v1/auth/verify-email/request');
+    expect(req.status).toBe(202);
+    const verifyMail = mailer.sent.find((m) => m.subject.startsWith('Confirm'));
+    expect(verifyMail).toBeDefined();
+    const token = tokens.tokens[tokens.tokens.length - 1]!.token;
+    expect(verifyMail!.text).toContain('verify_token=');
+
+    // Act
+    const confirm = await agent.post('/api/v1/auth/verify-email/confirm').send({ token });
+    // Assert: 204 and /auth/me now carries verifiedAt
+    expect(confirm.status).toBe(204);
+    const me = await agent.get('/api/v1/auth/me');
+    expect(me.body.user.verifiedAt).toBeDefined();
+  });
+
+  it('VerifyEmail_BadToken_Returns401', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/verify-email/confirm')
+      .send({ token: 'not-a-real-token' });
+    expect(res.status).toBe(401);
+  });
+
+  it('VerifyEmail_RequestWithoutSession_Returns401', async () => {
+    const res = await request(app).post('/api/v1/auth/verify-email/request');
+    expect(res.status).toBe(401);
   });
 
   it('PasswordReset_BadToken_Returns401', async () => {

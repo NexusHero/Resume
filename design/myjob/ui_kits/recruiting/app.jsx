@@ -87,6 +87,8 @@ function Workspace({ user, onLogout }) {
   const [editing, setEditing] = React.useState(null);
   // Which create form is open ('mandate' | 'talent' | 'placement' | null).
   const [formKind, setFormKind] = React.useState(null);
+  // Optional seed values for the create form (mandate drafted from a posting).
+  const [formPrefill, setFormPrefill] = React.useState(null);
   // The record being edited, as { kind, id, values } — null when not editing.
   const [editRecord, setEditRecord] = React.useState(null);
   // Live data sources. Each tracks loading/error and never falls back to
@@ -127,6 +129,24 @@ function Workspace({ user, onLogout }) {
   );
 
   const addMandate = () => setFormKind('mandate');
+  // Matching hands a live posting over; the mandate form opens pre-filled and
+  // carries the ad text so matching/ATS/prep work from day one.
+  const mandateFromJob = (job) => {
+    setFormPrefill({
+      client: job.company || '',
+      role: job.title || '',
+      location: job.location || '',
+      jobText: [
+        `${job.title}${job.company ? ' — ' + job.company : ''}`,
+        job.location,
+        job.req && job.req.length ? `Skills: ${job.req.join(', ')}` : '',
+        job.url,
+      ]
+        .filter(Boolean)
+        .join('\n'),
+    });
+    setFormKind('mandate');
+  };
   const addTalent = () => setFormKind('talent');
   const addPlacement = () => setFormKind('placement');
 
@@ -237,7 +257,7 @@ function Workspace({ user, onLogout }) {
     if (nav === 'uebersicht') body = <window.Dashboard me={me} apps={apps} vkpis={vkpis} clients={clients} mandates={mandates} onOpenTalent={goTalent} onOpenPipeline={() => setNav('bewerbungen')} onOpenMandate={() => setNav('mandate')} />;
     else if (nav === 'mandate') body = withState(mandatesRes, <window.MandateView mandates={mandates} onEdit={editMandate} onOpenPipeline={goPipeline} />);
     else if (nav === 'pool') body = withState(talentsRes, <window.TalentGrid talents={talents} apps={apps} onOpen={goTalent} onAdd={addTalent} />);
-    else if (nav === 'matching') body = <window.Matching talents={talents} />;
+    else if (nav === 'matching') body = <window.Matching talents={talents} onCreateMandate={mandateFromJob} />;
     else if (nav === 'bewerbungen') body = (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '100%' }}>
         <window.PipelineBoard apps={apps} talents={talents} onOpen={goTalent} />
@@ -246,7 +266,7 @@ function Workspace({ user, onLogout }) {
     else if (nav === 'platzierungen') body = withState(placementsRes, <window.PlatzierungenView placements={placements} kpis={vkpis} onEdit={editPlacement} />);
     else if (nav === 'berichte') body = <window.ReportsView clients={reportClients} mandates={mandates} placements={placements} apps={apps} kpis={vkpis} />;
     else if (nav === 'postfach') body = <window.Inbox messages={messages} apps={apps} talents={talents} onOpenTalent={goTalent} />;
-    else if (nav === 'einstellungen') body = <window.SettingsView />;
+    else if (nav === 'einstellungen') body = <window.SettingsView user={user} />;
   }
 
   const actions = (!talent && (nav === 'bewerbungen' || nav === 'uebersicht'))
@@ -264,7 +284,8 @@ function Workspace({ user, onLogout }) {
       {formKind && (
         <window.RecordFormModal
           kind={formKind}
-          onClose={() => setFormKind(null)}
+          prefill={formPrefill}
+          onClose={() => { setFormKind(null); setFormPrefill(null); }}
           onSubmit={(values) => submitForm(formKind, values)}
         />
       )}
@@ -285,15 +306,34 @@ function Workspace({ user, onLogout }) {
 function App() {
   const [auth, setAuth] = React.useState({ status: 'loading', user: null });
   const [providers, setProviders] = React.useState({ google: false, linkedin: false });
+  // Result of a ?verify_token= link click — shown on the login screen.
+  const [verifyNotice, setVerifyNotice] = React.useState(null);
 
   React.useEffect(() => {
     let alive = true;
+    // An emailed verification link opens the app with ?verify_token= — confirm
+    // it first (works signed-in or out), then load the session so verifiedAt
+    // is already stamped when /auth/me answers.
+    const verifyToken = (() => {
+      try { return new URLSearchParams(window.location.search).get('verify_token') || ''; }
+      catch { return ''; }
+    })();
+    const verify = verifyToken
+      ? window.RecruitApi.confirmEmailVerification(verifyToken)
+          .then(() => { if (alive) setVerifyNotice({ ok: true, text: 'Your email address is confirmed.' }); })
+          .catch((e) => { if (alive) setVerifyNotice({ ok: false, text: (e && e.message) || 'Verification failed.' }); })
+          .finally(() => {
+            try { window.history.replaceState({}, '', window.location.pathname); } catch { /* ignore */ }
+          })
+      : Promise.resolve();
     window.RecruitApi.authProviders()
       .then((p) => { if (alive) setProviders(p); })
       .catch(() => {});
-    window.RecruitApi.authMe()
-      .then((user) => { if (alive) setAuth({ status: 'ready', user }); })
-      .catch(() => { if (alive) setAuth({ status: 'ready', user: null }); });
+    verify.then(() =>
+      window.RecruitApi.authMe()
+        .then((user) => { if (alive) setAuth({ status: 'ready', user }); })
+        .catch(() => { if (alive) setAuth({ status: 'ready', user: null }); }),
+    );
     return () => { alive = false; };
   }, []);
 
@@ -302,6 +342,7 @@ function App() {
     return (
       <window.LoginScreen
         providers={providers}
+        initialNotice={verifyNotice ? verifyNotice.text : null}
         onAuthed={(user) => setAuth({ status: 'ready', user })}
       />
     );

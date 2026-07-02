@@ -48,6 +48,7 @@ import { AuthService } from './services/auth-service';
 import { MembersService } from './services/members-service';
 import { AccountService } from './services/account-service';
 import { PasswordResetService } from './services/password-reset-service';
+import { EmailVerificationService } from './services/email-verification-service';
 import { ApplicationController } from './http/application-controller';
 import { JobController } from './http/job-controller';
 import { AtsController } from './http/ats-controller';
@@ -98,6 +99,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     userRepository: asValue(persistence.userRepository),
     sessionStore: asValue(persistence.sessionStore),
     passwordResetTokenStore: asValue(persistence.passwordResetTokenStore),
+    emailVerificationTokenStore: asValue(persistence.emailVerificationTokenStore),
     apiKeyStore: asValue(persistence.apiKeyStore),
     usageMeter: asValue(persistence.usageMeter),
     interviewObservationRepository: asValue(persistence.interviewObservationRepository),
@@ -151,6 +153,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     membersService: asClass(MembersService).singleton(),
     accountService: asClass(AccountService).singleton(),
     passwordResetService: asClass(PasswordResetService).singleton(),
+    emailVerificationService: asClass(EmailVerificationService).singleton(),
     applicationController: asClass(ApplicationController).singleton(),
     jobController: asClass(JobController).singleton(),
     atsController: asClass(AtsController).singleton(),

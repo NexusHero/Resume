@@ -37,7 +37,7 @@ function SocialButton({ href, mark, children }) {
   );
 }
 
-function LoginScreen({ providers, onAuthed }) {
+function LoginScreen({ providers, onAuthed, initialNotice }) {
   const initialToken = React.useState(readResetToken)[0];
   // modes: 'login' | 'register' | 'forgot' | 'reset'
   const [mode, setMode] = React.useState(initialToken ? 'reset' : 'login');
@@ -45,7 +45,7 @@ function LoginScreen({ providers, onAuthed }) {
   const [password, setPassword] = React.useState('');
   const [confirm, setConfirm] = React.useState('');
   const [error, setError] = React.useState(null);
-  const [notice, setNotice] = React.useState(null);
+  const [notice, setNotice] = React.useState(initialNotice || null);
   const [loading, setLoading] = React.useState(false);
 
   const isRegister = mode === 'register';

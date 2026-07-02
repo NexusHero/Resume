@@ -187,6 +187,20 @@ const RecruitApi = {
   async authLogout() {
     await fetch(`${RECRUIT_API_BASE}/auth/logout`, { method: 'POST' });
   },
+  async requestEmailVerification() {
+    const res = await fetch(`${RECRUIT_API_BASE}/auth/verify-email/request`, { method: 'POST' });
+    if (!res.ok)
+      throw new Error((await res.json().catch(() => ({}))).detail || 'Could not send the email');
+  },
+  async confirmEmailVerification(token) {
+    const res = await fetch(`${RECRUIT_API_BASE}/auth/verify-email/confirm`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ token }),
+    });
+    if (!res.ok)
+      throw new Error((await res.json().catch(() => ({}))).detail || 'Verification failed');
+  },
   async requestPasswordReset(email) {
     // Always resolves (the server replies 202 whether or not the email exists).
     await fetch(`${RECRUIT_API_BASE}/auth/password-reset/request`, {

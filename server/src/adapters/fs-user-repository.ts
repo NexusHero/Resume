@@ -57,6 +57,12 @@ export class FsUserRepository implements UserRepository {
     await this.write(next);
   }
 
+  async markVerified(id: string, at: string): Promise<void> {
+    const all = await this.list();
+    const next = all.map((u) => (u.id === id ? { ...u, verifiedAt: at } : u));
+    await this.write(next);
+  }
+
   async remove(id: string): Promise<boolean> {
     const all = await this.list();
     const next = all.filter((u) => u.id !== id);

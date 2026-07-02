@@ -46,7 +46,7 @@ interface ProviderStub {
   generate?: (input: LlmGenerateInput) => Promise<string>;
 }
 
-function ctx(stub: ProviderStub = {}, pdfText: string | Error = '') {
+function ctx(stub: ProviderStub = {}, pdfText: string | Error = '', logger = noopLogger) {
   const talents = new InMemoryTalentRepository();
   const documents = new InMemoryDocumentRepository();
   const keys = new InMemoryApiKeyStore();
@@ -86,7 +86,7 @@ function ctx(stub: ProviderStub = {}, pdfText: string | Error = '') {
     usageMeter,
     interviewObservationRepository: observations,
     clock: new FixedClock(),
-    logger: noopLogger,
+    logger,
   });
   return {
     service,
@@ -689,6 +689,22 @@ describe('DocumentAiService.candidatePrep', () => {
     expect(res.provider).toBe('template');
     expect(res.likelyQuestions.length).toBeGreaterThan(0);
     expect(res.companyLabel).toBe('US Big Tech');
+  });
+
+  it('TruncatedReply_LogsWarningAndFallsBack', async () => {
+    // A reply cut off mid-JSON (e.g. by the token budget) must not be a
+    // silent template fallback — the warn log is what makes it diagnosable.
+    const warns: string[] = [];
+    const logger = { ...noopLogger, warn: (_ctx: unknown, msg?: string) => warns.push(msg ?? '') };
+    const c = ctx(
+      { available: true, generate: async () => '{"likelyQuestions":[{"category":"Fa' },
+      '',
+      logger,
+    );
+    await c.talents.add(talent('t1'));
+    const res = await c.service.candidatePrep(OWNER, OWNER, 't1', mandate, ad);
+    expect(res.provider).toBe('template');
+    expect(warns.some((m) => m.includes('did not match the expected schema'))).toBe(true);
   });
 
   it('ObservationsOverrideArchetypeConfidence', async () => {

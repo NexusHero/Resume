@@ -49,7 +49,13 @@ export class GeminiLlmProvider implements LlmProvider {
       body: JSON.stringify({
         ...(input.system ? { systemInstruction: { parts: [{ text: input.system }] } } : {}),
         contents: [{ role: 'user', parts: [{ text: input.prompt }] }],
-        generationConfig: { maxOutputTokens: input.maxTokens ?? 1024 },
+        generationConfig: {
+          maxOutputTokens: input.maxTokens ?? 1024,
+          // Gemini 2.5 spends "thinking" tokens inside maxOutputTokens; with
+          // our tight budgets that truncates the visible reply (and breaks
+          // JSON parsing). These are short, structured tasks — disable it.
+          thinkingConfig: { thinkingBudget: 0 },
+        },
       }),
     });
     if (res.status === 400 || res.status === 401 || res.status === 403) {

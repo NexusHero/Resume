@@ -1,7 +1,7 @@
 import { DocumentAiService } from '../../src/services/document-ai-service';
 import { DocumentService } from '../../src/services/document-service';
 import { LlmService } from '../../src/services/llm-service';
-import { NotFoundError } from '../../src/domain/errors';
+import { NotFoundError, ValidationError } from '../../src/domain/errors';
 import type { LlmGenerateInput, LlmProvider, LlmProviderId } from '../../src/ports/llm-provider';
 import {
   InMemoryTalentRepository,
@@ -15,6 +15,7 @@ import {
   noopLogger,
 } from '../support/fakes';
 import type { Talent } from '../../src/domain/talent';
+import { saveDocumentsSchema } from '../../src/domain/talent-documents';
 
 const OWNER = 'owner1';
 const talent = (id: string): Talent => ({
@@ -85,8 +86,34 @@ function ctx(stub: ProviderStub = {}, pdfText: string | Error = '') {
     clock: new FixedClock(),
     logger: noopLogger,
   });
-  return { service, talents, keys, usageMeter, observations, getUsedKey: () => usedKey };
+  return {
+    service,
+    talents,
+    keys,
+    usageMeter,
+    observations,
+    documentService,
+    getUsedKey: () => usedKey,
+  };
 }
+
+/** A document set whose resume clearly reads as German (drives language detection). */
+const germanDocuments = saveDocumentsSchema.parse({
+  contact: { name: 'Lena', role: 'Produktdesignerin' },
+  resume: {
+    summary:
+      'Erfahrene Designerin mit abgeschlossenem Studium und langjähriger Erfahrung ' +
+      'in anspruchsvollen Projekten für internationale Unternehmen.',
+    experience: [
+      {
+        role: 'Designerin',
+        company: 'Aurora',
+        bullets: ['Gestaltung und Pflege der Design-Systeme für die wichtigsten Produkte'],
+      },
+    ],
+    skillGroups: [{ label: 'Werkzeuge', items: ['Figma'] }],
+  },
+});
 
 describe('DocumentAiService', () => {
   it('Suggest_WithUserKey_UsesProviderAndForwardsKey', async () => {
@@ -155,6 +182,61 @@ describe('DocumentAiService', () => {
     await c.talents.add(talent('t1'));
     await c.service.suggest(OWNER, OWNER, 't1', 'summary');
     expect(c.usageMeter.events).toHaveLength(0);
+  });
+
+  it('Suggest_GermanCv_FallsBackToGermanTemplates', async () => {
+    const c = ctx(); // no provider → deterministic fallback
+    await c.talents.add(talent('t1'));
+    await c.documentService.save(OWNER, 't1', germanDocuments);
+
+    const summary = await c.service.suggest(OWNER, OWNER, 't1', 'summary');
+    expect(summary.provider).toBe('template');
+    expect(summary.text).toContain('Produktdesignerin');
+    expect(summary.text).toContain('lösungsorientiert');
+
+    const letter = await c.service.suggest(OWNER, OWNER, 't1', 'letter', {
+      role: 'Lead Designerin',
+      company: 'Helio',
+    });
+    expect(letter.provider).toBe('template');
+    expect(letter.paragraphs).toHaveLength(3);
+    expect(letter.paragraphs?.[0]).toContain('bewerbe ich mich');
+    expect(letter.paragraphs?.[0]).toContain('bei Helio');
+  });
+
+  it('Suggest_GermanCv_PromptsCarryGermanDirective', async () => {
+    const systems: string[] = [];
+    const c = ctx({
+      available: true,
+      generate: async (input) => {
+        systems.push(input.system);
+        return 'Ein Vorschlag.';
+      },
+    });
+    await c.talents.add(talent('t1'));
+    await c.documentService.save(OWNER, 't1', germanDocuments);
+
+    await c.service.suggest(OWNER, OWNER, 't1', 'summary');
+    await c.service.suggest(OWNER, OWNER, 't1', 'letter');
+    expect(systems).toHaveLength(2);
+    for (const system of systems) {
+      expect(system).toContain('Antworte ausschließlich auf Deutsch.');
+    }
+  });
+
+  it('Suggest_EnglishCv_PromptsCarryEnglishDirective', async () => {
+    const systems: string[] = [];
+    const c = ctx({
+      available: true,
+      generate: async (input) => {
+        systems.push(input.system);
+        return 'A suggestion.';
+      },
+    });
+    await c.talents.add(talent('t1')); // empty docs → detection falls back to 'en'
+
+    await c.service.suggest(OWNER, OWNER, 't1', 'summary');
+    expect(systems[0]).toContain('Respond in English only.');
   });
 
   it('Suggest_MeteringFailure_DoesNotBreakTheSuggestion', async () => {
@@ -635,6 +717,65 @@ describe('DocumentAiService.candidatePrep', () => {
     const c = ctx();
     await expect(
       c.service.candidatePrep(OWNER, OWNER, 'missing', mandate, ad),
+    ).rejects.toBeInstanceOf(NotFoundError);
+  });
+});
+
+describe('DocumentAiService.translateDocuments', () => {
+  const TRANSLATED = JSON.stringify({
+    resume: { summary: 'Experienced developer.' },
+    letter: { absaetze: ['Hello team'] },
+  });
+
+  it('Translate_NoProvider_ThrowsValidation', async () => {
+    const c = ctx(); // provider unavailable + no key
+    await c.talents.add(talent('t1'));
+    // Default docs are empty → detected source 'en'; translate to 'de' needs a provider.
+    await expect(c.service.translateDocuments(OWNER, OWNER, 't1', 'de')).rejects.toBeInstanceOf(
+      ValidationError,
+    );
+  });
+
+  it('Translate_SameLanguage_Throws', async () => {
+    const c = ctx({ available: true, generate: async () => TRANSLATED });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1')); // empty docs → source 'en'
+    await expect(c.service.translateDocuments(OWNER, OWNER, 't1', 'en')).rejects.toBeInstanceOf(
+      ValidationError,
+    );
+  });
+
+  it('Translate_WithProvider_CreatesAndPersistsVariant', async () => {
+    const c = ctx({ available: true, generate: async () => TRANSLATED });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+
+    const first = await c.service.translateDocuments(OWNER, OWNER, 't1', 'de');
+    expect(first.created).toBe(true);
+    expect(first.lang).toBe('de');
+    expect(first.translation.resume.summary).toBe('Experienced developer.');
+    expect(first.translation.provider).toBe('claude');
+
+    // Second call returns the persisted variant without regenerating.
+    const second = await c.service.translateDocuments(OWNER, OWNER, 't1', 'de');
+    expect(second.created).toBe(false);
+    expect(second.translation.letter.absaetze).toEqual(['Hello team']);
+  });
+
+  it('Translate_MalformedResult_Throws', async () => {
+    const c = ctx({ available: true, generate: async () => 'not json at all' });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+    await expect(c.service.translateDocuments(OWNER, OWNER, 't1', 'de')).rejects.toBeInstanceOf(
+      ValidationError,
+    );
+  });
+
+  it('Translate_UnknownTalent_Throws404', async () => {
+    const c = ctx({ available: true, generate: async () => TRANSLATED });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await expect(
+      c.service.translateDocuments(OWNER, OWNER, 'missing', 'de'),
     ).rejects.toBeInstanceOf(NotFoundError);
   });
 });

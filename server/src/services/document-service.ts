@@ -1,10 +1,12 @@
 import {
   type TalentDocuments,
+  type DocumentTranslation,
   type SaveDocumentsInput,
   defaultStyle,
   emptyResume,
   emptyLetter,
 } from '../domain/talent-documents';
+import type { OutputLang } from '../domain/language';
 import { documentsToHtml } from '../domain/documents-html';
 import { NotFoundError } from '../domain/errors';
 import type { DocumentRepository } from '../ports/document-repository';
@@ -80,6 +82,9 @@ export class DocumentService {
     const talent = await this.talents.findById(ownerId, talentId);
     if (!talent) throw new NotFoundError(`Talent ${talentId} not found`);
 
+    // Preserve any stored language variants — the editor save only carries the
+    // primary set, so translations must not be dropped on a normal save.
+    const existing = await this.docs.get(ownerId, talentId);
     const documents: TalentDocuments = {
       ownerId,
       talentId,
@@ -87,10 +92,28 @@ export class DocumentService {
       resume: input.resume,
       letter: input.letter,
       style: input.style,
+      ...(existing?.translations ? { translations: existing.translations } : {}),
       updatedAt: this.clock.isoNow(),
     };
     await this.docs.save(documents);
     return documents;
+  }
+
+  /** Store a translated language variant alongside the primary document set. */
+  async saveTranslation(
+    ownerId: string,
+    talentId: string,
+    lang: OutputLang,
+    translation: DocumentTranslation,
+  ): Promise<TalentDocuments> {
+    const documents = await this.get(ownerId, talentId); // 404s on unknown talent
+    const updated: TalentDocuments = {
+      ...documents,
+      translations: { ...(documents.translations ?? {}), [lang]: translation },
+      updatedAt: this.clock.isoNow(),
+    };
+    await this.docs.save(updated);
+    return updated;
   }
 
   /** Render the talent's saved documents (resume + cover letter) to a PDF. */

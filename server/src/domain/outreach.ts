@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { OutputLang } from './language';
 import type { TalentDocuments } from './talent-documents';
+import { candidateFacts } from './candidate-facts';
 
 /** Who the message is written to. */
 export const outreachAudiences = ['candidate', 'client'] as const;
@@ -41,27 +42,6 @@ export const outreachResultSchema = z.object({
   body: z.string().default(''),
 });
 
-function candidateFacts(documents: TalentDocuments, lang: OutputLang = 'en'): string {
-  const { contact, resume } = documents;
-  const roles = resume.experience
-    .map((e) => [e.role, e.company].filter(Boolean).join(' @ '))
-    .filter(Boolean);
-  const skills = resume.skillGroups.flatMap((g) => g.items);
-  const L =
-    lang === 'de'
-      ? { name: 'Name', role: 'Rolle', profile: 'Profil', roles: 'Stationen', skills: 'Skills' }
-      : { name: 'Name', role: 'Role', profile: 'Profile', roles: 'Experience', skills: 'Skills' };
-  return [
-    contact.name ? `${L.name}: ${contact.name}` : '',
-    contact.role ? `${L.role}: ${contact.role}` : '',
-    resume.summary ? `${L.profile}: ${resume.summary}` : '',
-    roles.length ? `${L.roles}: ${roles.join('; ')}` : '',
-    skills.length ? `${L.skills}: ${skills.join(', ')}` : '',
-  ]
-    .filter(Boolean)
-    .join('\n');
-}
-
 export function outreachPrompt(
   documents: TalentDocuments,
   opts: OutreachOptions,
@@ -98,7 +78,7 @@ export function outreachPrompt(
       'call-to-action. Do not invent facts. Return ONLY valid JSON (no explanation, no ' +
       'markdown fences): {"subject":"","body":""}.' +
       langRule,
-    prompt: `${promptLabels.candidate}:\n${candidateFacts(documents, lang)}\n\n${
+    prompt: `${promptLabels.candidate}:\n${candidateFacts(documents, { lang })}\n\n${
       promptLabels.mandate
     }:\n"""\n${opts.mandateContext || promptLabels.missing}\n"""`,
   };

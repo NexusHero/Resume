@@ -11,6 +11,7 @@ export const USAGE_FEATURES = [
   'matchExplain', // explain why a candidate fits a mandate
   'interviewKit', // generate an interview kit for a candidate + mandate
   'candidatePrep', // candidate-facing interview preparation pack
+  'translate', // translate a talent's documents into another language
 ] as const;
 export type UsageFeature = (typeof USAGE_FEATURES)[number];
 

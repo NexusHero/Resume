@@ -56,7 +56,9 @@ import {
 import { companyInterviewProfile } from '../domain/company-archetype';
 import { extractRequirements } from '../domain/job-requirements';
 import { type GroundingReport, checkGrounding, groundingSource } from '../domain/grounding';
-import { detectLanguage } from '../domain/language';
+import { detectLanguage, type OutputLang } from '../domain/language';
+import { translatePrompt, translateResultSchema } from '../domain/document-translate';
+import { ValidationError } from '../domain/errors';
 import {
   aggregateObservations,
   applyObserved,
@@ -66,6 +68,7 @@ import type { InterviewObservationRepository } from '../ports/interview-observat
 import {
   type DocumentContact,
   type ResumeContent,
+  type DocumentTranslation,
   saveDocumentsSchema,
 } from '../domain/talent-documents';
 import type { LlmProvider, LlmProviderId, TokenUsage } from '../ports/llm-provider';
@@ -110,11 +113,34 @@ export interface DocumentAiServiceDeps {
   logger: Logger;
 }
 
+/** A prompt pair produced by one of the domain prompt builders. */
+interface BuiltPrompt {
+  system: string;
+  prompt: string;
+}
+
+/** Max output tokens per generation, sized to each feature's expected reply. */
+const MAX_TOKENS = {
+  summary: 300,
+  letter: 700,
+  parse: 1500,
+  ats: 900,
+  pitch: 700,
+  outreach: 700,
+  translate: 2000,
+  matchExplain: 500,
+  interviewKit: 900,
+  candidatePrep: 1200,
+} as const;
+
 /**
- * AI assistance for the document editor: rewrite the resume summary or draft
- * cover-letter paragraphs from the talent's own facts, using the caller's
- * stored key for the current provider (falling back to the server credential,
- * then to a deterministic template — so it always returns usable text).
+ * Home of all document AI features: suggest (summary/letter rewrite), CV parse
+ * (text + PDF), ATS scoring, candidate pitch, outreach drafts, translation,
+ * match explanations, interview kits and candidate prep. Every feature resolves
+ * the caller's stored key for the current provider (falling back to the server
+ * credential), meters token spend against the caller, and — except translation,
+ * which requires a provider — degrades to a deterministic template so it always
+ * returns a usable result.
  */
 export class DocumentAiService {
   private readonly documents: DocumentService;
@@ -169,6 +195,53 @@ export class DocumentAiService {
     return active ? { provider: active } : null;
   }
 
+  /**
+   * Run one generation against a resolved provider (forwarding the caller's
+   * key when present) and meter its token spend. Generation failures propagate
+   * to the caller; metering swallows its own errors (see {@link meter}).
+   */
+  private async generateAndMeter(
+    userId: string,
+    feature: UsageFeature,
+    maxTokens: number,
+    built: BuiltPrompt,
+    resolved: { provider: LlmProvider; apiKey?: string },
+  ): Promise<{ reply: string; provider: LlmProviderId }> {
+    const { text, usage } = await resolved.provider.generate({
+      system: built.system,
+      prompt: built.prompt,
+      maxTokens,
+      ...(resolved.apiKey ? { apiKey: resolved.apiKey } : {}),
+    });
+    await this.meter(userId, resolved.provider.id, feature, usage);
+    return { reply: text, provider: resolved.provider.id };
+  }
+
+  /**
+   * The shared LLM scaffold behind every feature with a deterministic
+   * fallback: resolve a provider, generate, meter. Returns null when no
+   * provider is available or the generation fails (logged), so the caller can
+   * fall back to its template.
+   */
+  private async runLlm(
+    userId: string,
+    feature: UsageFeature,
+    maxTokens: number,
+    built: BuiltPrompt,
+  ): Promise<{ reply: string; provider: LlmProviderId } | null> {
+    const resolved = await this.resolveProvider(userId);
+    if (!resolved) return null;
+    try {
+      return await this.generateAndMeter(userId, feature, maxTokens, built, resolved);
+    } catch (err) {
+      this.logger.warn(
+        { feature, err: err instanceof Error ? err.message : String(err) },
+        'llm generation failed, falling back',
+      );
+      return null;
+    }
+  }
+
   async suggest(
     scope: string,
     userId: string,
@@ -177,34 +250,26 @@ export class DocumentAiService {
     target: DocumentAiTarget = {},
   ): Promise<DocumentAiSuggestion> {
     const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
-    const resolved = await this.resolveProvider(userId);
+    // Output language follows the candidate's own documents (CV language).
+    const lang = detectLanguage(groundingSource(documents, ''));
+    const built =
+      action === 'summary' ? summaryPrompt(documents, lang) : letterPrompt(documents, target, lang);
+    const res = await this.runLlm(
+      userId,
+      'suggest',
+      action === 'summary' ? MAX_TOKENS.summary : MAX_TOKENS.letter,
+      built,
+    );
 
-    if (resolved) {
-      try {
-        const { provider, apiKey } = resolved;
-        const built =
-          action === 'summary' ? summaryPrompt(documents) : letterPrompt(documents, target);
-        const { text, usage } = await provider.generate({
-          system: built.system,
-          prompt: built.prompt,
-          maxTokens: action === 'summary' ? 300 : 700,
-          ...(apiKey ? { apiKey } : {}),
-        });
-        await this.meter(userId, provider.id, 'suggest', usage);
-        return action === 'summary'
-          ? { action, text: text.trim(), provider: provider.id }
-          : { action, paragraphs: toParagraphs(text), provider: provider.id };
-      } catch (err) {
-        this.logger.warn(
-          { action, err: err instanceof Error ? err.message : String(err) },
-          'AI document suggestion failed, falling back to template',
-        );
-      }
+    if (res) {
+      return action === 'summary'
+        ? { action, text: res.reply.trim(), provider: res.provider }
+        : { action, paragraphs: toParagraphs(res.reply), provider: res.provider };
     }
 
     return action === 'summary'
-      ? { action, text: fallbackSummary(documents), provider: 'template' }
-      : { action, paragraphs: fallbackLetter(documents, target), provider: 'template' };
+      ? { action, text: fallbackSummary(documents, lang), provider: 'template' }
+      : { action, paragraphs: fallbackLetter(documents, target, lang), provider: 'template' };
   }
 
   /**
@@ -220,29 +285,10 @@ export class DocumentAiService {
     text: string,
   ): Promise<ParsedDocument> {
     await this.documents.get(scope, talentId); // 404s on unknown talent
-    const resolved = await this.resolveProvider(userId);
 
-    let raw: unknown = null;
-    let provider: LlmProviderId | 'template' = 'template';
-    if (resolved) {
-      try {
-        const built = parsePrompt(text);
-        const { text: reply, usage } = await resolved.provider.generate({
-          system: built.system,
-          prompt: built.prompt,
-          maxTokens: 1500,
-          ...(resolved.apiKey ? { apiKey: resolved.apiKey } : {}),
-        });
-        await this.meter(userId, resolved.provider.id, 'parse', usage);
-        raw = extractJson(reply);
-        if (raw) provider = resolved.provider.id;
-      } catch (err) {
-        this.logger.warn(
-          { err: err instanceof Error ? err.message : String(err) },
-          'CV parsing failed, falling back',
-        );
-      }
-    }
+    const res = await this.runLlm(userId, 'parse', MAX_TOKENS.parse, parsePrompt(text));
+    const raw: unknown = res ? extractJson(res.reply) : null;
+    const provider: LlmProviderId | 'template' = res && raw ? res.provider : 'template';
 
     // Validate whatever we have (LLM JSON or fallback) through the save schema,
     // which fills defaults for any missing/invalid field.
@@ -304,27 +350,11 @@ export class DocumentAiService {
     jobText: string,
   ): Promise<AtsScore & { provider: LlmProviderId | 'template' }> {
     const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
-    const resolved = await this.resolveProvider(userId);
 
-    if (resolved) {
-      try {
-        const built = atsPrompt(documents, jobText);
-        const { text: reply, usage } = await resolved.provider.generate({
-          system: built.system,
-          prompt: built.prompt,
-          maxTokens: 900,
-          ...(resolved.apiKey ? { apiKey: resolved.apiKey } : {}),
-        });
-        await this.meter(userId, resolved.provider.id, 'ats', usage);
-        const json = extractJson(reply);
-        const parsed = atsResultSchema.safeParse(json);
-        if (parsed.success) return { ...normalizeAts(parsed.data), provider: resolved.provider.id };
-      } catch (err) {
-        this.logger.warn(
-          { err: err instanceof Error ? err.message : String(err) },
-          'ATS scoring failed, falling back',
-        );
-      }
+    const res = await this.runLlm(userId, 'ats', MAX_TOKENS.ats, atsPrompt(documents, jobText));
+    if (res) {
+      const parsed = atsResultSchema.safeParse(extractJson(res.reply));
+      if (parsed.success) return { ...normalizeAts(parsed.data), provider: res.provider };
     }
 
     return { ...fallbackAts(documents, jobText), provider: 'template' };
@@ -345,7 +375,6 @@ export class DocumentAiService {
     CandidatePitch & { provider: LlmProviderId | 'template'; grounding: GroundingReport }
   > {
     const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
-    const resolved = await this.resolveProvider(userId);
     const source = groundingSource(documents, mandateContext);
     // Output language follows the job/mandate context, else the candidate's CV.
     const lang = detectLanguage(mandateContext.trim() || groundingSource(documents, ''));
@@ -358,29 +387,19 @@ export class DocumentAiService {
       grounding: checkGrounding([pitch.headline, ...pitch.paragraphs].join(' '), source),
     });
 
-    if (resolved) {
-      try {
-        const built = pitchPrompt(documents, mandateContext, lang);
-        const { text: reply, usage } = await resolved.provider.generate({
-          system: built.system,
-          prompt: built.prompt,
-          maxTokens: 700,
-          ...(resolved.apiKey ? { apiKey: resolved.apiKey } : {}),
-        });
-        await this.meter(userId, resolved.provider.id, 'pitch', usage);
-        const json = extractJson(reply);
-        const parsed = pitchResultSchema.safeParse(json);
-        if (parsed.success) {
-          const pitch = normalizePitch(parsed.data);
-          if (pitch.headline || pitch.paragraphs.length) {
-            return withGrounding(pitch, resolved.provider.id);
-          }
+    const res = await this.runLlm(
+      userId,
+      'pitch',
+      MAX_TOKENS.pitch,
+      pitchPrompt(documents, mandateContext, lang),
+    );
+    if (res) {
+      const parsed = pitchResultSchema.safeParse(extractJson(res.reply));
+      if (parsed.success) {
+        const pitch = normalizePitch(parsed.data);
+        if (pitch.headline || pitch.paragraphs.length) {
+          return withGrounding(pitch, res.provider);
         }
-      } catch (err) {
-        this.logger.warn(
-          { err: err instanceof Error ? err.message : String(err) },
-          'candidate pitch failed, falling back',
-        );
       }
     }
 
@@ -402,7 +421,6 @@ export class DocumentAiService {
     OutreachMessage & { provider: LlmProviderId | 'template'; grounding: GroundingReport }
   > {
     const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
-    const resolved = await this.resolveProvider(userId);
     const source = groundingSource(documents, opts.mandateContext ?? '');
     // Output language follows the job/mandate context, else the candidate's CV.
     const lang = detectLanguage(
@@ -414,31 +432,81 @@ export class DocumentAiService {
       grounding: checkGrounding([message.subject, message.body].join(' '), source),
     });
 
-    if (resolved) {
-      try {
-        const built = outreachPrompt(documents, opts, lang);
-        const { text: reply, usage } = await resolved.provider.generate({
-          system: built.system,
-          prompt: built.prompt,
-          maxTokens: 700,
-          ...(resolved.apiKey ? { apiKey: resolved.apiKey } : {}),
-        });
-        await this.meter(userId, resolved.provider.id, 'outreach', usage);
-        const json = extractJson(reply);
-        const parsed = outreachResultSchema.safeParse(json);
-        if (parsed.success) {
-          const message = normalizeOutreach(parsed.data, opts.channel);
-          if (message.body) return withGrounding(message, resolved.provider.id);
-        }
-      } catch (err) {
-        this.logger.warn(
-          { err: err instanceof Error ? err.message : String(err) },
-          'outreach draft failed, falling back',
-        );
+    const res = await this.runLlm(
+      userId,
+      'outreach',
+      MAX_TOKENS.outreach,
+      outreachPrompt(documents, opts, lang),
+    );
+    if (res) {
+      const parsed = outreachResultSchema.safeParse(extractJson(res.reply));
+      if (parsed.success) {
+        const message = normalizeOutreach(parsed.data, opts.channel);
+        if (message.body) return withGrounding(message, res.provider);
       }
     }
 
     return withGrounding(fallbackOutreach(documents, opts, lang), 'template');
+  }
+
+  /**
+   * Translate a talent's documents (resume + cover letter) into `targetLang` and
+   * store the result as a language variant. Idempotent: if a variant already
+   * exists it is returned as-is (`created: false`). Unlike the other AI features
+   * translation has no deterministic fallback — it requires a provider, so
+   * without one a ValidationError asks the recruiter to add a key.
+   */
+  async translateDocuments(
+    scope: string,
+    userId: string,
+    talentId: string,
+    targetLang: OutputLang,
+  ): Promise<{ lang: OutputLang; translation: DocumentTranslation; created: boolean }> {
+    const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
+
+    const sourceLang = detectLanguage(
+      [documents.resume.summary, ...documents.resume.experience.flatMap((e) => e.bullets)].join(
+        ' ',
+      ),
+    );
+    if (targetLang === sourceLang) {
+      throw new ValidationError(
+        `The documents already read as ${targetLang === 'de' ? 'German' : 'English'}.`,
+      );
+    }
+
+    const existing = documents.translations?.[targetLang];
+    if (existing) return { lang: targetLang, translation: existing, created: false };
+
+    const resolved = await this.resolveProvider(userId);
+    if (!resolved) {
+      throw new ValidationError(
+        'Translation needs an AI provider. Add your Claude or Gemini key in Settings, then try again.',
+      );
+    }
+
+    // No fallback here: a generation failure propagates rather than degrading.
+    const { reply, provider } = await this.generateAndMeter(
+      userId,
+      'translate',
+      MAX_TOKENS.translate,
+      translatePrompt(documents, targetLang),
+      resolved,
+    );
+
+    const parsed = translateResultSchema.safeParse(extractJson(reply));
+    if (!parsed.success) {
+      throw new ValidationError('The translation could not be produced — please try again.');
+    }
+
+    const translation: DocumentTranslation = {
+      resume: parsed.data.resume,
+      letter: parsed.data.letter,
+      provider,
+      updatedAt: this.clock.isoNow(),
+    };
+    await this.documents.saveTranslation(scope, talentId, targetLang, translation);
+    return { lang: targetLang, translation, created: true };
   }
 
   /**
@@ -455,28 +523,18 @@ export class DocumentAiService {
   ): Promise<MatchExplanation & { provider: LlmProviderId | 'template' }> {
     const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
     const matchedSkills = matchedForMandate(documents, mandate);
-    const resolved = await this.resolveProvider(userId);
 
-    if (resolved && documents) {
-      try {
-        const built = explainPrompt(documents, mandate, matchedSkills);
-        const { text: reply, usage } = await resolved.provider.generate({
-          system: built.system,
-          prompt: built.prompt,
-          maxTokens: 500,
-          ...(resolved.apiKey ? { apiKey: resolved.apiKey } : {}),
-        });
-        await this.meter(userId, resolved.provider.id, 'matchExplain', usage);
-        const parsed = explanationResultSchema.safeParse(extractJson(reply));
-        if (parsed.success) {
-          const explanation = normalizeExplanation(parsed.data, matchedSkills);
-          if (explanation.reasons.length) return { ...explanation, provider: resolved.provider.id };
-        }
-      } catch (err) {
-        this.logger.warn(
-          { err: err instanceof Error ? err.message : String(err) },
-          'match explanation failed, falling back',
-        );
+    const res = await this.runLlm(
+      userId,
+      'matchExplain',
+      MAX_TOKENS.matchExplain,
+      explainPrompt(documents, mandate, matchedSkills),
+    );
+    if (res) {
+      const parsed = explanationResultSchema.safeParse(extractJson(res.reply));
+      if (parsed.success) {
+        const explanation = normalizeExplanation(parsed.data, matchedSkills);
+        if (explanation.reasons.length) return { ...explanation, provider: res.provider };
       }
     }
 
@@ -495,28 +553,18 @@ export class DocumentAiService {
     mandate: MandateContext,
   ): Promise<InterviewKit & { provider: LlmProviderId | 'template' }> {
     const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
-    const resolved = await this.resolveProvider(userId);
 
-    if (resolved) {
-      try {
-        const built = interviewKitPrompt(documents, mandate);
-        const { text: reply, usage } = await resolved.provider.generate({
-          system: built.system,
-          prompt: built.prompt,
-          maxTokens: 900,
-          ...(resolved.apiKey ? { apiKey: resolved.apiKey } : {}),
-        });
-        await this.meter(userId, resolved.provider.id, 'interviewKit', usage);
-        const parsed = interviewKitResultSchema.safeParse(extractJson(reply));
-        if (parsed.success) {
-          const kit = normalizeInterviewKit(parsed.data);
-          if (kit.questions.length) return { ...kit, provider: resolved.provider.id };
-        }
-      } catch (err) {
-        this.logger.warn(
-          { err: err instanceof Error ? err.message : String(err) },
-          'interview kit failed, falling back',
-        );
+    const res = await this.runLlm(
+      userId,
+      'interviewKit',
+      MAX_TOKENS.interviewKit,
+      interviewKitPrompt(documents, mandate),
+    );
+    if (res) {
+      const parsed = interviewKitResultSchema.safeParse(extractJson(res.reply));
+      if (parsed.success) {
+        const kit = normalizeInterviewKit(parsed.data);
+        if (kit.questions.length) return { ...kit, provider: res.provider };
       }
     }
 
@@ -548,27 +596,17 @@ export class DocumentAiService {
     );
     const requirements = extractRequirements(jobText);
     const base = fallbackPrep(documents, mandate, company, requirements, jobText);
-    const resolved = await this.resolveProvider(userId);
 
-    if (resolved && documents) {
-      try {
-        const built = prepPrompt(documents, mandate, company, base.strengths);
-        const { text: reply, usage } = await resolved.provider.generate({
-          system: built.system,
-          prompt: built.prompt,
-          maxTokens: 1200,
-          ...(resolved.apiKey ? { apiKey: resolved.apiKey } : {}),
-        });
-        await this.meter(userId, resolved.provider.id, 'candidatePrep', usage);
-        const parsed = prepResultSchema.safeParse(extractJson(reply));
-        if (parsed.success) {
-          return { ...mergePrep(base, parsed.data), provider: resolved.provider.id };
-        }
-      } catch (err) {
-        this.logger.warn(
-          { err: err instanceof Error ? err.message : String(err) },
-          'candidate prep failed, falling back',
-        );
+    const res = await this.runLlm(
+      userId,
+      'candidatePrep',
+      MAX_TOKENS.candidatePrep,
+      prepPrompt(documents, mandate, company, base.strengths),
+    );
+    if (res) {
+      const parsed = prepResultSchema.safeParse(extractJson(res.reply));
+      if (parsed.success) {
+        return { ...mergePrep(base, parsed.data), provider: res.provider };
       }
     }
 

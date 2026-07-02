@@ -1,8 +1,11 @@
 import { z } from 'zod';
 import type { TalentDocuments } from './talent-documents';
 import { tokenize } from './ats-ai';
+import { candidateFacts, documentSkills } from './candidate-facts';
 import { jobClusters, skillMatchesJob } from './skill-semantics';
-import { canonicalizeSkills } from './skill-taxonomy';
+
+// Re-exported from its new home so existing consumers keep one import path.
+export { documentSkills } from './candidate-facts';
 
 /**
  * "Why does this candidate fit?" — a short, grounded justification of a
@@ -23,18 +26,6 @@ export interface MatchExplanation {
   matchedSkills: string[]; // skills that answer the mandate
 }
 
-/** Skills a candidate demonstrably has, taken from their document set. */
-export function documentSkills(documents: TalentDocuments | null): string[] {
-  if (!documents) return [];
-  const all = [
-    ...documents.resume.skillGroups.flatMap((g) => g.items),
-    ...documents.resume.experience.flatMap((e) => e.skills),
-  ]
-    .map((s) => s.trim())
-    .filter(Boolean);
-  return canonicalizeSkills(all);
-}
-
 /** Which of the candidate's skills answer the mandate (semantic match). */
 export function matchedForMandate(
   documents: TalentDocuments | null,
@@ -44,23 +35,6 @@ export function matchedForMandate(
   const tokens = tokenize(jobText);
   const clusters = jobClusters(tokens);
   return documentSkills(documents).filter((s) => skillMatchesJob(s, tokens, clusters));
-}
-
-function candidateFacts(documents: TalentDocuments): string {
-  const { contact, resume } = documents;
-  const roles = resume.experience
-    .map((e) => [e.role, e.company].filter(Boolean).join(' @ '))
-    .filter(Boolean);
-  const skills = documentSkills(documents);
-  return [
-    contact.name ? `Name: ${contact.name}` : '',
-    contact.role ? `Role: ${contact.role}` : '',
-    resume.summary ? `Profile: ${resume.summary}` : '',
-    roles.length ? `Experience: ${roles.join('; ')}` : '',
-    skills.length ? `Skills: ${skills.join(', ')}` : '',
-  ]
-    .filter(Boolean)
-    .join('\n');
 }
 
 export function explainPrompt(

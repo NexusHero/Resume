@@ -164,6 +164,7 @@ export function createApp(deps: AppDeps): Express {
   api.post('/talents/:id/documents/ats', requireAuth, asyncHandler(docs.ats));
   api.post('/talents/:id/documents/pitch', requireAuth, asyncHandler(docs.pitch));
   api.post('/talents/:id/documents/outreach', requireAuth, asyncHandler(docs.outreach));
+  api.post('/talents/:id/documents/translate', requireAuth, asyncHandler(docs.translate));
   api.get('/talents/:id/dossier/pdf', requireAuth, asyncHandler(docs.dossier));
   // Talent attachments (files uploaded base64; owner-scoped).
   api.get('/talents/:id/attachments', requireAuth, asyncHandler(att.list));

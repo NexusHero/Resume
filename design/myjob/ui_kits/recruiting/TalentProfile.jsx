@@ -71,7 +71,7 @@ function ResumeTab({ talent, onEdit, onCreateMappe }) {
               </div>
             </div>
 
-            <CvSideSection title="Kontakt">
+            <CvSideSection title="Contact">
               <CvContact icon="pin" value={talent.location} />
               <CvContact icon="mail" value={talent.email} />
               <CvContact icon={null} value={talent.phone} />
@@ -94,7 +94,7 @@ function ResumeTab({ talent, onEdit, onCreateMappe }) {
               </div>
             </CvSideSection>
 
-            <CvSideSection title="Ausbildung">
+            <CvSideSection title="Education">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '13px' }}>
                 {r.education.map((e, i) => (
                   <div key={i}>
@@ -110,12 +110,12 @@ function ResumeTab({ talent, onEdit, onCreateMappe }) {
           {/* paper main — summary & experience */}
           <div style={{ background: 'var(--surface-card)', padding: '32px 34px' }}>
             <section style={{ marginBottom: '26px' }}>
-              <CvMainHeading icon="user" title="Profil" onEdit={onEdit} />
+              <CvMainHeading icon="user" title="Profile" onEdit={onEdit} />
               <p style={{ fontSize: '14.5px', lineHeight: 1.65, color: 'var(--text-body)', margin: 0 }}>{r.summary}</p>
             </section>
 
             <section>
-              <CvMainHeading icon="briefcase" title="Werdegang" onEdit={onEdit} />
+              <CvMainHeading icon="briefcase" title="Experience" onEdit={onEdit} />
               <div style={{ position: 'relative', paddingLeft: '22px' }}>
                 <span style={{ position: 'absolute', left: '5px', top: '6px', bottom: '6px', width: '1.5px', background: 'var(--border-strong)' }} />
                 {r.experience.map((e, i) => (
@@ -233,11 +233,56 @@ function TalentApplications({ apps, onCreateMappe }) {
   );
 }
 
+/** Does a fetched resume actually carry content, or is it just the empty seed? */
+function hasResumeContent(resume) {
+  if (!resume) return false;
+  return !!(
+    resume.summary ||
+    (resume.experience || []).length ||
+    (resume.education || []).length ||
+    (resume.skillGroups || []).length
+  );
+}
+
+/** Server attachment → the {name, tag, sub} shape the attachment rows render. */
+function toAttachmentRow(a) {
+  const kb = Math.max(1, Math.round((a.size || 0) / 1024));
+  return { id: a.id, name: a.name, tag: '', sub: `${kb} KB` };
+}
+
 function TalentProfile({ talent, apps, onBack, onEdit, onCreateMappe }) {
   const [tab, setTab] = React.useState('lebenslauf');
+  // The profile shows the talent's REAL saved documents and attachments from
+  // the API — the list row only carries basic fields. A failed fetch (e.g. the
+  // session-derived "me" profile has no talent record) falls back to whatever
+  // the row already had.
+  const [loaded, setLoaded] = React.useState(null); // null = loading
+  React.useEffect(() => {
+    let alive = true;
+    setLoaded(null);
+    Promise.all([
+      window.RecruitApi.getTalentDocuments(talent.id).catch(() => null),
+      window.RecruitApi.listAttachments(talent.id).catch(() => []),
+    ]).then(([docs, attachments]) => {
+      if (alive) setLoaded({ docs, attachments });
+    });
+    return () => {
+      alive = false;
+    };
+  }, [talent.id]);
+
+  if (loaded === null) return <window.LoadingState />;
+  const resume = hasResumeContent(loaded.docs && loaded.docs.resume)
+    ? loaded.docs.resume
+    : talent.resume;
+  const attachments = loaded.attachments.length
+    ? loaded.attachments.map(toAttachmentRow)
+    : talent.attachments || [];
+  const view = { ...talent, resume, attachments };
+
   const tabs = [
     { id: 'lebenslauf', label: 'Resume' },
-    { id: 'anhaenge', label: 'Attachments', count: talent.attachments.length },
+    { id: 'anhaenge', label: 'Attachments', count: view.attachments.length },
     { id: 'bewerbungen', label: 'Applications', count: apps.length },
   ];
   return (
@@ -254,7 +299,7 @@ function TalentProfile({ talent, apps, onBack, onEdit, onCreateMappe }) {
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '26px', fontWeight: 700, letterSpacing: '-0.025em', margin: 0 }}>{talent.name}</h2>
             {talent.me && <TP.Badge variant="light" size="sm">Me</TP.Badge>}
           </div>
-          <div style={{ fontSize: '14px', color: 'var(--sidebar-muted)', marginTop: '3px' }}>{talent.role} · {talent.headline}</div>
+          <div style={{ fontSize: '14px', color: 'var(--sidebar-muted)', marginTop: '3px' }}>{[talent.role, talent.headline].filter(Boolean).join(' · ')}</div>
           <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
             <TP.Badge variant="glass" size="sm" icon={<TP.Icon name="pin" size={11} />}>{talent.location}</TP.Badge>
             <TP.Badge variant="glass" size="sm" icon={<TP.Icon name="clock" size={11} />}>{talent.availability}</TP.Badge>
@@ -269,8 +314,8 @@ function TalentProfile({ talent, apps, onBack, onEdit, onCreateMappe }) {
 
       <TP.Tabs value={tab} onChange={setTab} tabs={tabs} />
 
-      {tab === 'lebenslauf' && <ResumeTab talent={talent} onEdit={onEdit} onCreateMappe={onCreateMappe} />}
-      {tab === 'anhaenge' && <AttachmentsTab talent={talent} apps={apps} />}
+      {tab === 'lebenslauf' && <ResumeTab talent={view} onEdit={onEdit} onCreateMappe={onCreateMappe} />}
+      {tab === 'anhaenge' && <AttachmentsTab talent={view} apps={apps} />}
       {tab === 'bewerbungen' && <TalentApplications apps={apps} onCreateMappe={onCreateMappe} />}
     </div>
   );

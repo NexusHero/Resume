@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { OutputLang } from './language';
 
 /**
  * The two documents an agency prepares for a candidate — a Lebenslauf (resume)
@@ -68,6 +69,18 @@ export interface DocumentStyle {
   size: number;
 }
 
+/**
+ * A translated variant of the documents — the resume + cover letter rendered in
+ * another language. Stored alongside the primary set so a recruiter can present
+ * the same candidate to a client in the job ad's language without re-typing.
+ */
+export interface DocumentTranslation {
+  resume: ResumeContent;
+  letter: LetterContent;
+  provider: string; // 'claude' | 'gemini' | 'template' — which backend produced it
+  updatedAt: string; // ISO 8601
+}
+
 /** The persisted aggregate: one document set per (owner, talent). */
 export interface TalentDocuments {
   ownerId: string;
@@ -76,6 +89,8 @@ export interface TalentDocuments {
   resume: ResumeContent;
   letter: LetterContent;
   style: DocumentStyle;
+  /** Optional language variants keyed by language (e.g. `en`, `de`). */
+  translations?: Partial<Record<OutputLang, DocumentTranslation>>;
   updatedAt: string; // ISO 8601
 }
 
@@ -88,7 +103,7 @@ const contactSchema = z.object({
   linkedin: z.string().default(''),
 });
 
-const resumeSchema = z.object({
+export const resumeSchema = z.object({
   summary: z.string().default(''),
   experience: z
     .array(
@@ -117,7 +132,7 @@ const resumeSchema = z.object({
     .default([]),
 });
 
-const letterSchema = z.object({
+export const letterSchema = z.object({
   firma: z.string().default(''),
   ansprechpartner: z.string().default(''),
   strasse: z.string().default(''),

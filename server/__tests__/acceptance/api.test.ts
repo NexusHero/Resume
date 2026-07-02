@@ -760,6 +760,27 @@ describe('REST API /api/v1', () => {
       expect(res.body.pitch.provider).toBe('template');
     });
 
+    it('DocumentsTranslate_WithoutKey_AsksForProvider', async () => {
+      const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+      const id = created.body.talent.id as string;
+      // No LLM key in tests → translation cannot fall back, so it returns a 400
+      // problem+json telling the recruiter to add a key.
+      const res = await agent
+        .post(`/api/v1/talents/${id}/documents/translate`)
+        .send({ targetLang: 'de' });
+      expect(res.status).toBe(400);
+      expect(res.body.detail).toMatch(/provider|key/i);
+    });
+
+    it('DocumentsTranslate_RejectsUnknownLang', async () => {
+      const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+      const id = created.body.talent.id as string;
+      const res = await agent
+        .post(`/api/v1/talents/${id}/documents/translate`)
+        .send({ targetLang: 'fr' });
+      expect(res.status).toBe(400);
+    });
+
     it('DocumentsOutreach_CandidateEmail_ReturnsSubjectAndBody', async () => {
       const created = await agent
         .post('/api/v1/talents')

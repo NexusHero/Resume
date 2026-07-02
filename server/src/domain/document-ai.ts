@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import type { TalentDocuments } from './talent-documents';
+import { candidateFacts } from './candidate-facts';
+import type { OutputLang } from './language';
 
 /** What the editor can ask the AI to (re)write. */
 export type DocumentAiAction = 'summary' | 'letter';
@@ -18,29 +20,18 @@ export interface DocumentAiTarget {
   company?: string;
 }
 
-function facts(documents: TalentDocuments): string {
-  const { contact, resume } = documents;
-  const roles = resume.experience
-    .map((e) => [e.role, e.company].filter(Boolean).join(' @ '))
-    .filter(Boolean);
-  const skills = resume.skillGroups.flatMap((g) => g.items);
-  return [
-    contact.role ? `Role: ${contact.role}` : '',
-    roles.length ? `Experience: ${roles.join('; ')}` : '',
-    skills.length ? `Skills: ${skills.join(', ')}` : '',
-  ]
-    .filter(Boolean)
-    .join('\n');
-}
-
 /** Prompt to rewrite the resume summary from the talent's own facts. */
-export function summaryPrompt(documents: TalentDocuments): { system: string; prompt: string } {
+export function summaryPrompt(
+  documents: TalentDocuments,
+  lang: OutputLang = 'en',
+): { system: string; prompt: string } {
   return {
     system:
       'You are an experienced career coach. Write a concise, compelling ' +
       'summary (2–3 sentences) for a resume. No clichés, ' +
-      'no repeated first-person phrasing, no invented facts.',
-    prompt: `Candidate facts:\n${facts(documents)}\n\nCurrent summary:\n${
+      'no repeated first-person phrasing, no invented facts.' +
+      (lang === 'de' ? ' Antworte ausschließlich auf Deutsch.' : ' Respond in English only.'),
+    prompt: `Candidate facts:\n${candidateFacts(documents)}\n\nCurrent summary:\n${
       documents.resume.summary || '(empty)'
     }\n\nReturn only the new summary.`,
   };
@@ -50,6 +41,7 @@ export function summaryPrompt(documents: TalentDocuments): { system: string; pro
 export function letterPrompt(
   documents: TalentDocuments,
   target: DocumentAiTarget = {},
+  lang: OutputLang = 'en',
 ): { system: string; prompt: string } {
   const aim = [
     target.role ? `the "${target.role}" position` : '',
@@ -61,8 +53,9 @@ export function letterPrompt(
     system:
       'You are an experienced career coach. Write the body of a cover ' +
       'letter as 3 paragraphs (introduction, core competencies, closing). Only the paragraphs, ' +
-      'without salutation or sign-off. Separate the paragraphs with a blank line. No invented facts.',
-    prompt: `Candidate facts:\n${facts(documents)}\n\nTarget position: ${
+      'without salutation or sign-off. Separate the paragraphs with a blank line. No invented facts.' +
+      (lang === 'de' ? ' Antworte ausschließlich auf Deutsch.' : ' Respond in English only.'),
+    prompt: `Candidate facts:\n${candidateFacts(documents)}\n\nTarget position: ${
       aim || '(not specified)'
     }\n\nReturn only the three paragraphs.`,
   };
@@ -81,9 +74,14 @@ export function toParagraphs(text: string): string[] {
  * Deterministic fallbacks — used when no LLM provider is available (no user key
  * and no server credentials), so the feature always returns usable text.
  */
-export function fallbackSummary(documents: TalentDocuments): string {
-  const role = documents.contact.role || 'Professional';
+export function fallbackSummary(documents: TalentDocuments, lang: OutputLang = 'en'): string {
   const skills = documents.resume.skillGroups.flatMap((g) => g.items).slice(0, 4);
+  if (lang === 'de') {
+    const role = documents.contact.role || 'Fachkraft';
+    const skillPart = skills.length ? ` mit Schwerpunkt auf ${skills.join(', ')}` : '';
+    return `${role}${skillPart}. Erfahren in der praktischen Umsetzung anspruchsvoller Projekte, lösungsorientiert und teamstark.`;
+  }
+  const role = documents.contact.role || 'Professional';
   const skillPart = skills.length ? ` with a focus on ${skills.join(', ')}` : '';
   return `${role}${skillPart}. Experienced in delivering demanding projects in practice, solution-oriented and a strong team player.`;
 }
@@ -91,10 +89,21 @@ export function fallbackSummary(documents: TalentDocuments): string {
 export function fallbackLetter(
   documents: TalentDocuments,
   target: DocumentAiTarget = {},
+  lang: OutputLang = 'en',
 ): string[] {
+  const skills = documents.resume.skillGroups.flatMap((g) => g.items).slice(0, 3);
+  if (lang === 'de') {
+    const role = target.role || documents.contact.role;
+    const position = role ? `die Stelle als ${role}` : 'die ausgeschriebene Stelle';
+    const company = target.company ? ` bei ${target.company}` : '';
+    return [
+      `Mit großem Interesse bewerbe ich mich auf ${position}${company}. Mein Profil passt genau auf Ihre Anforderungen.`,
+      `In meiner bisherigen Laufbahn habe ich${skills.length ? ` insbesondere mit ${skills.join(', ')} gearbeitet und dabei` : ''} überzeugende Ergebnisse erzielt und Verantwortung übernommen.`,
+      'Über die Gelegenheit, meinen Beitrag zu Ihrem Team in einem persönlichen Gespräch zu erläutern, würde ich mich sehr freuen.',
+    ];
+  }
   const role = target.role || documents.contact.role || 'the advertised position';
   const company = target.company ? ` at ${target.company}` : '';
-  const skills = documents.resume.skillGroups.flatMap((g) => g.items).slice(0, 3);
   return [
     `I am applying for ${role}${company} with great interest. My profile is a precise match for your requirements.`,
     `Throughout my career I have${skills.length ? ` worked in particular with ${skills.join(', ')} and` : ''} achieved convincing results and taken on responsibility.`,

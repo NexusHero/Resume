@@ -38,7 +38,7 @@ function Matching({ talents, onApplied }) {
   const q = query.trim().toLowerCase();
   const manualJobs = MT_JOBS.filter((j) =>
     (country === 'ALL' || j.country === country) &&
-    (source === 'Alle' || j.source === source) &&
+    (source === 'All' || j.source === source) &&
     (!q || `${j.title} ${j.company} ${j.location}`.toLowerCase().includes(q))
   );
 

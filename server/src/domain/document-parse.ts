@@ -23,15 +23,15 @@ export type ParsePdfRequestInput = z.infer<typeof parsePdfRequestSchema>;
 export function parsePrompt(text: string): { system: string; prompt: string } {
   return {
     system:
-      'Du bist ein Parser für Lebensläufe. Extrahiere die Angaben aus dem Text und ' +
-      'gib AUSSCHLIESSLICH gültiges JSON in genau diesem Schema zurück (keine Erklärung, ' +
-      'keine Markdown-Fences):\n' +
+      'You are a resume parser. Extract the details from the text and ' +
+      'return ONLY valid JSON in exactly this schema (no explanation, ' +
+      'no Markdown fences):\n' +
       '{"contact":{"name":"","role":"","email":"","phone":"","location":"","linkedin":""},' +
       '"resume":{"summary":"","experience":[{"role":"","company":"","period":"","location":"",' +
       '"bullets":[""],"skills":[""]}],"education":[{"degree":"","school":"","period":"","note":""}],' +
       '"skillGroups":[{"label":"","items":[""]}]}}\n' +
-      'Erfinde nichts. Lass unbekannte Felder leer bzw. als leere Liste.',
-    prompt: `Lebenslauf-Text:\n"""\n${text}\n"""`,
+      'Do not invent anything. Leave unknown fields empty or as an empty list.',
+    prompt: `Resume text:\n"""\n${text}\n"""`,
   };
 }
 

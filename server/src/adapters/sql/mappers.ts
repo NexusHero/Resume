@@ -286,6 +286,7 @@ export function rowToTalentDocuments(row: TalentDocumentsRow): TalentDocuments {
     resume: row.resume,
     letter: row.letter,
     style: row.style,
+    ...(row.translations ? { translations: row.translations } : {}),
     updatedAt: row.updatedAt,
   };
 }
@@ -298,6 +299,7 @@ export function talentDocumentsToRow(documents: TalentDocuments): TalentDocument
     resume: documents.resume,
     letter: documents.letter,
     style: documents.style,
+    translations: documents.translations ?? null,
     updatedAt: documents.updatedAt,
   };
 }

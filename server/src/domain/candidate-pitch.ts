@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { TalentDocuments } from './talent-documents';
 import type { OutputLang } from './language';
+import { candidateFacts } from './candidate-facts';
 
 /**
  * POST /api/v1/talents/:id/documents/pitch — an optional mandate/job context to
@@ -26,27 +27,6 @@ export const pitchResultSchema = z.object({
   highlights: z.array(z.string()).default([]),
 });
 
-function candidateFacts(documents: TalentDocuments): string {
-  const { contact, resume } = documents;
-  const roles = resume.experience
-    .map((e) => [e.role, e.company].filter(Boolean).join(' @ '))
-    .filter(Boolean);
-  const skills = resume.skillGroups.flatMap((g) => g.items);
-  const education = resume.education
-    .map((e) => [e.degree, e.school].filter(Boolean).join(', '))
-    .filter(Boolean);
-  return [
-    contact.name ? `Name: ${contact.name}` : '',
-    contact.role ? `Role: ${contact.role}` : '',
-    resume.summary ? `Profile: ${resume.summary}` : '',
-    roles.length ? `Experience: ${roles.join('; ')}` : '',
-    skills.length ? `Skills: ${skills.join(', ')}` : '',
-    education.length ? `Education: ${education.join('; ')}` : '',
-  ]
-    .filter(Boolean)
-    .join('\n');
-}
-
 export function pitchPrompt(
   documents: TalentDocuments,
   mandateContext: string,
@@ -63,7 +43,7 @@ export function pitchPrompt(
     (lang === 'de' ? ' Antworte ausschließlich auf Deutsch.' : ' Respond in English only.');
   return {
     system,
-    prompt: `Candidate:\n${candidateFacts(documents)}\n\nMandate/role context:\n"""\n${
+    prompt: `Candidate:\n${candidateFacts(documents, { education: true })}\n\nMandate/role context:\n"""\n${
       mandateContext || '(not provided — general profile)'
     }\n"""`,
   };

@@ -4,14 +4,14 @@
 const MP = window.MyJobDesignSystem_f3658e;
 
 const MP_FORMATS = [
-  { id: 'coding', label: 'Coding-Challenge' },
-  { id: 'system_design', label: 'System-Design' },
-  { id: 'case', label: 'Case-Interview' },
-  { id: 'fachgespraech', label: 'Fachgespräch' },
-  { id: 'assessment_center', label: 'Assessment-Center' },
-  { id: 'behavioral', label: 'Verhaltensfragen' },
-  { id: 'take_home', label: 'Take-Home-Aufgabe' },
-  { id: 'presentation', label: 'Fachpräsentation' },
+  { id: 'coding', label: 'Coding challenge' },
+  { id: 'system_design', label: 'System design' },
+  { id: 'case', label: 'Case interview' },
+  { id: 'fachgespraech', label: 'Technical interview' },
+  { id: 'assessment_center', label: 'Assessment center' },
+  { id: 'behavioral', label: 'Behavioral questions' },
+  { id: 'take_home', label: 'Take-home assignment' },
+  { id: 'presentation', label: 'Technical presentation' },
 ];
 
 const MP_STAGES = [
@@ -106,7 +106,7 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
     try {
       setAgg(await window.RecruitApi.aggCheck(matchQuery));
     } catch {
-      setAgg({ findings: [], riskLevel: 'none', hasGenderMarker: false, summary: 'Prüfung fehlgeschlagen.' });
+      setAgg({ findings: [], riskLevel: 'none', hasGenderMarker: false, summary: 'Check failed.' });
     } finally {
       setAggLoading(false);
     }
@@ -134,7 +134,7 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
     } catch {
       setExplains((e) => ({
         ...e,
-        [talentId]: { loading: false, open: true, data: { summary: 'Konnte keine Begründung laden.', reasons: [] } },
+        [talentId]: { loading: false, open: true, data: { summary: 'Could not load an explanation.', reasons: [] } },
       }));
     }
   };
@@ -206,7 +206,7 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
           <MP.Icon name="arrowLeft" size={14} /> Back to mandates
         </button>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
-          <MP.Button variant="outline" size="sm" iconLeft={<MP.Icon name="users" size={15} />} onClick={openKnowledge}>Firmen-Wissen</MP.Button>
+          <MP.Button variant="outline" size="sm" iconLeft={<MP.Icon name="users" size={15} />} onClick={openKnowledge}>Company knowledge</MP.Button>
           <MP.Button variant="outline" size="sm" iconLeft={<MP.Icon name="zap" size={15} />} onClick={openMatch}>Find matches</MP.Button>
           <MP.Button variant="primary" size="sm" iconLeft={<MP.Icon name="plus" size={15} />} onClick={openAdd}>Add candidate</MP.Button>
         </div>
@@ -290,7 +290,7 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
             />
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '12px' }}>
               <MP.Button variant="outline" size="sm" iconLeft={<MP.Icon name="alert" size={15} />} disabled={aggLoading} onClick={runAgg}>
-                {aggLoading ? 'Prüfe…' : 'AGG-Check'}
+                {aggLoading ? 'Checking…' : 'AGG check'}
               </MP.Button>
               <MP.Button variant="primary" size="sm" iconLeft={<MP.Icon name="zap" size={15} />} disabled={matchLoading} onClick={runMatch}>
                 {matchLoading ? 'Ranking…' : matches === null ? 'Rank pool' : 'Re-rank'}
@@ -311,7 +311,7 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
                       <div key={i} style={{ display: 'flex', gap: '9px', alignItems: 'flex-start' }}>
                         <span style={{ flexShrink: 0, marginTop: '1px', fontFamily: 'var(--font-mono)', fontSize: '9.5px', fontWeight: 600, letterSpacing: '0.03em', textTransform: 'uppercase', color: f.severity === 'high' ? 'var(--danger)' : 'var(--text-soft)', background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '2px 7px' }}>{f.categoryLabel}</span>
                         <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: '12.5px', color: 'var(--text-heading)' }}><strong style={{ color: 'var(--danger)' }}>„{f.term}"</strong> — {f.issue}</div>
+                          <div style={{ fontSize: '12.5px', color: 'var(--text-heading)' }}><strong style={{ color: 'var(--danger)' }}>“{f.term}”</strong> — {f.issue}</div>
                           <div style={{ fontSize: '11.5px', color: 'var(--text-soft)', marginTop: '1px' }}>{f.suggestion}</div>
                         </div>
                       </div>
@@ -345,13 +345,13 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
                           ))}
                         </div>
                       </div>
-                      <button onClick={() => toggleExplain(mm.talentId)} title="Warum passt dieser Kandidat?" style={{ flexShrink: 0, cursor: 'pointer', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '10.5px', padding: '4px 9px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                        <MP.Icon name="zap" size={12} /> {exp && exp.open ? 'Warum ▲' : 'Warum ▾'}
+                      <button onClick={() => toggleExplain(mm.talentId)} title="Why does this candidate fit?" style={{ flexShrink: 0, cursor: 'pointer', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '10.5px', padding: '4px 9px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <MP.Icon name="zap" size={12} /> {exp && exp.open ? 'Why ▲' : 'Why ▾'}
                       </button>
-                      <button onClick={() => openInterview(mm.talentId, mm.name)} title="Interview-Kit erstellen" style={{ flexShrink: 0, cursor: 'pointer', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '10.5px', padding: '4px 9px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <button onClick={() => openInterview(mm.talentId, mm.name)} title="Create interview kit" style={{ flexShrink: 0, cursor: 'pointer', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '10.5px', padding: '4px 9px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                         <MP.Icon name="message" size={12} /> Interview
                       </button>
-                      <button onClick={() => openPrep(mm.talentId, mm.name)} title="Bewerber-Vorbereitung erstellen" style={{ flexShrink: 0, cursor: 'pointer', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '10.5px', padding: '4px 9px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <button onClick={() => openPrep(mm.talentId, mm.name)} title="Create candidate prep" style={{ flexShrink: 0, cursor: 'pointer', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '10.5px', padding: '4px 9px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                         <MP.Icon name="award" size={12} /> Prep
                       </button>
                       <MP.MatchIndicator value={mm.score} variant="chip" />
@@ -366,7 +366,7 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
                     {exp && exp.open && (
                       <div style={{ borderTop: '1px solid var(--border)', background: 'var(--surface-sunk)', padding: '10px 12px' }}>
                         {exp.loading ? (
-                          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>Begründung wird erstellt…</div>
+                          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>Building the explanation…</div>
                         ) : (
                           <>
                             {exp.data.summary && <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-heading)', marginBottom: exp.data.reasons.length ? '6px' : 0 }}>{exp.data.summary}</div>}
@@ -396,19 +396,19 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
           <div onClick={() => setInterview(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(8,11,18,0.5)', backdropFilter: 'blur(2px)', zIndex: 70 }} />
           <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 71, width: 'min(640px, 94vw)', maxHeight: '86vh', display: 'flex', flexDirection: 'column', background: 'var(--surface-card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-lg)', padding: '22px' }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '4px' }}>
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)' }}>Interview-Kit</span>
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)' }}>Interview kit</span>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-soft)' }}>{interview.name} · {mandate.role}</span>
             </div>
 
             {interview.loading ? (
-              <div style={{ padding: '28px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Leitfaden wird erstellt…</div>
+              <div style={{ padding: '28px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Building the guide…</div>
             ) : !interview.data ? (
-              <div style={{ padding: '22px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Konnte das Interview-Kit nicht laden.</div>
+              <div style={{ padding: '22px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Could not load the interview kit.</div>
             ) : (
               <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '10px' }}>
                 {interview.data.focus && (
                   <div style={{ fontSize: '12.5px', color: 'var(--text-heading)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '10px 12px' }}>
-                    <strong>Fokus:</strong> {interview.data.focus}
+                    <strong>Focus:</strong> {interview.data.focus}
                   </div>
                 )}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -418,7 +418,7 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
                         <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9.5px', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--accent-strong)', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-pill)', padding: '2px 8px' }}>{q.category}</span>
                       </div>
                       <div style={{ fontSize: '13px', color: 'var(--text-heading)', lineHeight: 1.45 }}>{q.question}</div>
-                      {q.lookFor && <div style={{ fontSize: '11.5px', color: 'var(--text-soft)', marginTop: '3px' }}>→ Achte auf: {q.lookFor}</div>}
+                      {q.lookFor && <div style={{ fontSize: '11.5px', color: 'var(--text-soft)', marginTop: '3px' }}>→ Look for: {q.lookFor}</div>}
                     </div>
                   ))}
                 </div>
@@ -447,21 +447,21 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
           <div onClick={() => setPrep(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(8,11,18,0.5)', backdropFilter: 'blur(2px)', zIndex: 70 }} />
           <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 71, width: 'min(680px, 95vw)', maxHeight: '88vh', display: 'flex', flexDirection: 'column', background: 'var(--surface-card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-lg)', padding: '22px' }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '2px' }}>
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)' }}>Bewerber-Vorbereitung</span>
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)' }}>Candidate prep</span>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-soft)' }}>{prep.name} · {mandate.role}</span>
             </div>
-            <div style={{ fontSize: '11.5px', color: 'var(--text-soft)', marginBottom: '8px' }}>Zum Teilen mit dem Kandidaten. Firmenangaben sind Einschätzungen — vor dem Gespräch prüfen.</div>
+            <div style={{ fontSize: '11.5px', color: 'var(--text-soft)', marginBottom: '8px' }}>For sharing with the candidate. Company details are estimates — verify before the interview.</div>
 
             {prep.loading ? (
-              <div style={{ padding: '28px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Vorbereitung wird erstellt…</div>
+              <div style={{ padding: '28px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Building the prep…</div>
             ) : !prep.data ? (
-              <div style={{ padding: '22px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Konnte die Vorbereitung nicht laden.</div>
+              <div style={{ padding: '22px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Could not load the prep.</div>
             ) : (
               <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '6px' }}>
                 {/* Company style with provenance */}
                 <div style={{ background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '12px 14px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--text-heading)' }}>Interview-Stil: {prep.data.companyLabel}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--text-heading)' }}>Interview style: {prep.data.companyLabel}</span>
                     <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9.5px', color: 'var(--text-soft)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '1px 7px' }}>{prep.data.companySource} · {prep.data.companyConfidence}</span>
                   </div>
                   <ul style={{ margin: 0, paddingLeft: '16px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -471,20 +471,20 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
                 </div>
 
                 {prep.data.obligations.length > 0 && (
-                  <PrepSection title="Auflagen (aus der Anzeige)" items={prep.data.obligations} tone="var(--danger)" MP={MP} />
+                  <PrepSection title="Obligations (from the ad)" items={prep.data.obligations} tone="var(--danger)" MP={MP} />
                 )}
                 {prep.data.processHints.length > 0 && (
-                  <PrepSection title="Prozess-Hinweise" items={prep.data.processHints} MP={MP} />
+                  <PrepSection title="Process notes" items={prep.data.processHints} MP={MP} />
                 )}
 
                 {prep.data.requirementChecks.length > 0 && (
                   <div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '7px' }}>Anforderungen abgleichen</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '7px' }}>Requirements check</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                       {prep.data.requirementChecks.map((c, i) => (
                         <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '12.5px' }}>
                           <MP.Icon name={c.covered ? 'check' : 'alert'} size={13} style={{ marginTop: '1px', color: c.covered ? 'var(--status-hired-strong)' : 'var(--status-offer-strong, #D97757)' }} />
-                          <span style={{ color: 'var(--text-body)' }}>{c.text}{!c.covered && <span style={{ color: 'var(--text-soft)' }}> — im Profil belegen</span>}</span>
+                          <span style={{ color: 'var(--text-body)' }}>{c.text}{!c.covered && <span style={{ color: 'var(--text-soft)' }}> — back this up in the profile</span>}</span>
                         </div>
                       ))}
                     </div>
@@ -493,7 +493,7 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
 
                 {prep.data.strengths.length > 0 && (
                   <div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '7px' }}>Deine Stärken für diese Stelle</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '7px' }}>Your strengths for this role</div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                       {prep.data.strengths.map((s, i) => <span key={i} style={{ fontSize: '11.5px', color: 'var(--accent-strong)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '3px 10px' }}>{s}</span>)}
                     </div>
@@ -501,7 +501,7 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
                 )}
 
                 <div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '7px' }}>Womit du rechnen solltest</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '7px' }}>What to expect</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {prep.data.likelyQuestions.map((q, i) => (
                       <div key={i} style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '10px 12px' }}>
@@ -514,7 +514,7 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
                 </div>
 
                 <div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '7px' }}>Antwort-Gerüste (STAR)</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '7px' }}>Answer scaffolds (STAR)</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {prep.data.starAnswers.map((s, i) => (
                       <div key={i} style={{ background: 'var(--surface-sunk)', borderRadius: 'var(--radius-md)', padding: '10px 12px' }}>
@@ -525,7 +525,7 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
                   </div>
                 </div>
 
-                <PrepSection title="Fragen, die du stellen solltest" items={prep.data.candidateQuestions} MP={MP} />
+                <PrepSection title="Questions you should ask" items={prep.data.candidateQuestions} MP={MP} />
               </div>
             )}
 
@@ -541,23 +541,23 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
           <div onClick={() => setKnowledge(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(8,11,18,0.5)', backdropFilter: 'blur(2px)', zIndex: 70 }} />
           <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 71, width: 'min(600px, 95vw)', maxHeight: '88vh', display: 'flex', flexDirection: 'column', background: 'var(--surface-card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-lg)', padding: '22px' }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '2px' }}>
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)' }}>Firmen-Wissen</span>
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)' }}>Company knowledge</span>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-soft)' }}>{mandate.client}</span>
             </div>
-            <div style={{ fontSize: '11.5px', color: 'var(--text-soft)', marginBottom: '10px' }}>Echte Interview-Erfahrungen eures Teams. Je mehr ihr festhaltet, desto sicherer wird die Vorbereitung.</div>
+            <div style={{ fontSize: '11.5px', color: 'var(--text-soft)', marginBottom: '10px' }}>Real interview experiences from your team. The more you capture, the more confident the prep gets.</div>
 
             <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {/* Aggregated knowledge */}
               {knowledge.loading ? (
-                <div style={{ padding: '18px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Lädt…</div>
+                <div style={{ padding: '18px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Loading…</div>
               ) : !knowledge.data || !knowledge.data.profile ? (
-                <div style={{ padding: '14px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '12.5px', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-md)' }}>Noch keine Beobachtungen — die Vorbereitung nutzt bis dahin den Firmen-Archetyp.</div>
+                <div style={{ padding: '14px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '12.5px', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-md)' }}>No observations yet — until then, the prep uses the company archetype.</div>
               ) : (
                 <div style={{ background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '12px 14px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: 'var(--text-heading)' }}>{knowledge.data.profile.sampleSize} Beobachtung{knowledge.data.profile.sampleSize === 1 ? '' : 'en'}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: 'var(--text-heading)' }}>{knowledge.data.profile.sampleSize} observation{knowledge.data.profile.sampleSize === 1 ? '' : 's'}</span>
                     <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9.5px', color: 'var(--accent-strong)', background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '1px 7px' }}>Confidence: {knowledge.data.profile.confidence}</span>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', marginLeft: 'auto' }}>~{knowledge.data.profile.typicalRounds} Runden · {knowledge.data.profile.difficulty}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', marginLeft: 'auto' }}>~{knowledge.data.profile.typicalRounds} rounds · {knowledge.data.profile.difficulty}</span>
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                     {knowledge.data.profile.formats.map((f) => (
@@ -569,7 +569,7 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
 
               {/* Capture form */}
               <div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '9px' }}>Interview-Erfahrung festhalten</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '9px' }}>Capture an interview experience</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '11px' }}>
                   {MP_FORMATS.map((f) => {
                     const on = knowledge.form.formats.includes(f.id);
@@ -580,11 +580,11 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
                 </div>
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
                   <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-soft)' }}>
-                    Runden
+                    Rounds
                     <input type="number" min="0" max="20" value={knowledge.form.rounds} onChange={(e) => setKnowledge((k) => ({ ...k, form: { ...k.form, rounds: Number(e.target.value) } }))} style={{ width: '52px', padding: '5px 8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', color: 'var(--text-heading)', fontFamily: 'var(--font-mono)', fontSize: '12px' }} />
                   </label>
                   <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-soft)' }}>
-                    Schwierigkeit
+                    Difficulty
                     <select value={knowledge.form.difficulty} onChange={(e) => setKnowledge((k) => ({ ...k, form: { ...k.form, difficulty: e.target.value } }))} style={{ padding: '5px 8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', color: 'var(--text-heading)', fontFamily: 'var(--font-mono)', fontSize: '12px', cursor: 'pointer' }}>
                       <option value="low">low</option>
                       <option value="medium">medium</option>
@@ -592,10 +592,10 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
                     </select>
                   </label>
                 </div>
-                <input value={knowledge.form.notes} onChange={(e) => setKnowledge((k) => ({ ...k, form: { ...k.form, notes: e.target.value } }))} placeholder="Notiz (optional) — z. B. gefragte Themen" style={{ width: '100%', marginTop: '10px', padding: '8px 11px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', color: 'var(--text-heading)', fontFamily: 'var(--font-body)', fontSize: '12.5px', outline: 'none', boxSizing: 'border-box' }} />
+                <input value={knowledge.form.notes} onChange={(e) => setKnowledge((k) => ({ ...k, form: { ...k.form, notes: e.target.value } }))} placeholder="Note (optional) — e.g. topics that came up" style={{ width: '100%', marginTop: '10px', padding: '8px 11px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', color: 'var(--text-heading)', fontFamily: 'var(--font-body)', fontSize: '12.5px', outline: 'none', boxSizing: 'border-box' }} />
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '11px' }}>
                   <MP.Button variant="primary" size="sm" iconLeft={<MP.Icon name="plus" size={14} />} disabled={knowledge.saving || knowledge.form.formats.length === 0} onClick={saveObservation}>
-                    {knowledge.saving ? 'Speichert…' : 'Festhalten'}
+                    {knowledge.saving ? 'Saving…' : 'Capture'}
                   </MP.Button>
                 </div>
               </div>

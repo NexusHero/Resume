@@ -72,7 +72,7 @@ function MappeModal({ talent, onClose }) {
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Recipient</div>
             <MM.Input label="Company" icon="building" value={rcpt.company} onChange={(e) => setR('company', e.target.value)} placeholder="Aurora Systems GmbH" />
             <MM.Input label="Position" icon="briefcase" value={rcpt.subject} onChange={(e) => setR('subject', e.target.value)} placeholder="Senior C++ Engineer" />
-            <MM.Input label="Contact person" icon="user" value={rcpt.contact} onChange={(e) => setR('contact', e.target.value)} placeholder="Personalabteilung" />
+            <MM.Input label="Contact person" icon="user" value={rcpt.contact} onChange={(e) => setR('contact', e.target.value)} placeholder="HR department" />
             <MM.Input label="ZIP & city" icon="pin" value={rcpt.plzOrt} onChange={(e) => setR('plzOrt', e.target.value)} placeholder="10115 Berlin" />
           </div>
 
@@ -131,7 +131,7 @@ function MappeModal({ talent, onClose }) {
 
         {/* footer */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 22px', borderTop: '1px solid var(--border)', background: 'var(--surface-subtle)' }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)' }}>{count} Dokumente · 1 PDF</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)' }}>{count} documents · 1 PDF</span>
           <div style={{ display: 'flex', gap: '10px' }}>
             <MM.Button variant="ghost" onClick={onClose}>Cancel</MM.Button>
             <MM.Button variant="primary" iconRight={<MM.Icon name="arrowRight" size={15} />} onClick={createDossier}>Create dossier</MM.Button>

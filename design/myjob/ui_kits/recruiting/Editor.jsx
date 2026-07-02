@@ -32,7 +32,7 @@ function ResumeDoc({ contact, resume }) {
 
         <div style={{ height: '1px', background: 'var(--sidebar-border)', margin: '24px 0' }} />
 
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--sidebar-soft)', marginBottom: '13px' }}>Kontakt</div>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--sidebar-soft)', marginBottom: '13px' }}>Contact</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '11px' }}>
           {[['mail', contact.email], ['phone', contact.phone], ['pin', contact.location], ['linkedin', contact.linkedin]].filter(([, v]) => v).map(([ic, v]) => (
             <div key={ic} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -161,18 +161,32 @@ function FormGroup({ title, children, onAdd }) {
  */
 function GroundingWarning({ grounding }) {
   if (!grounding || grounding.grounded || !grounding.unsupported?.length) return null;
-  const label = (u) => (u.kind === 'number' ? `Zahl „${u.text}“` : `Skill „${u.text}“`);
+  const label = (u) => (u.kind === 'number' ? `Number “${u.text}”` : `Skill “${u.text}”`);
   const n = grounding.unsupported.length;
   return (
     <div style={{ marginTop: '14px', border: '1px solid var(--warning-border, #e6b800)', background: 'var(--warning-soft, rgba(230,184,0,0.10))', borderRadius: 'var(--radius-md)', padding: '11px 13px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '7px', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 600, color: 'var(--warning-strong, #8a6d00)', marginBottom: '6px' }}>
-        <ED.Icon name="alert" size={12} />{n} {n === 1 ? 'nicht belegte Angabe' : 'nicht belegte Angaben'}
+        <ED.Icon name="alert" size={12} />{n} {n === 1 ? 'unsupported claim' : 'unsupported claims'}
       </div>
       <div style={{ fontSize: '12.5px', lineHeight: 1.5, color: 'var(--text-body)' }}>
-        Diese Angaben stehen so nicht im Lebenslauf / Mandat — bitte vor dem Versand prüfen:{' '}
+        These claims are not backed by the CV / mandate — please verify before sending:{' '}
         {grounding.unsupported.map((u) => label(u)).join(', ')}.
       </div>
     </div>
+  );
+}
+
+/**
+ * Which backend produced a generated draft — honesty over polish: recruiters
+ * should always see whether AI or the deterministic template wrote the text.
+ */
+function ProviderBadge({ provider }) {
+  if (!provider) return null;
+  const label = provider === 'template' ? 'Template · no AI' : `AI · ${provider}`;
+  return (
+    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-soft)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '3px 9px', whiteSpace: 'nowrap' }}>
+      {label}
+    </span>
   );
 }
 
@@ -189,18 +203,18 @@ function Editor({ talent, onClose, onCreateMappe }) {
   }, []);
   const [contact, setContact] = React.useState({ name: talent.name, role: talent.role, email: talent.email, phone: talent.phone, location: talent.location, linkedin: talent.linkedin || '', src: talent.src });
   const [resume, setResume] = React.useState(() => JSON.parse(JSON.stringify(talent.resume || { summary: '', experience: [], education: [], skillGroups: [] })));
-  const [letter, setLetter] = React.useState(() => JSON.parse(JSON.stringify(talent.letter || { firma: '', ansprechpartner: '', strasse: '', plzOrt: '', betreff: '', anrede: 'Sehr geehrte Damen und Herren,', absaetze: [''], gruss: 'Kind regards' })));
+  const [letter, setLetter] = React.useState(() => JSON.parse(JSON.stringify(talent.letter || { firma: '', ansprechpartner: '', strasse: '', plzOrt: '', betreff: '', anrede: 'Dear Sir or Madam,', absaetze: [''], gruss: 'Kind regards' })));
 
   const setC = (k, v) => setContact((s) => ({ ...s, [k]: v }));
   const setExp = (i, k, v) => setResume((s) => { const e = [...s.experience]; e[i] = { ...e[i], [k]: v }; return { ...s, experience: e }; });
   const setEdu = (i, k, v) => setResume((s) => { const e = [...s.education]; e[i] = { ...e[i], [k]: v }; return { ...s, education: e }; });
-  const addExp = () => setResume((s) => ({ ...s, experience: [{ role: 'Neue Position', company: '', period: '', location: '', bullets: [''], skills: [] }, ...s.experience] }));
+  const addExp = () => setResume((s) => ({ ...s, experience: [{ role: 'New position', company: '', period: '', location: '', bullets: [''], skills: [] }, ...s.experience] }));
   const delExp = (i) => setResume((s) => ({ ...s, experience: s.experience.filter((_, j) => j !== i) }));
   const setPara = (i, v) => setLetter((s) => { const a = [...s.absaetze]; a[i] = v; return { ...s, absaetze: a }; });
   const addPara = () => setLetter((s) => ({ ...s, absaetze: [...s.absaetze, ''] }));
 
   /* ---- Magic: AI adjusts the active document. The suggestion is shown GREY
-     and only applied on “Übernehmen” (or discarded on “Verwerfen”). ---- */
+     and only applied on “Apply” (or discarded on “Discard”). ---- */
   const [gen, setGen] = React.useState(false);
   const [pending, setPending] = React.useState(null);
   const runAI = async () => {
@@ -393,7 +407,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
   };
   const copyOutreach = async () => {
     if (!outMsg) return;
-    const text = [outMsg.subject && `Betreff: ${outMsg.subject}`, outMsg.body]
+    const text = [outMsg.subject && `Subject: ${outMsg.subject}`, outMsg.body]
       .filter(Boolean)
       .join('\n\n');
     try {
@@ -586,7 +600,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
           <div onClick={() => setPitchOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(8,11,18,0.45)', backdropFilter: 'blur(2px)', zIndex: 60 }} />
           <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 61, width: 'min(680px, 92vw)', maxHeight: '88vh', overflowY: 'auto', background: 'var(--surface-card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-lg)', padding: '22px' }}>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)', marginBottom: '4px' }}>Candidate pitch</div>
-            <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginBottom: '12px' }}>A short „why this candidate" profile to present to the client. Add the mandate/role for a tailored pitch (optional).</div>
+            <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginBottom: '12px' }}>A short “why this candidate” profile to present to the client. Add the mandate/role for a tailored pitch (optional).</div>
             <textarea value={mandateContext} onChange={(e) => setMandateContext(e.target.value)} rows={5} placeholder="Mandate / role context (optional)…" style={{ width: '100%', resize: 'vertical', padding: '11px 13px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', color: 'var(--text-heading)', fontFamily: 'var(--font-body)', fontSize: '13px', outline: 'none' }} />
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
               <ED.Button variant="ghost" onClick={() => setPitchOpen(false)}>Close</ED.Button>
@@ -596,9 +610,12 @@ function Editor({ talent, onClose, onCreateMappe }) {
               <div style={{ marginTop: '18px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
                   <div style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 700, color: 'var(--text-heading)' }}>{pitch.headline}</div>
-                  <button onClick={copyPitch} style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', padding: '4px 12px' }}>
-                    <ED.Icon name={pitchCopied ? 'check' : 'fileText'} size={13} /> {pitchCopied ? 'Copied' : 'Copy'}
-                  </button>
+                  <span style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                    <ProviderBadge provider={pitch.provider} />
+                    <button onClick={copyPitch} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', padding: '4px 12px' }}>
+                      <ED.Icon name={pitchCopied ? 'check' : 'fileText'} size={13} /> {pitchCopied ? 'Copied' : 'Copy'}
+                    </button>
+                  </span>
                 </div>
                 {pitch.paragraphs.map((p, i) => (
                   <p key={i} style={{ margin: '10px 0 0', fontSize: '13px', lineHeight: 1.55, color: 'var(--text-body)' }}>{p}</p>
@@ -638,7 +655,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
                   {toggle(<>{pill(outChannel === 'email', () => setOutChannel('email'), 'Email')}{pill(outChannel === 'linkedin', () => setOutChannel('linkedin'), 'LinkedIn')}</>)}
                 </div>
               </div>
-              <input value={outTone} onChange={(e) => setOutTone(e.target.value)} placeholder="Tone (optional), e.g. locker/Du or förmlich/Sie" style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', color: 'var(--text-heading)', fontFamily: 'var(--font-body)', fontSize: '13px', outline: 'none', marginBottom: '10px' }} />
+              <input value={outTone} onChange={(e) => setOutTone(e.target.value)} placeholder='Tone (optional), e.g. casual ("Du") or formal ("Sie")' style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', color: 'var(--text-heading)', fontFamily: 'var(--font-body)', fontSize: '13px', outline: 'none', marginBottom: '10px' }} />
               <textarea value={outContext} onChange={(e) => setOutContext(e.target.value)} rows={4} placeholder="Mandate / role context (optional)…" style={{ width: '100%', resize: 'vertical', padding: '11px 13px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', color: 'var(--text-heading)', fontFamily: 'var(--font-body)', fontSize: '13px', outline: 'none' }} />
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
                 <ED.Button variant="ghost" onClick={() => setOutreachOpen(false)}>Close</ED.Button>
@@ -647,6 +664,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
               {outMsg && (
                 <div style={{ marginTop: '18px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', marginBottom: '10px' }}>
+                    <ProviderBadge provider={outMsg.provider} />
                     {outChannel === 'email' && (
                       <button onClick={openOutreachMail} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', padding: '4px 12px' }}>
                         <ED.Icon name="send" size={13} /> Open in email
@@ -657,7 +675,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
                     </button>
                   </div>
                   {outMsg.subject && (
-                    <div style={{ fontSize: '13px', color: 'var(--text-heading)', marginBottom: '8px' }}><strong>Betreff:</strong> {outMsg.subject}</div>
+                    <div style={{ fontSize: '13px', color: 'var(--text-heading)', marginBottom: '8px' }}><strong>Subject:</strong> {outMsg.subject}</div>
                   )}
                   <div style={{ whiteSpace: 'pre-wrap', fontSize: '13px', lineHeight: 1.55, color: 'var(--text-body)' }}>{outMsg.body}</div>
                   <GroundingWarning grounding={outMsg.grounding} />
@@ -679,11 +697,11 @@ function Editor({ talent, onClose, onCreateMappe }) {
             {(gen || pending) && (
               <div style={{ border: '1px dashed var(--accent-border)', borderRadius: 'var(--radius-md)', overflow: 'hidden', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '8px 12px', background: 'var(--accent-soft)', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 600, color: 'var(--accent-strong)' }}>
-                  <ED.Icon name="zap" size={12} />KI-Vorschlag · noch nicht übernommen
+                  <ED.Icon name="zap" size={12} />AI suggestion · not applied yet
                 </div>
                 <div style={{ padding: '12px 13px' }}>
                   {gen ? (
-                    <div style={{ fontSize: '12.5px', color: 'var(--accent-strong)', fontStyle: 'italic' }}>myJob passt an …</div>
+                    <div style={{ fontSize: '12.5px', color: 'var(--accent-strong)', fontStyle: 'italic' }}>myJob is tailoring …</div>
                   ) : pending.kind === 'summary' ? (
                     <div style={{ fontSize: '12.5px', lineHeight: 1.6, color: 'var(--text-soft)', fontStyle: 'italic' }}>{pending.value}</div>
                   ) : (
@@ -692,8 +710,8 @@ function Editor({ talent, onClose, onCreateMappe }) {
                 </div>
                 {!gen && (
                   <div style={{ display: 'flex', gap: '8px', padding: '10px 13px', borderTop: '1px solid var(--border)', background: 'var(--surface-subtle)' }}>
-                    <button onClick={acceptAI} style={{ appearance: 'none', cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-sm)', padding: '6px 12px' }}><ED.Icon name="check" size={13} />Übernehmen</button>
-                    <button onClick={cancelAI} style={{ appearance: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-sm)', padding: '6px 12px' }}><ED.Icon name="x" size={13} />Verwerfen</button>
+                    <button onClick={acceptAI} style={{ appearance: 'none', cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-sm)', padding: '6px 12px' }}><ED.Icon name="check" size={13} />Apply</button>
+                    <button onClick={cancelAI} style={{ appearance: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-sm)', padding: '6px 12px' }}><ED.Icon name="x" size={13} />Discard</button>
                   </div>
                 )}
               </div>
@@ -702,10 +720,10 @@ function Editor({ talent, onClose, onCreateMappe }) {
             <FormGroup title="Contact / header">
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <ED.Input label="Name" value={contact.name} onChange={(e) => setC('name', e.target.value)} wrapStyle={{ gridColumn: '1 / -1' }} />
-                <ED.Input label="Rolle" value={contact.role} onChange={(e) => setC('role', e.target.value)} wrapStyle={{ gridColumn: '1 / -1' }} />
-                <ED.Input label="E-Mail" value={contact.email} onChange={(e) => setC('email', e.target.value)} />
-                <ED.Input label="Telefon" value={contact.phone} onChange={(e) => setC('phone', e.target.value)} />
-                <ED.Input label="Ort" value={contact.location} onChange={(e) => setC('location', e.target.value)} />
+                <ED.Input label="Role" value={contact.role} onChange={(e) => setC('role', e.target.value)} wrapStyle={{ gridColumn: '1 / -1' }} />
+                <ED.Input label="Email" value={contact.email} onChange={(e) => setC('email', e.target.value)} />
+                <ED.Input label="Phone" value={contact.phone} onChange={(e) => setC('phone', e.target.value)} />
+                <ED.Input label="Location" value={contact.location} onChange={(e) => setC('location', e.target.value)} />
                 <ED.Input label="LinkedIn" value={contact.linkedin} onChange={(e) => setC('linkedin', e.target.value)} />
               </div>
             </FormGroup>
@@ -726,7 +744,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
                         <ED.Input label="Position" value={e.role} onChange={(ev) => setExp(i, 'role', ev.target.value)} />
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '9px' }}>
                           <ED.Input label="Company" value={e.company} onChange={(ev) => setExp(i, 'company', ev.target.value)} />
-                          <ED.Input label="Zeitraum" value={e.period} onChange={(ev) => setExp(i, 'period', ev.target.value)} />
+                          <ED.Input label="Period" value={e.period} onChange={(ev) => setExp(i, 'period', ev.target.value)} />
                         </div>
                         <ED.Textarea label="Responsibilities (one per line)" rows={3} value={e.bullets.join('\n')} onChange={(ev) => setExp(i, 'bullets', ev.target.value.split('\n'))} />
                       </div>
@@ -738,9 +756,9 @@ function Editor({ talent, onClose, onCreateMappe }) {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {resume.education.map((e, i) => (
                       <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '9px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '12px', background: 'var(--surface-subtle)' }}>
-                        <ED.Input label="Abschluss" value={e.degree} onChange={(ev) => setEdu(i, 'degree', ev.target.value)} wrapStyle={{ gridColumn: '1 / -1' }} />
+                        <ED.Input label="Degree" value={e.degree} onChange={(ev) => setEdu(i, 'degree', ev.target.value)} wrapStyle={{ gridColumn: '1 / -1' }} />
                         <ED.Input label="Institution" value={e.school} onChange={(ev) => setEdu(i, 'school', ev.target.value)} />
-                        <ED.Input label="Zeitraum" value={e.period} onChange={(ev) => setEdu(i, 'period', ev.target.value)} />
+                        <ED.Input label="Period" value={e.period} onChange={(ev) => setEdu(i, 'period', ev.target.value)} />
                       </div>
                     ))}
                   </div>
@@ -756,7 +774,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
                     <ED.Input label="ZIP & city" value={letter.plzOrt} onChange={(e) => setLetter((s) => ({ ...s, plzOrt: e.target.value }))} />
                   </div>
                 </FormGroup>
-                <FormGroup title="Inhalt">
+                <FormGroup title="Content">
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <ED.Input label="Subject" value={letter.betreff} onChange={(e) => setLetter((s) => ({ ...s, betreff: e.target.value }))} />
                     <ED.Input label="Salutation" value={letter.anrede} onChange={(e) => setLetter((s) => ({ ...s, anrede: e.target.value }))} />
@@ -776,18 +794,18 @@ function Editor({ talent, onClose, onCreateMappe }) {
         <div style={{ background: 'var(--surface-page)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>
-              <ED.Icon name="eye" size={14} /> Live-Vorschau · {doc === 'lebenslauf' ? 'Resume' : 'Cover letter'}
+              <ED.Icon name="eye" size={14} /> Live preview · {doc === 'lebenslauf' ? 'Resume' : 'Cover letter'}
             </span>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button onClick={runAI} style={{ appearance: 'none', cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12.5px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-md)', padding: '7px 12px' }}>
-                <ED.Icon name="zap" size={14} />KI anpassen
+                <ED.Icon name="zap" size={14} />AI tailor
               </button>
-              <ED.Button size="sm" variant="outline" iconLeft={<ED.Icon name="download" size={14} />}>PDF</ED.Button>
+              <ED.Button size="sm" variant="outline" iconLeft={<ED.Icon name="download" size={14} />} onClick={() => window.open(window.RecruitApi.talentDocumentsPdfUrl(talentId), '_blank')}>PDF</ED.Button>
               <ED.Button size="sm" variant="primary" iconRight={<ED.Icon name="arrowRight" size={14} />} onClick={onCreateMappe}>To dossier</ED.Button>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '8px 16px', borderBottom: '1px solid var(--border)', flexShrink: 0, flexWrap: 'wrap' }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Stil</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Style</span>
             <div style={{ display: 'flex', gap: '4px', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-sm)', padding: '3px' }}>
               {[['classic', 'Classic'], ['modern', 'Modern'], ['compact', 'Compact']].map(([id, label]) => (
                 <button key={id} onClick={() => setCfg((c) => ({ ...c, template: id }))} style={{ border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: cfg.template === id ? 600 : 500, padding: '4px 9px', borderRadius: '4px', background: cfg.template === id ? 'var(--surface-card)' : 'transparent', color: cfg.template === id ? 'var(--text-heading)' : 'var(--text-muted)' }}>{label}</button>

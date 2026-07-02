@@ -32,7 +32,9 @@ test.describe('UI acceptance — the suite renders in English', () => {
     // The unified recruiting nav renders these destinations in English.
     await expect(nav).toContainText('Workspace');
     await expect(nav).toContainText('Talent Pool');
-    await expect(nav).toContainText('Applications');
+    await expect(nav).toContainText('Mandates');
+    // Applications is hidden until it has a live data source.
+    await expect(nav).not.toContainText('Applications');
     // No German leaked into the navigation.
     await expect(nav).not.toContainText('Übersicht');
   });

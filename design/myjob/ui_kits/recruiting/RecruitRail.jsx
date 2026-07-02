@@ -15,7 +15,8 @@ const NAV_SECTIONS = [
     items: [
       { id: 'uebersicht', label: 'Workspace', icon: 'home' },
       { id: 'mandate', label: 'Mandates', icon: 'briefcase' },
-      { id: 'bewerbungen', label: 'Applications', icon: 'columns' },
+      // Applications is hidden until it has a live data source — an always-empty
+      // board reads as broken, not as coming soon (same call as the Inbox).
       { id: 'platzierungen', label: 'Placements', icon: 'award' },
     ],
   },
@@ -132,10 +133,7 @@ function RecruitRail({ active, onNav, me, talentCount, search, onSearch, title, 
               <Icon name="search" size={15} style={{ color: 'var(--text-soft)' }} />
               <input value={search} onChange={(e) => onSearch(e.target.value)} placeholder="Talents, companies, roles …" style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-heading)', padding: '8px 0' }} />
             </label>
-            <div style={{ position: 'relative' }}>
-              <IconButton icon="bell" label="Notifications" variant="outline" />
-              <span style={{ position: 'absolute', top: '-3px', right: '-3px', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--signal-500)', border: '2px solid var(--paper)' }} />
-            </div>
+            {/* Notifications return once there is something to notify about. */}
             {actions}
             {onLogout && (
               <button onClick={onLogout} title="Log out" style={{ display: 'inline-flex', alignItems: 'center', background: 'var(--surface-card)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', padding: '7px 13px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '12.5px', fontWeight: 600, color: 'var(--text-soft)' }}>Log out</button>

@@ -50,8 +50,14 @@ function useResource(fetcher) {
  * or applications yet, so those are empty; the views render honest empty states.
  */
 function makeMeProfile(user) {
+  // "suhay.sevinc@…" → "Suhay Sevinc"; digits/underscores don't read as a name.
   const local = String((user && user.email) || '').split('@')[0];
-  const name = local ? local.charAt(0).toUpperCase() + local.slice(1) : 'Me';
+  const words = local
+    .split(/[._-]+/)
+    .map((w) => w.replace(/\d+/g, ''))
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1));
+  const name = words.join(' ') || 'Me';
   return {
     id: (user && user.id) || 'me',
     me: true,
@@ -148,8 +154,7 @@ function Workspace({ user, onLogout }) {
     );
 
   // Applications, clients and inbox messages have no live recruiting API yet, so
-  // a real (served) account shows honest empty states rather than sample data.
-  // The sample arrays in data.js remain only as an offline (file://) fallback.
+  // the views show honest empty states until one exists (no fabricated data).
   const apps = [];
   const clients = [];
   const messages = [];

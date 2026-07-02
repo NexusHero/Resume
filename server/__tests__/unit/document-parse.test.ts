@@ -19,6 +19,14 @@ describe('document-parse', () => {
     expect(prompt).toContain('Max Mustermann');
   });
 
+  it('ParsePrompt_InstructionsAreEnglish', () => {
+    const { system, prompt } = parsePrompt('irrelevant');
+    expect(system).toContain('You are a resume parser');
+    expect(system).toContain('Do not invent anything');
+    expect(system).not.toContain('Lebensläufe');
+    expect(prompt).toContain('Resume text:');
+  });
+
   it('ExtractJson_ParsesFencedOrPaddedReplies', () => {
     expect(extractJson('```json\n{"a":1}\n```')).toEqual({ a: 1 });
     expect(extractJson('Hier:\n{"b":2} — fertig')).toEqual({ b: 2 });

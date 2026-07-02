@@ -1,3 +1,4 @@
+import { UpstreamProviderError } from '../domain/errors';
 import type {
   LlmGenerateInput,
   LlmGenerateResult,
@@ -51,13 +52,22 @@ export class GeminiLlmProvider implements LlmProvider {
         generationConfig: { maxOutputTokens: input.maxTokens ?? 1024 },
       }),
     });
-    if (!res.ok) throw new Error(`Gemini responded ${res.status}`);
+    if (res.status === 400 || res.status === 401 || res.status === 403) {
+      throw new UpstreamProviderError(
+        'Google rejected the API key — check it under Settings → AI models & API keys.',
+      );
+    }
+    if (!res.ok) {
+      throw new UpstreamProviderError(
+        `The Gemini API responded with ${res.status} — try again in a moment.`,
+      );
+    }
     const body = (await res.json()) as GeminiResponse;
     const text = (body.candidates?.[0]?.content?.parts ?? [])
       .map((p) => p.text ?? '')
       .join('')
       .trim();
-    if (!text) throw new Error('Gemini returned no text');
+    if (!text) throw new UpstreamProviderError('Gemini returned an empty response — try again.');
     return {
       text,
       usage: {

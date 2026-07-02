@@ -16,7 +16,7 @@ function mtSkills(cand, job) {
   return job.req.map((name) => ({ name, met: have.includes(name.toLowerCase()) }));
 }
 
-function Matching({ talents }) {
+function Matching({ talents, onCreateMandate }) {
   const [mode, setMode] = React.useState('auto');
   const [candId, setCandId] = React.useState((talents.find((t) => t.me) || talents[0]).id);
   const [country, setCountry] = React.useState('ALL');
@@ -111,16 +111,28 @@ function Matching({ talents }) {
         {(mode === 'auto' ? autoJobs.map((x) => x.j) : manualJobs).map((job) => {
           const open = job.url ? () => window.open(job.url, '_blank', 'noopener') : undefined;
           return (
-            <MT.PositionCard
-              key={job.id}
-              title={job.title} company={job.company} location={job.location} country={job.country}
-              source={job.source} pensum={job.pensum} salary={job.salary} posted={job.posted}
-              match={mtScore(cand, job).pct}
-              skills={mtSkills(cand, job)}
-              applyLabel={job.url ? 'View posting' : undefined}
-              onApply={open}
-              onView={open}
-            />
+            <div key={job.id}>
+              <MT.PositionCard
+                title={job.title} company={job.company} location={job.location} country={job.country}
+                source={job.source} pensum={job.pensum} salary={job.salary} posted={job.posted}
+                match={mtScore(cand, job).pct}
+                skills={mtSkills(cand, job)}
+                applyLabel={job.url ? 'View posting' : undefined}
+                onApply={open}
+                onView={open}
+              />
+              {onCreateMandate && (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
+                  <button
+                    onClick={() => onCreateMandate(job)}
+                    title="Open a client mandate drafted from this posting"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', appearance: 'none', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '11px', padding: '4px 11px' }}
+                  >
+                    <MT.Icon name="briefcase" size={12} /> Create mandate
+                  </button>
+                </div>
+              )}
+            </div>
           );
         })}
         {(mode === 'auto' ? jobs.length === 0 : manualJobs.length === 0) && (

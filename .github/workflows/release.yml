@@ -4,7 +4,14 @@ on:
   push:
     tags:
       - 'v*' # e.g. v1.0.0
+  # Manual releases: action-gh-release creates the tag on the default branch
+  # when it does not exist yet, so a dispatch needs only the version input.
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release, e.g. v1.0.0 (created if missing)'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -52,6 +59,7 @@ jobs:
       - name: Publish release with all platform assets
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ inputs.tag || github.ref_name }}
           files: artifacts/**/*
           generate_release_notes: true
         env:

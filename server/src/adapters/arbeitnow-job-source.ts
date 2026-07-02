@@ -48,7 +48,7 @@ export class ArbeitnowJobSource implements JobSource {
       role: j.title ?? '',
       city: j.location ?? '',
       country: '',
-      mode: j.remote ? 'remote' : 'vor Ort',
+      mode: j.remote ? 'remote' : 'on-site',
       posted: j.created_at ? new Date(j.created_at * 1000).toISOString().slice(0, 10) : undefined,
       skills: j.tags ?? [],
       snippet: snippetFrom(j.description),

@@ -25,7 +25,7 @@ import type { MembersController } from './members-controller';
 import type { AccountController } from './account-controller';
 import type { PasswordResetController } from './password-reset-controller';
 import { asyncHandler } from './async-handler';
-import { errorHandler, notFound } from './problem';
+import { errorHandler, notFound, sendProblem } from './problem';
 import { corsMiddleware, securityHeaders, recruitingCsp, RECRUITING_KIT_PREFIX } from './security';
 
 export interface AppDeps {
@@ -91,12 +91,21 @@ export function createApp(deps: AppDeps): Express {
   api.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
   // Throttle the credential endpoints against brute-force / account-creation abuse.
+  // The handler sends problem+json so the login form can show the real reason
+  // ("too many attempts") instead of a generic "Login failed".
   const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     limit: 10,
     standardHeaders: true,
     legacyHeaders: false,
     validate: false,
+    handler: (_req, res) =>
+      sendProblem(res, {
+        type: 'about:blank',
+        title: 'Too Many Requests',
+        status: 429,
+        detail: 'Too many attempts. Please wait a few minutes and try again.',
+      }),
   });
   api.post('/auth/register', authLimiter, asyncHandler(auth.register));
   api.post('/auth/login', authLimiter, asyncHandler(auth.login));

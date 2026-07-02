@@ -61,7 +61,7 @@ describe('ArbeitnowJobSource', () => {
       url: 'https://acme.test/job',
     });
     expect(jobs[0]?.posted).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    expect(jobs[1]?.mode).toBe('vor Ort');
+    expect(jobs[1]?.mode).toBe('on-site');
   });
 
   it('Search_FiltersClientSideByKeywordAndCity', async () => {
@@ -94,7 +94,7 @@ describe('ArbeitnowJobSource', () => {
       company: '',
       role: '',
       city: '',
-      mode: 'vor Ort',
+      mode: 'on-site',
       skills: [],
       snippet: '',
     });

@@ -26,12 +26,16 @@ function Matching({ talents }) {
   // Live postings — loaded once; the search box filters client-side so typing
   // stays instant (the boards are already merged server-side).
   const [jobs, setJobs] = React.useState(null); // null = loading
+  const [sample, setSample] = React.useState(false);
   const [error, setError] = React.useState(false);
   const load = React.useCallback(() => {
     setJobs(null);
     setError(false);
     window.RecruitApi.searchJobs()
-      .then(setJobs)
+      .then((r) => {
+        setJobs(r.jobs);
+        setSample(r.sample);
+      })
       .catch(() => setError(true));
   }, []);
   React.useEffect(() => {
@@ -58,6 +62,12 @@ function Matching({ talents }) {
 
   return (
     <div style={{ maxWidth: '780px' }}>
+      {sample && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', color: 'var(--text-muted)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '8px 12px', marginBottom: '16px' }}>
+          <MT.Icon name="info" size={14} style={{ flexShrink: 0 }} />
+          <span>Sample postings — no live job source is configured. Enable Arbeitnow, Adzuna or Bundesagentur via the server config to search real openings.</span>
+        </div>
+      )}
       {/* mode */}
       <div style={{ display: 'inline-flex', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '3px', gap: '3px', marginBottom: '20px' }}>
         {[['auto', 'Auto · Skill-Match'], ['manual', 'Manual']].map(([id, lbl]) => (

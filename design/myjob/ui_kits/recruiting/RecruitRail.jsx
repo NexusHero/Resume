@@ -26,10 +26,9 @@ const NAV_SECTIONS = [
       { id: 'matching', label: 'Matching', icon: 'search' },
     ],
   },
-  {
-    label: 'Comms',
-    items: [{ id: 'postfach', label: 'Inbox', icon: 'inbox' }],
-  },
+  // Comms/Inbox is hidden until it is wired to a real mail source — an empty
+  // placeholder view reads as broken, not as "coming soon".
+
   {
     label: 'Insights',
     items: [{ id: 'berichte', label: 'Reports', icon: 'trend' }],

@@ -46,6 +46,7 @@ export class JobSearchService {
     return {
       query,
       threshold: query.threshold,
+      source: this.source.name,
       top,
       more,
       counts: { total: scored.length, top: top.length, more: more.length },

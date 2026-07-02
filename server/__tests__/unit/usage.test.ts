@@ -8,7 +8,7 @@ import { UsageService } from '../../src/services/usage-service';
 import { InMemoryUsageMeter } from '../support/fakes';
 
 const ev = (over: Partial<UsageEvent> = {}): UsageEvent => ({
-  ownerId: 'u1',
+  userId: 'u1',
   provider: 'claude',
   feature: 'ats',
   inputTokens: 1000,
@@ -80,7 +80,7 @@ describe('usage domain', () => {
         'T',
       );
       expect(e).toEqual({
-        ownerId: 'u9',
+        userId: 'u9',
         provider: 'gemini',
         feature: 'outreach',
         inputTokens: 12,
@@ -94,8 +94,8 @@ describe('usage domain', () => {
 describe('UsageService', () => {
   it('SummaryFor_ReadsOnlyTheGivenUsersEvents', async () => {
     const meter = new InMemoryUsageMeter();
-    await meter.record(ev({ ownerId: 'u1', inputTokens: 100, outputTokens: 50 }));
-    await meter.record(ev({ ownerId: 'other', inputTokens: 999, outputTokens: 999 }));
+    await meter.record(ev({ userId: 'u1', inputTokens: 100, outputTokens: 50 }));
+    await meter.record(ev({ userId: 'other', inputTokens: 999, outputTokens: 999 }));
     const svc = new UsageService({ usageMeter: meter });
     const summary = await svc.summaryFor('u1');
     expect(summary.requests).toBe(1);

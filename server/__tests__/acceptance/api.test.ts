@@ -1506,6 +1506,23 @@ describe('REST API /api/v1', () => {
     expect(res.status).toBe(401);
   });
 
+  it('Auth_LoginRateLimited_Returns429Problem', async () => {
+    // Arrange: exhaust the credential limiter (10 per window, shared per IP).
+    for (let i = 0; i < 10; i += 1) {
+      await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: 'rl@example.com', password: 'wrongpass' });
+    }
+    // Act
+    const res = await request(app)
+      .post('/api/v1/auth/login')
+      .send({ email: 'rl@example.com', password: 'wrongpass' });
+    // Assert: problem+json with an actionable detail, not a plain-text body.
+    expect(res.status).toBe(429);
+    expect(res.body).toMatchObject({ status: 429, title: 'Too Many Requests' });
+    expect(res.body.detail).toMatch(/Too many attempts/);
+  });
+
   it('Auth_LoginThenLogout_ClearsSession', async () => {
     const agent = request.agent(app);
     await agent

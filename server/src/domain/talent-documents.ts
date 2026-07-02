@@ -57,7 +57,6 @@ export interface LetterContent {
 
 /** Layout templates for the printed documents. */
 export type DocumentTemplate = 'classic' | 'modern' | 'compact';
-export const documentTemplates: DocumentTemplate[] = ['classic', 'modern', 'compact'];
 
 /** The shared look — layout template, accent colour trio, font and scale. */
 export interface DocumentStyle {

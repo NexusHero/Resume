@@ -22,8 +22,9 @@ export const INTERVIEW_STAGES: CandidacyStage[] = ['interview', 'offer', 'placed
 
 /**
  * A talent's candidacy for one mandate — the link that turns a loose talent
- * pool + separate mandates into a pipeline. Owner-scoped; unique per
- * (owner, mandate, talent). `order` positions the card within its stage column.
+ * pool + separate mandates into a pipeline. Team-scoped (`ownerId` holds the
+ * team scope); unique per (scope, mandate, talent). `order` positions the card
+ * within its stage column.
  */
 export interface Candidacy {
   id: string;

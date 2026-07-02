@@ -114,3 +114,15 @@ with elevated rights. **Applicant/Owner** is the personal-toolkit actor.
 - **Trigger:** enabling richer AI output.
 - **Flow:** store a per-user Claude/Gemini key (encrypted); switch provider at runtime.
   Every AI call is metered so requests/tokens/cost are visible per user and feature.
+
+## UC-15 — Apply in the job's language
+
+- **Actor:** Recruiter · **Requirements:** FR-42, FR-23, FR-43
+- **Trigger:** the job ad and the candidate's documents are in different languages
+  (e.g. a German CV, an English posting).
+- **Flow:** generated pitch/outreach/cover letters automatically follow the language of
+  the job ad (detected from the mandate's Stellenanzeige — independent of the app UI).
+  If the documents themselves only exist in one language, the recruiter clicks
+  **Translate → EN/DE** in the editor to create the other-language variant (stored
+  alongside the original, reviewed before sending; requires an AI key). Every draft
+  shows whether AI or the deterministic template produced it.

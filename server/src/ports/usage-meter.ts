@@ -9,7 +9,7 @@ export interface UsageMeter {
   /** Record one metered generation. */
   record(event: UsageEvent): Promise<void>;
   /** Every event for a user, in insertion order. */
-  list(ownerId: string): Promise<UsageEvent[]>;
+  list(userId: string): Promise<UsageEvent[]>;
   /** Drop a user's events (DSGVO account erasure). */
-  removeForOwner(ownerId: string): Promise<void>;
+  removeForUser(userId: string): Promise<void>;
 }

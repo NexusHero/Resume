@@ -165,7 +165,7 @@ export function PositionCard({
         <div>
           {matched && (
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-3xs)', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '8px' }}>
-              Skill-Abgleich
+              Skill match
             </div>
           )}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>

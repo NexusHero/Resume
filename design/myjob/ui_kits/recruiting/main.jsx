@@ -13,6 +13,11 @@ import './Workspace.jsx';
 import './VermittlerViews.jsx';
 import './MandatePipeline.jsx';
 import './TalentProfile.jsx';
+// Editor pieces: shared primitives first (the others destructure them from
+// window at module scope), then previews and modals, then the editor itself.
+import './EditorShared.jsx';
+import './EditorDocs.jsx';
+import './EditorModals.jsx';
 import './Editor.jsx';
 import './MappeModal.jsx';
 import './RecordFormModal.jsx';

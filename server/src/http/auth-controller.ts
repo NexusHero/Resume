@@ -78,7 +78,7 @@ export class AuthController {
   };
 
   /**
-   * Guard for owner-scoped routes: resolves the session cookie to a user and
+   * Guard for authenticated routes: resolves the session cookie to a user and
    * stamps `req.userId`. Rejects with 401 when no valid session is present.
    */
   requireAuth = async (req: Request, _res: Response, next: NextFunction): Promise<void> => {

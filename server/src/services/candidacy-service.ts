@@ -34,8 +34,10 @@ export interface CandidacyServiceDeps {
 
 /**
  * The recruiting pipeline: which talents are in a mandate's pipeline and at
- * which stage. Enforces owner scope + referential integrity (the mandate and
- * talent must exist and be owned by the caller) and blocks duplicate entries.
+ * which stage. Team-scoped: the `ownerId` parameter carries the caller's scope
+ * (`currentScope(req)` — the shared team). Enforces that scope + referential
+ * integrity (the mandate and talent must exist in the team's data) and blocks
+ * duplicate entries.
  */
 export class CandidacyService {
   private readonly repo: CandidacyRepository;

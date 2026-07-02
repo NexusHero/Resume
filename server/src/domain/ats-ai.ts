@@ -5,7 +5,6 @@ import type { TalentDocuments } from './talent-documents';
 export const atsRequestSchema = z.object({
   jobText: z.string().min(1, 'jobText is required').max(50_000),
 });
-export type AtsRequestInput = z.infer<typeof atsRequestSchema>;
 
 /** A résumé-vs-job match analysis. */
 export interface AtsScore {

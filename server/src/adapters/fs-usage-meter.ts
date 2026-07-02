@@ -30,13 +30,13 @@ export class FsUsageMeter implements UsageMeter {
     await this.write(all);
   }
 
-  async list(ownerId: string): Promise<UsageEvent[]> {
-    return (await this.readAll()).filter((e) => e.ownerId === ownerId);
+  async list(userId: string): Promise<UsageEvent[]> {
+    return (await this.readAll()).filter((e) => e.userId === userId);
   }
 
-  async removeForOwner(ownerId: string): Promise<void> {
+  async removeForUser(userId: string): Promise<void> {
     const all = await this.readAll();
-    const next = all.filter((e) => e.ownerId !== ownerId);
+    const next = all.filter((e) => e.userId !== userId);
     if (next.length !== all.length) await this.write(next);
   }
 

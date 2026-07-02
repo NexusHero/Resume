@@ -31,7 +31,7 @@ export interface PositionCardProps extends React.HTMLAttributes<HTMLDivElement> 
   pensum?: string;
   /** Salary band, e.g. "CHF 110–130k" or "€ 75–90k". */
   salary?: string;
-  /** Relative posting time, e.g. "vor 2 Tagen". */
+  /** Relative posting time, e.g. "2 days ago". */
   posted?: string;
   /** Required skills. Pass `{name, met}` in a candidate context to mark the gap. */
   skills?: PositionSkill[];

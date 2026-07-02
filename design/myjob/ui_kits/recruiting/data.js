@@ -286,6 +286,29 @@ const RecruitApi = {
     const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/talents`));
     return Array.isArray(data) ? data.map(mapTalent) : [];
   },
+  /* Live job postings from the two-tier search (both tiers merged — the
+     Matching view re-scores per selected candidate, not per the server's
+     default profile). Offline the server serves its sample source. */
+  async searchJobs(q = '') {
+    const url = q
+      ? `${RECRUIT_API_BASE}/jobs?q=${encodeURIComponent(q)}`
+      : `${RECRUIT_API_BASE}/jobs`;
+    const data = await _jsonOrThrow(await fetch(url));
+    const jobs = [...(data.top || []), ...(data.more || [])];
+    return jobs.map((j) => ({
+      id: j.id,
+      title: j.role,
+      company: j.company,
+      location: j.city || '',
+      country: j.country || '',
+      source: j.source || '',
+      pensum: j.mode || '',
+      salary: j.salary || '',
+      posted: j.posted || '',
+      url: j.url || '',
+      req: Array.isArray(j.skills) ? j.skills : [],
+    }));
+  },
   // --- Recruiting pipeline (candidacies) ---
   async mandateCandidacies(mandateId) {
     const data = await _jsonOrThrow(

@@ -12,7 +12,6 @@ import { type TalentDocuments, resumeSchema, letterSchema } from './talent-docum
 export const translateRequestSchema = z.object({
   targetLang: z.enum(['de', 'en']),
 });
-export type TranslateRequestInput = z.infer<typeof translateRequestSchema>;
 
 const LANG_NAME: Record<OutputLang, string> = { de: 'German', en: 'English' };
 

@@ -301,9 +301,9 @@ function TalentProfile({ talent, apps, onBack, onEdit, onCreateMappe }) {
           </div>
           <div style={{ fontSize: '14px', color: 'var(--sidebar-muted)', marginTop: '3px' }}>{[talent.role, talent.headline].filter(Boolean).join(' · ')}</div>
           <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
-            <TP.Badge variant="glass" size="sm" icon={<TP.Icon name="pin" size={11} />}>{talent.location}</TP.Badge>
-            <TP.Badge variant="glass" size="sm" icon={<TP.Icon name="clock" size={11} />}>{talent.availability}</TP.Badge>
-            <TP.Badge variant="glass" size="sm" icon={<TP.Icon name="mail" size={11} />}>{talent.email}</TP.Badge>
+            {[['pin', talent.location], ['clock', talent.availability], ['mail', talent.email]]
+              .filter(([, v]) => v)
+              .map(([icon, v]) => <TP.Badge key={icon} variant="glass" size="sm" icon={<TP.Icon name={icon} size={11} />}>{v}</TP.Badge>)}
           </div>
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>

@@ -26,10 +26,11 @@ export interface DocumentServiceDeps {
 }
 
 /**
- * The resume + cover-letter document set for a talent. Owner-scoped: every
- * operation first verifies the talent belongs to the caller. When no set has
- * been saved yet, `get` seeds the contact block from the talent so the editor
- * always opens on a usable document.
+ * The resume + cover-letter document set for a talent. Team-scoped: the
+ * `ownerId` parameter carries the caller's scope (`currentScope(req)` — the
+ * shared team), and every operation first verifies the talent exists in that
+ * scope. When no set has been saved yet, `get` seeds the contact block from
+ * the talent so the editor always opens on a usable document.
  */
 export class DocumentService {
   private readonly docs: DocumentRepository;

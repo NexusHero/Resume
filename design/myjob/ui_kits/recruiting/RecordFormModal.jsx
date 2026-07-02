@@ -58,14 +58,17 @@ const RECORD_FORMS = {
   },
 };
 
-function RecordFormModal({ kind, record, onClose, onSubmit }) {
+function RecordFormModal({ kind, record, prefill, onClose, onSubmit }) {
   const form = RECORD_FORMS[kind];
   const editing = record != null;
+  // `record` = edit an existing row; `prefill` = create, but seed the fields
+  // (e.g. a mandate drafted from a job posting).
+  const seed = record ?? prefill;
   const [values, setValues] = React.useState(() => {
     const init = {};
     form.fields.forEach((f) => {
-      const fromRecord = record ? record[f.name] : undefined;
-      init[f.name] = fromRecord != null ? fromRecord : f.default != null ? f.default : '';
+      const fromSeed = seed ? seed[f.name] : undefined;
+      init[f.name] = fromSeed != null ? fromSeed : f.default != null ? f.default : '';
     });
     return init;
   });

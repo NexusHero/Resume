@@ -34,7 +34,7 @@ function ResumeDoc({ contact, resume, template = 'classic' }) {
     <div style={{ width: '720px', background: '#fff', borderRadius: 'var(--radius-md)', overflow: 'hidden', boxShadow: 'var(--shadow-page)', display: 'flex', minHeight: '940px' }}>
       {/* dark sidebar — the "Header" */}
       <aside style={{ width: '38%', background: 'linear-gradient(168deg, var(--ink-800) 0%, var(--ink-950) 100%)', color: '#fff', padding: compact ? '26px 22px' : '34px 26px' }}>
-        <EDC.Avatar name={contact.name} src={contact.src} size={compact ? 88 : 104} radius="var(--radius-lg)" />
+        <EDC.Avatar name={contact.name} src={contact.photo || contact.src} size={compact ? 88 : 104} radius="var(--radius-lg)" />
         <div style={{ fontFamily: 'var(--font-display)', fontSize: modern ? '27px' : compact ? '22px' : '25px', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.1, marginTop: '18px', color: modern ? 'var(--accent-on-dark)' : '#fff' }}>{contact.name}</div>
         <div style={{ fontSize: '13px', color: 'var(--accent-on-dark)', fontWeight: 600, marginTop: '5px' }}>{contact.role}</div>
 

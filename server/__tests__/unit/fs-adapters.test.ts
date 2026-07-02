@@ -16,6 +16,7 @@ import { FsAttachmentStore } from '../../src/adapters/fs-attachment-store';
 import { FsUserRepository } from '../../src/adapters/fs-user-repository';
 import { FsSessionStore } from '../../src/adapters/fs-session-store';
 import { FsPasswordResetTokenStore } from '../../src/adapters/fs-password-reset-token-store';
+import { FsEmailVerificationTokenStore } from '../../src/adapters/fs-email-verification-token-store';
 import { FsApiKeyStore } from '../../src/adapters/fs-api-key-store';
 import { FsUsageMeter } from '../../src/adapters/fs-usage-meter';
 import { FsInterviewObservationRepository } from '../../src/adapters/fs-interview-observation-repository';
@@ -49,6 +50,7 @@ function tmpConfig(): AppConfig {
     usersFile: path.join(storeDir, 'users.json'),
     sessionsFile: path.join(storeDir, 'sessions.json'),
     passwordResetTokensFile: path.join(storeDir, 'password-reset-tokens.json'),
+    emailVerificationTokensFile: path.join(storeDir, 'email-verification-tokens.json'),
     apiKeysFile: path.join(storeDir, 'api-keys.json'),
     usageFile: path.join(storeDir, 'usage.json'),
     interviewObservationsFile: path.join(storeDir, 'interview-observations.json'),
@@ -240,6 +242,44 @@ describe('FsPasswordResetTokenStore', () => {
   it('DestroyForUser_DropsOnlyThatUsersTokens', async () => {
     const config = tmpConfig();
     const store = new FsPasswordResetTokenStore({ config, clock: fixedClock });
+    const a = await store.create('u1');
+    const b = await store.create('u2');
+    await store.destroyForUser('u1');
+    expect(await store.consume(a)).toBeNull();
+    expect(await store.consume(b)).toBe('u2');
+  });
+});
+
+describe('FsEmailVerificationTokenStore', () => {
+  it('Consume_ValidToken_ReturnsUserIdOnceThenGone', async () => {
+    const config = tmpConfig();
+    const store = new FsEmailVerificationTokenStore({ config, clock: fixedClock });
+    const token = await store.create('u1');
+    expect(await store.consume(token)).toBe('u1'); // single-use
+    expect(await store.consume(token)).toBeNull(); // already consumed
+  });
+
+  it('Consume_UnknownToken_ReturnsNull', async () => {
+    const store = new FsEmailVerificationTokenStore({ config: tmpConfig(), clock: fixedClock });
+    expect(await store.consume('nope')).toBeNull();
+  });
+
+  it('Consume_ExpiredToken_ReturnsNull', async () => {
+    let nowIso = '2026-01-01T00:00:00.000Z';
+    const clock = {
+      isoNow: () => nowIso,
+      now: () => new Date(nowIso),
+      today: () => nowIso.slice(0, 10),
+    };
+    const store = new FsEmailVerificationTokenStore({ config: tmpConfig(), clock });
+    const token = await store.create('u1');
+    nowIso = '2026-01-01T02:00:00.000Z'; // > 60-minute TTL
+    expect(await store.consume(token)).toBeNull();
+  });
+
+  it('DestroyForUser_DropsOnlyThatUsersTokens', async () => {
+    const config = tmpConfig();
+    const store = new FsEmailVerificationTokenStore({ config, clock: fixedClock });
     const a = await store.create('u1');
     const b = await store.create('u2');
     await store.destroyForUser('u1');

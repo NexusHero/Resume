@@ -102,6 +102,7 @@ export function documentsToHtml(
   h1 { font-size: ${(22 * scale).toFixed(2)}px; margin: 0 0 2px; color: #0f1626; letter-spacing: -0.02em; }
   .role { color: ${strong}; font-weight: 600; margin-bottom: 10px; }
   .contact { font-size: ${(9.5 * scale).toFixed(2)}px; color: #4b5563; border-bottom: 2px solid ${accent}; padding-bottom: 10px; margin-bottom: 14px; }
+  .photo { float: right; width: 86px; height: 86px; object-fit: cover; border-radius: 8px; margin: 0 0 8px 12px; }
   h2 { font-size: ${(11 * scale).toFixed(2)}px; text-transform: uppercase; letter-spacing: 0.12em; color: ${strong}; margin: 16px 0 8px; }
   .summary { margin-bottom: 6px; }
   .entry { margin-bottom: 10px; }
@@ -124,6 +125,11 @@ export function documentsToHtml(
 </head>
 <body class="tpl-${template}">
   <section class="page resume">
+    ${
+      contact.photo && /^data:image\/[a-z+.-]+;base64,[A-Za-z0-9+/=]+$/.test(contact.photo)
+        ? `<img class="photo" src="${contact.photo}" alt="" />`
+        : ''
+    }
     <h1>${esc(contact.name)}</h1>
     <div class="role">${esc(contact.role)}</div>
     <div class="contact">${[contact.email, contact.phone, contact.location, contact.linkedin]

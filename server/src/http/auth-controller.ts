@@ -2,6 +2,8 @@ import type { Request, Response, NextFunction } from 'express';
 import { registerSchema, loginSchema } from '../domain/user';
 import { UnauthorizedError } from '../domain/errors';
 import type { AuthService } from '../services/auth-service';
+import type { EmailVerificationService } from '../services/email-verification-service';
+import { confirmVerificationSchema } from '../domain/email-verification';
 import type { AppConfig } from '../config';
 
 /** Reads a single cookie value from the raw Cookie header (no cookie-parser dep). */
@@ -21,13 +23,19 @@ function readCookie(req: Request, name: string): string | undefined {
 /** Auth endpoints under /api/v1/auth — register, login, logout, me, providers. */
 export class AuthController {
   private readonly service: AuthService;
+  private readonly verification: EmailVerificationService;
   private readonly cookieName: string;
   private readonly cookieSecure: boolean;
   private readonly maxAgeMs: number;
   private readonly providers: { google: boolean; linkedin: boolean };
 
-  constructor(deps: { authService: AuthService; config: AppConfig }) {
+  constructor(deps: {
+    authService: AuthService;
+    emailVerificationService: EmailVerificationService;
+    config: AppConfig;
+  }) {
     this.service = deps.authService;
+    this.verification = deps.emailVerificationService;
     this.cookieName = deps.config.auth.sessionCookieName;
     this.cookieSecure = deps.config.auth.cookieSecure;
     // Keep the cookie's client-side lifetime aligned with the server session TTL.
@@ -52,7 +60,25 @@ export class AuthController {
     const input = registerSchema.parse(req.body);
     const { user, token } = await this.service.register(input);
     this.setSession(res, token);
+    // Best-effort: the confirmation link goes out, but registration never
+    // fails on mail problems (offline-first; console mailer in dev).
+    void this.verification.send(user);
     res.status(201).json({ user });
+  };
+
+  /** Re-send the verification link for the signed-in account. */
+  requestVerification = async (req: Request, res: Response): Promise<void> => {
+    const user = await this.service.currentUser(readCookie(req, this.cookieName));
+    if (!user) throw new UnauthorizedError('Sign in to request a verification email');
+    await this.verification.send(user);
+    res.sendStatus(202);
+  };
+
+  /** Confirm the emailed token — marks the account verified. */
+  confirmVerification = async (req: Request, res: Response): Promise<void> => {
+    const { token } = confirmVerificationSchema.parse(req.body);
+    await this.verification.confirm(token);
+    res.sendStatus(204);
   };
 
   login = async (req: Request, res: Response): Promise<void> => {

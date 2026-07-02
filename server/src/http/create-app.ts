@@ -113,6 +113,10 @@ export function createApp(deps: AppDeps): Express {
   // Rate-limited like the other credential endpoints.
   api.post('/auth/password-reset/request', authLimiter, asyncHandler(passwordReset.request));
   api.post('/auth/password-reset/confirm', authLimiter, asyncHandler(passwordReset.confirm));
+  // Soft email verification: resend for the signed-in user; confirm is open
+  // (the token IS the credential) but throttled like the other auth routes.
+  api.post('/auth/verify-email/request', asyncHandler(auth.requestVerification));
+  api.post('/auth/verify-email/confirm', authLimiter, asyncHandler(auth.confirmVerification));
   api.post('/auth/logout', asyncHandler(auth.logout));
   api.get('/auth/me', asyncHandler(auth.me));
   api.get('/auth/providers', asyncHandler(auth.providersInfo));

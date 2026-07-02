@@ -16,6 +16,37 @@ const ED_ACCENTS = [
 ];
 
 /* A titled block in the form column, with an optional add action. */
+/* Overlays dashed lines where A4 pages roughly break in the exported PDF
+   (720px preview width → ~1018px per page). An approximation — fonts and
+   margins differ slightly in print — but it stops page-2 surprises. */
+function A4PageMarkers({ children }) {
+  const ref = React.useRef(null);
+  const [pages, setPages] = React.useState([]);
+  const PAGE = Math.round((720 * 297) / 210);
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof ResizeObserver === 'undefined') return undefined;
+    const ro = new ResizeObserver(() => {
+      const h = el.offsetHeight;
+      const breaks = [];
+      for (let y = PAGE; y < h; y += PAGE) breaks.push(y);
+      setPages((p) => (p.length === breaks.length ? p : breaks));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      {children}
+      {pages.map((y, i) => (
+        <div key={y} title="Approximate A4 page break in the exported PDF" style={{ position: 'absolute', left: '-8px', right: '-8px', top: `${y}px`, borderTop: '2px dashed var(--accent)', opacity: 0.55, pointerEvents: 'none' }}>
+          <span style={{ position: 'absolute', right: 0, top: '-9px', fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--accent-strong)', background: 'var(--surface-card)', borderRadius: 'var(--radius-pill)', padding: '2px 8px' }}>Page {i + 2} ↓</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function FormGroup({ title, children, onAdd }) {
   return (
     <div style={{ marginBottom: '22px' }}>
@@ -49,6 +80,31 @@ function Editor({ talent, onClose, onCreateMappe }) {
   const [letter, setLetter] = React.useState(() => JSON.parse(JSON.stringify(talent.letter || { firma: '', ansprechpartner: '', strasse: '', plzOrt: '', betreff: '', anrede: 'Dear Sir or Madam,', absaetze: [''], gruss: 'Kind regards' })));
 
   const setC = (k, v) => setContact((s) => ({ ...s, [k]: v }));
+
+  /* Portrait upload: downscale to 512px via canvas so the data URI stays well
+     under the server's 300 KB cap, then store it on the contact block. */
+  const [photoMsg, setPhotoMsg] = React.useState(null);
+  const uploadPhoto = (file) => {
+    setPhotoMsg(null);
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { setPhotoMsg('Please pick an image file.'); return; }
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const max = 512;
+      const scale = Math.min(1, max / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      const dataUri = canvas.toDataURL('image/jpeg', 0.85);
+      if (dataUri.length > 300000) { setPhotoMsg('Photo is too large even after resizing.'); return; }
+      setC('photo', dataUri);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); setPhotoMsg('Could not read that image.'); };
+    img.src = url;
+  };
   const setExp = (i, k, v) => setResume((s) => { const e = [...s.experience]; e[i] = { ...e[i], [k]: v }; return { ...s, experience: e }; });
   const setEdu = (i, k, v) => setResume((s) => { const e = [...s.education]; e[i] = { ...e[i], [k]: v }; return { ...s, education: e }; });
   const addExp = () => setResume((s) => ({ ...s, experience: [{ role: 'New position', company: '', period: '', location: '', bullets: [''], skills: [] }, ...s.experience] }));
@@ -247,6 +303,17 @@ function Editor({ talent, onClose, onCreateMappe }) {
                 <ED.Input label="Phone" value={contact.phone} onChange={(e) => setC('phone', e.target.value)} />
                 <ED.Input label="Location" value={contact.location} onChange={(e) => setC('location', e.target.value)} />
                 <ED.Input label="LinkedIn" value={contact.linkedin} onChange={(e) => setC('linkedin', e.target.value)} />
+                <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <ED.Avatar name={contact.name} src={contact.photo || contact.src} size={40} radius="var(--radius-md)" />
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', padding: '5px 12px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>
+                    <ED.Icon name="upload" size={12} /> {contact.photo ? 'Replace photo' : 'Upload photo'}
+                    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => uploadPhoto(e.target.files[0])} />
+                  </label>
+                  {contact.photo && (
+                    <button onClick={() => setC('photo', undefined)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', textDecoration: 'underline', padding: 0 }}>Remove</button>
+                  )}
+                  {photoMsg && <span style={{ fontSize: '11.5px', color: 'var(--danger)' }}>{photoMsg}</span>}
+                </div>
               </div>
             </FormGroup>
 
@@ -347,7 +414,9 @@ function Editor({ talent, onClose, onCreateMappe }) {
           </div>
           <div ref={previewRef} style={{ flex: 1, overflowY: 'auto', padding: '28px', display: 'flex', justifyContent: 'center' }}>
             <div style={{ zoom: scale * cfg.size, '--accent': cfg.accent, '--accent-strong': cfg.strong, '--accent-on-dark': cfg.onDark, '--font-display': cfg.font, '--font-body': cfg.font }}>
-              {doc === 'lebenslauf' ? <EdResumeDoc contact={contact} resume={resume} template={cfg.template} /> : <EdLetterDoc contact={contact} letter={letter} template={cfg.template} />}
+              <A4PageMarkers>
+                {doc === 'lebenslauf' ? <EdResumeDoc contact={contact} resume={resume} template={cfg.template} /> : <EdLetterDoc contact={contact} letter={letter} template={cfg.template} />}
+              </A4PageMarkers>
             </div>
           </div>
         </div>

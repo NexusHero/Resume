@@ -40,6 +40,10 @@ export class SqlUserRepository implements UserRepository {
     await this.db.update(users).set({ roles }).where(eq(users.id, id));
   }
 
+  async markVerified(id: string, at: string): Promise<void> {
+    await this.db.update(users).set({ verifiedAt: at }).where(eq(users.id, id));
+  }
+
   async remove(id: string): Promise<boolean> {
     const removed = await this.db.delete(users).where(eq(users.id, id)).returning({ id: users.id });
     return removed.length > 0;

@@ -15,10 +15,18 @@ export const users = pgTable('users', {
   passwordHash: text('password_hash').notNull(),
   roles: jsonb('roles').$type<Role[]>().notNull(),
   createdAt: text('created_at').notNull(),
+  verifiedAt: text('verified_at'),
 });
 
 /** Opaque server-side sessions: a token maps to a user id, with a creation time. */
 export const sessions = pgTable('sessions', {
+  token: text('token').primaryKey(),
+  userId: text('user_id').notNull(),
+  createdAt: text('created_at').notNull(),
+});
+
+/** One-time, expiring email-verification tokens — separate from reset tokens on purpose. */
+export const emailVerificationTokens = pgTable('email_verification_tokens', {
   token: text('token').primaryKey(),
   userId: text('user_id').notNull(),
   createdAt: text('created_at').notNull(),

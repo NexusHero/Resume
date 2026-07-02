@@ -200,8 +200,31 @@ function ReportsView({ clients, mandates, placements, apps, kpis }) {
   const fmt = (n) => n.toLocaleString('de-DE');
   const order = window.STAGES_ORDER;
   const maxStage = Math.max(...order.map((s) => apps.filter((a) => a.status === s).length), 1);
+
+  // Download the booked placements as CSV — values quoted, so names with
+  // commas survive; the blob URL is revoked right after the click.
+  const exportCsv = () => {
+    const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const rows = [
+      ['candidate', 'role', 'client', 'start', 'fee', 'status'],
+      ...placements.map((p) => [p.candName, p.candRole, p.client, p.start, p.fee, p.status]),
+    ];
+    const csv = rows.map((r) => r.map(esc).join(',')).join('\r\n');
+    const url = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'placements.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <VV.Button variant="outline" size="sm" iconLeft={<VV.Icon name="download" size={14} />} disabled={placements.length === 0} onClick={exportCsv}>
+          Export placements (CSV)
+        </VV.Button>
+      </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px' }}>
         {kpis.map((k, i) => <VV.StatCard key={i} {...k} />)}
       </div>

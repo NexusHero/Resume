@@ -16,6 +16,8 @@ export interface User {
   passwordHash: string;
   roles: Role[];
   createdAt: string; // ISO 8601
+  /** When the email address was confirmed via the emailed link (soft check). */
+  verifiedAt?: string;
 }
 
 /** The public projection of a user — no secrets. */
@@ -24,10 +26,17 @@ export interface UserView {
   email: string;
   roles: Role[];
   createdAt: string;
+  verifiedAt?: string;
 }
 
 export function toUserView(u: User): UserView {
-  return { id: u.id, email: u.email, roles: u.roles, createdAt: u.createdAt };
+  return {
+    id: u.id,
+    email: u.email,
+    roles: u.roles,
+    createdAt: u.createdAt,
+    ...(u.verifiedAt ? { verifiedAt: u.verifiedAt } : {}),
+  };
 }
 
 /** True when the user holds the admin role. */

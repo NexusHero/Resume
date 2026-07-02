@@ -11,6 +11,8 @@ export interface UserRepository {
   updatePassword(id: string, passwordHash: string): Promise<void>;
   /** Replace an account's roles (admin member management). */
   updateRoles(id: string, roles: Role[]): Promise<void>;
+  /** Stamp the account as email-verified (soft verification flow). */
+  markVerified(id: string, at: string): Promise<void>;
   /** Delete an account by id; returns whether a row was removed (DSGVO erasure). */
   remove(id: string): Promise<boolean>;
 }

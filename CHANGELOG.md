@@ -8,7 +8,25 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+
+- **Drag-and-drop pipeline board** — candidacy cards can be dragged between stage
+  columns (with drop highlighting); the per-card stage select stays as fallback.
+- **Mandate from a posting** — every Matching result offers "Create mandate",
+  opening the mandate form pre-filled with client, role, location and the ad
+  text, so matching/ATS/prep work from day one.
+- **CSV export in Reports** — booked placements download as a quoted, Excel-safe
+  `placements.csv`.
+- **Resume photo** — upload a portrait in the editor (downscaled client-side,
+  stored as a size-capped data URI on the contact block); shown in the live
+  preview and rendered into the exported PDF.
+- **A4 page-break markers** — the live preview overlays dashed lines where the
+  exported PDF will roughly break pages, ending page-2 surprises.
+- **Email verification (soft)** — registration sends a confirmation link
+  (console mailer in dev, SMTP in prod); clicking it stamps `verifiedAt`, shown
+  in Settings with a resend button. Nothing is locked while unverified —
+  offline-first — and verification tokens live in a store separate from
+  password-reset tokens by design.
 
 ## [1.0.0] - 2026-07-02
 

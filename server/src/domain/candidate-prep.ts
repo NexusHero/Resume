@@ -91,26 +91,26 @@ export function prepPrompt(
   strengths: string[],
 ): { system: string; prompt: string } {
   const stations = documents.resume.experience
-    .map((e) => [e.role, e.company].filter(Boolean).join(' bei '))
+    .map((e) => [e.role, e.company].filter(Boolean).join(' at '))
     .filter(Boolean);
   return {
     system:
-      'Du bist Karriere-Coach und bereitest eine:n Bewerber:in auf ein konkretes ' +
-      'Vorstellungsgespräch vor. Ziel: die Person bekommt den Job. Nutze NUR die gegebenen ' +
-      'Fakten (Profil, Firmentyp, Anzeige) — erfinde nichts, keine erfundenen Firmen-Details. ' +
-      'Gib AUSSCHLIESSLICH ' +
-      'gültiges JSON in genau diesem Schema zurück (keine Markdown-Fences): ' +
+      'You are a career coach preparing an applicant for a specific ' +
+      'job interview. Goal: the person gets the job. Use ONLY the given ' +
+      'facts (profile, company type, ad) — invent nothing, no made-up company details. ' +
+      'Return EXCLUSIVELY ' +
+      'valid JSON in exactly this schema (no markdown fences): ' +
       '{"likelyQuestions":[{"category":"","question":"","why":""}],"starAnswers":[{"competency":"",' +
-      '"prompt":"","scaffold":""}],"candidateQuestions":[""]}. likelyQuestions = 4–6 erwartbare ' +
-      'Fragen (passend zum Firmentyp/Format) mit kurzer Begründung. starAnswers = 2–3 Antwort-' +
-      'Gerüste nach STAR, konkret aus den Stationen der Person. candidateQuestions = 3–4 kluge ' +
-      'Rückfragen an das Unternehmen.',
+      '"prompt":"","scaffold":""}],"candidateQuestions":[""]}. likelyQuestions = 4–6 expected ' +
+      'questions (fitting the company type/format) with a short rationale. starAnswers = 2–3 answer ' +
+      "scaffolds using STAR, grounded in the person's own roles. candidateQuestions = 3–4 smart " +
+      'questions to ask the company.',
     prompt:
-      `Firmentyp: ${company.label} (Interview-Stil: ${company.style.formats.join('; ')})\n` +
-      `Rolle: ${mandate.role}${mandate.client ? ` bei ${mandate.client}` : ''}\n` +
-      `${strengths.length ? `Passende Stärken: ${strengths.join(', ')}\n` : ''}` +
-      `Stationen: ${stations.join('; ') || '—'}\n` +
-      `${documents.resume.summary ? `Profil: ${documents.resume.summary}` : ''}`,
+      `Company type: ${company.label} (interview style: ${company.style.formats.join('; ')})\n` +
+      `Role: ${mandate.role}${mandate.client ? ` at ${mandate.client}` : ''}\n` +
+      `${strengths.length ? `Matching strengths: ${strengths.join(', ')}\n` : ''}` +
+      `Roles: ${stations.join('; ') || '—'}\n` +
+      `${documents.resume.summary ? `Profile: ${documents.resume.summary}` : ''}`,
   };
 }
 
@@ -128,8 +128,8 @@ export function fallbackPrep(
   const firstStation = documents?.resume.experience[0];
   const stationLabel =
     firstStation && (firstStation.role || firstStation.company)
-      ? [firstStation.role, firstStation.company].filter(Boolean).join(' bei ')
-      : 'einer deiner Stationen';
+      ? [firstStation.role, firstStation.company].filter(Boolean).join(' at ')
+      : 'one of your roles';
 
   const requirementChecks: RequirementCheck[] = requirements.musts.map((text) => ({
     text,
@@ -139,39 +139,39 @@ export function fallbackPrep(
   const likelyQuestions: PrepQuestion[] = [
     ...company.style.formats.slice(0, 3).map((f) => ({
       category: 'Format',
-      question: `Rechne mit: ${f}.`,
-      why: `typisch für ${company.label}`,
+      question: `Expect: ${f}.`,
+      why: `typical for ${company.label}`,
     })),
     ...topSkills.slice(0, 2).map((s) => ({
-      category: 'Fachlich',
-      question: `Vertiefe an einem konkreten Projekt deine Erfahrung mit ${s}.`,
-      why: 'in Profil und Anzeige relevant',
+      category: 'Technical',
+      question: `Go deep on your experience with ${s} using a concrete project.`,
+      why: 'relevant in both profile and ad',
     })),
     {
-      category: 'Verhalten',
-      question: `Nenne ein Beispiel, das „${company.style.emphasis[0] ?? 'deine Stärke'}" zeigt.`,
-      why: `wird bei ${company.label} besonders gewichtet`,
+      category: 'Behavior',
+      question: `Give an example that demonstrates "${company.style.emphasis[0] ?? 'your strength'}".`,
+      why: `weighted particularly heavily at ${company.label}`,
     },
   ];
 
   const starAnswers: StarAnswer[] = [
     ...topSkills.slice(0, 1).map((s) => ({
       competency: s,
-      prompt: `Erzähle von einem Projekt mit ${s}.`,
-      scaffold: `Situation: deine Rolle bei ${stationLabel}. Aufgabe: das Ziel. Handlung: was DU konkret mit ${s} getan hast. Ergebnis: messbares Resultat.`,
+      prompt: `Tell us about a project involving ${s}.`,
+      scaffold: `Situation: your role at ${stationLabel}. Task: the goal. Action: what YOU specifically did with ${s}. Result: a measurable outcome.`,
     })),
     {
-      competency: 'Herausforderung',
-      prompt: 'Beschreibe eine schwierige Situation und wie du sie gelöst hast.',
-      scaffold: `Situation: z. B. bei ${stationLabel}. Aufgabe: das Problem. Handlung: deine konkreten Schritte. Ergebnis: was am Ende besser war.`,
+      competency: 'Challenge',
+      prompt: 'Describe a difficult situation and how you resolved it.',
+      scaffold: `Situation: e.g. at ${stationLabel}. Task: the problem. Action: your concrete steps. Result: what was better in the end.`,
     },
   ];
 
   const candidateQuestions = [
-    'Wie sieht Erfolg in dieser Rolle nach 6–12 Monaten aus?',
-    'Wie ist das Team aufgestellt, mit dem ich zusammenarbeiten würde?',
-    'Wie läuft das Onboarding in den ersten Wochen ab?',
-    `Worauf legt ihr im Auswahlprozess besonders Wert (${company.style.emphasis[0] ?? 'Fachliches'})?`,
+    'What does success in this role look like after 6–12 months?',
+    "How is the team I'd be working with set up?",
+    'What does onboarding look like in the first few weeks?',
+    `What do you value most in the selection process (${company.style.emphasis[0] ?? 'technical skills'})?`,
   ];
 
   return {

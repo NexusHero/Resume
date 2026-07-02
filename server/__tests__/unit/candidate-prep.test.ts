@@ -74,7 +74,7 @@ describe('candidate-prep domain', () => {
       expect(p.companyLabel).toBe('US Big Tech'); // Google → curated
       expect(p.companySource).toBe('curated');
       expect(p.companyConfidence).toBe('high');
-      expect(p.formats.join(' ')).toMatch(/Coding/);
+      expect(p.formats.join(' ')).toMatch(/coding/i);
     });
 
     it('SurfacesObligationsAndProcessFromAd', () => {
@@ -106,7 +106,7 @@ describe('candidate-prep domain', () => {
       const p = build(null);
       expect(p.strengths).toEqual([]);
       expect(p.likelyQuestions.length).toBeGreaterThan(0);
-      expect(p.starAnswers[0]?.scaffold).toContain('einer deiner Stationen');
+      expect(p.starAnswers[0]?.scaffold).toContain('one of your roles');
     });
 
     it('NoAdOverlap_UsesOwnSkillsForQuestions', () => {
@@ -143,8 +143,8 @@ describe('candidate-prep domain', () => {
         style: { formats: [], emphasis: [], rounds: '', tips: [] },
       };
       const p = fallbackPrep(docs(), mandate, bareCompany, extractRequirements(jobAd), jobAd);
-      expect(p.likelyQuestions.some((q) => q.question.includes('deine Stärke'))).toBe(true);
-      expect(p.candidateQuestions.some((q) => q.includes('Fachliches'))).toBe(true);
+      expect(p.likelyQuestions.some((q) => q.question.includes('your strength'))).toBe(true);
+      expect(p.candidateQuestions.some((q) => q.includes('technical skills'))).toBe(true);
     });
   });
 
@@ -161,8 +161,8 @@ describe('candidate-prep domain', () => {
       const company = companyInterviewProfile('', 'Engineer', '');
       const sparse = docs({ summary: '', experience: [] });
       const { prompt } = prepPrompt(sparse, { role: 'Engineer', location: '' }, company, []);
-      expect(prompt).toContain('Rolle: Engineer\n'); // no " bei <client>"
-      expect(prompt).not.toContain('Passende Stärken');
+      expect(prompt).toContain('Role: Engineer\n'); // no " at <client>"
+      expect(prompt).not.toContain('Matching strengths');
     });
   });
 

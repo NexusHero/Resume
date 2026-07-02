@@ -31,15 +31,15 @@ export function atsPrompt(
   const roles = documents.resume.experience.map((e) => e.role).filter(Boolean);
   return {
     system:
-      'Du bist ein ATS-Analyst. Vergleiche das Kandidatenprofil mit der Stellenanzeige und ' +
-      'gib AUSSCHLIESSLICH gültiges JSON zurück (keine Erklärung, keine Markdown-Fences): ' +
+      'You are an ATS analyst. Compare the candidate profile with the job ad and ' +
+      'return ONLY valid JSON (no explanation, no markdown fences): ' +
       '{"score":0,"matched":[""],"missing":[""],"suggestions":[""]}. ' +
-      'score ist eine Zahl 0–100 (Trefferquote). matched = Schlüsselbegriffe der Anzeige, die der ' +
-      'Kandidat erfüllt. missing = wichtige Begriffe der Anzeige, die fehlen. suggestions = ' +
-      'konkrete, umsetzbare Verbesserungen am Lebenslauf. Erfinde keine Skills.',
-    prompt: `Kandidat:\nRolle(n): ${roles.join(', ') || '—'}\nSkills: ${
+      'score is a number 0–100 (match rate). matched = key terms from the ad that the ' +
+      'candidate meets. missing = important terms from the ad that are absent. suggestions = ' +
+      'concrete, actionable improvements to the résumé. Do not invent skills.',
+    prompt: `Candidate:\nRole(s): ${roles.join(', ') || '—'}\nSkills: ${
       skills.join(', ') || '—'
-    }\nZusammenfassung: ${documents.resume.summary || '—'}\n\nStellenanzeige:\n"""\n${jobText}\n"""`,
+    }\nSummary: ${documents.resume.summary || '—'}\n\nJob ad:\n"""\n${jobText}\n"""`,
   };
 }
 
@@ -78,8 +78,8 @@ export function fallbackAts(documents: TalentDocuments, jobText: string): AtsSco
     matched: [...new Set(matchedLabels)],
     missing: [],
     suggestions: [
-      'Übernimm zentrale Begriffe der Stellenanzeige wörtlich in Zusammenfassung und Erfahrung.',
-      'Belege Kernkompetenzen mit messbaren Ergebnissen (Zahlen, Wirkung).',
+      "Mirror the job ad's key terms verbatim in your summary and experience.",
+      'Back core competencies with measurable results (numbers, impact).',
     ],
   };
 }

@@ -297,14 +297,46 @@ describe('cover-letter domain', () => {
     const text = coverLetterTemplate(req, candidate);
     expect(text).toContain('Celonis');
     expect(text).toContain('Senior C++ Engineer');
-    expect(text).toContain('C++ und gRPC');
+    expect(text).toContain('C++ and gRPC');
     expect(text.trim().endsWith('Suhay Sevinc')).toBe(true);
   });
 
   it('Prompt_IncludesStructuredFacts', () => {
     const { system, prompt } = coverLetterPrompt(req, candidate);
-    expect(system).toContain('Deutsch');
+    expect(system).toContain('English');
     expect(prompt).toContain('Celonis');
     expect(prompt).toContain('C++, gRPC');
+  });
+
+  it('Template_German_ProducesGermanLetter', () => {
+    const text = coverLetterTemplate({ ...req, city: 'Zürich' }, candidate, 'de');
+    expect(text).toContain('Sehr geehrtes Team von Celonis');
+    expect(text).toContain('in Zürich');
+    expect(text).toContain('C++ und gRPC');
+    expect(text.trim().endsWith('Suhay Sevinc')).toBe(true);
+  });
+
+  it('Prompt_German_AsksForGermanOutput', () => {
+    const { system } = coverLetterPrompt(req, candidate, 'de');
+    expect(system).toContain('Deutsch');
+  });
+
+  it('Template_NoSkills_UsesDefaultFocus', () => {
+    expect(coverLetterTemplate({ ...req, skills: [] }, candidate)).toContain(
+      'Software Engineering',
+    );
+    expect(coverLetterTemplate({ ...req, skills: [] }, candidate, 'de')).toContain(
+      'Software Engineering',
+    );
+  });
+
+  it('Template_German_NoCity_OmitsLocation', () => {
+    const text = coverLetterTemplate({ ...req, city: undefined }, candidate, 'de');
+    expect(text).toContain('Sehr geehrtes Team von Celonis');
+    expect(text).not.toContain(' in undefined');
+  });
+
+  it('Prompt_NoSkills_UsesDash', () => {
+    expect(coverLetterPrompt({ ...req, skills: [] }, candidate).prompt).toContain('—');
   });
 });

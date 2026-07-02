@@ -10,7 +10,7 @@ import { type MandateContext, documentSkills, matchedForMandate } from './match-
  * a recruiter always walks into the interview prepared.
  */
 export interface InterviewQuestion {
-  category: string; // e.g. Fachlich, Erfahrung, Motivation, Kultur
+  category: string; // e.g. Technical, Experience, Motivation, Culture
   question: string;
   lookFor: string; // what a strong answer demonstrates
 }
@@ -43,8 +43,8 @@ function candidateFacts(documents: TalentDocuments): string {
     .filter(Boolean);
   return [
     contact.name ? `Name: ${contact.name}` : '',
-    resume.summary ? `Profil: ${resume.summary}` : '',
-    roles.length ? `Stationen: ${roles.join('; ')}` : '',
+    resume.summary ? `Profile: ${resume.summary}` : '',
+    roles.length ? `Roles: ${roles.join('; ')}` : '',
     documentSkills(documents).length ? `Skills: ${documentSkills(documents).join(', ')}` : '',
   ]
     .filter(Boolean)
@@ -57,17 +57,17 @@ export function interviewKitPrompt(
 ): { system: string; prompt: string } {
   return {
     system:
-      'Du bist erfahrene:r Personalberater:in und erstellst einen Interview-Leitfaden für ' +
-      'ein Gespräch mit einer:einem Kandidat:in zu einem konkreten Mandat. Fragen sollen ' +
-      'auf Profil und Stelle zugeschnitten sein, fair und ohne Diskriminierung. Gib ' +
-      'AUSSCHLIESSLICH gültiges JSON in genau diesem Schema zurück (keine Erklärung, keine ' +
-      'Markdown-Fences): {"focus":"","questions":[{"category":"","question":"","lookFor":""}],' +
-      '"scorecard":[""]}. focus = eine Zeile, worauf besonders zu achten ist. questions = ' +
-      '4–6 Fragen mit Kategorie und „lookFor" (was eine gute Antwort zeigt). scorecard = ' +
-      '3–6 Bewertungskriterien.',
+      'You are an experienced recruiter creating an interview guide for a ' +
+      'conversation with a candidate about a specific mandate. Questions should be ' +
+      'tailored to the profile and the role, fair and free of discrimination. Return ' +
+      'EXCLUSIVELY valid JSON in exactly this schema (no explanation, no ' +
+      'markdown fences): {"focus":"","questions":[{"category":"","question":"","lookFor":""}],' +
+      '"scorecard":[""]}. focus = one line on what to pay particular attention to. questions = ' +
+      '4–6 questions with a category and a "lookFor" (what a good answer shows). scorecard = ' +
+      '3–6 evaluation criteria.',
     prompt:
-      `Mandat: ${mandate.role}${mandate.client ? ` bei ${mandate.client}` : ''}` +
-      `${mandate.location ? `, ${mandate.location}` : ''}\n\nKandidat:\n${candidateFacts(documents)}`,
+      `Mandate: ${mandate.role}${mandate.client ? ` at ${mandate.client}` : ''}` +
+      `${mandate.location ? `, ${mandate.location}` : ''}\n\nCandidate:\n${candidateFacts(documents)}`,
   };
 }
 
@@ -84,42 +84,42 @@ export function fallbackInterviewKit(
   const questions: InterviewQuestion[] = [];
   for (const skill of topSkills) {
     questions.push({
-      category: 'Fachlich',
-      question: `Beschreiben Sie ein Projekt, in dem Sie ${skill} eingesetzt haben. Was war Ihre konkrete Rolle?`,
-      lookFor: 'Tiefe, konkrete Beispiele und eigener Beitrag statt allgemeiner Aussagen.',
+      category: 'Technical',
+      question: `Describe a project in which you used ${skill}. What was your specific role?`,
+      lookFor: 'Depth, concrete examples and personal contribution rather than general statements.',
     });
   }
   if (firstStation && (firstStation.role || firstStation.company)) {
     questions.push({
-      category: 'Erfahrung',
-      question: `Was war Ihre größte Herausforderung als ${[firstStation.role, firstStation.company]
+      category: 'Experience',
+      question: `What was your biggest challenge as ${[firstStation.role, firstStation.company]
         .filter(Boolean)
-        .join(' bei ')} und wie sind Sie damit umgegangen?`,
-      lookFor: 'Problemlösung, Eigenverantwortung und messbares Ergebnis.',
+        .join(' at ')} and how did you handle it?`,
+      lookFor: 'Problem-solving, ownership and a measurable outcome.',
     });
   }
   questions.push({
     category: 'Motivation',
-    question: `Was reizt Sie an der Rolle „${mandate.role}"${mandate.client ? ` bei ${mandate.client}` : ''}?`,
-    lookFor: 'Konkreter Bezug zur Stelle statt allgemeiner Floskeln.',
+    question: `What appeals to you about the role of "${mandate.role}"${mandate.client ? ` at ${mandate.client}` : ''}?`,
+    lookFor: 'A concrete connection to the role rather than generic phrases.',
   });
   questions.push({
-    category: 'Kultur',
-    question: 'Wie sieht ein Arbeitsumfeld aus, in dem Sie Ihre beste Leistung bringen?',
-    lookFor: 'Selbstkenntnis und Passung zum Team/Kunden.',
+    category: 'Culture',
+    question: 'What does a work environment look like in which you do your best work?',
+    lookFor: 'Self-awareness and fit with the team/client.',
   });
 
   const scorecard = [
-    ...topSkills.map((s) => `Fachliche Tiefe: ${s}`),
-    `Eignung für „${mandate.role}"`,
-    'Kommunikation & Klarheit',
-    'Motivation & Passung',
+    ...topSkills.map((s) => `Technical depth: ${s}`),
+    `Suitability for "${mandate.role}"`,
+    'Communication & clarity',
+    'Motivation & fit',
   ];
 
   return {
     focus: matched.length
-      ? `Fachliche Tiefe in ${topSkills.join(', ')} sowie Passung zur Rolle prüfen.`
-      : `Grundeignung für „${mandate.role}" und Motivation im Detail prüfen.`,
+      ? `Assess technical depth in ${topSkills.join(', ')} as well as fit for the role.`
+      : `Assess basic suitability for "${mandate.role}" and motivation in detail.`,
     questions,
     scorecard: scorecard.slice(0, 6),
   };

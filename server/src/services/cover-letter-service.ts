@@ -9,6 +9,7 @@ import type { LlmProviderId } from '../ports/llm-provider';
 import type { UsageMeter } from '../ports/usage-meter';
 import type { Clock } from '../ports/clock';
 import { toUsageEvent } from '../domain/usage';
+import { detectLanguage } from '../domain/language';
 import type { LlmService } from './llm-service';
 
 export interface CoverLetterResult {
@@ -60,9 +61,14 @@ export class CoverLetterService {
     // With a user key, use that provider regardless of server availability;
     // otherwise the currently selected provider, if it has server credentials.
     const provider = override ? this.llm.get(override.provider) : this.llm.active();
+    // The letter follows the posting's language; the request carries no free ad
+    // text, so infer from the company/role/city/skills, defaulting to English.
+    const lang = detectLanguage(
+      [req.company, req.role, req.city ?? '', ...(req.skills ?? [])].join(' '),
+    );
     if (provider) {
       try {
-        const { system, prompt } = coverLetterPrompt(req, this.candidate);
+        const { system, prompt } = coverLetterPrompt(req, this.candidate, lang);
         const { text, usage } = await provider.generate({
           system,
           prompt,
@@ -89,6 +95,6 @@ export class CoverLetterService {
         );
       }
     }
-    return { text: coverLetterTemplate(req, this.candidate), provider: 'template' };
+    return { text: coverLetterTemplate(req, this.candidate, lang), provider: 'template' };
   }
 }

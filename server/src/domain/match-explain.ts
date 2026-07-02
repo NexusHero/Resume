@@ -54,9 +54,9 @@ function candidateFacts(documents: TalentDocuments): string {
   const skills = documentSkills(documents);
   return [
     contact.name ? `Name: ${contact.name}` : '',
-    contact.role ? `Rolle: ${contact.role}` : '',
-    resume.summary ? `Profil: ${resume.summary}` : '',
-    roles.length ? `Stationen: ${roles.join('; ')}` : '',
+    contact.role ? `Role: ${contact.role}` : '',
+    resume.summary ? `Profile: ${resume.summary}` : '',
+    roles.length ? `Experience: ${roles.join('; ')}` : '',
     skills.length ? `Skills: ${skills.join(', ')}` : '',
   ]
     .filter(Boolean)
@@ -70,17 +70,17 @@ export function explainPrompt(
 ): { system: string; prompt: string } {
   return {
     system:
-      'Du bist Personalberater:in und begründest kurz und ehrlich, warum ein:e Kandidat:in ' +
-      'auf ein Mandat passt. Keine erfundenen Fakten, nur was aus den Angaben hervorgeht. ' +
-      'Gib AUSSCHLIESSLICH gültiges JSON in genau diesem Schema zurück (keine Erklärung, ' +
-      'keine Markdown-Fences): {"summary":"","reasons":["",""]}. ' +
-      'summary = eine Zeile „Warum passt diese:r Kandidat:in". reasons = 2–4 konkrete, ' +
-      'belegbare Gründe (Skills, Stationen, Rolle). Wenn etwas fehlt, benenne es fair.',
+      'You are a recruiter and briefly and honestly explain why a candidate ' +
+      'fits a mandate. No fabricated facts, only what follows from the given details. ' +
+      'Return EXCLUSIVELY valid JSON in exactly this schema (no explanation, ' +
+      'no markdown fences): {"summary":"","reasons":["",""]}. ' +
+      'summary = a one-line "Why does this candidate fit". reasons = 2–4 concrete, ' +
+      'verifiable reasons (skills, experience, role). If something is missing, name it fairly.',
     prompt:
-      `Mandat: ${mandate.role}${mandate.client ? ` bei ${mandate.client}` : ''}` +
+      `Mandate: ${mandate.role}${mandate.client ? ` at ${mandate.client}` : ''}` +
       `${mandate.location ? `, ${mandate.location}` : ''}\n` +
-      `${matchedSkills.length ? `Überschneidende Skills: ${matchedSkills.join(', ')}\n` : ''}` +
-      `\nKandidat:\n${candidateFacts(documents)}`,
+      `${matchedSkills.length ? `Overlapping skills: ${matchedSkills.join(', ')}\n` : ''}` +
+      `\nCandidate:\n${candidateFacts(documents)}`,
   };
 }
 
@@ -93,18 +93,18 @@ export function fallbackExplanation(
   mandate: MandateContext,
   matchedSkills: string[],
 ): MatchExplanation {
-  const name = documents?.contact.name || 'Der:die Kandidat:in';
+  const name = documents?.contact.name || 'The candidate';
   const reasons: string[] = [];
 
   if (matchedSkills.length) {
-    reasons.push(`Passende Skills zum Mandat: ${matchedSkills.slice(0, 6).join(', ')}.`);
+    reasons.push(`Skills matching the mandate: ${matchedSkills.slice(0, 6).join(', ')}.`);
   }
   const firstStation = documents?.resume.experience[0];
   if (firstStation && (firstStation.role || firstStation.company)) {
     reasons.push(
-      `Relevante Erfahrung als ${[firstStation.role, firstStation.company]
+      `Relevant experience as ${[firstStation.role, firstStation.company]
         .filter(Boolean)
-        .join(' bei ')}.`,
+        .join(' at ')}.`,
     );
   }
   if (documents?.resume.summary) {
@@ -112,15 +112,15 @@ export function fallbackExplanation(
   }
   if (reasons.length === 0) {
     reasons.push(
-      'Noch keine belastbaren Belege im Profil — im Erstgespräch die Eignung für die Rolle prüfen.',
+      'No strong evidence in the profile yet — assess fit for the role in a first call.',
     );
   }
 
   const summary = matchedSkills.length
-    ? `${name} bringt ${matchedSkills.length} passende Kompetenz${
-        matchedSkills.length === 1 ? '' : 'en'
-      } für „${mandate.role}" mit.`
-    : `${name} — Eignung für „${mandate.role}" im Gespräch klären.`;
+    ? `${name} brings ${matchedSkills.length} matching skill${
+        matchedSkills.length === 1 ? '' : 's'
+      } for "${mandate.role}".`
+    : `${name} — clarify fit for "${mandate.role}" in a call.`;
 
   return { summary, reasons: reasons.slice(0, 4), matchedSkills };
 }

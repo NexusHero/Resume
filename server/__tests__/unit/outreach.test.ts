@@ -67,19 +67,26 @@ describe('outreach', () => {
   it('OutreachPrompt_Candidate_AddressesTheCandidate', () => {
     const { system, prompt } = outreachPrompt(documents, opts({ mandateContext: 'C++ Lead' }));
     expect(system).toContain('JSON');
-    expect(system).toContain('KANDIDAT');
+    expect(system).toContain('CANDIDATE');
+    expect(system).toContain('Respond in English only.');
     expect(prompt).toContain('C++, Rust, Python');
     expect(prompt).toContain('C++ Lead');
   });
 
   it('OutreachPrompt_Client_AddressesTheClient', () => {
     const { system } = outreachPrompt(documents, opts({ audience: 'client' }));
-    expect(system).toContain('KUNDEN');
+    expect(system).toContain('CLIENT');
   });
 
   it('OutreachPrompt_LinkedIn_ForbidsSubject', () => {
     const { system } = outreachPrompt(documents, opts({ channel: 'linkedin' }));
-    expect(system).toContain('KEIN Betreff');
+    expect(system).toContain('NO subject');
+  });
+
+  it('OutreachPrompt_German_RespondsInGerman', () => {
+    const { system, prompt } = outreachPrompt(documents, opts(), 'de');
+    expect(system).toContain('Antworte ausschließlich auf Deutsch.');
+    expect(prompt).toContain('(nicht angegeben)');
   });
 
   it('OutreachPrompt_ToneAndRecruiterName_AreApplied', () => {
@@ -100,7 +107,7 @@ describe('outreach', () => {
     const { prompt } = outreachPrompt(bare, opts());
     expect(prompt).not.toContain('Name:');
     expect(prompt).not.toContain('Skills:');
-    expect(prompt).toContain('(nicht angegeben)');
+    expect(prompt).toContain('(not provided)');
   });
 
   it('FallbackOutreach_CandidateEmail_HasSubjectAndBody', () => {
@@ -112,8 +119,16 @@ describe('outreach', () => {
 
   it('FallbackOutreach_ClientEmail_PresentsCandidate', () => {
     const msg = fallbackOutreach(documents, opts({ audience: 'client' }));
-    expect(msg.subject).toContain('Position');
+    expect(msg.subject).toContain('position');
     expect(msg.body).toContain('Max Mustermann');
+  });
+
+  it('FallbackOutreach_German_ProducesGermanCopy', () => {
+    const msg = fallbackOutreach(documents, opts(), 'de');
+    expect(msg.body).toContain('Hätten Sie diese Woche');
+    expect(msg.body).toContain('Ihr Profil als');
+    const client = fallbackOutreach(documents, opts({ audience: 'client' }), 'de');
+    expect(client.body).toContain('Sehr geehrte Damen und Herren');
   });
 
   it('FallbackOutreach_LinkedIn_HasNoSubject', () => {
@@ -150,7 +165,7 @@ describe('outreach', () => {
     };
     const msg = fallbackOutreach(bare, opts());
     expect(msg.body.length).toBeGreaterThan(0);
-    expect(msg.subject).toContain('die Rolle');
+    expect(msg.subject).toContain('the role');
   });
 
   it('NormalizeOutreach_StripsSubjectForLinkedIn', () => {
@@ -159,5 +174,33 @@ describe('outreach', () => {
     expect(email.body).toBe('Text');
     const li = normalizeOutreach({ subject: 'should vanish', body: 'x' }, 'linkedin');
     expect(li.subject).toBe('');
+  });
+
+  // Sweep every audience × channel × language combination so both the English
+  // and German fallback branches are exercised.
+  it('FallbackOutreach_CoversAllAudienceChannelLangCombos', () => {
+    for (const lang of ['en', 'de'] as const) {
+      for (const audience of ['candidate', 'client'] as const) {
+        for (const channel of ['email', 'linkedin'] as const) {
+          const opts: OutreachOptions = {
+            audience,
+            channel,
+            tone: '',
+            mandateContext: '',
+            recruiterName: 'Sam Recruiter',
+          };
+          const msg = fallbackOutreach(documents, opts, lang);
+          expect(msg.body).toContain('Sam Recruiter');
+          expect(channel === 'linkedin' ? msg.subject === '' : msg.subject.length > 0).toBe(true);
+        }
+      }
+    }
+    // Also cover the no-recruiter-name branch (no signature appended).
+    const noName = fallbackOutreach(
+      documents,
+      { audience: 'client', channel: 'email', tone: '', mandateContext: '', recruiterName: '' },
+      'de',
+    );
+    expect(noName.body).not.toContain('Mit freundlichen Grüßen\n\n');
   });
 });

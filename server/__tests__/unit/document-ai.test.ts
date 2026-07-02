@@ -48,7 +48,7 @@ const documents: TalentDocuments = {
 describe('document-ai prompts', () => {
   it('SummaryPrompt_IncludesCandidateFacts', () => {
     const { system, prompt } = summaryPrompt(documents);
-    expect(system).toContain('Lebenslauf');
+    expect(system).toContain('resume');
     expect(prompt).toContain('Designer @ Aurora');
     expect(prompt).toContain('Figma, Sketch');
   });
@@ -61,7 +61,7 @@ describe('document-ai prompts', () => {
 
   it('LetterPrompt_WithoutTarget_StillValid', () => {
     const { prompt } = letterPrompt(documents);
-    expect(prompt).toContain('nicht angegeben');
+    expect(prompt).toContain('not specified');
   });
 
   it('ToParagraphs_SplitsOnBlankLines', () => {

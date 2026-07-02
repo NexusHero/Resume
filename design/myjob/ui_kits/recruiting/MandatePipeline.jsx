@@ -25,17 +25,27 @@ const MP_STAGES = [
 
 function MandateCard({ card, onOpenTalent, onMove, onRemove }) {
   const [hover, setHover] = React.useState(false);
+  const [dragging, setDragging] = React.useState(false);
   const name = card.talent ? card.talent.name : 'Unknown talent';
   const role = card.talent ? card.talent.role : '';
   return (
     <div
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData('text/plain', card.id);
+        e.dataTransfer.effectAllowed = 'move';
+        setDragging(true);
+      }}
+      onDragEnd={() => setDragging(false)}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
+      title="Drag to another stage"
       style={{
         background: 'var(--surface-card)', border: '1px solid var(--border)',
         borderRadius: 'var(--radius-md)', padding: '11px 12px',
         boxShadow: hover ? 'var(--shadow-md)' : 'var(--shadow-xs)',
         transition: 'box-shadow var(--dur-fast)',
+        cursor: 'grab', opacity: dragging ? 0.45 : 1,
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
@@ -194,6 +204,15 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
     setCards((cs) => cs.map((c) => (c.id === card.id ? { ...c, stage } : c)));
     try { await window.RecruitApi.updateCandidacy(card.id, { stage }); } catch { load(); }
   };
+  // Drag-and-drop between stage columns — same optimistic move as the select.
+  const [dropStage, setDropStage] = React.useState(null);
+  const dropCard = (e, stage) => {
+    e.preventDefault();
+    setDropStage(null);
+    const id = e.dataTransfer.getData('text/plain');
+    const card = (cards || []).find((c) => c.id === id);
+    if (card && card.stage !== stage) moveCard(card, stage);
+  };
   const removeCard = async (card) => {
     setCards((cs) => cs.filter((c) => c.id !== card.id));
     try { await window.RecruitApi.removeCandidacy(card.id); } catch { load(); }
@@ -231,17 +250,24 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${MP_STAGES.length}, minmax(200px, 1fr))`, gap: '14px', alignItems: 'start', flex: 1, minHeight: 0, overflowX: 'auto' }}>
           {MP_STAGES.map((s) => {
             const list = cards.filter((c) => c.stage === s.id);
+            const over = dropStage === s.id;
             return (
-              <div key={s.id} style={{ display: 'flex', flexDirection: 'column', gap: '11px', minWidth: 0 }}>
+              <div
+                key={s.id}
+                onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDropStage(s.id); }}
+                onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDropStage(null); }}
+                onDrop={(e) => dropCard(e, s.id)}
+                style={{ display: 'flex', flexDirection: 'column', gap: '11px', minWidth: 0, borderRadius: 'var(--radius-md)', outline: over ? '2px dashed var(--accent)' : 'none', outlineOffset: '3px', background: over ? 'var(--accent-soft)' : 'transparent', transition: 'background var(--dur-fast)' }}
+              >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 2px' }}>
                   <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: s.color }} />
                   <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>{s.label}</span>
                   <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, color: 'var(--text-soft)', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-pill)', padding: '1px 8px', marginLeft: 'auto' }}>{list.length}</span>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minHeight: '52px' }}>
                   {list.map((c) => <MandateCard key={c.id} card={c} onOpenTalent={onOpenTalent} onMove={moveCard} onRemove={removeCard} />)}
                   {list.length === 0 && (
-                    <div style={{ border: '1.5px dashed var(--border-strong)', borderRadius: 'var(--radius-md)', padding: '14px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>empty</div>
+                    <div style={{ border: '1.5px dashed var(--border-strong)', borderRadius: 'var(--radius-md)', padding: '14px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>{over ? 'drop here' : 'empty'}</div>
                   )}
                 </div>
               </div>

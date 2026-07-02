@@ -38,8 +38,9 @@ test.describe('UI acceptance — the suite renders in English', () => {
   });
 
   test('Recruiting_OpenTalentPool_ShowsTalents', async ({ page }) => {
-    // The pool loads from the API (empty here) — the pinned "me" talent and the
-    // Add-talent action are always present.
+    // The pool loads from the API (empty here) — the pinned "me" talent (derived
+    // from the signed-in session, not fabricated data) and the Add-talent action
+    // are always present.
     await page.route('**/api/v1/talents', (route) => {
       if (route.request().method() !== 'GET') return route.continue();
       return route.fulfill({ contentType: 'application/json', body: JSON.stringify([]) });
@@ -47,13 +48,13 @@ test.describe('UI acceptance — the suite renders in English', () => {
     await page.route('**/api/v1/auth/me', (route) =>
       route.fulfill({
         contentType: 'application/json',
-        body: JSON.stringify({ user: { id: 'user1', email: 'me@example.de' } }),
+        body: JSON.stringify({ user: { id: 'user1', email: 'nora@example.de' } }),
       }),
     );
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     await page.getByRole('button', { name: /Talent Pool/ }).click();
     await expect(page.locator('main')).toContainText('Add talent');
-    await expect(page.locator('main')).toContainText('Suhay Sevinc');
+    await expect(page.locator('main')).toContainText('Nora'); // session-derived "me"
   });
 
   test('Recruiting_DataError_ShowsErrorStateWithRetry', async ({ page }) => {
@@ -140,7 +141,7 @@ test.describe('UI acceptance — the suite renders in English', () => {
 
   test('Recruiting_TalentPool_RendersApiTalentsWithMe', async ({ page }) => {
     // Stub the live talents endpoint with a candidate not in the sample; the
-    // pinned "me" talent (Suhay Sevinc) must still appear alongside it.
+    // session-derived pinned "me" talent must still appear alongside it.
     await page.route('**/api/v1/talents', (route) => {
       if (route.request().method() !== 'GET') return route.continue();
       return route.fulfill({
@@ -166,13 +167,13 @@ test.describe('UI acceptance — the suite renders in English', () => {
     await page.route('**/api/v1/auth/me', (route) =>
       route.fulfill({
         contentType: 'application/json',
-        body: JSON.stringify({ user: { id: 'user1', email: 'me@example.de' } }),
+        body: JSON.stringify({ user: { id: 'user1', email: 'nora@example.de' } }),
       }),
     );
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     await page.getByRole('button', { name: /Talent Pool/ }).click();
     await expect(page.locator('main')).toContainText('Tobias Wirth'); // from the API
-    await expect(page.locator('main')).toContainText('Suhay Sevinc'); // pinned "me"
+    await expect(page.locator('main')).toContainText('Nora'); // session-derived "me"
   });
 
   test('Recruiting_Editor_LoadsAndAutosavesDocuments', async ({ page }) => {

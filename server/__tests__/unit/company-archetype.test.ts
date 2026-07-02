@@ -7,7 +7,7 @@ describe('company-archetype', () => {
       expect(p.archetype).toBe('bigtech_us');
       expect(p.source).toBe('curated');
       expect(p.confidence).toBe('high');
-      expect(p.style.formats.join(' ')).toMatch(/Coding/);
+      expect(p.style.formats.join(' ')).toMatch(/coding/i);
     });
 
     it('NVIDIA_ClassifiedAsDeepTechHardware', () => {
@@ -23,7 +23,7 @@ describe('company-archetype', () => {
     it('Trumpf_ClassifiedAsIndustrieMittelstand', () => {
       const p = companyInterviewProfile('TRUMPF SE + Co. KG', 'C++ Engineer');
       expect(p.archetype).toBe('industrie_mittelstand');
-      expect(p.style.formats.join(' ')).toMatch(/Fachgespräch/);
+      expect(p.style.formats.join(' ')).toMatch(/technical interview/);
     });
 
     it('Mercedes_ClassifiedAsGrosskonzern', () => {

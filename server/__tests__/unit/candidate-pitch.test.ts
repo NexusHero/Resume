@@ -74,9 +74,9 @@ describe('candidate-pitch', () => {
     };
     const { prompt } = pitchPrompt(bare, '');
     expect(prompt).not.toContain('Name:');
-    expect(prompt).not.toContain('Rolle:');
+    expect(prompt).not.toContain('Role:');
     expect(prompt).not.toContain('Skills:');
-    expect(prompt).toContain('(nicht angegeben');
+    expect(prompt).toContain('(not provided');
   });
 
   it('FallbackPitch_BuildsProfileFromFacts', () => {
@@ -86,6 +86,12 @@ describe('candidate-pitch', () => {
     expect(pitch.paragraphs[0]).toContain('Senior C++ engineer');
     expect(pitch.highlights).toEqual(expect.arrayContaining(['C++', 'M.Sc. Informatik']));
     expect(pitch.highlights.length).toBeLessThanOrEqual(5);
+  });
+
+  it('FallbackPitch_German_ProducesGermanText', () => {
+    const pitch = fallbackPitch(documents, 'Konkretes Mandat', 'de');
+    expect(pitch.headline).toContain('mit Schwerpunkt');
+    expect(pitch.paragraphs[pitch.paragraphs.length - 1]).toContain('vorliegenden Mandat');
   });
 
   it('FallbackPitch_WithMandate_AddsFitParagraph', () => {
@@ -101,7 +107,7 @@ describe('candidate-pitch', () => {
       resume: { summary: '', experience: [], education: [], skillGroups: [] },
     };
     const pitch = fallbackPitch(empty, '');
-    expect(pitch.headline).toContain('Fachkraft');
+    expect(pitch.headline).toContain('professional');
     expect(pitch.paragraphs.length).toBeGreaterThan(0);
     expect(pitch.highlights).toEqual([]);
   });
@@ -115,5 +121,21 @@ describe('candidate-pitch', () => {
     expect(pitch.headline).toBe('Top Kandidat');
     expect(pitch.paragraphs).toEqual(['a', 'b', 'c']); // capped at 3
     expect(pitch.highlights).toEqual(['x', 'y', 'z', 'w', 'v']); // capped at 5
+  });
+
+  it('FallbackPitch_WithMandateContext_AddsFitParagraph', () => {
+    for (const lang of ['en', 'de'] as const) {
+      const pitch = fallbackPitch(documents, 'Senior C++ role at a scale-up', lang);
+      // skills → headline focus (83-84); education → highlights (98-100)
+      expect(pitch.headline).toContain('C++');
+      expect(pitch.highlights).toContain('M.Sc. Informatik');
+      // mandate context present → the extra "fit" paragraph is appended (91)
+      expect(pitch.paragraphs.length).toBe(3);
+    }
+  });
+
+  it('PitchPrompt_WithMandateContext_ByLanguage', () => {
+    expect(pitchPrompt(documents, 'A concrete mandate', 'en').system).toContain('English');
+    expect(pitchPrompt(documents, 'A concrete mandate', 'de').system).toContain('Deutsch');
   });
 });

@@ -68,7 +68,7 @@ describe('interview-kit domain', () => {
       sparse.contact.name = '';
       const { prompt } = interviewKitPrompt(sparse, { role: 'Engineer', location: '' });
       expect(prompt).toContain('Engineer');
-      expect(prompt).not.toContain(' bei '); // no client
+      expect(prompt).not.toContain(' at '); // no client
     });
   });
 
@@ -87,13 +87,13 @@ describe('interview-kit domain', () => {
     it('EmptyDocuments_StillProducesGenericKit', () => {
       const kit = fallbackInterviewKit(null, mandate);
       expect(kit.questions.length).toBeGreaterThan(0);
-      expect(kit.questions.some((q) => q.category === 'Kultur')).toBe(true);
-      expect(kit.focus).toContain('Grundeignung');
+      expect(kit.questions.some((q) => q.category === 'Culture')).toBe(true);
+      expect(kit.focus).toContain('basic suitability');
     });
 
     it('IncludesStationQuestionWhenExperiencePresent', () => {
       const kit = fallbackInterviewKit(docs(), mandate);
-      expect(kit.questions.some((q) => q.category === 'Erfahrung')).toBe(true);
+      expect(kit.questions.some((q) => q.category === 'Experience')).toBe(true);
     });
 
     it('StationWithCompanyOnly_StillAsksExperienceQuestion', () => {
@@ -104,7 +104,7 @@ describe('interview-kit domain', () => {
       });
       const kit = fallbackInterviewKit(d, mandate);
       expect(
-        kit.questions.some((q) => q.category === 'Erfahrung' && q.question.includes('BetaCorp')),
+        kit.questions.some((q) => q.category === 'Experience' && q.question.includes('BetaCorp')),
       ).toBe(true);
     });
 
@@ -113,8 +113,8 @@ describe('interview-kit domain', () => {
       const kit = fallbackInterviewKit(docs(), { role: 'Data Scientist', location: '' });
       expect(kit.questions.some((q) => q.question.includes('React'))).toBe(true);
       const motivation = kit.questions.find((q) => q.category === 'Motivation');
-      expect(motivation?.question).not.toContain(' bei ');
-      expect(kit.focus).toContain('Grundeignung');
+      expect(motivation?.question).not.toContain(' at ');
+      expect(kit.focus).toContain('basic suitability');
     });
   });
 

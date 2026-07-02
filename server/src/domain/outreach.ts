@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { OutputLang } from './language';
 import type { TalentDocuments } from './talent-documents';
 
 /** Who the message is written to. */
@@ -40,18 +41,22 @@ export const outreachResultSchema = z.object({
   body: z.string().default(''),
 });
 
-function candidateFacts(documents: TalentDocuments): string {
+function candidateFacts(documents: TalentDocuments, lang: OutputLang = 'en'): string {
   const { contact, resume } = documents;
   const roles = resume.experience
     .map((e) => [e.role, e.company].filter(Boolean).join(' @ '))
     .filter(Boolean);
   const skills = resume.skillGroups.flatMap((g) => g.items);
+  const L =
+    lang === 'de'
+      ? { name: 'Name', role: 'Rolle', profile: 'Profil', roles: 'Stationen', skills: 'Skills' }
+      : { name: 'Name', role: 'Role', profile: 'Profile', roles: 'Experience', skills: 'Skills' };
   return [
-    contact.name ? `Name: ${contact.name}` : '',
-    contact.role ? `Rolle: ${contact.role}` : '',
-    resume.summary ? `Profil: ${resume.summary}` : '',
-    roles.length ? `Stationen: ${roles.join('; ')}` : '',
-    skills.length ? `Skills: ${skills.join(', ')}` : '',
+    contact.name ? `${L.name}: ${contact.name}` : '',
+    contact.role ? `${L.role}: ${contact.role}` : '',
+    resume.summary ? `${L.profile}: ${resume.summary}` : '',
+    roles.length ? `${L.roles}: ${roles.join('; ')}` : '',
+    skills.length ? `${L.skills}: ${skills.join(', ')}` : '',
   ]
     .filter(Boolean)
     .join('\n');
@@ -60,36 +65,42 @@ function candidateFacts(documents: TalentDocuments): string {
 export function outreachPrompt(
   documents: TalentDocuments,
   opts: OutreachOptions,
+  lang: OutputLang = 'en',
 ): { system: string; prompt: string } {
   const toClient = opts.audience === 'client';
   const isEmail = opts.channel === 'email';
   const audienceRule = toClient
-    ? 'Schreibe an einen KUNDEN (Auftraggeber): stelle diese:n Kandidat:in überzeugend für ' +
-      'dessen offene Position vor. Sprich den Kunden an, nicht die Kandidatin.'
-    : 'Schreibe an die/den KANDIDAT:IN direkt (passive Ansprache/Sourcing): wecke Interesse an ' +
-      'der Rolle. Sprich die Person an, verkaufe die Chance, ohne aufdringlich zu sein.';
+    ? 'Write to a CLIENT (hiring company): pitch this candidate convincingly for their open ' +
+      'position. Address the client, not the candidate.'
+    : 'Write to the CANDIDATE directly (passive sourcing outreach): spark interest in the role. ' +
+      'Address the person, sell the opportunity, without being pushy.';
   const channelRule = isEmail
-    ? 'Kanal E-Mail: liefere eine prägnante Betreffzeile (subject) und einen Fließtext (body) mit ' +
-      'Anrede und Grußformel.'
-    : 'Kanal LinkedIn-Direktnachricht: KEIN Betreff (subject = ""). body ist kurz (max. ~120 Wörter), ' +
-      'ohne formelle Grußformel, direkt und persönlich.';
-  const toneRule = opts.tone
-    ? `Tonalität: ${opts.tone}.`
-    : 'Tonalität: professionell und freundlich.';
+    ? 'Channel email: provide a concise subject line (subject) and a body with a greeting and ' +
+      'a sign-off.'
+    : 'Channel LinkedIn direct message: NO subject (subject = ""). The body is short ' +
+      '(max ~120 words), without a formal sign-off, direct and personal.';
+  const toneRule = opts.tone ? `Tone: ${opts.tone}.` : 'Tone: professional and friendly.';
   const signature = opts.recruiterName
-    ? `Unterschreibe mit „${opts.recruiterName}".`
-    : 'Lass die Signatur/den Absendernamen weg (der Nutzer ergänzt ihn).';
+    ? `Sign off with "${opts.recruiterName}".`
+    : 'Leave out the signature/sender name (the user will add it).';
+  const langRule =
+    lang === 'de' ? ' Antworte ausschließlich auf Deutsch.' : ' Respond in English only.';
+  const promptLabels =
+    lang === 'de'
+      ? { candidate: 'Kandidat', mandate: 'Mandat/Stellenkontext', missing: '(nicht angegeben)' }
+      : { candidate: 'Candidate', mandate: 'Mandate/role context', missing: '(not provided)' };
 
   return {
     system:
-      'Du bist erfahrene:r Personalberater:in und schreibst die erste Kontaktnachricht. ' +
+      'You are an experienced recruiter writing the first-contact message. ' +
       `${audienceRule} ${channelRule} ${toneRule} ${signature} ` +
-      'Baue 1–2 konkrete Anknüpfungspunkte aus dem Profil ein und ende mit einem klaren, ' +
-      'niedrigschwelligen Call-to-Action. Erfinde keine Fakten. Gib AUSSCHLIESSLICH gültiges ' +
-      'JSON zurück (keine Erklärung, keine Markdown-Fences): {"subject":"","body":""}.',
-    prompt: `Kandidat:\n${candidateFacts(documents)}\n\nMandat/Stellenkontext:\n"""\n${
-      opts.mandateContext || '(nicht angegeben)'
-    }\n"""`,
+      'Weave in 1-2 concrete hooks from the profile and end with a clear, low-friction ' +
+      'call-to-action. Do not invent facts. Return ONLY valid JSON (no explanation, no ' +
+      'markdown fences): {"subject":"","body":""}.' +
+      langRule,
+    prompt: `${promptLabels.candidate}:\n${candidateFacts(documents, lang)}\n\n${
+      promptLabels.mandate
+    }:\n"""\n${opts.mandateContext || promptLabels.missing}\n"""`,
   };
 }
 
@@ -100,46 +111,86 @@ export function outreachPrompt(
 export function fallbackOutreach(
   documents: TalentDocuments,
   opts: OutreachOptions,
+  lang: OutputLang = 'en',
 ): OutreachMessage {
   const { contact, resume } = documents;
-  const name = contact.name || 'die/der Kandidat:in';
-  const role = contact.role || resume.experience[0]?.role || 'die Rolle';
-  const skills = resume.skillGroups.flatMap((g) => g.items).slice(0, 3);
-  const skillPart = skills.length ? ` (u. a. ${skills.join(', ')})` : '';
   const sign = opts.recruiterName ? `\n\n${opts.recruiterName}` : '';
   const toClient = opts.audience === 'client';
 
-  if (toClient) {
+  if (lang === 'de') {
+    const name = contact.name || 'die/der Kandidat:in';
+    const role = contact.role || resume.experience[0]?.role || 'die Rolle';
+    const skills = resume.skillGroups.flatMap((g) => g.items).slice(0, 3);
+    const skillPart = skills.length ? ` (u. a. ${skills.join(', ')})` : '';
+
+    if (toClient) {
+      const body =
+        `Sehr geehrte Damen und Herren,\n\n` +
+        `für Ihre offene Position möchte ich Ihnen ${name} vorstellen — ${role}${skillPart}. ` +
+        `Das Profil passt aus meiner Sicht sehr gut zu Ihren Anforderungen.\n\n` +
+        `Gerne schicke ich Ihnen die vollständigen Unterlagen zu oder stelle den Kontakt her. ` +
+        `Passt Ihnen ein kurzes Telefonat diese Woche?` +
+        (opts.recruiterName ? `\n\nMit freundlichen Grüßen${sign}` : '');
+      return opts.channel === 'linkedin'
+        ? {
+            subject: '',
+            body: `Hallo, ich habe mit ${name} (${role}${skillPart}) ein Profil, das gut zu Ihrer offenen Position passen könnte. Interesse an den Details?${sign}`,
+          }
+        : { subject: `Passende:r Kandidat:in für Ihre Position: ${role}`, body };
+    }
+
     const body =
-      `Sehr geehrte Damen und Herren,\n\n` +
-      `für Ihre offene Position möchte ich Ihnen ${name} vorstellen — ${role}${skillPart}. ` +
-      `Das Profil passt aus meiner Sicht sehr gut zu Ihren Anforderungen.\n\n` +
-      `Gerne schicke ich Ihnen die vollständigen Unterlagen zu oder stelle den Kontakt her. ` +
-      `Passt Ihnen ein kurzes Telefonat diese Woche?` +
-      (opts.recruiterName ? `\n\nMit freundlichen Grüßen${sign}` : '');
+      `Hallo ${contact.name || ''}`.trim() +
+      ',\n\n' +
+      `ich bin auf Ihr Profil als ${role}${skillPart} aufmerksam geworden und habe eine Rolle, ` +
+      `die gut passen könnte.\n\n` +
+      `Hätten Sie diese Woche 15 Minuten für ein kurzes Gespräch? Dann gebe ich Ihnen die Details.` +
+      (opts.recruiterName ? `\n\nBeste Grüße${sign}` : '');
     return opts.channel === 'linkedin'
       ? {
           subject: '',
-          body: `Hallo, ich habe mit ${name} (${role}${skillPart}) ein Profil, das gut zu Ihrer offenen Position passen könnte. Interesse an den Details?${sign}`,
+          body:
+            `Hallo ${contact.name || ''}`.trim() +
+            `, Ihr Profil als ${role}${skillPart} passt gut zu einer Rolle, die ich gerade besetze. Kurz austauschen?${sign}`,
         }
-      : { subject: `Passende:r Kandidat:in für Ihre Position: ${role}`, body };
+      : { subject: `Spannende Rolle für Ihr Profil als ${role}`, body };
+  }
+
+  const name = contact.name || 'the candidate';
+  const role = contact.role || resume.experience[0]?.role || 'the role';
+  const skills = resume.skillGroups.flatMap((g) => g.items).slice(0, 3);
+  const skillPart = skills.length ? ` (incl. ${skills.join(', ')})` : '';
+
+  if (toClient) {
+    const body =
+      `Dear Sir or Madam,\n\n` +
+      `for your open position I would like to introduce ${name} — ${role}${skillPart}. ` +
+      `In my view the profile is a very good match for your requirements.\n\n` +
+      `I would be happy to send you the full documents or make the introduction. ` +
+      `Would a short call this week work for you?` +
+      (opts.recruiterName ? `\n\nBest regards${sign}` : '');
+    return opts.channel === 'linkedin'
+      ? {
+          subject: '',
+          body: `Hello, I have a profile in ${name} (${role}${skillPart}) that could be a good fit for your open position. Interested in the details?${sign}`,
+        }
+      : { subject: `A strong candidate for your position: ${role}`, body };
   }
 
   const body =
-    `Hallo ${contact.name || ''}`.trim() +
+    `Hello ${contact.name || ''}`.trim() +
     ',\n\n' +
-    `ich bin auf Ihr Profil als ${role}${skillPart} aufmerksam geworden und habe eine Rolle, ` +
-    `die gut passen könnte.\n\n` +
-    `Hätten Sie diese Woche 15 Minuten für ein kurzes Gespräch? Dann gebe ich Ihnen die Details.` +
-    (opts.recruiterName ? `\n\nBeste Grüße${sign}` : '');
+    `I came across your profile as ${role}${skillPart} and have a role that could be a great fit.\n\n` +
+    `Would you have 15 minutes this week for a quick chat? I can share the details then.` +
+    (opts.recruiterName ? `\n\nBest regards${sign}` : '');
   return opts.channel === 'linkedin'
     ? {
         subject: '',
         body:
-          `Hallo ${contact.name || ''}`.trim() +
-          `, Ihr Profil als ${role}${skillPart} passt gut zu einer Rolle, die ich gerade besetze. Kurz austauschen?${sign}`,
+          `Hello ${contact.name || ''}`.trim() +
+          `, your profile as ${role}${skillPart} is a good fit for a role I am currently filling. Quick chat?${sign}`,
       }
-    : { subject: `Spannende Rolle für Ihr Profil als ${role}`, body };
+    : { subject: `An exciting role for your profile as ${role}`, body };
 }
 
 /** Trim and, for LinkedIn, drop any subject the LLM produced anyway. */

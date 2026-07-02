@@ -82,7 +82,7 @@ describe('match-explain domain', () => {
     it('NoOverlap_StillReturnsHonestReason', () => {
       const e = fallbackExplanation(null, mandate, []);
       expect(e.reasons.length).toBeGreaterThan(0);
-      expect(e.summary).toContain('klären');
+      expect(e.summary).toContain('clarify');
     });
   });
 
@@ -102,15 +102,15 @@ describe('match-explain domain', () => {
       sparse.contact.role = '';
       const { prompt } = explainPrompt(sparse, { role: 'Engineer', location: '' }, []);
       expect(prompt).toContain('Engineer');
-      expect(prompt).not.toContain('bei '); // no client
-      expect(prompt).not.toContain('Überschneidende Skills');
+      expect(prompt).not.toContain(' at '); // no client
+      expect(prompt).not.toContain('Overlapping skills');
     });
   });
 
   describe('fallbackExplanation edge cases', () => {
     it('SingleSkill_UsesSingularSummary', () => {
       const e = fallbackExplanation(docs(), mandate, ['React']);
-      expect(e.summary).toContain('1 passende Kompetenz ');
+      expect(e.summary).toContain('1 matching skill ');
     });
 
     it('StationWithoutCompany_StillListsRole', () => {
@@ -139,11 +139,11 @@ describe('match-explain domain', () => {
   describe('normalizeExplanation', () => {
     it('TrimsAndClampsToFourReasons', () => {
       const raw = explanationResultSchema.parse({
-        summary: '  Passt gut  ',
+        summary: '  Good fit  ',
         reasons: ['a', '', 'b', 'c', 'd', 'e'],
       });
       const e = normalizeExplanation(raw, ['React']);
-      expect(e.summary).toBe('Passt gut');
+      expect(e.summary).toBe('Good fit');
       expect(e.reasons).toEqual(['a', 'b', 'c', 'd']);
       expect(e.matchedSkills).toEqual(['React']);
     });

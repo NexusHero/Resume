@@ -57,8 +57,10 @@ export function checkGrounding(generated: string, source: string): GroundingRepo
     }
   };
 
-  // 1. Numbers with a unit — the value must appear in the source.
-  for (const m of generated.matchAll(/(\d+)\s*(?:\+\s*)?(jahren?|jahre|%|prozent)/gi)) {
+  // 1. Numbers with a unit (German or English) — the value must appear in the source.
+  for (const m of generated.matchAll(
+    /(\d+)\s*(?:\+\s*)?(jahren?|jahre|years?|%|prozent|percent)/gi,
+  )) {
     const value = m[1] as string;
     if (!new RegExp(`\\b${value}\\b`).test(srcLower)) flag('number', m[0].trim());
   }

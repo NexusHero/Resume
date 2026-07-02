@@ -135,6 +135,7 @@ export function rowToMandate(row: MandateRow): Mandate {
     submitted: row.submitted,
     interviews: row.interviews,
     jobText: row.jobText,
+    lang: (row.lang as Mandate['lang']) ?? 'en',
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -155,6 +156,7 @@ export function mandateToRow(mandate: Mandate): MandateInsert {
     submitted: mandate.submitted,
     interviews: mandate.interviews,
     jobText: mandate.jobText,
+    lang: mandate.lang,
     createdAt: mandate.createdAt,
     updatedAt: mandate.updatedAt,
   };

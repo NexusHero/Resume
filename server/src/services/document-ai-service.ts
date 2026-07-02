@@ -56,6 +56,7 @@ import {
 import { companyInterviewProfile } from '../domain/company-archetype';
 import { extractRequirements } from '../domain/job-requirements';
 import { type GroundingReport, checkGrounding, groundingSource } from '../domain/grounding';
+import { detectLanguage } from '../domain/language';
 import {
   aggregateObservations,
   applyObserved,
@@ -346,6 +347,8 @@ export class DocumentAiService {
     const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
     const resolved = await this.resolveProvider(userId);
     const source = groundingSource(documents, mandateContext);
+    // Output language follows the job/mandate context, else the candidate's CV.
+    const lang = detectLanguage(mandateContext.trim() || groundingSource(documents, ''));
     const withGrounding = <T extends CandidatePitch>(
       pitch: T,
       provider: LlmProviderId | 'template',
@@ -357,7 +360,7 @@ export class DocumentAiService {
 
     if (resolved) {
       try {
-        const built = pitchPrompt(documents, mandateContext);
+        const built = pitchPrompt(documents, mandateContext, lang);
         const { text: reply, usage } = await resolved.provider.generate({
           system: built.system,
           prompt: built.prompt,
@@ -381,7 +384,7 @@ export class DocumentAiService {
       }
     }
 
-    return withGrounding(fallbackPitch(documents, mandateContext), 'template');
+    return withGrounding(fallbackPitch(documents, mandateContext, lang), 'template');
   }
 
   /**
@@ -401,6 +404,10 @@ export class DocumentAiService {
     const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
     const resolved = await this.resolveProvider(userId);
     const source = groundingSource(documents, opts.mandateContext ?? '');
+    // Output language follows the job/mandate context, else the candidate's CV.
+    const lang = detectLanguage(
+      (opts.mandateContext ?? '').trim() || groundingSource(documents, ''),
+    );
     const withGrounding = (message: OutreachMessage, provider: LlmProviderId | 'template') => ({
       ...message,
       provider,
@@ -409,7 +416,7 @@ export class DocumentAiService {
 
     if (resolved) {
       try {
-        const built = outreachPrompt(documents, opts);
+        const built = outreachPrompt(documents, opts, lang);
         const { text: reply, usage } = await resolved.provider.generate({
           system: built.system,
           prompt: built.prompt,
@@ -431,7 +438,7 @@ export class DocumentAiService {
       }
     }
 
-    return withGrounding(fallbackOutreach(documents, opts), 'template');
+    return withGrounding(fallbackOutreach(documents, opts, lang), 'template');
   }
 
   /**

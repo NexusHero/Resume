@@ -1,4 +1,5 @@
 import { type Mandate, type CreateMandateInput, type UpdateMandateInput } from '../domain/mandate';
+import { detectLanguage } from '../domain/language';
 import { NotFoundError } from '../domain/errors';
 import type { MandateRepository } from '../ports/mandate-repository';
 import type { CandidacyRepository } from '../ports/candidacy-repository';
@@ -52,6 +53,7 @@ export class MandateService {
       submitted: input.submitted,
       interviews: input.interviews,
       jobText: input.jobText,
+      lang: detectLanguage(input.jobText),
       createdAt: now,
       updatedAt: now,
     };
@@ -62,6 +64,8 @@ export class MandateService {
   async update(ownerId: string, id: string, patch: UpdateMandateInput): Promise<Mandate> {
     const existing = await this.get(ownerId, id);
     const updated: Mandate = { ...existing, ...patch, updatedAt: this.clock.isoNow() };
+    // Keep the derived language in sync when the job ad text changes.
+    if (patch.jobText !== undefined) updated.lang = detectLanguage(patch.jobText);
     await this.repo.update(updated);
     return updated;
   }

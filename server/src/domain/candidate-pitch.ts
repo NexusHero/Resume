@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { TalentDocuments } from './talent-documents';
+import type { OutputLang } from './language';
 
 /**
  * POST /api/v1/talents/:id/documents/pitch — an optional mandate/job context to
@@ -36,11 +37,11 @@ function candidateFacts(documents: TalentDocuments): string {
     .filter(Boolean);
   return [
     contact.name ? `Name: ${contact.name}` : '',
-    contact.role ? `Rolle: ${contact.role}` : '',
-    resume.summary ? `Profil: ${resume.summary}` : '',
-    roles.length ? `Stationen: ${roles.join('; ')}` : '',
+    contact.role ? `Role: ${contact.role}` : '',
+    resume.summary ? `Profile: ${resume.summary}` : '',
+    roles.length ? `Experience: ${roles.join('; ')}` : '',
     skills.length ? `Skills: ${skills.join(', ')}` : '',
-    education.length ? `Ausbildung: ${education.join('; ')}` : '',
+    education.length ? `Education: ${education.join('; ')}` : '',
   ]
     .filter(Boolean)
     .join('\n');
@@ -49,18 +50,21 @@ function candidateFacts(documents: TalentDocuments): string {
 export function pitchPrompt(
   documents: TalentDocuments,
   mandateContext: string,
+  lang: OutputLang = 'en',
 ): { system: string; prompt: string } {
+  const system =
+    'You are a recruitment consultant writing a short candidate profile that you ' +
+    'present to the client (the mandate) — persuasive, credible, free of empty phrases ' +
+    'and without inventing facts. Return ONLY valid JSON in exactly this schema (no ' +
+    'explanation, no Markdown fences): ' +
+    '{"headline":"","paragraphs":["",""],"highlights":["",""]}. ' +
+    'headline = one concise line "why this candidate". paragraphs = 2–3 short ' +
+    'paragraphs on suitability. highlights = 3–5 bullet-point strengths.' +
+    (lang === 'de' ? ' Antworte ausschließlich auf Deutsch.' : ' Respond in English only.');
   return {
-    system:
-      'Du bist Personalberater:in und schreibst ein Kandidaten-Kurzprofil, das du dem ' +
-      'Kunden (dem Mandat) vorlegst — überzeugend, seriös, ohne Floskeln und ohne erfundene ' +
-      'Fakten. Gib AUSSCHLIESSLICH gültiges JSON in genau diesem Schema zurück (keine ' +
-      'Erklärung, keine Markdown-Fences): ' +
-      '{"headline":"","paragraphs":["",""],"highlights":["",""]}. ' +
-      'headline = eine prägnante Zeile „Warum diese:r Kandidat:in". paragraphs = 2–3 kurze ' +
-      'Absätze zur Eignung. highlights = 3–5 stichpunktartige Stärken.',
-    prompt: `Kandidat:\n${candidateFacts(documents)}\n\nMandat/Stellenkontext:\n"""\n${
-      mandateContext || '(nicht angegeben — allgemeines Kurzprofil)'
+    system,
+    prompt: `Candidate:\n${candidateFacts(documents)}\n\nMandate/role context:\n"""\n${
+      mandateContext || '(not provided — general profile)'
     }\n"""`,
   };
 }
@@ -69,29 +73,46 @@ export function pitchPrompt(
  * Deterministic fallback (no LLM): assemble an honest short profile straight
  * from the talent's own facts, so the feature always returns something usable.
  */
-export function fallbackPitch(documents: TalentDocuments, mandateContext: string): CandidatePitch {
+export function fallbackPitch(
+  documents: TalentDocuments,
+  mandateContext: string,
+  lang: OutputLang = 'en',
+): CandidatePitch {
   const { contact, resume } = documents;
-  const name = contact.name || 'Der:die Kandidat:in';
-  const role = contact.role || resume.experience[0]?.role || 'Fachkraft';
+  const de = lang === 'de';
+  const name = contact.name || (de ? 'Der:die Kandidat:in' : 'The candidate');
+  const role = contact.role || resume.experience[0]?.role || (de ? 'Fachkraft' : 'professional');
   const skills = resume.skillGroups.flatMap((g) => g.items);
   const stations = resume.experience
-    .map((e) => [e.role, e.company].filter(Boolean).join(' bei '))
+    .map((e) => [e.role, e.company].filter(Boolean).join(de ? ' bei ' : ' at '))
     .filter(Boolean);
 
-  const headline = `${name} — ${role}${
-    skills.length ? ` mit Schwerpunkt ${skills.slice(0, 3).join(', ')}` : ''
-  }`;
+  const headline = de
+    ? `${name} — ${role}${skills.length ? ` mit Schwerpunkt ${skills.slice(0, 3).join(', ')}` : ''}`
+    : `${name} — ${role}${
+        skills.length ? ` with a focus on ${skills.slice(0, 3).join(', ')}` : ''
+      }`;
 
-  const paragraphs = [
-    resume.summary ||
-      `${name} bringt als ${role} fundierte Erfahrung mit und überzeugt durch lösungsorientiertes, verlässliches Arbeiten.`,
-    stations.length
-      ? `Relevante Stationen: ${stations.slice(0, 3).join('; ')}.`
-      : `${name} hat in der bisherigen Laufbahn Verantwortung übernommen und Projekte erfolgreich umgesetzt.`,
-  ];
+  const paragraphs = de
+    ? [
+        resume.summary ||
+          `${name} bringt als ${role} fundierte Erfahrung mit und überzeugt durch lösungsorientiertes, verlässliches Arbeiten.`,
+        stations.length
+          ? `Relevante Stationen: ${stations.slice(0, 3).join('; ')}.`
+          : `${name} hat in der bisherigen Laufbahn Verantwortung übernommen und Projekte erfolgreich umgesetzt.`,
+      ]
+    : [
+        resume.summary ||
+          `${name} brings solid experience as a ${role} and stands out through solution-oriented, dependable work.`,
+        stations.length
+          ? `Relevant roles: ${stations.slice(0, 3).join('; ')}.`
+          : `${name} has taken on responsibility throughout their career and delivered projects successfully.`,
+      ];
   if (mandateContext.trim()) {
     paragraphs.push(
-      'Das Profil passt gut zum vorliegenden Mandat; im Gespräch lassen sich die relevanten Kompetenzen gezielt vertiefen.',
+      de
+        ? 'Das Profil passt gut zum vorliegenden Mandat; im Gespräch lassen sich die relevanten Kompetenzen gezielt vertiefen.'
+        : 'The profile is a strong fit for this mandate; the relevant competencies can be explored in more depth during an interview.',
     );
   }
 

@@ -12,7 +12,7 @@ export class TalentController {
   }
 
   list = async (req: Request, res: Response): Promise<void> => {
-    res.json(await this.service.list(currentScope(req)));
+    res.json(await this.service.listWithSkills(currentScope(req)));
   };
 
   create = async (req: Request, res: Response): Promise<void> => {

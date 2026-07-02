@@ -37,6 +37,7 @@ const RECORD_FORMS = {
       { name: 'phone', label: 'Phone' },
       { name: 'availability', label: 'Availability', placeholder: 'e.g. immediately' },
       { name: 'salary', label: 'Salary expectation' },
+      { name: 'skills', label: 'Skills', full: true, placeholder: 'Comma-separated, e.g. React, TypeScript — powers Matching' },
     ],
   },
   placement: {

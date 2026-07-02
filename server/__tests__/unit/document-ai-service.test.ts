@@ -5,6 +5,7 @@ import { NotFoundError, ValidationError } from '../../src/domain/errors';
 import type { LlmGenerateInput, LlmProvider, LlmProviderId } from '../../src/ports/llm-provider';
 import {
   InMemoryTalentRepository,
+  InMemoryUserRepository,
   InMemoryDocumentRepository,
   InMemoryApiKeyStore,
   InMemoryUsageMeter,
@@ -54,6 +55,7 @@ function ctx(stub: ProviderStub = {}, pdfText: string | Error = '') {
   const documentService = new DocumentService({
     documentRepository: documents,
     talentRepository: talents,
+    userRepository: new InMemoryUserRepository(),
     pdfRenderer: new FakePdfRenderer(),
     clock: new FixedClock(),
   });

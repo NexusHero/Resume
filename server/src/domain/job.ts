@@ -28,6 +28,8 @@ export interface ScoredJob extends Job {
 export interface JobSearchResult {
   query: JobQuery;
   threshold: number;
+  /** Which backing source produced the postings ('Sample' = offline fallback). */
+  source: string;
   /** match >= threshold, best first. */
   top: ScoredJob[];
   /** below threshold — stretch / new-domain opportunities, best first. */

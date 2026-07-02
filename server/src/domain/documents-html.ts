@@ -15,7 +15,15 @@ function esc(value: unknown): string {
  * style (accent colour, font, scale) drives both pages, so the export matches
  * what the editor previews.
  */
-export function documentsToHtml(documents: TalentDocuments): string {
+export interface DocumentsHtmlOptions {
+  /** Pre-formatted letter date ("Zürich, 2.7.2026" carries the locale). */
+  letterDate?: string;
+}
+
+export function documentsToHtml(
+  documents: TalentDocuments,
+  options: DocumentsHtmlOptions = {},
+): string {
   const { contact, resume, letter, style } = documents;
   const accent = esc(style.accent);
   const strong = esc(style.strong);
@@ -107,6 +115,7 @@ export function documentsToHtml(documents: TalentDocuments): string {
   .skillgroup { margin: 3px 0; }
   .skilllabel { font-weight: 600; color: ${strong}; }
   .cl-recipient { margin-bottom: 24px; }
+  .cl-date { text-align: right; color: #555; margin: 4px 0 14px; }
   .cl-subject { font-weight: 700; color: #0f1626; margin-bottom: 14px; }
   .cl p { margin: 0 0 10px; }
   .cl-gruss { margin-top: 18px; }
@@ -128,6 +137,7 @@ export function documentsToHtml(documents: TalentDocuments): string {
   </section>
   <section class="page cl">
     ${letterAddress ? `<div class="cl-recipient">${letterAddress}</div>` : ''}
+    ${options.letterDate ? `<div class="cl-date">${esc(options.letterDate)}</div>` : ''}
     ${letter.betreff ? `<div class="cl-subject">${esc(letter.betreff)}</div>` : ''}
     ${letter.anrede ? `<p>${esc(letter.anrede)}</p>` : ''}
     ${letterBody}

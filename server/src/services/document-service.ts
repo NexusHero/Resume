@@ -6,11 +6,13 @@ import {
   emptyResume,
   emptyLetter,
 } from '../domain/talent-documents';
+import { detectLanguage } from '../domain/language';
 import type { OutputLang } from '../domain/language';
 import { documentsToHtml } from '../domain/documents-html';
 import { NotFoundError } from '../domain/errors';
 import type { DocumentRepository } from '../ports/document-repository';
 import type { TalentRepository } from '../ports/talent-repository';
+import type { UserRepository } from '../ports/user-repository';
 import type { AttachmentStore } from '../ports/attachment-store';
 import type { PdfRenderer } from '../ports/pdf-renderer';
 import type { PdfMerger } from '../ports/pdf-merger';
@@ -19,6 +21,7 @@ import type { Clock } from '../ports/clock';
 export interface DocumentServiceDeps {
   documentRepository: DocumentRepository;
   talentRepository: TalentRepository;
+  userRepository: UserRepository;
   attachmentStore: AttachmentStore;
   pdfRenderer: PdfRenderer;
   pdfMerger: PdfMerger;
@@ -35,6 +38,7 @@ export interface DocumentServiceDeps {
 export class DocumentService {
   private readonly docs: DocumentRepository;
   private readonly talents: TalentRepository;
+  private readonly users: UserRepository;
   private readonly attachments: AttachmentStore;
   private readonly pdf: PdfRenderer;
   private readonly merger: PdfMerger;
@@ -43,35 +47,73 @@ export class DocumentService {
   constructor(deps: DocumentServiceDeps) {
     this.docs = deps.documentRepository;
     this.talents = deps.talentRepository;
+    this.users = deps.userRepository;
     this.attachments = deps.attachmentStore;
     this.pdf = deps.pdfRenderer;
     this.merger = deps.pdfMerger;
     this.clock = deps.clock;
   }
 
-  async get(ownerId: string, talentId: string): Promise<TalentDocuments> {
+  /**
+   * The subject a document set belongs to: a pool talent, or — for the
+   * recruiter's own documents, which are keyed by their user id and have no
+   * talent record — the signed-in user themselves.
+   */
+  private async requireSubject(
+    ownerId: string,
+    talentId: string,
+  ): Promise<{
+    name: string;
+    role: string;
+    email: string;
+    phone: string;
+    location: string;
+    updatedAt: string;
+  }> {
     const talent = await this.talents.findById(ownerId, talentId);
-    if (!talent) throw new NotFoundError(`Talent ${talentId} not found`);
+    if (talent) return talent;
+    const user = await this.users.findById(talentId);
+    if (!user) throw new NotFoundError(`Talent ${talentId} not found`);
+    // "suhay.sevinc@…" → "Suhay Sevinc" — same derivation the workspace uses.
+    const name = user.email
+      .split('@')[0]!
+      .split(/[._-]+/)
+      .map((w) => w.replace(/\d+/g, ''))
+      .filter(Boolean)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+    return {
+      name,
+      role: 'Recruiter',
+      email: user.email,
+      phone: '',
+      location: '',
+      updatedAt: user.createdAt,
+    };
+  }
+
+  async get(ownerId: string, talentId: string): Promise<TalentDocuments> {
+    const subject = await this.requireSubject(ownerId, talentId);
 
     const existing = await this.docs.get(ownerId, talentId);
     if (existing) return existing;
 
-    // No set saved yet — seed the contact from the talent, blank the rest.
+    // No set saved yet — seed the contact from the subject, blank the rest.
     return {
       ownerId,
       talentId,
       contact: {
-        name: talent.name,
-        role: talent.role,
-        email: talent.email,
-        phone: talent.phone,
-        location: talent.location,
+        name: subject.name,
+        role: subject.role,
+        email: subject.email,
+        phone: subject.phone,
+        location: subject.location,
         linkedin: '',
       },
       resume: { ...emptyResume },
       letter: { ...emptyLetter },
       style: { ...defaultStyle },
-      updatedAt: talent.updatedAt,
+      updatedAt: subject.updatedAt,
     };
   }
 
@@ -80,8 +122,7 @@ export class DocumentService {
     talentId: string,
     input: SaveDocumentsInput,
   ): Promise<TalentDocuments> {
-    const talent = await this.talents.findById(ownerId, talentId);
-    if (!talent) throw new NotFoundError(`Talent ${talentId} not found`);
+    await this.requireSubject(ownerId, talentId); // 404s unknown subjects
 
     // Preserve any stored language variants — the editor save only carries the
     // primary set, so translations must not be dropped on a normal save.
@@ -117,10 +158,25 @@ export class DocumentService {
     return updated;
   }
 
+  /**
+   * The letter's date line, "Zürich, 2.7.2026" — locale follows the letter's
+   * language (a German Anschreiben gets a German date), mirroring the preview.
+   */
+  private letterDate(documents: TalentDocuments): string {
+    const lang = detectLanguage(`${documents.letter.anrede} ${documents.letter.gruss}`, 'de');
+    const date = new Date(this.clock.isoNow()).toLocaleDateString(
+      lang === 'de' ? 'de-DE' : 'en-GB',
+    );
+    const city = documents.contact.location.trim();
+    return city ? `${city}, ${date}` : date;
+  }
+
   /** Render the talent's saved documents (resume + cover letter) to a PDF. */
   async renderPdf(ownerId: string, talentId: string): Promise<Buffer> {
     const documents = await this.get(ownerId, talentId);
-    return this.pdf.renderHtml(documentsToHtml(documents));
+    return this.pdf.renderHtml(
+      documentsToHtml(documents, { letterDate: this.letterDate(documents) }),
+    );
   }
 
   /**
@@ -146,7 +202,9 @@ export class DocumentService {
         betreff: recipient.subject || documents.letter.betreff,
       },
     };
-    const mainPdf = await this.pdf.renderHtml(documentsToHtml(merged));
+    const mainPdf = await this.pdf.renderHtml(
+      documentsToHtml(merged, { letterDate: this.letterDate(merged) }),
+    );
     if (!attachmentIds.length) return mainPdf;
 
     // Append the selected PDF attachments after the resume + cover letter.

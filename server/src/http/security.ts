@@ -49,10 +49,9 @@ export const RECRUITING_KIT_PREFIX = '/design/myjob/ui_kits/recruiting/dist';
  * scripts come only from same-origin (`script-src 'self'` — no `unsafe-inline`,
  * no `unsafe-eval`), which is the real XSS protection. Styles still need
  * `unsafe-inline` because the design system uses React inline styles and the
- * document carries an inline `<style>` block; the kit's CSS `@import`s the
- * Space Grotesk webfont from Google Fonts (CSS from fonts.googleapis.com, font
- * files from fonts.gstatic.com). `blob:` covers the client-side export/PDF
- * downloads built with `createObjectURL`.
+ * document carries an inline `<style>` block. Fonts are self-hosted
+ * (design/fonts), so no third-party origin appears at all. `blob:` covers the
+ * client-side export/PDF downloads built with `createObjectURL`.
  */
 const RECRUITING_CSP = [
   "default-src 'self'",
@@ -63,8 +62,8 @@ const RECRUITING_CSP = [
   "script-src 'self'",
   "connect-src 'self'",
   "img-src 'self' data: blob:",
-  "font-src 'self' https://fonts.gstatic.com",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self'",
+  "style-src 'self' 'unsafe-inline'",
 ].join('; ');
 
 /**

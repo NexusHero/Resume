@@ -1,5 +1,6 @@
 import { TalentService } from '../../src/services/talent-service';
 import { createTalentSchema, updateTalentSchema } from '../../src/domain/talent';
+import { emptyResume, emptyLetter, defaultStyle } from '../../src/domain/talent-documents';
 import { NotFoundError } from '../../src/domain/errors';
 import {
   InMemoryTalentRepository,
@@ -53,6 +54,45 @@ describe('TalentService', () => {
       createTalentSchema.parse({ name: 'Marco', skills: ['Go', 'AWS'] }),
     );
     expect(created.skills).toEqual(['Go', 'AWS']);
+  });
+
+  it('ListWithSkills_TalentWithDocuments_MergesDocumentSkills', async () => {
+    // Arrange: stored skills on the record, more skills only in the documents.
+    const { service, documents } = makeService();
+    const created = await service.create(
+      OWNER,
+      createTalentSchema.parse({ name: 'Nora', skills: ['React'] }),
+    );
+    await documents.save({
+      ownerId: OWNER,
+      talentId: created.id,
+      contact: { name: 'Nora', role: '', email: '', phone: '', location: '', linkedin: '' },
+      resume: {
+        ...emptyResume,
+        skillGroups: [{ label: 'Core', items: ['TypeScript'] }],
+        experience: [
+          { role: 'Dev', company: 'Acme', location: '', period: '', bullets: [], skills: ['Node'] },
+        ],
+      },
+      letter: { ...emptyLetter },
+      style: { ...defaultStyle },
+      updatedAt: '2026-06-25T10:00:00.000Z',
+    });
+    // Act
+    const listed = await service.listWithSkills(OWNER);
+    // Assert: effectiveSkills carries record + document skills, canonicalized
+    // (Node → Node.js); the stored field stays untouched.
+    expect(listed[0]?.effectiveSkills).toEqual(
+      expect.arrayContaining(['React', 'TypeScript', 'Node.js']),
+    );
+    expect(listed[0]?.skills).toEqual(['React']);
+  });
+
+  it('ListWithSkills_NoDocuments_UsesStoredSkills', async () => {
+    const { service } = makeService();
+    await service.create(OWNER, createTalentSchema.parse({ name: 'Ben', skills: ['Go'] }));
+    const listed = await service.listWithSkills(OWNER);
+    expect(listed[0]?.effectiveSkills).toEqual(['Go']);
   });
 
   it('List_ReturnsOnlyOwnRows', async () => {

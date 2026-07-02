@@ -42,10 +42,12 @@ describe('recruitingCsp', () => {
     expect(csp).toContain("script-src 'self'");
     expect(csp).not.toContain('unsafe-eval');
     expect(csp).not.toMatch(/script-src[^;]*unsafe-inline/);
-    // styles need unsafe-inline (React inline styles) + the Google Fonts CSS host
-    expect(csp).toContain("style-src 'self' 'unsafe-inline' https://fonts.googleapis.com");
-    expect(csp).toContain('font-src');
-    expect(csp).toContain('https://fonts.gstatic.com');
+    // styles need unsafe-inline (React inline styles); fonts are self-hosted,
+    // so no third-party origin may appear anywhere in the policy
+    expect(csp).toContain("style-src 'self' 'unsafe-inline'");
+    expect(csp).toContain("font-src 'self'");
+    expect(csp).not.toContain('fonts.googleapis.com');
+    expect(csp).not.toContain('fonts.gstatic.com');
     expect(csp).toContain("object-src 'none'");
     expect(csp).toContain('blob:'); // export/PDF downloads
   });

@@ -10,6 +10,26 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Added
 
+- **Skills that power Matching** — the Add-talent form takes comma-separated skills, and
+  `GET /talents` returns each talent's `effectiveSkills` (stored skills merged with what
+  their documents prove, canonicalized), so Matching scores against the full picture. The
+  recruiter's own pinned profile derives its skills from their saved documents.
+- **"My documents" persist** — the recruiter's own resume/cover letter (keyed by their user
+  id, which has no talent record) can now be loaded, saved and given attachments: document
+  and attachment operations accept the signed-in user as a valid subject.
+- **Self-hosted webfonts** — Inter, Space Grotesk and JetBrains Mono ship as committed
+  woff2 files (`design/fonts/`); no request to Google Fonts leaves the browser (DSGVO),
+  typography works offline, and the CSP no longer allows any third-party origin.
+- **Honest sample-data notice** — `GET /jobs` reports which source produced the postings;
+  Matching shows a "Sample postings" hint when no live job source is configured.
+- **Dated cover letter** — the exported PDF letter carries a "City, date" line whose locale
+  follows the letter's language (German Anschreiben → German date), matching the preview.
+
+### Changed
+
+- **Inbox hidden** — the placeholder Inbox view is out of the navigation until it is wired
+  to a real mail source.
+
 - **Job-language AI output** — generated candidate-facing documents (pitch, outreach,
   cover letter, CV suggestions) follow the **language of the job ad / candidate material**
   (German posting → German application), detected deterministically offline

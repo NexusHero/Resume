@@ -14,6 +14,8 @@ export interface DocumentContact {
   phone: string;
   location: string;
   linkedin: string;
+  /** Optional portrait as a data URI (image/*), shown in the resume header. */
+  photo?: string;
 }
 
 export interface ResumeExperience {
@@ -100,6 +102,13 @@ const contactSchema = z.object({
   phone: z.string().default(''),
   location: z.string().default(''),
   linkedin: z.string().default(''),
+  // ~220 KB of base64 — enough for a decent portrait, small enough to live
+  // inside the document row. Must be an image data URI (never a remote URL).
+  photo: z
+    .string()
+    .max(300_000)
+    .regex(/^data:image\//, 'photo must be an image data URI')
+    .optional(),
 });
 
 export const resumeSchema = z.object({

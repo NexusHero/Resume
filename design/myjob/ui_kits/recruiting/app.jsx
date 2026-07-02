@@ -181,6 +181,14 @@ function Workspace({ user, onLogout }) {
     return window.RecruitApi.updatePlacement(id, values).then(placementsRes.reload);
   };
 
+  // The topbar search filters the list views (pool, mandates, placements) —
+  // a simple contains-match over the fields a recruiter scans for.
+  const q = search.trim().toLowerCase();
+  const matches = (...fields) => !q || fields.some((f) => String(f || '').toLowerCase().includes(q));
+  const shownTalents = talents.filter((t) => matches(t.name, t.role, t.headline, (t.skills || []).join(' ')));
+  const shownMandates = mandates.filter((m) => matches(m.client, m.role, m.location));
+  const shownPlacements = placements.filter((p) => matches(p.candName, p.candRole, p.client));
+
   // Render a view, or a loading / error (retry) state while its source resolves.
   const withState = (res, node) =>
     res.loading ? (
@@ -254,16 +262,16 @@ function Workspace({ user, onLogout }) {
     // Guard against an unknown nav key — destructuring `undefined` here would
     // white-screen the whole workspace.
     [title, subtitle] = TITLES[nav] || TITLES.uebersicht;
-    if (nav === 'uebersicht') body = <window.Dashboard me={me} apps={apps} vkpis={vkpis} clients={clients} mandates={mandates} onOpenTalent={goTalent} onOpenPipeline={() => setNav('bewerbungen')} onOpenMandate={() => setNav('mandate')} />;
-    else if (nav === 'mandate') body = withState(mandatesRes, <window.MandateView mandates={mandates} onEdit={editMandate} onOpenPipeline={goPipeline} />);
-    else if (nav === 'pool') body = withState(talentsRes, <window.TalentGrid talents={talents} apps={apps} onOpen={goTalent} onAdd={addTalent} />);
+    if (nav === 'uebersicht') body = <window.Dashboard me={me} apps={apps} vkpis={vkpis} clients={clients} mandates={mandates} onOpenTalent={goTalent} onOpenPipeline={() => setNav('mandate')} onOpenMandate={() => setNav('mandate')} />;
+    else if (nav === 'mandate') body = withState(mandatesRes, <window.MandateView mandates={shownMandates} onEdit={editMandate} onOpenPipeline={goPipeline} />);
+    else if (nav === 'pool') body = withState(talentsRes, <window.TalentGrid talents={shownTalents} apps={apps} onOpen={goTalent} onAdd={addTalent} />);
     else if (nav === 'matching') body = <window.Matching talents={talents} onCreateMandate={mandateFromJob} />;
     else if (nav === 'bewerbungen') body = (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '100%' }}>
         <window.PipelineBoard apps={apps} talents={talents} onOpen={goTalent} />
       </div>
     );
-    else if (nav === 'platzierungen') body = withState(placementsRes, <window.PlatzierungenView placements={placements} kpis={vkpis} onEdit={editPlacement} />);
+    else if (nav === 'platzierungen') body = withState(placementsRes, <window.PlatzierungenView placements={shownPlacements} kpis={vkpis} onEdit={editPlacement} />);
     else if (nav === 'berichte') body = <window.ReportsView clients={reportClients} mandates={mandates} placements={placements} apps={apps} kpis={vkpis} />;
     else if (nav === 'postfach') body = <window.Inbox messages={messages} apps={apps} talents={talents} onOpenTalent={goTalent} />;
     else if (nav === 'einstellungen') body = <window.SettingsView user={user} />;

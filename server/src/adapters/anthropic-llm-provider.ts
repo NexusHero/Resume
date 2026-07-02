@@ -1,3 +1,4 @@
+import { UpstreamProviderError } from '../domain/errors';
 import type {
   LlmGenerateInput,
   LlmGenerateResult,
@@ -59,14 +60,23 @@ export class AnthropicLlmProvider implements LlmProvider {
         messages: [{ role: 'user', content: input.prompt }],
       }),
     });
-    if (!res.ok) throw new Error(`Anthropic responded ${res.status}`);
+    if (res.status === 401 || res.status === 403) {
+      throw new UpstreamProviderError(
+        'Anthropic rejected the API key — check it under Settings → AI models & API keys.',
+      );
+    }
+    if (!res.ok) {
+      throw new UpstreamProviderError(
+        `The Anthropic API responded with ${res.status} — try again in a moment.`,
+      );
+    }
     const body = (await res.json()) as AnthropicResponse;
     const text = (body.content ?? [])
       .filter((b) => b.type === 'text')
       .map((b) => b.text ?? '')
       .join('')
       .trim();
-    if (!text) throw new Error('Anthropic returned no text');
+    if (!text) throw new UpstreamProviderError('Anthropic returned an empty response — try again.');
     return {
       text,
       usage: {

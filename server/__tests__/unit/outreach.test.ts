@@ -165,7 +165,10 @@ describe('outreach', () => {
     };
     const msg = fallbackOutreach(bare, opts());
     expect(msg.body.length).toBeGreaterThan(0);
-    expect(msg.subject).toContain('the role');
+    // With no known role the "as <role>" phrase is dropped entirely — the
+    // message must never read "your profile as the role".
+    expect(msg.subject).toBe('An exciting role for your profile');
+    expect(msg.body).not.toContain('as the role');
   });
 
   it('NormalizeOutreach_StripsSubjectForLinkedIn', () => {

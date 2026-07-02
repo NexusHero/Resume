@@ -1,3 +1,4 @@
+import { UpstreamProviderError } from '../../src/domain/errors';
 import { AnthropicLlmProvider } from '../../src/adapters/anthropic-llm-provider';
 import { GeminiLlmProvider } from '../../src/adapters/gemini-llm-provider';
 import { LlmService } from '../../src/services/llm-service';
@@ -70,13 +71,26 @@ describe('AnthropicLlmProvider', () => {
     ).toBe(false);
   });
 
-  it('Generate_ThrowsOnHttpError', async () => {
+  it('Generate_BadKey_ThrowsActionableUpstreamError', async () => {
+    // 401 from Anthropic = rejected key → a 502 problem with a hint, not a 500.
     const { http } = fakeHttp({}, { ok: false, status: 401 });
     const provider = new AnthropicLlmProvider({
       httpFetch: http,
       config: { apiKey: 'k', model: 'm' },
     });
-    await expect(provider.generate({ prompt: 'x' })).rejects.toThrow('401');
+    const err = await provider.generate({ prompt: 'x' }).catch((e) => e);
+    expect(err).toBeInstanceOf(UpstreamProviderError);
+    expect(err.status).toBe(502);
+    expect(err.message).toContain('API key');
+  });
+
+  it('Generate_UpstreamOutage_ThrowsUpstreamError', async () => {
+    const { http } = fakeHttp({}, { ok: false, status: 529 });
+    const provider = new AnthropicLlmProvider({
+      httpFetch: http,
+      config: { apiKey: 'k', model: 'm' },
+    });
+    await expect(provider.generate({ prompt: 'x' })).rejects.toThrow('529');
   });
 });
 

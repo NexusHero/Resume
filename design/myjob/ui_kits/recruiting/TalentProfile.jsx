@@ -170,7 +170,28 @@ function ResumeTab({ talent, onEdit, onCreateMappe }) {
 }
 
 /* ---- Anhänge tab — documents that link to applications ---- */
-function AttachmentsTab({ talent, apps }) {
+function AttachmentsTab({ talent, apps, onUploaded }) {
+  const [uploading, setUploading] = React.useState(false);
+  const [error, setError] = React.useState(null);
+  const upload = (file) => {
+    if (!file) return;
+    setUploading(true);
+    setError(null);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataBase64 = String(reader.result).split(',')[1] || '';
+      window.RecruitApi.uploadAttachment(talent.id, {
+        name: file.name,
+        contentType: file.type || 'application/octet-stream',
+        dataBase64,
+      })
+        .then(() => onUploaded && onUploaded())
+        .catch((e) => setError((e && e.message) || 'Upload failed.'))
+        .finally(() => setUploading(false));
+    };
+    reader.onerror = () => { setUploading(false); setError('Could not read that file.'); };
+    reader.readAsDataURL(file);
+  };
   const usage = (atId) => apps.filter((a) => (a.attachments || []).includes(atId));
   return (
     <TP.Card pad={false}>
@@ -179,8 +200,16 @@ function AttachmentsTab({ talent, apps }) {
           <div style={{ fontFamily: 'var(--font-display)', fontSize: '15px', fontWeight: 700, color: 'var(--text-heading)' }}>Documents & attachments</div>
           <div style={{ fontSize: '12px', color: 'var(--text-soft)', marginTop: '1px' }}>Upload once, link to any application</div>
         </div>
-        <TP.Button variant="ink" size="sm" iconLeft={<TP.Icon name="upload" size={14} />}>Upload</TP.Button>
+        <label style={{ cursor: 'pointer' }}>
+          <TP.Button variant="ink" size="sm" iconLeft={<TP.Icon name="upload" size={14} />} disabled={uploading} style={{ pointerEvents: 'none' }}>
+            {uploading ? 'Uploading…' : 'Upload'}
+          </TP.Button>
+          <input type="file" style={{ display: 'none' }} onChange={(e) => upload(e.target.files[0])} />
+        </label>
       </div>
+      {error && (
+        <div style={{ padding: '10px 18px', fontSize: '12.5px', color: 'var(--danger)', borderBottom: '1px solid var(--border)' }}>{error}</div>
+      )}
       {talent.attachments.length === 0 && (
         <div style={{ padding: '40px', textAlign: 'center', fontSize: '13px', color: 'var(--text-soft)' }}>No attachments yet.</div>
       )}
@@ -270,6 +299,10 @@ function TalentProfile({ talent, apps, onBack, onEdit, onCreateMappe }) {
       alive = false;
     };
   }, [talent.id]);
+  const reloadAttachments = () =>
+    window.RecruitApi.listAttachments(talent.id)
+      .then((attachments) => setLoaded((l) => (l ? { ...l, attachments } : l)))
+      .catch(() => {});
 
   if (loaded === null) return <window.LoadingState />;
   const resume = hasResumeContent(loaded.docs && loaded.docs.resume)
@@ -315,7 +348,7 @@ function TalentProfile({ talent, apps, onBack, onEdit, onCreateMappe }) {
       <TP.Tabs value={tab} onChange={setTab} tabs={tabs} />
 
       {tab === 'lebenslauf' && <ResumeTab talent={view} onEdit={onEdit} onCreateMappe={onCreateMappe} />}
-      {tab === 'anhaenge' && <AttachmentsTab talent={view} apps={apps} />}
+      {tab === 'anhaenge' && <AttachmentsTab talent={view} apps={apps} onUploaded={reloadAttachments} />}
       {tab === 'bewerbungen' && <TalentApplications apps={apps} onCreateMappe={onCreateMappe} />}
     </div>
   );

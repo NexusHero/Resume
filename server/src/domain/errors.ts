@@ -61,3 +61,9 @@ export class ValidationError extends DomainError {
     super(message);
   }
 }
+
+/** The configured AI provider rejected or failed the request (502). */
+export class UpstreamProviderError extends DomainError {
+  readonly status = 502;
+  readonly type = 'upstream-provider';
+}

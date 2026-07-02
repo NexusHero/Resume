@@ -198,8 +198,6 @@ function ReportsView({ clients, mandates, placements, apps, kpis }) {
   const maxFee = Math.max(...perClient.map((x) => x.sum), 1);
   const active = mandates.filter((m) => m.status === 'active').length;
   const fmt = (n) => n.toLocaleString('de-DE');
-  const order = window.STAGES_ORDER;
-  const maxStage = Math.max(...order.map((s) => apps.filter((a) => a.status === s).length), 1);
 
   // Download the booked placements as CSV — values quoted, so names with
   // commas survive; the blob URL is revoked right after the click.
@@ -229,7 +227,7 @@ function ReportsView({ clients, mandates, placements, apps, kpis }) {
         {kpis.map((k, i) => <VV.StatCard key={i} {...k} />)}
       </div>
       <ForecastCard />
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
         <VV.Card title="Fees per client" subtitle="Booked placements Q2">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '13px' }}>
             {perClient.map((x) => (
@@ -245,23 +243,7 @@ function ReportsView({ clients, mandates, placements, apps, kpis }) {
             ))}
           </div>
         </VV.Card>
-        <VV.Card title="Application funnel" subtitle="Candidates per stage">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {order.map((s) => {
-              const n = apps.filter((a) => a.status === s).length;
-              const meta = VV.STAGES[s];
-              return (
-                <div key={s} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ width: '74px', fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-muted)', flexShrink: 0 }}>{window.STAGE_LABELS[s]}</span>
-                  <div style={{ flex: 1, height: '20px', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
-                    <div style={{ width: `${(n / maxStage) * 100}%`, height: '100%', background: meta.color, borderRadius: 'var(--radius-sm)', minWidth: '6px' }} />
-                  </div>
-                  <span style={{ width: '20px', fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600, color: 'var(--text-heading)', textAlign: 'right' }}>{n}</span>
-                </div>
-              );
-            })}
-          </div>
-        </VV.Card>
+        {/* The application funnel returns when applications have a live source. */}
       </div>
     </div>
   );

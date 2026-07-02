@@ -2,12 +2,14 @@ import { type Attachment, type UploadAttachmentInput } from '../domain/attachmen
 import { NotFoundError, ValidationError } from '../domain/errors';
 import type { AttachmentStore, AttachmentBlob } from '../ports/attachment-store';
 import type { TalentRepository } from '../ports/talent-repository';
+import type { UserRepository } from '../ports/user-repository';
 import type { Clock } from '../ports/clock';
 import type { IdGenerator } from '../ports/id-generator';
 
 export interface AttachmentServiceDeps {
   attachmentStore: AttachmentStore;
   talentRepository: TalentRepository;
+  userRepository: UserRepository;
   clock: Clock;
   idGenerator: IdGenerator;
 }
@@ -16,20 +18,24 @@ export interface AttachmentServiceDeps {
 export class AttachmentService {
   private readonly store: AttachmentStore;
   private readonly talents: TalentRepository;
+  private readonly users: UserRepository;
   private readonly clock: Clock;
   private readonly ids: IdGenerator;
 
   constructor(deps: AttachmentServiceDeps) {
     this.store = deps.attachmentStore;
     this.talents = deps.talentRepository;
+    this.users = deps.userRepository;
     this.clock = deps.clock;
     this.ids = deps.idGenerator;
   }
 
   private async requireTalent(ownerId: string, talentId: string): Promise<void> {
-    if (!(await this.talents.findById(ownerId, talentId))) {
-      throw new NotFoundError(`Talent ${talentId} not found`);
-    }
+    if (await this.talents.findById(ownerId, talentId)) return;
+    // The recruiter's own attachments are keyed by their user id — "me" has
+    // no talent record but is still a valid subject.
+    if (await this.users.findById(talentId)) return;
+    throw new NotFoundError(`Talent ${talentId} not found`);
   }
 
   async list(ownerId: string, talentId: string): Promise<Attachment[]> {

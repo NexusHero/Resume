@@ -1,4 +1,5 @@
 import { type Talent, type CreateTalentInput, type UpdateTalentInput } from '../domain/talent';
+import { candidateSkills } from '../domain/match';
 import { NotFoundError } from '../domain/errors';
 import type { TalentRepository } from '../ports/talent-repository';
 import type { DocumentRepository } from '../ports/document-repository';
@@ -6,6 +7,9 @@ import type { AttachmentStore } from '../ports/attachment-store';
 import type { CandidacyRepository } from '../ports/candidacy-repository';
 import type { Clock } from '../ports/clock';
 import type { IdGenerator } from '../ports/id-generator';
+
+/** A listed talent: stored fields plus the skills their documents prove. */
+export type TalentWithSkills = Talent & { effectiveSkills: string[] };
 
 export interface TalentServiceDeps {
   talentRepository: TalentRepository;
@@ -36,6 +40,22 @@ export class TalentService {
 
   list(ownerId: string): Promise<Talent[]> {
     return this.repo.list(ownerId);
+  }
+
+  /**
+   * The pool as the API lists it: each talent carries `effectiveSkills` — the
+   * stored skills merged with what their documents prove (canonicalized), so
+   * client-side matching scores against the full picture, not just the fields
+   * someone remembered to type into the form.
+   */
+  async listWithSkills(ownerId: string): Promise<TalentWithSkills[]> {
+    const talents = await this.repo.list(ownerId);
+    return Promise.all(
+      talents.map(async (talent) => ({
+        ...talent,
+        effectiveSkills: candidateSkills(talent, await this.documents.get(ownerId, talent.id)),
+      })),
+    );
   }
 
   async get(ownerId: string, id: string): Promise<Talent> {

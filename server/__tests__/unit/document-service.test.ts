@@ -3,6 +3,7 @@ import { NotFoundError } from '../../src/domain/errors';
 import {
   InMemoryTalentRepository,
   InMemoryDocumentRepository,
+  InMemoryUserRepository,
   InMemoryAttachmentStore,
   FakePdfRenderer,
   FakePdfMerger,
@@ -77,15 +78,17 @@ function ctx() {
   const documents = new InMemoryDocumentRepository();
   const attachments = new InMemoryAttachmentStore();
   const pdf = new FakePdfRenderer();
+  const users = new InMemoryUserRepository();
   const service = new DocumentService({
     documentRepository: documents,
     talentRepository: talents,
+    userRepository: users,
     attachmentStore: attachments,
     pdfRenderer: pdf,
     pdfMerger: new FakePdfMerger(),
     clock: new FixedClock(),
   });
-  return { service, talents, documents, attachments, pdf };
+  return { service, talents, documents, attachments, pdf, users };
 }
 
 describe('DocumentService', () => {
@@ -103,6 +106,41 @@ describe('DocumentService', () => {
     expect(docs.resume.experience).toEqual([]);
     expect(docs.letter.anrede).toBe('Sehr geehrte Damen und Herren,');
     expect(docs.style.accent).toBe('#2A6FDB');
+  });
+
+  it('Get_SelfWithoutTalentRecord_SeedsContactFromUser', async () => {
+    // Arrange: the recruiter's own documents are keyed by their user id — no
+    // talent record exists for "me".
+    const c = ctx();
+    await c.users.add({
+      id: 'user1',
+      email: 'nora.weber@example.de',
+      passwordHash: 'x',
+      roles: ['recruiter'],
+      createdAt: '2026-06-25T10:00:00.000Z',
+    });
+    // Act
+    const docs = await c.service.get(OWNER, 'user1');
+    // Assert: contact seeded from the account (name derived from the email).
+    expect(docs.contact).toMatchObject({
+      name: 'Nora Weber',
+      role: 'Recruiter',
+      email: 'nora.weber@example.de',
+    });
+  });
+
+  it('Save_SelfWithoutTalentRecord_Persists', async () => {
+    const c = ctx();
+    await c.users.add({
+      id: 'user1',
+      email: 'me@example.de',
+      passwordHash: 'x',
+      roles: ['recruiter'],
+      createdAt: '2026-06-25T10:00:00.000Z',
+    });
+    const saved = await c.service.save(OWNER, 'user1', input);
+    expect(saved.talentId).toBe('user1');
+    expect((await c.service.get(OWNER, 'user1')).resume.summary).toBe(input.resume.summary);
   });
 
   it('Save_ThenGet_RoundTripsAndStampsUpdatedAt', async () => {
@@ -165,6 +203,8 @@ describe('DocumentService', () => {
     // the rendered HTML carries the saved content
     expect(c.pdf.lastHtml).toContain('Designer with 8 years of experience.');
     expect(c.pdf.lastHtml).toContain('Absatz eins.');
+    // German letter → German-locale date line, prefixed with the sender's city
+    expect(c.pdf.lastHtml).toContain('Leipzig, 25.6.2026');
   });
 
   it('RenderPdf_UnknownTalent_Throws404', async () => {

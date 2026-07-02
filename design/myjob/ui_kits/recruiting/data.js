@@ -62,7 +62,9 @@ function mapTalent(t) {
     phone: t.phone || '',
     availability: t.availability || '',
     salary: t.salary || '',
-    skills: Array.isArray(t.skills) ? t.skills : [],
+    // Prefer the server's merged view (stored skills + what the documents
+    // prove); fall back to the raw field for older payloads.
+    skills: Array.isArray(t.effectiveSkills) ? t.effectiveSkills : Array.isArray(t.skills) ? t.skills : [],
     score: typeof t.score === 'number' ? t.score : Math.round((filled / 8) * 100),
     attachments: [],
     me: false,
@@ -80,7 +82,13 @@ function toTalentCreate(t) {
     phone: t.phone || '',
     availability: t.availability || '',
     salary: t.salary || '',
-    skills: Array.isArray(t.skills) ? t.skills : [],
+    // The form field is a comma-separated string; the API wants an array.
+    skills: Array.isArray(t.skills)
+      ? t.skills
+      : String(t.skills || '')
+          .split(',')
+          .map((x) => x.trim())
+          .filter(Boolean),
   };
 }
 
@@ -294,8 +302,8 @@ const RecruitApi = {
       ? `${RECRUIT_API_BASE}/jobs?q=${encodeURIComponent(q)}`
       : `${RECRUIT_API_BASE}/jobs`;
     const data = await _jsonOrThrow(await fetch(url));
-    const jobs = [...(data.top || []), ...(data.more || [])];
-    return jobs.map((j) => ({
+    const merged = [...(data.top || []), ...(data.more || [])];
+    const jobs = merged.map((j) => ({
       id: j.id,
       title: j.role,
       company: j.company,
@@ -308,6 +316,8 @@ const RecruitApi = {
       url: j.url || '',
       req: Array.isArray(j.skills) ? j.skills : [],
     }));
+    // 'Sample' = the server's offline fallback — the UI says so honestly.
+    return { jobs, sample: data.source === 'Sample' };
   },
   // --- Recruiting pipeline (candidacies) ---
   async mandateCandidacies(mandateId) {

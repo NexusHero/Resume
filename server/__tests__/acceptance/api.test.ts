@@ -213,6 +213,7 @@ function makeApp(
     attachmentService: new AttachmentService({
       attachmentStore,
       talentRepository,
+      userRepository,
       clock: new FixedClock(),
       idGenerator: new SequenceIdGenerator('att'),
     }),
@@ -220,6 +221,7 @@ function makeApp(
   const documentService = new DocumentService({
     documentRepository,
     talentRepository,
+    userRepository,
     attachmentStore,
     pdfRenderer: new FakePdfRenderer(),
     pdfMerger: new FakePdfMerger(),

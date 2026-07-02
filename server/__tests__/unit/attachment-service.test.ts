@@ -2,6 +2,7 @@ import { AttachmentService } from '../../src/services/attachment-service';
 import { NotFoundError, ValidationError } from '../../src/domain/errors';
 import {
   InMemoryTalentRepository,
+  InMemoryUserRepository,
   InMemoryAttachmentStore,
   FixedClock,
   SequenceIdGenerator,
@@ -33,6 +34,7 @@ function ctx() {
   const service = new AttachmentService({
     attachmentStore: store,
     talentRepository: talents,
+    userRepository: new InMemoryUserRepository(),
     clock: new FixedClock(),
     idGenerator: new SequenceIdGenerator('att'),
   });

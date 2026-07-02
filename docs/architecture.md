@@ -159,9 +159,14 @@ See [requirements.md](requirements.md) for the full FR/NFR catalogue. Verificati
 
 ## 11. Risks and Technical Debt
 
-- **Clean-code review pending** — the codebase has grown fast; a dedicated pass for SRP,
-  naming, duplication and controller/service boundaries is tracked (roadmap Phase 0) and
-  should precede the next big feature.
+- ✅ **Clean-code review done** (roadmap 0.9) — a three-dimension audit (clean code,
+  architecture conformance, UX walkthrough) confirmed the layering holds; the found debt
+  was paid down: the per-feature LLM scaffold collapsed into one `runLlm()` helper, five
+  duplicated `candidateFacts` builders unified, PII/sample data removed from the shipped
+  bundle, the remaining German UI chrome translated, dead exports deleted and the
+  scope/userId naming drift fixed. Remaining known debt: the triple manual wiring lists
+  (container / AppDeps / index imports) and one domain→ports type import
+  (`usage.ts` → `llm-provider`).
 - The rendered UML diagrams (§3, §5) predate the recruiting/AI modules; refresh the
   PlantUML sources when they are next touched.
 - OpenAPI is hand-kept, not generated from zod (roadmap 0.5).

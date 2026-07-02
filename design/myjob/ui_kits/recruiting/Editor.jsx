@@ -135,6 +135,10 @@ function Editor({ talent, onClose, onCreateMappe }) {
   const acceptAI = () => {
     if (pending && pending.kind === 'summary') setResume((s) => ({ ...s, summary: pending.value }));
     if (pending && pending.kind === 'letter') setLetter((s) => ({ ...s, absaetze: pending.value }));
+    if (pending && pending.kind === 'import') {
+      if (Object.keys(pending.contact).length) setContact((s) => ({ ...s, ...pending.contact }));
+      if (pending.resume) setResume(pending.resume);
+    }
     setPending(null);
   };
   const cancelAI = () => setPending(null);
@@ -179,9 +183,15 @@ function Editor({ talent, onClose, onCreateMappe }) {
   const saveLabel = { saving: 'Saving…', saved: 'Saved', error: 'Not saved' };
 
   /* The import modal hands the parsed CV back here to fill the form. */
+  /* The parsed CV is staged like an AI suggestion — shown in the preview
+     banner and only applied on "Apply". Empty parsed contact fields never
+     overwrite values the recruiter already typed. */
   const applyParsed = (parsed) => {
-    if (parsed.contact) setContact((s) => ({ ...s, ...parsed.contact }));
-    if (parsed.resume) setResume(parsed.resume);
+    const contactPatch = {};
+    Object.entries(parsed.contact || {}).forEach(([k, v]) => {
+      if (typeof v === 'string' && v.trim()) contactPatch[k] = v;
+    });
+    setPending({ kind: 'import', contact: contactPatch, resume: parsed.resume || null });
   };
 
   /* ---- Translate: create the other-language variant of the documents ---- */
@@ -275,11 +285,19 @@ function Editor({ talent, onClose, onCreateMappe }) {
             {(gen || pending) && (
               <div style={{ border: '1px dashed var(--accent-border)', borderRadius: 'var(--radius-md)', overflow: 'hidden', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '8px 12px', background: 'var(--accent-soft)', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 600, color: 'var(--accent-strong)' }}>
-                  <ED.Icon name="zap" size={12} />AI suggestion · not applied yet
+                  <ED.Icon name="zap" size={12} />Suggestion · not applied yet
                 </div>
                 <div style={{ padding: '12px 13px' }}>
                   {gen ? (
                     <div style={{ fontSize: '12.5px', color: 'var(--accent-strong)', fontStyle: 'italic' }}>myJob is tailoring …</div>
+                  ) : pending.kind === 'import' ? (
+                    <div style={{ fontSize: '12.5px', lineHeight: 1.7, color: 'var(--text-soft)' }}>
+                      <div style={{ fontWeight: 600, color: 'var(--text-heading)', marginBottom: '4px' }}>Parsed from the CV:</div>
+                      {Object.keys(pending.contact).length > 0 && <div>Contact: {Object.entries(pending.contact).map(([k, v]) => `${k} “${v}”`).join(', ')}</div>}
+                      {pending.resume && <div>{(pending.resume.experience || []).length} experience · {(pending.resume.education || []).length} education · {(pending.resume.skillGroups || []).flatMap((g) => g.items || []).length} skills</div>}
+                      {pending.resume && pending.resume.summary && <div style={{ fontStyle: 'italic', marginTop: '4px' }}>“{pending.resume.summary.slice(0, 220)}{pending.resume.summary.length > 220 ? '…' : ''}”</div>}
+                      {Object.keys(pending.contact).length === 0 && !pending.resume && <div>Nothing could be extracted from that text.</div>}
+                    </div>
                   ) : pending.kind === 'summary' ? (
                     <div style={{ fontSize: '12.5px', lineHeight: 1.6, color: 'var(--text-soft)', fontStyle: 'italic' }}>{pending.value}</div>
                   ) : (

@@ -10,6 +10,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Fixed
 
+- **Gemini replies are no longer truncated** — Gemini 2.5 spends "thinking"
+  tokens inside `maxOutputTokens`, which cut structured replies mid-JSON and
+  silently degraded features to their templates; thinking is now disabled for
+  these short, structured tasks (verified live: ATS, prep and suggest come
+  back complete).
+- **Candidate prep no longer falls back for lack of tokens** — its reply is
+  the largest structured output (questions + STAR scaffolds + rationale), so
+  its budget rose from 1200 to 2000 tokens.
+- **Template fallbacks are diagnosable** — when an LLM reply arrives but
+  fails its schema (truncated or malformed JSON), a warning is logged; before,
+  that fallback was indistinguishable from "no provider configured".
 - **CV import is no longer destructive** — the parsed CV is staged as a
   suggestion (Apply/Discard) like the AI tailor, and empty parsed contact
   fields never overwrite values the recruiter already typed.

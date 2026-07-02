@@ -130,7 +130,9 @@ const MAX_TOKENS = {
   translate: 2000,
   matchExplain: 500,
   interviewKit: 900,
-  candidatePrep: 1200,
+  // Prep is the largest structured reply (4–6 questions with rationale, STAR
+  // scaffolds, candidate questions); 1200 was regularly truncated mid-JSON.
+  candidatePrep: 2000,
 } as const;
 
 /**
@@ -240,6 +242,26 @@ export class DocumentAiService {
       );
       return null;
     }
+  }
+
+  /**
+   * Validate a JSON-shaped LLM reply against its feature schema. A miss
+   * (truncated output, malformed JSON, wrong shape) must be visible in the
+   * logs — otherwise the template fallback is indistinguishable from a
+   * missing provider.
+   */
+  private parseReply<T>(
+    feature: UsageFeature,
+    reply: string,
+    schema: { safeParse: (value: unknown) => { success: true; data: T } | { success: false } },
+  ): T | null {
+    const parsed = schema.safeParse(extractJson(reply));
+    if (parsed.success) return parsed.data;
+    this.logger.warn(
+      { feature, replyChars: reply.length },
+      'llm reply did not match the expected schema, falling back',
+    );
+    return null;
   }
 
   async suggest(
@@ -353,8 +375,8 @@ export class DocumentAiService {
 
     const res = await this.runLlm(userId, 'ats', MAX_TOKENS.ats, atsPrompt(documents, jobText));
     if (res) {
-      const parsed = atsResultSchema.safeParse(extractJson(res.reply));
-      if (parsed.success) return { ...normalizeAts(parsed.data), provider: res.provider };
+      const parsed = this.parseReply('ats', res.reply, atsResultSchema);
+      if (parsed) return { ...normalizeAts(parsed), provider: res.provider };
     }
 
     return { ...fallbackAts(documents, jobText), provider: 'template' };
@@ -394,9 +416,9 @@ export class DocumentAiService {
       pitchPrompt(documents, mandateContext, lang),
     );
     if (res) {
-      const parsed = pitchResultSchema.safeParse(extractJson(res.reply));
-      if (parsed.success) {
-        const pitch = normalizePitch(parsed.data);
+      const parsed = this.parseReply('pitch', res.reply, pitchResultSchema);
+      if (parsed) {
+        const pitch = normalizePitch(parsed);
         if (pitch.headline || pitch.paragraphs.length) {
           return withGrounding(pitch, res.provider);
         }
@@ -439,9 +461,9 @@ export class DocumentAiService {
       outreachPrompt(documents, opts, lang),
     );
     if (res) {
-      const parsed = outreachResultSchema.safeParse(extractJson(res.reply));
-      if (parsed.success) {
-        const message = normalizeOutreach(parsed.data, opts.channel);
+      const parsed = this.parseReply('outreach', res.reply, outreachResultSchema);
+      if (parsed) {
+        const message = normalizeOutreach(parsed, opts.channel);
         if (message.body) return withGrounding(message, res.provider);
       }
     }
@@ -531,9 +553,9 @@ export class DocumentAiService {
       explainPrompt(documents, mandate, matchedSkills),
     );
     if (res) {
-      const parsed = explanationResultSchema.safeParse(extractJson(res.reply));
-      if (parsed.success) {
-        const explanation = normalizeExplanation(parsed.data, matchedSkills);
+      const parsed = this.parseReply('matchExplain', res.reply, explanationResultSchema);
+      if (parsed) {
+        const explanation = normalizeExplanation(parsed, matchedSkills);
         if (explanation.reasons.length) return { ...explanation, provider: res.provider };
       }
     }
@@ -561,9 +583,9 @@ export class DocumentAiService {
       interviewKitPrompt(documents, mandate),
     );
     if (res) {
-      const parsed = interviewKitResultSchema.safeParse(extractJson(res.reply));
-      if (parsed.success) {
-        const kit = normalizeInterviewKit(parsed.data);
+      const parsed = this.parseReply('interviewKit', res.reply, interviewKitResultSchema);
+      if (parsed) {
+        const kit = normalizeInterviewKit(parsed);
         if (kit.questions.length) return { ...kit, provider: res.provider };
       }
     }
@@ -604,9 +626,9 @@ export class DocumentAiService {
       prepPrompt(documents, mandate, company, base.strengths),
     );
     if (res) {
-      const parsed = prepResultSchema.safeParse(extractJson(res.reply));
-      if (parsed.success) {
-        return { ...mergePrep(base, parsed.data), provider: res.provider };
+      const parsed = this.parseReply('candidatePrep', res.reply, prepResultSchema);
+      if (parsed) {
+        return { ...mergePrep(base, parsed), provider: res.provider };
       }
     }
 

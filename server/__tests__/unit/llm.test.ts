@@ -111,6 +111,25 @@ describe('GeminiLlmProvider', () => {
     expect(calls[0]!.url).toContain('gemini-2.5-flash:generateContent');
     expect(calls[0]!.url).toContain('key=g-key');
   });
+
+  it('Generate_DisablesThinkingSoTheBudgetIsAllVisibleOutput', async () => {
+    // Gemini 2.5 spends "thinking" tokens inside maxOutputTokens; without
+    // thinkingBudget: 0 our tight budgets come back truncated mid-JSON.
+    const { http, calls } = fakeHttp({
+      candidates: [{ content: { parts: [{ text: 'ok' }] } }],
+    });
+    const provider = new GeminiLlmProvider({
+      httpFetch: http,
+      config: { apiKey: 'g-key', model: 'gemini-2.5-flash' },
+    });
+    await provider.generate({ prompt: 'hi', maxTokens: 900 });
+
+    const sent = JSON.parse((calls[0]!.init as { body: string }).body);
+    expect(sent.generationConfig).toEqual({
+      maxOutputTokens: 900,
+      thinkingConfig: { thinkingBudget: 0 },
+    });
+  });
 });
 
 describe('LlmService', () => {

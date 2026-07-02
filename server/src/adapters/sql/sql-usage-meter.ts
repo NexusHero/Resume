@@ -15,7 +15,8 @@ export class SqlUsageMeter implements UsageMeter {
 
   async record(event: UsageEvent): Promise<void> {
     await this.db.insert(usageEvents).values({
-      ownerId: event.ownerId,
+      // Domain field `userId` maps onto the legacy `owner_id` column (no migration).
+      userId: event.userId,
       provider: event.provider,
       feature: event.feature,
       inputTokens: event.inputTokens,
@@ -24,14 +25,14 @@ export class SqlUsageMeter implements UsageMeter {
     });
   }
 
-  async list(ownerId: string): Promise<UsageEvent[]> {
+  async list(userId: string): Promise<UsageEvent[]> {
     const rows = await this.db
       .select()
       .from(usageEvents)
-      .where(eq(usageEvents.ownerId, ownerId))
+      .where(eq(usageEvents.userId, userId))
       .orderBy(asc(usageEvents.seq));
     return rows.map((r) => ({
-      ownerId: r.ownerId,
+      userId: r.userId,
       provider: r.provider as LlmProviderId,
       feature: r.feature as UsageFeature,
       inputTokens: r.inputTokens,
@@ -40,7 +41,7 @@ export class SqlUsageMeter implements UsageMeter {
     }));
   }
 
-  async removeForOwner(ownerId: string): Promise<void> {
-    await this.db.delete(usageEvents).where(eq(usageEvents.ownerId, ownerId));
+  async removeForUser(userId: string): Promise<void> {
+    await this.db.delete(usageEvents).where(eq(usageEvents.userId, userId));
   }
 }

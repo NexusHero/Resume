@@ -3,7 +3,7 @@ import { addCandidacySchema, updateCandidacySchema } from '../domain/candidacy';
 import type { CandidacyService } from '../services/candidacy-service';
 import { currentScope } from './current-user';
 
-/** The recruiting pipeline: talents in a mandate's stages (owner-scoped). */
+/** The recruiting pipeline: talents in a mandate's stages (team-scoped). */
 export class CandidacyController {
   private readonly service: CandidacyService;
 

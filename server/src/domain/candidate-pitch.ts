@@ -11,7 +11,6 @@ import { candidateFacts } from './candidate-facts';
 export const pitchRequestSchema = z.object({
   mandateContext: z.string().max(50_000).default(''),
 });
-export type PitchRequestInput = z.infer<typeof pitchRequestSchema>;
 
 /** A short "why this candidate" profile a recruiter presents to a client. */
 export interface CandidatePitch {

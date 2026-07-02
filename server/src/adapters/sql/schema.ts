@@ -85,7 +85,7 @@ export interface SavedSearchQueryRow {
   threshold: number;
 }
 
-/** Client search mandates (mirrors domain `Mandate`). Owner-scoped per recruiter. */
+/** Client search mandates (mirrors domain `Mandate`). Team-scoped (`owner_id` holds the team scope). */
 export const mandates = pgTable('mandates', {
   id: text('id').primaryKey(),
   ownerId: text('owner_id').notNull(),
@@ -105,7 +105,7 @@ export const mandates = pgTable('mandates', {
   updatedAt: text('updated_at').notNull(),
 });
 
-/** Represented candidates (mirrors domain `Talent`). Owner-scoped per recruiter. */
+/** Represented candidates (mirrors domain `Talent`). Team-scoped (`owner_id` holds the team scope). */
 export const talents = pgTable('talents', {
   id: text('id').primaryKey(),
   ownerId: text('owner_id').notNull(),
@@ -123,7 +123,7 @@ export const talents = pgTable('talents', {
   anonymizedAt: text('anonymized_at'),
 });
 
-/** Files attached to a talent (base64 bytes + metadata). Owner-scoped. */
+/** Files attached to a talent (base64 bytes + metadata). Team-scoped. */
 export const attachments = pgTable('attachments', {
   id: text('id').primaryKey(),
   ownerId: text('owner_id').notNull(),
@@ -151,7 +151,7 @@ export const talentDocuments = pgTable(
   (t) => ({ pk: primaryKey({ columns: [t.ownerId, t.talentId] }) }),
 );
 
-/** Pipeline candidacies (talent ↔ mandate links with a stage). Owner-scoped. */
+/** Pipeline candidacies (talent ↔ mandate links with a stage). Team-scoped. */
 export const candidacies = pgTable('candidacies', {
   id: text('id').primaryKey(),
   ownerId: text('owner_id').notNull(),
@@ -182,7 +182,8 @@ export const interviewObservations = pgTable('interview_observations', {
 /** Append-only meter of LLM calls (mirrors domain `UsageEvent`). Per user. */
 export const usageEvents = pgTable('usage_events', {
   seq: serial('seq').primaryKey(),
-  ownerId: text('owner_id').notNull(),
+  // Domain field is `userId`; the column keeps its legacy name `owner_id` to avoid a migration.
+  userId: text('owner_id').notNull(),
   provider: text('provider').notNull(),
   feature: text('feature').notNull(),
   inputTokens: integer('input_tokens').notNull(),
@@ -190,7 +191,7 @@ export const usageEvents = pgTable('usage_events', {
   at: text('at').notNull(),
 });
 
-/** Booked placements (mirrors domain `Placement`). Owner-scoped per recruiter. */
+/** Booked placements (mirrors domain `Placement`). Team-scoped (`owner_id` holds the team scope). */
 export const placements = pgTable('placements', {
   id: text('id').primaryKey(),
   ownerId: text('owner_id').notNull(),

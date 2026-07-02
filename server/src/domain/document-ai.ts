@@ -12,7 +12,6 @@ export const aiSuggestSchema = z.object({
   role: z.string().optional(),
   company: z.string().optional(),
 });
-export type AiSuggestInput = z.infer<typeof aiSuggestSchema>;
 
 /** Optional targeting for a cover letter — the role/company it's aimed at. */
 export interface DocumentAiTarget {

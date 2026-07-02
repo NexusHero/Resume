@@ -137,7 +137,7 @@ describe('AccountService', () => {
     const token = await ctx.sessionStore.create(USER);
     await ctx.passwordResetTokenStore.create(USER);
     await ctx.usageMeter.record({
-      ownerId: USER,
+      userId: USER,
       provider: 'claude',
       feature: 'ats',
       inputTokens: 10,

@@ -17,7 +17,7 @@ export type UsageFeature = (typeof USAGE_FEATURES)[number];
 
 /** One metered LLM call: who made it, which provider/feature, and what it cost. */
 export interface UsageEvent {
-  ownerId: string; // the user whose key/quota it counts against
+  userId: string; // the user whose key/quota it counts against
   provider: LlmProviderId;
   feature: UsageFeature;
   inputTokens: number;
@@ -123,14 +123,14 @@ export function summarizeUsage(events: UsageEvent[]): UsageSummary {
 
 /** Construct a usage event from a completed generation's token usage. */
 export function toUsageEvent(
-  ownerId: string,
+  userId: string,
   provider: LlmProviderId,
   feature: UsageFeature,
   usage: TokenUsage,
   at: string,
 ): UsageEvent {
   return {
-    ownerId,
+    userId,
     provider,
     feature,
     inputTokens: usage.inputTokens,

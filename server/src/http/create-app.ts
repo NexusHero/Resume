@@ -118,8 +118,8 @@ export function createApp(deps: AppDeps): Express {
   api.post('/searches', asyncHandler(s.create));
   api.delete('/searches/:id', asyncHandler(s.remove));
   api.get('/searches/:id/run', asyncHandler(s.run));
-  // Recruiting endpoints are owner-scoped: every request must carry a valid
-  // session, and the resolved user id scopes the data it can see and mutate.
+  // Recruiting endpoints require a valid session; the data behind them is
+  // team-scoped (currentScope) — every member works on the shared team pool.
   const requireAuth = asyncHandler(auth.requireAuth);
   api.get('/mandates', requireAuth, asyncHandler(m.list));
   api.post('/mandates', requireAuth, asyncHandler(m.create));
@@ -129,7 +129,7 @@ export function createApp(deps: AppDeps): Express {
   api.post('/talents', requireAuth, asyncHandler(t.create));
   api.patch('/talents/:id', requireAuth, asyncHandler(t.update));
   api.delete('/talents/:id', requireAuth, asyncHandler(t.remove));
-  // Recruiting pipeline: talents in a mandate's stages (owner-scoped).
+  // Recruiting pipeline: talents in a mandate's stages (team-scoped).
   api.post('/mandates/:id/match', requireAuth, asyncHandler(match.match));
   // AI on top of matching: explain a candidate's fit for the mandate.
   api.post(
@@ -154,7 +154,7 @@ export function createApp(deps: AppDeps): Express {
   // DSGVO retention (admin-only, enforced in the controller via Authorizer).
   api.get('/retention/report', requireAuth, asyncHandler(retention.report));
   api.post('/talents/:id/anonymize', requireAuth, asyncHandler(retention.anonymize));
-  // A talent's resume + cover-letter documents (owner-scoped).
+  // A talent's resume + cover-letter documents (team-scoped).
   api.get('/talents/:id/documents', requireAuth, asyncHandler(docs.get));
   api.put('/talents/:id/documents', requireAuth, asyncHandler(docs.save));
   api.get('/talents/:id/documents/pdf', requireAuth, asyncHandler(docs.pdf));
@@ -166,7 +166,7 @@ export function createApp(deps: AppDeps): Express {
   api.post('/talents/:id/documents/outreach', requireAuth, asyncHandler(docs.outreach));
   api.post('/talents/:id/documents/translate', requireAuth, asyncHandler(docs.translate));
   api.get('/talents/:id/dossier/pdf', requireAuth, asyncHandler(docs.dossier));
-  // Talent attachments (files uploaded base64; owner-scoped).
+  // Talent attachments (files uploaded base64; team-scoped).
   api.get('/talents/:id/attachments', requireAuth, asyncHandler(att.list));
   api.post('/talents/:id/attachments', requireAuth, asyncHandler(att.upload));
   api.get('/attachments/:id', requireAuth, asyncHandler(att.download));
@@ -189,7 +189,7 @@ export function createApp(deps: AppDeps): Express {
   api.get('/forecast', requireAuth, asyncHandler(forecast.get));
   api.get('/settings/llm', asyncHandler(llm.settings));
   api.put('/settings/llm', asyncHandler(llm.setProvider));
-  // Per-user API keys are owner-scoped (encrypted server-side).
+  // API keys are per-user, not team-shared (encrypted server-side).
   api.get('/settings/keys', requireAuth, asyncHandler(llm.keysStatus));
   api.put('/settings/keys/:provider', requireAuth, asyncHandler(llm.setKey));
   api.delete('/settings/keys/:provider', requireAuth, asyncHandler(llm.removeKey));

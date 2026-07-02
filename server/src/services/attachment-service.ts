@@ -12,7 +12,7 @@ export interface AttachmentServiceDeps {
   idGenerator: IdGenerator;
 }
 
-/** Owner-scoped CRUD for talent attachments; verifies talent ownership first. */
+/** Team-scoped CRUD for talent attachments (scope = the caller's shared team); verifies the talent exists in that scope first. */
 export class AttachmentService {
   private readonly store: AttachmentStore;
   private readonly talents: TalentRepository;

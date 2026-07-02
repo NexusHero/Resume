@@ -19,7 +19,6 @@ export const outreachRequestSchema = z.object({
   mandateContext: z.string().max(50_000).default(''),
   recruiterName: z.string().max(120).default(''),
 });
-export type OutreachRequestInput = z.infer<typeof outreachRequestSchema>;
 
 /** Options that steer the generated message (everything but the talent). */
 export interface OutreachOptions {

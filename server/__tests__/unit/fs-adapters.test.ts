@@ -301,8 +301,8 @@ describe('FsApiKeyStore', () => {
 });
 
 describe('FsUsageMeter', () => {
-  const event = (ownerId: string, over = {}) => ({
-    ownerId,
+  const event = (userId: string, over = {}) => ({
+    userId,
     provider: 'claude' as const,
     feature: 'ats' as const,
     inputTokens: 100,
@@ -326,19 +326,19 @@ describe('FsUsageMeter', () => {
     expect(await meter.list('u2')).toHaveLength(1);
   });
 
-  it('RemoveForOwner_DropsOnlyThatOwner', async () => {
+  it('RemoveForUser_DropsOnlyThatUser', async () => {
     const meter = new FsUsageMeter({ config: tmpConfig() });
     await meter.record(event('u1'));
     await meter.record(event('u2'));
-    await meter.removeForOwner('u1');
+    await meter.removeForUser('u1');
     expect(await meter.list('u1')).toEqual([]);
     expect(await meter.list('u2')).toHaveLength(1);
   });
 
-  it('RemoveForOwner_UnknownOwner_IsNoOp', async () => {
+  it('RemoveForUser_UnknownUser_IsNoOp', async () => {
     const meter = new FsUsageMeter({ config: tmpConfig() });
     await meter.record(event('u1'));
-    await meter.removeForOwner('ghost');
+    await meter.removeForUser('ghost');
     expect(await meter.list('u1')).toHaveLength(1);
   });
 

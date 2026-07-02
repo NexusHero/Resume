@@ -426,11 +426,11 @@ export class InMemoryUsageMeter implements UsageMeter {
   async record(event: UsageEvent): Promise<void> {
     this.events.push(event);
   }
-  async list(ownerId: string): Promise<UsageEvent[]> {
-    return this.events.filter((e) => e.ownerId === ownerId);
+  async list(userId: string): Promise<UsageEvent[]> {
+    return this.events.filter((e) => e.userId === userId);
   }
-  async removeForOwner(ownerId: string): Promise<void> {
-    this.events = this.events.filter((e) => e.ownerId !== ownerId);
+  async removeForUser(userId: string): Promise<void> {
+    this.events = this.events.filter((e) => e.userId !== userId);
   }
 }
 

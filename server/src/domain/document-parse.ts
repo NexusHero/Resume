@@ -4,7 +4,6 @@ import { z } from 'zod';
 export const parseRequestSchema = z.object({
   text: z.string().min(1, 'text is required').max(50_000),
 });
-export type ParseRequestInput = z.infer<typeof parseRequestSchema>;
 
 /**
  * POST /api/v1/talents/:id/documents/parse-pdf — a CV uploaded as a base64 PDF

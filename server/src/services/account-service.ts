@@ -88,7 +88,7 @@ export class AccountService {
     }
     await this.sessions.destroyForUser(userId);
     await this.resetTokens.destroyForUser(userId);
-    await this.usage.removeForOwner(userId);
+    await this.usage.removeForUser(userId);
     await this.users.remove(userId);
   }
 }

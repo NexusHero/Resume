@@ -185,11 +185,11 @@ export class DocumentAiService {
   }
 
   private async resolveProvider(
-    ownerId: string,
+    userId: string,
   ): Promise<{ provider: LlmProvider; apiKey?: string } | null> {
     const currentId = this.llm.currentProvider();
     const current = this.llm.get(currentId);
-    const apiKey = await this.keys.get(ownerId, currentId);
+    const apiKey = await this.keys.get(userId, currentId);
     if (current && apiKey) return { provider: current, apiKey };
     const active = this.llm.active(); // a provider with server credentials
     return active ? { provider: active } : null;

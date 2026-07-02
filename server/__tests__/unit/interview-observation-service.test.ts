@@ -24,6 +24,7 @@ const mandate = (id: string, client = 'Google Germany GmbH'): Mandate => ({
   submitted: 0,
   interviews: 0,
   jobText: '',
+  lang: 'en',
   createdAt: '2026-06-25T10:00:00.000Z',
   updatedAt: '2026-06-25T10:00:00.000Z',
 });

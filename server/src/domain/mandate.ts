@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { OutputLang } from './language';
 
 export const MANDATE_PRIORITIES = ['high', 'medium', 'low'] as const;
 export type MandatePriority = (typeof MANDATE_PRIORITIES)[number];
@@ -22,6 +23,13 @@ export interface Mandate {
   interviews: number;
   /** The job ad text — the employer's own requirements for this role. */
   jobText: string;
+  /**
+   * Language of the job ad, derived from `jobText`. Generated documents for this
+   * mandate (pitch, outreach, prep, …) follow it: a German posting yields a
+   * German application, an English posting an English one — independent of the
+   * app UI language. Defaults to `'en'` when the ad is empty.
+   */
+  lang: OutputLang;
   createdAt: string; // ISO 8601
   updatedAt: string; // ISO 8601
 }

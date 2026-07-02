@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { TalentDocuments } from './talent-documents';
 import { type MandateContext, documentSkills, matchedForMandate } from './match-explain';
+import { candidateFacts } from './candidate-facts';
 
 /**
  * An interview kit for a candidate against a mandate: a handful of tailored
@@ -35,21 +36,6 @@ export const interviewKitResultSchema = z.object({
     .default([]),
   scorecard: z.array(z.string()).default([]),
 });
-
-function candidateFacts(documents: TalentDocuments): string {
-  const { contact, resume } = documents;
-  const roles = resume.experience
-    .map((e) => [e.role, e.company].filter(Boolean).join(' @ '))
-    .filter(Boolean);
-  return [
-    contact.name ? `Name: ${contact.name}` : '',
-    resume.summary ? `Profile: ${resume.summary}` : '',
-    roles.length ? `Roles: ${roles.join('; ')}` : '',
-    documentSkills(documents).length ? `Skills: ${documentSkills(documents).join(', ')}` : '',
-  ]
-    .filter(Boolean)
-    .join('\n');
-}
 
 export function interviewKitPrompt(
   documents: TalentDocuments,

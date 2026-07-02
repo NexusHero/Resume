@@ -413,6 +413,26 @@ function Editor({ talent, onClose, onCreateMappe }) {
     window.open(url, '_blank');
   };
 
+  /* ---- Translate: create the other-language variant of the documents ---- */
+  const [translating, setTranslating] = React.useState('');
+  const [translateMsg, setTranslateMsg] = React.useState(null);
+  const runTranslate = async (lang) => {
+    if (!canPersist || translating) return;
+    setTranslating(lang);
+    setTranslateMsg(null);
+    try {
+      const res = await window.RecruitApi.translateDocuments(talentId, lang);
+      const name = lang === 'de' ? 'German' : 'English';
+      setTranslateMsg({
+        ok: true,
+        text: res.created ? `${name} version created.` : `${name} version already exists.`,
+      });
+    } catch (e) {
+      setTranslateMsg({ ok: false, text: (e && e.message) || 'Translation failed.' });
+    }
+    setTranslating('');
+  };
+
   const seg = (id, label) => (
     <button onClick={() => setDoc(id)} style={{ flex: 1, padding: '8px 10px', border: 'none', cursor: 'pointer', borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600, background: doc === id ? 'var(--surface-card)' : 'transparent', color: doc === id ? 'var(--text-heading)' : 'var(--text-soft)', boxShadow: doc === id ? 'var(--shadow-xs)' : 'none' }}>{label}</button>
   );
@@ -469,7 +489,34 @@ function Editor({ talent, onClose, onCreateMappe }) {
             <ED.Icon name="download" size={13} /> PDF
           </button>
         )}
+        {canPersist && (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>
+              <ED.Icon name="globe" size={13} /> Translate
+            </span>
+            {[['en', 'EN'], ['de', 'DE']].map(([lang, label]) => (
+              <button
+                key={lang}
+                onClick={() => runTranslate(lang)}
+                disabled={!!translating}
+                title={`Translate the documents to ${lang === 'de' ? 'German' : 'English'}`}
+                style={{ display: 'inline-flex', alignItems: 'center', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', cursor: translating ? 'default' : 'pointer', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, color: 'var(--text-soft)', padding: '4px 10px', opacity: translating && translating !== lang ? 0.5 : 1 }}
+              >
+                {translating === lang ? '…' : label}
+              </button>
+            ))}
+          </span>
+        )}
       </div>
+
+      {translateMsg && (
+        <div
+          role="status"
+          style={{ alignSelf: 'flex-start', fontFamily: 'var(--font-mono)', fontSize: '11px', color: translateMsg.ok ? 'var(--positive, #1F8A5B)' : 'var(--danger)', background: translateMsg.ok ? 'var(--positive-soft, rgba(31,138,91,0.10))' : 'var(--danger-soft)', border: `1px solid ${translateMsg.ok ? 'var(--positive, #1F8A5B)' : 'var(--danger)'}`, borderRadius: 'var(--radius-md)', padding: '6px 12px' }}
+        >
+          {translateMsg.text}
+        </div>
+      )}
 
       {importing && (
         <>

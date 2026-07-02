@@ -630,6 +630,24 @@ const RecruitApi = {
     );
     return data.message; // { subject, body, provider }
   },
+  async translateDocuments(talentId, targetLang) {
+    const res = await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/documents/translate`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ targetLang }),
+    });
+    if (!res.ok) {
+      // Surface the problem+json detail (e.g. "add a key") to the UI.
+      let detail = `API ${res.status}`;
+      try {
+        detail = (await res.json()).detail || detail;
+      } catch {
+        /* non-JSON error body */
+      }
+      throw new Error(detail);
+    }
+    return res.json(); // { lang, translation, created }
+  },
   async listPlacements() {
     const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/placements`));
     return Array.isArray(data) ? data.map(mapPlacement) : [];

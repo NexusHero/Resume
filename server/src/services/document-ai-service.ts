@@ -56,7 +56,9 @@ import {
 import { companyInterviewProfile } from '../domain/company-archetype';
 import { extractRequirements } from '../domain/job-requirements';
 import { type GroundingReport, checkGrounding, groundingSource } from '../domain/grounding';
-import { detectLanguage } from '../domain/language';
+import { detectLanguage, type OutputLang } from '../domain/language';
+import { translatePrompt, translateResultSchema } from '../domain/document-translate';
+import { ValidationError } from '../domain/errors';
 import {
   aggregateObservations,
   applyObserved,
@@ -66,6 +68,7 @@ import type { InterviewObservationRepository } from '../ports/interview-observat
 import {
   type DocumentContact,
   type ResumeContent,
+  type DocumentTranslation,
   saveDocumentsSchema,
 } from '../domain/talent-documents';
 import type { LlmProvider, LlmProviderId, TokenUsage } from '../ports/llm-provider';
@@ -439,6 +442,66 @@ export class DocumentAiService {
     }
 
     return withGrounding(fallbackOutreach(documents, opts, lang), 'template');
+  }
+
+  /**
+   * Translate a talent's documents (resume + cover letter) into `targetLang` and
+   * store the result as a language variant. Idempotent: if a variant already
+   * exists it is returned as-is (`created: false`). Unlike the other AI features
+   * translation has no deterministic fallback — it requires a provider, so
+   * without one a ValidationError asks the recruiter to add a key.
+   */
+  async translateDocuments(
+    scope: string,
+    userId: string,
+    talentId: string,
+    targetLang: OutputLang,
+  ): Promise<{ lang: OutputLang; translation: DocumentTranslation; created: boolean }> {
+    const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
+
+    const sourceLang = detectLanguage(
+      [documents.resume.summary, ...documents.resume.experience.flatMap((e) => e.bullets)].join(
+        ' ',
+      ),
+    );
+    if (targetLang === sourceLang) {
+      throw new ValidationError(
+        `The documents already read as ${targetLang === 'de' ? 'German' : 'English'}.`,
+      );
+    }
+
+    const existing = documents.translations?.[targetLang];
+    if (existing) return { lang: targetLang, translation: existing, created: false };
+
+    const resolved = await this.resolveProvider(userId);
+    if (!resolved) {
+      throw new ValidationError(
+        'Translation needs an AI provider. Add your Claude or Gemini key in Settings, then try again.',
+      );
+    }
+
+    const built = translatePrompt(documents, targetLang);
+    const { text, usage } = await resolved.provider.generate({
+      system: built.system,
+      prompt: built.prompt,
+      maxTokens: 2000,
+      ...(resolved.apiKey ? { apiKey: resolved.apiKey } : {}),
+    });
+    await this.meter(userId, resolved.provider.id, 'translate', usage);
+
+    const parsed = translateResultSchema.safeParse(extractJson(text));
+    if (!parsed.success) {
+      throw new ValidationError('The translation could not be produced — please try again.');
+    }
+
+    const translation: DocumentTranslation = {
+      resume: parsed.data.resume,
+      letter: parsed.data.letter,
+      provider: resolved.provider.id,
+      updatedAt: this.clock.isoNow(),
+    };
+    await this.documents.saveTranslation(scope, talentId, targetLang, translation);
+    return { lang: targetLang, translation, created: true };
   }
 
   /**

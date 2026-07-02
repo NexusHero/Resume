@@ -4,6 +4,7 @@ import type {
   ResumeContent,
   LetterContent,
   DocumentStyle,
+  TalentDocuments,
 } from '../../domain/talent-documents';
 import type { Role } from '../../domain/user';
 
@@ -144,6 +145,7 @@ export const talentDocuments = pgTable(
     resume: jsonb('resume').$type<ResumeContent>().notNull(),
     letter: jsonb('letter').$type<LetterContent>().notNull(),
     style: jsonb('style').$type<DocumentStyle>().notNull(),
+    translations: jsonb('translations').$type<TalentDocuments['translations']>(),
     updatedAt: text('updated_at').notNull(),
   },
   (t) => ({ pk: primaryKey({ columns: [t.ownerId, t.talentId] }) }),

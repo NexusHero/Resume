@@ -130,6 +130,32 @@ describe('DocumentService', () => {
     expect(c.documents.documents).toHaveLength(1);
   });
 
+  it('Save_PreservesStoredTranslations', async () => {
+    const c = ctx();
+    await c.talents.add(talent('t1'));
+    await c.service.save(OWNER, 't1', input);
+    await c.service.saveTranslation(OWNER, 't1', 'en', {
+      resume: { summary: 'Translated.', experience: [], education: [], skillGroups: [] },
+      letter: {
+        firma: '',
+        ansprechpartner: '',
+        strasse: '',
+        plzOrt: '',
+        betreff: '',
+        anrede: '',
+        absaetze: ['Hello'],
+        gruss: '',
+      },
+      provider: 'claude',
+      updatedAt: new FixedClock().isoNow(),
+    });
+    // A normal editor save must not drop the stored language variant.
+    await c.service.save(OWNER, 't1', { ...input, resume: { ...input.resume, summary: 'Edit.' } });
+    const loaded = await c.service.get(OWNER, 't1');
+    expect(loaded.resume.summary).toBe('Edit.');
+    expect(loaded.translations?.en?.resume.summary).toBe('Translated.');
+  });
+
   it('RenderPdf_BuildsHtmlFromSavedDocuments', async () => {
     const c = ctx();
     await c.talents.add(talent('t1'));

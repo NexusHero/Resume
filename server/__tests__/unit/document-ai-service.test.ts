@@ -1,7 +1,7 @@
 import { DocumentAiService } from '../../src/services/document-ai-service';
 import { DocumentService } from '../../src/services/document-service';
 import { LlmService } from '../../src/services/llm-service';
-import { NotFoundError } from '../../src/domain/errors';
+import { NotFoundError, ValidationError } from '../../src/domain/errors';
 import type { LlmGenerateInput, LlmProvider, LlmProviderId } from '../../src/ports/llm-provider';
 import {
   InMemoryTalentRepository,
@@ -635,6 +635,65 @@ describe('DocumentAiService.candidatePrep', () => {
     const c = ctx();
     await expect(
       c.service.candidatePrep(OWNER, OWNER, 'missing', mandate, ad),
+    ).rejects.toBeInstanceOf(NotFoundError);
+  });
+});
+
+describe('DocumentAiService.translateDocuments', () => {
+  const TRANSLATED = JSON.stringify({
+    resume: { summary: 'Experienced developer.' },
+    letter: { absaetze: ['Hello team'] },
+  });
+
+  it('Translate_NoProvider_ThrowsValidation', async () => {
+    const c = ctx(); // provider unavailable + no key
+    await c.talents.add(talent('t1'));
+    // Default docs are empty → detected source 'en'; translate to 'de' needs a provider.
+    await expect(c.service.translateDocuments(OWNER, OWNER, 't1', 'de')).rejects.toBeInstanceOf(
+      ValidationError,
+    );
+  });
+
+  it('Translate_SameLanguage_Throws', async () => {
+    const c = ctx({ available: true, generate: async () => TRANSLATED });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1')); // empty docs → source 'en'
+    await expect(c.service.translateDocuments(OWNER, OWNER, 't1', 'en')).rejects.toBeInstanceOf(
+      ValidationError,
+    );
+  });
+
+  it('Translate_WithProvider_CreatesAndPersistsVariant', async () => {
+    const c = ctx({ available: true, generate: async () => TRANSLATED });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+
+    const first = await c.service.translateDocuments(OWNER, OWNER, 't1', 'de');
+    expect(first.created).toBe(true);
+    expect(first.lang).toBe('de');
+    expect(first.translation.resume.summary).toBe('Experienced developer.');
+    expect(first.translation.provider).toBe('claude');
+
+    // Second call returns the persisted variant without regenerating.
+    const second = await c.service.translateDocuments(OWNER, OWNER, 't1', 'de');
+    expect(second.created).toBe(false);
+    expect(second.translation.letter.absaetze).toEqual(['Hello team']);
+  });
+
+  it('Translate_MalformedResult_Throws', async () => {
+    const c = ctx({ available: true, generate: async () => 'not json at all' });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await c.talents.add(talent('t1'));
+    await expect(c.service.translateDocuments(OWNER, OWNER, 't1', 'de')).rejects.toBeInstanceOf(
+      ValidationError,
+    );
+  });
+
+  it('Translate_UnknownTalent_Throws404', async () => {
+    const c = ctx({ available: true, generate: async () => TRANSLATED });
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    await expect(
+      c.service.translateDocuments(OWNER, OWNER, 'missing', 'de'),
     ).rejects.toBeInstanceOf(NotFoundError);
   });
 });

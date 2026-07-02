@@ -128,10 +128,12 @@ export async function migrate(pool: Pool): Promise<void> {
       resume jsonb NOT NULL,
       letter jsonb NOT NULL,
       style jsonb NOT NULL,
+      translations jsonb,
       updated_at text NOT NULL,
       PRIMARY KEY (owner_id, talent_id)
     );
     CREATE INDEX IF NOT EXISTS talent_documents_owner_id_idx ON talent_documents (owner_id);
+    ALTER TABLE talent_documents ADD COLUMN IF NOT EXISTS translations jsonb;
     CREATE TABLE IF NOT EXISTS attachments (
       id text PRIMARY KEY,
       owner_id text NOT NULL,

@@ -5,6 +5,7 @@ import { parseRequestSchema, parsePdfRequestSchema } from '../domain/document-pa
 import { atsRequestSchema } from '../domain/ats-ai';
 import { pitchRequestSchema } from '../domain/candidate-pitch';
 import { outreachRequestSchema } from '../domain/outreach';
+import { translateRequestSchema } from '../domain/document-translate';
 import type { DocumentService } from '../services/document-service';
 import type { DocumentAiService } from '../services/document-ai-service';
 import { currentScope, currentUserId } from './current-user';
@@ -133,5 +134,16 @@ export class DocumentController {
       opts,
     );
     res.json({ message });
+  };
+
+  translate = async (req: Request, res: Response): Promise<void> => {
+    const { targetLang } = translateRequestSchema.parse(req.body);
+    const result = await this.ai.translateDocuments(
+      currentScope(req),
+      currentUserId(req),
+      req.params.id as string,
+      targetLang,
+    );
+    res.json(result);
   };
 }

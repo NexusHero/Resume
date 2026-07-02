@@ -8,6 +8,29 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+### Fixed
+
+- **CV import is no longer destructive** — the parsed CV is staged as a
+  suggestion (Apply/Discard) like the AI tailor, and empty parsed contact
+  fields never overwrite values the recruiter already typed.
+- **Rejected API keys surface honestly** — an invalid Claude/Gemini key now
+  yields a 502 problem with "check your key in Settings" instead of a naked
+  500; features with a deterministic fallback keep falling back silently.
+- **The Attachments tab's Upload button works** (it was decorative; uploads
+  previously only worked inside the dossier modal).
+- **The topbar search actually searches** — it filters the Talent Pool,
+  Mandates and Placements lists.
+- Offline outreach no longer renders "your profile as the role" when no role
+  is known — the phrase is dropped instead.
+- The letter preview no longer shows a leading comma before the date when the
+  sender has no location.
+
+### Changed
+
+- The decorative notification bell and the always-empty Applications board
+  (and its Reports funnel card) are hidden until they have a real data source
+  — same call as the Inbox.
+
 ### Added
 
 - **Drag-and-drop pipeline board** — candidacy cards can be dragged between stage

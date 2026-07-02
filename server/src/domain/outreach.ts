@@ -98,14 +98,16 @@ export function fallbackOutreach(
 
   if (lang === 'de') {
     const name = contact.name || 'die/der Kandidat:in';
-    const role = contact.role || resume.experience[0]?.role || 'die Rolle';
+    const role = contact.role || resume.experience[0]?.role || '';
+    // With no known role the "als <Rolle>"-phrases read broken — drop them.
+    const alsRolle = role ? ` als ${role}` : '';
     const skills = resume.skillGroups.flatMap((g) => g.items).slice(0, 3);
     const skillPart = skills.length ? ` (u. a. ${skills.join(', ')})` : '';
 
     if (toClient) {
       const body =
         `Sehr geehrte Damen und Herren,\n\n` +
-        `für Ihre offene Position möchte ich Ihnen ${name} vorstellen — ${role}${skillPart}. ` +
+        `für Ihre offene Position möchte ich Ihnen ${name} vorstellen${role ? ` — ${role}` : ''}${skillPart}. ` +
         `Das Profil passt aus meiner Sicht sehr gut zu Ihren Anforderungen.\n\n` +
         `Gerne schicke ich Ihnen die vollständigen Unterlagen zu oder stelle den Kontakt her. ` +
         `Passt Ihnen ein kurzes Telefonat diese Woche?` +
@@ -113,15 +115,20 @@ export function fallbackOutreach(
       return opts.channel === 'linkedin'
         ? {
             subject: '',
-            body: `Hallo, ich habe mit ${name} (${role}${skillPart}) ein Profil, das gut zu Ihrer offenen Position passen könnte. Interesse an den Details?${sign}`,
+            body: `Hallo, ich habe mit ${name}${role ? ` (${role}${skillPart})` : skillPart} ein Profil, das gut zu Ihrer offenen Position passen könnte. Interesse an den Details?${sign}`,
           }
-        : { subject: `Passende:r Kandidat:in für Ihre Position: ${role}`, body };
+        : {
+            subject: role
+              ? `Passende:r Kandidat:in für Ihre Position: ${role}`
+              : 'Passende:r Kandidat:in für Ihre Position',
+            body,
+          };
     }
 
     const body =
       `Hallo ${contact.name || ''}`.trim() +
       ',\n\n' +
-      `ich bin auf Ihr Profil als ${role}${skillPart} aufmerksam geworden und habe eine Rolle, ` +
+      `ich bin auf Ihr Profil${alsRolle}${skillPart} aufmerksam geworden und habe eine Rolle, ` +
       `die gut passen könnte.\n\n` +
       `Hätten Sie diese Woche 15 Minuten für ein kurzes Gespräch? Dann gebe ich Ihnen die Details.` +
       (opts.recruiterName ? `\n\nBeste Grüße${sign}` : '');
@@ -130,20 +137,27 @@ export function fallbackOutreach(
           subject: '',
           body:
             `Hallo ${contact.name || ''}`.trim() +
-            `, Ihr Profil als ${role}${skillPart} passt gut zu einer Rolle, die ich gerade besetze. Kurz austauschen?${sign}`,
+            `, Ihr Profil${alsRolle}${skillPart} passt gut zu einer Rolle, die ich gerade besetze. Kurz austauschen?${sign}`,
         }
-      : { subject: `Spannende Rolle für Ihr Profil als ${role}`, body };
+      : {
+          subject: role
+            ? `Spannende Rolle für Ihr Profil als ${role}`
+            : 'Spannende Rolle für Ihr Profil',
+          body,
+        };
   }
 
   const name = contact.name || 'the candidate';
-  const role = contact.role || resume.experience[0]?.role || 'the role';
+  const role = contact.role || resume.experience[0]?.role || '';
+  // With no known role the "as <role>"-phrases read broken — drop them.
+  const asRole = role ? ` as ${role}` : '';
   const skills = resume.skillGroups.flatMap((g) => g.items).slice(0, 3);
   const skillPart = skills.length ? ` (incl. ${skills.join(', ')})` : '';
 
   if (toClient) {
     const body =
       `Dear Sir or Madam,\n\n` +
-      `for your open position I would like to introduce ${name} — ${role}${skillPart}. ` +
+      `for your open position I would like to introduce ${name}${role ? ` — ${role}` : ''}${skillPart}. ` +
       `In my view the profile is a very good match for your requirements.\n\n` +
       `I would be happy to send you the full documents or make the introduction. ` +
       `Would a short call this week work for you?` +
@@ -151,15 +165,20 @@ export function fallbackOutreach(
     return opts.channel === 'linkedin'
       ? {
           subject: '',
-          body: `Hello, I have a profile in ${name} (${role}${skillPart}) that could be a good fit for your open position. Interested in the details?${sign}`,
+          body: `Hello, I have a profile in ${name}${role ? ` (${role}${skillPart})` : skillPart} that could be a good fit for your open position. Interested in the details?${sign}`,
         }
-      : { subject: `A strong candidate for your position: ${role}`, body };
+      : {
+          subject: role
+            ? `A strong candidate for your position: ${role}`
+            : 'A strong candidate for your position',
+          body,
+        };
   }
 
   const body =
     `Hello ${contact.name || ''}`.trim() +
     ',\n\n' +
-    `I came across your profile as ${role}${skillPart} and have a role that could be a great fit.\n\n` +
+    `I came across your profile${asRole}${skillPart} and have a role that could be a great fit.\n\n` +
     `Would you have 15 minutes this week for a quick chat? I can share the details then.` +
     (opts.recruiterName ? `\n\nBest regards${sign}` : '');
   return opts.channel === 'linkedin'
@@ -167,9 +186,14 @@ export function fallbackOutreach(
         subject: '',
         body:
           `Hello ${contact.name || ''}`.trim() +
-          `, your profile as ${role}${skillPart} is a good fit for a role I am currently filling. Quick chat?${sign}`,
+          `, your profile${asRole}${skillPart} is a good fit for a role I am currently filling. Quick chat?${sign}`,
       }
-    : { subject: `An exciting role for your profile as ${role}`, body };
+    : {
+        subject: role
+          ? `An exciting role for your profile as ${role}`
+          : 'An exciting role for your profile',
+        body,
+      };
 }
 
 /** Trim and, for LinkedIn, drop any subject the LLM produced anyway. */

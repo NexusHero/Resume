@@ -136,7 +136,7 @@ function LetterDoc({ contact, letter, template = 'classic' }) {
             <div>{letter.strasse}</div>
             <div>{letter.plzOrt}</div>
           </div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11.5px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{contact.location}, {new Date().toLocaleDateString(/dear|sincerely|regards/i.test(`${letter.anrede} ${letter.gruss}`) ? 'en-GB' : 'de-DE')}</div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11.5px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{[contact.location, new Date().toLocaleDateString(/dear|sincerely|regards/i.test(`${letter.anrede} ${letter.gruss}`) ? 'en-GB' : 'de-DE')].filter(Boolean).join(', ')}</div>
         </div>
 
         <div style={{ fontSize: '14px', fontWeight: 700, color: modern ? 'var(--accent-strong)' : 'var(--text-heading)', marginBottom: '20px' }}>{letter.betreff}</div>

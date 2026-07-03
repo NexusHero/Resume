@@ -3,6 +3,7 @@ import type { LlmProviderId, TokenUsage } from '../ports/llm-provider';
 /** The AI features whose token spend we meter, one per user-facing action. */
 export const USAGE_FEATURES = [
   'suggest', // rewrite résumé summary / draft cover-letter paragraphs
+  'tailor', // tailor a full application (summary + letter) to one job on autopilot
   'parse', // parse a pasted or uploaded CV into structured fields
   'ats', // score a résumé against a job ad
   'pitch', // draft a candidate pitch for a mandate

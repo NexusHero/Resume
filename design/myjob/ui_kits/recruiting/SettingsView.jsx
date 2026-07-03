@@ -349,6 +349,7 @@ function ComplianceCard() {
    keys (and quota) are per user. */
 const USAGE_FEATURE_LABELS = {
   suggest: 'Document assist',
+  tailor: 'Application tailoring',
   parse: 'CV parsing',
   ats: 'ATS scoring',
   pitch: 'Candidate pitch',

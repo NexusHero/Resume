@@ -916,6 +916,10 @@ describe('DocumentAiService.tailorForMandate', () => {
     expect(res.lang).toBe('en');
     expect(res.usage).toEqual({ inputTokens: 5, outputTokens: 7, costUsd: 0.0001 });
     expect(res.grounding).toBeDefined();
+    // Autopilot tailoring is metered as its own feature, not lumped in with 'suggest'.
+    const events = await c.usageMeter.list(OWNER);
+    expect(events).toHaveLength(1);
+    expect(events[0].feature).toBe('tailor');
   });
 
   it('NoProvider_FallsBackToTemplateInTargetLanguage', async () => {

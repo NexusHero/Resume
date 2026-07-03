@@ -487,7 +487,7 @@ function SettingsView({ user }) {
 
         <div style={{ display: 'flex', gap: '10px', marginTop: '16px', padding: '12px 14px', background: 'var(--surface-subtle)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '12.5px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
           <SV.Icon name="check" size={16} style={{ flexShrink: 0, color: 'var(--text-soft)', marginTop: '2px' }} />
-          <span>Keys are kept in this browser and sent over an encrypted channel only when generating. The active model is stored on the server. Remove a key any time to revoke access.</span>
+          <span>Keys are kept in this browser and sent over an encrypted channel only when generating. The active model is stored with your account — it survives restarts and is not shared with teammates. Remove a key any time to revoke access.</span>
         </div>
       </div>
 

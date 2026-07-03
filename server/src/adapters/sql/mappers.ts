@@ -266,6 +266,7 @@ export function rowToUser(row: UserRow): User {
     roles: (Array.isArray(row.roles) && row.roles.length ? row.roles : ['recruiter']) as Role[],
     createdAt: row.createdAt,
     ...(row.verifiedAt ? { verifiedAt: row.verifiedAt } : {}),
+    ...(row.llmProvider ? { llmProvider: row.llmProvider as User['llmProvider'] } : {}),
   };
 }
 
@@ -277,6 +278,7 @@ export function userToRow(user: User): UserInsert {
     roles: user.roles,
     createdAt: user.createdAt,
     ...(user.verifiedAt ? { verifiedAt: user.verifiedAt } : {}),
+    ...(user.llmProvider ? { llmProvider: user.llmProvider } : {}),
   };
 }
 

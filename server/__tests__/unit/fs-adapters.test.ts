@@ -135,6 +135,16 @@ describe('FsUserRepository', () => {
     await repo.add(user('u1', 'a@example.com'));
     expect(await repo.remove('nope')).toBe(false);
   });
+
+  it('Repository_SetLlmProvider_PersistsAcrossInstances', async () => {
+    const config = tmpConfig();
+    const repo = new FsUserRepository({ config });
+    await repo.add(user('u1', 'a@example.com'));
+    await repo.setLlmProvider('u1', 'gemini');
+    // A fresh instance (e.g. after a restart) still sees the choice.
+    const fresh = new FsUserRepository({ config });
+    expect((await fresh.findById('u1'))?.llmProvider).toBe('gemini');
+  });
 });
 
 const fixedClock = new FixedClock();

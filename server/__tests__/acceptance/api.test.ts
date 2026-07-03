@@ -135,6 +135,9 @@ function makeApp(
   // erased with the account.
   const apiKeyStore = new InMemoryApiKeyStore();
   const usageMeter = new InMemoryUsageMeter();
+  // Shared so the per-user provider choice, auth and members management all
+  // observe the same accounts.
+  const userRepository = new InMemoryUserRepository();
   const llmController = new LlmController({
     llmService,
     coverLetterService: new CoverLetterService({
@@ -145,6 +148,7 @@ function makeApp(
       logger: noopLogger,
     }),
     apiKeyStore,
+    userRepository,
   });
   // Shared repositories so the account (DSGVO) endpoints observe the same data
   // the recruiting endpoints write, and erasure affects the same auth state.
@@ -154,7 +158,6 @@ function makeApp(
   const candidacyRepository = new InMemoryCandidacyRepository();
   const documentRepository = new InMemoryDocumentRepository();
   const attachmentStore = new InMemoryAttachmentStore();
-  const userRepository = new InMemoryUserRepository();
   const sessionStore = new MemorySessionStore();
   const passwordResetTokenStore =
     opts.passwordResetTokenStore ?? new InMemoryPasswordResetTokenStore();
@@ -235,6 +238,7 @@ function makeApp(
     documentService,
     llmService,
     apiKeyStore,
+    userRepository,
     pdfTextExtractor: new FakePdfTextExtractor('Extracted CV text from PDF.'),
     usageMeter,
     interviewObservationRepository,
@@ -1800,14 +1804,37 @@ describe('REST API /api/v1', () => {
     );
   });
 
-  it('LlmSettings_Put_SwitchesProvider', async () => {
+  it('LlmSettings_Put_Unauthenticated_Returns401', async () => {
+    // The provider choice is per user, so switching requires a session.
     const res = await request(app).put('/api/v1/settings/llm').send({ provider: 'gemini' });
-    expect(res.status).toBe(200);
-    expect(res.body.current).toBe('gemini');
+    expect(res.status).toBe(401);
+  });
+
+  it('LlmSettings_Put_PersistsPerUser_WithoutLeakingAcrossUsers', async () => {
+    const alice = request.agent(app);
+    await alice
+      .post('/api/v1/auth/register')
+      .send({ email: 'alice-llm@example.com', password: 'correct horse battery' });
+    const put = await alice.put('/api/v1/settings/llm').send({ provider: 'gemini' });
+    expect(put.status).toBe(200);
+    expect(put.body.current).toBe('gemini');
+    // Alice keeps her choice on the next read …
+    expect((await alice.get('/api/v1/settings/llm')).body.current).toBe('gemini');
+    // … while a signed-out reader and another user still see the default.
+    expect((await request(app).get('/api/v1/settings/llm')).body.current).toBe('claude');
+    const bob = request.agent(app);
+    await bob
+      .post('/api/v1/auth/register')
+      .send({ email: 'bob-llm@example.com', password: 'correct horse battery' });
+    expect((await bob.get('/api/v1/settings/llm')).body.current).toBe('claude');
   });
 
   it('LlmSettings_PutUnknown_Returns400', async () => {
-    const res = await request(app).put('/api/v1/settings/llm').send({ provider: 'openai' });
+    const agent = request.agent(app);
+    await agent
+      .post('/api/v1/auth/register')
+      .send({ email: 'llm-unknown@example.com', password: 'correct horse battery' });
+    const res = await agent.put('/api/v1/settings/llm').send({ provider: 'openai' });
     expect(res.status).toBe(400);
   });
 

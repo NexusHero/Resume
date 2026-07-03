@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { LlmProviderId } from '../ports/llm-provider';
 
 /**
  * Team roles a user can hold. Roles are a set — a person can be several at once
@@ -18,6 +19,12 @@ export interface User {
   createdAt: string; // ISO 8601
   /** When the email address was confirmed via the emailed link (soft check). */
   verifiedAt?: string;
+  /**
+   * The AI provider this user works with (Settings → AI models). Persisted so
+   * the choice survives restarts and is never shared across the team; absent
+   * means the server's configured default.
+   */
+  llmProvider?: LlmProviderId;
 }
 
 /** The public projection of a user — no secrets. */

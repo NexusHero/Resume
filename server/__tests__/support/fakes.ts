@@ -367,6 +367,9 @@ export class InMemoryUserRepository implements UserRepository {
   async markVerified(id: string, at: string): Promise<void> {
     this.users = this.users.map((u) => (u.id === id ? { ...u, verifiedAt: at } : u));
   }
+  async setLlmProvider(id: string, provider: LlmProviderId): Promise<void> {
+    this.users = this.users.map((u) => (u.id === id ? { ...u, llmProvider: provider } : u));
+  }
   async remove(id: string): Promise<boolean> {
     const before = this.users.length;
     this.users = this.users.filter((u) => u.id !== id);

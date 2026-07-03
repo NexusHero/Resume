@@ -50,12 +50,13 @@ function ctx(stub: ProviderStub = {}, pdfText: string | Error = '', logger = noo
   const talents = new InMemoryTalentRepository();
   const documents = new InMemoryDocumentRepository();
   const keys = new InMemoryApiKeyStore();
+  const users = new InMemoryUserRepository();
   const usageMeter = new InMemoryUsageMeter();
   const pdfTextExtractor = new FakePdfTextExtractor(pdfText);
   const documentService = new DocumentService({
     documentRepository: documents,
     talentRepository: talents,
-    userRepository: new InMemoryUserRepository(),
+    userRepository: users,
     pdfRenderer: new FakePdfRenderer(),
     clock: new FixedClock(),
   });
@@ -72,9 +73,13 @@ function ctx(stub: ProviderStub = {}, pdfText: string | Error = '', logger = noo
       return { text, usage: { inputTokens: 5, outputTokens: 7 } };
     },
   };
+  // A gemini twin of the stub, so tests can exercise the per-user provider
+  // choice; with 'claude' as the configured default it is only reachable via
+  // a persisted user preference.
+  const gemini: LlmProvider = { ...provider, id: 'gemini', label: 'Gemini' };
   const llm = new LlmService({
-    providers: [provider],
-    defaultProvider: 'claude',
+    providers: [provider, gemini],
+    defaultProvider: stub.id ?? 'claude',
     logger: noopLogger,
   });
   const observations = new InMemoryInterviewObservationRepository();
@@ -82,6 +87,7 @@ function ctx(stub: ProviderStub = {}, pdfText: string | Error = '', logger = noo
     documentService,
     llmService: llm,
     apiKeyStore: keys,
+    userRepository: users,
     pdfTextExtractor,
     usageMeter,
     interviewObservationRepository: observations,
@@ -92,6 +98,7 @@ function ctx(stub: ProviderStub = {}, pdfText: string | Error = '', logger = noo
     service,
     talents,
     keys,
+    users,
     usageMeter,
     observations,
     documentService,
@@ -146,6 +153,26 @@ describe('DocumentAiService', () => {
     await c.talents.add(talent('t1'));
     const summary = await c.service.suggest(OWNER, OWNER, 't1', 'summary');
     expect(summary.usage).toBeUndefined();
+  });
+
+  it('Suggest_UsesTheUsersPersistedProviderChoice', async () => {
+    // Config default is claude, but this user switched to gemini (persisted on
+    // the account) and only has a gemini key — the choice must win, also after
+    // a server restart (nothing about it lives in memory).
+    const c = ctx();
+    await c.talents.add(talent('t1'));
+    await c.users.add({
+      id: OWNER,
+      email: 'owner@example.com',
+      passwordHash: 'h',
+      roles: ['recruiter'],
+      createdAt: '2026-06-25T10:00:00.000Z',
+      llmProvider: 'gemini',
+    });
+    await c.keys.set(OWNER, 'gemini', 'g-user-key');
+    const summary = await c.service.suggest(OWNER, OWNER, 't1', 'summary');
+    expect(summary.provider).toBe('gemini');
+    expect(c.getUsedKey()).toBe('g-user-key');
   });
 
   it('Suggest_NoKeyNoServerCredential_FallsBackToTemplate', async () => {

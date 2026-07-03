@@ -10,6 +10,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Fixed
 
+- **The AI provider choice is per user and survives restarts** — it is now
+  persisted on the account instead of held in server memory, which had two
+  traps: a restart silently reset everyone to the default (your Gemini key
+  then went unused — template mode without a hint), and one user switching
+  flipped the provider for the whole team. Switching now requires being
+  signed in.
 - **Gemini replies are no longer truncated** — Gemini 2.5 spends "thinking"
   tokens inside `maxOutputTokens`, which cut structured replies mid-JSON and
   silently degraded features to their templates; thinking is now disabled for

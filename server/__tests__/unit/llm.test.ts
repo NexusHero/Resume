@@ -4,7 +4,6 @@ import { GeminiLlmProvider } from '../../src/adapters/gemini-llm-provider';
 import { LlmService } from '../../src/services/llm-service';
 import { CoverLetterService } from '../../src/services/cover-letter-service';
 import { coverLetterTemplate, coverLetterPrompt } from '../../src/domain/cover-letter';
-import { ValidationError } from '../../src/domain/errors';
 import type { HttpFetch } from '../../src/ports/http-fetch';
 import type { LlmGenerateResult, LlmProvider } from '../../src/ports/llm-provider';
 import { noopLogger, InMemoryUsageMeter, FixedClock } from '../support/fakes';
@@ -160,28 +159,18 @@ describe('LlmService', () => {
     ]);
   });
 
-  it('SetProvider_SwitchesAndRejectsUnknown', () => {
+  it('Active_NullWhenDefaultProviderHasNoCredentials', () => {
+    // gemini as the configured default, but without server credentials
     const svc = new LlmService({
       providers: [claude, gemini],
-      defaultProvider: 'claude',
+      defaultProvider: 'gemini',
       logger: noopLogger,
     });
-    expect(svc.setProvider('gemini').current).toBe('gemini');
-    expect(() => svc.setProvider('openai')).toThrow(ValidationError);
-  });
-
-  it('Active_NullWhenSelectedProviderHasNoCredentials', () => {
-    const svc = new LlmService({
-      providers: [claude, gemini],
-      defaultProvider: 'claude',
-      logger: noopLogger,
-    });
-    expect(svc.active()).toBe(claude);
-    svc.setProvider('gemini'); // unavailable
+    expect(svc.currentProvider()).toBe('gemini');
     expect(svc.active()).toBeNull();
   });
 
-  it('Get_ReturnsProviderRegardlessOfAvailability_CurrentReflectsSelection', () => {
+  it('Get_ReturnsProviderRegardlessOfAvailability', () => {
     const svc = new LlmService({
       providers: [claude, gemini],
       defaultProvider: 'claude',
@@ -189,8 +178,15 @@ describe('LlmService', () => {
     });
     expect(svc.currentProvider()).toBe('claude');
     expect(svc.get('gemini')).toBe(gemini); // unavailable but still returned for user-key callers
-    svc.setProvider('gemini');
-    expect(svc.currentProvider()).toBe('gemini');
+  });
+
+  it('UnknownDefault_FallsBackToTheFirstWiredProvider', () => {
+    const svc = new LlmService({
+      providers: [claude, gemini],
+      defaultProvider: 'openai' as never,
+      logger: noopLogger,
+    });
+    expect(svc.currentProvider()).toBe('claude');
   });
 });
 

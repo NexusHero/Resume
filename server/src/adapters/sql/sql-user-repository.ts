@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 import type { User, Role } from '../../domain/user';
+import type { LlmProviderId } from '../../ports/llm-provider';
 import type { UserRepository } from '../../ports/user-repository';
 import type { Db } from './db';
 import { users } from './schema';
@@ -42,6 +43,10 @@ export class SqlUserRepository implements UserRepository {
 
   async markVerified(id: string, at: string): Promise<void> {
     await this.db.update(users).set({ verifiedAt: at }).where(eq(users.id, id));
+  }
+
+  async setLlmProvider(id: string, provider: LlmProviderId): Promise<void> {
+    await this.db.update(users).set({ llmProvider: provider }).where(eq(users.id, id));
   }
 
   async remove(id: string): Promise<boolean> {

@@ -41,6 +41,9 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: Web unit tests (Vitest)
+        run: npm run test:web
+
   # ── UI acceptance tests (Playwright) ────────────────────────────────────
   e2e:
     name: e2e — Playwright

@@ -19,6 +19,8 @@
     "test": "jest --coverage",
     "test:watch": "jest --watch",
     "test:e2e": "playwright test",
+    "test:web": "vitest run",
+    "test:web:watch": "vitest",
     "package": "bash scripts/build-artifact.sh",
     "hooks:install": "git config core.hooksPath scripts/hooks && echo 'Git hooks installed (core.hooksPath=scripts/hooks)'",
     "build:web": "vite build"
@@ -42,6 +44,10 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.48.0",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
     "@types/node": "^26.0.1",
@@ -49,9 +55,11 @@
     "@types/pg": "^8.20.0",
     "@types/supertest": "^7.2.0",
     "@types/swagger-ui-dist": "^3.30.6",
+    "@vitest/coverage-v8": "^4.1.9",
     "eslint": "^10.6.0",
     "globals": "^17.7.0",
     "jest": "^30.4.2",
+    "jsdom": "^29.1.1",
     "prettier": "^3.9.4",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
@@ -60,6 +68,7 @@
     "tsx": "^4.19.1",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.62.1",
-    "vite": "^8.1.2"
+    "vite": "^8.1.2",
+    "vitest": "^4.1.9"
   }
 }

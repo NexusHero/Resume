@@ -198,6 +198,7 @@ Full log in [`docs/adr/`](adr). Summary:
 | 0020 | Pluggable neural embeddings (Ollama, OpenAI) behind the port  | Accepted                       |
 | 0021 | Pro/Free plan gating at one HTTP seam (license deferred)      | Accepted                       |
 | 0022 | Split DocumentAiService into a runner + five services         | Accepted                       |
+| 0023 | Frontend unit/component test base with Vitest (jsdom)         | Accepted                       |
 
 ## 10. Quality Requirements
 
@@ -210,6 +211,7 @@ See [requirements.md](requirements.md) for the full FR/NFR catalogue. Verificati
 | Type safety     | NFR-03      | `npm run typecheck` in CI                       |
 | Persistence     | NFR-04      | `DATABASE_URL`-gated Postgres integration tests |
 | Trust / honesty | NFR-05      | Playwright e2e + grounding unit tests           |
+| Frontend logic  | NFR-01      | Vitest jsdom unit/component tests (`test:web`)  |
 | Security        | NFR-06      | CodeQL + security workflow; `security.ts`       |
 | Consistency     | NFR-09      | Conventional-commit + format/lint checks in CI  |
 
@@ -229,6 +231,11 @@ See [requirements.md](requirements.md) for the full FR/NFR catalogue. Verificati
   one home. `AssistantService` still carries the autopilot orchestration and remains a
   candidate for the same treatment (the `ApplicationBuilder` extraction in ADR-0019 was a
   first step).
+- **Frontend god-components** (`MandatePipeline` ~720 lines, `Editor`, `SettingsView`) are
+  the frontend counterpart to the backend god classes and are next for a split (roadmap
+  A2). The prerequisite — a fast component-level test net — now exists: the Vitest jsdom
+  base (ADR-0023). Web coverage is intentionally **not yet gated**; it starts low and rises
+  as the components are split. The server keeps its 90 % Jest gate.
 - **Embeddings default to hashed-lexical** (ADR-0017): fully offline and deterministic.
   Neural backends are now opt-in behind the same port (ADR-0020) — `ollama` (local,
   first-party) or `openai` (third-party API) — each degrading to hashed on any error, so

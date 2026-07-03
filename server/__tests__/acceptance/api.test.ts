@@ -37,6 +37,7 @@ import { RetentionService } from '../../src/services/retention-service';
 import { MatchService } from '../../src/services/match-service';
 import { HashedEmbeddingProvider } from '../../src/adapters/hashed-embedding-provider';
 import { AssistantService } from '../../src/services/assistant-service';
+import { AutopilotService } from '../../src/services/autopilot-service';
 import { AssistantController } from '../../src/http/assistant-controller';
 import { ApplicationBuilder } from '../../src/services/application-builder';
 import { ArtifactController } from '../../src/http/artifact-controller';
@@ -270,21 +271,33 @@ function makeApp(
     documentService,
     attachmentService,
   });
+  const assistantSuggestionRepository = new InMemoryAssistantSuggestionRepository();
+  const assistantIds = new SequenceIdGenerator('sugg');
+  const autopilotService = new AutopilotService({
+    assistantSuggestionRepository,
+    mandateRepository,
+    matchService,
+    candidacyService,
+    mandateService,
+    jobSearchService,
+    applicationBuilder,
+    clock: new FixedClock(),
+    idGenerator: assistantIds,
+    logger: noopLogger,
+  });
   const assistantController = new AssistantController({
     assistantService: new AssistantService({
       assistantSettingsStore: new InMemoryAssistantSettingsStore(),
-      assistantSuggestionRepository: new InMemoryAssistantSuggestionRepository(),
+      assistantSuggestionRepository,
       mandateRepository,
       talentRepository,
       documentRepository,
       candidacyRepository,
       matchService,
       candidacyService,
-      mandateService,
-      jobSearchService,
-      applicationBuilder,
+      autopilotService,
       clock: new FixedClock(),
-      idGenerator: new SequenceIdGenerator('sugg'),
+      idGenerator: assistantIds,
       logger: noopLogger,
     }),
   });

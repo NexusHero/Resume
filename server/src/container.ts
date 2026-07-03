@@ -45,6 +45,7 @@ import { UsageService } from './services/usage-service';
 import { ForecastService } from './services/forecast-service';
 import { InterviewObservationService } from './services/interview-observation-service';
 import { AssistantService } from './services/assistant-service';
+import { AutopilotService } from './services/autopilot-service';
 import { ApplicationBuilder } from './services/application-builder';
 import { DocumentService } from './services/document-service';
 import { DocumentAiService } from './services/document-ai-service';
@@ -167,6 +168,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     forecastService: asClass(ForecastService).singleton(),
     interviewObservationService: asClass(InterviewObservationService).singleton(),
     applicationBuilder: asClass(ApplicationBuilder).singleton(),
+    autopilotService: asClass(AutopilotService).singleton(),
     assistantService: asClass(AssistantService).singleton(),
     documentService: asClass(DocumentService).singleton(),
     documentAiService: asClass(DocumentAiService).singleton(),

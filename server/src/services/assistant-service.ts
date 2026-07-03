@@ -1,21 +1,13 @@
 import {
   type AssistantSettings,
   type AssistantSuggestion,
-  type ApplicationPayload,
   type UpdateAssistantSettingsInput,
   DEFAULT_ASSISTANT_SETTINGS,
-  applicationDedupKey,
-  applicationPayloadSchema,
-  parseApplicationPayload,
-  toSuggestionPayload,
   isDue,
   isStale,
   daysStale,
   suggestionKey,
 } from '../domain/assistant';
-import { type ApplicationTarget, mandateToTarget, jobToTarget } from '../domain/application-target';
-import { jobQuerySchema } from '../domain/job';
-import { createMandateSchema } from '../domain/mandate';
 import { ConflictError, NotFoundError } from '../domain/errors';
 import type {
   AssistantSettingsStore,
@@ -30,9 +22,7 @@ import type { IdGenerator } from '../ports/id-generator';
 import type { Logger } from '../ports/logger';
 import type { MatchService } from './match-service';
 import type { CandidacyService } from './candidacy-service';
-import type { MandateService } from './mandate-service';
-import type { JobSearchService } from './job-search-service';
-import type { ApplicationBuilder } from './application-builder';
+import type { AutopilotService } from './autopilot-service';
 
 export interface AssistantRunResult {
   runId: string;
@@ -51,9 +41,7 @@ export interface AssistantServiceDeps {
   candidacyRepository: CandidacyRepository;
   matchService: MatchService;
   candidacyService: CandidacyService;
-  mandateService: MandateService;
-  jobSearchService: JobSearchService;
-  applicationBuilder: ApplicationBuilder;
+  autopilotService: AutopilotService;
   clock: Clock;
   idGenerator: IdGenerator;
   logger: Logger;
@@ -63,11 +51,6 @@ export interface AssistantServiceDeps {
 const MIN_MATCH_SCORE = 40;
 const SHORTLIST_LIMIT = 3;
 const STALE_AFTER_DAYS = 7;
-/** Bounds autopilot's token spend per run: at most this many packets are built. */
-const AUTOPILOT_BUILD_LIMIT = 5;
-/** How many openings/candidates autopilot considers before the build cap. */
-const AUTOPILOT_TARGET_LIMIT = 10;
-const AUTOPILOT_MATCH_LIMIT = 3;
 
 /**
  * The assistant: a second driver of the application services (ADR-0013). Each
@@ -86,9 +69,7 @@ export class AssistantService {
   private readonly candidacies: CandidacyRepository;
   private readonly match: MatchService;
   private readonly candidacyService: CandidacyService;
-  private readonly mandateService: MandateService;
-  private readonly jobs: JobSearchService;
-  private readonly builder: ApplicationBuilder;
+  private readonly autopilot: AutopilotService;
   private readonly clock: Clock;
   private readonly ids: IdGenerator;
   private readonly logger: Logger;
@@ -102,9 +83,7 @@ export class AssistantService {
     this.candidacies = deps.candidacyRepository;
     this.match = deps.matchService;
     this.candidacyService = deps.candidacyService;
-    this.mandateService = deps.mandateService;
-    this.jobs = deps.jobSearchService;
-    this.builder = deps.applicationBuilder;
+    this.autopilot = deps.autopilotService;
     this.clock = deps.clock;
     this.ids = deps.idGenerator;
     this.logger = deps.logger;
@@ -243,115 +222,12 @@ export class AssistantService {
     // 4. Autopilot: build full application packets for strong matches and stage
     // them for approval. Only in the top gear — this is the token-spending step.
     if (settings.mode === 'autopilot') {
-      proposed += await this.runAutopilot(scope, settings, runId, now);
+      proposed += await this.autopilot.propose(scope, settings, runId, now);
     }
 
     await this.settingsStore.set(scope, { ...settings, lastRunAt: now });
     this.logger.info({ runId, proposed, applied }, 'assistant run finished');
     return { runId, proposed, applied };
-  }
-
-  /**
-   * The autopilot pass: pull openings from the configured source (received job
-   * postings or own mandates), rank the pool against each, and for the strong,
-   * not-yet-applied matches build a tailored application packet and stage it.
-   * Bounded per run so token spend stays predictable; dedup keeps it from
-   * rebuilding an application it already staged.
-   */
-  private async runAutopilot(
-    scope: string,
-    settings: AssistantSettings,
-    runId: string,
-    now: string,
-  ): Promise<number> {
-    // Scan already-staged applications to avoid rebuilding one. This is a batch
-    // read, so a single malformed/legacy record is skipped (logged) rather than
-    // allowed to abort the whole run.
-    const seenApps = new Set<string>();
-    for (const s of await this.suggestions.list(scope)) {
-      if (s.kind !== 'application') continue;
-      const parsed = applicationPayloadSchema.safeParse(s.payload);
-      if (!parsed.success) {
-        this.logger.warn(
-          { suggestionId: s.id },
-          'skipping malformed application payload in dedup scan',
-        );
-        continue;
-      }
-      seenApps.add(applicationDedupKey(parsed.data.targetRef, s.talentId ?? ''));
-    }
-    const targets = await this.autopilotTargets(scope, settings);
-    let built = 0;
-    let proposed = 0;
-
-    for (const target of targets) {
-      if (built >= AUTOPILOT_BUILD_LIMIT) break;
-      const matches = await this.rankForTarget(scope, target, AUTOPILOT_MATCH_LIMIT);
-      for (const m of matches) {
-        if (built >= AUTOPILOT_BUILD_LIMIT) break;
-        if (m.inPipeline || m.score < settings.minApplyScore) continue;
-        const key = applicationDedupKey(target.ref, m.talentId);
-        if (seenApps.has(key)) continue;
-        seenApps.add(key);
-
-        let payload: ApplicationPayload;
-        try {
-          payload = await this.builder.build(scope, scope, target, m.talentId, m.score);
-        } catch (err) {
-          this.logger.warn(
-            { targetRef: target.ref, err: err instanceof Error ? err.message : String(err) },
-            'autopilot application build failed, skipping',
-          );
-          continue;
-        }
-        built += 1;
-
-        const suggestion: AssistantSuggestion = {
-          id: this.ids.next(),
-          ownerId: scope,
-          kind: 'application',
-          title: `Apply ${m.name} → ${target.company} — ${target.role}`,
-          rationale:
-            `Match ${m.score}/100; tailored CV + cover letter in ` +
-            `${payload.lang.toUpperCase()} ready` +
-            (payload.ungroundedCount
-              ? `; ⚠ ${payload.ungroundedCount} unverified claim(s) to review`
-              : ''),
-          ...(payload.mandateId ? { mandateId: payload.mandateId } : {}),
-          talentId: m.talentId,
-          payload: toSuggestionPayload(payload),
-          status: 'proposed',
-          createdAt: now,
-          runId,
-        };
-        await this.suggestions.add(suggestion);
-        proposed += 1;
-      }
-    }
-    return proposed;
-  }
-
-  /** The openings autopilot applies to, normalized from the configured source. */
-  private async autopilotTargets(
-    scope: string,
-    settings: AssistantSettings,
-  ): Promise<ApplicationTarget[]> {
-    if (settings.applySource === 'mandates') {
-      return (await this.mandates.list(scope))
-        .filter((m) => m.status === 'active')
-        .slice(0, AUTOPILOT_TARGET_LIMIT)
-        .map(mandateToTarget);
-    }
-    // Received job postings from the boards (offline sample when none are live).
-    const result = await this.jobs.search(jobQuerySchema.parse({ threshold: 0 }));
-    return [...result.top, ...result.more].slice(0, AUTOPILOT_TARGET_LIMIT).map(jobToTarget);
-  }
-
-  /** Rank the pool against a target (mandate path knows the pipeline; job path doesn't). */
-  private async rankForTarget(scope: string, target: ApplicationTarget, limit: number) {
-    return target.source === 'mandates'
-      ? this.match.rankForMandate(scope, target.ref, target.jobText, limit)
-      : this.match.rankForJobText(scope, target.jobText, limit);
   }
 
   /** Accept a suggestion — applies its action (if any) and resolves it. */
@@ -360,7 +236,7 @@ export class AssistantService {
     if (suggestion.kind === 'shortlist-add' && suggestion.mandateId && suggestion.talentId) {
       await this.addToPipeline(scope, suggestion.mandateId, suggestion.talentId, false);
     } else if (suggestion.kind === 'application' && suggestion.talentId) {
-      await this.approveApplication(scope, suggestion);
+      await this.autopilot.approve(scope, suggestion);
     }
     const resolved: AssistantSuggestion = {
       ...suggestion,
@@ -383,41 +259,13 @@ export class AssistantService {
     return resolved;
   }
 
-  /**
-   * Approve a staged application: put the candidate into the pipeline. For a
-   * job-board opening the posting is first materialized into a mandate (the
-   * same "mandate from a posting" path), so from here on there is exactly one
-   * downstream flow. The actual outward submission stays a manual step.
-   */
-  private async approveApplication(scope: string, suggestion: AssistantSuggestion): Promise<void> {
-    const payload = parseApplicationPayload(suggestion.payload);
-    let mandateId = payload.mandateId;
-    if (!mandateId) {
-      const mandate = await this.mandateService.create(
-        scope,
-        createMandateSchema.parse({
-          client: payload.company || 'Unknown company',
-          role: payload.role || 'Role',
-          location: payload.location || '—',
-          jobText: payload.jobText,
-        }),
-      );
-      mandateId = mandate.id;
-    }
-    await this.addToPipeline(scope, mandateId, suggestion.talentId as string, false);
-  }
-
   /** Render the Bewerbungsmappe for a staged application (any status). */
   async renderApplicationDossier(scope: string, id: string): Promise<Buffer> {
     const suggestion = await this.suggestions.findById(scope, id);
     if (!suggestion || suggestion.kind !== 'application' || !suggestion.talentId) {
       throw new NotFoundError(`Application ${id} not found`);
     }
-    return this.builder.renderDossier(
-      scope,
-      suggestion.talentId,
-      parseApplicationPayload(suggestion.payload),
-    );
+    return this.autopilot.renderDossier(scope, suggestion);
   }
 
   private async requireProposed(scope: string, id: string): Promise<AssistantSuggestion> {

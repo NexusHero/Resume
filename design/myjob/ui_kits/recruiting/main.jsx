@@ -6,6 +6,7 @@
 import './setup-globals.js'; // sets window.React/ReactDOM first
 import '../../_ds_bundle.js'; // window.MyJobDesignSystem_f3658e (uses window.React)
 import './data.js';
+import './use-viewport.jsx'; // window.useViewport — read by the shell + views
 import './DataStates.jsx';
 import './RecruitRail.jsx';
 import './PipelineBoard.jsx';

@@ -82,14 +82,51 @@ function NavSection({ section, active, onNav, badges }) {
   );
 }
 
+/* A three-bar menu button — the DS icon set has no hamburger, so it is drawn
+   inline. Shown only on mobile, it opens the navigation drawer. */
+function MenuButton({ onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label="Open navigation"
+      style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '38px', height: '38px', background: 'var(--surface-card)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', cursor: 'pointer', color: 'var(--text-soft)' }}
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+        <line x1="3" y1="6" x2="21" y2="6" />
+        <line x1="3" y1="12" x2="21" y2="12" />
+        <line x1="3" y1="18" x2="21" y2="18" />
+      </svg>
+    </button>
+  );
+}
+
 function RecruitRail({ active, onNav, me, talentCount, search, onSearch, title, subtitle, badges = {}, actions, onLogout, children }) {
+  const { isMobile } = window.useViewport ? window.useViewport() : { isMobile: false };
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+  // Leaving mobile (e.g. rotating a tablet to landscape) hides the drawer so it
+  // can't linger over the restored rail.
+  React.useEffect(() => { if (!isMobile) setDrawerOpen(false); }, [isMobile]);
+  const handleNav = (id) => { setDrawerOpen(false); onNav(id); };
+
+  const railBg = 'linear-gradient(165deg, var(--ink-850) 0%, var(--ink-900) 100%)';
+  const asideStyle = isMobile
+    ? {
+        position: 'fixed', top: 0, bottom: 0, left: 0, zIndex: 50, width: 'min(280px, 82vw)',
+        transform: drawerOpen ? 'translateX(0)' : 'translateX(-100%)', transition: 'transform var(--dur-med, 0.24s) ease',
+        display: 'flex', flexDirection: 'column', background: railBg,
+        borderRight: '1px solid var(--sidebar-border)', boxShadow: drawerOpen ? 'var(--shadow-lg)' : 'none',
+      }
+    : {
+        width: 'var(--app-nav-width)', flexShrink: 0, display: 'flex', flexDirection: 'column',
+        background: railBg, borderRight: '1px solid var(--sidebar-border)',
+      };
+
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--app-bg)' }}>
-      <aside style={{
-        width: 'var(--app-nav-width)', flexShrink: 0, display: 'flex', flexDirection: 'column',
-        background: 'linear-gradient(165deg, var(--ink-850) 0%, var(--ink-900) 100%)',
-        borderRight: '1px solid var(--sidebar-border)',
-      }}>
+      {isMobile && drawerOpen && (
+        <div onClick={() => setDrawerOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(8,11,18,0.5)', backdropFilter: 'blur(2px)', zIndex: 49 }} />
+      )}
+      <aside style={asideStyle}>
         <div style={{ padding: '20px 18px 16px', display: 'flex', alignItems: 'center', gap: '11px' }}>
           <img src="/design/myjob/assets/logo/myjob-mark.svg" width="34" height="34" alt="" />
           <div>
@@ -99,16 +136,16 @@ function RecruitRail({ active, onNav, me, talentCount, search, onSearch, title, 
         </div>
 
         <nav style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', flex: 1, overflowY: 'auto' }}>
-          {NAV_SECTIONS.map((s) => <NavSection key={s.label} section={s} active={active} onNav={onNav} badges={badges} />)}
+          {NAV_SECTIONS.map((s) => <NavSection key={s.label} section={s} active={active} onNav={handleNav} badges={badges} />)}
         </nav>
 
         {/* Pinned utilities (Settings) sit just above the identity footer. */}
         <div style={{ padding: '6px 12px 4px', borderTop: '1px solid var(--sidebar-border)' }}>
-          {NAV_FOOTER.map((n) => <NavItem key={n.id} item={n} active={active === n.id} onClick={() => onNav(n.id)} badge={badges[n.id]} />)}
+          {NAV_FOOTER.map((n) => <NavItem key={n.id} item={n} active={active === n.id} onClick={() => handleNav(n.id)} badge={badges[n.id]} />)}
         </div>
 
         {/* who I represent — the Vermittler scale, stated quietly */}
-        <button onClick={() => onNav('pool')} style={{
+        <button onClick={() => handleNav('pool')} style={{
           margin: '4px 14px 10px', padding: '11px 13px', borderRadius: 'var(--radius-md)', cursor: 'pointer', textAlign: 'left',
           background: 'var(--sidebar-glass)', border: '1px solid var(--sidebar-border)', display: 'flex', alignItems: 'center', gap: '10px',
         }}>
@@ -123,20 +160,25 @@ function RecruitRail({ active, onNav, me, talentCount, search, onSearch, title, 
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         <header style={{
-          height: 'var(--app-topbar-h)', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '16px',
-          padding: '0 28px', background: 'color-mix(in oklch, var(--paper) 88%, transparent)',
+          height: 'var(--app-topbar-h)', flexShrink: 0, display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '16px',
+          padding: isMobile ? '0 14px' : '0 28px', background: 'color-mix(in oklch, var(--paper) 88%, transparent)',
           backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', borderBottom: '1px solid var(--border)',
           position: 'sticky', top: 0, zIndex: 5,
         }}>
+          {isMobile && <MenuButton onClick={() => setDrawerOpen(true)} />}
           <div style={{ minWidth: 0 }}>
-            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.015em' }}>{title}</h1>
-            {subtitle && <div style={{ fontSize: '11.5px', color: 'var(--text-soft)', marginTop: '1px' }}>{subtitle}</div>}
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: isMobile ? '16px' : '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.015em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</h1>
+            {subtitle && !isMobile && <div style={{ fontSize: '11.5px', color: 'var(--text-soft)', marginTop: '1px' }}>{subtitle}</div>}
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface-card)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', padding: '0 11px', width: '220px' }}>
-              <Icon name="search" size={15} style={{ color: 'var(--text-soft)' }} />
-              <input value={search} onChange={(e) => onSearch(e.target.value)} placeholder="Talents, companies, roles …" style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-heading)', padding: '8px 0' }} />
-            </label>
+            {/* The header search is a desktop convenience; on mobile it would crowd
+                out the title, so it is dropped (search stays reachable per view). */}
+            {!isMobile && (
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface-card)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', padding: '0 11px', width: '220px' }}>
+                <Icon name="search" size={15} style={{ color: 'var(--text-soft)' }} />
+                <input value={search} onChange={(e) => onSearch(e.target.value)} placeholder="Talents, companies, roles …" style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-heading)', padding: '8px 0' }} />
+              </label>
+            )}
             {/* Notifications return once there is something to notify about. */}
             {actions}
             {onLogout && (

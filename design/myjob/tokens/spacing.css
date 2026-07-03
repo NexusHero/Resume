@@ -35,3 +35,12 @@
   --sidebar-width: 360px;
   --page-max:      1180px;
 }
+
+/* Mobile density (ADR-0025): the app shell switches the sidebar to a drawer in
+   JS; here we only tighten the main content padding so views get more width on
+   a phone. Matches the useViewport breakpoint. */
+@media (max-width: 768px) {
+  :root {
+    --pad-app: 14px 14px;
+  }
+}

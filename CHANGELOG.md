@@ -47,9 +47,6 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 - The decorative notification bell and the always-empty Applications board
   (and its Reports funnel card) are hidden until they have a real data source
   — same call as the Inbox.
-
-### Changed
-
 - **arc42 documentation brought current** — both UML diagrams (system context,
   building blocks) redrawn for the recruiting suite (they still showed the
   original applicant-only system), and the stale sections refreshed: per-user
@@ -59,6 +56,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Added
 
+- **The outcome loop** — every generated outreach message and pitch is logged
+  (kind, provider, channel — never the text) and can be stamped with its fate:
+  replied, no reply, converted (ADR-0014). The outreach modal shows the
+  talent's history with one-click stamping plus the desk's honest reply rate;
+  Reports gains an "Outcome loop" card with rates by kind and by provider
+  (template vs AI). Rates count only resolved artifacts — pending never
+  distorts them.
 - **The Assistant** — an agent that prepares the desk (ADR-0013): it
   shortlists pool candidates for active mandates (with score + matched
   skills as the rationale), flags pipeline cards that sat untouched for a

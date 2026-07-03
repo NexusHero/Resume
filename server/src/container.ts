@@ -67,6 +67,7 @@ import { ComplianceController } from './http/compliance-controller';
 import { ForecastController } from './http/forecast-controller';
 import { ObservationController } from './http/observation-controller';
 import { AssistantController } from './http/assistant-controller';
+import { ArtifactController } from './http/artifact-controller';
 import { DocumentController } from './http/document-controller';
 import { AttachmentController } from './http/attachment-controller';
 import { AuthController } from './http/auth-controller';
@@ -107,6 +108,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     interviewObservationRepository: asValue(persistence.interviewObservationRepository),
     assistantSettingsStore: asValue(persistence.assistantSettingsStore),
     assistantSuggestionRepository: asValue(persistence.assistantSuggestionRepository),
+    artifactLogRepository: asValue(persistence.artifactLogRepository),
     passwordHasher: asClass(ScryptPasswordHasher).singleton(),
     // Transactional email: console by default, SMTP (nodemailer) when configured.
     mailer: asFunction(({ config: c, logger }) => createMailer({ config: c, logger })).singleton(),
@@ -176,6 +178,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     forecastController: asClass(ForecastController).singleton(),
     observationController: asClass(ObservationController).singleton(),
     assistantController: asClass(AssistantController).singleton(),
+    artifactController: asClass(ArtifactController).singleton(),
     documentController: asClass(DocumentController).singleton(),
     attachmentController: asClass(AttachmentController).singleton(),
     authController: asClass(AuthController).singleton(),

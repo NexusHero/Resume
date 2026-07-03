@@ -134,6 +134,42 @@ const FORECAST_STAGE_LABELS = {
 /* ForecastCard — weighted expected revenue across the live pipeline. Each
    mandate's fee is weighted by the probability its pipeline yields a placement.
    Self-fetching so it stays decoupled from the report props. */
+/* OutcomeCard — the outcome loop's aggregate: which artifacts (and which
+   backend, template vs AI) actually got replies. Loads its own data; hidden
+   while the log is empty — no fabricated rates. */
+function OutcomeCard() {
+  const [stats, setStats] = React.useState(null);
+  React.useEffect(() => {
+    let alive = true;
+    window.RecruitApi.getArtifactStats()
+      .then((s) => { if (alive) setStats(s); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+  if (!stats || !stats.byKind || stats.byKind.length === 0) return null;
+  const KIND_LABELS = { outreach: 'Outreach', pitch: 'Pitch' };
+  const rate = (b) => (b.replyRate === null ? '— pending' : `${b.replyRate}%`);
+  return (
+    <VV.Card title="Outcome loop" subtitle="What your AI artifacts actually achieved — resolved replies only, no guesses">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {stats.byKind.map((b) => (
+          <div key={b.kind} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto auto', gap: '14px', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid var(--border)' }}>
+            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-heading)' }}>{KIND_LABELS[b.kind] || b.kind}</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11.5px', color: 'var(--text-muted)' }}>{b.sent} sent · {b.pending} pending</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11.5px', color: b.replyRate === null ? 'var(--text-soft)' : 'var(--accent-strong)', minWidth: '72px', textAlign: 'right' }}>{rate(b)}</span>
+          </div>
+        ))}
+        {stats.byProvider.filter((b) => b.replyRate !== null).map((b) => (
+          <div key={`${b.kind}-${b.provider}`} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', gap: '14px', alignItems: 'center', padding: '6px 0' }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-soft)' }}>{KIND_LABELS[b.kind] || b.kind} · {b.provider}</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-muted)' }}>{rate(b)}</span>
+          </div>
+        ))}
+      </div>
+    </VV.Card>
+  );
+}
+
 function ForecastCard() {
   const [data, setData] = React.useState(null); // null = loading
   const [error, setError] = React.useState(false);
@@ -227,6 +263,7 @@ function ReportsView({ clients, mandates, placements, apps, kpis }) {
         {kpis.map((k, i) => <VV.StatCard key={i} {...k} />)}
       </div>
       <ForecastCard />
+      <OutcomeCard />
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
         <VV.Card title="Fees per client" subtitle="Booked placements Q2">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '13px' }}>

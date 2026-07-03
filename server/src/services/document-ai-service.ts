@@ -74,6 +74,9 @@ import {
 import type { LlmProvider, LlmProviderId, TokenUsage } from '../ports/llm-provider';
 import type { ApiKeyStore } from '../ports/api-key-store';
 import type { UserRepository } from '../ports/user-repository';
+import type { ArtifactLogRepository } from '../ports/artifact-log-repository';
+import type { IdGenerator } from '../ports/id-generator';
+import type { ArtifactKind } from '../domain/artifact';
 import type { PdfTextExtractor } from '../ports/pdf-text-extractor';
 import type { UsageMeter } from '../ports/usage-meter';
 import type { Clock } from '../ports/clock';
@@ -114,6 +117,8 @@ export interface DocumentAiServiceDeps {
   pdfTextExtractor: PdfTextExtractor;
   usageMeter: UsageMeter;
   interviewObservationRepository: InterviewObservationRepository;
+  artifactLogRepository: ArtifactLogRepository;
+  idGenerator: IdGenerator;
   clock: Clock;
   logger: Logger;
 }
@@ -157,6 +162,8 @@ export class DocumentAiService {
   private readonly pdfText: PdfTextExtractor;
   private readonly usage: UsageMeter;
   private readonly observations: InterviewObservationRepository;
+  private readonly artifacts: ArtifactLogRepository;
+  private readonly ids: IdGenerator;
   private readonly clock: Clock;
   private readonly logger: Logger;
 
@@ -168,6 +175,8 @@ export class DocumentAiService {
     this.pdfText = deps.pdfTextExtractor;
     this.usage = deps.usageMeter;
     this.observations = deps.interviewObservationRepository;
+    this.artifacts = deps.artifactLogRepository;
+    this.ids = deps.idGenerator;
     this.clock = deps.clock;
     this.logger = deps.logger;
   }
@@ -276,6 +285,38 @@ export class DocumentAiService {
       'llm reply did not match the expected schema, falling back',
     );
     return null;
+  }
+
+  /**
+   * Log a client-facing artifact for the outcome loop (ADR-0014). Template
+   * results are logged too — comparing template vs AI reply rates is the
+   * point. Logging must never break the feature it observes.
+   */
+  private async logArtifact(
+    scope: string,
+    kind: ArtifactKind,
+    talentId: string,
+    provider: string,
+    context: { channel?: string; audience?: string } = {},
+  ): Promise<void> {
+    try {
+      await this.artifacts.add({
+        id: this.ids.next(),
+        ownerId: scope,
+        kind,
+        talentId,
+        provider,
+        channel: context.channel ?? '',
+        audience: context.audience ?? '',
+        outcome: 'pending',
+        createdAt: this.clock.isoNow(),
+      });
+    } catch (err) {
+      this.logger.warn(
+        { kind, err: err instanceof Error ? err.message : String(err) },
+        'artifact logging failed',
+      );
+    }
   }
 
   async suggest(
@@ -441,11 +482,13 @@ export class DocumentAiService {
       if (parsed) {
         const pitch = normalizePitch(parsed);
         if (pitch.headline || pitch.paragraphs.length) {
+          await this.logArtifact(scope, 'pitch', talentId, res.provider);
           return withGrounding(pitch, res.provider, res.usage);
         }
       }
     }
 
+    await this.logArtifact(scope, 'pitch', talentId, 'template');
     return withGrounding(fallbackPitch(documents, mandateContext, lang), 'template');
   }
 
@@ -490,14 +533,19 @@ export class DocumentAiService {
       MAX_TOKENS.outreach,
       outreachPrompt(documents, opts, lang),
     );
+    const outreachContext = { channel: opts.channel, audience: opts.audience };
     if (res) {
       const parsed = this.parseReply('outreach', res.reply, outreachResultSchema);
       if (parsed) {
         const message = normalizeOutreach(parsed, opts.channel);
-        if (message.body) return withGrounding(message, res.provider, res.usage);
+        if (message.body) {
+          await this.logArtifact(scope, 'outreach', talentId, res.provider, outreachContext);
+          return withGrounding(message, res.provider, res.usage);
+        }
       }
     }
 
+    await this.logArtifact(scope, 'outreach', talentId, 'template', outreachContext);
     return withGrounding(fallbackOutreach(documents, opts, lang), 'template');
   }
 

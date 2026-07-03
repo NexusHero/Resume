@@ -29,6 +29,7 @@ import { errorHandler, notFound, sendProblem } from './problem';
 import { corsMiddleware, securityHeaders, recruitingCsp, RECRUITING_KIT_PREFIX } from './security';
 import { registerApiDocs } from './api-docs';
 import type { AssistantController } from './assistant-controller';
+import type { ArtifactController } from './artifact-controller';
 
 export interface AppDeps {
   applicationController: ApplicationController;
@@ -48,6 +49,7 @@ export interface AppDeps {
   forecastController: ForecastController;
   observationController: ObservationController;
   assistantController: AssistantController;
+  artifactController: ArtifactController;
   documentController: DocumentController;
   attachmentController: AttachmentController;
   authController: AuthController;
@@ -78,6 +80,7 @@ export function createApp(deps: AppDeps): Express {
     forecastController: forecast,
     observationController: observations,
     assistantController: assistant,
+    artifactController: artifacts,
     documentController: docs,
     attachmentController: att,
     authController: auth,
@@ -213,6 +216,10 @@ export function createApp(deps: AppDeps): Express {
   api.get('/assistant/suggestions', requireAuth, asyncHandler(assistant.list));
   api.post('/assistant/suggestions/:id/accept', requireAuth, asyncHandler(assistant.accept));
   api.post('/assistant/suggestions/:id/dismiss', requireAuth, asyncHandler(assistant.dismiss));
+  // The outcome loop: generated artifacts and what became of them.
+  api.get('/artifacts', requireAuth, asyncHandler(artifacts.list));
+  api.get('/artifacts/stats', requireAuth, asyncHandler(artifacts.stats));
+  api.post('/artifacts/:id/outcome', requireAuth, asyncHandler(artifacts.setOutcome));
   // The provider choice is per user (persisted); signed-out callers see the default.
   api.get('/settings/llm', asyncHandler(auth.attachUser), asyncHandler(llm.settings));
   api.put('/settings/llm', requireAuth, asyncHandler(llm.setProvider));

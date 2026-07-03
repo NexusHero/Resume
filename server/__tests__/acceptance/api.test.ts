@@ -37,6 +37,7 @@ import { RetentionService } from '../../src/services/retention-service';
 import { MatchService } from '../../src/services/match-service';
 import { AssistantService } from '../../src/services/assistant-service';
 import { AssistantController } from '../../src/http/assistant-controller';
+import { ArtifactController } from '../../src/http/artifact-controller';
 import { UsageService } from '../../src/services/usage-service';
 import { ForecastService } from '../../src/services/forecast-service';
 import { InterviewObservationService } from '../../src/services/interview-observation-service';
@@ -58,6 +59,7 @@ import { KeywordSkillExtractor } from '../../src/adapters/keyword-skill-extracto
 import { RoleAuthorizer } from '../../src/adapters/role-authorizer';
 import {
   InMemoryApplicationRepository,
+  InMemoryArtifactLogRepository,
   InMemoryAssistantSettingsStore,
   InMemoryAssistantSuggestionRepository,
   InMemoryAuditLog,
@@ -251,6 +253,7 @@ function makeApp(
     clock: new FixedClock(),
   });
   const interviewObservationRepository = new InMemoryInterviewObservationRepository();
+  const artifactLogRepository = new InMemoryArtifactLogRepository();
   const documentAiService = new DocumentAiService({
     documentService,
     llmService,
@@ -259,8 +262,14 @@ function makeApp(
     pdfTextExtractor: new FakePdfTextExtractor('Extracted CV text from PDF.'),
     usageMeter,
     interviewObservationRepository,
+    artifactLogRepository,
+    idGenerator: new SequenceIdGenerator('art'),
     clock: new FixedClock(),
     logger: noopLogger,
+  });
+  const artifactController = new ArtifactController({
+    artifactLogRepository,
+    clock: new FixedClock(),
   });
   const documentController = new DocumentController({ documentService, documentAiService });
   const matchAiController = new MatchAiController({ mandateRepository, documentAiService });
@@ -347,6 +356,7 @@ function makeApp(
     forecastController,
     observationController,
     assistantController,
+    artifactController,
     documentController,
     attachmentController,
     authController,
@@ -1915,6 +1925,54 @@ describe('REST API /api/v1', () => {
     expect(res.status).toBe(200);
     expect(res.body.provider).toBe('template');
     expect(res.body.text).toContain('Helio');
+  });
+
+  it('Artifacts_Unauthenticated_Returns401', async () => {
+    expect((await request(app).get('/api/v1/artifacts')).status).toBe(401);
+  });
+
+  it('Artifacts_OutcomeLoop_LogStampAggregate', async () => {
+    const agent = request.agent(app);
+    await agent
+      .post('/api/v1/auth/register')
+      .send({ email: 'loop@example.com', password: 'correct horse battery' });
+    const talent = await agent
+      .post('/api/v1/talents')
+      .send({ name: 'Nora Weiss', role: 'Data Engineer', skills: ['Python'] });
+    const talentId = talent.body.talent.id;
+
+    // Generating outreach logs an artifact (template here — no key configured).
+    await agent
+      .post(`/api/v1/talents/${talentId}/documents/outreach`)
+      .send({ audience: 'candidate', channel: 'email' });
+    const list = await agent.get(`/api/v1/artifacts?talentId=${talentId}`);
+    expect(list.body).toHaveLength(1);
+    expect(list.body[0]).toMatchObject({
+      kind: 'outreach',
+      provider: 'template',
+      channel: 'email',
+      outcome: 'pending',
+    });
+
+    // Stamp the fate; the stats reflect it.
+    const id = list.body[0].id;
+    expect(
+      (await agent.post(`/api/v1/artifacts/${id}/outcome`).send({ outcome: 'ghosted' })).status,
+    ).toBe(400);
+    const stamped = await agent
+      .post(`/api/v1/artifacts/${id}/outcome`)
+      .send({ outcome: 'replied' });
+    expect(stamped.body.artifact).toMatchObject({ outcome: 'replied' });
+    expect(stamped.body.artifact.outcomeAt).toBeTruthy();
+    const stats = await agent.get('/api/v1/artifacts/stats');
+    const outreach = stats.body.byKind.find((b: { kind: string }) => b.kind === 'outreach');
+    expect(outreach).toMatchObject({ sent: 1, replied: 1, replyRate: 100 });
+    // The unfiltered list covers the whole team scope.
+    expect((await agent.get('/api/v1/artifacts')).body.length).toBeGreaterThanOrEqual(1);
+
+    expect(
+      (await agent.post('/api/v1/artifacts/nope/outcome').send({ outcome: 'replied' })).status,
+    ).toBe(404);
   });
 
   it('ApiDocs_OpenApiSpec_IsServed', async () => {

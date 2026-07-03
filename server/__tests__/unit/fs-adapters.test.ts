@@ -24,6 +24,7 @@ import {
   FsAssistantSettingsStore,
   FsAssistantSuggestionRepository,
 } from '../../src/adapters/fs-assistant-store';
+import { FsArtifactLogRepository } from '../../src/adapters/fs-artifact-log-repository';
 import { SecretCipher } from '../../src/adapters/secret-cipher';
 import { FixedClock } from '../support/fakes';
 import type { Application, AuditEvent } from '../../src/domain/application';
@@ -60,6 +61,7 @@ function tmpConfig(): AppConfig {
     interviewObservationsFile: path.join(storeDir, 'interview-observations.json'),
     assistantSettingsFile: path.join(storeDir, 'assistant-settings.json'),
     assistantSuggestionsFile: path.join(storeDir, 'assistant-suggestions.json'),
+    artifactLogFile: path.join(storeDir, 'artifact-log.json'),
     staticDir: rootDir,
     versionedPaths: ['bewerbungen'],
     candidateProfile: { skills: [] },
@@ -1105,5 +1107,43 @@ describe('FsAssistantStores', () => {
     const all = await repo.list('team');
     expect(all.find((x) => x.id === 's1')?.status).toBe('accepted');
     expect(all.find((x) => x.id === 's2')?.status).toBe('proposed'); // others untouched
+  });
+});
+
+describe('FsArtifactLogRepository', () => {
+  const artifact = (id: string, talentId = 't1') => ({
+    id,
+    ownerId: 'team',
+    kind: 'outreach' as const,
+    talentId,
+    provider: 'template',
+    channel: 'email',
+    audience: 'candidate',
+    outcome: 'pending' as const,
+    createdAt: `2026-07-03T10:00:0${id.length}.000Z`,
+  });
+
+  it('AddListFilterUpdate_RoundTrips_ScopedToOwner', async () => {
+    const config = tmpConfig();
+    const repo = new FsArtifactLogRepository({ config });
+    await repo.add(artifact('a1'));
+    await repo.add(artifact('a2', 't2'));
+    expect(await repo.list('team')).toHaveLength(2);
+    expect(await repo.list('other')).toEqual([]);
+    expect(await repo.listForTalent('team', 't2')).toHaveLength(1);
+    expect(await repo.findById('other', 'a1')).toBeNull();
+    const a1 = (await repo.findById('team', 'a1'))!;
+    await repo.update({ ...a1, outcome: 'replied', outcomeAt: '2026-07-03T11:00:00.000Z' });
+    // A fresh instance (restart) still sees the stamped fate; others untouched.
+    const fresh = new FsArtifactLogRepository({ config });
+    expect((await fresh.findById('team', 'a1'))?.outcome).toBe('replied');
+    expect((await fresh.findById('team', 'a2'))?.outcome).toBe('pending');
+  });
+
+  it('MalformedFile_ListsNothing', async () => {
+    const config = tmpConfig();
+    await fs.mkdir(config.storeDir, { recursive: true });
+    await fs.writeFile(config.artifactLogFile, 'not json');
+    expect(await new FsArtifactLogRepository({ config }).list('team')).toEqual([]);
   });
 });

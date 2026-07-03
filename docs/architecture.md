@@ -202,6 +202,7 @@ Full log in [`docs/adr/`](adr). Summary:
 | 0024 | Split the MandatePipeline god-component (board + 5 modals)    | Accepted                       |
 | 0025 | Responsive app shell (matchMedia hook + mobile drawer)        | Accepted (E1 slice 1)          |
 | 0026 | Responsive dense views (dashboard grids + scrollable tables)  | Accepted (E1 slice 2)          |
+| 0027 | Responsive CV profile, editor, and form modals                | Accepted (E1 slice 3)          |
 
 ## 10. Quality Requirements
 
@@ -243,12 +244,13 @@ See [requirements.md](requirements.md) for the full FR/NFR catalogue. Verificati
   Neural backends are now opt-in behind the same port (ADR-0020) — `ollama` (local,
   first-party) or `openai` (third-party API) — each degrading to hashed on any error, so
   the offline default and the DSGVO story are preserved.
-- **Responsive UI is partial** (ADR-0025/0026): the app shell (`RecruitRail` → drawer) and
-  the dense dashboard/reporting views (Workspace, Placements, Reports — KPI grids collapse,
-  fixed-column tables scroll) now adapt via the `useViewport` hook. Still desktop-only and
-  the next E1 slices: `TalentProfile` (the CV document layout), the `Editor` (fixed editing
-  pane), and the `Settings`/form modals. The board is touch-usable via the stage `<select>`;
-  touch drag-and-drop is intentionally not implemented.
+- **Responsive UI** (ADR-0025/0026/0027): the shell (`RecruitRail` → drawer), the dense
+  dashboard/reporting views (KPI grids collapse, tables scroll), and the document screens
+  (`TalentProfile` CV stacks, the `Editor` stacks its panes + wraps its toolbar, form modals
+  go single-column) all adapt via the `useViewport` hook — the core app is usable on a phone.
+  The one remaining gap is `SettingsView`'s list rows (they use `minmax(0,1fr) … auto` tracks
+  that shrink acceptably, so they were left as-is). The board is touch-usable via the stage
+  `<select>`; touch drag-and-drop is intentionally not implemented.
 - OpenAPI covers the full surface but is hand-kept, not generated from zod — drift is
   guarded only by review discipline and the docs acceptance tests (ADR-0012).
 - Some ports still have only a file adapter (e.g. `PdfArchive`); object storage is a

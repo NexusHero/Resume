@@ -64,6 +64,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
      The pinned "me" profile has no server row, so it stays local-only. ---- */
   const talentId = talent.id;
   const canPersist = !!talentId && talentId !== 'me';
+  const { isMobile } = window.useViewport ? window.useViewport() : { isMobile: false };
 
   const [doc, setDoc] = React.useState('lebenslauf');
   const previewRef = React.useRef(null);
@@ -225,8 +226,8 @@ function Editor({ talent, onClose, onCreateMappe }) {
   );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '14px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', alignSelf: 'flex-start' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: isMobile ? 'auto' : '100%', gap: '14px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: isMobile ? 'wrap' : 'nowrap', alignSelf: isMobile ? 'stretch' : 'flex-start' }}>
         <button onClick={onClose} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)', padding: 0 }}>
           <ED.Icon name="arrowLeft" size={14} /> Back to profile
         </button>
@@ -277,7 +278,10 @@ function Editor({ talent, onClose, onCreateMappe }) {
       {modal === 'pitch' && <EdPitchModal talentId={talentId} onClose={() => setModal(null)} />}
       {modal === 'outreach' && <EdOutreachModal talentId={talentId} defaultEmail={contact.email} onClose={() => setModal(null)} />}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: '20px', flex: 1, minHeight: 0, minWidth: 0 }}>
+      {/* On mobile the 380px form pane can't sit beside the preview — stack them
+          (form, then live preview) and let the page scroll. Both panes stay
+          mounted so the preview's fit-to-width scaling still runs (ADR-0027). */}
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '380px 1fr', gap: '20px', flex: 1, minHeight: 0, minWidth: 0 }}>
         {/* LEFT — form */}
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0 }}>
           <div style={{ display: 'flex', gap: '4px', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-md)', padding: '4px', marginBottom: '16px' }}>

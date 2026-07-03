@@ -193,6 +193,7 @@ function PitchModal({ talentId, onClose }) {
 
 /* ---- Outreach: first-contact message (to candidate or client, email/LinkedIn) ---- */
 function OutreachModal({ talentId, defaultEmail, onClose }) {
+  const { isMobile } = window.useViewport ? window.useViewport() : { isMobile: false };
   const [outAudience, setOutAudience] = React.useState('candidate'); // candidate | client
   const [outChannel, setOutChannel] = React.useState('email'); // email | linkedin
   const [outTone, setOutTone] = React.useState('');
@@ -302,7 +303,7 @@ function OutreachModal({ talentId, defaultEmail, onClose }) {
 
   return (
     <EdmModalShell title="Outreach message" subtitle="Draft the first-contact message — to the candidate (sourcing) or to a client (presenting the candidate), as an email or a LinkedIn DM." subtitleGap="14px" onClose={onClose}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
         <div>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '5px' }}>To</div>
           {toggle(<>{pill(outAudience === 'candidate', () => setOutAudience('candidate'), 'Candidate')}{pill(outAudience === 'client', () => setOutAudience('client'), 'Client')}</>)}

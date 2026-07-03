@@ -287,6 +287,64 @@ paths:
         '400': { $ref: '#/components/responses/ValidationProblem' }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
+  /talents/import:
+    post:
+      tags: [Talents]
+      summary: Bulk-import CVs (PDF) as talents
+      description: >
+        Parse each uploaded PDF CV into a new talent (contact, résumé, skills),
+        reusing the single-CV parse path. Each file is handled independently —
+        a failure is reported and the batch continues; a talent that fails after
+        creation is rolled back. Bounded to 20 files per request.
+      operationId: importTalents
+      security:
+        - cookieSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [items]
+              properties:
+                items:
+                  type: array
+                  minItems: 1
+                  maxItems: 20
+                  items:
+                    type: object
+                    required: [dataBase64]
+                    properties:
+                      dataBase64: { type: string, description: Base64-encoded PDF bytes }
+                      filename: { type: string, default: '' }
+      responses:
+        '201':
+          description: Per-file import results (order matches the request).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      oneOf:
+                        - type: object
+                          properties:
+                            ok: { type: boolean, enum: [true] }
+                            talentId: { type: string }
+                            name: { type: string }
+                            skillCount: { type: integer }
+                            provider: { type: string }
+                            extractedChars: { type: integer }
+                        - type: object
+                          properties:
+                            ok: { type: boolean, enum: [false] }
+                            filename: { type: string }
+                            error: { type: string }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
   /talents/{id}:
     patch:
       tags: [Talents]

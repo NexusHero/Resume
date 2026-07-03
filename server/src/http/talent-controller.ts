@@ -1,14 +1,18 @@
 import type { Request, Response } from 'express';
 import { createTalentSchema, updateTalentSchema } from '../domain/talent';
+import { importPdfsSchema } from '../domain/talent-import';
 import type { TalentService } from '../services/talent-service';
-import { currentScope } from './current-user';
+import type { TalentImportService } from '../services/talent-import-service';
+import { currentScope, currentUserId } from './current-user';
 
 /** CRUD for the talent pool under /api/v1/talents. */
 export class TalentController {
   private readonly service: TalentService;
+  private readonly importService: TalentImportService;
 
-  constructor(deps: { talentService: TalentService }) {
+  constructor(deps: { talentService: TalentService; talentImportService: TalentImportService }) {
     this.service = deps.talentService;
+    this.importService = deps.talentImportService;
   }
 
   list = async (req: Request, res: Response): Promise<void> => {
@@ -18,6 +22,16 @@ export class TalentController {
   create = async (req: Request, res: Response): Promise<void> => {
     const input = createTalentSchema.parse(req.body);
     res.status(201).json({ talent: await this.service.create(currentScope(req), input) });
+  };
+
+  importPdfs = async (req: Request, res: Response): Promise<void> => {
+    const input = importPdfsSchema.parse(req.body);
+    const result = await this.importService.importPdfs(
+      currentScope(req),
+      currentUserId(req),
+      input,
+    );
+    res.status(201).json(result);
   };
 
   update = async (req: Request, res: Response): Promise<void> => {

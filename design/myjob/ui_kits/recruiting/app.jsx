@@ -151,6 +151,36 @@ function Workspace({ user, onLogout }) {
   const addTalent = () => setFormKind('talent');
   const addPlacement = () => setFormKind('placement');
 
+  // Bulk CV import: read each PDF to base64, import as talents, report the
+  // outcome and refresh the pool.
+  const [importing, setImporting] = React.useState(false);
+  const importCvs = async (files) => {
+    setImporting(true);
+    try {
+      const items = await Promise.all(
+        files.map(
+          (file) =>
+            new Promise((resolve, reject) => {
+              const r = new FileReader();
+              r.onload = () => resolve({ dataBase64: String(r.result).split(',')[1] || '', filename: file.name });
+              r.onerror = reject;
+              r.readAsDataURL(file);
+            }),
+        ),
+      );
+      const results = await window.RecruitApi.importTalents(items);
+      await talentsRes.reload();
+      const ok = results.filter((r) => r.ok).length;
+      const failed = results.length - ok;
+      // eslint-disable-next-line no-alert
+      window.alert(`Imported ${ok} CV${ok === 1 ? '' : 's'}${failed ? `, ${failed} failed` : ''}.`);
+    } catch {
+      // eslint-disable-next-line no-alert
+      window.alert('CV import failed. Please try again.');
+    }
+    setImporting(false);
+  };
+
   // The create form modal submits here; each returns the create promise so the
   // modal can show its busy state, then close on success or surface an error.
   const submitForm = (kind, values) => {
@@ -265,7 +295,7 @@ function Workspace({ user, onLogout }) {
     [title, subtitle] = TITLES[nav] || TITLES.uebersicht;
     if (nav === 'uebersicht') body = <window.Dashboard me={me} apps={apps} vkpis={vkpis} clients={clients} mandates={mandates} onOpenTalent={goTalent} onOpenPipeline={() => setNav('mandate')} onOpenMandate={() => setNav('mandate')} />;
     else if (nav === 'mandate') body = withState(mandatesRes, <window.MandateView mandates={shownMandates} onEdit={editMandate} onOpenPipeline={goPipeline} />);
-    else if (nav === 'pool') body = withState(talentsRes, <window.TalentGrid talents={shownTalents} apps={apps} onOpen={goTalent} onAdd={addTalent} />);
+    else if (nav === 'pool') body = withState(talentsRes, <window.TalentGrid talents={shownTalents} apps={apps} onOpen={goTalent} onAdd={addTalent} onImport={importCvs} importing={importing} />);
     else if (nav === 'matching') body = <window.Matching talents={talents} onCreateMandate={mandateFromJob} />;
     else if (nav === 'bewerbungen') body = (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '100%' }}>

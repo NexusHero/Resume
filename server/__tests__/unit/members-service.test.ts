@@ -3,12 +3,13 @@ import { NotFoundError, ValidationError } from '../../src/domain/errors';
 import { InMemoryUserRepository } from '../support/fakes';
 import type { User, Role } from '../../src/domain/user';
 
-const user = (id: string, roles: Role[], createdAt: string): User => ({
+const user = (id: string, roles: Role[], createdAt: string, tenantId?: string): User => ({
   id,
   email: `${id}@example.com`,
   passwordHash: 'x',
   roles,
   createdAt,
+  ...(tenantId ? { tenantId } : {}),
 });
 
 function ctx() {
@@ -58,5 +59,47 @@ describe('MembersService', () => {
     c.repo.users.push(user('u2', ['admin'], '2026-01-02T00:00:00.000Z'));
     const updated = await c.service.setRoles('u2', ['recruiter']);
     expect(updated.roles).toEqual(['recruiter']);
+  });
+
+  describe('tenant isolation (ADR-0033)', () => {
+    it('List_OnlyReturnsMembersOfTheGivenTenant', async () => {
+      const c = ctx();
+      c.repo.users.push(user('a1', ['admin'], '2026-01-01T00:00:00.000Z', 'acme'));
+      c.repo.users.push(user('a2', ['recruiter'], '2026-01-02T00:00:00.000Z', 'acme'));
+      c.repo.users.push(user('b1', ['admin'], '2026-01-03T00:00:00.000Z', 'globex'));
+      const acme = await c.service.list('acme');
+      expect(acme.map((m) => m.id)).toEqual(['a1', 'a2']);
+      expect((await c.service.list('globex')).map((m) => m.id)).toEqual(['b1']);
+    });
+
+    it('List_DefaultScope_ReturnsUsersWithoutAnExplicitTenant', async () => {
+      const c = ctx();
+      c.repo.users.push(user('u1', ['admin'], '2026-01-01T00:00:00.000Z')); // no tenantId => 'team'
+      c.repo.users.push(user('b1', ['admin'], '2026-01-02T00:00:00.000Z', 'globex'));
+      expect((await c.service.list()).map((m) => m.id)).toEqual(['u1']);
+    });
+
+    it('SetRoles_TargetInAnotherTenant_Throws404', async () => {
+      const c = ctx();
+      c.repo.users.push(user('a1', ['admin'], '2026-01-01T00:00:00.000Z', 'acme'));
+      c.repo.users.push(user('b1', ['recruiter'], '2026-01-02T00:00:00.000Z', 'globex'));
+      // An acme admin cannot touch a globex member — it's not even visible.
+      await expect(c.service.setRoles('b1', ['admin'], 'acme')).rejects.toBeInstanceOf(
+        NotFoundError,
+      );
+      expect(c.repo.users.find((u) => u.id === 'b1')?.roles).toEqual(['recruiter']);
+    });
+
+    it('SetRoles_LastAdminGuard_IsPerTenant', async () => {
+      const c = ctx();
+      // acme has a single admin; globex has its own admin. Demoting acme's only
+      // admin must fail even though the instance still has another admin elsewhere.
+      c.repo.users.push(user('a1', ['admin'], '2026-01-01T00:00:00.000Z', 'acme'));
+      c.repo.users.push(user('b1', ['admin'], '2026-01-02T00:00:00.000Z', 'globex'));
+      await expect(c.service.setRoles('a1', ['recruiter'], 'acme')).rejects.toBeInstanceOf(
+        ValidationError,
+      );
+      expect(c.repo.users.find((u) => u.id === 'a1')?.roles).toEqual(['admin']);
+    });
   });
 });

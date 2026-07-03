@@ -162,6 +162,8 @@ The outward submission stays a manual step (ADR-0019).
 - **Auth & tenancy:** sessions + RBAC (ADR-0004); recruiting data is scope-owned (ADR-0010).
   `currentScope(req)` resolves to the user's `tenantId`, defaulting to `'team'` when absent
   (ADR-0033) — the seam is multi-tenant-ready while every current install stays single-tenant.
+  Member management (roster + role admin) is tenant-scoped too (ADR-0034): an admin only sees
+  and re-roles their own tenant, and the last-admin invariant is enforced per tenant.
 - **API contract:** hand-maintained OpenAPI 3.1 + self-hosted Swagger UI (ADR-0012),
   extended in the same PR as any route change.
 - **Self-hosted assets:** fonts and the Swagger UI ship from this origin — no CDN, no
@@ -211,6 +213,7 @@ Full log in [`docs/adr/`](adr). Summary:
 | 0031 | PDF archive to S3-compatible object storage                   | Accepted (D-series slice 3)    |
 | 0032 | Bounded PDF render pool (concurrency semaphore)               | Accepted (D-series slice 4)    |
 | 0033 | Multi-tenant scope foundation (tenantId, default 'team')      | Accepted (D-series slice 6·1)  |
+| 0034 | Tenant-scoped member management (roster + role admin)         | Accepted (D-series slice 6·2)  |
 
 ## 10. Quality Requirements
 

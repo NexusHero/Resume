@@ -50,14 +50,29 @@ export class MatchService {
 
     // Fall back to matching on the mandate itself when no ad text is given.
     const query = jobText.trim() || `${mandate.role} ${mandate.location}`;
-    const queryVector = await this.embeddings.embed(query);
-
-    const [talents, pipeline] = await Promise.all([
-      this.talents.list(scope),
-      this.candidacies.listForMandate(scope, mandateId),
-    ]);
+    const pipeline = await this.candidacies.listForMandate(scope, mandateId);
     const inPipeline = new Set(pipeline.map((c) => c.talentId));
+    return this.rankPool(scope, query, limit, inPipeline);
+  }
 
+  /**
+   * Rank the pool against arbitrary job-ad text — the mandate-free path the
+   * auto-apply agent uses for postings received from the boards (ADR-0019).
+   * There is no pipeline to check, so `inPipeline` is always false.
+   */
+  async rankForJobText(scope: string, jobText: string, limit: number): Promise<TalentMatch[]> {
+    return this.rankPool(scope, jobText.trim(), limit, new Set());
+  }
+
+  /** The shared hybrid ranking: skills/ontology score + embedding similarity. */
+  private async rankPool(
+    scope: string,
+    query: string,
+    limit: number,
+    inPipeline: Set<string>,
+  ): Promise<TalentMatch[]> {
+    const queryVector = await this.embeddings.embed(query);
+    const talents = await this.talents.list(scope);
     const matches = await Promise.all(
       talents
         .filter((t) => !t.anonymizedAt) // no identifiable data to present

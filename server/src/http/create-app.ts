@@ -226,6 +226,12 @@ export function createApp(deps: AppDeps): Express {
   api.get('/assistant/suggestions', requireAuth, asyncHandler(assistant.list));
   api.post('/assistant/suggestions/:id/accept', requireAuth, asyncHandler(assistant.accept));
   api.post('/assistant/suggestions/:id/dismiss', requireAuth, asyncHandler(assistant.dismiss));
+  // The staged application's Bewerbungsmappe (tailored CV + cover letter + Zeugnisse).
+  api.get(
+    '/assistant/suggestions/:id/dossier.pdf',
+    requireAuth,
+    asyncHandler(assistant.applicationDossier),
+  );
   // The outcome loop: generated artifacts and what became of them.
   api.get('/artifacts', requireAuth, asyncHandler(artifacts.list));
   api.get('/artifacts/stats', requireAuth, asyncHandler(artifacts.stats));

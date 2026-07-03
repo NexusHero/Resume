@@ -66,4 +66,15 @@ export class AssistantController {
       suggestion: await this.service.dismiss(currentScope(req), req.params.id as string),
     });
   };
+
+  /** GET /assistant/suggestions/:id/dossier.pdf — the staged application's Mappe. */
+  applicationDossier = async (req: Request, res: Response): Promise<void> => {
+    const pdf = await this.service.renderApplicationDossier(
+      currentScope(req),
+      req.params.id as string,
+    );
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'inline; filename="bewerbungsmappe.pdf"');
+    res.send(pdf);
+  };
 }

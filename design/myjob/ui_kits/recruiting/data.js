@@ -502,6 +502,10 @@ const RecruitApi = {
       await fetch(`${RECRUIT_API_BASE}/assistant/suggestions/${id}/${action}`, { method: 'POST' }),
     );
   },
+  assistantDossierUrl(id) {
+    // the staged application's Bewerbungsmappe (same-origin, cookie-authenticated)
+    return `${RECRUIT_API_BASE}/assistant/suggestions/${id}/dossier.pdf`;
+  },
   async companyKnowledge(mandateId) {
     // { company, profile: { sampleSize, formats[], typicalRounds, difficulty, confidence } | null, observations[] }
     return _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/mandates/${mandateId}/observations`));

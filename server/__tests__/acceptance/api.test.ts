@@ -38,6 +38,7 @@ import { MatchService } from '../../src/services/match-service';
 import { HashedEmbeddingProvider } from '../../src/adapters/hashed-embedding-provider';
 import { AssistantService } from '../../src/services/assistant-service';
 import { AssistantController } from '../../src/http/assistant-controller';
+import { ApplicationBuilder } from '../../src/services/application-builder';
 import { ArtifactController } from '../../src/http/artifact-controller';
 import { MailController } from '../../src/http/mail-controller';
 import { MailService } from '../../src/services/mail-service';
@@ -176,14 +177,13 @@ function makeApp(
   const passwordResetTokenStore =
     opts.passwordResetTokenStore ?? new InMemoryPasswordResetTokenStore();
   const mailer = opts.mailer ?? new RecordingMailer();
-  const mandateController = new MandateController({
-    mandateService: new MandateService({
-      mandateRepository,
-      candidacyRepository,
-      clock: new FixedClock(),
-      idGenerator: new SequenceIdGenerator('mandate'),
-    }),
+  const mandateService = new MandateService({
+    mandateRepository,
+    candidacyRepository,
+    clock: new FixedClock(),
+    idGenerator: new SequenceIdGenerator('mandate'),
   });
+  const mandateController = new MandateController({ mandateService });
   const talentController = new TalentController({
     talentService: new TalentService({
       talentRepository,
@@ -233,30 +233,14 @@ function makeApp(
     embeddingProvider: new HashedEmbeddingProvider(),
   });
   const matchController = new MatchController({ matchService });
-  const assistantController = new AssistantController({
-    assistantService: new AssistantService({
-      assistantSettingsStore: new InMemoryAssistantSettingsStore(),
-      assistantSuggestionRepository: new InMemoryAssistantSuggestionRepository(),
-      mandateRepository,
-      talentRepository,
-      documentRepository,
-      candidacyRepository,
-      matchService,
-      candidacyService,
-      clock: new FixedClock(),
-      idGenerator: new SequenceIdGenerator('sugg'),
-      logger: noopLogger,
-    }),
+  const attachmentService = new AttachmentService({
+    attachmentStore,
+    talentRepository,
+    userRepository,
+    clock: new FixedClock(),
+    idGenerator: new SequenceIdGenerator('att'),
   });
-  const attachmentController = new AttachmentController({
-    attachmentService: new AttachmentService({
-      attachmentStore,
-      talentRepository,
-      userRepository,
-      clock: new FixedClock(),
-      idGenerator: new SequenceIdGenerator('att'),
-    }),
-  });
+  const attachmentController = new AttachmentController({ attachmentService });
   const documentService = new DocumentService({
     documentRepository,
     talentRepository,
@@ -280,6 +264,29 @@ function makeApp(
     idGenerator: new SequenceIdGenerator('art'),
     clock: new FixedClock(),
     logger: noopLogger,
+  });
+  const applicationBuilder = new ApplicationBuilder({
+    documentAiService,
+    documentService,
+    attachmentService,
+  });
+  const assistantController = new AssistantController({
+    assistantService: new AssistantService({
+      assistantSettingsStore: new InMemoryAssistantSettingsStore(),
+      assistantSuggestionRepository: new InMemoryAssistantSuggestionRepository(),
+      mandateRepository,
+      talentRepository,
+      documentRepository,
+      candidacyRepository,
+      matchService,
+      candidacyService,
+      mandateService,
+      jobSearchService,
+      applicationBuilder,
+      clock: new FixedClock(),
+      idGenerator: new SequenceIdGenerator('sugg'),
+      logger: noopLogger,
+    }),
   });
   const artifactController = new ArtifactController({
     artifactLogRepository,
@@ -2030,6 +2037,55 @@ describe('REST API /api/v1', () => {
     const overview = await agent.get('/api/v1/assistant');
     expect(overview.body.counts.autoApplied).toBeGreaterThanOrEqual(1);
     expect(overview.body.counts.dismissed).toBeGreaterThanOrEqual(1);
+  });
+
+  it('Assistant_Autopilot_BuildsApplication_DownloadMappe_Approve', async () => {
+    const agent = request.agent(app);
+    await agent
+      .post('/api/v1/auth/register')
+      .send({ email: 'autopilot@example.com', password: 'correct horse battery' });
+    // Top gear, own mandates as the source, any decent match qualifies.
+    const put = await agent.put('/api/v1/assistant').send({
+      enabled: true,
+      mode: 'autopilot',
+      applySource: 'mandates',
+      minApplyScore: 0,
+    });
+    expect(put.body.settings).toMatchObject({ mode: 'autopilot', applySource: 'mandates' });
+
+    const mandate = await agent.post('/api/v1/mandates').send({
+      client: 'Nordwind GmbH',
+      role: 'Backend Engineer',
+      location: 'Kiel',
+      jobText: 'Backend Engineer, Go und PostgreSQL, für unser Plattform-Team.',
+    });
+    await agent
+      .post('/api/v1/talents')
+      .send({ name: 'Ada Lux', role: 'Backend Engineer', skills: ['Go', 'PostgreSQL'] });
+
+    const run = await agent.post('/api/v1/assistant/run');
+    expect(run.status).toBe(200);
+
+    // A full application packet is staged (tailored snapshot, German ad → German).
+    const queue = await agent.get('/api/v1/assistant/suggestions');
+    const appItem = queue.body.find((s: { kind: string }) => s.kind === 'application');
+    expect(appItem).toBeDefined();
+    expect(appItem.payload.source).toBe('mandates');
+    expect(appItem.payload.lang).toBe('de');
+    expect(appItem.payload.paragraphs).toHaveLength(3);
+
+    // The Bewerbungsmappe renders as a PDF.
+    const pdf = await agent.get(`/api/v1/assistant/suggestions/${appItem.id}/dossier.pdf`);
+    expect(pdf.status).toBe(200);
+    expect(pdf.headers['content-type']).toContain('application/pdf');
+
+    // Approving puts the candidate into the mandate's pipeline.
+    const accept = await agent.post(`/api/v1/assistant/suggestions/${appItem.id}/accept`);
+    expect(accept.body.suggestion.status).toBe('accepted');
+    const board = await agent.get(`/api/v1/mandates/${mandate.body.mandate.id}/candidacies`);
+    expect(board.body.some((c: { talent: { name: string } }) => c.talent.name === 'Ada Lux')).toBe(
+      true,
+    );
   });
 
   it('CoverLetter_SignedInWithoutKey_UsesTheStoredProviderChoiceAndFallsBack', async () => {

@@ -191,6 +191,21 @@ export class DocumentService {
     attachmentIds: string[] = [],
   ): Promise<Buffer> {
     const documents = await this.get(ownerId, talentId);
+    return this.renderDossierFromDocuments(ownerId, documents, recipient, attachmentIds);
+  }
+
+  /**
+   * Render a Bewerbungsmappe from a documents object supplied by the caller —
+   * the same assembly as {@link renderDossierPdf} but from arbitrary content,
+   * so the auto-apply agent can render a tailored snapshot without persisting
+   * it over the candidate's stored documents (ADR-0019).
+   */
+  async renderDossierFromDocuments(
+    ownerId: string,
+    documents: TalentDocuments,
+    recipient: DossierRecipient,
+    attachmentIds: string[] = [],
+  ): Promise<Buffer> {
     const merged: TalentDocuments = {
       ...documents,
       letter: {

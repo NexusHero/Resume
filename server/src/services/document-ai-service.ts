@@ -155,6 +155,11 @@ const MAX_TOKENS = {
   candidatePrep: 2000,
 } as const;
 
+/** The message of a caught error, whatever its type — for structured logs. */
+function errMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
 /**
  * Home of all document AI features: suggest (summary/letter rewrite), CV parse
  * (text + PDF), ATS scoring, candidate pitch, outreach drafts, translation,
@@ -205,10 +210,7 @@ export class DocumentAiService {
     try {
       await this.usage.record(toUsageEvent(userId, provider, feature, usage, this.clock.isoNow()));
     } catch (err) {
-      this.logger.warn(
-        { feature, err: err instanceof Error ? err.message : String(err) },
-        'usage metering failed',
-      );
+      this.logger.warn({ feature, err: errMessage(err) }, 'usage metering failed');
     }
   }
 
@@ -269,10 +271,7 @@ export class DocumentAiService {
     try {
       return await this.generateAndMeter(userId, feature, maxTokens, built, resolved);
     } catch (err) {
-      this.logger.warn(
-        { feature, err: err instanceof Error ? err.message : String(err) },
-        'llm generation failed, falling back',
-      );
+      this.logger.warn({ feature, err: errMessage(err) }, 'llm generation failed, falling back');
       return null;
     }
   }
@@ -295,6 +294,22 @@ export class DocumentAiService {
       'llm reply did not match the expected schema, falling back',
     );
     return null;
+  }
+
+  /**
+   * Wrap a generated content object in the standard AI-response envelope: which
+   * backend produced it, what the call cost, and a grounding self-check over the
+   * supplied text against the CV+context source. Shared by every grounded
+   * feature (pitch, outreach, tailoring) so the shape stays identical.
+   */
+  private withGrounding<T>(
+    content: T,
+    groundedText: string,
+    source: string,
+    provider: LlmProviderId | 'template',
+    usage?: CallUsage,
+  ): T & { provider: LlmProviderId | 'template'; usage?: CallUsage; grounding: GroundingReport } {
+    return { ...content, provider, usage, grounding: checkGrounding(groundedText, source) };
   }
 
   /**
@@ -322,10 +337,7 @@ export class DocumentAiService {
         createdAt: this.clock.isoNow(),
       });
     } catch (err) {
-      this.logger.warn(
-        { kind, err: err instanceof Error ? err.message : String(err) },
-        'artifact logging failed',
-      );
+      this.logger.warn({ kind, err: errMessage(err) }, 'artifact logging failed');
     }
   }
 
@@ -396,11 +408,14 @@ export class DocumentAiService {
     }
 
     // Flag any claim the CV + ad don't support — trust matters most on autopilot.
-    const grounding = checkGrounding(
+    const grounded = this.withGrounding(
+      content,
       [content.summary, ...content.paragraphs].join('\n'),
       groundingSource(documents, target.jobText),
+      provider,
+      usage,
     );
-    return { ...content, lang: target.lang, provider, usage, grounding };
+    return { ...grounded, lang: target.lang };
   }
 
   /**
@@ -450,10 +465,7 @@ export class DocumentAiService {
     try {
       text = await this.pdfText.extract(pdf);
     } catch (err) {
-      this.logger.warn(
-        { err: err instanceof Error ? err.message : String(err) },
-        'PDF text extraction failed',
-      );
+      this.logger.warn({ err: errMessage(err) }, 'PDF text extraction failed');
     }
 
     if (!text.trim()) {
@@ -514,16 +526,18 @@ export class DocumentAiService {
     const source = groundingSource(documents, mandateContext);
     // Output language follows the job/mandate context, else the candidate's CV.
     const lang = detectLanguage(mandateContext.trim() || groundingSource(documents, ''));
-    const withGrounding = <T extends CandidatePitch>(
-      pitch: T,
+    const grounded = (
+      pitch: CandidatePitch,
       provider: LlmProviderId | 'template',
       usage?: CallUsage,
-    ) => ({
-      ...pitch,
-      provider,
-      usage,
-      grounding: checkGrounding([pitch.headline, ...pitch.paragraphs].join(' '), source),
-    });
+    ) =>
+      this.withGrounding(
+        pitch,
+        [pitch.headline, ...pitch.paragraphs].join(' '),
+        source,
+        provider,
+        usage,
+      );
 
     const res = await this.runLlm(
       userId,
@@ -537,13 +551,13 @@ export class DocumentAiService {
         const pitch = normalizePitch(parsed);
         if (pitch.headline || pitch.paragraphs.length) {
           await this.logArtifact(scope, 'pitch', talentId, res.provider);
-          return withGrounding(pitch, res.provider, res.usage);
+          return grounded(pitch, res.provider, res.usage);
         }
       }
     }
 
     await this.logArtifact(scope, 'pitch', talentId, 'template');
-    return withGrounding(fallbackPitch(documents, mandateContext, lang), 'template');
+    return grounded(fallbackPitch(documents, mandateContext, lang), 'template');
   }
 
   /**
@@ -570,16 +584,18 @@ export class DocumentAiService {
     const lang = detectLanguage(
       (opts.mandateContext ?? '').trim() || groundingSource(documents, ''),
     );
-    const withGrounding = (
+    const grounded = (
       message: OutreachMessage,
       provider: LlmProviderId | 'template',
       usage?: CallUsage,
-    ) => ({
-      ...message,
-      provider,
-      usage,
-      grounding: checkGrounding([message.subject, message.body].join(' '), source),
-    });
+    ) =>
+      this.withGrounding(
+        message,
+        [message.subject, message.body].join(' '),
+        source,
+        provider,
+        usage,
+      );
 
     const res = await this.runLlm(
       userId,
@@ -594,13 +610,13 @@ export class DocumentAiService {
         const message = normalizeOutreach(parsed, opts.channel);
         if (message.body) {
           await this.logArtifact(scope, 'outreach', talentId, res.provider, outreachContext);
-          return withGrounding(message, res.provider, res.usage);
+          return grounded(message, res.provider, res.usage);
         }
       }
     }
 
     await this.logArtifact(scope, 'outreach', talentId, 'template', outreachContext);
-    return withGrounding(fallbackOutreach(documents, opts, lang), 'template');
+    return grounded(fallbackOutreach(documents, opts, lang), 'template');
   }
 
   /**

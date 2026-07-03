@@ -49,6 +49,16 @@ export class ForbiddenError extends DomainError {
   }
 }
 
+/** The feature needs a higher subscription plan (402 Payment Required). */
+export class PlanRequiredError extends DomainError {
+  readonly status = 402;
+  readonly type = 'plan-required';
+
+  constructor(public readonly requiredPlan: string) {
+    super(`This feature requires the ${requiredPlan} plan.`);
+  }
+}
+
 /** The request payload failed validation (400). */
 export class ValidationError extends DomainError {
   readonly status = 400;

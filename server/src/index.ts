@@ -32,6 +32,7 @@ import type { AuthController } from './http/auth-controller';
 import type { MembersController } from './http/members-controller';
 import type { AccountController } from './http/account-controller';
 import type { PasswordResetController } from './http/password-reset-controller';
+import type { PlanProvider } from './ports/plan-provider';
 
 async function main(): Promise<void> {
   const config = loadConfig();
@@ -72,6 +73,7 @@ async function main(): Promise<void> {
     membersController: container.resolve<MembersController>('membersController'),
     accountController: container.resolve<AccountController>('accountController'),
     passwordResetController: container.resolve<PasswordResetController>('passwordResetController'),
+    planProvider: container.resolve<PlanProvider>('planProvider'),
     config,
     logger,
   });

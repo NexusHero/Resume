@@ -25,6 +25,8 @@ import type { MembersController } from './members-controller';
 import type { AccountController } from './account-controller';
 import type { PasswordResetController } from './password-reset-controller';
 import { asyncHandler } from './async-handler';
+import { makeRequirePlan } from './require-plan';
+import type { PlanProvider } from '../ports/plan-provider';
 import { errorHandler, notFound, sendProblem } from './problem';
 import { corsMiddleware, securityHeaders, recruitingCsp, RECRUITING_KIT_PREFIX } from './security';
 import { registerApiDocs } from './api-docs';
@@ -58,6 +60,7 @@ export interface AppDeps {
   membersController: MembersController;
   accountController: AccountController;
   passwordResetController: PasswordResetController;
+  planProvider: PlanProvider;
   config: AppConfig;
   logger: Logger;
 }
@@ -146,29 +149,40 @@ export function createApp(deps: AppDeps): Express {
   // Recruiting endpoints require a valid session; the data behind them is
   // team-scoped (currentScope) — every member works on the shared team pool.
   const requireAuth = asyncHandler(auth.requireAuth);
+  // The single Pro-gate seam (ADR-0021): every generative/AI route below is
+  // marked with requirePlan('pro'); no feature branches on the plan itself.
+  const requirePlan = makeRequirePlan(deps.planProvider);
+  const requirePro = requirePlan('pro');
   api.get('/mandates', requireAuth, asyncHandler(m.list));
   api.post('/mandates', requireAuth, asyncHandler(m.create));
   api.patch('/mandates/:id', requireAuth, asyncHandler(m.update));
   api.delete('/mandates/:id', requireAuth, asyncHandler(m.remove));
   api.get('/talents', requireAuth, asyncHandler(t.list));
   api.post('/talents', requireAuth, asyncHandler(t.create));
-  api.post('/talents/import', requireAuth, asyncHandler(t.importPdfs));
+  api.post('/talents/import', requireAuth, requirePro, asyncHandler(t.importPdfs));
   api.patch('/talents/:id', requireAuth, asyncHandler(t.update));
   api.delete('/talents/:id', requireAuth, asyncHandler(t.remove));
   // Recruiting pipeline: talents in a mandate's stages (team-scoped).
   api.post('/mandates/:id/match', requireAuth, asyncHandler(match.match));
-  // AI on top of matching: explain a candidate's fit for the mandate.
+  // AI on top of matching (Pro): explain a candidate's fit for the mandate.
   api.post(
     '/mandates/:id/candidates/:talentId/explain',
     requireAuth,
+    requirePro,
     asyncHandler(matchAi.explain),
   );
   api.post(
     '/mandates/:id/candidates/:talentId/interview-kit',
     requireAuth,
+    requirePro,
     asyncHandler(matchAi.interviewKit),
   );
-  api.post('/mandates/:id/candidates/:talentId/prep', requireAuth, asyncHandler(matchAi.prep));
+  api.post(
+    '/mandates/:id/candidates/:talentId/prep',
+    requireAuth,
+    requirePro,
+    asyncHandler(matchAi.prep),
+  );
   // Observation flywheel: record & read real interview experiences per company.
   api.get('/mandates/:id/observations', requireAuth, asyncHandler(observations.forMandate));
   api.post('/mandates/:id/observations', requireAuth, asyncHandler(observations.record));
@@ -187,13 +201,24 @@ export function createApp(deps: AppDeps): Express {
   api.get('/talents/:id/documents', requireAuth, asyncHandler(docs.get));
   api.put('/talents/:id/documents', requireAuth, asyncHandler(docs.save));
   api.get('/talents/:id/documents/pdf', requireAuth, asyncHandler(docs.pdf));
-  api.post('/talents/:id/documents/ai', requireAuth, asyncHandler(docs.aiSuggest));
-  api.post('/talents/:id/documents/parse', requireAuth, asyncHandler(docs.parse));
-  api.post('/talents/:id/documents/parse-pdf', requireAuth, asyncHandler(docs.parsePdf));
-  api.post('/talents/:id/documents/ats', requireAuth, asyncHandler(docs.ats));
-  api.post('/talents/:id/documents/pitch', requireAuth, asyncHandler(docs.pitch));
-  api.post('/talents/:id/documents/outreach', requireAuth, asyncHandler(docs.outreach));
-  api.post('/talents/:id/documents/translate', requireAuth, asyncHandler(docs.translate));
+  // Generative document AI (Pro).
+  api.post('/talents/:id/documents/ai', requireAuth, requirePro, asyncHandler(docs.aiSuggest));
+  api.post('/talents/:id/documents/parse', requireAuth, requirePro, asyncHandler(docs.parse));
+  api.post(
+    '/talents/:id/documents/parse-pdf',
+    requireAuth,
+    requirePro,
+    asyncHandler(docs.parsePdf),
+  );
+  api.post('/talents/:id/documents/ats', requireAuth, requirePro, asyncHandler(docs.ats));
+  api.post('/talents/:id/documents/pitch', requireAuth, requirePro, asyncHandler(docs.pitch));
+  api.post('/talents/:id/documents/outreach', requireAuth, requirePro, asyncHandler(docs.outreach));
+  api.post(
+    '/talents/:id/documents/translate',
+    requireAuth,
+    requirePro,
+    asyncHandler(docs.translate),
+  );
   api.get('/talents/:id/dossier/pdf', requireAuth, asyncHandler(docs.dossier));
   // Talent attachments (files uploaded base64; team-scoped).
   api.get('/talents/:id/attachments', requireAuth, asyncHandler(att.list));
@@ -217,12 +242,19 @@ export function createApp(deps: AppDeps): Express {
   api.get('/settings/usage/audit.csv', requireAuth, asyncHandler(usage.auditCsv));
   // AGG (anti-discrimination) language check + neutral rewrite for job ads / outreach.
   api.post('/compliance/agg-check', requireAuth, asyncHandler(compliance.aggCheck));
-  api.post('/compliance/agg-rewrite', requireAuth, asyncHandler(compliance.aggRewrite));
+  // The neutral rewrite is LLM-generated (Pro); the check itself is deterministic (Free).
+  api.post('/compliance/agg-rewrite', requireAuth, requirePro, asyncHandler(compliance.aggRewrite));
   // Weighted pipeline revenue forecast across the team's live mandates.
   api.get('/forecast', requireAuth, asyncHandler(forecast.get));
-  // The assistant: settings, manual run, and the reviewable suggestion queue.
+  // The assistant: the deterministic suggest/act modes are Free; only switching
+  // to the token-spending autopilot gear (and its generated dossier) is Pro.
   api.get('/assistant', requireAuth, asyncHandler(assistant.overview));
-  api.put('/assistant', requireAuth, asyncHandler(assistant.updateSettings));
+  api.put(
+    '/assistant',
+    requireAuth,
+    requirePlan('pro', (req) => (req.body as { mode?: string } | undefined)?.mode === 'autopilot'),
+    asyncHandler(assistant.updateSettings),
+  );
   api.post('/assistant/run', requireAuth, asyncHandler(assistant.run));
   api.get('/assistant/suggestions', requireAuth, asyncHandler(assistant.list));
   api.post('/assistant/suggestions/:id/accept', requireAuth, asyncHandler(assistant.accept));
@@ -231,6 +263,7 @@ export function createApp(deps: AppDeps): Express {
   api.get(
     '/assistant/suggestions/:id/dossier.pdf',
     requireAuth,
+    requirePro,
     asyncHandler(assistant.applicationDossier),
   );
   // The outcome loop: generated artifacts and what became of them.
@@ -249,7 +282,12 @@ export function createApp(deps: AppDeps): Express {
   api.put('/settings/keys/:provider', requireAuth, asyncHandler(llm.setKey));
   api.delete('/settings/keys/:provider', requireAuth, asyncHandler(llm.removeKey));
   // Open route, but a signed-in user's own key is used when present.
-  api.post('/cover-letter', asyncHandler(auth.attachUser), asyncHandler(llm.generateCoverLetter));
+  api.post(
+    '/cover-letter',
+    asyncHandler(auth.attachUser),
+    requirePro,
+    asyncHandler(llm.generateCoverLetter),
+  );
   api.use((_req, res) => notFound(res));
 
   app.use('/api/v1', api);

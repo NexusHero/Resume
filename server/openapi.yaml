@@ -155,6 +155,10 @@ paths:
                     oneOf:
                       - $ref: '#/components/schemas/User'
                       - type: 'null'
+                  plan:
+                    type: string
+                    enum: [free, pro]
+                    description: The instance-wide subscription plan (ADR-0021).
 
   /auth/providers:
     get:
@@ -660,6 +664,9 @@ paths:
                 properties:
                   pitch: { $ref: '#/components/schemas/Pitch' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        # Representative Pro gate (ADR-0021); every generative route returns this
+        # on a Free plan. Full per-route annotation follows when the plan goes live.
+        '402': { $ref: '#/components/responses/PlanRequired' }
         '404': { $ref: '#/components/responses/NotFound' }
         '502': { $ref: '#/components/responses/UpstreamProblem' }
 
@@ -2271,6 +2278,11 @@ components:
           schema: { $ref: '#/components/schemas/Problem' }
     Forbidden:
       description: The session lacks the required role.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    PlanRequired:
+      description: The feature needs a higher subscription plan (ADR-0021). `type` is `about:blank#plan-required`.
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }

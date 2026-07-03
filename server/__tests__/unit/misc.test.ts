@@ -1,6 +1,27 @@
 import { SystemClock } from '../../src/adapters/system-clock';
 import { RandomIdGenerator } from '../../src/adapters/random-id-generator';
 import { loadConfig } from '../../src/config';
+import { planSatisfies } from '../../src/domain/plan';
+import { EnvPlanProvider } from '../../src/adapters/env-plan-provider';
+
+describe('plan (ADR-0021)', () => {
+  it('planSatisfies_ProCoversEverything_FreeCoversOnlyFree', () => {
+    expect(planSatisfies('pro', 'pro')).toBe(true);
+    expect(planSatisfies('pro', 'free')).toBe(true);
+    expect(planSatisfies('free', 'free')).toBe(true);
+    expect(planSatisfies('free', 'pro')).toBe(false);
+  });
+
+  it('EnvPlanProvider_ReturnsConfiguredPlan', async () => {
+    expect(await new EnvPlanProvider('free').planFor('team')).toBe('free');
+    expect(await new EnvPlanProvider('pro').planFor('team')).toBe('pro');
+  });
+
+  it('loadConfig_PlanDefaultsToProElseFree', () => {
+    expect(loadConfig({}).plan).toBe('pro');
+    expect(loadConfig({ PLAN: 'free' }).plan).toBe('free');
+  });
+});
 
 describe('SystemClock', () => {
   const clock = new SystemClock();

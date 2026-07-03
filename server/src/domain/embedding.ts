@@ -35,6 +35,17 @@ function features(word: string): string[] {
 }
 
 /**
+ * L2-normalize a vector so cosine similarity reduces to a plain dot product.
+ * Shared by the hashed embedder and the neural adapters (whose raw vectors are
+ * not always unit-length) so `cosine`/`similarityScore` stay in range whatever
+ * backend produced the vector.
+ */
+export function l2normalize(v: number[]): number[] {
+  const norm = Math.sqrt(v.reduce((acc, x) => acc + x * x, 0));
+  return norm === 0 ? v : v.map((x) => x / norm);
+}
+
+/**
  * Embed a text: every feature lands in a hashed bucket with a hash-derived
  * sign (cancels collision bias), weighted by log term frequency; the result
  * is L2-normalized so cosine reduces to a dot product.
@@ -50,8 +61,7 @@ export function embed(text: string): number[] {
     const sign = (h & 1) === 1 ? 1 : -1;
     v[(h >>> 1) % EMBEDDING_DIM]! += sign * (1 + Math.log(count));
   }
-  const norm = Math.sqrt(v.reduce((acc, x) => acc + x * x, 0));
-  return norm === 0 ? v : v.map((x) => x / norm);
+  return l2normalize(v);
 }
 
 /** Cosine similarity of two embeddings (–1…1; 0 when either text was empty). */

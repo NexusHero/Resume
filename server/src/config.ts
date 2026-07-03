@@ -39,6 +39,8 @@ export interface AppConfig {
   candidate: CandidateIdentity;
   /** LLM provider wiring for cover-letter generation. */
   llm: LlmConfig;
+  /** Embedding backend for hybrid matching (hashed default, Ollama/OpenAI opt-in). */
+  embedding: EmbeddingConfig;
   /** Pre-configured search run when /api/v1/jobs is called with no params. */
   defaultJobSearch: Record<string, unknown>;
   /** Which live job boards to query (none → offline sample). */
@@ -118,6 +120,16 @@ export interface LlmConfig {
   provider: LlmProviderId;
   anthropic: { apiKey: string; model: string };
   gemini: { apiKey: string; model: string };
+}
+
+/** Which embedding backend hybrid matching uses (ADR-0017, ADR-0020). */
+export interface EmbeddingConfig {
+  /** `hashed` (offline default), `ollama` (local neural), or `openai` (API). */
+  provider: 'hashed' | 'ollama' | 'openai';
+  ollama: { url: string; model: string };
+  openai: { apiKey: string; model: string; baseUrl: string };
+  /** Per-call timeout for the neural backends (ms). */
+  timeoutMs: number;
 }
 
 /** Live job-board wiring, resolved from the environment. */
@@ -205,6 +217,24 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
         apiKey: env.GEMINI_API_KEY ?? '',
         model: env.GEMINI_MODEL ?? 'gemini-2.5-flash',
       },
+    },
+    embedding: {
+      provider:
+        env.EMBEDDING_PROVIDER === 'ollama'
+          ? 'ollama'
+          : env.EMBEDDING_PROVIDER === 'openai'
+            ? 'openai'
+            : 'hashed',
+      ollama: {
+        url: (env.OLLAMA_URL ?? 'http://localhost:11434').replace(/\/+$/, ''),
+        model: env.OLLAMA_EMBED_MODEL ?? 'nomic-embed-text',
+      },
+      openai: {
+        apiKey: env.OPENAI_API_KEY ?? '',
+        model: env.OPENAI_EMBED_MODEL ?? 'text-embedding-3-small',
+        baseUrl: (env.OPENAI_BASE_URL ?? 'https://api.openai.com/v1').replace(/\/+$/, ''),
+      },
+      timeoutMs: Number(env.EMBEDDING_TIMEOUT_MS) || 10_000,
     },
     defaultJobSearch: { threshold: 80 },
     jobSources: {

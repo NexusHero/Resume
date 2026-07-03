@@ -11,5 +11,11 @@ export interface HttpResponse {
 
 export type HttpFetch = (
   url: string,
-  init?: { method?: string; headers?: Record<string, string>; body?: string },
+  init?: {
+    method?: string;
+    headers?: Record<string, string>;
+    body?: string;
+    /** Abort signal, e.g. from a per-call timeout; forwarded to global fetch. */
+    signal?: AbortSignal;
+  },
 ) => Promise<HttpResponse>;

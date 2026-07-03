@@ -81,7 +81,7 @@ See [`docs/umls/03_system_context.puml`](umls/03_system_context.puml).
 | Trust           | Deterministic LLM fallback + grounding self-check; no scraping, first-party data only.     | 0005, 0006, 0009 |
 | Security        | Auth + RBAC + team scope; CORS allow-list, headers, rate-limited creds, encrypted secrets. | 0004, 0010       |
 | Agency          | One in-process agent, single autonomy scale (`suggest`→`act`→`autopilot`), staged review.  | 0013, 0019       |
-| Matching        | Local hashed embeddings + hybrid lexical/semantic ranking; fully offline.                  | 0007, 0017       |
+| Matching        | Hashed embeddings + hybrid ranking (offline default); opt-in neural (Ollama/OpenAI).       | 0007, 0017, 0020 |
 | Evidence        | Outcome loop + learned forecast + KI-Audit-Trail and retention automation (EU-AI-Act).     | 0014, 0016, 0018 |
 
 ## 5. Building Block View
@@ -195,6 +195,7 @@ Full log in [`docs/adr/`](adr). Summary:
 | 0017 | Local hashed embeddings + hybrid matching                     | Accepted                       |
 | 0018 | Compliance automation (audit trail, retention, AGG engine)    | Accepted                       |
 | 0019 | Autopilot: the auto-apply gear of the one agent (CoRecruiter) | Accepted                       |
+| 0020 | Pluggable neural embeddings (Ollama, OpenAI) behind the port  | Accepted                       |
 
 ## 10. Quality Requirements
 
@@ -224,8 +225,10 @@ See [requirements.md](requirements.md) for the full FR/NFR catalogue. Verificati
   `runLlm` scaffold, and `AssistantService` gained the autopilot orchestration. Both are
   candidates for a follow-up split (the `ApplicationBuilder` extraction in ADR-0019 was a
   first step); the shared LLM idioms are also ripe for a small helper module.
-- **Embeddings are hashed-lexical, not neural** (ADR-0017): fully offline and deterministic
-  by design, but a pluggable neural provider behind the same port is a future upgrade.
+- **Embeddings default to hashed-lexical** (ADR-0017): fully offline and deterministic.
+  Neural backends are now opt-in behind the same port (ADR-0020) — `ollama` (local,
+  first-party) or `openai` (third-party API) — each degrading to hashed on any error, so
+  the offline default and the DSGVO story are preserved.
 - OpenAPI covers the full surface but is hand-kept, not generated from zod — drift is
   guarded only by review discipline and the docs acceptance tests (ADR-0012).
 - Some ports still have only a file adapter (e.g. `PdfArchive`); object storage is a

@@ -51,6 +51,12 @@ import { AutopilotService } from './services/autopilot-service';
 import { ApplicationBuilder } from './services/application-builder';
 import { DocumentService } from './services/document-service';
 import { DocumentAiService } from './services/document-ai-service';
+import { LlmFeatureRunner } from './services/llm-feature-runner';
+import { DocumentAssistService } from './services/document-assist-service';
+import { CvParseService } from './services/cv-parse-service';
+import { AtsAiService } from './services/ats-ai-service';
+import { OutreachAiService } from './services/outreach-ai-service';
+import { MatchAiService } from './services/match-ai-service';
 import { AttachmentService } from './services/attachment-service';
 import { AuthService } from './services/auth-service';
 import { MembersService } from './services/members-service';
@@ -180,6 +186,14 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     autopilotService: asClass(AutopilotService).singleton(),
     assistantService: asClass(AssistantService).singleton(),
     documentService: asClass(DocumentService).singleton(),
+    // AI feature services behind the shared runner (ADR-0022); documentAiService
+    // is a thin facade over them for the existing callers.
+    llmFeatureRunner: asClass(LlmFeatureRunner).singleton(),
+    documentAssistService: asClass(DocumentAssistService).singleton(),
+    cvParseService: asClass(CvParseService).singleton(),
+    atsAiService: asClass(AtsAiService).singleton(),
+    outreachAiService: asClass(OutreachAiService).singleton(),
+    matchAiService: asClass(MatchAiService).singleton(),
     documentAiService: asClass(DocumentAiService).singleton(),
     attachmentService: asClass(AttachmentService).singleton(),
     authService: asClass(AuthService).singleton(),

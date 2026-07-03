@@ -1,4 +1,5 @@
-import { DocumentAiService } from '../../src/services/document-ai-service';
+import type { DocumentAiService } from '../../src/services/document-ai-service';
+import { buildDocumentAiService } from '../support/build-document-ai';
 import { DocumentService } from '../../src/services/document-service';
 import { LlmService } from '../../src/services/llm-service';
 import { NotFoundError, ValidationError } from '../../src/domain/errors';
@@ -86,7 +87,7 @@ function ctx(stub: ProviderStub = {}, pdfText: string | Error = '', logger = noo
   });
   const observations = new InMemoryInterviewObservationRepository();
   const artifacts = new InMemoryArtifactLogRepository();
-  const service = new DocumentAiService({
+  const service = buildDocumentAiService({
     documentService,
     llmService: llm,
     apiKeyStore: keys,

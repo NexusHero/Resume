@@ -1,7 +1,7 @@
 import { TalentImportService } from '../../src/services/talent-import-service';
 import { TalentService } from '../../src/services/talent-service';
 import { DocumentService } from '../../src/services/document-service';
-import { DocumentAiService } from '../../src/services/document-ai-service';
+import { buildDocumentAiService } from '../support/build-document-ai';
 import { LlmService } from '../../src/services/llm-service';
 import { importedName, importedSkills } from '../../src/domain/talent-import';
 import { emptyResume } from '../../src/domain/talent-documents';
@@ -54,7 +54,7 @@ function ctx(generate?: (p: string) => string, pdfText = 'Extracted CV text.') {
       usage: { inputTokens: 5, outputTokens: 7 },
     }),
   };
-  const documentAiService = new DocumentAiService({
+  const documentAiService = buildDocumentAiService({
     documentService,
     llmService: new LlmService({
       providers: [provider],

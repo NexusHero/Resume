@@ -197,6 +197,7 @@ Full log in [`docs/adr/`](adr). Summary:
 | 0019 | Autopilot: the auto-apply gear of the one agent (CoRecruiter) | Accepted                       |
 | 0020 | Pluggable neural embeddings (Ollama, OpenAI) behind the port  | Accepted                       |
 | 0021 | Pro/Free plan gating at one HTTP seam (license deferred)      | Accepted                       |
+| 0022 | Split DocumentAiService into a runner + five services         | Accepted                       |
 
 ## 10. Quality Requirements
 
@@ -222,10 +223,12 @@ See [requirements.md](requirements.md) for the full FR/NFR catalogue. Verificati
   scope/userId naming drift fixed. Remaining known debt: the triple manual wiring lists
   (container / AppDeps / index imports) and one domain→ports type import
   (`usage.ts` → `llm-provider`).
-- **God classes to watch:** `DocumentAiService` now carries ten AI features behind one
-  `runLlm` scaffold, and `AssistantService` gained the autopilot orchestration. Both are
-  candidates for a follow-up split (the `ApplicationBuilder` extraction in ADR-0019 was a
-  first step); the shared LLM idioms are also ripe for a small helper module.
+- **God classes to watch:** `DocumentAiService`'s ten AI features were split (ADR-0022)
+  into a shared `LlmFeatureRunner` plus five single-concern services, with the old class
+  kept as a thin logic-free facade so callers are unchanged; the shared LLM idiom now has
+  one home. `AssistantService` still carries the autopilot orchestration and remains a
+  candidate for the same treatment (the `ApplicationBuilder` extraction in ADR-0019 was a
+  first step).
 - **Embeddings default to hashed-lexical** (ADR-0017): fully offline and deterministic.
   Neural backends are now opt-in behind the same port (ADR-0020) — `ollama` (local,
   first-party) or `openai` (third-party API) — each degrading to hashed on any error, so

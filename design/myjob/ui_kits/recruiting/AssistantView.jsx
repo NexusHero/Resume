@@ -36,6 +36,7 @@ function AvModePill({ active, onClick, label, hint }) {
 }
 
 function AssistantView({ onChanged }) {
+  const { isMobile } = useViewport();
   const [settings, setSettings] = React.useState(null); // null = loading
   const [counts, setCounts] = React.useState({});
   const [queue, setQueue] = React.useState([]);
@@ -174,7 +175,7 @@ function AssistantView({ onChanged }) {
         ) : (
           <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column' }}>
             {proposed.map((s) => (
-              <div key={s.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
+              <div key={s.id} style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'flex-start', gap: '12px', padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
                 <span style={{ flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: '9.5px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: AV_KIND_COLORS[s.kind] || 'var(--text-soft)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '3px 9px', marginTop: '2px' }}>
                   {AV_KIND_LABELS[s.kind] || s.kind}
                 </span>
@@ -199,7 +200,7 @@ function AssistantView({ onChanged }) {
                     </div>
                   )}
                 </div>
-                <div style={{ flexShrink: 0, display: 'flex', gap: '8px' }}>
+                <div style={{ flexShrink: 0, display: 'flex', gap: '8px', justifyContent: isMobile ? 'flex-end' : 'flex-start' }}>
                   <AV.Button variant="primary" size="sm" onClick={() => resolve(s.id, 'accept')}>{s.kind === 'application' ? 'Approve' : 'Accept'}</AV.Button>
                   <AV.Button variant="ghost" size="sm" onClick={() => resolve(s.id, 'dismiss')}>Dismiss</AV.Button>
                 </div>

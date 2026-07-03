@@ -22,6 +22,7 @@ import './Editor.jsx';
 import './MappeModal.jsx';
 import './RecordFormModal.jsx';
 import './Matching.jsx';
+import './AssistantView.jsx';
 import './SettingsView.jsx';
 import './Login.jsx';
 import './app.jsx';

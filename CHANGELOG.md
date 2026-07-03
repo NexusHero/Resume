@@ -59,6 +59,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Added
 
+- **The Assistant** — an agent that prepares the desk (ADR-0013): it
+  shortlists pool candidates for active mandates (with score + matched
+  skills as the rationale), flags pipeline cards that sat untouched for a
+  week, and flags talents too empty to match. It runs on the server on a
+  configurable schedule — also while everyone is signed out — and stages
+  everything in a review queue (Accept/Dismiss; dismissed is never
+  re-proposed). Autonomy is a setting: "Suggest" stages only, "Act" applies
+  internal reversible actions itself (visibly auto-applied). It never
+  contacts anyone, never deletes, and spends no AI tokens in v1.
 - **A browsable API reference** — the OpenAPI 3.1 contract in
   `server/openapi.yaml` now covers the full REST surface (auth, recruiting,
   documents/AI, settings, team, DSGVO — previously only the applicant-side

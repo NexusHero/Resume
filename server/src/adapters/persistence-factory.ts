@@ -15,6 +15,10 @@ import type { EmailVerificationTokenStore } from '../ports/email-verification-to
 import type { ApiKeyStore } from '../ports/api-key-store';
 import type { UsageMeter } from '../ports/usage-meter';
 import type { InterviewObservationRepository } from '../ports/interview-observation-repository';
+import type {
+  AssistantSettingsStore,
+  AssistantSuggestionRepository,
+} from '../ports/assistant-store';
 import type { Clock } from '../ports/clock';
 import { FsApplicationRepository } from './fs-application-repository';
 import { FsAuditLog } from './fs-audit-log';
@@ -32,6 +36,7 @@ import { FsEmailVerificationTokenStore } from './fs-email-verification-token-sto
 import { FsApiKeyStore } from './fs-api-key-store';
 import { FsUsageMeter } from './fs-usage-meter';
 import { FsInterviewObservationRepository } from './fs-interview-observation-repository';
+import { FsAssistantSettingsStore, FsAssistantSuggestionRepository } from './fs-assistant-store';
 import { SecretCipher } from './secret-cipher';
 import { SqlApplicationRepository } from './sql/sql-application-repository';
 import { SqlAuditLog } from './sql/sql-audit-log';
@@ -49,6 +54,10 @@ import { SqlEmailVerificationTokenStore } from './sql/sql-email-verification-tok
 import { SqlApiKeyStore } from './sql/sql-api-key-store';
 import { SqlUsageMeter } from './sql/sql-usage-meter';
 import { SqlInterviewObservationRepository } from './sql/sql-interview-observation-repository';
+import {
+  SqlAssistantSettingsStore,
+  SqlAssistantSuggestionRepository,
+} from './sql/sql-assistant-store';
 import type { Db } from './sql/db';
 
 /** The storage ports, resolved to one backend. */
@@ -69,6 +78,8 @@ export interface Persistence {
   apiKeyStore: ApiKeyStore;
   usageMeter: UsageMeter;
   interviewObservationRepository: InterviewObservationRepository;
+  assistantSettingsStore: AssistantSettingsStore;
+  assistantSuggestionRepository: AssistantSuggestionRepository;
 }
 
 /**
@@ -98,6 +109,8 @@ export function createPersistence(deps: { config: AppConfig; clock: Clock; db?: 
       apiKeyStore: new SqlApiKeyStore({ db, secretCipher }),
       usageMeter: new SqlUsageMeter({ db }),
       interviewObservationRepository: new SqlInterviewObservationRepository({ db }),
+      assistantSettingsStore: new SqlAssistantSettingsStore({ db }),
+      assistantSuggestionRepository: new SqlAssistantSuggestionRepository({ db }),
     };
   }
   return {
@@ -117,5 +130,7 @@ export function createPersistence(deps: { config: AppConfig; clock: Clock; db?: 
     apiKeyStore: new FsApiKeyStore({ config, secretCipher }),
     usageMeter: new FsUsageMeter({ config }),
     interviewObservationRepository: new FsInterviewObservationRepository({ config }),
+    assistantSettingsStore: new FsAssistantSettingsStore({ config }),
+    assistantSuggestionRepository: new FsAssistantSuggestionRepository({ config }),
   };
 }

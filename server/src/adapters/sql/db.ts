@@ -190,5 +190,24 @@ export async function migrate(pool: Pool): Promise<void> {
       at text NOT NULL
     );
     CREATE INDEX IF NOT EXISTS interview_observations_company_idx ON interview_observations (owner_id, company_key);
+    CREATE TABLE IF NOT EXISTS assistant_settings (
+      owner_id text PRIMARY KEY,
+      settings jsonb NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS assistant_suggestions (
+      id text PRIMARY KEY,
+      owner_id text NOT NULL,
+      kind text NOT NULL,
+      title text NOT NULL,
+      rationale text NOT NULL,
+      mandate_id text,
+      talent_id text,
+      payload jsonb NOT NULL,
+      status text NOT NULL,
+      created_at text NOT NULL,
+      resolved_at text,
+      run_id text NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS assistant_suggestions_owner_idx ON assistant_suggestions (owner_id, status);
   `);
 }

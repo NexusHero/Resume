@@ -19,6 +19,9 @@ import type { UsageController } from './http/usage-controller';
 import type { ComplianceController } from './http/compliance-controller';
 import type { ForecastController } from './http/forecast-controller';
 import type { ObservationController } from './http/observation-controller';
+import type { AssistantController } from './http/assistant-controller';
+import type { AssistantService } from './services/assistant-service';
+import { TEAM_SCOPE } from './http/current-user';
 import type { DocumentController } from './http/document-controller';
 import type { AttachmentController } from './http/attachment-controller';
 import type { AuthController } from './http/auth-controller';
@@ -56,6 +59,7 @@ async function main(): Promise<void> {
     complianceController: container.resolve<ComplianceController>('complianceController'),
     forecastController: container.resolve<ForecastController>('forecastController'),
     observationController: container.resolve<ObservationController>('observationController'),
+    assistantController: container.resolve<AssistantController>('assistantController'),
     documentController: container.resolve<DocumentController>('documentController'),
     attachmentController: container.resolve<AttachmentController>('attachmentController'),
     authController: container.resolve<AuthController>('authController'),
@@ -65,6 +69,20 @@ async function main(): Promise<void> {
     config,
     logger,
   });
+
+  // The assistant's scheduler: a light minute-tick asks the service whether a
+  // run is due (enabled + interval elapsed). unref() keeps it from blocking
+  // shutdown; failures are logged, never fatal.
+  const assistantService = container.resolve<AssistantService>('assistantService');
+  const assistantTimer = setInterval(() => {
+    assistantService.runIfDue(TEAM_SCOPE).catch((err: unknown) => {
+      logger.warn(
+        { err: err instanceof Error ? err.message : String(err) },
+        'assistant scheduled run failed',
+      );
+    });
+  }, 60_000);
+  assistantTimer.unref();
 
   const server = app.listen(config.port, () => {
     logger.info(

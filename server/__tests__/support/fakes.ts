@@ -35,6 +35,11 @@ import type { LlmProviderId } from '../../src/ports/llm-provider';
 import type { UsageMeter } from '../../src/ports/usage-meter';
 import type { UsageEvent } from '../../src/domain/usage';
 import type { InterviewObservationRepository } from '../../src/ports/interview-observation-repository';
+import type {
+  AssistantSettingsStore,
+  AssistantSuggestionRepository,
+} from '../../src/ports/assistant-store';
+import type { AssistantSettings, AssistantSuggestion } from '../../src/domain/assistant';
 import type { InterviewObservation } from '../../src/domain/interview-observation';
 
 export class InMemoryApplicationRepository implements ApplicationRepository {
@@ -473,6 +478,36 @@ export class InMemoryInterviewObservationRepository implements InterviewObservat
   }
   async list(ownerId: string): Promise<InterviewObservation[]> {
     return this.rows.filter((o) => o.ownerId === ownerId).sort((a, b) => b.at.localeCompare(a.at));
+  }
+}
+
+export class InMemoryAssistantSettingsStore implements AssistantSettingsStore {
+  rows = new Map<string, AssistantSettings>();
+  async get(ownerId: string): Promise<AssistantSettings | null> {
+    return this.rows.get(ownerId) ?? null;
+  }
+  async set(ownerId: string, settings: AssistantSettings): Promise<void> {
+    this.rows.set(ownerId, settings);
+  }
+}
+
+export class InMemoryAssistantSuggestionRepository implements AssistantSuggestionRepository {
+  rows: AssistantSuggestion[] = [];
+  async list(ownerId: string): Promise<AssistantSuggestion[]> {
+    return this.rows
+      .filter((s) => s.ownerId === ownerId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+  async findById(ownerId: string, id: string): Promise<AssistantSuggestion | null> {
+    return this.rows.find((s) => s.ownerId === ownerId && s.id === id) ?? null;
+  }
+  async add(suggestion: AssistantSuggestion): Promise<void> {
+    this.rows.push(suggestion);
+  }
+  async update(suggestion: AssistantSuggestion): Promise<void> {
+    this.rows = this.rows.map((s) =>
+      s.ownerId === suggestion.ownerId && s.id === suggestion.id ? suggestion : s,
+    );
   }
 }
 

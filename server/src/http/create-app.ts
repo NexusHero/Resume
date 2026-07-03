@@ -28,6 +28,7 @@ import { asyncHandler } from './async-handler';
 import { errorHandler, notFound, sendProblem } from './problem';
 import { corsMiddleware, securityHeaders, recruitingCsp, RECRUITING_KIT_PREFIX } from './security';
 import { registerApiDocs } from './api-docs';
+import type { AssistantController } from './assistant-controller';
 
 export interface AppDeps {
   applicationController: ApplicationController;
@@ -46,6 +47,7 @@ export interface AppDeps {
   complianceController: ComplianceController;
   forecastController: ForecastController;
   observationController: ObservationController;
+  assistantController: AssistantController;
   documentController: DocumentController;
   attachmentController: AttachmentController;
   authController: AuthController;
@@ -75,6 +77,7 @@ export function createApp(deps: AppDeps): Express {
     complianceController: compliance,
     forecastController: forecast,
     observationController: observations,
+    assistantController: assistant,
     documentController: docs,
     attachmentController: att,
     authController: auth,
@@ -203,6 +206,13 @@ export function createApp(deps: AppDeps): Express {
   api.post('/compliance/agg-check', requireAuth, asyncHandler(compliance.aggCheck));
   // Weighted pipeline revenue forecast across the team's live mandates.
   api.get('/forecast', requireAuth, asyncHandler(forecast.get));
+  // The assistant: settings, manual run, and the reviewable suggestion queue.
+  api.get('/assistant', requireAuth, asyncHandler(assistant.overview));
+  api.put('/assistant', requireAuth, asyncHandler(assistant.updateSettings));
+  api.post('/assistant/run', requireAuth, asyncHandler(assistant.run));
+  api.get('/assistant/suggestions', requireAuth, asyncHandler(assistant.list));
+  api.post('/assistant/suggestions/:id/accept', requireAuth, asyncHandler(assistant.accept));
+  api.post('/assistant/suggestions/:id/dismiss', requireAuth, asyncHandler(assistant.dismiss));
   // The provider choice is per user (persisted); signed-out callers see the default.
   api.get('/settings/llm', asyncHandler(auth.attachUser), asyncHandler(llm.settings));
   api.put('/settings/llm', requireAuth, asyncHandler(llm.setProvider));

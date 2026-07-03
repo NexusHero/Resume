@@ -34,6 +34,10 @@ const NAV_SECTIONS = [
     label: 'Insights',
     items: [{ id: 'berichte', label: 'Reports', icon: 'trend' }],
   },
+  {
+    label: 'Automation',
+    items: [{ id: 'assistant', label: 'Assistant', icon: 'zap' }],
+  },
 ];
 
 /* Pinned utilities, rendered at the bottom of the rail. */

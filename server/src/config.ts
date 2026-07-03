@@ -25,6 +25,8 @@ export interface AppConfig {
   apiKeysFile: string;
   usageFile: string;
   interviewObservationsFile: string;
+  assistantSettingsFile: string;
+  assistantSuggestionsFile: string;
   staticDir: string;
   /** Repo-relative paths the Versioner stages on each change. */
   versionedPaths: string[];
@@ -165,6 +167,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     apiKeysFile: path.join(storeDir, 'api-keys.json'),
     usageFile: path.join(storeDir, 'usage.json'),
     interviewObservationsFile: path.join(storeDir, 'interview-observations.json'),
+    assistantSettingsFile: path.join(storeDir, 'assistant-settings.json'),
+    assistantSuggestionsFile: path.join(storeDir, 'assistant-suggestions.json'),
     staticDir: rootDir,
     versionedPaths: ['archive/bewerbungen'],
     candidateProfile: CANDIDATE_PROFILE,

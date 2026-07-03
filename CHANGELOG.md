@@ -63,6 +63,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Added
 
+- **Compliance automation** — three tools that were one step short are now
+  actionable end to end (ADR-0018): a **KI-Audit-Trail** exports the per-call
+  AI processing record (model, feature, tokens, cost, timestamp) as JSON or a
+  CSV from the usage card; **Löschfristen-Automatik** adds a hard deletion
+  deadline beside the review window — overdue candidates can be cleared one by
+  one, in bulk, or by an opt-in background sweep (anonymize-only, admin-only,
+  off by default); and the **AGG-Schreibhilfe** turns a flagged job ad into a
+  neutral draft in one click, replacing the phrases it safely can and
+  surfacing the ones that need a human decision.
 - **Matching v2 — hybrid ranking with local embeddings** — the pool ranking
   now blends the skill/ontology score (70%) with text similarity between the
   job ad and the candidate's full profile (30%), computed by local hashed

@@ -23,6 +23,7 @@ import type { AssistantController } from './http/assistant-controller';
 import type { ArtifactController } from './http/artifact-controller';
 import type { AssistantService } from './services/assistant-service';
 import type { MailService } from './services/mail-service';
+import type { RetentionService } from './services/retention-service';
 import type { MailController } from './http/mail-controller';
 import { TEAM_SCOPE } from './http/current-user';
 import type { DocumentController } from './http/document-controller';
@@ -103,6 +104,15 @@ async function main(): Promise<void> {
       'reply sync enabled (IMAP mailbox configured)',
     );
   }
+
+  // Löschfristen-Automatik: an hourly sweep anonymizes candidates past the
+  // deletion deadline — but only for teams whose policy opts in (checked each
+  // tick). unref()ed, never fatal.
+  const retentionService = container.resolve<RetentionService>('retentionService');
+  const retentionTimer = setInterval(() => {
+    void retentionService.runAutoAnonymizeIfDue(TEAM_SCOPE);
+  }, 60 * 60_000);
+  retentionTimer.unref();
 
   const server = app.listen(config.port, () => {
     logger.info(

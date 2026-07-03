@@ -112,6 +112,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     usageMeter: asValue(persistence.usageMeter),
     interviewObservationRepository: asValue(persistence.interviewObservationRepository),
     assistantSettingsStore: asValue(persistence.assistantSettingsStore),
+    retentionPolicyStore: asValue(persistence.retentionPolicyStore),
     assistantSuggestionRepository: asValue(persistence.assistantSuggestionRepository),
     artifactLogRepository: asValue(persistence.artifactLogRepository),
     stageTransitionRepository: asValue(persistence.stageTransitionRepository),

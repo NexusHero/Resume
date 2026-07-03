@@ -32,6 +32,8 @@ import type { EmailVerificationTokenStore } from '../../src/ports/email-verifica
 import type { Mailer, MailMessage } from '../../src/ports/mailer';
 import type { InboxSource } from '../../src/ports/inbox-source';
 import type { StageTransitionRepository } from '../../src/ports/stage-transition-repository';
+import type { RetentionPolicyStore } from '../../src/ports/retention-policy-store';
+import type { RetentionPolicy } from '../../src/domain/retention';
 import type { StageTransition } from '../../src/domain/stage-history';
 import type { InboxMessage } from '../../src/domain/mail-sync';
 import type { ApiKeyStore } from '../../src/ports/api-key-store';
@@ -437,6 +439,16 @@ export class RecordingMailer implements Mailer {
   async send(message: MailMessage): Promise<void> {
     if (this.failWith) throw this.failWith;
     this.sent.push(message);
+  }
+}
+
+export class InMemoryRetentionPolicyStore implements RetentionPolicyStore {
+  policies = new Map<string, RetentionPolicy>();
+  async get(ownerId: string): Promise<RetentionPolicy | null> {
+    return this.policies.get(ownerId) ?? null;
+  }
+  async set(ownerId: string, policy: RetentionPolicy): Promise<void> {
+    this.policies.set(ownerId, policy);
   }
 }
 

@@ -26,6 +26,7 @@ import {
 } from '../../src/adapters/fs-assistant-store';
 import { FsArtifactLogRepository } from '../../src/adapters/fs-artifact-log-repository';
 import { FsStageTransitionRepository } from '../../src/adapters/fs-stage-transition-repository';
+import { FsRetentionPolicyStore } from '../../src/adapters/fs-retention-policy-store';
 import { SecretCipher } from '../../src/adapters/secret-cipher';
 import { FixedClock } from '../support/fakes';
 import type { Application, AuditEvent } from '../../src/domain/application';
@@ -64,6 +65,7 @@ function tmpConfig(): AppConfig {
     assistantSuggestionsFile: path.join(storeDir, 'assistant-suggestions.json'),
     artifactLogFile: path.join(storeDir, 'artifact-log.json'),
     stageTransitionsFile: path.join(storeDir, 'stage-transitions.json'),
+    retentionPolicyFile: path.join(storeDir, 'retention-policy.json'),
     staticDir: rootDir,
     versionedPaths: ['bewerbungen'],
     candidateProfile: { skills: [] },
@@ -1148,6 +1150,29 @@ describe('FsArtifactLogRepository', () => {
     await fs.mkdir(config.storeDir, { recursive: true });
     await fs.writeFile(config.artifactLogFile, 'not json');
     expect(await new FsArtifactLogRepository({ config }).list('team')).toEqual([]);
+  });
+});
+
+describe('FsRetentionPolicyStore', () => {
+  it('SetThenGet_RoundTrips_PerOwner_SurvivesRestart', async () => {
+    const config = tmpConfig();
+    const store = new FsRetentionPolicyStore({ config });
+    await store.set('team', { reviewDays: 90, deletionDays: 200, autoAnonymize: true });
+    // a fresh instance (restart) still sees it; other owners are untouched
+    const fresh = new FsRetentionPolicyStore({ config });
+    expect(await fresh.get('team')).toEqual({
+      reviewDays: 90,
+      deletionDays: 200,
+      autoAnonymize: true,
+    });
+    expect(await fresh.get('nobody')).toBeNull();
+  });
+
+  it('MalformedFile_ReturnsNull', async () => {
+    const config = tmpConfig();
+    await fs.mkdir(config.storeDir, { recursive: true });
+    await fs.writeFile(config.retentionPolicyFile, 'not json');
+    expect(await new FsRetentionPolicyStore({ config }).get('team')).toBeNull();
   });
 });
 

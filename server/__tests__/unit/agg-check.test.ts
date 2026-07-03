@@ -1,4 +1,4 @@
-import { checkAgg, aggCheckSchema } from '../../src/domain/agg-check';
+import { checkAgg, aggCheckSchema, rewriteAgg } from '../../src/domain/agg-check';
 
 describe('agg-check domain', () => {
   it('CleanText_NoMarker_ReportsNoneButHintsMarker', () => {
@@ -76,5 +76,39 @@ describe('agg-check domain', () => {
 
   it('Schema_DefaultsEmptyText', () => {
     expect(aggCheckSchema.parse({})).toEqual({ text: '' });
+  });
+});
+
+describe('rewriteAgg — the AGG writing aid', () => {
+  it('Rewrite_ReplacesSafePhrases_ReportsEdits', () => {
+    const r = rewriteAgg('Wir sind ein junges dynamisches Team und suchen Digital Natives.');
+    expect(r.changed).toBe(true);
+    expect(r.text).toContain('motiviertes Team');
+    expect(r.text).toContain('sicherer Umgang mit digitalen Tools');
+    expect(r.text).not.toMatch(/digital natives/i);
+    expect(r.edits.map((e) => e.to)).toEqual(
+      expect.arrayContaining(['motiviertes Team', 'sicherer Umgang mit digitalen Tools']),
+    );
+  });
+
+  it('Rewrite_LeavesHardCasesUnresolved', () => {
+    // an age limit has no safe mechanical rewrite — flagged, not changed
+    const r = rewriteAgg('Bewerber max. 35 Jahre, keine Ausländer.');
+    expect(r.changed).toBe(false);
+    expect(r.unresolved.some((f) => f.category === 'alter')).toBe(true);
+    expect(r.unresolved.some((f) => f.category === 'herkunft')).toBe(true);
+  });
+
+  it('Rewrite_CleanText_NoChange', () => {
+    const r = rewriteAgg('Wir suchen eine erfahrene Fachkraft (m/w/d).');
+    expect(r.changed).toBe(false);
+    expect(r.edits).toEqual([]);
+    expect(r.unresolved).toEqual([]);
+  });
+
+  it('Rewrite_ResolvedPhrasesLeaveNoResidualFinding', () => {
+    const r = rewriteAgg('Muttersprachler Deutsch gewünscht.');
+    expect(r.text).toContain('verhandlungssicheres Deutsch (C1)');
+    expect(r.unresolved.some((f) => f.category === 'herkunft')).toBe(false);
   });
 });

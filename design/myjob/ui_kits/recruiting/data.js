@@ -158,6 +158,25 @@ const RecruitApi = {
     );
     return data.talent;
   },
+  async getRetentionPolicy() {
+    // { reviewDays, deletionDays, autoAnonymize }
+    return _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/retention/policy`));
+  },
+  async updateRetentionPolicy(patch) {
+    return _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/retention/policy`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(patch),
+      }),
+    );
+  },
+  async anonymizeOverdue() {
+    // { overdue, anonymized, talentIds[] }
+    return _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/retention/anonymize-overdue`, { method: 'POST' }),
+    );
+  },
   async authProviders() {
     try {
       return await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/auth/providers`));
@@ -245,10 +264,28 @@ const RecruitApi = {
       }),
     );
   },
+  async aggRewrite(text) {
+    // { text, changed, edits[], unresolved[] }
+    return _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/compliance/agg-rewrite`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ text }),
+      }),
+    );
+  },
   /* ---- AI usage counter (per-user requests / tokens / cost) ---- */
   async getUsage() {
     // { requests, inputTokens, outputTokens, totalTokens, costUsd, byProvider[], byFeature[] }
     return _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/settings/usage`));
+  },
+  async getUsageAudit() {
+    // [{ at, provider, feature, inputTokens, outputTokens, costUsd }] newest first
+    return _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/settings/usage/audit`));
+  },
+  usageAuditCsvUrl() {
+    // download URL for the KI-Audit-Trail CSV (same-origin, cookie-authenticated)
+    return `${RECRUIT_API_BASE}/settings/usage/audit.csv`;
   },
   /* ---- LLM settings (active provider + availability) ---- */
   async getLlmSettings() {

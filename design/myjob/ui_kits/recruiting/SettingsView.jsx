@@ -219,6 +219,14 @@ function ComplianceCard() {
   const [isAdmin, setIsAdmin] = React.useState(null); // null = unknown
   const [items, setItems] = React.useState(null); // null = loading
   const [busy, setBusy] = React.useState('');
+  const [policy, setPolicy] = React.useState(null);
+  const [sweeping, setSweeping] = React.useState(false);
+
+  const reload = React.useCallback(() => {
+    return window.RecruitApi.retentionReport()
+      .then((r) => setItems(r))
+      .catch(() => setItems([]));
+  }, []);
 
   React.useEffect(() => {
     let alive = true;
@@ -230,6 +238,7 @@ function ComplianceCard() {
         if (!alive) return;
         setIsAdmin(admin);
         if (!admin) { setItems([]); return; }
+        window.RecruitApi.getRetentionPolicy().then((p) => { if (alive) setPolicy(p); }).catch(() => {});
         return window.RecruitApi.retentionReport()
           .then((r) => { if (alive) setItems(r); })
           .catch(() => { if (alive) setItems([]); });
@@ -250,17 +259,68 @@ function ComplianceCard() {
     setBusy('');
   };
 
+  const savePolicy = async (patch) => {
+    const next = { ...policy, ...patch };
+    setPolicy(next); // optimistic
+    try {
+      const saved = await window.RecruitApi.updateRetentionPolicy(patch);
+      setPolicy(saved);
+      reload();
+    } catch { /* ignore */ }
+  };
+
+  const sweepOverdue = async () => {
+    if (sweeping) return;
+    // eslint-disable-next-line no-alert
+    if (!window.confirm('Anonymize every candidate past the deletion deadline? This cannot be undone.')) return;
+    setSweeping(true);
+    try {
+      await window.RecruitApi.anonymizeOverdue();
+      await reload();
+    } catch { /* ignore */ }
+    setSweeping(false);
+  };
+
   if (isAdmin === false) return null; // compliance is admin-only
+
+  const overdueCount = (items || []).filter((i) => i.overdue).length;
 
   return (
     <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '22px 24px' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
         <div style={{ flex: 1 }}>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>Data retention (DSGVO)</h2>
-          <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Candidates with no active pipeline for a while. Nothing is deleted automatically — review and anonymize when appropriate.</div>
+          <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Candidates with no active pipeline for a while. Past the deletion deadline they are overdue — anonymize on review, in bulk, or let the automatic sweep clear them.</div>
         </div>
-        {items && <span style={{ flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '4px 10px' }}>{items.length} due</span>}
+        {items && <span style={{ flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '4px 10px' }}>{items.length} due{overdueCount > 0 ? ` · ${overdueCount} overdue` : ''}</span>}
       </div>
+
+      {/* Löschfristen policy: review window, deletion deadline, auto-anonymize */}
+      {policy && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px 18px', marginTop: '14px', padding: '12px 14px', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-md)' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '12px', color: 'var(--text-muted)' }}>
+            Review after
+            <input type="number" min="1" max="3650" value={policy.reviewDays} onChange={(e) => setPolicy({ ...policy, reviewDays: Number(e.target.value) })} onBlur={(e) => savePolicy({ reviewDays: Number(e.target.value) })} style={{ width: '64px', padding: '4px 7px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-card)', color: 'var(--text-heading)', fontFamily: 'var(--font-mono)', fontSize: '12px' }} />
+            days
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '12px', color: 'var(--text-muted)' }}>
+            Delete after
+            <input type="number" min="1" max="3650" value={policy.deletionDays} onChange={(e) => setPolicy({ ...policy, deletionDays: Number(e.target.value) })} onBlur={(e) => savePolicy({ deletionDays: Number(e.target.value) })} style={{ width: '64px', padding: '4px 7px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-card)', color: 'var(--text-heading)', fontFamily: 'var(--font-mono)', fontSize: '12px' }} />
+            days
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '12px', color: 'var(--text-muted)', cursor: 'pointer' }}>
+            <input type="checkbox" checked={policy.autoAnonymize} onChange={(e) => savePolicy({ autoAnonymize: e.target.checked })} />
+            Auto-anonymize overdue (runs on the server)
+          </label>
+        </div>
+      )}
+
+      {overdueCount > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginTop: '12px', padding: '10px 14px', background: 'var(--danger-soft, rgba(200,50,50,0.08))', border: '1px solid var(--danger)', borderRadius: 'var(--radius-md)' }}>
+          <span style={{ fontSize: '12.5px', color: 'var(--danger)' }}>{overdueCount} candidate{overdueCount === 1 ? ' is' : 's are'} past the deletion deadline.</span>
+          <button type="button" onClick={sweepOverdue} disabled={sweeping} style={{ cursor: sweeping ? 'default' : 'pointer', border: '1px solid var(--danger)', borderRadius: 'var(--radius-pill)', background: 'var(--danger)', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '5px 14px', whiteSpace: 'nowrap' }}>{sweeping ? 'Anonymizing…' : `Anonymize all overdue`}</button>
+        </div>
+      )}
 
       {items === null ? (
         <div style={{ padding: '28px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Loading…</div>
@@ -274,7 +334,7 @@ function ComplianceCard() {
                 <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-heading)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{it.name}</div>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>{it.role || '—'}</div>
               </div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11.5px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{it.inactiveDays}d inactive</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11.5px', color: it.overdue ? 'var(--danger)' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>{it.inactiveDays}d inactive{it.overdue ? ' · overdue' : ''}</div>
               <button type="button" onClick={() => anonymize(it)} disabled={busy === it.talentId} style={{ cursor: busy ? 'default' : 'pointer', border: '1px solid var(--danger)', borderRadius: 'var(--radius-pill)', background: 'none', color: 'var(--danger)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '4px 12px' }}>{busy === it.talentId ? 'Anonymizing…' : 'Anonymize'}</button>
             </div>
           ))}
@@ -341,6 +401,9 @@ function UsageCard() {
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>AI usage</h2>
           <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>What your account has spent on AI so far. The cost is an estimate from public list prices, not a bill.</div>
         </div>
+        {usage && usage.requests > 0 && (
+          <a href={window.RecruitApi.usageAuditCsvUrl()} download title="Download the per-call AI audit trail (CSV)" style={{ flexShrink: 0, textDecoration: 'none', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', padding: '5px 12px' }}>Audit trail (CSV)</a>
+        )}
       </div>
 
       {error ? (

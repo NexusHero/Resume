@@ -1,4 +1,10 @@
-import { summarizeUsage, type UsageSummary } from '../domain/usage';
+import {
+  summarizeUsage,
+  buildAuditTrail,
+  auditTrailToCsv,
+  type UsageSummary,
+  type AuditEntry,
+} from '../domain/usage';
 import type { UsageMeter } from '../ports/usage-meter';
 
 export interface UsageServiceDeps {
@@ -20,5 +26,15 @@ export class UsageService {
 
   async summaryFor(userId: string): Promise<UsageSummary> {
     return summarizeUsage(await this.meter.list(userId));
+  }
+
+  /** The per-call AI audit trail (KI-Audit-Trail), newest first. */
+  async auditFor(userId: string): Promise<AuditEntry[]> {
+    return buildAuditTrail(await this.meter.list(userId));
+  }
+
+  /** The same trail serialized as an Excel-safe CSV for export. */
+  async auditCsvFor(userId: string): Promise<string> {
+    return auditTrailToCsv(await this.auditFor(userId));
   }
 }

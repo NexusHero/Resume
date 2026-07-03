@@ -1483,6 +1483,72 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
 
+  /retention/policy:
+    get:
+      tags: [Compliance & DSGVO]
+      summary: The team's retention policy (review window, deletion deadline, auto-anonymize)
+      operationId: getRetentionPolicy
+      security:
+        - cookieSession: []
+      responses:
+        '200':
+          description: The stored policy (or defaults until one is set).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RetentionPolicy' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    put:
+      tags: [Compliance & DSGVO]
+      summary: Update the retention policy (admin)
+      description: >-
+        The review window is clamped to at most the deletion deadline. Enabling
+        `autoAnonymize` lets a server-side sweep anonymize overdue candidates in
+        the background (ADR-0018).
+      operationId: updateRetentionPolicy
+      security:
+        - cookieSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reviewDays: { type: integer, minimum: 1, maximum: 3650 }
+                deletionDays: { type: integer, minimum: 1, maximum: 3650 }
+                autoAnonymize: { type: boolean }
+      responses:
+        '200':
+          description: The updated policy.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RetentionPolicy' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /retention/anonymize-overdue:
+    post:
+      tags: [Compliance & DSGVO]
+      summary: Anonymize every candidate past the deletion deadline (admin)
+      operationId: anonymizeOverdue
+      security:
+        - cookieSession: []
+      responses:
+        '200':
+          description: What the sweep considered and anonymized.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  overdue: { type: integer }
+                  anonymized: { type: integer }
+                  talentIds: { type: array, items: { type: string } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
   /compliance/agg-check:
     post:
       tags: [Compliance & DSGVO]
@@ -1504,6 +1570,45 @@ paths:
           content:
             application/json:
               schema: { type: object, additionalProperties: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /compliance/agg-rewrite:
+    post:
+      tags: [Compliance & DSGVO]
+      summary: Produce a neutral draft of AGG-risk text (writing aid)
+      description: >-
+        Deterministically replaces every flagged phrase that has a safe neutral
+        rewrite; phrases with no safe automatic fix are returned in `unresolved`.
+      operationId: aggRewrite
+      security:
+        - cookieSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                text: { type: string, maxLength: 50000 }
+      responses:
+        '200':
+          description: The rewritten text plus the edits made and anything unresolved.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  text: { type: string }
+                  changed: { type: boolean }
+                  edits:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        category: { type: string }
+                        from: { type: string }
+                        to: { type: string }
+                  unresolved: { type: array, items: { type: object, additionalProperties: true } }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
   /forecast:
@@ -1972,6 +2077,46 @@ paths:
               schema: { $ref: '#/components/schemas/UsageSummary' }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
+  /settings/usage/audit:
+    get:
+      tags: [Settings]
+      summary: The caller's per-call AI audit trail (KI-Audit-Trail)
+      operationId: usageAudit
+      security:
+        - cookieSession: []
+      responses:
+        '200':
+          description: One entry per metered AI call, newest first.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    at: { type: string }
+                    provider: { $ref: '#/components/schemas/ProviderId' }
+                    feature: { type: string }
+                    inputTokens: { type: integer }
+                    outputTokens: { type: integer }
+                    costUsd: { type: number }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /settings/usage/audit.csv:
+    get:
+      tags: [Settings]
+      summary: The AI audit trail as a downloadable CSV
+      operationId: usageAuditCsv
+      security:
+        - cookieSession: []
+      responses:
+        '200':
+          description: Quoted, Excel-safe CSV (header + one row per call).
+          content:
+            text/csv:
+              schema: { type: string }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
   /cover-letter:
     post:
       tags: [Documents]
@@ -2406,6 +2551,19 @@ components:
         outputTokens: { type: integer }
         totalTokens: { type: integer }
         costUsd: { type: number }
+
+    RetentionPolicy:
+      type: object
+      properties:
+        reviewDays:
+          type: integer
+          description: Inactivity (days) after which a candidate is flagged for review.
+        deletionDays:
+          type: integer
+          description: Inactivity (days) after which a candidate is overdue for anonymization.
+        autoAnonymize:
+          type: boolean
+          description: When true, the server anonymizes overdue candidates on a schedule.
 
     UsageSummary:
       allOf:

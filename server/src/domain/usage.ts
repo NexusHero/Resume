@@ -139,6 +139,50 @@ export function summarizeUsage(events: UsageEvent[]): UsageSummary {
   };
 }
 
+/**
+ * The KI-Audit-Trail (ADR-0018): a per-call record of automated AI processing,
+ * derived from the same metered events. Where the usage summary aggregates,
+ * the trail keeps each call — the granular transparency DSGVO (Art. 15) and
+ * the EU AI Act's transparency duties expect: which model, for what, when,
+ * at what cost.
+ */
+export interface AuditEntry {
+  at: string;
+  provider: LlmProviderId;
+  feature: UsageFeature;
+  inputTokens: number;
+  outputTokens: number;
+  costUsd: number;
+}
+
+/** Build the audit trail from a user's metered events, newest first. */
+export function buildAuditTrail(events: UsageEvent[]): AuditEntry[] {
+  return events
+    .map((e) => ({
+      at: e.at,
+      provider: e.provider,
+      feature: e.feature,
+      inputTokens: e.inputTokens,
+      outputTokens: e.outputTokens,
+      costUsd: roundCost(estimateCost(e.provider, e.inputTokens, e.outputTokens)),
+    }))
+    .sort((a, b) => b.at.localeCompare(a.at));
+}
+
+/** Quote a CSV field so values with commas/quotes/newlines survive Excel import. */
+function csvField(value: string | number): string {
+  return `"${String(value).replace(/"/g, '""')}"`;
+}
+
+/** Serialize the audit trail as a quoted, Excel-safe CSV (header + one row per call). */
+export function auditTrailToCsv(entries: AuditEntry[]): string {
+  const header = ['timestamp', 'provider', 'feature', 'input_tokens', 'output_tokens', 'cost_usd'];
+  const rows = entries.map((e) =>
+    [e.at, e.provider, e.feature, e.inputTokens, e.outputTokens, e.costUsd].map(csvField).join(','),
+  );
+  return [header.map(csvField).join(','), ...rows].join('\r\n') + '\r\n';
+}
+
 /** Construct a usage event from a completed generation's token usage. */
 export function toUsageEvent(
   userId: string,

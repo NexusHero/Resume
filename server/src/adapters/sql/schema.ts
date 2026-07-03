@@ -8,6 +8,7 @@ import type {
 } from '../../domain/talent-documents';
 import type { Role } from '../../domain/user';
 import type { AssistantSettings } from '../../domain/assistant';
+import type { RetentionPolicy } from '../../domain/retention';
 
 /** Registered accounts (mirrors domain `User`). */
 export const users = pgTable('users', {
@@ -193,6 +194,12 @@ export const interviewObservations = pgTable('interview_observations', {
 export const assistantSettings = pgTable('assistant_settings', {
   ownerId: text('owner_id').primaryKey(),
   settings: jsonb('settings').$type<AssistantSettings>().notNull(),
+});
+
+/** The team's DSGVO retention policy (mirrors domain `RetentionPolicy`). */
+export const retentionPolicies = pgTable('retention_policies', {
+  ownerId: text('owner_id').primaryKey(),
+  policy: jsonb('policy').$type<RetentionPolicy>().notNull(),
 });
 
 /** The assistant's suggestion queue (mirrors domain `AssistantSuggestion`). Team-scoped. */

@@ -6,6 +6,7 @@ import {
   parseApplicationPayload,
 } from '../../src/domain/assistant';
 import { AssistantService } from '../../src/services/assistant-service';
+import { AutopilotService } from '../../src/services/autopilot-service';
 import { MatchService } from '../../src/services/match-service';
 import { HashedEmbeddingProvider } from '../../src/adapters/hashed-embedding-provider';
 import { CandidacyService } from '../../src/services/candidacy-service';
@@ -179,6 +180,19 @@ function ctx() {
     documentService,
     attachmentService,
   });
+  const assistantIds = new SequenceIdGenerator('s');
+  const autopilotService = new AutopilotService({
+    assistantSuggestionRepository: suggestions,
+    mandateRepository: mandates,
+    matchService,
+    candidacyService,
+    mandateService,
+    jobSearchService,
+    applicationBuilder,
+    clock,
+    idGenerator: assistantIds,
+    logger: noopLogger,
+  });
   const service = new AssistantService({
     assistantSettingsStore: settingsStore,
     assistantSuggestionRepository: suggestions,
@@ -188,11 +202,9 @@ function ctx() {
     candidacyRepository: candidacies,
     matchService,
     candidacyService,
-    mandateService,
-    jobSearchService,
-    applicationBuilder,
+    autopilotService,
     clock,
-    idGenerator: new SequenceIdGenerator('s'),
+    idGenerator: assistantIds,
     logger: noopLogger,
   });
   return {

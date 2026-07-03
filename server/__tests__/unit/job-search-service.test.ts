@@ -1,4 +1,6 @@
 import { JobSearchService } from '../../src/services/job-search-service';
+import { AllJobSourcesFailedError } from '../../src/ports/job-source';
+import { SampleJobSource } from '../../src/adapters/sample-job-source';
 import { jobQuerySchema, type Job } from '../../src/domain/job';
 import type { JobSource } from '../../src/ports/job-source';
 import type { CandidateProfile } from '../../src/domain/skill';
@@ -35,6 +37,7 @@ function job(id: string, skills: string[]): Job {
 
 function makeService(jobs: Job[]): JobSearchService {
   return new JobSearchService({
+    fallbackJobSource: new SampleJobSource(),
     jobSource: new StubJobSource(jobs),
     skillExtractor: noopSkillExtractor,
     candidateProfile: profile,
@@ -78,6 +81,7 @@ describe('JobSearchService.search', () => {
       source: 'Stub',
     };
     const service = new JobSearchService({
+      fallbackJobSource: new SampleJobSource(),
       jobSource: new StubJobSource([tagless]),
       skillExtractor: new KeywordSkillExtractor(),
       candidateProfile: profile, // has C++ (3) and gRPC (2)
@@ -97,5 +101,42 @@ describe('JobSearchService.search', () => {
     // covered 5 / total 7 = 71 → below 70 boundary? compute: weights C++3 gRPC2 =5 covered; missing Rust,Go,Java =3 → 5/8=63
     const result = await service.search(jobQuerySchema.parse({ threshold: 63 }));
     expect(result.top.map((j) => j.id)).toEqual(['exactly80']);
+  });
+});
+
+describe('JobSearchService live-source fallback', () => {
+  it('Search_AllLiveSourcesDown_ServesSampleAndSaysSo', async () => {
+    const service = new JobSearchService({
+      jobSource: {
+        name: 'composite',
+        search: async () => {
+          throw new AllJobSourcesFailedError(['Arbeitnow']);
+        },
+      },
+      fallbackJobSource: new SampleJobSource(),
+      skillExtractor: new KeywordSkillExtractor(),
+      candidateProfile: { skills: [{ name: 'React', weight: 3 }] },
+      logger: noopLogger,
+    });
+    const result = await service.search({ threshold: 80 });
+    expect(result.source).toBe('Sample');
+    expect(result.liveSourcesDown).toBe(true);
+    expect(result.counts.total).toBeGreaterThan(0); // the sample still ranks
+  });
+
+  it('Search_OtherErrors_StillPropagate', async () => {
+    const service = new JobSearchService({
+      jobSource: {
+        name: 'composite',
+        search: async () => {
+          throw new Error('unexpected');
+        },
+      },
+      fallbackJobSource: new SampleJobSource(),
+      skillExtractor: new KeywordSkillExtractor(),
+      candidateProfile: { skills: [] },
+      logger: noopLogger,
+    });
+    await expect(service.search({ threshold: 80 })).rejects.toThrow('unexpected');
   });
 });

@@ -30,6 +30,11 @@ export interface JobSearchResult {
   threshold: number;
   /** Which backing source produced the postings ('Sample' = offline fallback). */
   source: string;
+  /**
+   * True when live sources are configured but every one of them failed on
+   * this search — the results shown are the offline sample, not "no hits".
+   */
+  liveSourcesDown?: boolean;
   /** match >= threshold, best first. */
   top: ScoredJob[];
   /** below threshold — stretch / new-domain opportunities, best first. */

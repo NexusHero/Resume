@@ -1,11 +1,13 @@
 import { type CandidateProfile, scoreJob, unionSkills } from '../domain/skill';
 import type { Job, JobQuery, JobSearchResult, ScoredJob } from '../domain/job';
-import type { JobSource } from '../ports/job-source';
+import { AllJobSourcesFailedError, type JobSource } from '../ports/job-source';
 import type { SkillExtractor } from '../ports/skill-extractor';
 import type { Logger } from '../ports/logger';
 
 export interface JobSearchServiceDeps {
   jobSource: JobSource;
+  /** Offline sample, used (and declared) when every live source fails. */
+  fallbackJobSource: JobSource;
   skillExtractor: SkillExtractor;
   candidateProfile: CandidateProfile;
   logger: Logger;
@@ -20,19 +22,35 @@ export interface JobSearchServiceDeps {
  */
 export class JobSearchService {
   private readonly source: JobSource;
+  private readonly fallback: JobSource;
   private readonly extractor: SkillExtractor;
   private readonly profile: CandidateProfile;
   private readonly logger: Logger;
 
   constructor(deps: JobSearchServiceDeps) {
     this.source = deps.jobSource;
+    this.fallback = deps.fallbackJobSource;
     this.extractor = deps.skillExtractor;
     this.profile = deps.candidateProfile;
     this.logger = deps.logger;
   }
 
   async search(query: JobQuery): Promise<JobSearchResult> {
-    const jobs = await this.source.search(query);
+    // When every configured live source fails (network blocked, APIs down,
+    // bad keys) the search degrades to the offline sample AND says so —
+    // an unexplained empty list would look like "no openings match you".
+    let jobs: Job[];
+    let source = this.source.name;
+    let liveSourcesDown = false;
+    try {
+      jobs = await this.source.search(query);
+    } catch (err) {
+      if (!(err instanceof AllJobSourcesFailedError)) throw err;
+      this.logger.warn({ sources: err.sources }, 'all live job sources failed — serving sample');
+      jobs = await this.fallback.search(query);
+      source = this.fallback.name;
+      liveSourcesDown = true;
+    }
     const scored = jobs.map((job) => this.score(job)).sort((a, b) => b.match - a.match);
 
     const top = scored.filter((j) => j.match >= query.threshold);
@@ -46,7 +64,8 @@ export class JobSearchService {
     return {
       query,
       threshold: query.threshold,
-      source: this.source.name,
+      source,
+      ...(liveSourcesDown ? { liveSourcesDown } : {}),
       top,
       more,
       counts: { total: scored.length, top: top.length, more: more.length },

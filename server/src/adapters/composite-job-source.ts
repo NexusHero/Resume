@@ -1,12 +1,15 @@
 import type { Job, JobQuery } from '../domain/job';
-import type { JobSource } from '../ports/job-source';
+import { AllJobSourcesFailedError, type JobSource } from '../ports/job-source';
 import type { Logger } from '../ports/logger';
 
 /**
  * Fans a search out across several job sources in parallel and merges the
  * results. A single failing source (down API, bad key, rate limit) is logged
  * and skipped — the search still returns whatever the healthy sources gave.
- * Duplicates are removed by source + id.
+ * When EVERY source fails it throws AllJobSourcesFailedError instead of
+ * returning an empty list, so the caller can fall back honestly rather than
+ * present "no hits" for a search that never happened. Duplicates are removed
+ * by source + id.
  */
 export class CompositeJobSource implements JobSource {
   readonly name = 'composite';
@@ -19,16 +22,21 @@ export class CompositeJobSource implements JobSource {
   }
 
   async search(query: JobQuery): Promise<Job[]> {
+    const failed: string[] = [];
     const batches = await Promise.all(
       this.sources.map(async (source) => {
         try {
           return await source.search(query);
         } catch (err) {
           this.logger.warn({ source: source.name, err: String(err) }, 'job source failed');
+          failed.push(source.name);
           return [] as Job[];
         }
       }),
     );
+    if (this.sources.length > 0 && failed.length === this.sources.length) {
+      throw new AllJobSourcesFailedError(failed);
+    }
 
     const seen = new Set<string>();
     const merged: Job[] = [];

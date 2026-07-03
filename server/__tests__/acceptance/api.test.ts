@@ -116,6 +116,7 @@ function makeApp(
   const controller = new ApplicationController({ applicationService: service });
   const jobSearchService = new JobSearchService({
     jobSource: new SampleJobSource(),
+    fallbackJobSource: new SampleJobSource(),
     skillExtractor: new KeywordSkillExtractor(),
     candidateProfile: config.candidateProfile,
     logger: noopLogger,

@@ -1182,10 +1182,19 @@ paths:
           schema: { type: integer, minimum: 0, maximum: 100, default: 80 }
       responses:
         '200':
-          description: Scored postings; `source` says which backend produced them (e.g. `offline-sample`).
+          description: >-
+            Scored postings; `source` says which backend produced them.
+            `liveSourcesDown: true` means live sources are configured but every
+            one failed on this search — the postings shown are the offline
+            sample, not "no hits".
           content:
             application/json:
-              schema: { type: object, additionalProperties: true }
+              schema:
+                type: object
+                additionalProperties: true
+                properties:
+                  source: { type: string }
+                  liveSourcesDown: { type: boolean }
 
   /applications:
     get:

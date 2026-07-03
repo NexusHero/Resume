@@ -14,6 +14,7 @@ import {
 function makeService() {
   const repo = new InMemorySavedSearchRepository();
   const jobSearchService = new JobSearchService({
+    fallbackJobSource: new SampleJobSource(),
     jobSource: new SampleJobSource(),
     skillExtractor: noopSkillExtractor,
     candidateProfile: { skills: [{ name: 'Rust' }] },

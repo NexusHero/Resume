@@ -10,6 +10,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Fixed
 
+- **A dead live-job-source no longer looks like "no openings"** — when live
+  boards (Arbeitnow / Bundesagentur / Adzuna) are configured but every one
+  fails (network blocked, API down, bad key), the search now falls back to
+  the offline sample **and says so**: the API returns `liveSourcesDown: true`
+  and Matching shows "Live job sources are configured but unreachable" instead
+  of a silent empty list. A single failing source keeps merging as before, and
+  an empty result from a healthy source still counts as honest "no hits".
 - **The AI provider choice is per user and survives restarts** — it is now
   persisted on the account instead of held in server memory, which had two
   traps: a restart silently reset everyone to the default (your Gemini key

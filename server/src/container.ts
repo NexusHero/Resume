@@ -22,6 +22,7 @@ import { PuppeteerPdfRenderer } from './adapters/puppeteer-pdf-renderer';
 import { PdfLibMerger } from './adapters/pdf-lib-merger';
 import { PdfjsTextExtractor } from './adapters/pdfjs-text-extractor';
 import { createJobSource } from './adapters/job-source-factory';
+import { SampleJobSource } from './adapters/sample-job-source';
 import { nodeFetch } from './adapters/node-fetch';
 import { KeywordSkillExtractor } from './adapters/keyword-skill-extractor';
 import { HashedEmbeddingProvider } from './adapters/hashed-embedding-provider';
@@ -133,6 +134,8 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     jobSource: asFunction(({ config: c, logger }) =>
       createJobSource({ config: c, logger, httpFetch: nodeFetch }),
     ).singleton(),
+    // The offline sample doubles as the honest fallback when live sources fail.
+    fallbackJobSource: asFunction(() => new SampleJobSource()).singleton(),
     skillExtractor: asFunction(() => new KeywordSkillExtractor()).singleton(),
     // Semantic similarity for hybrid matching: local hashed vectors (ADR-0017).
     embeddingProvider: asClass(HashedEmbeddingProvider).singleton(),

@@ -91,7 +91,7 @@ function AssistantView({ onChanged }) {
       <AvCard>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 320px', minWidth: 0 }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0 }}>Assistant</h2>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0 }}>CoRecruiter</h2>
             <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '4px', lineHeight: 1.55 }}>
               Shortlists candidates for active mandates, flags stalled pipeline cards and empty profiles —
               and, on <strong>Autopilot</strong>, builds complete applications (tailored CV + cover letter +

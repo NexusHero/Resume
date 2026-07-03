@@ -3,6 +3,7 @@ import puppeteer, { type Browser, type Page } from 'puppeteer';
 import type { AppConfig } from '../config';
 import type { Logger } from '../ports/logger';
 import type { CoverLetterOptions, PdfRenderer } from '../ports/pdf-renderer';
+import { Semaphore } from './semaphore';
 
 // `document` is only referenced inside functions serialized to the browser by
 // Puppeteer; this is a Node project without the DOM lib, so declare it loosely.
@@ -14,10 +15,14 @@ export class PuppeteerPdfRenderer implements PdfRenderer {
   private readonly rootDir: string;
   private readonly logger: Logger;
   private browserPromise: Promise<Browser> | null = null;
+  // One shared browser, but a bounded number of concurrent pages (ADR-0032):
+  // a burst of exports can't spawn unlimited Chromium tabs and blow up memory.
+  private readonly renderPool: Semaphore;
 
   constructor(deps: { config: AppConfig; logger: Logger }) {
     this.rootDir = deps.config.rootDir;
     this.logger = deps.logger;
+    this.renderPool = new Semaphore(deps.config.pdfRenderConcurrency);
   }
 
   private browser(): Promise<Browser> {
@@ -40,10 +45,22 @@ export class PuppeteerPdfRenderer implements PdfRenderer {
     return Buffer.from(bytes);
   }
 
+  /** Acquire a render permit, open a page, run `fn`, then always close the page
+      and release the permit. The single place page lifecycle + pooling live. */
+  private withPage<T>(fn: (page: Page) => Promise<T>): Promise<T> {
+    return this.renderPool.run(async () => {
+      const browser = await this.browser();
+      const page = await browser.newPage();
+      try {
+        return await fn(page);
+      } finally {
+        await page.close();
+      }
+    });
+  }
+
   async renderCv({ language }: { language: 'de' | 'en' }): Promise<Buffer> {
-    const browser = await this.browser();
-    const page = await browser.newPage();
-    try {
+    return this.withPage(async (page) => {
       await page.goto(this.fileUrl('design/documents/ui_kits/cv/index.html'), {
         waitUntil: 'networkidle0',
         timeout: 60000,
@@ -60,16 +77,12 @@ export class PuppeteerPdfRenderer implements PdfRenderer {
           /* fonts API unavailable */
         }
       });
-      return await this.toPdf(page);
-    } finally {
-      await page.close();
-    }
+      return this.toPdf(page);
+    });
   }
 
   async renderCoverLetter(options: CoverLetterOptions): Promise<Buffer> {
-    const browser = await this.browser();
-    const page = await browser.newPage();
-    try {
+    return this.withPage(async (page) => {
       await page.goto(this.fileUrl('design/documents/ui_kits/cover-letter/index.html'), {
         waitUntil: 'networkidle0',
         timeout: 60000,
@@ -109,16 +122,12 @@ export class PuppeteerPdfRenderer implements PdfRenderer {
           /* fonts API unavailable */
         }
       });
-      return await this.toPdf(page);
-    } finally {
-      await page.close();
-    }
+      return this.toPdf(page);
+    });
   }
 
   async renderHtml(html: string): Promise<Buffer> {
-    const browser = await this.browser();
-    const page = await browser.newPage();
-    try {
+    return this.withPage(async (page) => {
       await page.setContent(html, { waitUntil: 'load', timeout: 60000 });
       await page.evaluate(async () => {
         try {
@@ -127,10 +136,8 @@ export class PuppeteerPdfRenderer implements PdfRenderer {
           /* fonts API unavailable */
         }
       });
-      return await this.toPdf(page);
-    } finally {
-      await page.close();
-    }
+      return this.toPdf(page);
+    });
   }
 
   async close(): Promise<void> {

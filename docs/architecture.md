@@ -207,6 +207,7 @@ Full log in [`docs/adr/`](adr). Summary:
 | 0029 | Fail-fast production readiness gate (Postgres, APP_SECRET)    | Accepted (D-series slice 1)    |
 | 0030 | Scheduler leader election via Postgres advisory locks         | Accepted (D-series slice 2)    |
 | 0031 | PDF archive to S3-compatible object storage                   | Accepted (D-series slice 3)    |
+| 0032 | Bounded PDF render pool (concurrency semaphore)               | Accepted (D-series slice 4)    |
 
 ## 10. Quality Requirements
 

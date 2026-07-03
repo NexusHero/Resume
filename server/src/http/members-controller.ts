@@ -3,7 +3,7 @@ import { setRolesSchema } from '../domain/user';
 import { ForbiddenError } from '../domain/errors';
 import type { MembersService } from '../services/members-service';
 import type { Authorizer } from '../ports/authorizer';
-import { currentPrincipal } from './current-user';
+import { currentPrincipal, currentScope } from './current-user';
 
 /** Team member management under /api/v1/members (admin only). */
 export class MembersController {
@@ -21,17 +21,17 @@ export class MembersController {
     }
   }
 
-  /** GET /members — list the team. */
+  /** GET /members — list the acting admin's tenant (ADR-0033). */
   list = async (req: Request, res: Response): Promise<void> => {
     this.require(req, 'list');
-    res.json(await this.service.list());
+    res.json(await this.service.list(currentScope(req)));
   };
 
-  /** PATCH /members/:id/roles — set a member's roles. */
+  /** PATCH /members/:id/roles — set a member's roles within the admin's tenant. */
   setRoles = async (req: Request, res: Response): Promise<void> => {
     this.require(req, 'setRoles');
     const { roles } = setRolesSchema.parse(req.body);
-    const member = await this.service.setRoles(req.params.id as string, roles);
+    const member = await this.service.setRoles(req.params.id as string, roles, currentScope(req));
     res.json({ member });
   };
 }

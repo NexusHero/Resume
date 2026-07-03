@@ -203,6 +203,7 @@ Full log in [`docs/adr/`](adr). Summary:
 | 0025 | Responsive app shell (matchMedia hook + mobile drawer)        | Accepted (E1 slice 1)          |
 | 0026 | Responsive dense views (dashboard grids + scrollable tables)  | Accepted (E1 slice 2)          |
 | 0027 | Responsive CV profile, editor, and form modals                | Accepted (E1 slice 3)          |
+| 0028 | Installable PWA (manifest + hand-rolled service worker)       | Accepted (E2)                  |
 
 ## 10. Quality Requirements
 
@@ -253,6 +254,12 @@ See [requirements.md](requirements.md) for the full FR/NFR catalogue. Verificati
   The one remaining gap is `SettingsView`'s list rows (they use `minmax(0,1fr) … auto` tracks
   that shrink acceptably, so they were left as-is). The board is touch-usable via the stage
   `<select>`; touch drag-and-drop is intentionally not implemented.
+- **Installable PWA** (ADR-0028): a web app manifest + a hand-rolled service worker (offline
+  shell, `/api` never cached) + generated PNG icons make the kit installable to the home
+  screen and launchable standalone. On-device install (Android/iOS, HTTPS) is a **manual
+  acceptance step** — it can't be exercised in CI; the source-level wiring is unit-tested.
+  Offline covers the shell, not data — richer offline (write queue, cached read models) and a
+  Capacitor app-store wrapper are separate follow-ups.
 - OpenAPI covers the full surface but is hand-kept, not generated from zod — drift is
   guarded only by review discipline and the docs acceptance tests (ADR-0012).
 - Some ports still have only a file adapter (e.g. `PdfArchive`); object storage is a

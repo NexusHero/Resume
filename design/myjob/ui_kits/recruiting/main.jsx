@@ -32,3 +32,12 @@ import './app.jsx';
 import { createRoot } from 'react-dom/client';
 
 createRoot(document.getElementById('root')).render(window.React.createElement(window.App));
+
+// Register the service worker for installability + offline shell (ADR-0028).
+// Fire-and-forget: a failure (no HTTPS in dev, unsupported browser) must never
+// break the app. The SW lives next to this bundle so its scope is the kit.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(() => {});
+  });
+}

@@ -19,6 +19,8 @@ import {
   talentDocumentsToRow,
   rowToAttachment,
   attachmentToRow,
+  rowToAssistantSuggestion,
+  assistantSuggestionToRow,
 } from '../../src/adapters/sql/mappers';
 import type { Application, AuditEvent } from '../../src/domain/application';
 import type { SavedSearch } from '../../src/domain/saved-search';
@@ -312,5 +314,52 @@ describe('attachment mappers', () => {
     const row = attachmentToRow(attachment, 'ZGF0YQ==');
     expect(row.data).toBe('ZGF0YQ==');
     expect(rowToAttachment(row)).toEqual(attachment); // meta round-trips (no bytes)
+  });
+});
+
+describe('assistant suggestion mappers', () => {
+  it('Suggestion_RoundTrips_WithAllOptionals', () => {
+    const suggestion = {
+      id: 's1',
+      ownerId: 'team',
+      kind: 'shortlist-add' as const,
+      title: 'Add Jonas',
+      rationale: 'Match score 80/100',
+      mandateId: 'm1',
+      talentId: 't1',
+      payload: { score: 80 },
+      status: 'accepted' as const,
+      createdAt: '2026-07-03T10:00:00.000Z',
+      resolvedAt: '2026-07-03T11:00:00.000Z',
+      runId: 'r1',
+    };
+    expect(
+      rowToAssistantSuggestion(
+        assistantSuggestionToRow(suggestion) as Required<
+          ReturnType<typeof assistantSuggestionToRow>
+        >,
+      ),
+    ).toEqual(suggestion);
+  });
+
+  it('Suggestion_RoundTrips_WithoutOptionals', () => {
+    const suggestion = {
+      id: 's2',
+      ownerId: 'team',
+      kind: 'data-gap' as const,
+      title: 'Complete a profile',
+      rationale: 'No skills on file',
+      payload: {},
+      status: 'proposed' as const,
+      createdAt: '2026-07-03T10:00:00.000Z',
+      runId: 'r1',
+    };
+    expect(
+      rowToAssistantSuggestion(
+        assistantSuggestionToRow(suggestion) as Required<
+          ReturnType<typeof assistantSuggestionToRow>
+        >,
+      ),
+    ).toEqual(suggestion);
   });
 });

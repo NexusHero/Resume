@@ -48,6 +48,8 @@ tags:
   - name: Jobs & Applications
     description: Job search and the applicant-side application log
   - name: Saved searches
+  - name: Assistant
+    description: The in-process agent — settings, manual runs, and the reviewable suggestion queue
   - name: Settings
     description: AI provider choice, per-user API keys, usage
   - name: Team
@@ -1501,6 +1503,153 @@ paths:
               schema: { type: object, additionalProperties: true }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
+  /assistant:
+    get:
+      tags: [Assistant]
+      summary: The assistant's settings and queue counts
+      operationId: assistantOverview
+      security:
+        - cookieSession: []
+      responses:
+        '200':
+          description: Persisted settings + counts per suggestion status.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  settings: { $ref: '#/components/schemas/AssistantSettings' }
+                  counts:
+                    type: object
+                    properties:
+                      proposed: { type: integer }
+                      accepted: { type: integer }
+                      dismissed: { type: integer }
+                      autoApplied: { type: integer }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    put:
+      tags: [Assistant]
+      summary: Update the assistant's settings (persisted; survives restarts)
+      operationId: assistantUpdateSettings
+      security:
+        - cookieSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enabled: { type: boolean }
+                mode:
+                  type: string
+                  enum: [suggest, act]
+                  description: suggest = everything waits for review; act = internal reversible actions are applied directly (auto-applied).
+                intervalMinutes: { type: integer, minimum: 15, maximum: 1440 }
+      responses:
+        '200':
+          description: The updated settings.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  settings: { $ref: '#/components/schemas/AssistantSettings' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /assistant/run:
+    post:
+      tags: [Assistant]
+      summary: Run the playbook now (the scheduler runs it in the background too)
+      operationId: assistantRun
+      security:
+        - cookieSession: []
+      responses:
+        '200':
+          description: What the run staged / applied.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  runId: { type: string }
+                  proposed: { type: integer }
+                  applied: { type: integer }
+        '400':
+          description: The assistant is switched off.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /assistant/suggestions:
+    get:
+      tags: [Assistant]
+      summary: The suggestion queue (newest first, all statuses)
+      operationId: assistantSuggestions
+      security:
+        - cookieSession: []
+      responses:
+        '200':
+          description: Every suggestion with title, rationale and status.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/AssistantSuggestion' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /assistant/suggestions/{id}/accept:
+    post:
+      tags: [Assistant]
+      summary: Accept a suggestion (applies its action, e.g. add to the pipeline)
+      operationId: assistantAccept
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses:
+        '200':
+          description: The resolved suggestion.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  suggestion: { $ref: '#/components/schemas/AssistantSuggestion' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: Already resolved.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+  /assistant/suggestions/{id}/dismiss:
+    post:
+      tags: [Assistant]
+      summary: Dismiss a suggestion (it will not be proposed again)
+      operationId: assistantDismiss
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses:
+        '200':
+          description: The resolved suggestion.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  suggestion: { $ref: '#/components/schemas/AssistantSuggestion' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: Already resolved.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
   /settings/llm:
     get:
       tags: [Settings]
@@ -2050,3 +2199,28 @@ components:
                   - type: object
                     properties:
                       feature: { type: string }
+
+    AssistantSettings:
+      type: object
+      properties:
+        enabled: { type: boolean }
+        mode:
+          type: string
+          enum: [suggest, act]
+        intervalMinutes: { type: integer }
+        lastRunAt: { type: string, format: date-time }
+
+    AssistantSuggestion:
+      type: object
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [shortlist-add, follow-up, data-gap] }
+        title: { type: string }
+        rationale: { type: string }
+        mandateId: { type: string }
+        talentId: { type: string }
+        payload: { type: object, additionalProperties: true }
+        status: { type: string, enum: [proposed, accepted, dismissed, auto-applied] }
+        createdAt: { type: string, format: date-time }
+        resolvedAt: { type: string, format: date-time }
+        runId: { type: string }

@@ -7,6 +7,7 @@ import type { Candidacy, CandidacyStage } from '../../domain/candidacy';
 import type { User, Role } from '../../domain/user';
 import type { TalentDocuments } from '../../domain/talent-documents';
 import type { Attachment } from '../../domain/attachment';
+import type { AssistantSuggestion, SuggestionKind, SuggestionStatus } from '../../domain/assistant';
 import {
   applications,
   auditEvents,
@@ -18,6 +19,7 @@ import {
   users,
   talentDocuments,
   attachments,
+  assistantSuggestions,
 } from './schema';
 
 type ApplicationRow = typeof applications.$inferSelect;
@@ -40,6 +42,8 @@ type TalentDocumentsRow = typeof talentDocuments.$inferSelect;
 type TalentDocumentsInsert = typeof talentDocuments.$inferInsert;
 type AttachmentRow = typeof attachments.$inferSelect;
 type AttachmentInsert = typeof attachments.$inferInsert;
+type AssistantSuggestionRow = typeof assistantSuggestions.$inferSelect;
+type AssistantSuggestionInsert = typeof assistantSuggestions.$inferInsert;
 
 // Postgres stores absent optional values as NULL; the domain uses `undefined`.
 const orUndef = <T>(v: T | null): T | undefined => v ?? undefined;
@@ -330,5 +334,39 @@ export function attachmentToRow(attachment: Attachment, dataBase64: string): Att
     size: attachment.size,
     data: dataBase64,
     createdAt: attachment.createdAt,
+  };
+}
+
+export function rowToAssistantSuggestion(row: AssistantSuggestionRow): AssistantSuggestion {
+  return {
+    id: row.id,
+    ownerId: row.ownerId,
+    kind: row.kind as SuggestionKind,
+    title: row.title,
+    rationale: row.rationale,
+    ...(row.mandateId ? { mandateId: row.mandateId } : {}),
+    ...(row.talentId ? { talentId: row.talentId } : {}),
+    payload: row.payload ?? {},
+    status: row.status as SuggestionStatus,
+    createdAt: row.createdAt,
+    ...(row.resolvedAt ? { resolvedAt: row.resolvedAt } : {}),
+    runId: row.runId,
+  };
+}
+
+export function assistantSuggestionToRow(s: AssistantSuggestion): AssistantSuggestionInsert {
+  return {
+    id: s.id,
+    ownerId: s.ownerId,
+    kind: s.kind,
+    title: s.title,
+    rationale: s.rationale,
+    mandateId: s.mandateId ?? null,
+    talentId: s.talentId ?? null,
+    payload: s.payload,
+    status: s.status,
+    createdAt: s.createdAt,
+    resolvedAt: s.resolvedAt ?? null,
+    runId: s.runId,
   };
 }

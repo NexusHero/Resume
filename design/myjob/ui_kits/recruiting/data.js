@@ -401,6 +401,32 @@ const RecruitApi = {
     return data.prep; // { companyLabel, formats, obligations, requirementChecks, strengths, likelyQuestions, starAnswers, candidateQuestions, provider }
   },
   /* ---- Interview-observation flywheel ---- */
+  // --- assistant: settings + reviewable suggestion queue ---
+  async getAssistant() {
+    // { settings: { enabled, mode, intervalMinutes, lastRunAt? }, counts: {...} }
+    return _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/assistant`));
+  },
+  async updateAssistant(patch) {
+    return _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/assistant`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      }),
+    );
+  },
+  async runAssistant() {
+    return _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/assistant/run`, { method: 'POST' }));
+  },
+  async listAssistantSuggestions() {
+    return _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/assistant/suggestions`));
+  },
+  async resolveAssistantSuggestion(id, action) {
+    // action: 'accept' | 'dismiss'
+    return _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/assistant/suggestions/${id}/${action}`, { method: 'POST' }),
+    );
+  },
   async companyKnowledge(mandateId) {
     // { company, profile: { sampleSize, formats[], typicalRounds, difficulty, confidence } | null, observations[] }
     return _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/mandates/${mandateId}/observations`));

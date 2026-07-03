@@ -20,6 +20,10 @@ import { FsEmailVerificationTokenStore } from '../../src/adapters/fs-email-verif
 import { FsApiKeyStore } from '../../src/adapters/fs-api-key-store';
 import { FsUsageMeter } from '../../src/adapters/fs-usage-meter';
 import { FsInterviewObservationRepository } from '../../src/adapters/fs-interview-observation-repository';
+import {
+  FsAssistantSettingsStore,
+  FsAssistantSuggestionRepository,
+} from '../../src/adapters/fs-assistant-store';
 import { SecretCipher } from '../../src/adapters/secret-cipher';
 import { FixedClock } from '../support/fakes';
 import type { Application, AuditEvent } from '../../src/domain/application';
@@ -54,6 +58,8 @@ function tmpConfig(): AppConfig {
     apiKeysFile: path.join(storeDir, 'api-keys.json'),
     usageFile: path.join(storeDir, 'usage.json'),
     interviewObservationsFile: path.join(storeDir, 'interview-observations.json'),
+    assistantSettingsFile: path.join(storeDir, 'assistant-settings.json'),
+    assistantSuggestionsFile: path.join(storeDir, 'assistant-suggestions.json'),
     staticDir: rootDir,
     versionedPaths: ['bewerbungen'],
     candidateProfile: { skills: [] },
@@ -1044,5 +1050,60 @@ describe('FsCandidacyRepository', () => {
     await fs.mkdir(config.storeDir, { recursive: true });
     await fs.writeFile(config.candidaciesFile, 'not json');
     expect(await new FsCandidacyRepository({ config }).listForMandate(OWNER, 'm1')).toEqual([]);
+  });
+});
+
+describe('FsAssistantStores', () => {
+  it('Settings_PersistAcrossInstances', async () => {
+    const config = tmpConfig();
+    await new FsAssistantSettingsStore({ config }).set('team', {
+      enabled: true,
+      mode: 'act',
+      intervalMinutes: 240,
+      lastRunAt: '2026-07-03T10:00:00.000Z',
+    });
+    // A fresh instance (e.g. after a restart) still sees the configuration.
+    expect(await new FsAssistantSettingsStore({ config }).get('team')).toMatchObject({
+      enabled: true,
+      mode: 'act',
+      intervalMinutes: 240,
+    });
+    expect(await new FsAssistantSettingsStore({ config }).get('other')).toBeNull();
+  });
+
+  it('Suggestions_AddUpdateRoundTrip_ScopedToOwner', async () => {
+    const config = tmpConfig();
+    const repo = new FsAssistantSuggestionRepository({ config });
+    await repo.add({
+      id: 's1',
+      ownerId: 'team',
+      kind: 'shortlist-add',
+      title: 'Add Jonas',
+      rationale: 'Match score 80/100',
+      mandateId: 'm1',
+      talentId: 't1',
+      payload: { score: 80 },
+      status: 'proposed',
+      createdAt: '2026-07-03T10:00:00.000Z',
+      runId: 'r1',
+    });
+    expect(await repo.findById('team', 's1')).toMatchObject({ title: 'Add Jonas' });
+    expect(await repo.findById('other', 's1')).toBeNull();
+    await repo.add({
+      id: 's2',
+      ownerId: 'team',
+      kind: 'data-gap',
+      title: 'Complete a profile',
+      rationale: 'No skills on file',
+      payload: {},
+      status: 'proposed',
+      createdAt: '2026-07-03T09:00:00.000Z',
+      runId: 'r1',
+    });
+    const s1 = (await repo.findById('team', 's1'))!;
+    await repo.update({ ...s1, status: 'accepted', resolvedAt: '2026-07-03T11:00:00.000Z' });
+    const all = await repo.list('team');
+    expect(all.find((x) => x.id === 's1')?.status).toBe('accepted');
+    expect(all.find((x) => x.id === 's2')?.status).toBe('proposed'); // others untouched
   });
 });

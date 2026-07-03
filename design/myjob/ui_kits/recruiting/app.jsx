@@ -9,6 +9,7 @@ const TITLES = {
   bewerbungen: ['Applications', 'Pipeline of all submissions and your own dossiers'],
   platzierungen: ['Placements', 'Booked placements and fees'],
   berichte: ['Reports', 'Fees, funnel and utilization'],
+  assistant: ['Assistant', 'Your agent prepares the desk — you approve'],
   postfach: ['Inbox', 'Messages from clients and companies'],
   einstellungen: ['Settings', 'API key, AI framework & agentic mode'],
 };
@@ -272,6 +273,7 @@ function Workspace({ user, onLogout }) {
       </div>
     );
     else if (nav === 'platzierungen') body = withState(placementsRes, <window.PlatzierungenView placements={shownPlacements} kpis={vkpis} onEdit={editPlacement} />);
+    else if (nav === 'assistant') body = <window.AssistantView onChanged={() => { mandatesRes.reload(); }} />;
     else if (nav === 'berichte') body = <window.ReportsView clients={reportClients} mandates={mandates} placements={placements} apps={apps} kpis={vkpis} />;
     else if (nav === 'postfach') body = <window.Inbox messages={messages} apps={apps} talents={talents} onOpenTalent={goTalent} />;
     else if (nav === 'einstellungen') body = <window.SettingsView user={user} />;

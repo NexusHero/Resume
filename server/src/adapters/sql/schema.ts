@@ -7,6 +7,7 @@ import type {
   TalentDocuments,
 } from '../../domain/talent-documents';
 import type { Role } from '../../domain/user';
+import type { AssistantSettings } from '../../domain/assistant';
 
 /** Registered accounts (mirrors domain `User`). */
 export const users = pgTable('users', {
@@ -186,6 +187,28 @@ export const interviewObservations = pgTable('interview_observations', {
   difficulty: text('difficulty').notNull(),
   notes: text('notes').notNull(),
   at: text('at').notNull(),
+});
+
+/** The assistant's team configuration (mirrors domain `AssistantSettings`). */
+export const assistantSettings = pgTable('assistant_settings', {
+  ownerId: text('owner_id').primaryKey(),
+  settings: jsonb('settings').$type<AssistantSettings>().notNull(),
+});
+
+/** The assistant's suggestion queue (mirrors domain `AssistantSuggestion`). Team-scoped. */
+export const assistantSuggestions = pgTable('assistant_suggestions', {
+  id: text('id').primaryKey(),
+  ownerId: text('owner_id').notNull(),
+  kind: text('kind').notNull(),
+  title: text('title').notNull(),
+  rationale: text('rationale').notNull(),
+  mandateId: text('mandate_id'),
+  talentId: text('talent_id'),
+  payload: jsonb('payload').$type<Record<string, unknown>>().notNull(),
+  status: text('status').notNull(),
+  createdAt: text('created_at').notNull(),
+  resolvedAt: text('resolved_at'),
+  runId: text('run_id').notNull(),
 });
 
 /** Append-only meter of LLM calls (mirrors domain `UsageEvent`). Per user. */

@@ -35,6 +35,8 @@ import { PlacementService } from '../../src/services/placement-service';
 import { CandidacyService } from '../../src/services/candidacy-service';
 import { RetentionService } from '../../src/services/retention-service';
 import { MatchService } from '../../src/services/match-service';
+import { AssistantService } from '../../src/services/assistant-service';
+import { AssistantController } from '../../src/http/assistant-controller';
 import { UsageService } from '../../src/services/usage-service';
 import { ForecastService } from '../../src/services/forecast-service';
 import { InterviewObservationService } from '../../src/services/interview-observation-service';
@@ -56,6 +58,8 @@ import { KeywordSkillExtractor } from '../../src/adapters/keyword-skill-extracto
 import { RoleAuthorizer } from '../../src/adapters/role-authorizer';
 import {
   InMemoryApplicationRepository,
+  InMemoryAssistantSettingsStore,
+  InMemoryAssistantSuggestionRepository,
   InMemoryAuditLog,
   InMemoryPdfArchive,
   InMemorySavedSearchRepository,
@@ -187,16 +191,15 @@ function makeApp(
     clock: new FixedClock(),
     idGenerator: new SequenceIdGenerator('placement'),
   });
-  const candidacyController = new CandidacyController({
-    candidacyService: new CandidacyService({
-      candidacyRepository,
-      mandateRepository,
-      talentRepository,
-      placementService,
-      clock: new FixedClock(),
-      idGenerator: new SequenceIdGenerator('cand'),
-    }),
+  const candidacyService = new CandidacyService({
+    candidacyRepository,
+    mandateRepository,
+    talentRepository,
+    placementService,
+    clock: new FixedClock(),
+    idGenerator: new SequenceIdGenerator('cand'),
   });
+  const candidacyController = new CandidacyController({ candidacyService });
   const retentionController = new RetentionController({
     retentionService: new RetentionService({
       talentRepository,
@@ -207,12 +210,26 @@ function makeApp(
     }),
     authorizer: new RoleAuthorizer(),
   });
-  const matchController = new MatchController({
-    matchService: new MatchService({
+  const matchService = new MatchService({
+    mandateRepository,
+    talentRepository,
+    documentRepository,
+    candidacyRepository,
+  });
+  const matchController = new MatchController({ matchService });
+  const assistantController = new AssistantController({
+    assistantService: new AssistantService({
+      assistantSettingsStore: new InMemoryAssistantSettingsStore(),
+      assistantSuggestionRepository: new InMemoryAssistantSuggestionRepository(),
       mandateRepository,
       talentRepository,
       documentRepository,
       candidacyRepository,
+      matchService,
+      candidacyService,
+      clock: new FixedClock(),
+      idGenerator: new SequenceIdGenerator('sugg'),
+      logger: noopLogger,
     }),
   });
   const attachmentController = new AttachmentController({
@@ -329,6 +346,7 @@ function makeApp(
     complianceController,
     forecastController,
     observationController,
+    assistantController,
     documentController,
     attachmentController,
     authController,
@@ -1788,6 +1806,115 @@ describe('REST API /api/v1', () => {
     const res = await request(app).get('/');
     expect(res.status).toBe(302);
     expect(res.headers.location).toBe('/design/myjob/ui_kits/recruiting/dist/index.html');
+  });
+
+  it('Assistant_Unauthenticated_Returns401', async () => {
+    expect((await request(app).get('/api/v1/assistant')).status).toBe(401);
+    expect((await request(app).post('/api/v1/assistant/run')).status).toBe(401);
+  });
+
+  it('Assistant_FullFlow_EnableRunReviewAccept', async () => {
+    const agent = request.agent(app);
+    await agent
+      .post('/api/v1/auth/register')
+      .send({ email: 'assistant@example.com', password: 'correct horse battery' });
+
+    // Off by default; running while off is a 400 with a hint.
+    const before = await agent.get('/api/v1/assistant');
+    expect(before.body.settings).toMatchObject({ enabled: false, mode: 'suggest' });
+    expect((await agent.post('/api/v1/assistant/run')).status).toBe(400);
+
+    // Enable (persisted), seed a mandate + a matching talent, run.
+    const put = await agent.put('/api/v1/assistant').send({ enabled: true, intervalMinutes: 240 });
+    expect(put.body.settings).toMatchObject({ enabled: true, intervalMinutes: 240 });
+    await agent.post('/api/v1/mandates').send({
+      client: 'PayFlow AG',
+      role: 'Backend Engineer',
+      location: 'Berlin',
+      jobText: 'Backend Engineer with Go and PostgreSQL experience',
+    });
+    await agent.post('/api/v1/talents').send({
+      name: 'Jonas Keller',
+      role: 'Backend Engineer',
+      skills: ['Go', 'PostgreSQL'],
+    });
+    const run = await agent.post('/api/v1/assistant/run');
+    expect(run.status).toBe(200);
+    expect(run.body.proposed).toBeGreaterThanOrEqual(1);
+
+    // The queue holds a shortlist suggestion; accepting adds the candidacy.
+    const queue = await agent.get('/api/v1/assistant/suggestions');
+    const shortlist = queue.body.find((s: { kind: string }) => s.kind === 'shortlist-add');
+    expect(shortlist.title).toContain('Jonas Keller');
+    const accept = await agent.post(`/api/v1/assistant/suggestions/${shortlist.id}/accept`);
+    expect(accept.body.suggestion.status).toBe('accepted');
+    const mandates = await agent.get('/api/v1/mandates');
+    const board = await agent.get(`/api/v1/mandates/${mandates.body[0].id}/candidacies`);
+    expect(board.body).toHaveLength(1);
+    expect(board.body[0].talent.name).toBe('Jonas Keller');
+
+    // Resolving twice conflicts; the overview counts reflect the outcome.
+    expect((await agent.post(`/api/v1/assistant/suggestions/${shortlist.id}/dismiss`)).status).toBe(
+      409,
+    );
+    const after = await agent.get('/api/v1/assistant');
+    expect(after.body.counts.accepted).toBe(1);
+    expect(after.body.settings.lastRunAt).toBeTruthy();
+  });
+
+  it('Assistant_ActModeAndDismiss_ReflectInCounts', async () => {
+    const agent = request.agent(app);
+    await agent
+      .post('/api/v1/auth/register')
+      .send({ email: 'assistant-act@example.com', password: 'correct horse battery' });
+    await agent.put('/api/v1/assistant').send({ enabled: true, mode: 'act' });
+    await agent.post('/api/v1/mandates').send({
+      client: 'Helio GmbH',
+      role: 'Platform Engineer',
+      location: 'Hamburg',
+      jobText: 'Platform Engineer with Kubernetes and Go',
+    });
+    // One clear match (auto-applied in act mode) + one empty profile (data gap).
+    await agent.post('/api/v1/talents').send({
+      name: 'Mila Sommer',
+      role: 'Platform Engineer',
+      skills: ['Kubernetes', 'Go'],
+    });
+    await agent.post('/api/v1/talents').send({ name: 'Empty Profile' });
+    const run = await agent.post('/api/v1/assistant/run');
+    expect(run.body.applied).toBeGreaterThanOrEqual(1);
+
+    // The auto-applied shortlist landed on the board without any accept.
+    const mandates = await agent.get('/api/v1/mandates');
+    const helio = mandates.body.find((m: { client: string }) => m.client === 'Helio GmbH');
+    const board = await agent.get(`/api/v1/mandates/${helio.id}/candidacies`);
+    expect(board.body.some((c: { note: string }) => c.note === 'Added by the assistant')).toBe(
+      true,
+    );
+
+    // Dismiss the data-gap suggestion; the overview counts every status.
+    const queue = await agent.get('/api/v1/assistant/suggestions');
+    const gap = queue.body.find((s: { kind: string }) => s.kind === 'data-gap');
+    await agent.post(`/api/v1/assistant/suggestions/${gap.id}/dismiss`);
+    const overview = await agent.get('/api/v1/assistant');
+    expect(overview.body.counts.autoApplied).toBeGreaterThanOrEqual(1);
+    expect(overview.body.counts.dismissed).toBeGreaterThanOrEqual(1);
+  });
+
+  it('CoverLetter_SignedInWithoutKey_UsesTheStoredProviderChoiceAndFallsBack', async () => {
+    // The authed path resolves the user's persisted provider, finds no key,
+    // and degrades to the template — no upstream call is made.
+    const agent = request.agent(app);
+    await agent
+      .post('/api/v1/auth/register')
+      .send({ email: 'letter-authed@example.com', password: 'correct horse battery' });
+    await agent.put('/api/v1/settings/llm').send({ provider: 'gemini' });
+    const res = await agent
+      .post('/api/v1/cover-letter')
+      .send({ company: 'Helio', role: 'Engineer', city: 'Berlin', skills: ['Go'] });
+    expect(res.status).toBe(200);
+    expect(res.body.provider).toBe('template');
+    expect(res.body.text).toContain('Helio');
   });
 
   it('ApiDocs_OpenApiSpec_IsServed', async () => {

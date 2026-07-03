@@ -3,6 +3,7 @@ const WS = window.MyJobDesignSystem_f3658e;
 
 /* ---------- Übersicht — agency-led, but my own applications stay front of mind ---------- */
 function Dashboard({ me, apps, vkpis, clients, mandates, onOpenTalent, onOpenPipeline, onOpenMandate }) {
+  const { isMobile } = window.useViewport ? window.useViewport() : { isMobile: false };
   const mine = apps.filter((a) => a.talentId === 'me');
   const nextSteps = mine.filter((a) => a.status === 'interview' || a.status === 'offer');
   // Live mandates carry the client name directly; the sample shape carries a
@@ -18,11 +19,11 @@ function Dashboard({ me, apps, vkpis, clients, mandates, onOpenTalent, onOpenPip
       </div>
 
       {/* agency kpis */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '14px' }}>
         {vkpis.map((k, i) => <WS.StatCard key={i} {...k} />)}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px', alignItems: 'start' }}>
         {/* active mandates */}
         <WS.Card title="Active mandates" subtitle="Search mandates with deadline"
           action={<WS.Button size="sm" variant="ghost" iconRight={<WS.Icon name="arrowRight" size={14} />} onClick={onOpenMandate}>All</WS.Button>} pad={false}>

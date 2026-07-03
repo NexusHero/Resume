@@ -18,6 +18,7 @@ const PLACEMENT_TONE = { 'Paid': 'hired', 'Invoiced': 'offer', 'Probation': 'int
 
 /* ---------- Mandate: client search assignments ---------- */
 function MandateView({ mandates, onEdit, onOpenPipeline }) {
+  const { isMobile } = window.useViewport ? window.useViewport() : { isMobile: false };
   const order = [];
   const byClient = new Map();
   (mandates || []).forEach((m) => {
@@ -41,6 +42,10 @@ function MandateView({ mandates, onEdit, onOpenPipeline }) {
               </div>
               <VV.Badge variant="subtle" size="sm">{ms.length} mandates</VV.Badge>
             </header>
+            {/* Fixed-width columns don't fit a phone; scroll the table sideways
+                on mobile rather than misaligning the cells (ADR-0026). */}
+            <div style={{ overflowX: isMobile ? 'auto' : 'visible' }}>
+            <div style={{ minWidth: isMobile ? '620px' : 'auto' }}>
             {ms.map((m) => (
               <div key={m.id} onClick={onEdit ? () => onEdit(m) : undefined} role={onEdit ? 'button' : undefined} title={onEdit ? 'Edit mandate' : undefined} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.5fr) 96px 104px 116px 116px', alignItems: 'center', gap: '14px', padding: '13px 18px', borderBottom: '1px solid var(--border)', cursor: onEdit ? 'pointer' : 'default' }}>
                 <div style={{ minWidth: 0 }}>
@@ -70,6 +75,8 @@ function MandateView({ mandates, onEdit, onOpenPipeline }) {
                 </div>
               </div>
             ))}
+            </div>
+            </div>
           </VV.Card>
         );
       })}
@@ -86,12 +93,16 @@ function MandateView({ mandates, onEdit, onOpenPipeline }) {
 
 /* ---------- Platzierungen: booked placements + fees ---------- */
 function PlatzierungenView({ placements, kpis, onEdit }) {
+  const { isMobile } = window.useViewport ? window.useViewport() : { isMobile: false };
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '14px' }}>
         {kpis.map((k, i) => <VV.StatCard key={i} {...k} />)}
       </div>
       <VV.Card pad={false} title="Placements" subtitle="Successful placements and fees">
+        {/* Fixed columns scroll sideways on a phone rather than misaligning (ADR-0026). */}
+        <div style={{ overflowX: isMobile ? 'auto' : 'visible' }}>
+        <div style={{ minWidth: isMobile ? '600px' : 'auto' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.4fr) minmax(0,1.2fr) 110px 110px 110px', gap: '14px', padding: '11px 18px', fontFamily: 'var(--font-mono)', fontSize: '9.5px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-soft)', borderBottom: '1px solid var(--border)', background: 'var(--surface-subtle)' }}>
           <span>Talent</span><span>Client · Role</span><span>Start</span><span>Fee</span><span style={{ textAlign: 'right' }}>Status</span>
         </div>
@@ -115,6 +126,8 @@ function PlatzierungenView({ placements, kpis, onEdit }) {
             No placements yet.
           </div>
         )}
+        </div>
+        </div>
       </VV.Card>
     </div>
   );
@@ -255,6 +268,7 @@ function ForecastCard() {
 }
 
 function ReportsView({ clients, mandates, placements, apps, kpis }) {
+  const { isMobile } = window.useViewport ? window.useViewport() : { isMobile: false };
   const feeNum = (s) => parseInt(String(s).replace(/[^0-9]/g, ''), 10) || 0;
   const perClient = clients.map((k) => ({
     name: k.name,
@@ -288,7 +302,7 @@ function ReportsView({ clients, mandates, placements, apps, kpis }) {
           Export placements (CSV)
         </VV.Button>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '14px' }}>
         {kpis.map((k, i) => <VV.StatCard key={i} {...k} />)}
       </div>
       <ForecastCard />

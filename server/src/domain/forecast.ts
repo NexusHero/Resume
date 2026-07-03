@@ -43,20 +43,23 @@ export interface PipelineForecast {
 }
 
 /** Probability a mandate gets filled: 1 − Π(1 − p) over its candidacies. */
-function fillProbability(candidacies: Candidacy[]): number {
-  const missAll = candidacies.reduce(
-    (acc, c) => acc * (1 - (STAGE_WIN_PROBABILITY[c.stage] ?? 0)),
-    1,
-  );
+function fillProbability(
+  candidacies: Candidacy[],
+  winProbability: Record<CandidacyStage, number>,
+): number {
+  const missAll = candidacies.reduce((acc, c) => acc * (1 - (winProbability[c.stage] ?? 0)), 1);
   return 1 - missAll;
 }
 
 /** The furthest-advanced stage among a mandate's candidacies (by win probability). */
-function topStage(candidacies: Candidacy[]): CandidacyStage | null {
+function topStage(
+  candidacies: Candidacy[],
+  winProbability: Record<CandidacyStage, number>,
+): CandidacyStage | null {
   let best: CandidacyStage | null = null;
   let bestP = -1;
   for (const c of candidacies) {
-    const p = STAGE_WIN_PROBABILITY[c.stage] ?? 0;
+    const p = winProbability[c.stage] ?? 0;
     if (p > bestP) {
       bestP = p;
       best = c.stage;
@@ -68,10 +71,13 @@ function topStage(candidacies: Candidacy[]): CandidacyStage | null {
 /**
  * Build the weighted forecast from the (non-closed) mandates and their
  * candidacies. Mandates with no candidacy are omitted — they carry no pipeline.
+ * The stage curve defaults to the industry-typical one; Forecast v2 passes the
+ * desk's learned probabilities instead (ADR-0016).
  */
 export function forecastPipeline(
   mandates: Mandate[],
   candidaciesByMandate: Map<string, Candidacy[]>,
+  winProbability: Record<CandidacyStage, number> = STAGE_WIN_PROBABILITY,
 ): PipelineForecast {
   const rows: MandateForecast[] = [];
   let totalWeighted = 0;
@@ -81,7 +87,7 @@ export function forecastPipeline(
     const candidacies = candidaciesByMandate.get(m.id) ?? [];
     if (candidacies.length === 0) continue;
     const feeValue = parseFeeValue(m.feeValue);
-    const probability = fillProbability(candidacies);
+    const probability = fillProbability(candidacies, winProbability);
     const weightedValue = Math.round(feeValue * probability);
     totalWeighted += weightedValue;
     totalFaceValue += feeValue;
@@ -93,7 +99,7 @@ export function forecastPipeline(
       probability: Math.round(probability * 100) / 100,
       weightedValue,
       candidacies: candidacies.length,
-      topStage: topStage(candidacies),
+      topStage: topStage(candidacies, winProbability),
     });
   }
 

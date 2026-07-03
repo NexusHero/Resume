@@ -6,7 +6,10 @@ import {
   INTERVIEW_STAGES,
 } from '../domain/candidacy';
 import { NotFoundError, ConflictError } from '../domain/errors';
+import type { StageTransition } from '../domain/stage-history';
 import type { CandidacyRepository } from '../ports/candidacy-repository';
+import type { StageTransitionRepository } from '../ports/stage-transition-repository';
+import type { Logger } from '../ports/logger';
 import type { MandateRepository } from '../ports/mandate-repository';
 import type { TalentRepository } from '../ports/talent-repository';
 import type { PlacementService } from './placement-service';
@@ -28,8 +31,10 @@ export interface CandidacyServiceDeps {
   mandateRepository: MandateRepository;
   talentRepository: TalentRepository;
   placementService: PlacementService;
+  stageTransitionRepository: StageTransitionRepository;
   clock: Clock;
   idGenerator: IdGenerator;
+  logger: Logger;
 }
 
 /**
@@ -44,16 +49,20 @@ export class CandidacyService {
   private readonly mandates: MandateRepository;
   private readonly talents: TalentRepository;
   private readonly placements: PlacementService;
+  private readonly transitions: StageTransitionRepository;
   private readonly clock: Clock;
   private readonly ids: IdGenerator;
+  private readonly logger: Logger;
 
   constructor(deps: CandidacyServiceDeps) {
     this.repo = deps.candidacyRepository;
     this.mandates = deps.mandateRepository;
     this.talents = deps.talentRepository;
     this.placements = deps.placementService;
+    this.transitions = deps.stageTransitionRepository;
     this.clock = deps.clock;
     this.ids = deps.idGenerator;
+    this.logger = deps.logger;
   }
 
   /** The board for a mandate: every candidacy enriched with its talent summary. */
@@ -122,6 +131,7 @@ export class CandidacyService {
       updatedAt: now,
     };
     await this.repo.add(candidacy);
+    await this.logTransition(candidacy, null);
     await this.syncMandateCounts(ownerId, mandateId);
     return {
       ...candidacy,
@@ -141,6 +151,7 @@ export class CandidacyService {
     if (!existing) throw new NotFoundError(`Candidacy ${id} not found`);
     const updated: Candidacy = { ...existing, ...patch, updatedAt: this.clock.isoNow() };
     await this.repo.update(updated);
+    if (updated.stage !== existing.stage) await this.logTransition(updated, existing.stage);
     // Reaching 'placed' for the first time books a placement from the facts.
     if (updated.stage === 'placed' && existing.stage !== 'placed') {
       await this.bookPlacement(ownerId, updated);
@@ -175,6 +186,31 @@ export class CandidacyService {
       fee: mandate.fee,
       status: 'probation',
     });
+  }
+
+  /**
+   * Feed the prediction flywheel (ADR-0016): every stage change is logged so
+   * the forecast can learn the desk's real conversion rates. Logging must
+   * never break the pipeline action it observes — failures are swallowed.
+   */
+  private async logTransition(candidacy: Candidacy, from: StageTransition['from']): Promise<void> {
+    try {
+      await this.transitions.add({
+        id: this.ids.next(),
+        ownerId: candidacy.ownerId,
+        candidacyId: candidacy.id,
+        mandateId: candidacy.mandateId,
+        talentId: candidacy.talentId,
+        from,
+        to: candidacy.stage,
+        at: this.clock.isoNow(),
+      });
+    } catch (err) {
+      this.logger.warn(
+        { err: err instanceof Error ? err.message : String(err) },
+        'stage-transition logging failed',
+      );
+    }
   }
 
   /**

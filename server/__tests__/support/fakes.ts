@@ -31,6 +31,8 @@ import type { PasswordResetTokenStore } from '../../src/ports/password-reset-tok
 import type { EmailVerificationTokenStore } from '../../src/ports/email-verification-token-store';
 import type { Mailer, MailMessage } from '../../src/ports/mailer';
 import type { InboxSource } from '../../src/ports/inbox-source';
+import type { StageTransitionRepository } from '../../src/ports/stage-transition-repository';
+import type { StageTransition } from '../../src/domain/stage-history';
 import type { InboxMessage } from '../../src/domain/mail-sync';
 import type { ApiKeyStore } from '../../src/ports/api-key-store';
 import type { LlmProviderId } from '../../src/ports/llm-provider';
@@ -435,6 +437,18 @@ export class RecordingMailer implements Mailer {
   async send(message: MailMessage): Promise<void> {
     if (this.failWith) throw this.failWith;
     this.sent.push(message);
+  }
+}
+
+export class InMemoryStageTransitionRepository implements StageTransitionRepository {
+  rows: StageTransition[] = [];
+  constructor(private readonly failWith?: Error) {}
+  async list(ownerId: string): Promise<StageTransition[]> {
+    return this.rows.filter((t) => t.ownerId === ownerId).sort((a, b) => a.at.localeCompare(b.at));
+  }
+  async add(transition: StageTransition): Promise<void> {
+    if (this.failWith) throw this.failWith;
+    this.rows.push(transition);
   }
 }
 

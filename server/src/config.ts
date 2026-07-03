@@ -28,6 +28,7 @@ export interface AppConfig {
   assistantSettingsFile: string;
   assistantSuggestionsFile: string;
   artifactLogFile: string;
+  stageTransitionsFile: string;
   staticDir: string;
   /** Repo-relative paths the Versioner stages on each change. */
   versionedPaths: string[];
@@ -184,6 +185,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     assistantSettingsFile: path.join(storeDir, 'assistant-settings.json'),
     assistantSuggestionsFile: path.join(storeDir, 'assistant-suggestions.json'),
     artifactLogFile: path.join(storeDir, 'artifact-log.json'),
+    stageTransitionsFile: path.join(storeDir, 'stage-transitions.json'),
     staticDir: rootDir,
     versionedPaths: ['archive/bewerbungen'],
     candidateProfile: CANDIDATE_PROFILE,

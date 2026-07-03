@@ -81,6 +81,7 @@ import {
   InMemoryEmailVerificationTokenStore,
   RecordingMailer,
   FakeInboxSource,
+  InMemoryStageTransitionRepository,
   fakePasswordHasher,
   FakePdfRenderer,
   FakePdfMerger,
@@ -197,13 +198,16 @@ function makeApp(
     clock: new FixedClock(),
     idGenerator: new SequenceIdGenerator('placement'),
   });
+  const stageTransitionRepository = new InMemoryStageTransitionRepository();
   const candidacyService = new CandidacyService({
     candidacyRepository,
     mandateRepository,
     talentRepository,
     placementService,
+    stageTransitionRepository,
     clock: new FixedClock(),
     idGenerator: new SequenceIdGenerator('cand'),
+    logger: noopLogger,
   });
   const candidacyController = new CandidacyController({ candidacyService });
   const retentionController = new RetentionController({
@@ -292,7 +296,11 @@ function makeApp(
   });
   const complianceController = new ComplianceController();
   const forecastController = new ForecastController({
-    forecastService: new ForecastService({ mandateRepository, candidacyRepository }),
+    forecastService: new ForecastService({
+      mandateRepository,
+      candidacyRepository,
+      stageTransitionRepository,
+    }),
   });
   const observationController = new ObservationController({
     interviewObservationService: new InterviewObservationService({
@@ -1369,6 +1377,39 @@ describe('REST API /api/v1', () => {
       expect(row.probability).toBe(0.7); // offer stage
       expect(row.weightedValue).toBe(7000); // 10000 × 0.7
       expect(res.body.totalWeighted).toBeGreaterThanOrEqual(7000);
+      // Forecast v2: the curve is declared, transparently, per stage — with no
+      // resolved history yet, every stage is an industry default.
+      expect(res.body.probabilities).toHaveLength(4);
+      for (const p of res.body.probabilities) {
+        expect(p).toMatchObject({ source: 'default', wins: expect.any(Number) });
+      }
+      expect(res.body.insights).toEqual([]);
+    });
+
+    it('ForecastV2_StageMovesFeedTheTransitionLog', async () => {
+      const m = await agent.post('/api/v1/mandates').send({
+        client: 'Learn Co',
+        role: 'Engineer',
+        location: 'Berlin',
+        feeValue: '5.000 €',
+      });
+      const t = await agent.post('/api/v1/talents').send({ name: 'Cand Two' });
+      const added = await agent
+        .post(`/api/v1/mandates/${m.body.mandate.id}/candidacies`)
+        .send({ talentId: t.body.talent.id, stage: 'sourced' });
+      // sourced → interview → placed: two moves plus the add are logged, and
+      // the forecast reports the (still below-threshold) evidence.
+      await agent
+        .patch(`/api/v1/candidacies/${added.body.candidacy.id}`)
+        .send({ stage: 'interview' });
+      await agent.patch(`/api/v1/candidacies/${added.body.candidacy.id}`).send({ stage: 'placed' });
+      const res = await agent.get('/api/v1/forecast');
+      const interview = res.body.probabilities.find(
+        (p: { stage: string }) => p.stage === 'interview',
+      );
+      expect(interview.sample).toBeGreaterThanOrEqual(1);
+      expect(interview.wins).toBeGreaterThanOrEqual(1);
+      expect(interview.source).toBe('default'); // one journey is not a curve
     });
 
     it('Forecast_Unauthenticated_Returns401', async () => {

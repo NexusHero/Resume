@@ -8,6 +8,8 @@ import {
   InMemoryPlacementRepository,
   FixedClock,
   SequenceIdGenerator,
+  InMemoryStageTransitionRepository,
+  noopLogger,
 } from '../support/fakes';
 import type { Talent } from '../../src/domain/talent';
 import type { Mandate } from '../../src/domain/mandate';
@@ -47,7 +49,7 @@ const mandate = (id: string, ownerId = OWNER): Mandate => ({
   updatedAt: '2026-06-25T10:00:00.000Z',
 });
 
-function ctx() {
+function ctx(failTransitionsWith?: Error) {
   const candidacies = new InMemoryCandidacyRepository();
   const mandates = new InMemoryMandateRepository();
   const talents = new InMemoryTalentRepository();
@@ -57,15 +59,18 @@ function ctx() {
     clock: new FixedClock(),
     idGenerator: new SequenceIdGenerator('placement'),
   });
+  const transitions = new InMemoryStageTransitionRepository(failTransitionsWith);
   const service = new CandidacyService({
     candidacyRepository: candidacies,
     mandateRepository: mandates,
     talentRepository: talents,
     placementService,
+    stageTransitionRepository: transitions,
     clock: new FixedClock(),
     idGenerator: new SequenceIdGenerator('cand'),
+    logger: noopLogger,
   });
-  return { service, candidacies, mandates, talents, placements };
+  return { service, candidacies, mandates, talents, placements, transitions };
 }
 
 describe('CandidacyService', () => {
@@ -276,5 +281,52 @@ describe('CandidacyService', () => {
     const c = ctx();
     await c.mandates.add(mandate('m1', 'other'));
     await expect(c.service.board(OWNER, 'm1')).rejects.toBeInstanceOf(NotFoundError);
+  });
+});
+
+describe('CandidacyService stage-transition log (ADR-0016)', () => {
+  it('Add_LogsEntryTransitionWithNullFrom', async () => {
+    const c = ctx();
+    await c.mandates.add(mandate('m1'));
+    await c.talents.add(talent('t1'));
+    await c.service.add(OWNER, 'm1', { talentId: 't1', stage: 'screening', note: '' });
+    expect(c.transitions.rows).toHaveLength(1);
+    expect(c.transitions.rows[0]).toMatchObject({
+      mandateId: 'm1',
+      talentId: 't1',
+      from: null,
+      to: 'screening',
+    });
+  });
+
+  it('Update_StageMove_LogsFromAndTo', async () => {
+    const c = ctx();
+    await c.mandates.add(mandate('m1'));
+    await c.talents.add(talent('t1'));
+    const card = await c.service.add(OWNER, 'm1', { talentId: 't1', stage: 'sourced', note: '' });
+    await c.service.update(OWNER, card.id, { stage: 'interview' });
+    expect(c.transitions.rows.map((t) => `${t.from}->${t.to}`)).toEqual([
+      'null->sourced',
+      'sourced->interview',
+    ]);
+  });
+
+  it('Update_ReorderOrNoteOnly_LogsNothing', async () => {
+    const c = ctx();
+    await c.mandates.add(mandate('m1'));
+    await c.talents.add(talent('t1'));
+    const card = await c.service.add(OWNER, 'm1', { talentId: 't1', stage: 'sourced', note: '' });
+    await c.service.update(OWNER, card.id, { order: 3, note: 'call tomorrow' });
+    expect(c.transitions.rows).toHaveLength(1); // only the add
+  });
+
+  it('Logging_Failure_NeverBreaksThePipelineAction', async () => {
+    const c = ctx(new Error('disk full'));
+    await c.mandates.add(mandate('m1'));
+    await c.talents.add(talent('t1'));
+    const card = await c.service.add(OWNER, 'm1', { talentId: 't1', stage: 'sourced', note: '' });
+    const moved = await c.service.update(OWNER, card.id, { stage: 'offer' });
+    expect(moved.stage).toBe('offer');
+    expect(c.transitions.rows).toEqual([]);
   });
 });

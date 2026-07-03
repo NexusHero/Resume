@@ -112,6 +112,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     assistantSettingsStore: asValue(persistence.assistantSettingsStore),
     assistantSuggestionRepository: asValue(persistence.assistantSuggestionRepository),
     artifactLogRepository: asValue(persistence.artifactLogRepository),
+    stageTransitionRepository: asValue(persistence.stageTransitionRepository),
     passwordHasher: asClass(ScryptPasswordHasher).singleton(),
     // Transactional email: console by default, SMTP (nodemailer) when configured.
     mailer: asFunction(({ config: c, logger }) => createMailer({ config: c, logger })).singleton(),

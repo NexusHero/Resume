@@ -26,3 +26,4 @@ where a decision satisfies a specific requirement.
 | [0013](0013-in-process-assistant-agent.md)         | In-process assistant agent with staged-suggestion autonomy     | Accepted |
 | [0014](0014-first-party-outcome-loop.md)           | First-party outcome loop over AI artifacts                     | Accepted |
 | [0015](0015-first-party-email-integration.md)      | Email integration: send outreach + envelope-only reply sync    | Accepted |
+| [0016](0016-learned-stage-probabilities.md)        | Forecast v2: stage probabilities learned from the desk's data  | Accepted |

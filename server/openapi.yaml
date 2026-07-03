@@ -1496,15 +1496,56 @@ paths:
     get:
       tags: [Reports]
       summary: Weighted pipeline revenue forecast across live mandates
+      description: >-
+        Forecast v2: the stage-probability curve is learned from the desk's own
+        resolved candidacies (stage-transition log) once a stage has enough
+        samples; below that it stays on the transparent industry default. The
+        response always declares each probability's source.
       operationId: forecast
       security:
         - cookieSession: []
       responses:
         '200':
-          description: Stage-weighted expected fees.
+          description: Stage-weighted expected fees plus the curve used.
           content:
             application/json:
-              schema: { type: object, additionalProperties: true }
+              schema:
+                type: object
+                additionalProperties: true
+                properties:
+                  totalWeighted: { type: integer }
+                  totalFaceValue: { type: integer }
+                  mandates:
+                    type: array
+                    items: { type: object, additionalProperties: true }
+                  probabilities:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        stage:
+                          type: string
+                          enum: [sourced, screening, interview, offer]
+                        probability: { type: number }
+                        source:
+                          type: string
+                          enum: [observed, default]
+                        sample:
+                          type: integer
+                          description: Resolved journeys that passed through this stage.
+                        wins:
+                          type: integer
+                          description: …of which ended in a placement.
+                  insights:
+                    type: array
+                    description: Per-client interview→placement conversion (min. 3 resolved interviews).
+                    items:
+                      type: object
+                      properties:
+                        client: { type: string }
+                        interviews: { type: integer }
+                        placements: { type: integer }
+                        rate: { type: integer }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
   /assistant:

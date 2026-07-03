@@ -9,6 +9,7 @@ import type { TalentDocuments } from '../../domain/talent-documents';
 import type { Attachment } from '../../domain/attachment';
 import type { AssistantSuggestion, SuggestionKind, SuggestionStatus } from '../../domain/assistant';
 import type { ArtifactKind, ArtifactLog, ArtifactOutcome } from '../../domain/artifact';
+import type { StageTransition } from '../../domain/stage-history';
 import {
   applications,
   auditEvents,
@@ -22,6 +23,7 @@ import {
   attachments,
   assistantSuggestions,
   artifactLogs,
+  stageTransitions,
 } from './schema';
 
 type ApplicationRow = typeof applications.$inferSelect;
@@ -48,6 +50,8 @@ type AssistantSuggestionRow = typeof assistantSuggestions.$inferSelect;
 type AssistantSuggestionInsert = typeof assistantSuggestions.$inferInsert;
 type ArtifactLogRow = typeof artifactLogs.$inferSelect;
 type ArtifactLogInsert = typeof artifactLogs.$inferInsert;
+type StageTransitionRow = typeof stageTransitions.$inferSelect;
+type StageTransitionInsert = typeof stageTransitions.$inferInsert;
 
 // Postgres stores absent optional values as NULL; the domain uses `undefined`.
 const orUndef = <T>(v: T | null): T | undefined => v ?? undefined;
@@ -402,5 +406,31 @@ export function artifactLogToRow(log: ArtifactLog): ArtifactLogInsert {
     outcome: log.outcome,
     createdAt: log.createdAt,
     outcomeAt: log.outcomeAt ?? null,
+  };
+}
+
+export function rowToStageTransition(row: StageTransitionRow): StageTransition {
+  return {
+    id: row.id,
+    ownerId: row.ownerId,
+    candidacyId: row.candidacyId,
+    mandateId: row.mandateId,
+    talentId: row.talentId,
+    from: (row.fromStage as CandidacyStage | null) ?? null,
+    to: row.toStage as CandidacyStage,
+    at: row.at,
+  };
+}
+
+export function stageTransitionToRow(t: StageTransition): StageTransitionInsert {
+  return {
+    id: t.id,
+    ownerId: t.ownerId,
+    candidacyId: t.candidacyId,
+    mandateId: t.mandateId,
+    talentId: t.talentId,
+    fromStage: t.from,
+    toStage: t.to,
+    at: t.at,
   };
 }

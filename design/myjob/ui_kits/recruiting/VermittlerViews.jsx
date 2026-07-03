@@ -219,6 +219,35 @@ function ForecastCard() {
               </div>
             ))}
           </div>
+          {/* Forecast v2: the stage curve is declared, never hidden — observed
+              from this desk's resolved candidacies once the sample is big
+              enough, industry default until then. */}
+          {Array.isArray(data.probabilities) && data.probabilities.length > 0 && (
+            <div style={{ marginTop: '16px', borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '8px' }}>
+                Stage probabilities · {data.probabilities.some((p) => p.source === 'observed') ? 'learned from your desk' : 'industry defaults — learning as your pipeline resolves'}
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {data.probabilities.map((p) => (
+                  <span key={p.stage} title={p.source === 'observed' ? `${p.wins} of ${p.sample} resolved candidacies through ${p.stage} were placed` : `Default — only ${p.sample} resolved so far`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 9px', borderRadius: 'var(--radius-pill)', background: 'var(--surface-sunk)', fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-muted)' }}>
+                    {FORECAST_STAGE_LABELS[p.stage] || p.stage} {Math.round(p.probability * 100)}%
+                    <span style={{ fontSize: '9px', letterSpacing: '0.06em', textTransform: 'uppercase', color: p.source === 'observed' ? 'var(--accent-strong)' : 'var(--text-soft)' }}>{p.source === 'observed' ? `yours · ${p.sample}×` : 'default'}</span>
+                  </span>
+                ))}
+              </div>
+              {Array.isArray(data.insights) && data.insights.length > 0 && (
+                <div style={{ marginTop: '12px' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '6px' }}>Interview conversion by client</div>
+                  {data.insights.map((i) => (
+                    <div key={i.client} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', gap: '12px', alignItems: 'center', padding: '5px 0' }}>
+                      <span style={{ fontSize: '12px', color: 'var(--text-heading)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{i.client}</span>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-muted)' }}>{i.placements} of {i.interviews} interviews placed · {i.rate}%</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </>
       )}
     </VV.Card>

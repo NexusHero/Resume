@@ -205,6 +205,7 @@ Full log in [`docs/adr/`](adr). Summary:
 | 0027 | Responsive CV profile, editor, and form modals                | Accepted (E1 slice 3)          |
 | 0028 | Installable PWA (manifest + hand-rolled service worker)       | Accepted (E2)                  |
 | 0029 | Fail-fast production readiness gate (Postgres, APP_SECRET)    | Accepted (D-series slice 1)    |
+| 0030 | Scheduler leader election via Postgres advisory locks         | Accepted (D-series slice 2)    |
 
 ## 10. Quality Requirements
 

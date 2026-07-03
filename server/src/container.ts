@@ -10,7 +10,7 @@ import { loadConfig, type AppConfig } from './config';
 import { createLogger } from './adapters/pino-logger';
 import { SystemClock } from './adapters/system-clock';
 import { RandomIdGenerator } from './adapters/random-id-generator';
-import { FsPdfArchive } from './adapters/fs-pdf-archive';
+import { createPdfArchive } from './adapters/create-pdf-archive';
 import { ScryptPasswordHasher } from './adapters/scrypt-password-hasher';
 import { createMailer } from './adapters/mailer-factory';
 import { createInboxSource } from './adapters/inbox-source-factory';
@@ -131,7 +131,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     mailer: asFunction(({ config: c, logger }) => createMailer({ config: c, logger })).singleton(),
     // Inbox reading for reply detection: IMAP when configured, else disabled.
     inboxSource: asFunction(({ config: c }) => createInboxSource({ config: c })).singleton(),
-    pdfArchive: asClass(FsPdfArchive).singleton(),
+    pdfArchive: asFunction(({ config: c }) => createPdfArchive({ config: c })).singleton(),
     // Git versioning only makes sense for the file store; with Postgres there are
     // no JSON files to commit (and committing would needlessly fire git hooks).
     versioner:

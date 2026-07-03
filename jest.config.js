@@ -26,6 +26,10 @@ module.exports = {
     '!server/src/adapters/git-versioner.ts',
     '!server/src/adapters/pino-logger.ts',
     '!server/src/adapters/node-fetch.ts',
+    // Real S3 SDK I/O; the pure key/prefix logic in s3-pdf-archive.ts and the
+    // factory selection are unit-covered, the network wrapper is exercised in
+    // deployment against a real bucket.
+    '!server/src/adapters/aws-s3-putter.ts',
     // SMTP mailer talks to a real relay (nodemailer) — exercised by deployment,
     // not unit-covered; the console mailer and the factory selection are.
     '!server/src/adapters/smtp-mailer.ts',

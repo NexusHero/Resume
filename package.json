@@ -26,6 +26,7 @@
     "build:web": "vite build"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1079.0",
     "awilix": "^13.0.5",
     "drizzle-orm": "^0.45.2",
     "express": "^5.2.1",

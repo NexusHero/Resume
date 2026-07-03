@@ -69,28 +69,50 @@ export type SuggestionKind = (typeof SUGGESTION_KINDS)[number];
  * The snapshot behind an `application` suggestion — a tailored packet staged
  * for approval. It is a copy on the suggestion (payload jsonb), never written
  * over the candidate's canonical documents (ADR-0019).
+ *
+ * The schema is the single source of truth: it both types the payload the
+ * builder produces and re-validates it when it is read back out of storage
+ * (see `parseApplicationPayload`), so a malformed or legacy record fails loudly
+ * at the boundary instead of surfacing as an undefined field deep in the
+ * approve/render path.
  */
-export interface ApplicationPayload {
-  source: ApplicationSource;
+export const applicationPayloadSchema = z.object({
+  source: z.enum(APPLICATION_SOURCES),
   /** The opening's ref within its source (a mandate id, or a job posting id). */
-  targetRef: string;
-  role: string;
-  company: string;
-  location: string;
+  targetRef: z.string(),
+  role: z.string(),
+  company: z.string(),
+  location: z.string(),
   /** For the `mandates` source, the existing mandate id; empty for job targets. */
-  mandateId: string;
-  jobText: string;
-  lang: string;
-  score: number;
+  mandateId: z.string(),
+  jobText: z.string(),
+  lang: z.string(),
+  score: z.number(),
   /** The tuned résumé summary (snapshot). */
-  summary: string;
+  summary: z.string(),
   /** The cover-letter body paragraphs (snapshot). */
-  paragraphs: string[];
+  paragraphs: z.array(z.string()),
   /** PDF Zeugnisse to merge into the Mappe. */
-  attachmentIds: string[];
-  provider: string;
+  attachmentIds: z.array(z.string()),
+  provider: z.string(),
   /** Count of claims the CV + ad did not support (grounding self-check). */
-  ungroundedCount: number;
+  ungroundedCount: z.number(),
+});
+export type ApplicationPayload = z.infer<typeof applicationPayloadSchema>;
+
+/**
+ * Re-validate a stored suggestion payload back into a typed `ApplicationPayload`.
+ * The payload is persisted as opaque jsonb/json, so this is the one place its
+ * shape is checked on the way out — throwing on a malformed record rather than
+ * casting blindly. Callers hold an `application`-kind suggestion.
+ */
+export function parseApplicationPayload(payload: Record<string, unknown>): ApplicationPayload {
+  return applicationPayloadSchema.parse(payload);
+}
+
+/** Widen a typed payload to the suggestion's opaque storage shape. */
+export function toSuggestionPayload(payload: ApplicationPayload): Record<string, unknown> {
+  return { ...payload };
 }
 
 /** Dedup key for an application: one per (opening ref, talent). */

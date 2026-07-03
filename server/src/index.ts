@@ -1,8 +1,12 @@
+import type { Pool } from 'pg';
 import { loadConfig } from './config';
 import { checkProductionReadiness } from './config-validation';
 import { buildContainer } from './container';
 import { createApp } from './http/create-app';
 import { createDb, migrate, type Db } from './adapters/sql/db';
+import type { SchedulerLock } from './ports/scheduler-lock';
+import { NoopSchedulerLock } from './adapters/noop-scheduler-lock';
+import { PgAdvisorySchedulerLock } from './adapters/sql/pg-advisory-scheduler-lock';
 import type { Logger } from './ports/logger';
 import type { ApplicationController } from './http/application-controller';
 import type { JobController } from './http/job-controller';
@@ -52,14 +56,24 @@ async function main(): Promise<void> {
   }
 
   let db: Db | undefined;
+  let pool: Pool | undefined;
   if (config.store === 'sql') {
     const conn = createDb(config.databaseUrl);
     await migrate(conn.pool);
     db = conn.db;
+    pool = conn.pool;
   }
 
   const container = buildContainer(config, db);
   const logger = container.resolve<Logger>('logger');
+
+  // Scheduler leader election (ADR-0030): with Postgres, only the instance that
+  // wins each per-job advisory lock runs it, so scaling to N instances doesn't
+  // duplicate the timed jobs below. The filesystem store is single-instance, so
+  // the no-op lock (always leader) is correct there.
+  const schedulerLock: SchedulerLock = pool
+    ? new PgAdvisorySchedulerLock(pool)
+    : new NoopSchedulerLock();
 
   const app = createApp({
     applicationController: container.resolve<ApplicationController>('applicationController'),
@@ -97,12 +111,14 @@ async function main(): Promise<void> {
   // shutdown; failures are logged, never fatal.
   const assistantService = container.resolve<AssistantService>('assistantService');
   const assistantTimer = setInterval(() => {
-    assistantService.runIfDue(TEAM_SCOPE).catch((err: unknown) => {
-      logger.warn(
-        { err: err instanceof Error ? err.message : String(err) },
-        'assistant scheduled run failed',
-      );
-    });
+    schedulerLock
+      .runExclusive('assistant', () => assistantService.runIfDue(TEAM_SCOPE).then(() => {}))
+      .catch((err: unknown) => {
+        logger.warn(
+          { err: err instanceof Error ? err.message : String(err) },
+          'assistant scheduled run failed',
+        );
+      });
   }, 60_000);
   assistantTimer.unref();
 
@@ -112,7 +128,9 @@ async function main(): Promise<void> {
   if (mailService.replySyncEnabled) {
     const pollMs = config.mail.imap.pollMinutes * 60_000;
     const replyTimer = setInterval(() => {
-      void mailService.syncRepliesSafely(TEAM_SCOPE);
+      void schedulerLock.runExclusive('reply-sync', () =>
+        mailService.syncRepliesSafely(TEAM_SCOPE),
+      );
     }, pollMs);
     replyTimer.unref();
     logger.info(
@@ -126,7 +144,9 @@ async function main(): Promise<void> {
   // tick). unref()ed, never fatal.
   const retentionService = container.resolve<RetentionService>('retentionService');
   const retentionTimer = setInterval(() => {
-    void retentionService.runAutoAnonymizeIfDue(TEAM_SCOPE);
+    void schedulerLock.runExclusive('retention', () =>
+      retentionService.runAutoAnonymizeIfDue(TEAM_SCOPE),
+    );
   }, 60 * 60_000);
   retentionTimer.unref();
 

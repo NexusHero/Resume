@@ -80,13 +80,14 @@ Recommended production checklist:
 
 ### Running more than one instance
 
-The readiness gate makes Postgres mandatory, so app instances are stateless and
-horizontally scalable **except** for the in-process assistant scheduler
-(`runIfDue`): every instance would fire it, duplicating runs. Until a leader
-lock lands (roadmap D3), run the scheduler on exactly one instance — e.g. a
-single always-on instance, or scale the web tier and keep one dedicated worker.
-PDF rendering (Puppeteer) and the object-storage move for the archive are the
-other scale follow-ups (roadmap D2/D4).
+With Postgres (required in production) the app tier is stateless and
+**horizontally scalable — run as many instances as you like**. The three
+periodic jobs (assistant playbook, IMAP reply sync, retention sweep) are guarded
+by a Postgres advisory-lock leader election (ADR-0030), so each fires once per
+interval cluster-wide, not once per instance. No dedicated worker or external
+scheduler is needed. With the filesystem store the no-op lock applies (a single
+instance is always the leader). PDF rendering (Puppeteer) and the object-storage
+move for the archive are the remaining scale follow-ups (roadmap D2/D4).
 
 ## Notes
 

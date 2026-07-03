@@ -1,7 +1,10 @@
 # ADR-0013 — In-process assistant agent with staged-suggestion autonomy
 
-- **Status:** Accepted
+- **Status:** Accepted — extended by ADR-0019
 - **Relates to:** ADR-0001, ADR-0004, ADR-0005, ADR-0010
+- **Extended by:** ADR-0019 (adds a third `autopilot` gear that _does_ spend LLM
+  tokens; the "two modes, token-free in every mode" decision below is the v1
+  scope this ADR froze, not the current ceiling)
 
 ## Context
 
@@ -30,7 +33,9 @@ agent run** (an external client of the REST API vs. inside the server) and
   everything; `act` lets the agent apply _internal, reversible_ actions itself
   (add a match to the pipeline), visibly marked `auto-applied`. In no mode does
   it contact anyone, delete anything, or spend LLM tokens (the v1 playbook is
-  fully deterministic).
+  fully deterministic). _(ADR-0019 later adds a third gear, `autopilot`, which
+  builds application packets and does spend tokens — still nothing outward-facing
+  or destructive, and the two modes here stay token-free.)_
 - **Settings are persisted** (fs/sql, per team scope) — enabled, mode,
   interval, lastRunAt — so the agent's behaviour survives restarts and runs
   while everyone is signed out.

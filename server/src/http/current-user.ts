@@ -1,9 +1,9 @@
 import type { Request } from 'express';
 import { UnauthorizedError } from '../domain/errors';
-import type { Role } from '../domain/user';
+import { DEFAULT_TENANT, type Role } from '../domain/user';
 import type { AuthPrincipal } from '../ports/authorizer';
 
-type AuthedRequest = Request & { userId?: string; roles?: Role[] };
+type AuthedRequest = Request & { userId?: string; roles?: Role[]; tenantId?: string };
 
 /** The authenticated user's id, attached to the request by AuthController.requireAuth. */
 export function currentUserId(req: Request): string {
@@ -28,13 +28,15 @@ export function currentPrincipal(req: Request): AuthPrincipal {
 }
 
 /**
- * The owner scope for **shared team data** (mandates, talents, pipeline, …).
- * The whole instance is one team, so recruiting records are owned by the team,
- * not the individual — every member sees the same pool. (Auth is still per
- * user; only the *data ownership* is the team.) Later multi-org work makes this
- * read the user's org membership instead of a constant.
+ * The owner scope for **shared team data** (mandates, talents, pipeline, …) —
+ * the tenant the acting user belongs to (ADR-0033). Recruiting records are owned
+ * by the tenant, not the individual, so every member of a tenant sees the same
+ * pool while different tenants are fully isolated. requireAuth stamps
+ * `req.tenantId`; a request without one (or a user without an explicit tenant)
+ * falls back to `DEFAULT_TENANT`, which is every current single-tenant
+ * deployment. The `TEAM_SCOPE` alias is kept for that default.
  */
-export const TEAM_SCOPE = 'team';
-export function currentScope(_req: Request): string {
-  return TEAM_SCOPE;
+export const TEAM_SCOPE = DEFAULT_TENANT;
+export function currentScope(req: Request): string {
+  return (req as AuthedRequest).tenantId ?? DEFAULT_TENANT;
 }

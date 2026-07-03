@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import { registerSchema, loginSchema } from '../domain/user';
+import { registerSchema, loginSchema, DEFAULT_TENANT } from '../domain/user';
 import { UnauthorizedError } from '../domain/errors';
 import type { AuthService } from '../services/auth-service';
 import type { EmailVerificationService } from '../services/email-verification-service';
@@ -119,9 +119,12 @@ export class AuthController {
   requireAuth = async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
     const user = await this.service.currentUser(readCookie(req, this.cookieName));
     if (!user) throw new UnauthorizedError();
-    const r = req as Request & { userId?: string; roles?: typeof user.roles };
+    const r = req as Request & { userId?: string; roles?: typeof user.roles; tenantId?: string };
     r.userId = user.id;
     r.roles = user.roles;
+    // Stamp the tenant so currentScope() isolates data per tenant (ADR-0033);
+    // absent on the user means the default single tenant.
+    r.tenantId = user.tenantId ?? DEFAULT_TENANT;
     next();
   };
 
@@ -132,7 +135,11 @@ export class AuthController {
    */
   attachUser = async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
     const user = await this.service.currentUser(readCookie(req, this.cookieName));
-    if (user) (req as Request & { userId?: string }).userId = user.id;
+    if (user) {
+      const r = req as Request & { userId?: string; tenantId?: string };
+      r.userId = user.id;
+      r.tenantId = user.tenantId ?? DEFAULT_TENANT;
+    }
     next();
   };
 }

@@ -17,6 +17,7 @@ export const users = pgTable('users', {
   passwordHash: text('password_hash').notNull(),
   roles: jsonb('roles').$type<Role[]>().notNull(),
   createdAt: text('created_at').notNull(),
+  tenantId: text('tenant_id'),
   verifiedAt: text('verified_at'),
   llmProvider: text('llm_provider'),
 });

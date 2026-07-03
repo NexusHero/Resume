@@ -212,6 +212,20 @@ describe('user mappers', () => {
     };
     expect(rowToUser(userToRow(user) as Required<typeof user>)).toEqual(user);
   });
+
+  it('User_RoundTrips_WithTenantId', () => {
+    const user: User = {
+      id: 'u3',
+      email: 'c@example.com',
+      passwordHash: 'scrypt$salt$key',
+      roles: ['recruiter'],
+      createdAt: '2026-06-25T10:00:00.000Z',
+      tenantId: 'acme',
+    };
+    const row = userToRow(user);
+    expect(row.tenantId).toBe('acme');
+    expect(rowToUser(row as Required<typeof user>)).toEqual(user);
+  });
 });
 
 describe('placement mappers', () => {

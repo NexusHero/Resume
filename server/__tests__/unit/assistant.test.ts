@@ -3,6 +3,7 @@ import {
   isDue,
   isStale,
   suggestionKey,
+  parseApplicationPayload,
 } from '../../src/domain/assistant';
 import { AssistantService } from '../../src/services/assistant-service';
 import { MatchService } from '../../src/services/match-service';
@@ -521,5 +522,76 @@ describe('AssistantService autopilot (ADR-0019)', () => {
     await expect(c.service.renderApplicationDossier(OWNER, 'nope')).rejects.toBeInstanceOf(
       NotFoundError,
     );
+  });
+
+  it('ApproveApplication_MalformedStoredPayload_Throws', async () => {
+    const c = ctx();
+    await c.suggestions.add({
+      id: 'bad1',
+      ownerId: OWNER,
+      kind: 'application',
+      title: 'corrupt',
+      rationale: 'corrupt',
+      talentId: 't1',
+      payload: { source: 'jobs' }, // missing every other required field
+      status: 'proposed',
+      createdAt: '2020-01-01T00:00:00.000Z',
+      runId: 'r0',
+    });
+    await expect(c.service.accept(OWNER, 'bad1')).rejects.toThrow();
+  });
+
+  it('AutopilotRun_SkipsMalformedStagedPayload_StillStagesNewOne', async () => {
+    const c = ctx();
+    await c.settingsStore.set(OWNER, autopilot());
+    // A corrupt legacy application record must not abort the dedup scan.
+    await c.suggestions.add({
+      id: 'bad1',
+      ownerId: OWNER,
+      kind: 'application',
+      title: 'corrupt',
+      rationale: 'corrupt',
+      talentId: 't0',
+      payload: {},
+      status: 'proposed',
+      createdAt: '2020-01-01T00:00:00.000Z',
+      runId: 'r0',
+    });
+    await c.mandates.add(mandate('m1', { jobText: 'Go PostgreSQL' }));
+    await c.talents.add(talent('t1', { skills: ['Go', 'PostgreSQL'] }));
+    const res = await c.service.run(OWNER);
+    expect(res.proposed).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('parseApplicationPayload', () => {
+  const valid = {
+    source: 'jobs' as const,
+    targetRef: 'job-1',
+    role: 'Backend Engineer',
+    company: 'Helio',
+    location: 'Remote',
+    mandateId: '',
+    jobText: 'Go and Kubernetes',
+    lang: 'en',
+    score: 82,
+    summary: 'Tuned summary.',
+    paragraphs: ['Intro.', 'Core.', 'Close.'],
+    attachmentIds: [],
+    provider: 'template',
+    ungroundedCount: 0,
+  };
+
+  it('ValidPayload_RoundTripsThroughSchema', () => {
+    expect(parseApplicationPayload({ ...valid })).toEqual(valid);
+  });
+
+  it('MissingRequiredField_Throws', () => {
+    const { score: _score, ...missingScore } = valid;
+    expect(() => parseApplicationPayload(missingScore)).toThrow();
+  });
+
+  it('WrongType_Throws', () => {
+    expect(() => parseApplicationPayload({ ...valid, paragraphs: 'not-an-array' })).toThrow();
   });
 });

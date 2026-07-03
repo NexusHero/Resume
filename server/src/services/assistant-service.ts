@@ -5,6 +5,9 @@ import {
   type UpdateAssistantSettingsInput,
   DEFAULT_ASSISTANT_SETTINGS,
   applicationDedupKey,
+  applicationPayloadSchema,
+  parseApplicationPayload,
+  toSuggestionPayload,
   isDue,
   isStale,
   daysStale,
@@ -261,16 +264,22 @@ export class AssistantService {
     runId: string,
     now: string,
   ): Promise<number> {
-    const seenApps = new Set(
-      (await this.suggestions.list(scope))
-        .filter((s) => s.kind === 'application')
-        .map((s) =>
-          applicationDedupKey(
-            (s.payload as unknown as ApplicationPayload).targetRef ?? '',
-            s.talentId ?? '',
-          ),
-        ),
-    );
+    // Scan already-staged applications to avoid rebuilding one. This is a batch
+    // read, so a single malformed/legacy record is skipped (logged) rather than
+    // allowed to abort the whole run.
+    const seenApps = new Set<string>();
+    for (const s of await this.suggestions.list(scope)) {
+      if (s.kind !== 'application') continue;
+      const parsed = applicationPayloadSchema.safeParse(s.payload);
+      if (!parsed.success) {
+        this.logger.warn(
+          { suggestionId: s.id },
+          'skipping malformed application payload in dedup scan',
+        );
+        continue;
+      }
+      seenApps.add(applicationDedupKey(parsed.data.targetRef, s.talentId ?? ''));
+    }
     const targets = await this.autopilotTargets(scope, settings);
     let built = 0;
     let proposed = 0;
@@ -310,7 +319,7 @@ export class AssistantService {
               : ''),
           ...(payload.mandateId ? { mandateId: payload.mandateId } : {}),
           talentId: m.talentId,
-          payload: payload as unknown as Record<string, unknown>,
+          payload: toSuggestionPayload(payload),
           status: 'proposed',
           createdAt: now,
           runId,
@@ -381,7 +390,7 @@ export class AssistantService {
    * downstream flow. The actual outward submission stays a manual step.
    */
   private async approveApplication(scope: string, suggestion: AssistantSuggestion): Promise<void> {
-    const payload = suggestion.payload as unknown as ApplicationPayload;
+    const payload = parseApplicationPayload(suggestion.payload);
     let mandateId = payload.mandateId;
     if (!mandateId) {
       const mandate = await this.mandateService.create(
@@ -407,7 +416,7 @@ export class AssistantService {
     return this.builder.renderDossier(
       scope,
       suggestion.talentId,
-      suggestion.payload as unknown as ApplicationPayload,
+      parseApplicationPayload(suggestion.payload),
     );
   }
 

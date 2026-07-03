@@ -45,6 +45,7 @@ function CvMainHeading({ icon, title, onEdit }) {
 
 /* ---- Lebenslauf tab ---- */
 function ResumeTab({ talent, onEdit, onCreateMappe }) {
+  const { isMobile } = window.useViewport ? window.useViewport() : { isMobile: false };
   const r = talent.resume;
   if (!r) {
     return (
@@ -57,10 +58,12 @@ function ResumeTab({ talent, onEdit, onCreateMappe }) {
     );
   }
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '24px', alignItems: 'start' }}>
-      {/* CV document — dark "ink" sidebar + paper main (engineering-instrument look) */}
+    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 300px', gap: '24px', alignItems: 'start' }}>
+      {/* CV document — dark "ink" sidebar + paper main (engineering-instrument look).
+          On mobile the two CV columns stack: identity/skills panel on top, then the
+          experience/education paper below (ADR-0027). */}
       <TP.Card bodyStyle={{ padding: 0 }} style={{ overflow: 'hidden' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '264px 1fr', minHeight: '460px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '264px 1fr', minHeight: isMobile ? 0 : '460px' }}>
           {/* dark colored sidebar — identity, contact & skills */}
           <aside style={{ background: 'linear-gradient(180deg, var(--ink-850) 0%, var(--ink-900) 100%)', color: '#fff', padding: '30px 26px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '13px', paddingBottom: '22px', marginBottom: '24px', borderBottom: '1px solid var(--sidebar-border)' }}>

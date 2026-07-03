@@ -3,6 +3,7 @@
 const MM = window.MyJobDesignSystem_f3658e;
 
 function MappeModal({ talent, onClose }) {
+  const { isMobile } = window.useViewport ? window.useViewport() : { isMobile: false };
   const canPersist = !!talent.id && talent.id !== 'me';
   const [attachments, setAttachments] = React.useState(talent.attachments || []);
   const [picked, setPicked] = React.useState(() => new Set());
@@ -69,7 +70,7 @@ function MappeModal({ talent, onClose }) {
         </div>
 
         {/* body */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 22px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', alignItems: 'start' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 22px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '20px', alignItems: 'start' }}>
           {/* left: recipient */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '13px' }}>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Recipient</div>

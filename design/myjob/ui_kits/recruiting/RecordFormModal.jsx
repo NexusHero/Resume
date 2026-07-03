@@ -59,6 +59,7 @@ const RECORD_FORMS = {
 };
 
 function RecordFormModal({ kind, record, prefill, onClose, onSubmit }) {
+  const { isMobile } = window.useViewport ? window.useViewport() : { isMobile: false };
   const form = RECORD_FORMS[kind];
   const editing = record != null;
   // `record` = edit an existing row; `prefill` = create, but seed the fields
@@ -107,7 +108,7 @@ function RecordFormModal({ kind, record, prefill, onClose, onSubmit }) {
           <RF.IconButton icon="x" label="Close" variant="ghost" type="button" onClick={onClose} />
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 22px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', alignItems: 'start' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 22px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '14px', alignItems: 'start' }}>
           {form.fields.map((f) =>
             f.type === 'select' ? (
               <RF.Select key={f.name} label={f.label} options={f.options} value={values[f.name]} onChange={(e) => set(f.name, e.target.value)} aria-label={f.label} />

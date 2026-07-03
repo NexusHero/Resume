@@ -20,6 +20,16 @@ globalThis.ReactDOM = ReactDOM;
 window.React = React;
 window.ReactDOM = ReactDOM;
 
+// jsdom ships no ResizeObserver; kit components (e.g. the Editor's preview
+// fit-to-width) construct one on mount. A no-op keeps them renderable in tests.
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}
+
 /* Design-system stub. Every kit file starts with
    `const XX = window.MyJobDesignSystem_f3658e;` and then renders `XX.Something`.
    Rather than list every primitive, the stub is a Proxy: any accessed member is

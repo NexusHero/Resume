@@ -12,6 +12,7 @@ import { ConflictError, NotFoundError } from '../../src/domain/errors';
 import type { Candidacy } from '../../src/domain/candidacy';
 import type { Mandate } from '../../src/domain/mandate';
 import type { Talent } from '../../src/domain/talent';
+import { saveDocumentsSchema } from '../../src/domain/talent-documents';
 import {
   InMemoryAssistantSettingsStore,
   InMemoryAssistantSuggestionRepository,
@@ -118,7 +119,16 @@ function ctx() {
     idGenerator: new SequenceIdGenerator('s'),
     logger: noopLogger,
   });
-  return { service, settingsStore, suggestions, mandates, talents, candidacies };
+  return {
+    service,
+    settingsStore,
+    suggestions,
+    mandates,
+    talents,
+    documents,
+    candidacies,
+    candidacyService,
+  };
 }
 
 describe('assistant domain', () => {
@@ -147,6 +157,8 @@ describe('assistant domain', () => {
     expect(suggestionKey({ kind: 'follow-up', mandateId: 'm1', talentId: 't1' })).not.toBe(
       suggestionKey({ kind: 'shortlist-add', mandateId: 'm1', talentId: 't1' }),
     );
+    // Absent ids collapse to a stable key (kind-wide dedup).
+    expect(suggestionKey({ kind: 'data-gap' })).toBe('data-gap||');
   });
 });
 
@@ -214,6 +226,31 @@ describe('AssistantService', () => {
     expect(board[0]?.note).toBe('Added by the assistant');
   });
 
+  it('Run_ActMode_AutoApplyFailure_FallsBackToProposal', async () => {
+    const c = ctx();
+    await c.settingsStore.set(OWNER, { ...DEFAULT_ASSISTANT_SETTINGS, enabled: true, mode: 'act' });
+    await c.mandates.add(mandate('m1'));
+    await c.talents.add(talent('t1'));
+    jest.spyOn(c.candidacyService, 'add').mockRejectedValue(new Error('boom'));
+    const result = await c.service.run(OWNER);
+    // The action failed → the finding is staged for review instead of lost.
+    expect(result.applied).toBe(0);
+    expect(result.proposed).toBeGreaterThanOrEqual(1);
+    const [s] = (await c.suggestions.list(OWNER)).filter((x) => x.kind === 'shortlist-add');
+    expect(s?.status).toBe('proposed');
+  });
+
+  it('Run_StaleCandidacyOfUnknownTalent_StillProposesFollowUp', async () => {
+    const c = ctx();
+    await c.mandates.add(mandate('m1'));
+    await c.candidacies.add(
+      candidacy('c1', { talentId: 'ghost', updatedAt: '2026-06-20T10:00:00.000Z' }),
+    );
+    await c.service.run(OWNER);
+    const followUp = (await c.suggestions.list(OWNER)).find((s) => s.kind === 'follow-up');
+    expect(followUp?.title).toContain('A candidate');
+  });
+
   it('Run_FlagsStaleCandidacies', async () => {
     const c = ctx();
     await c.mandates.add(mandate('m1'));
@@ -230,6 +267,23 @@ describe('AssistantService', () => {
     await c.service.run(OWNER);
     const gap = (await c.suggestions.list(OWNER)).find((s) => s.kind === 'data-gap');
     expect(gap).toMatchObject({ talentId: 't1', status: 'proposed' });
+  });
+
+  it('Run_TalentWithoutSkillsButWithDocuments_IsNotFlagged', async () => {
+    const c = ctx();
+    await c.talents.add(talent('t1', { skills: [] }));
+    await c.talents.add(talent('t2', { skills: [] }));
+    // t1 proves substance via experience, t2 via a skill group — no data gap.
+    const withExperience = saveDocumentsSchema.parse({
+      resume: { experience: [{ role: 'Dev', company: 'X', bullets: [] }] },
+    });
+    const withSkillGroup = saveDocumentsSchema.parse({
+      resume: { skillGroups: [{ label: 'Tools', items: ['Go'] }] },
+    });
+    await c.documents.save({ ownerId: OWNER, talentId: 't1', ...withExperience, updatedAt: NOW });
+    await c.documents.save({ ownerId: OWNER, talentId: 't2', ...withSkillGroup, updatedAt: NOW });
+    await c.service.run(OWNER);
+    expect((await c.suggestions.list(OWNER)).filter((s) => s.kind === 'data-gap')).toEqual([]);
   });
 
   it('Run_StampsLastRunAt_SoTheSchedulerBacksOff', async () => {

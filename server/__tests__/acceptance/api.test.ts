@@ -1825,8 +1825,8 @@ describe('REST API /api/v1', () => {
     expect((await agent.post('/api/v1/assistant/run')).status).toBe(400);
 
     // Enable (persisted), seed a mandate + a matching talent, run.
-    const put = await agent.put('/api/v1/assistant').send({ enabled: true });
-    expect(put.body.settings.enabled).toBe(true);
+    const put = await agent.put('/api/v1/assistant').send({ enabled: true, intervalMinutes: 240 });
+    expect(put.body.settings).toMatchObject({ enabled: true, intervalMinutes: 240 });
     await agent.post('/api/v1/mandates').send({
       client: 'PayFlow AG',
       role: 'Backend Engineer',
@@ -1860,6 +1860,61 @@ describe('REST API /api/v1', () => {
     const after = await agent.get('/api/v1/assistant');
     expect(after.body.counts.accepted).toBe(1);
     expect(after.body.settings.lastRunAt).toBeTruthy();
+  });
+
+  it('Assistant_ActModeAndDismiss_ReflectInCounts', async () => {
+    const agent = request.agent(app);
+    await agent
+      .post('/api/v1/auth/register')
+      .send({ email: 'assistant-act@example.com', password: 'correct horse battery' });
+    await agent.put('/api/v1/assistant').send({ enabled: true, mode: 'act' });
+    await agent.post('/api/v1/mandates').send({
+      client: 'Helio GmbH',
+      role: 'Platform Engineer',
+      location: 'Hamburg',
+      jobText: 'Platform Engineer with Kubernetes and Go',
+    });
+    // One clear match (auto-applied in act mode) + one empty profile (data gap).
+    await agent.post('/api/v1/talents').send({
+      name: 'Mila Sommer',
+      role: 'Platform Engineer',
+      skills: ['Kubernetes', 'Go'],
+    });
+    await agent.post('/api/v1/talents').send({ name: 'Empty Profile' });
+    const run = await agent.post('/api/v1/assistant/run');
+    expect(run.body.applied).toBeGreaterThanOrEqual(1);
+
+    // The auto-applied shortlist landed on the board without any accept.
+    const mandates = await agent.get('/api/v1/mandates');
+    const helio = mandates.body.find((m: { client: string }) => m.client === 'Helio GmbH');
+    const board = await agent.get(`/api/v1/mandates/${helio.id}/candidacies`);
+    expect(board.body.some((c: { note: string }) => c.note === 'Added by the assistant')).toBe(
+      true,
+    );
+
+    // Dismiss the data-gap suggestion; the overview counts every status.
+    const queue = await agent.get('/api/v1/assistant/suggestions');
+    const gap = queue.body.find((s: { kind: string }) => s.kind === 'data-gap');
+    await agent.post(`/api/v1/assistant/suggestions/${gap.id}/dismiss`);
+    const overview = await agent.get('/api/v1/assistant');
+    expect(overview.body.counts.autoApplied).toBeGreaterThanOrEqual(1);
+    expect(overview.body.counts.dismissed).toBeGreaterThanOrEqual(1);
+  });
+
+  it('CoverLetter_SignedInWithoutKey_UsesTheStoredProviderChoiceAndFallsBack', async () => {
+    // The authed path resolves the user's persisted provider, finds no key,
+    // and degrades to the template — no upstream call is made.
+    const agent = request.agent(app);
+    await agent
+      .post('/api/v1/auth/register')
+      .send({ email: 'letter-authed@example.com', password: 'correct horse battery' });
+    await agent.put('/api/v1/settings/llm').send({ provider: 'gemini' });
+    const res = await agent
+      .post('/api/v1/cover-letter')
+      .send({ company: 'Helio', role: 'Engineer', city: 'Berlin', skills: ['Go'] });
+    expect(res.status).toBe(200);
+    expect(res.body.provider).toBe('template');
+    expect(res.body.text).toContain('Helio');
   });
 
   it('ApiDocs_OpenApiSpec_IsServed', async () => {

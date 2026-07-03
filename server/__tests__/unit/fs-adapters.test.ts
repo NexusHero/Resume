@@ -1089,8 +1089,21 @@ describe('FsAssistantStores', () => {
     });
     expect(await repo.findById('team', 's1')).toMatchObject({ title: 'Add Jonas' });
     expect(await repo.findById('other', 's1')).toBeNull();
+    await repo.add({
+      id: 's2',
+      ownerId: 'team',
+      kind: 'data-gap',
+      title: 'Complete a profile',
+      rationale: 'No skills on file',
+      payload: {},
+      status: 'proposed',
+      createdAt: '2026-07-03T09:00:00.000Z',
+      runId: 'r1',
+    });
     const s1 = (await repo.findById('team', 's1'))!;
     await repo.update({ ...s1, status: 'accepted', resolvedAt: '2026-07-03T11:00:00.000Z' });
-    expect((await repo.list('team'))[0]?.status).toBe('accepted');
+    const all = await repo.list('team');
+    expect(all.find((x) => x.id === 's1')?.status).toBe('accepted');
+    expect(all.find((x) => x.id === 's2')?.status).toBe('proposed'); // others untouched
   });
 });

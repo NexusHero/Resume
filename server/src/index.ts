@@ -1,4 +1,5 @@
 import { loadConfig } from './config';
+import { checkProductionReadiness } from './config-validation';
 import { buildContainer } from './container';
 import { createApp } from './http/create-app';
 import { createDb, migrate, type Db } from './adapters/sql/db';
@@ -36,6 +37,19 @@ import type { PlanProvider } from './ports/plan-provider';
 
 async function main(): Promise<void> {
   const config = loadConfig();
+
+  // Fail fast on an unsafe production config before touching the DB (ADR-0029).
+  // The logger lives in the container (not built yet), so boot diagnostics go to
+  // the console.
+  if (process.env.NODE_ENV === 'production') {
+    const { errors, warnings } = checkProductionReadiness(config);
+    for (const w of warnings) console.warn(`[config] warning: ${w}`);
+    if (errors.length > 0) {
+      for (const e of errors) console.error(`[config] error: ${e}`);
+      console.error('[config] Refusing to start: fix the production configuration above.');
+      process.exit(1);
+    }
+  }
 
   let db: Db | undefined;
   if (config.store === 'sql') {

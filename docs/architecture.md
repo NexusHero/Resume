@@ -204,6 +204,7 @@ Full log in [`docs/adr/`](adr). Summary:
 | 0026 | Responsive dense views (dashboard grids + scrollable tables)  | Accepted (E1 slice 2)          |
 | 0027 | Responsive CV profile, editor, and form modals                | Accepted (E1 slice 3)          |
 | 0028 | Installable PWA (manifest + hand-rolled service worker)       | Accepted (E2)                  |
+| 0029 | Fail-fast production readiness gate (Postgres, APP_SECRET)    | Accepted (D-series slice 1)    |
 
 ## 10. Quality Requirements
 

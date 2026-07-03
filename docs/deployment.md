@@ -54,6 +54,40 @@ Resolved from the environment (see `server/src/config.ts`):
 | `MAIL_IMAP_USER` / `MAIL_IMAP_PASS`                         | —                                                          | IMAP credentials.                                                                                                                    |
 | `MAIL_IMAP_POLL_MINUTES`                                    | `15`                                                       | How often the server polls the inbox for replies.                                                                                    |
 
+## Production readiness
+
+When `NODE_ENV=production`, the server runs a **fail-fast readiness check** at
+boot (`server/src/config-validation.ts`, ADR-0029) and **refuses to start** if
+the configuration is unsafe. Fix these before deploying:
+
+| Must set (boot fails otherwise) | Why                                                                                                       |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `STORE=sql` + `DATABASE_URL`    | The filesystem store is single-instance and lost on redeploy — Postgres is mandatory to scale or persist. |
+| `APP_SECRET`                    | Encrypts stored per-user LLM API keys at rest; the dev default is public.                                 |
+
+The check also **warns** (without blocking) when `MAIL_TRANSPORT` is not `smtp`
+(reset/verification links only log) or `APP_BASE_URL` still points at
+`localhost` (email links won't resolve).
+
+Recommended production checklist:
+
+1. `STORE=sql`, a managed Postgres `DATABASE_URL`, and a volume for `/app/archive`
+   (the PDF archive is still file-backed — see Notes).
+2. A strong `APP_SECRET` (keep it stable — rotating it invalidates stored keys).
+3. `MAIL_TRANSPORT=smtp` with `SMTP_*` and an `APP_BASE_URL` on the public origin.
+4. TLS terminated at the proxy; `NODE_ENV=production` (auto-enables Secure cookies).
+5. `CORS_ORIGINS` set only if the browser app is served from a different origin.
+
+### Running more than one instance
+
+The readiness gate makes Postgres mandatory, so app instances are stateless and
+horizontally scalable **except** for the in-process assistant scheduler
+(`runIfDue`): every instance would fire it, duplicating runs. Until a leader
+lock lands (roadmap D3), run the scheduler on exactly one instance — e.g. a
+single always-on instance, or scale the web tier and keep one dedicated worker.
+PDF rendering (Puppeteer) and the object-storage move for the archive are the
+other scale follow-ups (roadmap D2/D4).
+
 ## Notes
 
 - **Persistence:** with `STORE=sql`, everything (recruiting records,

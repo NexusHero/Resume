@@ -1,0 +1,621 @@
+/* MandatePipelineModals — the five feature modals launched from a mandate's
+   pipeline (ADR-0024). Split out of MandatePipeline.jsx so the orchestrator
+   keeps only the board; each modal owns its own feature state (fetch on mount,
+   local UI state) and talks to the parent through a small callback surface
+   (onClose, onAdded, onOpenTalent). Loaded before MandatePipeline.jsx by
+   main.jsx and published on window, following the kit's module convention. */
+const MPM = window.MyJobDesignSystem_f3658e;
+
+const MP_FORMATS = [
+  { id: 'coding', label: 'Coding challenge' },
+  { id: 'system_design', label: 'System design' },
+  { id: 'case', label: 'Case interview' },
+  { id: 'fachgespraech', label: 'Technical interview' },
+  { id: 'assessment_center', label: 'Assessment center' },
+  { id: 'behavioral', label: 'Behavioral questions' },
+  { id: 'take_home', label: 'Take-home assignment' },
+  { id: 'presentation', label: 'Technical presentation' },
+];
+
+/* Shared modal chrome: the dimmed backdrop + centered card. Every modal here
+   used the same fixed-overlay pattern inline; centralizing it removes the
+   repetition without changing the rendered markup. */
+function ModalOverlay({ onClose, zIndex = 60, width, maxHeight = '80vh', flexColumn, backdrop = 'rgba(8,11,18,0.5)', children }) {
+  return (
+    <>
+      <div
+        onClick={onClose}
+        style={{ position: 'fixed', inset: 0, background: backdrop, backdropFilter: 'blur(2px)', zIndex }}
+      />
+      <div
+        style={{
+          position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+          zIndex: zIndex + 1, width, maxHeight, overflowY: flexColumn ? undefined : 'auto',
+          display: flexColumn ? 'flex' : undefined, flexDirection: flexColumn ? 'column' : undefined,
+          background: 'var(--surface-card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-lg)', padding: '22px',
+        }}
+      >
+        {children}
+      </div>
+    </>
+  );
+}
+
+function PrepSection({ title, items, tone }) {
+  return (
+    <div>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: tone || 'var(--text-muted)', marginBottom: '7px' }}>{title}</div>
+      <ul style={{ margin: 0, paddingLeft: '16px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+        {items.map((it, i) => <li key={i} style={{ fontSize: '12.5px', color: 'var(--text-body)', lineHeight: 1.45 }}>{it}</li>)}
+      </ul>
+    </div>
+  );
+}
+
+/* Add a talent from the pool to this mandate's pipeline. Owns the pool fetch. */
+function AddCandidateModal({ mandate, excludeTalentIds, onClose, onAdded }) {
+  const [pool, setPool] = React.useState([]);
+  React.useEffect(() => {
+    let live = true;
+    (async () => {
+      try {
+        const list = await window.RecruitApi.listTalents();
+        if (live) setPool(list);
+      } catch {
+        if (live) setPool([]);
+        // eslint-disable-next-line no-alert
+        window.alert('Could not load the talent pool. Please try again.');
+      }
+    })();
+    return () => { live = false; };
+  }, []);
+
+  const exclude = excludeTalentIds instanceof Set ? excludeTalentIds : new Set(excludeTalentIds || []);
+  const addable = pool.filter((t) => !exclude.has(t.id) && t.id !== 'me');
+
+  const addCandidate = async (talentId) => {
+    try {
+      await window.RecruitApi.addCandidacy(mandate.id, { talentId });
+      onAdded();
+      onClose();
+    } catch { /* ignore (e.g. duplicate) */ }
+  };
+
+  return (
+    <ModalOverlay onClose={onClose} zIndex={60} width="min(520px, 92vw)" backdrop="rgba(8,11,18,0.45)">
+      <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)', marginBottom: '4px' }}>Add a candidate</div>
+      <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginBottom: '14px' }}>Pick a talent from the pool to add to this mandate's pipeline.</div>
+      {addable.length === 0 && (
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-soft)', padding: '8px 0' }}>Everyone in the pool is already in this pipeline.</div>
+      )}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {addable.map((t) => (
+          <button key={t.id} onClick={() => addCandidate(t.id)} style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', textAlign: 'left', padding: '9px 11px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', cursor: 'pointer' }}>
+            <MPM.Avatar name={t.name} size="xs" />
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: '13px', fontWeight: 600, color: 'var(--text-heading)' }}>{t.name}</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', marginLeft: 'auto' }}>{t.role}</span>
+          </button>
+        ))}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+        <MPM.Button variant="ghost" onClick={onClose}>Close</MPM.Button>
+      </div>
+    </ModalOverlay>
+  );
+}
+
+/* Interview kit for one candidate. Presentational — the parent modal fetches. */
+function InterviewKitModal({ interview, mandateRole, onClose }) {
+  return (
+    <ModalOverlay onClose={onClose} zIndex={70} width="min(640px, 94vw)" maxHeight="86vh" flexColumn>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '4px' }}>
+        <span style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)' }}>Interview kit</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-soft)' }}>{interview.name} · {mandateRole}</span>
+        {interview.data && (
+          <span style={{ marginLeft: 'auto' }}><window.ProviderBadge provider={interview.data.provider} usage={interview.data.usage} /></span>
+        )}
+      </div>
+
+      {interview.loading ? (
+        <div style={{ padding: '28px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Building the guide…</div>
+      ) : !interview.data ? (
+        <div style={{ padding: '22px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Could not load the interview kit.</div>
+      ) : (
+        <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '10px' }}>
+          {interview.data.focus && (
+            <div style={{ fontSize: '12.5px', color: 'var(--text-heading)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '10px 12px' }}>
+              <strong>Focus:</strong> {interview.data.focus}
+            </div>
+          )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {interview.data.questions.map((q, i) => (
+              <div key={i} style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '11px 12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '4px' }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9.5px', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--accent-strong)', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-pill)', padding: '2px 8px' }}>{q.category}</span>
+                </div>
+                <div style={{ fontSize: '13px', color: 'var(--text-heading)', lineHeight: 1.45 }}>{q.question}</div>
+                {q.lookFor && <div style={{ fontSize: '11.5px', color: 'var(--text-soft)', marginTop: '3px' }}>→ Look for: {q.lookFor}</div>}
+              </div>
+            ))}
+          </div>
+          {interview.data.scorecard.length > 0 && (
+            <div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '7px' }}>Scorecard</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {interview.data.scorecard.map((s, i) => (
+                  <span key={i} style={{ fontSize: '11.5px', color: 'var(--text-soft)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '3px 10px' }}>{s}</span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+        <MPM.Button variant="ghost" onClick={onClose}>Close</MPM.Button>
+      </div>
+    </ModalOverlay>
+  );
+}
+
+/* Candidate prep sheet. Presentational — the parent modal fetches. */
+function CandidatePrepModal({ prep, mandateRole, onClose }) {
+  return (
+    <ModalOverlay onClose={onClose} zIndex={70} width="min(680px, 95vw)" maxHeight="88vh" flexColumn>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '2px' }}>
+        <span style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)' }}>Candidate prep</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-soft)' }}>{prep.name} · {mandateRole}</span>
+        {prep.data && (
+          <span style={{ marginLeft: 'auto' }}><window.ProviderBadge provider={prep.data.provider} usage={prep.data.usage} /></span>
+        )}
+      </div>
+      <div style={{ fontSize: '11.5px', color: 'var(--text-soft)', marginBottom: '8px' }}>For sharing with the candidate. Company details are estimates — verify before the interview.</div>
+
+      {prep.loading ? (
+        <div style={{ padding: '28px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Building the prep…</div>
+      ) : !prep.data ? (
+        <div style={{ padding: '22px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Could not load the prep.</div>
+      ) : (
+        <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '6px' }}>
+          {/* Company style with provenance */}
+          <div style={{ background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '12px 14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--text-heading)' }}>Interview style: {prep.data.companyLabel}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9.5px', color: 'var(--text-soft)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '1px 7px' }}>{prep.data.companySource} · {prep.data.companyConfidence}</span>
+            </div>
+            <ul style={{ margin: 0, paddingLeft: '16px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              {prep.data.formats.map((f, i) => <li key={i} style={{ fontSize: '12px', color: 'var(--text-soft)' }}>{f}</li>)}
+            </ul>
+            <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '5px' }}>{prep.data.rounds}</div>
+          </div>
+
+          {prep.data.obligations.length > 0 && (
+            <PrepSection title="Obligations (from the ad)" items={prep.data.obligations} tone="var(--danger)" />
+          )}
+          {prep.data.processHints.length > 0 && (
+            <PrepSection title="Process notes" items={prep.data.processHints} />
+          )}
+
+          {prep.data.requirementChecks.length > 0 && (
+            <div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '7px' }}>Requirements check</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                {prep.data.requirementChecks.map((c, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '12.5px' }}>
+                    <MPM.Icon name={c.covered ? 'check' : 'alert'} size={13} style={{ marginTop: '1px', color: c.covered ? 'var(--status-hired-strong)' : 'var(--status-offer-strong, #D97757)' }} />
+                    <span style={{ color: 'var(--text-body)' }}>{c.text}{!c.covered && <span style={{ color: 'var(--text-soft)' }}> — back this up in the profile</span>}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {prep.data.strengths.length > 0 && (
+            <div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '7px' }}>Your strengths for this role</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {prep.data.strengths.map((s, i) => <span key={i} style={{ fontSize: '11.5px', color: 'var(--accent-strong)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '3px 10px' }}>{s}</span>)}
+              </div>
+            </div>
+          )}
+
+          <div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '7px' }}>What to expect</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {prep.data.likelyQuestions.map((q, i) => (
+                <div key={i} style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '10px 12px' }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9.5px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--accent-strong)' }}>{q.category}</span>
+                  <div style={{ fontSize: '12.5px', color: 'var(--text-heading)', marginTop: '2px' }}>{q.question}</div>
+                  {q.why && <div style={{ fontSize: '11px', color: 'var(--text-soft)', marginTop: '2px' }}>{q.why}</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '7px' }}>Answer scaffolds (STAR)</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {prep.data.starAnswers.map((s, i) => (
+                <div key={i} style={{ background: 'var(--surface-sunk)', borderRadius: 'var(--radius-md)', padding: '10px 12px' }}>
+                  <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-heading)' }}>{s.prompt}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-soft)', marginTop: '3px', lineHeight: 1.5 }}>{s.scaffold}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <PrepSection title="Questions you should ask" items={prep.data.candidateQuestions} />
+        </div>
+      )}
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+        <MPM.Button variant="ghost" onClick={onClose}>Close</MPM.Button>
+      </div>
+    </ModalOverlay>
+  );
+}
+
+/* Rank the talent pool for this mandate, with an AGG bias check + neutral
+   rewrite, per-candidate "why", and interview/prep launchers. Owns all of the
+   matching feature's state; notifies the parent only when a candidate is added
+   (onAdded → reload the board) or a profile is opened (onOpenTalent). */
+function FindMatchesModal({ mandate, onClose, onOpenTalent, onAdded }) {
+  const [matchQuery, setMatchQuery] = React.useState('');
+  const [matches, setMatches] = React.useState(null); // null = not run yet
+  const [matchLoading, setMatchLoading] = React.useState(false);
+  const [agg, setAgg] = React.useState(null); // null = not run yet
+  const [aggLoading, setAggLoading] = React.useState(false);
+  const [aggRewrite, setAggRewrite] = React.useState(null); // the neutral draft
+  const [aggRewriteLoading, setAggRewriteLoading] = React.useState(false);
+  const [explains, setExplains] = React.useState({}); // talentId -> { loading, open, data }
+  const [interview, setInterview] = React.useState(null); // { name, loading, data } | null
+  const [prep, setPrep] = React.useState(null); // { name, loading, data } | null
+
+  const runAgg = async () => {
+    setAggLoading(true);
+    try {
+      setAgg(await window.RecruitApi.aggCheck(matchQuery));
+      setAggRewrite(null);
+    } catch {
+      setAgg({ findings: [], riskLevel: 'none', hasGenderMarker: false, summary: 'Check failed.' });
+    } finally {
+      setAggLoading(false);
+    }
+  };
+  const runAggRewrite = async () => {
+    setAggRewriteLoading(true);
+    try {
+      setAggRewrite(await window.RecruitApi.aggRewrite(matchQuery));
+    } catch {
+      setAggRewrite(null);
+    } finally {
+      setAggRewriteLoading(false);
+    }
+  };
+  const applyAggRewrite = () => {
+    if (!aggRewrite) return;
+    setMatchQuery(aggRewrite.text);
+    setAgg(null);
+    setAggRewrite(null);
+  };
+  const runMatch = async () => {
+    setMatchLoading(true);
+    try {
+      setMatches(await window.RecruitApi.matchMandate(mandate.id, { jobText: matchQuery, limit: 12 }));
+    } catch {
+      setMatches([]);
+    } finally {
+      setMatchLoading(false);
+    }
+  };
+  const toggleExplain = async (talentId) => {
+    const cur = explains[talentId];
+    if (cur && cur.data) {
+      setExplains((e) => ({ ...e, [talentId]: { ...cur, open: !cur.open } }));
+      return;
+    }
+    setExplains((e) => ({ ...e, [talentId]: { loading: true, open: true } }));
+    try {
+      const data = await window.RecruitApi.explainMatch(mandate.id, talentId);
+      setExplains((e) => ({ ...e, [talentId]: { loading: false, open: true, data } }));
+    } catch {
+      setExplains((e) => ({
+        ...e,
+        [talentId]: { loading: false, open: true, data: { summary: 'Could not load an explanation.', reasons: [] } },
+      }));
+    }
+  };
+  const openInterview = async (talentId, name) => {
+    setInterview({ name, loading: true, data: null });
+    try {
+      const data = await window.RecruitApi.interviewKit(mandate.id, talentId);
+      setInterview({ name, loading: false, data });
+    } catch {
+      setInterview({ name, loading: false, data: null, error: true });
+    }
+  };
+  const openPrep = async (talentId, name) => {
+    setPrep({ name, loading: true, data: null });
+    try {
+      const data = await window.RecruitApi.candidatePrep(mandate.id, talentId);
+      setPrep({ name, loading: false, data });
+    } catch {
+      setPrep({ name, loading: false, data: null, error: true });
+    }
+  };
+  const addFromMatch = async (talentId) => {
+    try {
+      await window.RecruitApi.addCandidacy(mandate.id, { talentId });
+      setMatches((ms) => (ms || []).map((m) => (m.talentId === talentId ? { ...m, inPipeline: true } : m)));
+      onAdded();
+    } catch { /* ignore (e.g. duplicate) */ }
+  };
+
+  return (
+    <>
+      <ModalOverlay onClose={onClose} zIndex={60} width="min(600px, 94vw)" maxHeight="84vh" flexColumn backdrop="rgba(8,11,18,0.45)">
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)', marginBottom: '4px' }}>Find matches</div>
+        <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginBottom: '14px' }}>Rank the talent pool for <strong>{mandate.role}</strong>. Leave the ad empty to match on the mandate itself, or paste a job ad to sharpen the ranking.</div>
+        <MPM.Textarea
+          rows={4}
+          placeholder={`Optional: paste the job ad for “${mandate.role}” to rank against its requirements…`}
+          value={matchQuery}
+          onChange={(e) => setMatchQuery(e.target.value)}
+          aria-label="Job ad text"
+        />
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '12px' }}>
+          <MPM.Button variant="outline" size="sm" iconLeft={<MPM.Icon name="alert" size={15} />} disabled={aggLoading} onClick={runAgg}>
+            {aggLoading ? 'Checking…' : 'AGG check'}
+          </MPM.Button>
+          <MPM.Button variant="primary" size="sm" iconLeft={<MPM.Icon name="zap" size={15} />} disabled={matchLoading} onClick={runMatch}>
+            {matchLoading ? 'Ranking…' : matches === null ? 'Rank pool' : 'Re-rank'}
+          </MPM.Button>
+        </div>
+
+        {agg !== null && (() => {
+          const tone = agg.riskLevel === 'high' ? 'var(--danger)' : agg.riskLevel === 'medium' ? 'var(--status-offer-strong, #D97757)' : agg.riskLevel === 'low' ? 'var(--text-muted)' : 'var(--status-hired-strong)';
+          return (
+            <div style={{ marginTop: '12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '12px 14px', background: 'var(--surface-sunk)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: agg.findings.length ? '10px' : 0 }}>
+                <MPM.Icon name="alert" size={14} style={{ color: tone }} />
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: tone }}>AGG {agg.riskLevel}</span>
+                <span style={{ fontSize: '12px', color: 'var(--text-soft)' }}>{agg.summary}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {agg.findings.map((f, i) => (
+                  <div key={i} style={{ display: 'flex', gap: '9px', alignItems: 'flex-start' }}>
+                    <span style={{ flexShrink: 0, marginTop: '1px', fontFamily: 'var(--font-mono)', fontSize: '9.5px', fontWeight: 600, letterSpacing: '0.03em', textTransform: 'uppercase', color: f.severity === 'high' ? 'var(--danger)' : 'var(--text-soft)', background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '2px 7px' }}>{f.categoryLabel}</span>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: '12.5px', color: 'var(--text-heading)' }}><strong style={{ color: 'var(--danger)' }}>“{f.term}”</strong> — {f.issue}</div>
+                      <div style={{ fontSize: '11.5px', color: 'var(--text-soft)', marginTop: '1px' }}>{f.suggestion}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {agg.findings.length > 0 && (
+                <div style={{ marginTop: '10px' }}>
+                  <MPM.Button variant="outline" size="sm" iconLeft={<MPM.Icon name="zap" size={14} />} disabled={aggRewriteLoading} onClick={runAggRewrite}>
+                    {aggRewriteLoading ? 'Rewriting…' : 'Suggest neutral draft'}
+                  </MPM.Button>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+        {aggRewrite !== null && (
+          <div style={{ marginTop: '10px', border: '1px solid var(--accent-border)', borderRadius: 'var(--radius-md)', padding: '12px 14px', background: 'var(--accent-soft)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '8px' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--accent-strong)' }}>Neutral draft</span>
+              {aggRewrite.changed && (
+                <MPM.Button variant="primary" size="sm" onClick={applyAggRewrite}>Use this text</MPM.Button>
+              )}
+            </div>
+            {aggRewrite.changed ? (
+              <>
+                <div style={{ fontSize: '12.5px', color: 'var(--text-heading)', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{aggRewrite.text}</div>
+                <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {aggRewrite.edits.map((e, i) => (
+                    <span key={i} style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-soft)', background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '2px 8px' }}>“{e.from}” → “{e.to}”</span>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div style={{ fontSize: '12px', color: 'var(--text-soft)' }}>No automatic rewrite available — these phrases need a human decision.</div>
+            )}
+            {aggRewrite.unresolved && aggRewrite.unresolved.length > 0 && (
+              <div style={{ fontSize: '11.5px', color: 'var(--danger)', marginTop: '8px' }}>Still needs review: {aggRewrite.unresolved.map((f) => `“${f.term}”`).join(', ')}</div>
+            )}
+          </div>
+        )}
+
+        <div style={{ marginTop: '14px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {matches !== null && matches.length === 0 && (
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-soft)', padding: '8px 0' }}>No candidates in the pool yet.</div>
+          )}
+          {(matches || []).map((mm) => {
+            const exp = explains[mm.talentId];
+            return (
+              <div key={mm.talentId} style={{ borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--surface-card)', overflow: 'hidden' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 11px' }}>
+                  <MPM.Avatar name={mm.name} size="xs" />
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <button
+                      onClick={() => onOpenTalent(mm.talentId)}
+                      style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font-display)', fontSize: '13px', fontWeight: 700, color: 'var(--text-heading)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}
+                    >
+                      {mm.name}
+                    </button>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+                      {mm.role && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-soft)' }}>{mm.role}</span>}
+                      {(mm.matched || []).slice(0, 4).map((sk) => (
+                        <span key={sk} style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--accent-strong)', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-pill)', padding: '1px 7px' }}>{sk}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <button onClick={() => toggleExplain(mm.talentId)} title="Why does this candidate fit?" style={{ flexShrink: 0, cursor: 'pointer', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '10.5px', padding: '4px 9px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <MPM.Icon name="zap" size={12} /> {exp && exp.open ? 'Why ▲' : 'Why ▾'}
+                  </button>
+                  <button onClick={() => openInterview(mm.talentId, mm.name)} title="Create interview kit" style={{ flexShrink: 0, cursor: 'pointer', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '10.5px', padding: '4px 9px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <MPM.Icon name="message" size={12} /> Interview
+                  </button>
+                  <button onClick={() => openPrep(mm.talentId, mm.name)} title="Create candidate prep" style={{ flexShrink: 0, cursor: 'pointer', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '10.5px', padding: '4px 9px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <MPM.Icon name="award" size={12} /> Prep
+                  </button>
+                  <span title={typeof mm.skillScore === 'number' ? `Hybrid score: skills ${mm.skillScore}/100 (70%) + text similarity ${mm.semanticScore}/100 (30%)` : undefined} style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <MPM.MatchIndicator value={mm.score} variant="chip" />
+                    {typeof mm.skillScore === 'number' && (
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9.5px', color: 'var(--text-soft)', whiteSpace: 'nowrap' }}>S{mm.skillScore} · T{mm.semanticScore}</span>
+                    )}
+                  </span>
+                  {mm.inPipeline ? (
+                    <span style={{ flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-soft)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <MPM.Icon name="check" size={12} /> In pipeline
+                    </span>
+                  ) : (
+                    <MPM.Button variant="outline" size="sm" onClick={() => addFromMatch(mm.talentId)}>Add</MPM.Button>
+                  )}
+                </div>
+                {exp && exp.open && (
+                  <div style={{ borderTop: '1px solid var(--border)', background: 'var(--surface-sunk)', padding: '10px 12px' }}>
+                    {exp.loading ? (
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>Building the explanation…</div>
+                    ) : (
+                      <>
+                        {exp.data.summary && <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-heading)', marginBottom: exp.data.reasons.length ? '6px' : 0 }}>{exp.data.summary}</div>}
+                        <ul style={{ margin: 0, paddingLeft: '16px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          {exp.data.reasons.map((r, i) => (
+                            <li key={i} style={{ fontSize: '12px', color: 'var(--text-soft)', lineHeight: 1.45 }}>{r}</li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+          <MPM.Button variant="ghost" onClick={onClose}>Close</MPM.Button>
+        </div>
+      </ModalOverlay>
+
+      {interview && <InterviewKitModal interview={interview} mandateRole={mandate.role} onClose={() => setInterview(null)} />}
+      {prep && <CandidatePrepModal prep={prep} mandateRole={mandate.role} onClose={() => setPrep(null)} />}
+    </>
+  );
+}
+
+/* Company interview knowledge from first-party observations + a capture form.
+   Owns the knowledge fetch and the capture-form state. */
+function CompanyKnowledgeModal({ mandate, onClose }) {
+  const emptyObsForm = { rounds: 2, formats: [], difficulty: 'medium', notes: '' };
+  const [knowledge, setKnowledge] = React.useState({ loading: true, data: null, form: { ...emptyObsForm }, saving: false });
+
+  const reload = React.useCallback(async () => {
+    try {
+      const data = await window.RecruitApi.companyKnowledge(mandate.id);
+      setKnowledge((k) => ({ ...k, loading: false, data }));
+    } catch {
+      setKnowledge((k) => ({ ...k, loading: false, data: null, error: true }));
+    }
+  }, [mandate.id]);
+  React.useEffect(() => { reload(); }, [reload]);
+
+  const toggleObsFormat = (fid) => {
+    setKnowledge((k) => {
+      const has = k.form.formats.includes(fid);
+      const formats = has ? k.form.formats.filter((x) => x !== fid) : [...k.form.formats, fid];
+      return { ...k, form: { ...k.form, formats } };
+    });
+  };
+  const saveObservation = async () => {
+    setKnowledge((k) => ({ ...k, saving: true }));
+    try {
+      await window.RecruitApi.recordObservation(mandate.id, knowledge.form);
+      const data = await window.RecruitApi.companyKnowledge(mandate.id);
+      setKnowledge((k) => ({ ...k, saving: false, data, form: { ...emptyObsForm } }));
+    } catch {
+      setKnowledge((k) => ({ ...k, saving: false }));
+    }
+  };
+
+  return (
+    <ModalOverlay onClose={onClose} zIndex={70} width="min(600px, 95vw)" maxHeight="88vh" flexColumn>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '2px' }}>
+        <span style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)' }}>Company knowledge</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-soft)' }}>{mandate.client}</span>
+      </div>
+      <div style={{ fontSize: '11.5px', color: 'var(--text-soft)', marginBottom: '10px' }}>Real interview experiences from your team. The more you capture, the more confident the prep gets.</div>
+
+      <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {/* Aggregated knowledge */}
+        {knowledge.loading ? (
+          <div style={{ padding: '18px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Loading…</div>
+        ) : !knowledge.data || !knowledge.data.profile ? (
+          <div style={{ padding: '14px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '12.5px', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-md)' }}>No observations yet — until then, the prep uses the company archetype.</div>
+        ) : (
+          <div style={{ background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '12px 14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: 'var(--text-heading)' }}>{knowledge.data.profile.sampleSize} observation{knowledge.data.profile.sampleSize === 1 ? '' : 's'}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9.5px', color: 'var(--accent-strong)', background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '1px 7px' }}>Confidence: {knowledge.data.profile.confidence}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', marginLeft: 'auto' }}>~{knowledge.data.profile.typicalRounds} rounds · {knowledge.data.profile.difficulty}</span>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {knowledge.data.profile.formats.map((f) => (
+                <span key={f.format} style={{ fontSize: '11.5px', color: 'var(--text-body)', background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '3px 10px' }}>{f.label} · {f.count}×</span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Capture form */}
+        <div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '9px' }}>Capture an interview experience</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '11px' }}>
+            {MP_FORMATS.map((f) => {
+              const on = knowledge.form.formats.includes(f.id);
+              return (
+                <button key={f.id} onClick={() => toggleObsFormat(f.id)} style={{ cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '11px', padding: '4px 10px', borderRadius: 'var(--radius-pill)', border: `1px solid ${on ? 'var(--accent)' : 'var(--border-strong)'}`, background: on ? 'var(--accent-soft)' : 'var(--surface-card)', color: on ? 'var(--accent-strong)' : 'var(--text-soft)' }}>{f.label}</button>
+              );
+            })}
+          </div>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-soft)' }}>
+              Rounds
+              <input type="number" min="0" max="20" value={knowledge.form.rounds} onChange={(e) => setKnowledge((k) => ({ ...k, form: { ...k.form, rounds: Number(e.target.value) } }))} style={{ width: '52px', padding: '5px 8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', color: 'var(--text-heading)', fontFamily: 'var(--font-mono)', fontSize: '12px' }} />
+            </label>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-soft)' }}>
+              Difficulty
+              <select value={knowledge.form.difficulty} onChange={(e) => setKnowledge((k) => ({ ...k, form: { ...k.form, difficulty: e.target.value } }))} style={{ padding: '5px 8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', color: 'var(--text-heading)', fontFamily: 'var(--font-mono)', fontSize: '12px', cursor: 'pointer' }}>
+                <option value="low">low</option>
+                <option value="medium">medium</option>
+                <option value="high">high</option>
+              </select>
+            </label>
+          </div>
+          <input value={knowledge.form.notes} onChange={(e) => setKnowledge((k) => ({ ...k, form: { ...k.form, notes: e.target.value } }))} placeholder="Note (optional) — e.g. topics that came up" style={{ width: '100%', marginTop: '10px', padding: '8px 11px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', color: 'var(--text-heading)', fontFamily: 'var(--font-body)', fontSize: '12.5px', outline: 'none', boxSizing: 'border-box' }} />
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '11px' }}>
+            <MPM.Button variant="primary" size="sm" iconLeft={<MPM.Icon name="plus" size={14} />} disabled={knowledge.saving || knowledge.form.formats.length === 0} onClick={saveObservation}>
+              {knowledge.saving ? 'Saving…' : 'Capture'}
+            </MPM.Button>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+        <MPM.Button variant="ghost" onClick={onClose}>Close</MPM.Button>
+      </div>
+    </ModalOverlay>
+  );
+}
+
+Object.assign(window, {
+  AddCandidateModal,
+  FindMatchesModal,
+  InterviewKitModal,
+  CandidatePrepModal,
+  CompanyKnowledgeModal,
+});

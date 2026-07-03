@@ -11,6 +11,7 @@ import './RecruitRail.jsx';
 import './PipelineBoard.jsx';
 import './Workspace.jsx';
 import './VermittlerViews.jsx';
+import './MandatePipelineModals.jsx'; // feature modals, published before the orchestrator mounts them
 import './MandatePipeline.jsx';
 import './TalentProfile.jsx';
 // Editor pieces: shared primitives first (the others destructure them from

@@ -145,6 +145,13 @@ export interface JobSourcesConfig {
  * The candidate's skill set, derived from the CV. Core competencies carry more
  * weight so a job matching them scores higher than one matching peripheral tags.
  */
+/**
+ * The stand-in encryption secret used when `APP_SECRET` is unset. It keeps
+ * local/CI working but is public, so it must never be used in production — the
+ * readiness gate (config-validation.ts) refuses to boot on it.
+ */
+export const DEV_ENCRYPTION_SECRET = 'myjob-dev-insecure-secret';
+
 const CANDIDATE_PROFILE: CandidateProfile = {
   skills: [
     { name: 'C++', weight: 3 },
@@ -272,7 +279,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
         .split(',')
         .map((o) => o.trim())
         .filter(Boolean),
-      encryptionSecret: env.APP_SECRET ?? 'myjob-dev-insecure-secret',
+      encryptionSecret: env.APP_SECRET ?? DEV_ENCRYPTION_SECRET,
     },
     mail: {
       transport: env.MAIL_TRANSPORT === 'smtp' ? 'smtp' : 'console',

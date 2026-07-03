@@ -3,7 +3,8 @@
 > Documented with [arc42](https://arc42.org). Modeling language: **UML** (PlantUML sources in
 > [`docs/umls/`](umls), rendered to `.svg`). Companion docs:
 > [requirements](requirements.md) · [use cases](use-cases.md) ·
-> [architecture decisions](adr) · [roadmap](roadmap.md).
+> [architecture decisions](adr) · [roadmap](roadmap.md) ·
+> [EU AI Act brief](eu-ai-act.md).
 
 ## 1. Introduction and Goals
 

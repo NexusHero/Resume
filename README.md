@@ -119,7 +119,8 @@ See **[docs/deployment.md](docs/deployment.md)** for configuration (`STORE`, `DA
   erasure**; a retention report + **Löschfristen-Automatik** (a deletion deadline with an
   opt-in background anonymise sweep); a **KI-Audit-Trail** CSV of every AI call; and an
   **AGG writing aid** that rewrites a flagged job ad into a neutral draft. First-party data
-  only — no scraping.
+  only — no scraping. See the [EU AI Act brief](docs/eu-ai-act.md) for how these map to the
+  Act's transparency and human-oversight obligations for recruiting AI.
 - **AI cover letters** — `POST /api/v1/cover-letter` writes a tailored Anschreiben via
   Claude or Gemini, per-user switchable and persisted; deterministic template fallback.
 - **Job search & ATS** — skill-matched two-tier search across job boards (honest offline

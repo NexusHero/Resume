@@ -49,7 +49,7 @@ import { UsageService } from '../../src/services/usage-service';
 import { ForecastService } from '../../src/services/forecast-service';
 import { InterviewObservationService } from '../../src/services/interview-observation-service';
 import { DocumentService } from '../../src/services/document-service';
-import { DocumentAiService } from '../../src/services/document-ai-service';
+import { buildDocumentAiService } from '../support/build-document-ai';
 import { AttachmentService } from '../../src/services/attachment-service';
 import { AuthService } from '../../src/services/auth-service';
 import { EmailVerificationService } from '../../src/services/email-verification-service';
@@ -254,7 +254,7 @@ function makeApp(
   });
   const interviewObservationRepository = new InMemoryInterviewObservationRepository();
   const artifactLogRepository = new InMemoryArtifactLogRepository();
-  const documentAiService = new DocumentAiService({
+  const documentAiService = buildDocumentAiService({
     documentService,
     llmService,
     apiKeyStore,

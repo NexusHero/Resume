@@ -15,7 +15,7 @@ import { MandateService } from '../../src/services/mandate-service';
 import { JobSearchService } from '../../src/services/job-search-service';
 import { DocumentService } from '../../src/services/document-service';
 import { AttachmentService } from '../../src/services/attachment-service';
-import { DocumentAiService } from '../../src/services/document-ai-service';
+import { buildDocumentAiService } from '../support/build-document-ai';
 import { ApplicationBuilder } from '../../src/services/application-builder';
 import { LlmService } from '../../src/services/llm-service';
 import { SampleJobSource } from '../../src/adapters/sample-job-source';
@@ -162,7 +162,7 @@ function ctx() {
     clock,
     idGenerator: new SequenceIdGenerator('att'),
   });
-  const documentAiService = new DocumentAiService({
+  const documentAiService = buildDocumentAiService({
     documentService,
     llmService: new LlmService({ providers: [], defaultProvider: 'claude', logger: noopLogger }),
     apiKeyStore: new InMemoryApiKeyStore(),

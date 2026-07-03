@@ -232,9 +232,11 @@ See [requirements.md](requirements.md) for the full FR/NFR catalogue. Verificati
 - **God classes to watch:** `DocumentAiService`'s ten AI features were split (ADR-0022)
   into a shared `LlmFeatureRunner` plus five single-concern services, with the old class
   kept as a thin logic-free facade so callers are unchanged; the shared LLM idiom now has
-  one home. `AssistantService` still carries the autopilot orchestration and remains a
-  candidate for the same treatment (the `ApplicationBuilder` extraction in ADR-0019 was a
-  first step).
+  one home. `AssistantService`'s playbook `run()` (was ~120 lines mixing four strategies)
+  was decomposed into single-concern private steps (`proposeShortlists`,
+  `proposeStalledFollowUps`, `proposeDataGaps`) over a shared `stage()` helper, with the
+  token-spending autopilot step already its own service (`AutopilotService`, ADR-0019/PR5) —
+  no backend god class remains.
 - **Frontend god-components:** `MandatePipeline` (was ~720 lines) was split (ADR-0024) into
   a board-only orchestrator plus five feature modals that each own their state, locked by 22
   new Vitest tests. `Editor` and `SettingsView` are now the largest remaining components and

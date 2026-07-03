@@ -6,6 +6,7 @@ import {
 } from '../../src/domain/assistant';
 import { AssistantService } from '../../src/services/assistant-service';
 import { MatchService } from '../../src/services/match-service';
+import { HashedEmbeddingProvider } from '../../src/adapters/hashed-embedding-provider';
 import { CandidacyService } from '../../src/services/candidacy-service';
 import { PlacementService } from '../../src/services/placement-service';
 import { ConflictError, NotFoundError } from '../../src/domain/errors';
@@ -94,6 +95,7 @@ function ctx() {
     talentRepository: talents,
     documentRepository: documents,
     candidacyRepository: candidacies,
+    embeddingProvider: new HashedEmbeddingProvider(),
   });
   const candidacyService = new CandidacyService({
     candidacyRepository: candidacies,

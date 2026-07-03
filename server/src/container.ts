@@ -24,6 +24,7 @@ import { PdfjsTextExtractor } from './adapters/pdfjs-text-extractor';
 import { createJobSource } from './adapters/job-source-factory';
 import { nodeFetch } from './adapters/node-fetch';
 import { KeywordSkillExtractor } from './adapters/keyword-skill-extractor';
+import { HashedEmbeddingProvider } from './adapters/hashed-embedding-provider';
 import { AnthropicLlmProvider } from './adapters/anthropic-llm-provider';
 import { GeminiLlmProvider } from './adapters/gemini-llm-provider';
 import { RoleAuthorizer } from './adapters/role-authorizer';
@@ -133,6 +134,8 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
       createJobSource({ config: c, logger, httpFetch: nodeFetch }),
     ).singleton(),
     skillExtractor: asFunction(() => new KeywordSkillExtractor()).singleton(),
+    // Semantic similarity for hybrid matching: local hashed vectors (ADR-0017).
+    embeddingProvider: asClass(HashedEmbeddingProvider).singleton(),
     llmService: asFunction(
       ({ config: c, logger }) =>
         new LlmService({

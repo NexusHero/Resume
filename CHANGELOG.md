@@ -56,6 +56,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Added
 
+- **Matching v2 — hybrid ranking with local embeddings** — the pool ranking
+  now blends the skill/ontology score (70%) with text similarity between the
+  job ad and the candidate's full profile (30%), computed by local hashed
+  lexical embeddings behind a swappable `EmbeddingProvider` port (ADR-0017).
+  Catches candidates whose fit lives in their CV bullets rather than their
+  skill list — fully offline, deterministic, no candidate data leaves the
+  server. Match results show the breakdown (skills vs. text) so the blend is
+  never a black box.
 - **Forecast v2 — the prediction flywheel** — every pipeline stage move is now
   logged, and the revenue forecast learns its stage probabilities from the
   desk's own resolved candidacies instead of one-size-fits-all industry

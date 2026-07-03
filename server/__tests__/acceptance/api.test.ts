@@ -35,6 +35,7 @@ import { PlacementService } from '../../src/services/placement-service';
 import { CandidacyService } from '../../src/services/candidacy-service';
 import { RetentionService } from '../../src/services/retention-service';
 import { MatchService } from '../../src/services/match-service';
+import { HashedEmbeddingProvider } from '../../src/adapters/hashed-embedding-provider';
 import { AssistantService } from '../../src/services/assistant-service';
 import { AssistantController } from '../../src/http/assistant-controller';
 import { ArtifactController } from '../../src/http/artifact-controller';
@@ -225,6 +226,7 @@ function makeApp(
     talentRepository,
     documentRepository,
     candidacyRepository,
+    embeddingProvider: new HashedEmbeddingProvider(),
   });
   const matchController = new MatchController({ matchService });
   const assistantController = new AssistantController({

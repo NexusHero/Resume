@@ -1,4 +1,5 @@
 import { MatchService } from '../../src/services/match-service';
+import { HashedEmbeddingProvider } from '../../src/adapters/hashed-embedding-provider';
 import { NotFoundError } from '../../src/domain/errors';
 import {
   InMemoryMandateRepository,
@@ -69,6 +70,7 @@ function ctx() {
     talentRepository: talents,
     documentRepository: documents,
     candidacyRepository: candidacies,
+    embeddingProvider: new HashedEmbeddingProvider(),
   });
   return { service, mandates, talents, documents, candidacies };
 }
@@ -168,5 +170,39 @@ describe('MatchService.rankForMandate', () => {
     });
     const matches = await c.service.rankForMandate(SCOPE, 'm1', 'GraphQL federation', 10);
     expect(matches[0]?.matched).toContain('GraphQL');
+  });
+});
+
+describe('MatchService hybrid ranking (v2)', () => {
+  it('Rank_ExposesScoreBreakdown', async () => {
+    const c = ctx();
+    await c.mandates.add(mandate('m1'));
+    await c.talents.add(talent('t1', { skills: ['React'] }));
+    const [top] = await c.service.rankForMandate(SCOPE, 'm1', 'React frontend role', 10);
+    expect(top).toMatchObject({
+      skillScore: expect.any(Number),
+      semanticScore: expect.any(Number),
+    });
+    expect(top!.score).toBeLessThanOrEqual(100);
+    expect(top!.semanticScore).toBeGreaterThan(0); // "React" appears in role + skills
+  });
+
+  it('Rank_SemanticSimilarityBreaksSkillTies', async () => {
+    const c = ctx();
+    await c.mandates.add(mandate('m1'));
+    // Same (empty) skill list — v1 scored both identically. The headline text
+    // now separates them: one profile talks about the ad's domain.
+    await c.talents.add(
+      talent('fit', { role: '', headline: 'Kubernetes platform engineering in Go' }),
+    );
+    await c.talents.add(talent('other', { role: '', headline: 'Wedding florist and decorator' }));
+    const ranked = await c.service.rankForMandate(
+      SCOPE,
+      'm1',
+      'We run Kubernetes platforms written in Go',
+      10,
+    );
+    expect(ranked.map((r) => r.talentId)).toEqual(['fit', 'other']);
+    expect(ranked[0]!.semanticScore).toBeGreaterThan(ranked[1]!.semanticScore);
   });
 });

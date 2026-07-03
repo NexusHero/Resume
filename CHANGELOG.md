@@ -63,6 +63,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Added
 
+- **Autopilot — the auto-apply gear** — the assistant gains a third autonomy
+  level beside Suggest and Act (ADR-0019): on **Autopilot** it builds the whole
+  application for a strong match — a CV tailored to the ad, a cover letter in
+  the ad's language, and a Bewerbungsmappe with the candidate's certificates —
+  and stages it for one-click approval (with a "Download Mappe" preview and a
+  grounding warning for unsupported claims). A single **source** switch aims it
+  at the job postings received from the boards or at your own mandates; a
+  job-board opening is turned into a mandate only on approval, so one pipeline
+  serves both. The candidate's stored documents are never overwritten (the
+  tailored packet is a snapshot), nothing is ever sent out on its own, and
+  per-run caps keep the token spend predictable.
 - **Compliance automation** — three tools that were one step short are now
   actionable end to end (ADR-0018): a **KI-Audit-Trail** exports the per-call
   AI processing record (model, feature, tokens, cost, timestamp) as JSON or a

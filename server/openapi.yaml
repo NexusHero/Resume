@@ -1707,8 +1707,17 @@ paths:
                 enabled: { type: boolean }
                 mode:
                   type: string
-                  enum: [suggest, act]
-                  description: suggest = everything waits for review; act = internal reversible actions are applied directly (auto-applied).
+                  enum: [suggest, act, autopilot]
+                  description: >-
+                    suggest = everything waits for review; act = internal reversible
+                    actions are applied directly (auto-applied); autopilot = additionally
+                    builds full application packets for strong matches and stages them
+                    (spends AI tokens; ADR-0019).
+                applySource:
+                  type: string
+                  enum: [jobs, mandates]
+                  description: Autopilot's opening source — received job postings or own mandates.
+                minApplyScore: { type: integer, minimum: 0, maximum: 100 }
                 intervalMinutes: { type: integer, minimum: 15, maximum: 1440 }
       responses:
         '200':
@@ -1813,6 +1822,24 @@ paths:
           content:
             application/problem+json:
               schema: { $ref: '#/components/schemas/Problem' }
+
+  /assistant/suggestions/{id}/dossier.pdf:
+    get:
+      tags: [Assistant]
+      summary: The staged application's Bewerbungsmappe (tailored CV + cover letter + Zeugnisse)
+      description: Renders from the application snapshot; the candidate's stored documents are never mutated (ADR-0019).
+      operationId: assistantApplicationDossier
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses:
+        '200':
+          description: The application dossier as a PDF.
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
 
   /artifacts:
     get:
@@ -2593,7 +2620,11 @@ components:
         enabled: { type: boolean }
         mode:
           type: string
-          enum: [suggest, act]
+          enum: [suggest, act, autopilot]
+        applySource:
+          type: string
+          enum: [jobs, mandates]
+        minApplyScore: { type: integer }
         intervalMinutes: { type: integer }
         lastRunAt: { type: string, format: date-time }
 

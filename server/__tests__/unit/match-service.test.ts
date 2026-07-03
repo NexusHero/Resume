@@ -94,6 +94,16 @@ describe('MatchService.rankForMandate', () => {
     expect(matches[0]?.matched.sort()).toEqual(['React', 'TypeScript']);
   });
 
+  it('RankForJobText_RanksPoolWithoutMandate_InPipelineAlwaysFalse', async () => {
+    const c = ctx();
+    // no mandate needed — the ad text drives the ranking (job-board path)
+    await c.talents.add(talent('t1', { skills: ['React', 'TypeScript'] }));
+    await c.talents.add(talent('t2', { skills: ['COBOL'] }));
+    const matches = await c.service.rankForJobText(SCOPE, 'Looking for React TypeScript', 10);
+    expect(matches.map((m) => m.talentId)).toEqual(['t1', 't2']);
+    expect(matches.every((m) => m.inPipeline === false)).toBe(true);
+  });
+
   it('FlagsTalentsAlreadyInPipeline', async () => {
     const c = ctx();
     await c.mandates.add(mandate('m1'));

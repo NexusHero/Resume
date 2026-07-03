@@ -893,3 +893,57 @@ describe('DocumentAiService.translateDocuments', () => {
     ).rejects.toBeInstanceOf(NotFoundError);
   });
 });
+
+describe('DocumentAiService.tailorForMandate', () => {
+  const target = {
+    role: 'Backend Engineer',
+    company: 'Helio',
+    jobText: 'Go and Kubernetes',
+    lang: 'en' as const,
+  };
+
+  it('AiPath_ReturnsTunedSummaryAndCoverLetter_WithUsageAndGrounding', async () => {
+    const c = ctx({
+      available: true,
+      generate: async () =>
+        JSON.stringify({ summary: 'Tuned summary.', paragraphs: ['Intro.', 'Core.', 'Close.'] }),
+    });
+    await c.talents.add(talent('t1'));
+    const res = await c.service.tailorForMandate(OWNER, OWNER, 't1', target);
+    expect(res.provider).toBe('claude');
+    expect(res.summary).toBe('Tuned summary.');
+    expect(res.paragraphs).toEqual(['Intro.', 'Core.', 'Close.']);
+    expect(res.lang).toBe('en');
+    expect(res.usage).toEqual({ inputTokens: 5, outputTokens: 7, costUsd: 0.0001 });
+    expect(res.grounding).toBeDefined();
+  });
+
+  it('NoProvider_FallsBackToTemplateInTargetLanguage', async () => {
+    const c = ctx(); // no provider
+    await c.talents.add(talent('t1'));
+    const res = await c.service.tailorForMandate(OWNER, OWNER, 't1', {
+      ...target,
+      lang: 'de',
+      company: 'Globex',
+    });
+    expect(res.provider).toBe('template');
+    expect(res.usage).toBeUndefined();
+    expect(res.paragraphs).toHaveLength(3);
+    expect(res.paragraphs[0]).toContain('Globex');
+  });
+
+  it('MalformedJson_FallsBackToTemplate', async () => {
+    const c = ctx({ available: true, generate: async () => 'not json at all' });
+    await c.talents.add(talent('t1'));
+    const res = await c.service.tailorForMandate(OWNER, OWNER, 't1', target);
+    expect(res.provider).toBe('template');
+    expect(res.paragraphs).toHaveLength(3);
+  });
+
+  it('UnknownTalent_Throws404', async () => {
+    const c = ctx();
+    await expect(
+      c.service.tailorForMandate(OWNER, OWNER, 'missing', target),
+    ).rejects.toBeInstanceOf(NotFoundError);
+  });
+});

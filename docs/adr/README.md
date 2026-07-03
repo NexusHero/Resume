@@ -29,3 +29,4 @@ where a decision satisfies a specific requirement.
 | [0016](0016-learned-stage-probabilities.md)        | Forecast v2: stage probabilities learned from the desk's data  | Accepted |
 | [0017](0017-local-embeddings-hybrid-matching.md)   | Matching v2: local embeddings behind a port, hybrid scoring    | Accepted |
 | [0018](0018-compliance-automation.md)              | Compliance automation: audit trail, Löschfristen, AGG rewrite  | Accepted |
+| [0019](0019-autopilot-auto-apply-agent.md)         | Autopilot: the auto-apply gear of the one agent                | Accepted |

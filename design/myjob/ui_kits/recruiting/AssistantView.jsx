@@ -10,11 +10,13 @@ const AV_KIND_LABELS = {
   'shortlist-add': 'Shortlist',
   'follow-up': 'Follow-up',
   'data-gap': 'Data gap',
+  application: 'Application',
 };
 const AV_KIND_COLORS = {
   'shortlist-add': 'var(--accent-strong)',
   'follow-up': 'var(--warning-strong, #8a6d00)',
   'data-gap': 'var(--text-soft)',
+  application: 'var(--accent-strong)',
 };
 
 function AvCard({ children, style }) {
@@ -91,9 +93,10 @@ function AssistantView({ onChanged }) {
           <div style={{ flex: '1 1 320px', minWidth: 0 }}>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0 }}>Assistant</h2>
             <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '4px', lineHeight: 1.55 }}>
-              Shortlists candidates for active mandates, flags stalled pipeline cards and empty profiles.
-              Runs on the server in the background — also while you are signed out — and stages everything
-              here for review. It never contacts anyone and never deletes anything.
+              Shortlists candidates for active mandates, flags stalled pipeline cards and empty profiles —
+              and, on <strong>Autopilot</strong>, builds complete applications (tailored CV + cover letter +
+              Bewerbungsmappe) for strong matches. Runs on the server in the background — also while you are
+              signed out — and stages everything here for review. It never sends anything out and never deletes.
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
@@ -112,6 +115,7 @@ function AssistantView({ onChanged }) {
             <div style={{ display: 'flex', gap: '4px', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-md)', padding: '4px' }}>
               <AvModePill active={settings.mode === 'suggest'} onClick={() => patch({ mode: 'suggest' })} label="Suggest" hint="Everything waits for your approval." />
               <AvModePill active={settings.mode === 'act'} onClick={() => patch({ mode: 'act' })} label="Act" hint="Internal, reversible actions (e.g. adding a match to the pipeline) are applied directly and marked auto-applied. Nothing outward-facing ever runs alone." />
+              <AvModePill active={settings.mode === 'autopilot'} onClick={() => patch({ mode: 'autopilot' })} label="Autopilot" hint="Top gear: for strong matches the agent builds the whole application — tailored CV + cover letter in the ad's language + Bewerbungsmappe — and stages it here for one-click approval. It still never sends anything out." />
             </div>
           </div>
           <div>
@@ -128,6 +132,28 @@ function AssistantView({ onChanged }) {
             <AV.Button variant="primary" size="sm" disabled={busy || !settings.enabled} iconLeft={<AV.Icon name="zap" size={14} />} onClick={runNow}>Run now</AV.Button>
           </div>
         </div>
+        {/* Autopilot-only: where to draw openings from, and how strong a match must be. */}
+        {settings.mode === 'autopilot' && (
+          <div style={{ display: 'flex', gap: '18px', marginTop: '14px', flexWrap: 'wrap', alignItems: 'flex-end', paddingTop: '14px', borderTop: '1px dashed var(--border)' }}>
+            <div style={{ flex: '0 1 260px' }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '6px' }}>Apply to</div>
+              <div style={{ display: 'flex', gap: '4px', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-md)', padding: '4px' }}>
+                <AvModePill active={settings.applySource === 'jobs'} onClick={() => patch({ applySource: 'jobs' })} label="Job postings" hint="Openings received from the job boards." />
+                <AvModePill active={settings.applySource === 'mandates'} onClick={() => patch({ applySource: 'mandates' })} label="Own mandates" hint="Your active client mandates." />
+              </div>
+            </div>
+            <div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '6px' }}>Min. match</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input type="number" min="0" max="100" value={settings.minApplyScore} disabled={busy} onChange={(e) => patch({ minApplyScore: Math.max(0, Math.min(100, Number(e.target.value))) })} style={{ width: '64px', padding: '7px 9px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', color: 'var(--text-heading)', fontFamily: 'var(--font-mono)', fontSize: '12px' }} />
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>/ 100</span>
+              </div>
+            </div>
+            <div style={{ flex: '1 1 200px', fontSize: '11.5px', color: 'var(--text-soft)', lineHeight: 1.5 }}>
+              Builds a full application per strong match (spends AI tokens). Sending stays your click.
+            </div>
+          </div>
+        )}
         {lastRun && (
           <div role="status" style={{ marginTop: '12px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--positive, #1F8A5B)' }}>
             Run finished — {lastRun.proposed} suggested{lastRun.applied ? `, ${lastRun.applied} auto-applied` : ''}.
@@ -155,9 +181,26 @@ function AssistantView({ onChanged }) {
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-heading)' }}>{s.title}</div>
                   <div style={{ fontSize: '12px', color: 'var(--text-soft)', marginTop: '2px', lineHeight: 1.5 }}>{s.rationale}</div>
+                  {s.kind === 'application' && s.payload && (
+                    <div style={{ marginTop: '8px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', background: 'var(--surface-sunk)', padding: '10px 12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '6px' }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Tailored packet · {String(s.payload.lang || '').toUpperCase()} · {s.payload.provider === 'template' ? 'template' : `AI · ${s.payload.provider}`}</span>
+                        <a href={window.RecruitApi.assistantDossierUrl(s.id)} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 600, color: 'var(--accent-strong)', border: '1px solid var(--accent-border, var(--border-strong))', borderRadius: 'var(--radius-pill)', padding: '3px 10px' }}>Download Mappe (PDF)</a>
+                        {Number(s.payload.ungroundedCount) > 0 && (
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--danger)' }}>⚠ {s.payload.ungroundedCount} unverified claim(s)</span>
+                        )}
+                      </div>
+                      {s.payload.summary && (
+                        <div style={{ fontSize: '12px', color: 'var(--text-body)', lineHeight: 1.5, marginBottom: '6px' }}><strong style={{ color: 'var(--text-heading)' }}>Summary:</strong> {s.payload.summary}</div>
+                      )}
+                      {Array.isArray(s.payload.paragraphs) && s.payload.paragraphs.map((p, i) => (
+                        <div key={i} style={{ fontSize: '12px', color: 'var(--text-soft)', lineHeight: 1.5, marginTop: i ? '4px' : 0 }}>{p}</div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div style={{ flexShrink: 0, display: 'flex', gap: '8px' }}>
-                  <AV.Button variant="primary" size="sm" onClick={() => resolve(s.id, 'accept')}>Accept</AV.Button>
+                  <AV.Button variant="primary" size="sm" onClick={() => resolve(s.id, 'accept')}>{s.kind === 'application' ? 'Approve' : 'Accept'}</AV.Button>
                   <AV.Button variant="ghost" size="sm" onClick={() => resolve(s.id, 'dismiss')}>Dismiss</AV.Button>
                 </div>
               </div>

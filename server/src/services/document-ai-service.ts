@@ -9,6 +9,14 @@ import {
 } from '../domain/document-ai';
 import { parsePrompt, extractJson, fallbackParsed } from '../domain/document-parse';
 import {
+  type TailorTarget,
+  type TailoredApplication,
+  tailorPrompt,
+  tailorResultSchema,
+  fallbackTailor,
+  normalizeTailored,
+} from '../domain/application-tailor';
+import {
   type AtsScore,
   atsPrompt,
   atsResultSchema,
@@ -138,6 +146,8 @@ const MAX_TOKENS = {
   pitch: 700,
   outreach: 700,
   translate: 2000,
+  // Tailoring returns a tuned summary + a three-paragraph cover letter in one call.
+  tailor: 1100,
   matchExplain: 500,
   interviewKit: 900,
   // Prep is the largest structured reply (4–6 questions with rationale, STAR
@@ -347,6 +357,50 @@ export class DocumentAiService {
     return action === 'summary'
       ? { action, text: fallbackSummary(documents, lang), provider: 'template' }
       : { action, paragraphs: fallbackLetter(documents, target, lang), provider: 'template' };
+  }
+
+  /**
+   * Tailor a candidate's application to one job ad (ADR-0019): a résumé summary
+   * tuned to the ad plus a cover-letter body, in the AD's language, in one call.
+   * Returns a snapshot with provider/usage and a grounding check — it never
+   * writes the candidate's stored documents. Degrades to a deterministic
+   * template when no provider is configured.
+   */
+  async tailorForMandate(
+    scope: string,
+    userId: string,
+    talentId: string,
+    target: TailorTarget & { lang: OutputLang },
+  ): Promise<
+    TailoredApplication & {
+      lang: OutputLang;
+      provider: LlmProviderId | 'template';
+      usage?: CallUsage;
+      grounding: GroundingReport;
+    }
+  > {
+    const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
+    const built = tailorPrompt(documents, target, target.lang);
+    const res = await this.runLlm(userId, 'suggest', MAX_TOKENS.tailor, built);
+
+    let content: TailoredApplication;
+    let provider: LlmProviderId | 'template' = 'template';
+    let usage: CallUsage | undefined;
+    const parsed = res ? this.parseReply('suggest', res.reply, tailorResultSchema) : null;
+    if (res && parsed) {
+      content = normalizeTailored(parsed);
+      provider = res.provider;
+      usage = res.usage;
+    } else {
+      content = fallbackTailor(documents, target, target.lang);
+    }
+
+    // Flag any claim the CV + ad don't support — trust matters most on autopilot.
+    const grounding = checkGrounding(
+      [content.summary, ...content.paragraphs].join('\n'),
+      groundingSource(documents, target.jobText),
+    );
+    return { ...content, lang: target.lang, provider, usage, grounding };
   }
 
   /**

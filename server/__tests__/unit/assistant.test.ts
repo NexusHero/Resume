@@ -9,6 +9,15 @@ import { MatchService } from '../../src/services/match-service';
 import { HashedEmbeddingProvider } from '../../src/adapters/hashed-embedding-provider';
 import { CandidacyService } from '../../src/services/candidacy-service';
 import { PlacementService } from '../../src/services/placement-service';
+import { MandateService } from '../../src/services/mandate-service';
+import { JobSearchService } from '../../src/services/job-search-service';
+import { DocumentService } from '../../src/services/document-service';
+import { AttachmentService } from '../../src/services/attachment-service';
+import { DocumentAiService } from '../../src/services/document-ai-service';
+import { ApplicationBuilder } from '../../src/services/application-builder';
+import { LlmService } from '../../src/services/llm-service';
+import { SampleJobSource } from '../../src/adapters/sample-job-source';
+import { KeywordSkillExtractor } from '../../src/adapters/keyword-skill-extractor';
 import { ConflictError, NotFoundError } from '../../src/domain/errors';
 import type { Candidacy } from '../../src/domain/candidacy';
 import type { Mandate } from '../../src/domain/mandate';
@@ -26,6 +35,15 @@ import {
   SequenceIdGenerator,
   noopLogger,
   InMemoryStageTransitionRepository,
+  InMemoryUserRepository,
+  InMemoryAttachmentStore,
+  InMemoryApiKeyStore,
+  InMemoryUsageMeter,
+  InMemoryInterviewObservationRepository,
+  InMemoryArtifactLogRepository,
+  FakePdfRenderer,
+  FakePdfMerger,
+  FakePdfTextExtractor,
 } from '../support/fakes';
 
 const OWNER = 'team';
@@ -111,6 +129,55 @@ function ctx() {
     idGenerator: new SequenceIdGenerator('c'),
     logger: noopLogger,
   });
+  const attachmentStore = new InMemoryAttachmentStore();
+  const users = new InMemoryUserRepository();
+  const mandateService = new MandateService({
+    mandateRepository: mandates,
+    candidacyRepository: candidacies,
+    clock,
+    idGenerator: new SequenceIdGenerator('mandate'),
+  });
+  const jobSearchService = new JobSearchService({
+    jobSource: new SampleJobSource(),
+    fallbackJobSource: new SampleJobSource(),
+    skillExtractor: new KeywordSkillExtractor(),
+    candidateProfile: { skills: [] },
+    logger: noopLogger,
+  });
+  const documentService = new DocumentService({
+    documentRepository: documents,
+    talentRepository: talents,
+    userRepository: users,
+    attachmentStore,
+    pdfRenderer: new FakePdfRenderer(),
+    pdfMerger: new FakePdfMerger(),
+    clock,
+  });
+  const attachmentService = new AttachmentService({
+    attachmentStore,
+    talentRepository: talents,
+    userRepository: users,
+    clock,
+    idGenerator: new SequenceIdGenerator('att'),
+  });
+  const documentAiService = new DocumentAiService({
+    documentService,
+    llmService: new LlmService({ providers: [], defaultProvider: 'claude', logger: noopLogger }),
+    apiKeyStore: new InMemoryApiKeyStore(),
+    userRepository: users,
+    pdfTextExtractor: new FakePdfTextExtractor(''),
+    usageMeter: new InMemoryUsageMeter(),
+    interviewObservationRepository: new InMemoryInterviewObservationRepository(),
+    artifactLogRepository: new InMemoryArtifactLogRepository(),
+    idGenerator: new SequenceIdGenerator('art'),
+    clock,
+    logger: noopLogger,
+  });
+  const applicationBuilder = new ApplicationBuilder({
+    documentAiService,
+    documentService,
+    attachmentService,
+  });
   const service = new AssistantService({
     assistantSettingsStore: settingsStore,
     assistantSuggestionRepository: suggestions,
@@ -120,6 +187,9 @@ function ctx() {
     candidacyRepository: candidacies,
     matchService,
     candidacyService,
+    mandateService,
+    jobSearchService,
+    applicationBuilder,
     clock,
     idGenerator: new SequenceIdGenerator('s'),
     logger: noopLogger,
@@ -347,5 +417,109 @@ describe('AssistantService', () => {
       mode: 'act',
       intervalMinutes: 60,
     });
+  });
+});
+
+describe('AssistantService autopilot (ADR-0019)', () => {
+  const autopilot = (over = {}) => ({
+    enabled: true,
+    mode: 'autopilot' as const,
+    applySource: 'mandates' as const,
+    minApplyScore: 10,
+    intervalMinutes: 60,
+    ...over,
+  });
+
+  it('MandatesSource_BuildsAndStagesApplicationForStrongMatch', async () => {
+    const c = ctx();
+    await c.settingsStore.set(OWNER, autopilot());
+    await c.mandates.add(mandate('m1', { jobText: 'Go and PostgreSQL backend engineer' }));
+    await c.talents.add(talent('t1', { name: 'Ada', skills: ['Go', 'PostgreSQL'] }));
+
+    const res = await c.service.run(OWNER);
+    expect(res.proposed).toBeGreaterThanOrEqual(1);
+    const apps = (await c.suggestions.list(OWNER)).filter((s) => s.kind === 'application');
+    expect(apps).toHaveLength(1);
+    expect(apps[0]).toMatchObject({ talentId: 't1', mandateId: 'm1', status: 'proposed' });
+    const payload = apps[0]!.payload as Record<string, unknown>;
+    expect(payload.source).toBe('mandates');
+    expect(payload.paragraphs).toHaveLength(3); // template cover letter
+    expect(typeof payload.summary).toBe('string');
+  });
+
+  it('Dedup_DoesNotRebuildTheSameApplication', async () => {
+    const c = ctx();
+    await c.settingsStore.set(OWNER, autopilot());
+    await c.mandates.add(mandate('m1', { jobText: 'Go PostgreSQL' }));
+    await c.talents.add(talent('t1', { skills: ['Go', 'PostgreSQL'] }));
+    await c.service.run(OWNER);
+    await c.settingsStore.set(OWNER, { ...autopilot(), lastRunAt: undefined });
+    await c.service.run(OWNER);
+    const apps = (await c.suggestions.list(OWNER)).filter((s) => s.kind === 'application');
+    expect(apps).toHaveLength(1); // second run staged nothing new
+  });
+
+  it('MinApplyScore_FiltersOutWeakMatches', async () => {
+    const c = ctx();
+    await c.settingsStore.set(OWNER, autopilot({ minApplyScore: 100 }));
+    await c.mandates.add(mandate('m1', { jobText: 'Rust systems programming' }));
+    await c.talents.add(talent('t1', { skills: ['COBOL'] }));
+    await c.service.run(OWNER);
+    expect((await c.suggestions.list(OWNER)).filter((s) => s.kind === 'application')).toEqual([]);
+  });
+
+  it('SuggestAndActModes_DoNotBuildApplications', async () => {
+    const c = ctx();
+    await c.settingsStore.set(OWNER, autopilot({ mode: 'act' }));
+    await c.mandates.add(mandate('m1', { jobText: 'Go PostgreSQL' }));
+    await c.talents.add(talent('t1', { skills: ['Go', 'PostgreSQL'] }));
+    await c.service.run(OWNER);
+    expect((await c.suggestions.list(OWNER)).filter((s) => s.kind === 'application')).toEqual([]);
+  });
+
+  it('ApproveApplication_MandatesSource_AddsCandidacy', async () => {
+    const c = ctx();
+    await c.settingsStore.set(OWNER, autopilot());
+    await c.mandates.add(mandate('m1', { jobText: 'Go PostgreSQL' }));
+    await c.talents.add(talent('t1', { skills: ['Go', 'PostgreSQL'] }));
+    await c.service.run(OWNER);
+    const app = (await c.suggestions.list(OWNER)).find((s) => s.kind === 'application')!;
+    const accepted = await c.service.accept(OWNER, app.id);
+    expect(accepted.status).toBe('accepted');
+    const board = await c.candidacyService.board(OWNER, 'm1');
+    expect(board.map((cd) => cd.talentId)).toContain('t1');
+  });
+
+  it('JobsSource_StagesApplicationsAndApproveMaterializesMandate', async () => {
+    const c = ctx();
+    // minScore 0 → any ranked talent qualifies against a sampled posting
+    await c.settingsStore.set(OWNER, autopilot({ applySource: 'jobs', minApplyScore: 0 }));
+    await c.talents.add(talent('t1', { name: 'Ada', skills: ['Go', 'PostgreSQL', 'AWS'] }));
+    await c.service.run(OWNER);
+    const app = (await c.suggestions.list(OWNER)).find((s) => s.kind === 'application');
+    expect(app).toBeDefined();
+    const payload = app!.payload as Record<string, unknown>;
+    expect(payload.source).toBe('jobs');
+    expect(payload.mandateId).toBe(''); // no mandate yet
+    expect(app!.mandateId).toBeUndefined();
+
+    // Approving materializes a mandate from the posting, then adds the candidacy.
+    const before = (await c.mandates.list(OWNER)).length;
+    await c.service.accept(OWNER, app!.id);
+    expect((await c.mandates.list(OWNER)).length).toBe(before + 1);
+  });
+
+  it('RenderApplicationDossier_ReturnsPdf_And404sForNonApplication', async () => {
+    const c = ctx();
+    await c.settingsStore.set(OWNER, autopilot());
+    await c.mandates.add(mandate('m1', { jobText: 'Go PostgreSQL' }));
+    await c.talents.add(talent('t1', { skills: ['Go', 'PostgreSQL'] }));
+    await c.service.run(OWNER);
+    const app = (await c.suggestions.list(OWNER)).find((s) => s.kind === 'application')!;
+    const pdf = await c.service.renderApplicationDossier(OWNER, app.id);
+    expect(Buffer.isBuffer(pdf)).toBe(true);
+    await expect(c.service.renderApplicationDossier(OWNER, 'nope')).rejects.toBeInstanceOf(
+      NotFoundError,
+    );
   });
 });

@@ -36,7 +36,10 @@ function MappeModal({ talent, onClose }) {
       const att = await window.RecruitApi.uploadAttachment(talent.id, { name: file.name, contentType: file.type || 'application/pdf', dataBase64 });
       setAttachments((s) => [...s, att]);
       setPicked((s) => new Set(s).add(att.id));
-    } catch { /* ignore upload error */ }
+    } catch {
+      // eslint-disable-next-line no-alert
+      window.alert(`Could not upload "${file.name}". Please try again.`);
+    }
     setBusy(false);
   };
 

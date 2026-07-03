@@ -1,79 +1,81 @@
 @startuml 05_building_blocks
-title core/ -- Building Block View (UML)
+title server/src — Building Block View (UML, representative blocks)
 
 skinparam shadowing false
 skinparam componentStyle rectangle
 skinparam defaultTextAlignment center
+skinparam nodesep 25
+skinparam ranksep 45
+left to right direction
 
 package "HTTP" {
-  [create-app] as App
-  [ApplicationController] as Ctrl
-  [problem mapper] as Problem
+  [create-app + routes] as App
+  [controllers\n(auth, talent, mandate, candidacy,\nplacement, document, match, match-ai,\nllm, usage, members, account, ...)] as Ctrl
+  [problem mapper\n(RFC 9457)] as Problem
+  [security\n(CORS, headers, CSP)] as Security
+  [api-docs\n(OpenAPI + Swagger UI)] as Docs
 }
 
-package "Application" {
-  [ApplicationService] as Service
+package "Application (services)" {
+  [DocumentAiService\n(suggest, parse, ATS, pitch, outreach,\ntranslate, explain, kits, prep)] as AiSvc
+  [recruiting services\n(talent, mandate, candidacy,\nplacement, match, forecast,\nretention, members, usage)] as RecSvc
+  [auth services\n(auth, password reset,\nemail verification, account)] as AuthSvc
+  [LlmService\n(provider registry + default)] as LlmSvc
 }
 
-package "Domain" {
-  [application model and zod] as DomainModel
+package "Domain (pure, no I/O)" {
+  [recruiting model\n(talent, mandate, candidacy,\nplacement, user, usage)] as Model
+  [AI domain\n(prompts + fallbacks + schemas,\ngrounding, skill-semantics/-taxonomy,\ncompany-archetype, candidate-prep,\nlanguage, agg-check)] as AiDomain
   [errors] as DomainErrors
 }
 
 package "Ports" {
-  interface ApplicationRepository
-  interface AuditLog
-  interface PdfArchive
-  interface PdfRenderer
-  interface PdfMerger
-  interface Versioner
-  interface Clock
-  interface IdGenerator
-  interface Logger
+  interface "repositories\n(user, talent, mandate, candidacy,\nplacement, documents, observations)" as Repos
+  interface LlmProvider
+  interface "ApiKeyStore /\nUsageMeter" as Keys
+  interface "SessionStore /\nPasswordHasher / Mailer" as AuthPorts
+  interface "PdfRenderer / PdfMerger /\nPdfTextExtractor" as PdfPorts
+  interface JobSource
 }
 
 package "Adapters" {
-  [FsApplicationRepository] as FsRepo
-  [FsAuditLog] as FsAudit
-  [FsPdfArchive] as FsArchive
-  [PuppeteerPdfRenderer] as Pup
-  [PdfLibMerger] as Merger
-  [GitVersioner] as Git
-  [SystemClock] as Clk
-  [RandomIdGenerator] as Ids
-  [PinoLogger] as Pino
+  [fs-* (default)\nsql/* (Postgres)] as StoreAdapters
+  [AnthropicLlmProvider\nGeminiLlmProvider] as LlmAdapters
+  [scrypt hasher - secret cipher\nSMTP/console mailer] as AuthAdapters
+  [Puppeteer renderer - pdf-lib merger\npdfjs text extractor] as PdfAdapters
+  [arbeitnow - bundesagentur - adzuna\n+ offline sample (composite)] as JobAdapters
 }
 
-[container -- Awilix composition root] as Container
+[container — Awilix\ncomposition root] as Container
 
 App --> Ctrl
-Ctrl --> Service
+App ..> Security
+App ..> Docs
 Ctrl ..> Problem
-Service --> DomainModel
-Service ..> DomainErrors
-Service --> ApplicationRepository
-Service --> AuditLog
-Service --> PdfArchive
-Service --> PdfRenderer
-Service --> PdfMerger
-Service --> Versioner
-Service --> Clock
-Service --> IdGenerator
-Service --> Logger
+Ctrl --> AiSvc
+Ctrl --> RecSvc
+Ctrl --> AuthSvc
+AiSvc --> LlmSvc
+AiSvc --> AiDomain
+AiSvc --> Keys
+RecSvc --> Model
+AuthSvc --> AuthPorts
+AiSvc --> Repos
+RecSvc --> Repos
+AuthSvc --> Repos
+RecSvc ..> DomainErrors
+AiSvc --> PdfPorts
+RecSvc --> JobSource
+LlmSvc --> LlmProvider
 
-FsRepo ..|> ApplicationRepository
-FsAudit ..|> AuditLog
-FsArchive ..|> PdfArchive
-Pup ..|> PdfRenderer
-Merger ..|> PdfMerger
-Git ..|> Versioner
-Clk ..|> Clock
-Ids ..|> IdGenerator
-Pino ..|> Logger
+StoreAdapters ..|> Repos
+LlmAdapters ..|> LlmProvider
+AuthAdapters ..|> AuthPorts
+PdfAdapters ..|> PdfPorts
+JobAdapters ..|> JobSource
 
-Container ..> FsRepo
-Container ..> Pup
-Container ..> Git
+Container ..> StoreAdapters
+Container ..> LlmAdapters
 Container ..> App
 
 @enduml

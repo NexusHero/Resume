@@ -53,9 +53,12 @@ See [`docs/umls/03_system_context.puml`](umls/03_system_context.puml).
 ![System context](umls/03_system_context.svg)
 
 - **Recruiter/Admin** → the Workspace (browser) → REST API over HTTP (`/api/v1`), session
-  cookie authenticated.
-- API → **LLM providers** (Claude / Gemini) per-user key, for AI features — optional.
+  cookie authenticated. External integrators use the same API — the OpenAPI contract is
+  served at `/api/v1/openapi.yaml`, browsable at `/api/v1/docs` (ADR-0012).
+- API → **LLM providers** (Claude / Gemini) with the user's own key and persisted
+  provider choice (ADR-0011), for AI features — optional.
 - API → **job boards** (Arbeitnow / Bundesagentur / Adzuna) for search — resilient composite.
+- API → **SMTP mailer** for email verification and password-reset links (console in dev).
 - API → **Puppeteer** (headless Chromium) to render PDFs.
 - API → **Postgres** (`STORE=sql`) or the **filesystem** (default) for persistence.
 
@@ -74,8 +77,8 @@ The backend lives in `server/src/` and is strictly layered (dependencies point i
 
 ![Building blocks](umls/05_building_blocks.svg)
 
-> The rendered diagram shows the original applications core; the table below is the current
-> authoritative view of the layers (the recruiting/AI modules extend the same shape).
+> The diagram shows representative blocks per layer; the table below completes the
+> inventory.
 
 | Layer       | Building blocks (selected)                                                                                                                                                                                | Responsibility                                                                       |
 | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
@@ -94,12 +97,15 @@ implements each port — see ADR-0002 for the registration discipline this deman
 analogous):
 
 1. The controller validates the body (zod) and calls `DocumentAiService.pitchForMandate`.
-2. The service resolves the user's LLM provider from their encrypted key; with none, it
-   uses the deterministic template.
+2. The service resolves the provider: the user's **persisted choice** (`User.llmProvider`,
+   ADR-0011) or the configured default, then their encrypted key for it; with neither a
+   user key nor server credentials it uses the deterministic template.
 3. It builds a **grounding source** from the candidate's documents + the mandate context,
    generates the pitch (LLM or template), and runs `checkGrounding` over it.
-4. It meters the call (requests/tokens/cost) and returns `{ …pitch, provider, grounding }`.
-5. The Editor UI renders the pitch and, if `grounding.unsupported` is non-empty, a
+4. It meters the call (requests/tokens/cost) and returns
+   `{ …pitch, provider, usage, grounding }` — `usage` is the per-call token/cost payload.
+5. The Editor UI renders the pitch with a provider badge ("AI · gemini · 1.4k tok ·
+   $0.0011" / "Template · no AI") and, if `grounding.unsupported` is non-empty, a
    "nicht belegte Angaben" warning for the recruiter to resolve before sending.
 
 **Pipeline → placement** — advancing a candidacy to `placed` cascades to create a
@@ -111,15 +117,25 @@ derived from the live pipeline, never stored twice.
 - **Local:** `npm run serve` runs the TypeScript server (`tsx`); it serves both the REST
   API (`/api/v1`) and the static web UIs. `npm run build:web` bundles the recruiting kit.
 - **Docker:** `docker compose up --build` runs the app on Postgres (`STORE=sql`).
+- **Release:** a tag push (or manual `workflow_dispatch` with a `tag` input) builds
+  per-OS artifacts — compiled server + static app + the OpenAPI contract; run with
+  `npm ci --omit=dev && npm start`.
 - **Config:** `STORE`, `DATABASE_URL`, `CORS_ORIGINS`, `COOKIE_SECURE`, `SESSION_TTL_DAYS`,
-  `JOB_SOURCES`, LLM keys — see [deployment.md](deployment.md). No secrets in the repo.
+  `JOB_SOURCES`, LLM keys, SMTP — see [deployment.md](deployment.md). No secrets in the repo.
 
 ## 8. Cross-cutting Concepts
 
-- **AI safety:** deterministic fallback + per-user keys + metering (ADR-0005); grounding
-  self-check (ADR-0009); first-party data, no scraping (ADR-0006).
+- **AI safety:** deterministic fallback + per-user keys + metering (ADR-0005); the
+  provider choice is per user and persisted (ADR-0011); grounding self-check (ADR-0009);
+  first-party data, no scraping (ADR-0006).
+- **Cost transparency:** every LLM-backed response carries `usage` (tokens + estimated
+  USD) shown at the result; the settings card aggregates per provider and feature.
 - **Skills:** canonicalised (ADR-0008) then matched semantically offline (ADR-0007).
 - **Auth & tenancy:** sessions + RBAC (ADR-0004); recruiting data is team-scoped (ADR-0010).
+- **API contract:** hand-maintained OpenAPI 3.1 + self-hosted Swagger UI (ADR-0012),
+  extended in the same PR as any route change.
+- **Self-hosted assets:** fonts and the Swagger UI ship from this origin — no CDN, no
+  third-party request leaves the browser (DSGVO); strict CSP on the built kit and docs.
 - **DI discipline:** new ports must be registered in `container.ts`; unit tests won't catch
   a missing registration — the e2e boot will (ADR-0002).
 - **Validation & errors:** zod at the boundary; RFC-9457 problem+json.
@@ -142,6 +158,8 @@ Full log in [`docs/adr/`](adr). Summary:
 | 0008 | Skill canonicalization taxonomy                               | Accepted                       |
 | 0009 | Grounding self-check over generated text                      | Accepted                       |
 | 0010 | Team scope as the ownership boundary for recruiting data      | Accepted                       |
+| 0011 | Per-user, persisted LLM provider choice                       | Accepted                       |
+| 0012 | Hand-maintained OpenAPI contract + self-hosted Swagger UI     | Accepted                       |
 
 ## 10. Quality Requirements
 
@@ -167,23 +185,24 @@ See [requirements.md](requirements.md) for the full FR/NFR catalogue. Verificati
   scope/userId naming drift fixed. Remaining known debt: the triple manual wiring lists
   (container / AppDeps / index imports) and one domain→ports type import
   (`usage.ts` → `llm-provider`).
-- The rendered UML diagrams (§3, §5) predate the recruiting/AI modules; refresh the
-  PlantUML sources when they are next touched.
-- OpenAPI is hand-kept, not generated from zod (roadmap 0.5).
+- OpenAPI covers the full surface but is hand-kept, not generated from zod — drift is
+  guarded only by review discipline and the docs acceptance tests (ADR-0012).
 - Some ports still have only a file adapter (e.g. `PdfArchive`); object storage is a
   follow-up (roadmap 1.1).
 
 ## 12. Glossary
 
-| Term            | Meaning                                                                       |
-| --------------- | ----------------------------------------------------------------------------- |
-| Mandate         | A client's search assignment (fee, deadline, job ad).                         |
-| Talent          | A candidate in the pool, with an optional structured resume + attachments.    |
-| Candidacy       | A talent's presence on a mandate's pipeline, at some stage.                   |
-| Placement       | A booked candidacy with its fee.                                              |
-| Grounding       | Deterministic check that generated claims are supported by the CV + mandate.  |
-| Archetype       | Curated baseline company knowledge, used until real observations exist.       |
-| Observation     | A first-party record of a real interview, feeding future prep (the flywheel). |
-| Auflagen        | Employer conditions/requirements surfaced for candidate prep.                 |
-| Bewerbungsmappe | Application bundle: cover letter + CV + attachments merged into one PDF.      |
-| Team scope      | The ownership boundary that makes recruiting data shared across a team.       |
+| Term            | Meaning                                                                                                    |
+| --------------- | ---------------------------------------------------------------------------------------------------------- |
+| Mandate         | A client's search assignment (fee, deadline, job ad).                                                      |
+| Talent          | A candidate in the pool, with an optional structured resume + attachments.                                 |
+| Candidacy       | A talent's presence on a mandate's pipeline, at some stage.                                                |
+| Placement       | A booked candidacy with its fee.                                                                           |
+| Grounding       | Deterministic check that generated claims are supported by the CV + mandate.                               |
+| Archetype       | Curated baseline company knowledge, used until real observations exist.                                    |
+| Observation     | A first-party record of a real interview, feeding future prep (the flywheel).                              |
+| Auflagen        | Employer conditions/requirements surfaced for candidate prep.                                              |
+| Bewerbungsmappe | Application bundle: cover letter + CV + attachments merged into one PDF.                                   |
+| Team scope      | The ownership boundary that makes recruiting data shared across a team.                                    |
+| Provider badge  | UI label showing which backend produced a result (`AI · <provider>` + tokens/cost, or `Template · no AI`). |
+| Call usage      | Per-generation payload (`inputTokens`, `outputTokens`, `costUsd` estimate) on LLM-backed responses.        |

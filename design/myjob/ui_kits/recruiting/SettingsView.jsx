@@ -6,9 +6,12 @@ const SV = window.MyJobDesignSystem_f3658e;
 function ProviderRow({ p, active, onActivate, saved, onSave, onRemove }) {
   const [draft, setDraft] = React.useState('');
   const [reveal, setReveal] = React.useState(false);
+  const { isMobile } = useViewport();
   const connected = Boolean(saved) || p.available;
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1.3fr) auto', gap: '16px', alignItems: 'center', padding: '16px 0', borderBottom: '1px solid var(--border)' }}>
+    // On phones the three columns (name · key · controls) can't fit side by side —
+    // stack them so the key input and the Active/Remove controls each get full width.
+    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0,1fr) minmax(0,1.3fr) auto', gap: isMobile ? '12px' : '16px', alignItems: 'center', padding: '16px 0', borderBottom: '1px solid var(--border)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
         <span style={{ width: '36px', height: '36px', flexShrink: 0, borderRadius: 'var(--radius-md)', display: 'grid', placeItems: 'center', background: 'var(--ink-900)', color: '#fff', fontFamily: 'var(--font-display)', fontWeight: 700 }}>{p.label.charAt(0).toUpperCase()}</span>
         <div style={{ minWidth: 0 }}>
@@ -32,7 +35,7 @@ function ProviderRow({ p, active, onActivate, saved, onSave, onRemove }) {
         </div>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', justifyContent: 'flex-end' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', justifyContent: isMobile ? 'space-between' : 'flex-end' }}>
         <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: active ? 'var(--text-heading)' : 'var(--text-soft)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
           <input type="radio" name="active-provider" checked={active} onChange={onActivate} /> Active
         </label>

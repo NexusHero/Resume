@@ -255,12 +255,12 @@ See [requirements.md](requirements.md) for the full FR/NFR catalogue. Verificati
   first-party) or `openai` (third-party API) — each degrading to hashed on any error, so
   the offline default and the DSGVO story are preserved.
 - **Responsive UI** (ADR-0025/0026/0027): the shell (`RecruitRail` → drawer), the dense
-  dashboard/reporting views (KPI grids collapse, tables scroll), and the document screens
+  dashboard/reporting views (KPI grids collapse, tables scroll), the document screens
   (`TalentProfile` CV stacks, the `Editor` stacks its panes + wraps its toolbar, form modals
-  go single-column) all adapt via the `useViewport` hook — the core app is usable on a phone.
-  The one remaining gap is `SettingsView`'s list rows (they use `minmax(0,1fr) … auto` tracks
-  that shrink acceptably, so they were left as-is). The board is touch-usable via the stage
-  `<select>`; touch drag-and-drop is intentionally not implemented.
+  go single-column), and `SettingsView`'s AI-provider rows (the three-column name·key·controls
+  grid collapses to a stacked single column) all adapt via the `useViewport` hook — the core
+  app is usable on a phone. The board is touch-usable via the stage `<select>`; touch
+  drag-and-drop is intentionally not implemented.
 - **Installable PWA** (ADR-0028): a web app manifest + a hand-rolled service worker (offline
   shell, `/api` never cached) + generated PNG icons make the kit installable to the home
   screen and launchable standalone. On-device install (Android/iOS, HTTPS) is a **manual

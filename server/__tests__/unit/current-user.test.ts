@@ -4,7 +4,10 @@ import {
   optionalUserId,
   currentRoles,
   currentPrincipal,
+  currentScope,
+  TEAM_SCOPE,
 } from '../../src/http/current-user';
+import { DEFAULT_TENANT } from '../../src/domain/user';
 import { UnauthorizedError } from '../../src/domain/errors';
 
 const req = (over: Record<string, unknown> = {}): Request => over as unknown as Request;
@@ -33,5 +36,14 @@ describe('current-user helpers', () => {
       id: 'u1',
       roles: ['recruiter'],
     });
+  });
+
+  it('CurrentScope_NoTenant_FallsBackToDefault', () => {
+    expect(currentScope(req())).toBe(DEFAULT_TENANT);
+    expect(TEAM_SCOPE).toBe(DEFAULT_TENANT);
+  });
+
+  it('CurrentScope_WithTenant_ReturnsTenant', () => {
+    expect(currentScope(req({ tenantId: 'acme' }))).toBe('acme');
   });
 });

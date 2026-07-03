@@ -10,6 +10,14 @@ export const ROLES = ['admin', 'recruiter'] as const;
 export const roleSchema = z.enum(ROLES);
 export type Role = (typeof ROLES)[number];
 
+/**
+ * The tenant a user belongs to (ADR-0033). Data ownership is scoped by tenant,
+ * so users in different tenants never see each other's records. A user without
+ * an explicit tenant belongs to `DEFAULT_TENANT` — the single tenant every
+ * current deployment runs as, which preserves the pre-multi-tenant behaviour.
+ */
+export const DEFAULT_TENANT = 'team';
+
 /** A registered account. `passwordHash` never leaves the server. */
 export interface User {
   id: string;
@@ -17,6 +25,8 @@ export interface User {
   passwordHash: string;
   roles: Role[];
   createdAt: string; // ISO 8601
+  /** The tenant this user belongs to (ADR-0033); absent means `DEFAULT_TENANT`. */
+  tenantId?: string;
   /** When the email address was confirmed via the emailed link (soft check). */
   verifiedAt?: string;
   /**
@@ -33,6 +43,8 @@ export interface UserView {
   email: string;
   roles: Role[];
   createdAt: string;
+  /** The tenant this user belongs to (ADR-0033); absent means `DEFAULT_TENANT`. */
+  tenantId?: string;
   verifiedAt?: string;
 }
 
@@ -42,6 +54,7 @@ export function toUserView(u: User): UserView {
     email: u.email,
     roles: u.roles,
     createdAt: u.createdAt,
+    ...(u.tenantId ? { tenantId: u.tenantId } : {}),
     ...(u.verifiedAt ? { verifiedAt: u.verifiedAt } : {}),
   };
 }

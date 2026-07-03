@@ -159,7 +159,9 @@ The outward submission stays a manual step (ADR-0019).
   destructive runs alone, and token spend is bounded per run (ADR-0013, ADR-0019).
 - **Skills:** canonicalised (ADR-0008) then matched semantically offline (ADR-0007), with
   local hashed embeddings + hybrid lexical/semantic ranking (ADR-0017).
-- **Auth & tenancy:** sessions + RBAC (ADR-0004); recruiting data is team-scoped (ADR-0010).
+- **Auth & tenancy:** sessions + RBAC (ADR-0004); recruiting data is scope-owned (ADR-0010).
+  `currentScope(req)` resolves to the user's `tenantId`, defaulting to `'team'` when absent
+  (ADR-0033) — the seam is multi-tenant-ready while every current install stays single-tenant.
 - **API contract:** hand-maintained OpenAPI 3.1 + self-hosted Swagger UI (ADR-0012),
   extended in the same PR as any route change.
 - **Self-hosted assets:** fonts and the Swagger UI ship from this origin — no CDN, no
@@ -208,6 +210,7 @@ Full log in [`docs/adr/`](adr). Summary:
 | 0030 | Scheduler leader election via Postgres advisory locks         | Accepted (D-series slice 2)    |
 | 0031 | PDF archive to S3-compatible object storage                   | Accepted (D-series slice 3)    |
 | 0032 | Bounded PDF render pool (concurrency semaphore)               | Accepted (D-series slice 4)    |
+| 0033 | Multi-tenant scope foundation (tenantId, default 'team')      | Accepted (D-series slice 6·1)  |
 
 ## 10. Quality Requirements
 

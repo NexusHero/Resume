@@ -21,6 +21,7 @@ export async function migrate(pool: Pool): Promise<void> {
       created_at text NOT NULL
     );
     ALTER TABLE users ADD COLUMN IF NOT EXISTS roles jsonb NOT NULL DEFAULT '["recruiter"]'::jsonb;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS tenant_id text;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS verified_at text;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS llm_provider text;
     CREATE TABLE IF NOT EXISTS sessions (

@@ -255,18 +255,25 @@ function ComplianceCard() {
     try {
       await window.RecruitApi.anonymizeTalent(item.talentId);
       setItems((xs) => xs.filter((x) => x.talentId !== item.talentId));
-    } catch { /* ignore */ }
+    } catch {
+      // eslint-disable-next-line no-alert
+      window.alert(`Could not anonymize ${item.name}. Please try again.`);
+    }
     setBusy('');
   };
 
   const savePolicy = async (patch) => {
-    const next = { ...policy, ...patch };
-    setPolicy(next); // optimistic
+    const prev = policy;
+    setPolicy({ ...policy, ...patch }); // optimistic
     try {
       const saved = await window.RecruitApi.updateRetentionPolicy(patch);
       setPolicy(saved);
       reload();
-    } catch { /* ignore */ }
+    } catch {
+      setPolicy(prev); // roll the optimistic change back
+      // eslint-disable-next-line no-alert
+      window.alert('Could not save the retention policy. Please try again.');
+    }
   };
 
   const sweepOverdue = async () => {
@@ -277,7 +284,10 @@ function ComplianceCard() {
     try {
       await window.RecruitApi.anonymizeOverdue();
       await reload();
-    } catch { /* ignore */ }
+    } catch {
+      // eslint-disable-next-line no-alert
+      window.alert('Could not anonymize the overdue candidates. Please try again.');
+    }
     setSweeping(false);
   };
 

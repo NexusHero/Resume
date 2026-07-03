@@ -100,7 +100,13 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
 
   const openAdd = async () => {
     setAdding(true);
-    try { setPool(await window.RecruitApi.listTalents()); } catch { setPool([]); }
+    try {
+      setPool(await window.RecruitApi.listTalents());
+    } catch {
+      setPool([]);
+      // eslint-disable-next-line no-alert
+      window.alert('Could not load the talent pool. Please try again.');
+    }
   };
   const inPipeline = new Set((cards || []).map((c) => c.talentId));
   const addable = pool.filter((t) => !inPipeline.has(t.id) && t.id !== 'me');

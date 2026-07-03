@@ -21,3 +21,5 @@ where a decision satisfies a specific requirement.
 | [0008](0008-skill-canonicalization-taxonomy.md)    | Skill canonicalization taxonomy                                | Accepted |
 | [0009](0009-grounding-self-check.md)               | Grounding self-check over generated text                       | Accepted |
 | [0010](0010-team-scope-for-recruiting-data.md)     | Team scope as the ownership boundary for recruiting data       | Accepted |
+| [0011](0011-per-user-llm-provider-choice.md)       | Per-user, persisted LLM provider choice                        | Accepted |
+| [0012](0012-self-hosted-swagger-ui.md)             | Hand-maintained OpenAPI contract + self-hosted Swagger UI      | Accepted |

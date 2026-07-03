@@ -27,6 +27,7 @@ import type { PasswordResetController } from './password-reset-controller';
 import { asyncHandler } from './async-handler';
 import { errorHandler, notFound, sendProblem } from './problem';
 import { corsMiddleware, securityHeaders, recruitingCsp, RECRUITING_KIT_PREFIX } from './security';
+import { registerApiDocs } from './api-docs';
 
 export interface AppDeps {
   applicationController: ApplicationController;
@@ -89,6 +90,8 @@ export function createApp(deps: AppDeps): Express {
 
   const api = express.Router();
   api.get('/health', (_req, res) => res.json({ status: 'ok' }));
+  // API reference: the OpenAPI contract + a self-hosted Swagger UI (no CDN).
+  registerApiDocs(api, deps.config.rootDir);
 
   // Throttle the credential endpoints against brute-force / account-creation abuse.
   // The handler sends problem+json so the login form can show the real reason

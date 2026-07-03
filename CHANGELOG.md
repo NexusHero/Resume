@@ -50,6 +50,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Added
 
+- **A browsable API reference** — the OpenAPI 3.1 contract in
+  `server/openapi.yaml` now covers the full REST surface (auth, recruiting,
+  documents/AI, settings, team, DSGVO — previously only the applicant-side
+  endpoints) and is served at `/api/v1/openapi.yaml`, with a self-hosted
+  Swagger UI at `/api/v1/docs` (no CDN, strict CSP — ADR-0012).
 - **Costs are visible where AI is used** — every AI response carries its
   per-call usage (input/output tokens + estimated USD), and the provider badge
   shows it right at the result ("AI · gemini · 1.4k tok · $0.0011"): ATS,

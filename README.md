@@ -152,6 +152,11 @@ docs/                      ← architecture · requirements · use-cases · adr/
 Base path `/api/v1`. Recruiting endpoints require a session; job search and cover-letter
 generation are open.
 
+**Full, browsable reference:** the complete OpenAPI 3.1 contract lives in
+[`server/openapi.yaml`](server/openapi.yaml) and is served at `/api/v1/openapi.yaml`;
+a self-hosted **Swagger UI** (no CDN — [ADR-0012](docs/adr/0012-self-hosted-swagger-ui.md))
+runs at [`/api/v1/docs`](http://localhost:4178/api/v1/docs).
+
 | Endpoint                                                 | What it does                                          |
 | -------------------------------------------------------- | ----------------------------------------------------- |
 | `POST /auth/register` · `/auth/login`                    | create / sign in to an account                        |

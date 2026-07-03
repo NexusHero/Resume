@@ -49,6 +49,8 @@ export interface AppConfig {
   jobSources: JobSourcesConfig;
   /** Storage backend: 'fs' (JSON files, default) or 'sql' (Postgres). */
   store: 'fs' | 'sql';
+  /** Where finished application PDFs are archived (filesystem or S3). */
+  pdfArchive: PdfArchiveConfig;
   /** Postgres connection string, used when store === 'sql'. */
   databaseUrl: string;
   /** Authentication wiring (session cookie + social-login availability). */
@@ -122,6 +124,25 @@ export interface LlmConfig {
   provider: LlmProviderId;
   anthropic: { apiKey: string; model: string };
   gemini: { apiKey: string; model: string };
+}
+
+/** Where archived application PDFs live (ADR-0031). */
+export interface PdfArchiveConfig {
+  /** `fs` (default, under the store dir) or `s3` (any S3-compatible bucket). */
+  provider: 'fs' | 's3';
+  s3: {
+    bucket: string;
+    region: string;
+    /** Custom endpoint for non-AWS S3 (Cloudflare R2, Hetzner, MinIO); '' = AWS. */
+    endpoint: string;
+    /** Key prefix within the bucket. */
+    prefix: string;
+    /** Explicit credentials; empty falls back to the SDK's default chain. */
+    accessKeyId: string;
+    secretAccessKey: string;
+    /** Path-style addressing, needed by some non-AWS endpoints (e.g. MinIO). */
+    forcePathStyle: boolean;
+  };
 }
 
 /** Which embedding backend hybrid matching uses (ADR-0017, ADR-0020). */
@@ -265,6 +286,18 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     },
     store: env.STORE === 'sql' ? 'sql' : 'fs',
     databaseUrl: env.DATABASE_URL ?? '',
+    pdfArchive: {
+      provider: env.PDF_ARCHIVE === 's3' ? 's3' : 'fs',
+      s3: {
+        bucket: env.S3_BUCKET ?? '',
+        region: env.S3_REGION ?? 'us-east-1',
+        endpoint: (env.S3_ENDPOINT ?? '').replace(/\/+$/, ''),
+        prefix: env.S3_PREFIX ?? 'pdf-archive',
+        accessKeyId: env.S3_ACCESS_KEY_ID ?? '',
+        secretAccessKey: env.S3_SECRET_ACCESS_KEY ?? '',
+        forcePathStyle: env.S3_FORCE_PATH_STYLE === 'true',
+      },
+    },
     auth: {
       sessionCookieName: env.SESSION_COOKIE_NAME ?? 'myjob_session',
       // Secure cookies require HTTPS; on by default in production, or opt in via

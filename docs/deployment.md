@@ -33,6 +33,13 @@ Resolved from the environment (see `server/src/config.ts`):
 | `PORT`                                                      | `4178`                                                     | HTTP port.                                                                                                                           |
 | `STORE`                                                     | `fs`                                                       | `sql` uses Postgres; otherwise JSON files under `archive/`.                                                                          |
 | `DATABASE_URL`                                              | —                                                          | Postgres connection string (required when `STORE=sql`).                                                                              |
+| `PDF_ARCHIVE`                                               | `fs`                                                       | `s3` archives finished PDFs to an S3-compatible bucket; otherwise the filesystem under `archive/`.                                   |
+| `S3_BUCKET`                                                 | —                                                          | Bucket name (required when `PDF_ARCHIVE=s3` — boot fails without it).                                                                |
+| `S3_REGION`                                                 | `us-east-1`                                                | Bucket region.                                                                                                                       |
+| `S3_ENDPOINT`                                               | _(AWS)_                                                    | Custom endpoint for non-AWS S3 (Cloudflare R2, Hetzner, MinIO).                                                                      |
+| `S3_PREFIX`                                                 | `pdf-archive`                                              | Key prefix within the bucket.                                                                                                        |
+| `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY`                 | —                                                          | Explicit credentials; omit to use the SDK's default chain (env `AWS_*` / IAM role).                                                  |
+| `S3_FORCE_PATH_STYLE`                                       | _(off)_                                                    | `true` for path-style addressing (some non-AWS endpoints, e.g. MinIO).                                                               |
 | `CORS_ORIGINS`                                              | _(empty)_                                                  | Comma-separated browser origins allowed to call the API.                                                                             |
 | `COOKIE_SECURE`                                             | _(off)_                                                    | `true` sends the session cookie Secure (HTTPS-only). Auto-on when `NODE_ENV=production`.                                             |
 | `SESSION_TTL_DAYS`                                          | `30`                                                       | Server-side session lifetime; older sessions are rejected.                                                                           |
@@ -93,10 +100,12 @@ move for the archive are the remaining scale follow-ups (roadmap D2/D4).
 
 - **Persistence:** with `STORE=sql`, everything (recruiting records,
   applications, audit events, saved searches, users, sessions, password-reset
-  tokens and the encrypted per-user API keys) lives in Postgres. Only the PDF
-  archive is file-backed under `/app/archive` — mount a volume so it survives a
-  redeploy. With the default file store, mount a volume for the whole
-  `/app/archive` directory.
+  tokens and the encrypted per-user API keys) lives in Postgres. The PDF archive
+  is the one file-backed store left — set `PDF_ARCHIVE=s3` (ADR-0031) to move it
+  to an S3-compatible bucket (AWS, Cloudflare R2, Hetzner, MinIO), so nothing is
+  bound to a single machine and instances share it; otherwise mount a volume at
+  `/app/archive` so it survives a redeploy. With the default file store, mount a
+  volume for the whole `/app/archive` directory.
 - **Email / password reset:** the password-reset flow emails a one-time link.
   In production set `MAIL_TRANSPORT=smtp` with the `SMTP_*` variables (any relay
   works — e.g. an EU provider such as Brevo, Mailjet or SES-Frankfurt) and an

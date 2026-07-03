@@ -206,6 +206,7 @@ Full log in [`docs/adr/`](adr). Summary:
 | 0028 | Installable PWA (manifest + hand-rolled service worker)       | Accepted (E2)                  |
 | 0029 | Fail-fast production readiness gate (Postgres, APP_SECRET)    | Accepted (D-series slice 1)    |
 | 0030 | Scheduler leader election via Postgres advisory locks         | Accepted (D-series slice 2)    |
+| 0031 | PDF archive to S3-compatible object storage                   | Accepted (D-series slice 3)    |
 
 ## 10. Quality Requirements
 

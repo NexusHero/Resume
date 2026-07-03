@@ -13,6 +13,7 @@ import { SavedSearchService } from '../../src/services/saved-search-service';
 import { LlmController } from '../../src/http/llm-controller';
 import { MandateController } from '../../src/http/mandate-controller';
 import { TalentController } from '../../src/http/talent-controller';
+import { TalentImportService } from '../../src/services/talent-import-service';
 import { PlacementController } from '../../src/http/placement-controller';
 import { CandidacyController } from '../../src/http/candidacy-controller';
 import { RetentionController } from '../../src/http/retention-controller';
@@ -185,15 +186,13 @@ function makeApp(
     idGenerator: new SequenceIdGenerator('mandate'),
   });
   const mandateController = new MandateController({ mandateService });
-  const talentController = new TalentController({
-    talentService: new TalentService({
-      talentRepository,
-      documentRepository,
-      attachmentStore,
-      candidacyRepository,
-      clock: new FixedClock(),
-      idGenerator: new SequenceIdGenerator('talent'),
-    }),
+  const talentService = new TalentService({
+    talentRepository,
+    documentRepository,
+    attachmentStore,
+    candidacyRepository,
+    clock: new FixedClock(),
+    idGenerator: new SequenceIdGenerator('talent'),
   });
   // Shared so candidacies auto-booked when a card reaches 'placed' land in the
   // same placements the placement endpoints serve.
@@ -265,6 +264,15 @@ function makeApp(
     idGenerator: new SequenceIdGenerator('art'),
     clock: new FixedClock(),
     logger: noopLogger,
+  });
+  const talentController = new TalentController({
+    talentService,
+    talentImportService: new TalentImportService({
+      talentService,
+      documentService,
+      documentAiService,
+      logger: noopLogger,
+    }),
   });
   const applicationBuilder = new ApplicationBuilder({
     documentAiService,
@@ -805,6 +813,29 @@ describe('REST API /api/v1', () => {
       const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
       const id = created.body.talent.id as string;
       const res = await agent.post(`/api/v1/talents/${id}/documents/parse-pdf`).send({});
+      expect(res.status).toBe(400);
+    });
+
+    it('TalentsImport_TwoPdfs_CreatesTalentsWithParsedDocuments', async () => {
+      const dataBase64 = Buffer.from('%PDF-1.4 fake').toString('base64');
+      const res = await agent.post('/api/v1/talents/import').send({
+        items: [
+          { dataBase64, filename: 'ada.pdf' },
+          { dataBase64, filename: 'grace.pdf' },
+        ],
+      });
+      expect(res.status).toBe(201);
+      expect(res.body.results).toHaveLength(2);
+      expect(res.body.results.every((r: { ok: boolean }) => r.ok)).toBe(true);
+      // No LLM key → template parse keeps the (fake-)extracted text; name falls
+      // back to the placeholder, and the talents land in the pool.
+      expect(res.body.results[0]).toMatchObject({ ok: true, name: 'Imported CV' });
+      const list = await agent.get('/api/v1/talents');
+      expect(list.body).toHaveLength(2);
+    });
+
+    it('TalentsImport_Empty_Returns400', async () => {
+      const res = await agent.post('/api/v1/talents/import').send({ items: [] });
       expect(res.status).toBe(400);
     });
 

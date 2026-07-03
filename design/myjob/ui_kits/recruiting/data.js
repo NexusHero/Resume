@@ -544,6 +544,18 @@ const RecruitApi = {
     );
     return mapTalent(data.talent);
   },
+  /* Bulk-import CVs (PDF): items are { dataBase64, filename }. Returns a
+     per-file result array (order matches the request). */
+  async importTalents(items) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/talents/import`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ items }),
+      }),
+    );
+    return data.results;
+  },
   /* ---- Talent documents (resume + cover letter, stored server-side) ---- */
   async getTalentDocuments(talentId) {
     const data = await _jsonOrThrow(

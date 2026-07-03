@@ -62,12 +62,24 @@ function Dashboard({ me, apps, vkpis, clients, mandates, onOpenTalent, onOpenPip
 }
 
 /* ---------- Talents grid ---------- */
-function TalentGrid({ talents, apps, onOpen, onAdd }) {
+function TalentGrid({ talents, apps, onOpen, onAdd, onImport, importing }) {
+  const fileRef = React.useRef(null);
+  const pickFiles = (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (files.length && onImport) onImport(files);
+  };
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>{talents.length} {talents.length === 1 ? 'talent' : 'talents'}</span>
         <span style={{ flex: 1 }} />
+        {onImport && (
+          <>
+            <input ref={fileRef} type="file" accept=".pdf,application/pdf" multiple style={{ display: 'none' }} onChange={pickFiles} />
+            <WS.Button size="sm" variant="outline" iconLeft={<WS.Icon name="upload" size={14} />} onClick={() => fileRef.current && fileRef.current.click()} disabled={importing}>{importing ? 'Importing…' : 'Import CVs'}</WS.Button>
+          </>
+        )}
         <WS.Button size="sm" variant="outline" iconLeft={<WS.Icon name="plus" size={14} />} onClick={onAdd}>Add talent</WS.Button>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>

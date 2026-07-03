@@ -152,6 +152,7 @@ export function createApp(deps: AppDeps): Express {
   api.delete('/mandates/:id', requireAuth, asyncHandler(m.remove));
   api.get('/talents', requireAuth, asyncHandler(t.list));
   api.post('/talents', requireAuth, asyncHandler(t.create));
+  api.post('/talents/import', requireAuth, asyncHandler(t.importPdfs));
   api.patch('/talents/:id', requireAuth, asyncHandler(t.update));
   api.delete('/talents/:id', requireAuth, asyncHandler(t.remove));
   // Recruiting pipeline: talents in a mandate's stages (team-scoped).

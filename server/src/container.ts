@@ -37,6 +37,7 @@ import { LlmService } from './services/llm-service';
 import { CoverLetterService } from './services/cover-letter-service';
 import { MandateService } from './services/mandate-service';
 import { TalentService } from './services/talent-service';
+import { TalentImportService } from './services/talent-import-service';
 import { PlacementService } from './services/placement-service';
 import { CandidacyService } from './services/candidacy-service';
 import { RetentionService } from './services/retention-service';
@@ -160,6 +161,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     coverLetterService: asClass(CoverLetterService).singleton(),
     mandateService: asClass(MandateService).singleton(),
     talentService: asClass(TalentService).singleton(),
+    talentImportService: asClass(TalentImportService).singleton(),
     placementService: asClass(PlacementService).singleton(),
     candidacyService: asClass(CandidacyService).singleton(),
     retentionService: asClass(RetentionService).singleton(),

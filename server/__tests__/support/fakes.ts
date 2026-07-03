@@ -40,6 +40,8 @@ import type {
   AssistantSuggestionRepository,
 } from '../../src/ports/assistant-store';
 import type { AssistantSettings, AssistantSuggestion } from '../../src/domain/assistant';
+import type { ArtifactLog } from '../../src/domain/artifact';
+import type { ArtifactLogRepository } from '../../src/ports/artifact-log-repository';
 import type { InterviewObservation } from '../../src/domain/interview-observation';
 
 export class InMemoryApplicationRepository implements ApplicationRepository {
@@ -508,6 +510,27 @@ export class InMemoryAssistantSuggestionRepository implements AssistantSuggestio
     this.rows = this.rows.map((s) =>
       s.ownerId === suggestion.ownerId && s.id === suggestion.id ? suggestion : s,
     );
+  }
+}
+
+export class InMemoryArtifactLogRepository implements ArtifactLogRepository {
+  rows: ArtifactLog[] = [];
+  async list(ownerId: string): Promise<ArtifactLog[]> {
+    return this.rows
+      .filter((l) => l.ownerId === ownerId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+  async listForTalent(ownerId: string, talentId: string): Promise<ArtifactLog[]> {
+    return (await this.list(ownerId)).filter((l) => l.talentId === talentId);
+  }
+  async findById(ownerId: string, id: string): Promise<ArtifactLog | null> {
+    return this.rows.find((l) => l.ownerId === ownerId && l.id === id) ?? null;
+  }
+  async add(log: ArtifactLog): Promise<void> {
+    this.rows.push(log);
+  }
+  async update(log: ArtifactLog): Promise<void> {
+    this.rows = this.rows.map((l) => (l.ownerId === log.ownerId && l.id === log.id ? log : l));
   }
 }
 

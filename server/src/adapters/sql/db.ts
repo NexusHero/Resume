@@ -209,5 +209,18 @@ export async function migrate(pool: Pool): Promise<void> {
       run_id text NOT NULL
     );
     CREATE INDEX IF NOT EXISTS assistant_suggestions_owner_idx ON assistant_suggestions (owner_id, status);
+    CREATE TABLE IF NOT EXISTS artifact_logs (
+      id text PRIMARY KEY,
+      owner_id text NOT NULL,
+      kind text NOT NULL,
+      talent_id text NOT NULL,
+      provider text NOT NULL,
+      channel text NOT NULL,
+      audience text NOT NULL,
+      outcome text NOT NULL,
+      created_at text NOT NULL,
+      outcome_at text
+    );
+    CREATE INDEX IF NOT EXISTS artifact_logs_owner_idx ON artifact_logs (owner_id, talent_id);
   `);
 }

@@ -4,6 +4,7 @@ import { LlmService } from '../../src/services/llm-service';
 import { NotFoundError, ValidationError } from '../../src/domain/errors';
 import type { LlmGenerateInput, LlmProvider, LlmProviderId } from '../../src/ports/llm-provider';
 import {
+  InMemoryArtifactLogRepository,
   InMemoryTalentRepository,
   InMemoryUserRepository,
   InMemoryDocumentRepository,
@@ -13,6 +14,7 @@ import {
   FakePdfRenderer,
   FakePdfTextExtractor,
   FixedClock,
+  SequenceIdGenerator,
   noopLogger,
 } from '../support/fakes';
 import type { Talent } from '../../src/domain/talent';
@@ -83,6 +85,7 @@ function ctx(stub: ProviderStub = {}, pdfText: string | Error = '', logger = noo
     logger: noopLogger,
   });
   const observations = new InMemoryInterviewObservationRepository();
+  const artifacts = new InMemoryArtifactLogRepository();
   const service = new DocumentAiService({
     documentService,
     llmService: llm,
@@ -91,6 +94,8 @@ function ctx(stub: ProviderStub = {}, pdfText: string | Error = '', logger = noo
     pdfTextExtractor,
     usageMeter,
     interviewObservationRepository: observations,
+    artifactLogRepository: artifacts,
+    idGenerator: new SequenceIdGenerator('art'),
     clock: new FixedClock(),
     logger,
   });
@@ -101,6 +106,7 @@ function ctx(stub: ProviderStub = {}, pdfText: string | Error = '', logger = noo
     users,
     usageMeter,
     observations,
+    artifacts,
     documentService,
     getUsedKey: () => usedKey,
   };
@@ -779,6 +785,53 @@ describe('DocumentAiService.candidatePrep', () => {
     await expect(
       c.service.candidatePrep(OWNER, OWNER, 'missing', mandate, ad),
     ).rejects.toBeInstanceOf(NotFoundError);
+  });
+});
+
+describe('DocumentAiService outcome logging', () => {
+  const OUTREACH_JSON = JSON.stringify({ subject: 'Hi', body: 'A real body.' });
+
+  it('Outreach_LogsAnArtifactWithChannelAndAudience', async () => {
+    const c = ctx({ available: true, generate: async () => OUTREACH_JSON });
+    await c.talents.add(talent('t1'));
+    await c.service.outreach(OWNER, OWNER, 't1', {
+      audience: 'client',
+      channel: 'linkedin',
+      tone: '',
+      mandateContext: '',
+      recruiterName: '',
+    });
+    const [logged] = await c.artifacts.list(OWNER);
+    expect(logged).toMatchObject({
+      kind: 'outreach',
+      talentId: 't1',
+      provider: 'claude',
+      channel: 'linkedin',
+      audience: 'client',
+      outcome: 'pending',
+    });
+  });
+
+  it('Pitch_TemplateFallback_IsLoggedWithProviderTemplate', async () => {
+    const c = ctx(); // no provider → template pitch, still part of the loop
+    await c.talents.add(talent('t1'));
+    await c.service.pitchForMandate(OWNER, OWNER, 't1', '');
+    const [logged] = await c.artifacts.list(OWNER);
+    expect(logged).toMatchObject({ kind: 'pitch', provider: 'template', channel: '' });
+  });
+
+  it('Outreach_LoggingFailure_DoesNotBreakTheFeature', async () => {
+    const c = ctx();
+    await c.talents.add(talent('t1'));
+    jest.spyOn(c.artifacts, 'add').mockRejectedValue(new Error('disk full'));
+    const message = await c.service.outreach(OWNER, OWNER, 't1', {
+      audience: 'candidate',
+      channel: 'email',
+      tone: '',
+      mandateContext: '',
+      recruiterName: '',
+    });
+    expect(message.body).toBeTruthy();
   });
 });
 

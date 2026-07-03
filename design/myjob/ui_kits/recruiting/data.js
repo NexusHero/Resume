@@ -401,6 +401,24 @@ const RecruitApi = {
     return data.prep; // { companyLabel, formats, obligations, requirementChecks, strengths, likelyQuestions, starAnswers, candidateQuestions, provider }
   },
   /* ---- Interview-observation flywheel ---- */
+  // --- outcome loop: generated artifacts and what became of them ---
+  async listArtifacts(talentId) {
+    const q = talentId ? `?talentId=${encodeURIComponent(talentId)}` : '';
+    return _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/artifacts${q}`));
+  },
+  async setArtifactOutcome(id, outcome) {
+    return _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/artifacts/${id}/outcome`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ outcome }),
+      }),
+    );
+  },
+  async getArtifactStats() {
+    return _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/artifacts/stats`));
+  },
+
   // --- assistant: settings + reviewable suggestion queue ---
   async getAssistant() {
     // { settings: { enabled, mode, intervalMinutes, lastRunAt? }, counts: {...} }

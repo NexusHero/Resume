@@ -211,6 +211,20 @@ export const assistantSuggestions = pgTable('assistant_suggestions', {
   runId: text('run_id').notNull(),
 });
 
+/** The AI-artifact outcome log (mirrors domain `ArtifactLog`). Team-scoped. */
+export const artifactLogs = pgTable('artifact_logs', {
+  id: text('id').primaryKey(),
+  ownerId: text('owner_id').notNull(),
+  kind: text('kind').notNull(),
+  talentId: text('talent_id').notNull(),
+  provider: text('provider').notNull(),
+  channel: text('channel').notNull(),
+  audience: text('audience').notNull(),
+  outcome: text('outcome').notNull(),
+  createdAt: text('created_at').notNull(),
+  outcomeAt: text('outcome_at'),
+});
+
 /** Append-only meter of LLM calls (mirrors domain `UsageEvent`). Per user. */
 export const usageEvents = pgTable('usage_events', {
   seq: serial('seq').primaryKey(),

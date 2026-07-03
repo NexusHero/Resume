@@ -200,6 +200,25 @@ function OutreachModal({ talentId, defaultEmail, onClose }) {
   const [outMsg, setOutMsg] = React.useState(null);
   const [outBusy, setOutBusy] = React.useState(false);
   const [outCopied, setOutCopied] = React.useState(false);
+  // The outcome loop: this talent's past outreach + the desk's hit rate.
+  const [history, setHistory] = React.useState([]);
+  const [replyRate, setReplyRate] = React.useState(null);
+  const loadLoop = React.useCallback(() => {
+    if (!talentId) return;
+    window.RecruitApi.listArtifacts(talentId)
+      .then((all) => setHistory(all.filter((a) => a.kind === 'outreach')))
+      .catch(() => {});
+    window.RecruitApi.getArtifactStats()
+      .then((s) => {
+        const outreach = (s.byKind || []).find((b) => b.kind === 'outreach');
+        setReplyRate(outreach || null);
+      })
+      .catch(() => {});
+  }, [talentId]);
+  React.useEffect(loadLoop, [loadLoop]);
+  const stampOutcome = (id, outcome) => {
+    window.RecruitApi.setArtifactOutcome(id, outcome).then(loadLoop).catch(() => {});
+  };
   const runOutreach = async () => {
     if (!talentId) return;
     setOutBusy(true);
@@ -213,6 +232,7 @@ function OutreachModal({ talentId, defaultEmail, onClose }) {
           mandateContext: outContext,
         }),
       );
+      loadLoop(); // the generation was logged for the outcome loop
     } catch {
       /* ignore */
     }
@@ -279,6 +299,38 @@ function OutreachModal({ talentId, defaultEmail, onClose }) {
           )}
           <div style={{ whiteSpace: 'pre-wrap', fontSize: '13px', lineHeight: 1.55, color: 'var(--text-body)' }}>{outMsg.body}</div>
           <EdmGroundingWarning grounding={outMsg.grounding} />
+        </div>
+      )}
+
+      {/* The outcome loop: what past outreach achieved, and stamping new fates.
+          Honest by design — the rate only counts resolved messages. */}
+      {(history.length > 0 || (replyRate && replyRate.replyRate !== null)) && (
+        <div style={{ marginTop: '18px', borderTop: '1px solid var(--border)', paddingTop: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Outcome loop</span>
+            {replyRate && replyRate.replyRate !== null && (
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>
+                Your desk: {replyRate.replied + replyRate.converted} of {replyRate.replied + replyRate.noReply + replyRate.converted} resolved outreach got a reply ({replyRate.replyRate}%)
+              </span>
+            )}
+          </div>
+          {history.slice(0, 5).map((a) => (
+            <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-soft)', whiteSpace: 'nowrap' }}>
+                {new Date(a.createdAt).toLocaleDateString('en-GB')} · {a.channel} · {a.audience} · {a.provider}
+              </span>
+              <span style={{ marginLeft: 'auto', display: 'inline-flex', gap: '6px' }}>
+                {a.outcome === 'pending' ? (
+                  <>
+                    <EdmPillButton onClick={() => stampOutcome(a.id, 'replied')}>Replied</EdmPillButton>
+                    <EdmPillButton onClick={() => stampOutcome(a.id, 'no-reply')}>No reply</EdmPillButton>
+                  </>
+                ) : (
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: a.outcome === 'no-reply' ? 'var(--text-muted)' : 'var(--positive, #1F8A5B)' }}>{a.outcome}</span>
+                )}
+              </span>
+            </div>
+          ))}
         </div>
       )}
     </EdmModalShell>

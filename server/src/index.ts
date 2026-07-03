@@ -20,6 +20,7 @@ import type { ComplianceController } from './http/compliance-controller';
 import type { ForecastController } from './http/forecast-controller';
 import type { ObservationController } from './http/observation-controller';
 import type { AssistantController } from './http/assistant-controller';
+import type { ArtifactController } from './http/artifact-controller';
 import type { AssistantService } from './services/assistant-service';
 import { TEAM_SCOPE } from './http/current-user';
 import type { DocumentController } from './http/document-controller';
@@ -60,6 +61,7 @@ async function main(): Promise<void> {
     forecastController: container.resolve<ForecastController>('forecastController'),
     observationController: container.resolve<ObservationController>('observationController'),
     assistantController: container.resolve<AssistantController>('assistantController'),
+    artifactController: container.resolve<ArtifactController>('artifactController'),
     documentController: container.resolve<DocumentController>('documentController'),
     attachmentController: container.resolve<AttachmentController>('attachmentController'),
     authController: container.resolve<AuthController>('authController'),

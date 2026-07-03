@@ -19,6 +19,7 @@ import type {
   AssistantSettingsStore,
   AssistantSuggestionRepository,
 } from '../ports/assistant-store';
+import type { ArtifactLogRepository } from '../ports/artifact-log-repository';
 import type { Clock } from '../ports/clock';
 import { FsApplicationRepository } from './fs-application-repository';
 import { FsAuditLog } from './fs-audit-log';
@@ -37,6 +38,7 @@ import { FsApiKeyStore } from './fs-api-key-store';
 import { FsUsageMeter } from './fs-usage-meter';
 import { FsInterviewObservationRepository } from './fs-interview-observation-repository';
 import { FsAssistantSettingsStore, FsAssistantSuggestionRepository } from './fs-assistant-store';
+import { FsArtifactLogRepository } from './fs-artifact-log-repository';
 import { SecretCipher } from './secret-cipher';
 import { SqlApplicationRepository } from './sql/sql-application-repository';
 import { SqlAuditLog } from './sql/sql-audit-log';
@@ -58,6 +60,7 @@ import {
   SqlAssistantSettingsStore,
   SqlAssistantSuggestionRepository,
 } from './sql/sql-assistant-store';
+import { SqlArtifactLogRepository } from './sql/sql-artifact-log-repository';
 import type { Db } from './sql/db';
 
 /** The storage ports, resolved to one backend. */
@@ -80,6 +83,7 @@ export interface Persistence {
   interviewObservationRepository: InterviewObservationRepository;
   assistantSettingsStore: AssistantSettingsStore;
   assistantSuggestionRepository: AssistantSuggestionRepository;
+  artifactLogRepository: ArtifactLogRepository;
 }
 
 /**
@@ -111,6 +115,7 @@ export function createPersistence(deps: { config: AppConfig; clock: Clock; db?: 
       interviewObservationRepository: new SqlInterviewObservationRepository({ db }),
       assistantSettingsStore: new SqlAssistantSettingsStore({ db }),
       assistantSuggestionRepository: new SqlAssistantSuggestionRepository({ db }),
+      artifactLogRepository: new SqlArtifactLogRepository({ db }),
     };
   }
   return {
@@ -132,5 +137,6 @@ export function createPersistence(deps: { config: AppConfig; clock: Clock; db?: 
     interviewObservationRepository: new FsInterviewObservationRepository({ config }),
     assistantSettingsStore: new FsAssistantSettingsStore({ config }),
     assistantSuggestionRepository: new FsAssistantSuggestionRepository({ config }),
+    artifactLogRepository: new FsArtifactLogRepository({ config }),
   };
 }

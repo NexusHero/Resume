@@ -8,6 +8,7 @@ import type { User, Role } from '../../domain/user';
 import type { TalentDocuments } from '../../domain/talent-documents';
 import type { Attachment } from '../../domain/attachment';
 import type { AssistantSuggestion, SuggestionKind, SuggestionStatus } from '../../domain/assistant';
+import type { ArtifactKind, ArtifactLog, ArtifactOutcome } from '../../domain/artifact';
 import {
   applications,
   auditEvents,
@@ -20,6 +21,7 @@ import {
   talentDocuments,
   attachments,
   assistantSuggestions,
+  artifactLogs,
 } from './schema';
 
 type ApplicationRow = typeof applications.$inferSelect;
@@ -44,6 +46,8 @@ type AttachmentRow = typeof attachments.$inferSelect;
 type AttachmentInsert = typeof attachments.$inferInsert;
 type AssistantSuggestionRow = typeof assistantSuggestions.$inferSelect;
 type AssistantSuggestionInsert = typeof assistantSuggestions.$inferInsert;
+type ArtifactLogRow = typeof artifactLogs.$inferSelect;
+type ArtifactLogInsert = typeof artifactLogs.$inferInsert;
 
 // Postgres stores absent optional values as NULL; the domain uses `undefined`.
 const orUndef = <T>(v: T | null): T | undefined => v ?? undefined;
@@ -368,5 +372,35 @@ export function assistantSuggestionToRow(s: AssistantSuggestion): AssistantSugge
     createdAt: s.createdAt,
     resolvedAt: s.resolvedAt ?? null,
     runId: s.runId,
+  };
+}
+
+export function rowToArtifactLog(row: ArtifactLogRow): ArtifactLog {
+  return {
+    id: row.id,
+    ownerId: row.ownerId,
+    kind: row.kind as ArtifactKind,
+    talentId: row.talentId,
+    provider: row.provider,
+    channel: row.channel,
+    audience: row.audience,
+    outcome: row.outcome as ArtifactOutcome,
+    createdAt: row.createdAt,
+    ...(row.outcomeAt ? { outcomeAt: row.outcomeAt } : {}),
+  };
+}
+
+export function artifactLogToRow(log: ArtifactLog): ArtifactLogInsert {
+  return {
+    id: log.id,
+    ownerId: log.ownerId,
+    kind: log.kind,
+    talentId: log.talentId,
+    provider: log.provider,
+    channel: log.channel,
+    audience: log.audience,
+    outcome: log.outcome,
+    createdAt: log.createdAt,
+    outcomeAt: log.outcomeAt ?? null,
   };
 }

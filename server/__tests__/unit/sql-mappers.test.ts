@@ -21,6 +21,8 @@ import {
   attachmentToRow,
   rowToAssistantSuggestion,
   assistantSuggestionToRow,
+  rowToArtifactLog,
+  artifactLogToRow,
 } from '../../src/adapters/sql/mappers';
 import type { Application, AuditEvent } from '../../src/domain/application';
 import type { SavedSearch } from '../../src/domain/saved-search';
@@ -361,5 +363,30 @@ describe('assistant suggestion mappers', () => {
         >,
       ),
     ).toEqual(suggestion);
+  });
+});
+
+describe('artifact log mappers', () => {
+  it('ArtifactLog_RoundTrips_WithAndWithoutOutcomeAt', () => {
+    const stamped = {
+      id: 'a1',
+      ownerId: 'team',
+      kind: 'outreach' as const,
+      talentId: 't1',
+      provider: 'gemini',
+      channel: 'email',
+      audience: 'candidate',
+      outcome: 'replied' as const,
+      createdAt: '2026-07-03T10:00:00.000Z',
+      outcomeAt: '2026-07-03T11:00:00.000Z',
+    };
+    expect(
+      rowToArtifactLog(artifactLogToRow(stamped) as Required<ReturnType<typeof artifactLogToRow>>),
+    ).toEqual(stamped);
+    const pending = { ...stamped, id: 'a2', outcome: 'pending' as const };
+    delete (pending as { outcomeAt?: string }).outcomeAt;
+    expect(
+      rowToArtifactLog(artifactLogToRow(pending) as Required<ReturnType<typeof artifactLogToRow>>),
+    ).toEqual(pending);
   });
 });

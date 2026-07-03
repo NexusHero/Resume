@@ -50,6 +50,8 @@ tags:
   - name: Saved searches
   - name: Assistant
     description: The in-process agent — settings, manual runs, and the reviewable suggestion queue
+  - name: Artifacts
+    description: The outcome loop — generated AI artifacts and what became of them
   - name: Settings
     description: AI provider choice, per-user API keys, usage
   - name: Team
@@ -1650,6 +1652,86 @@ paths:
             application/problem+json:
               schema: { $ref: '#/components/schemas/Problem' }
 
+  /artifacts:
+    get:
+      tags: [Artifacts]
+      summary: Generated artifacts (outreach, pitch), newest first
+      operationId: listArtifacts
+      security:
+        - cookieSession: []
+      parameters:
+        - name: talentId
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        '200':
+          description: The artifact log (optionally filtered to one talent).
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ArtifactLog' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /artifacts/stats:
+    get:
+      tags: [Artifacts]
+      summary: Reply rates by kind, provider and channel
+      operationId: artifactStats
+      security:
+        - cookieSession: []
+      responses:
+        '200':
+          description: Aggregates; replyRate is null while nothing is resolved.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  byKind:
+                    type: array
+                    items: { $ref: '#/components/schemas/ArtifactBucket' }
+                  byProvider:
+                    type: array
+                    items: { $ref: '#/components/schemas/ArtifactBucket' }
+                  byChannel:
+                    type: array
+                    items: { $ref: '#/components/schemas/ArtifactBucket' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /artifacts/{id}/outcome:
+    post:
+      tags: [Artifacts]
+      summary: Stamp what became of an artifact
+      operationId: setArtifactOutcome
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [outcome]
+              properties:
+                outcome:
+                  type: string
+                  enum: [pending, replied, no-reply, converted]
+      responses:
+        '200':
+          description: The updated artifact.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  artifact: { $ref: '#/components/schemas/ArtifactLog' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
   /settings/llm:
     get:
       tags: [Settings]
@@ -2224,3 +2306,32 @@ components:
         createdAt: { type: string, format: date-time }
         resolvedAt: { type: string, format: date-time }
         runId: { type: string }
+
+    ArtifactLog:
+      type: object
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [outreach, pitch] }
+        talentId: { type: string }
+        provider:
+          { type: string, description: Which backend produced it (claude, gemini, template). }
+        channel: { type: string, description: email / linkedin; empty for pitches. }
+        audience: { type: string, description: candidate / client; empty for pitches. }
+        outcome: { type: string, enum: [pending, replied, no-reply, converted] }
+        createdAt: { type: string, format: date-time }
+        outcomeAt: { type: string, format: date-time }
+
+    ArtifactBucket:
+      type: object
+      properties:
+        kind: { type: string }
+        provider: { type: string }
+        channel: { type: string }
+        sent: { type: integer }
+        replied: { type: integer }
+        noReply: { type: integer }
+        converted: { type: integer }
+        pending: { type: integer }
+        replyRate:
+          type: [integer, 'null']
+          description: Percent over resolved artifacts; null while nothing is resolved.

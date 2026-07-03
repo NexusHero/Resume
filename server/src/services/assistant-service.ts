@@ -13,6 +13,7 @@ import type {
   AssistantSettingsStore,
   AssistantSuggestionRepository,
 } from '../ports/assistant-store';
+import type { Mandate } from '../domain/mandate';
 import type { MandateRepository } from '../ports/mandate-repository';
 import type { TalentRepository } from '../ports/talent-repository';
 import type { DocumentRepository } from '../ports/document-repository';
@@ -51,6 +52,14 @@ export interface AssistantServiceDeps {
 const MIN_MATCH_SCORE = 40;
 const SHORTLIST_LIMIT = 3;
 const STALE_AFTER_DAYS = 7;
+
+/** A suggestion as a playbook step stages it — the run assigns id/owner/status. */
+type StagedSuggestion = Omit<
+  AssistantSuggestion,
+  'id' | 'ownerId' | 'status' | 'createdAt' | 'runId'
+>;
+/** Stage a finding: dedups, auto-applies in mode 'act', and counts it. */
+type StageFn = (s: StagedSuggestion, autoApply?: () => Promise<void>) => Promise<void>;
 
 /**
  * The assistant: a second driver of the application services (ADR-0013). Each
@@ -124,10 +133,7 @@ export class AssistantService {
     let proposed = 0;
     let applied = 0;
 
-    const stage = async (
-      s: Omit<AssistantSuggestion, 'id' | 'ownerId' | 'status' | 'createdAt' | 'runId'>,
-      autoApply?: () => Promise<void>,
-    ): Promise<void> => {
+    const stage: StageFn = async (s, autoApply) => {
       if (seen.has(suggestionKey(s))) return;
       seen.add(suggestionKey(s));
       const suggestion: AssistantSuggestion = {
@@ -158,7 +164,30 @@ export class AssistantService {
 
     const mandates = (await this.mandates.list(scope)).filter((m) => m.status === 'active');
 
-    // 1. Shortlists: clear pool fits that are not in the pipeline yet.
+    // The playbook: each step stages its findings through `stage` above, which
+    // owns dedup, auto-apply and counting. The steps themselves are single-concern.
+    await this.proposeShortlists(scope, mandates, stage);
+    await this.proposeStalledFollowUps(scope, mandates, now, stage);
+    await this.proposeDataGaps(scope, stage);
+
+    // Autopilot: build full application packets for strong matches and stage them
+    // for approval. Only in the top gear — this is the token-spending step.
+    if (settings.mode === 'autopilot') {
+      proposed += await this.autopilot.propose(scope, settings, runId, now);
+    }
+
+    await this.settingsStore.set(scope, { ...settings, lastRunAt: now });
+    this.logger.info({ runId, proposed, applied }, 'assistant run finished');
+    return { runId, proposed, applied };
+  }
+
+  /** Step 1 — shortlists: clear pool fits not in the pipeline yet. In mode 'act'
+      the add is applied directly (internal + reversible). */
+  private async proposeShortlists(
+    scope: string,
+    mandates: Mandate[],
+    stage: StageFn,
+  ): Promise<void> {
     for (const mandate of mandates) {
       const matches = await this.match.rankForMandate(
         scope,
@@ -182,8 +211,15 @@ export class AssistantService {
         );
       }
     }
+  }
 
-    // 2. Stalled candidacies: pipeline cards nobody touched for a week.
+  /** Step 2 — stalled candidacies: pipeline cards nobody touched for a week. */
+  private async proposeStalledFollowUps(
+    scope: string,
+    mandates: Mandate[],
+    now: string,
+    stage: StageFn,
+  ): Promise<void> {
     for (const mandate of mandates) {
       for (const c of await this.candidacies.listForMandate(scope, mandate.id)) {
         if (!isStale(c, now, STALE_AFTER_DAYS)) continue;
@@ -200,8 +236,10 @@ export class AssistantService {
         });
       }
     }
+  }
 
-    // 3. Data gaps: talents matching can't see because there is nothing to score.
+  /** Step 3 — data gaps: talents matching can't see because there is nothing to score. */
+  private async proposeDataGaps(scope: string, stage: StageFn): Promise<void> {
     for (const talent of await this.talents.list(scope)) {
       if (talent.anonymizedAt || talent.skills.length > 0) continue;
       const documents = await this.documents.get(scope, talent.id);
@@ -218,16 +256,6 @@ export class AssistantService {
         payload: {},
       });
     }
-
-    // 4. Autopilot: build full application packets for strong matches and stage
-    // them for approval. Only in the top gear — this is the token-spending step.
-    if (settings.mode === 'autopilot') {
-      proposed += await this.autopilot.propose(scope, settings, runId, now);
-    }
-
-    await this.settingsStore.set(scope, { ...settings, lastRunAt: now });
-    this.logger.info({ runId, proposed, applied }, 'assistant run finished');
-    return { runId, proposed, applied };
   }
 
   /** Accept a suggestion — applies its action (if any) and resolves it. */

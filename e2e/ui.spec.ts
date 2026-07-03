@@ -357,8 +357,9 @@ test.describe('UI acceptance — the suite renders in English', () => {
       .first()
       .click();
     await page.getByRole('button', { name: /To dossier/ }).click();
-    // upload a PDF via the hidden file input in the Mappe modal
-    await page.locator('input[type="file"]').setInputFiles({
+    // upload a PDF via the hidden file input in the Mappe modal (the editor
+    // also carries the resume-photo file input, so scope by accept type)
+    await page.locator('input[type="file"][accept="application/pdf"]').setInputFiles({
       name: 'Zeugnis.pdf',
       mimeType: 'application/pdf',
       buffer: Buffer.from('%PDF-1.4 test'),

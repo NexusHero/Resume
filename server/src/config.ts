@@ -41,6 +41,8 @@ export interface AppConfig {
   llm: LlmConfig;
   /** Embedding backend for hybrid matching (hashed default, Ollama/OpenAI opt-in). */
   embedding: EmbeddingConfig;
+  /** Instance-wide subscription plan; `pro` (default) leaves everything ungated. */
+  plan: 'free' | 'pro';
   /** Pre-configured search run when /api/v1/jobs is called with no params. */
   defaultJobSearch: Record<string, unknown>;
   /** Which live job boards to query (none → offline sample). */
@@ -236,6 +238,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       },
       timeoutMs: Number(env.EMBEDDING_TIMEOUT_MS) || 10_000,
     },
+    // Default `pro` so the Pro gate is present but ungated until a plan/license
+    // mechanism is wired; set PLAN=free to enforce (ADR-0021).
+    plan: env.PLAN === 'free' ? 'free' : 'pro',
     defaultJobSearch: { threshold: 80 },
     jobSources: {
       arbeitnow: { enabled: enabled.has('arbeitnow') },

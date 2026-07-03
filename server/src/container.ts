@@ -26,6 +26,7 @@ import { SampleJobSource } from './adapters/sample-job-source';
 import { nodeFetch } from './adapters/node-fetch';
 import { KeywordSkillExtractor } from './adapters/keyword-skill-extractor';
 import { createEmbeddingProvider } from './adapters/create-embedding-provider';
+import { EnvPlanProvider } from './adapters/env-plan-provider';
 import { AnthropicLlmProvider } from './adapters/anthropic-llm-provider';
 import { GeminiLlmProvider } from './adapters/gemini-llm-provider';
 import { RoleAuthorizer } from './adapters/role-authorizer';
@@ -141,6 +142,9 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     // The offline sample doubles as the honest fallback when live sources fail.
     fallbackJobSource: asFunction(() => new SampleJobSource()).singleton(),
     skillExtractor: asFunction(() => new KeywordSkillExtractor()).singleton(),
+    // Subscription plan source: an instance-wide config default now, a license/
+    // billing adapter later behind the same port (ADR-0021).
+    planProvider: asFunction(({ config: c }) => new EnvPlanProvider(c.plan)).singleton(),
     // Semantic similarity for hybrid matching: hashed vectors by default
     // (ADR-0017), optionally Ollama (local neural) or OpenAI (ADR-0020).
     embeddingProvider: asFunction(({ config: c, logger }) =>

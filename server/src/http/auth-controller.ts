@@ -5,6 +5,8 @@ import type { AuthService } from '../services/auth-service';
 import type { EmailVerificationService } from '../services/email-verification-service';
 import { confirmVerificationSchema } from '../domain/email-verification';
 import type { AppConfig } from '../config';
+import type { PlanProvider } from '../ports/plan-provider';
+import { currentScope } from './current-user';
 
 /** Reads a single cookie value from the raw Cookie header (no cookie-parser dep). */
 function readCookie(req: Request, name: string): string | undefined {
@@ -29,13 +31,17 @@ export class AuthController {
   private readonly maxAgeMs: number;
   private readonly providers: { google: boolean; linkedin: boolean };
 
+  private readonly plans: PlanProvider;
+
   constructor(deps: {
     authService: AuthService;
     emailVerificationService: EmailVerificationService;
+    planProvider: PlanProvider;
     config: AppConfig;
   }) {
     this.service = deps.authService;
     this.verification = deps.emailVerificationService;
+    this.plans = deps.planProvider;
     this.cookieName = deps.config.auth.sessionCookieName;
     this.cookieSecure = deps.config.auth.cookieSecure;
     // Keep the cookie's client-side lifetime aligned with the server session TTL.
@@ -96,7 +102,10 @@ export class AuthController {
 
   me = async (req: Request, res: Response): Promise<void> => {
     const user = await this.service.currentUser(readCookie(req, this.cookieName));
-    res.json({ user });
+    // The plan drives the UI's Pro affordances; the server middleware is the
+    // real gate. Instance-wide today (currentScope is constant).
+    const plan = await this.plans.planFor(currentScope(req));
+    res.json({ user, plan });
   };
 
   providersInfo = async (_req: Request, res: Response): Promise<void> => {

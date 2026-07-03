@@ -15,7 +15,14 @@ const RECRUIT_API_BASE = (typeof window !== 'undefined' && window.RECRUIT_API) |
 const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
 async function _jsonOrThrow(res) {
-  if (!res.ok) throw new Error(`API ${res.status}`);
+  if (!res.ok) {
+    // A Pro-gated feature (ADR-0021) — surface an upgrade hint, not a raw code.
+    if (res.status === 402) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.detail || 'This is a Pro feature. Upgrade to unlock it.');
+    }
+    throw new Error(`API ${res.status}`);
+  }
   return res.json();
 }
 
@@ -131,7 +138,9 @@ const RecruitApi = {
   /* ---- Auth ---- */
   async authMe() {
     const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/auth/me`));
-    return data.user; // null when not signed in; { id, email, roles, createdAt }
+    // Carry the plan (ADR-0021) on the user so the UI can gate Pro affordances;
+    // the server middleware remains the real gate.
+    return data.user ? { ...data.user, plan: data.plan } : null;
   },
   async listMembers() {
     const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/members`));

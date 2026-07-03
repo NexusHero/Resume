@@ -196,6 +196,7 @@ Full log in [`docs/adr/`](adr). Summary:
 | 0018 | Compliance automation (audit trail, retention, AGG engine)    | Accepted                       |
 | 0019 | Autopilot: the auto-apply gear of the one agent (CoRecruiter) | Accepted                       |
 | 0020 | Pluggable neural embeddings (Ollama, OpenAI) behind the port  | Accepted                       |
+| 0021 | Pro/Free plan gating at one HTTP seam (license deferred)      | Accepted                       |
 
 ## 10. Quality Requirements
 

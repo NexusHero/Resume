@@ -14,6 +14,7 @@ import { LlmController } from '../../src/http/llm-controller';
 import { MandateController } from '../../src/http/mandate-controller';
 import { TalentController } from '../../src/http/talent-controller';
 import { TalentImportService } from '../../src/services/talent-import-service';
+import { EnvPlanProvider } from '../../src/adapters/env-plan-provider';
 import { PlacementController } from '../../src/http/placement-controller';
 import { CandidacyController } from '../../src/http/candidacy-controller';
 import { RetentionController } from '../../src/http/retention-controller';
@@ -106,6 +107,7 @@ function makeApp(
     inboxSource?: FakeInboxSource;
   } = {},
 ): Express {
+  const planProvider = new EnvPlanProvider(config.plan);
   const service = new ApplicationService({
     applicationRepository: new InMemoryApplicationRepository(),
     auditLog: new InMemoryAuditLog(),
@@ -363,6 +365,7 @@ function makeApp(
       clock: new FixedClock(),
       config,
     }),
+    planProvider,
     config,
   });
   const accountController = new AccountController({
@@ -420,6 +423,7 @@ function makeApp(
     membersController,
     accountController,
     passwordResetController,
+    planProvider,
     config,
     logger: noopLogger,
   });
@@ -1658,7 +1662,7 @@ describe('REST API /api/v1', () => {
       const del = await agent.delete('/api/v1/account');
       expect(del.status).toBe(204);
       // the session is gone — /auth/me now reports no user
-      expect((await agent.get('/api/v1/auth/me')).body).toEqual({ user: null });
+      expect((await agent.get('/api/v1/auth/me')).body).toEqual({ user: null, plan: 'pro' });
       // the team's shared data survives one member leaving: a new member sees it
       const teammate = request.agent(app);
       await teammate
@@ -2411,5 +2415,69 @@ describe('REST API /api/v1', () => {
   it('CoverLetter_PostMissingCompany_Returns400', async () => {
     const res = await request(app).post('/api/v1/cover-letter').send({ role: 'Engineer' });
     expect(res.status).toBe(400);
+  });
+});
+
+describe('Plan gating (ADR-0021)', () => {
+  const freeApp = () => makeApp(loadConfig({ PLAN: 'free' }));
+
+  it('FreePlan_MeReportsFreePlan', async () => {
+    const app = freeApp();
+    const res = await request(app).get('/api/v1/auth/me');
+    expect(res.body).toEqual({ user: null, plan: 'free' });
+  });
+
+  it('FreePlan_ProRoute_Returns402ProblemJson', async () => {
+    const app = freeApp();
+    const agent = request.agent(app);
+    await agent
+      .post('/api/v1/auth/register')
+      .send({ email: 'free@example.com', password: 'correct horse battery' });
+    const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+    const id = created.body.talent.id as string;
+    const res = await agent
+      .post(`/api/v1/talents/${id}/documents/pitch`)
+      .send({ mandateContext: 'x' });
+    expect(res.status).toBe(402);
+    expect(res.headers['content-type']).toMatch(/application\/problem\+json/);
+    expect(res.body).toMatchObject({ type: 'about:blank#plan-required', status: 402 });
+  });
+
+  it('FreePlan_FreeRoute_StillWorks', async () => {
+    const app = freeApp();
+    const agent = request.agent(app);
+    await agent
+      .post('/api/v1/auth/register')
+      .send({ email: 'free2@example.com', password: 'correct horse battery' });
+    // Creating a talent (ATS craft) is Free.
+    expect((await agent.post('/api/v1/talents').send({ name: 'Ada' })).status).toBe(201);
+    expect((await agent.get('/api/v1/talents')).status).toBe(200);
+  });
+
+  it('FreePlan_SwitchingAssistantToAutopilot_Returns402_ButSuggestIsFree', async () => {
+    const app = freeApp();
+    const agent = request.agent(app);
+    await agent
+      .post('/api/v1/auth/register')
+      .send({ email: 'free3@example.com', password: 'correct horse battery' });
+    const auto = await agent.put('/api/v1/assistant').send({ enabled: true, mode: 'autopilot' });
+    expect(auto.status).toBe(402);
+    const suggest = await agent.put('/api/v1/assistant').send({ enabled: true, mode: 'suggest' });
+    expect(suggest.status).toBe(200);
+  });
+
+  it('ProPlan_ProRoute_IsAllowed', async () => {
+    const app = makeApp(loadConfig({ PLAN: 'pro' }));
+    const agent = request.agent(app);
+    await agent
+      .post('/api/v1/auth/register')
+      .send({ email: 'pro@example.com', password: 'correct horse battery' });
+    const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+    const id = created.body.talent.id as string;
+    // No LLM key → the feature runs its template fallback, but the gate lets it through (not 402).
+    const res = await agent
+      .post(`/api/v1/talents/${id}/documents/pitch`)
+      .send({ mandateContext: 'x' });
+    expect(res.status).toBe(200);
   });
 });

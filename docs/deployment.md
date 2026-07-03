@@ -28,27 +28,30 @@ docker run -p 4178:4178 \
 
 Resolved from the environment (see `server/src/config.ts`):
 
-| Variable                               | Default                  | Purpose                                                                                  |
-| -------------------------------------- | ------------------------ | ---------------------------------------------------------------------------------------- |
-| `PORT`                                 | `4178`                   | HTTP port.                                                                               |
-| `STORE`                                | `fs`                     | `sql` uses Postgres; otherwise JSON files under `archive/`.                              |
-| `DATABASE_URL`                         | —                        | Postgres connection string (required when `STORE=sql`).                                  |
-| `CORS_ORIGINS`                         | _(empty)_                | Comma-separated browser origins allowed to call the API.                                 |
-| `COOKIE_SECURE`                        | _(off)_                  | `true` sends the session cookie Secure (HTTPS-only). Auto-on when `NODE_ENV=production`. |
-| `SESSION_TTL_DAYS`                     | `30`                     | Server-side session lifetime; older sessions are rejected.                               |
-| `LLM_PROVIDER`                         | `claude`                 | Active model provider for cover letters.                                                 |
-| `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` | —                        | Provider keys (server-side; never in the client).                                        |
-| `APP_SECRET`                           | _(dev)_                  | Secret that encrypts stored secrets (per-user API keys) at rest. **Set in production.**  |
-| `MAIL_TRANSPORT`                       | `console`                | `smtp` sends real email via nodemailer; otherwise the dev console transport logs it.     |
-| `MAIL_FROM`                            | `myJob …`                | From address on outgoing mail.                                                           |
-| `APP_BASE_URL`                         | `http://localhost:$PORT` | Public origin used to build links in emails (e.g. the password-reset link).              |
-| `RESET_TOKEN_TTL_MINUTES`              | `60`                     | Lifetime of a password-reset token.                                                      |
-| `SMTP_HOST` / `SMTP_PORT`              | — / `587`                | SMTP relay (used when `MAIL_TRANSPORT=smtp`). `SMTP_SECURE=true` or port 465 for TLS.    |
-| `SMTP_USER` / `SMTP_PASS`              | —                        | SMTP credentials (omit for an open relay on a trusted network).                          |
-| `MAIL_IMAP_HOST`                       | —                        | IMAP mailbox for outreach reply detection; unset disables reply sync entirely.           |
-| `MAIL_IMAP_PORT` / `MAIL_IMAP_SECURE`  | `993` / `true`           | IMAP connection; `MAIL_IMAP_SECURE=false` opts out of implicit TLS.                      |
-| `MAIL_IMAP_USER` / `MAIL_IMAP_PASS`    | —                        | IMAP credentials.                                                                        |
-| `MAIL_IMAP_POLL_MINUTES`               | `15`                     | How often the server polls the inbox for replies.                                        |
+| Variable                                                    | Default                                                    | Purpose                                                                                                                              |
+| ----------------------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `PORT`                                                      | `4178`                                                     | HTTP port.                                                                                                                           |
+| `STORE`                                                     | `fs`                                                       | `sql` uses Postgres; otherwise JSON files under `archive/`.                                                                          |
+| `DATABASE_URL`                                              | —                                                          | Postgres connection string (required when `STORE=sql`).                                                                              |
+| `CORS_ORIGINS`                                              | _(empty)_                                                  | Comma-separated browser origins allowed to call the API.                                                                             |
+| `COOKIE_SECURE`                                             | _(off)_                                                    | `true` sends the session cookie Secure (HTTPS-only). Auto-on when `NODE_ENV=production`.                                             |
+| `SESSION_TTL_DAYS`                                          | `30`                                                       | Server-side session lifetime; older sessions are rejected.                                                                           |
+| `LLM_PROVIDER`                                              | `claude`                                                   | Active model provider for cover letters.                                                                                             |
+| `ANTHROPIC_API_KEY` / `GEMINI_API_KEY`                      | —                                                          | Provider keys (server-side; never in the client).                                                                                    |
+| `EMBEDDING_PROVIDER`                                        | `hashed`                                                   | Matching embeddings: `hashed` (offline default), `ollama` (local neural), or `openai`. Falls back to hashed on any error (ADR-0020). |
+| `OLLAMA_URL` / `OLLAMA_EMBED_MODEL`                         | `http://localhost:11434` / `nomic-embed-text`              | Ollama server + embedding model (when `EMBEDDING_PROVIDER=ollama`).                                                                  |
+| `OPENAI_API_KEY` / `OPENAI_EMBED_MODEL` / `OPENAI_BASE_URL` | — / `text-embedding-3-small` / `https://api.openai.com/v1` | OpenAI embeddings (when `EMBEDDING_PROVIDER=openai`; without the key it stays hashed).                                               |
+| `APP_SECRET`                                                | _(dev)_                                                    | Secret that encrypts stored secrets (per-user API keys) at rest. **Set in production.**                                              |
+| `MAIL_TRANSPORT`                                            | `console`                                                  | `smtp` sends real email via nodemailer; otherwise the dev console transport logs it.                                                 |
+| `MAIL_FROM`                                                 | `myJob …`                                                  | From address on outgoing mail.                                                                                                       |
+| `APP_BASE_URL`                                              | `http://localhost:$PORT`                                   | Public origin used to build links in emails (e.g. the password-reset link).                                                          |
+| `RESET_TOKEN_TTL_MINUTES`                                   | `60`                                                       | Lifetime of a password-reset token.                                                                                                  |
+| `SMTP_HOST` / `SMTP_PORT`                                   | — / `587`                                                  | SMTP relay (used when `MAIL_TRANSPORT=smtp`). `SMTP_SECURE=true` or port 465 for TLS.                                                |
+| `SMTP_USER` / `SMTP_PASS`                                   | —                                                          | SMTP credentials (omit for an open relay on a trusted network).                                                                      |
+| `MAIL_IMAP_HOST`                                            | —                                                          | IMAP mailbox for outreach reply detection; unset disables reply sync entirely.                                                       |
+| `MAIL_IMAP_PORT` / `MAIL_IMAP_SECURE`                       | `993` / `true`                                             | IMAP connection; `MAIL_IMAP_SECURE=false` opts out of implicit TLS.                                                                  |
+| `MAIL_IMAP_USER` / `MAIL_IMAP_PASS`                         | —                                                          | IMAP credentials.                                                                                                                    |
+| `MAIL_IMAP_POLL_MINUTES`                                    | `15`                                                       | How often the server polls the inbox for replies.                                                                                    |
 
 ## Notes
 

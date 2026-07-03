@@ -56,6 +56,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Added
 
+- **Email integration** — drafted outreach can be sent straight from the app
+  ("Send email" in the outreach modal, via the configured SMTP/console
+  transport), and the outcome loop closes itself: point `MAIL_IMAP_*` at the
+  desk's mailbox and the server polls it, stamping pending email outreach as
+  `replied` the moment the talent writes back (manual "Check replies" too).
+  Only envelopes are read — message bodies never enter the application
+  (ADR-0015).
 - **The outcome loop** — every generated outreach message and pitch is logged
   (kind, provider, channel — never the text) and can be stamped with its fate:
   replied, no reply, converted (ADR-0014). The outreach modal shows the

@@ -45,6 +45,10 @@ Resolved from the environment (see `server/src/config.ts`):
 | `RESET_TOKEN_TTL_MINUTES`              | `60`                     | Lifetime of a password-reset token.                                                      |
 | `SMTP_HOST` / `SMTP_PORT`              | — / `587`                | SMTP relay (used when `MAIL_TRANSPORT=smtp`). `SMTP_SECURE=true` or port 465 for TLS.    |
 | `SMTP_USER` / `SMTP_PASS`              | —                        | SMTP credentials (omit for an open relay on a trusted network).                          |
+| `MAIL_IMAP_HOST`                       | —                        | IMAP mailbox for outreach reply detection; unset disables reply sync entirely.           |
+| `MAIL_IMAP_PORT` / `MAIL_IMAP_SECURE`  | `993` / `true`           | IMAP connection; `MAIL_IMAP_SECURE=false` opts out of implicit TLS.                      |
+| `MAIL_IMAP_USER` / `MAIL_IMAP_PASS`    | —                        | IMAP credentials.                                                                        |
+| `MAIL_IMAP_POLL_MINUTES`               | `15`                     | How often the server polls the inbox for replies.                                        |
 
 ## Notes
 
@@ -59,6 +63,12 @@ Resolved from the environment (see `server/src/config.ts`):
   works — e.g. an EU provider such as Brevo, Mailjet or SES-Frankfurt) and an
   `APP_BASE_URL` matching the public origin so the link resolves. Without it the
   console transport just logs the email (handy for local/dev).
+- **Outreach email + reply detection:** drafted outreach can be sent straight
+  from the app (same transport as above). Point `MAIL_IMAP_*` at the desk's
+  mailbox and the server polls it, stamping pending email outreach as `replied`
+  in the outcome loop when the talent writes back — only envelopes (sender,
+  date, subject) are read, message bodies never enter the application
+  (ADR-0015).
 - **TLS / cookies:** terminate TLS at a reverse proxy and serve the app over
   HTTPS. The `httpOnly` session cookie is sent `Secure` automatically in
   production (`NODE_ENV=production`) or with `COOKIE_SECURE=true`. Server-side

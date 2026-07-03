@@ -419,6 +419,25 @@ const RecruitApi = {
     return _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/artifacts/stats`));
   },
 
+  // --- email integration: send outreach + reply detection ---
+  async getMailStatus() {
+    // { sendTransport: 'console'|'smtp', replySync: bool, pollMinutes }
+    return _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/mail/status`));
+  },
+  async sendOutreach(talentId, { subject, body }) {
+    return _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/outreach/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject, body }),
+      }),
+    );
+  },
+  async syncMailReplies() {
+    // { checked, messages, replies }
+    return _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/mail/sync-replies`, { method: 'POST' }));
+  },
+
   // --- assistant: settings + reviewable suggestion queue ---
   async getAssistant() {
     // { settings: { enabled, mode, intervalMinutes, lastRunAt? }, counts: {...} }

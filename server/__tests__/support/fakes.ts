@@ -30,6 +30,8 @@ import type { PasswordHasher } from '../../src/ports/password-hasher';
 import type { PasswordResetTokenStore } from '../../src/ports/password-reset-token-store';
 import type { EmailVerificationTokenStore } from '../../src/ports/email-verification-token-store';
 import type { Mailer, MailMessage } from '../../src/ports/mailer';
+import type { InboxSource } from '../../src/ports/inbox-source';
+import type { InboxMessage } from '../../src/domain/mail-sync';
 import type { ApiKeyStore } from '../../src/ports/api-key-store';
 import type { LlmProviderId } from '../../src/ports/llm-provider';
 import type { UsageMeter } from '../../src/ports/usage-meter';
@@ -433,6 +435,18 @@ export class RecordingMailer implements Mailer {
   async send(message: MailMessage): Promise<void> {
     if (this.failWith) throw this.failWith;
     this.sent.push(message);
+  }
+}
+
+/** An inbox whose contents the test scripts; records the `since` bounds asked for. */
+export class FakeInboxSource implements InboxSource {
+  messages: InboxMessage[] = [];
+  calls: string[] = [];
+  constructor(private readonly failWith?: Error) {}
+  async listSince(since: string): Promise<InboxMessage[]> {
+    if (this.failWith) throw this.failWith;
+    this.calls.push(since);
+    return this.messages.filter((m) => m.receivedAt >= since);
   }
 }
 

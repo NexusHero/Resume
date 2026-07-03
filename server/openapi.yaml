@@ -52,6 +52,8 @@ tags:
     description: The in-process agent — settings, manual runs, and the reviewable suggestion queue
   - name: Artifacts
     description: The outcome loop — generated AI artifacts and what became of them
+  - name: Mail
+    description: Email integration — send drafted outreach, detect replies for the outcome loop
   - name: Settings
     description: AI provider choice, per-user API keys, usage
   - name: Team
@@ -1731,6 +1733,86 @@ paths:
         '400': { $ref: '#/components/responses/ValidationProblem' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
+
+  /talents/{id}/outreach/send:
+    post:
+      tags: [Mail]
+      summary: Send a drafted outreach email to the talent's address
+      description: >-
+        Delivers via the configured transport (console in dev, SMTP in
+        production). Fails with 400 when the talent has no email address.
+      operationId: sendOutreach
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [subject, body]
+              properties:
+                subject: { type: string, maxLength: 200 }
+                body: { type: string, maxLength: 20000 }
+      responses:
+        '200':
+          description: The mail was handed to the transport.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sent: { type: boolean }
+                  to: { type: string }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /mail/sync-replies:
+    post:
+      tags: [Mail]
+      summary: One reply-detection pass over the configured IMAP mailbox
+      description: >-
+        Fetches inbox mail since the oldest pending email outreach and stamps
+        every artifact whose talent has since written back as `replied`.
+        Requires MAIL_IMAP_HOST; also runs on a server-side schedule.
+      operationId: syncMailReplies
+      security:
+        - cookieSession: []
+      responses:
+        '200':
+          description: What the pass looked at and stamped.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  checked: { type: integer, description: Pending email outreach considered. }
+                  messages: { type: integer, description: Inbox messages inspected. }
+                  replies: { type: integer, description: Artifacts stamped as replied. }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /mail/status:
+    get:
+      tags: [Mail]
+      summary: How mail is wired (send transport, reply sync)
+      operationId: mailStatus
+      security:
+        - cookieSession: []
+      responses:
+        '200':
+          description: The mail configuration relevant to the UI.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sendTransport: { type: string, enum: [console, smtp] }
+                  replySync: { type: boolean }
+                  pollMinutes: { type: integer }
+        '401': { $ref: '#/components/responses/Unauthorized' }
 
   /settings/llm:
     get:

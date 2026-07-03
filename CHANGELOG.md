@@ -44,6 +44,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Added
 
+- **Costs are visible where AI is used** — every AI response carries its
+  per-call usage (input/output tokens + estimated USD), and the provider badge
+  shows it right at the result ("AI · gemini · 1.4k tok · $0.0011"): ATS,
+  pitch, outreach, the editor's suggestion banner, CV import, translation,
+  interview kit and candidate prep. The Settings usage card gains a
+  per-provider breakdown (tokens in/out + cost per Claude/Gemini).
 - **Drag-and-drop pipeline board** — candidacy cards can be dragged between stage
   columns (with drop highlighting); the per-card stage select stays as fallback.
 - **Mandate from a posting** — every Matching result offers "Create mandate",

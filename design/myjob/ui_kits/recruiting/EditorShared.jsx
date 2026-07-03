@@ -59,16 +59,32 @@ function GroundingWarning({ grounding }) {
   );
 }
 
+/* Token/cost formatting for the per-call usage payload the AI endpoints
+   return. Costs are estimates from list prices; most single calls land well
+   under a cent, so small values keep four decimals instead of rounding to $0. */
+function formatCallTokens(n) {
+  return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
+}
+function formatCallCost(v) {
+  if (!v) return '$0.00';
+  return v < 0.01 ? `$${v.toFixed(4)}` : `$${v.toFixed(2)}`;
+}
+
 /**
  * Which backend produced a generated draft — honesty over polish: recruiters
  * should always see whether AI or the deterministic template wrote the text.
+ * When the response carries its per-call usage, the badge also shows what the
+ * generation cost (tokens + estimated USD) right where the result appears.
  */
-function ProviderBadge({ provider }) {
+function ProviderBadge({ provider, usage }) {
   if (!provider) return null;
   const label = provider === 'template' ? 'Template · no AI' : `AI · ${provider}`;
+  const spend = usage
+    ? ` · ${formatCallTokens(usage.inputTokens + usage.outputTokens)} tok · ${formatCallCost(usage.costUsd)}`
+    : '';
   return (
-    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-soft)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '3px 9px', whiteSpace: 'nowrap' }}>
-      {label}
+    <span title={usage ? `${usage.inputTokens} in / ${usage.outputTokens} out · estimated from list prices` : undefined} style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-soft)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '3px 9px', whiteSpace: 'nowrap' }}>
+      {label}{spend}
     </span>
   );
 }

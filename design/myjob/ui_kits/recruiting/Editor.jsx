@@ -124,8 +124,8 @@ function Editor({ talent, onClose, onCreateMappe }) {
       // letter; for the pinned demo talent (no server row) there is no endpoint.
       const target = action === 'letter' ? { company: letter.firma, role: letter.betreff } : {};
       const s = await window.RecruitApi.suggestDocument(talentId, action, target);
-      if (s.action === 'summary') setPending({ kind: 'summary', value: s.text });
-      else setPending({ kind: 'letter', value: s.paragraphs });
+      if (s.action === 'summary') setPending({ kind: 'summary', value: s.text, provider: s.provider, usage: s.usage });
+      else setPending({ kind: 'letter', value: s.paragraphs, provider: s.provider, usage: s.usage });
     } catch {
       setPending(null);
     } finally {
@@ -191,7 +191,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
     Object.entries(parsed.contact || {}).forEach(([k, v]) => {
       if (typeof v === 'string' && v.trim()) contactPatch[k] = v;
     });
-    setPending({ kind: 'import', contact: contactPatch, resume: parsed.resume || null });
+    setPending({ kind: 'import', contact: contactPatch, resume: parsed.resume || null, provider: parsed.provider, usage: parsed.usage });
   };
 
   /* ---- Translate: create the other-language variant of the documents ---- */
@@ -204,9 +204,12 @@ function Editor({ talent, onClose, onCreateMappe }) {
     try {
       const res = await window.RecruitApi.translateDocuments(talentId, lang);
       const name = lang === 'de' ? 'German' : 'English';
+      const spend = res.usage
+        ? ` (${res.usage.inputTokens + res.usage.outputTokens} tok · $${res.usage.costUsd < 0.01 ? res.usage.costUsd.toFixed(4) : res.usage.costUsd.toFixed(2)})`
+        : '';
       setTranslateMsg({
         ok: true,
-        text: res.created ? `${name} version created.` : `${name} version already exists.`,
+        text: res.created ? `${name} version created.${spend}` : `${name} version already exists.`,
       });
     } catch (e) {
       setTranslateMsg({ ok: false, text: (e && e.message) || 'Translation failed.' });
@@ -286,6 +289,9 @@ function Editor({ talent, onClose, onCreateMappe }) {
               <div style={{ border: '1px dashed var(--accent-border)', borderRadius: 'var(--radius-md)', overflow: 'hidden', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '8px 12px', background: 'var(--accent-soft)', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 600, color: 'var(--accent-strong)' }}>
                   <ED.Icon name="zap" size={12} />Suggestion · not applied yet
+                  {pending && pending.provider && (
+                    <span style={{ marginLeft: 'auto' }}><window.ProviderBadge provider={pending.provider} usage={pending.usage} /></span>
+                  )}
                 </div>
                 <div style={{ padding: '12px 13px' }}>
                   {gen ? (

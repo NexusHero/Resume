@@ -297,6 +297,7 @@ const USAGE_FEATURE_LABELS = {
   matchExplain: 'Match explanation',
   interviewKit: 'Interview kit',
   candidatePrep: 'Candidate prep',
+  translate: 'Translation',
 };
 
 function formatTokens(n) {
@@ -355,6 +356,16 @@ function UsageCard() {
             <UsageStat label="Tokens" value={formatTokens(usage.totalTokens)} />
             <UsageStat label="Est. cost" value={formatCost(usage.costUsd)} />
           </div>
+
+          {usage.byProvider && usage.byProvider.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
+              {usage.byProvider.map((p) => (
+                <span key={p.provider} style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-soft)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '3px 10px', whiteSpace: 'nowrap' }}>
+                  {p.provider} · {formatTokens(p.inputTokens)} in / {formatTokens(p.outputTokens)} out · {formatCost(p.costUsd)}
+                </span>
+              ))}
+            </div>
+          )}
 
           {usage.byFeature && usage.byFeature.length > 0 && (
             <div style={{ marginTop: '14px' }}>

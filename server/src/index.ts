@@ -22,6 +22,8 @@ import type { ObservationController } from './http/observation-controller';
 import type { AssistantController } from './http/assistant-controller';
 import type { ArtifactController } from './http/artifact-controller';
 import type { AssistantService } from './services/assistant-service';
+import type { MailService } from './services/mail-service';
+import type { MailController } from './http/mail-controller';
 import { TEAM_SCOPE } from './http/current-user';
 import type { DocumentController } from './http/document-controller';
 import type { AttachmentController } from './http/attachment-controller';
@@ -62,6 +64,7 @@ async function main(): Promise<void> {
     observationController: container.resolve<ObservationController>('observationController'),
     assistantController: container.resolve<AssistantController>('assistantController'),
     artifactController: container.resolve<ArtifactController>('artifactController'),
+    mailController: container.resolve<MailController>('mailController'),
     documentController: container.resolve<DocumentController>('documentController'),
     attachmentController: container.resolve<AttachmentController>('attachmentController'),
     authController: container.resolve<AuthController>('authController'),
@@ -85,6 +88,21 @@ async function main(): Promise<void> {
     });
   }, 60_000);
   assistantTimer.unref();
+
+  // Reply detection: poll the configured IMAP mailbox so pending email
+  // outreach resolves itself. Off entirely without MAIL_IMAP_HOST.
+  const mailService = container.resolve<MailService>('mailService');
+  if (mailService.replySyncEnabled) {
+    const pollMs = config.mail.imap.pollMinutes * 60_000;
+    const replyTimer = setInterval(() => {
+      void mailService.syncRepliesSafely(TEAM_SCOPE);
+    }, pollMs);
+    replyTimer.unref();
+    logger.info(
+      { pollMinutes: config.mail.imap.pollMinutes },
+      'reply sync enabled (IMAP mailbox configured)',
+    );
+  }
 
   const server = app.listen(config.port, () => {
     logger.info(

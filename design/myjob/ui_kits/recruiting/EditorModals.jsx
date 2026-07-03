@@ -203,6 +203,13 @@ function OutreachModal({ talentId, defaultEmail, onClose }) {
   // The outcome loop: this talent's past outreach + the desk's hit rate.
   const [history, setHistory] = React.useState([]);
   const [replyRate, setReplyRate] = React.useState(null);
+  // Email integration: whether the server can send / watch for replies.
+  const [mailStatus, setMailStatus] = React.useState(null);
+  const [sendState, setSendState] = React.useState('idle'); // idle | sending | sent | error
+  const [syncNote, setSyncNote] = React.useState('');
+  React.useEffect(() => {
+    window.RecruitApi.getMailStatus().then(setMailStatus).catch(() => {});
+  }, []);
   const loadLoop = React.useCallback(() => {
     if (!talentId) return;
     window.RecruitApi.listArtifacts(talentId)
@@ -223,6 +230,7 @@ function OutreachModal({ talentId, defaultEmail, onClose }) {
     if (!talentId) return;
     setOutBusy(true);
     setOutCopied(false);
+    setSendState('idle');
     try {
       setOutMsg(
         await window.RecruitApi.outreachMessage(talentId, {
@@ -250,6 +258,31 @@ function OutreachModal({ talentId, defaultEmail, onClose }) {
     } catch {
       /* clipboard unavailable */
     }
+  };
+  const sendOutreachMail = async () => {
+    if (!outMsg || !defaultEmail || sendState === 'sending') return;
+    setSendState('sending');
+    try {
+      await window.RecruitApi.sendOutreach(talentId, {
+        subject: outMsg.subject || 'Your next role',
+        body: outMsg.body,
+      });
+      setSendState('sent');
+      loadLoop();
+    } catch {
+      setSendState('error');
+    }
+  };
+  const checkReplies = async () => {
+    setSyncNote('Checking…');
+    try {
+      const res = await window.RecruitApi.syncMailReplies();
+      setSyncNote(res.replies > 0 ? `${res.replies} repl${res.replies === 1 ? 'y' : 'ies'} found` : 'No new replies');
+      loadLoop();
+    } catch {
+      setSyncNote('Check failed');
+    }
+    setTimeout(() => setSyncNote(''), 4000);
   };
   const openOutreachMail = () => {
     if (!outMsg) return;
@@ -289,6 +322,11 @@ function OutreachModal({ talentId, defaultEmail, onClose }) {
         <div style={{ marginTop: '18px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', marginBottom: '10px' }}>
             <EdmProviderBadge provider={outMsg.provider} usage={outMsg.usage} />
+            {outChannel === 'email' && outAudience === 'candidate' && defaultEmail && (
+              <EdmPillButton icon={sendState === 'sent' ? 'check' : 'send'} onClick={sendOutreachMail}>
+                {sendState === 'sending' ? 'Sending…' : sendState === 'sent' ? `Sent to ${defaultEmail}` : sendState === 'error' ? 'Send failed — retry' : 'Send email'}
+              </EdmPillButton>
+            )}
             {outChannel === 'email' && (
               <EdmPillButton icon="send" onClick={openOutreachMail}>Open in email</EdmPillButton>
             )}
@@ -311,6 +349,12 @@ function OutreachModal({ talentId, defaultEmail, onClose }) {
             {replyRate && replyRate.replyRate !== null && (
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>
                 Your desk: {replyRate.replied + replyRate.converted} of {replyRate.replied + replyRate.noReply + replyRate.converted} resolved outreach got a reply ({replyRate.replyRate}%)
+              </span>
+            )}
+            {mailStatus && mailStatus.replySync && (
+              <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                {syncNote && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-muted)' }}>{syncNote}</span>}
+                <EdmPillButton onClick={checkReplies}>Check replies</EdmPillButton>
               </span>
             )}
           </div>

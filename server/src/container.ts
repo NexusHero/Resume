@@ -13,6 +13,7 @@ import { RandomIdGenerator } from './adapters/random-id-generator';
 import { FsPdfArchive } from './adapters/fs-pdf-archive';
 import { ScryptPasswordHasher } from './adapters/scrypt-password-hasher';
 import { createMailer } from './adapters/mailer-factory';
+import { createInboxSource } from './adapters/inbox-source-factory';
 import { createPersistence } from './adapters/persistence-factory';
 import type { Db } from './adapters/sql/db';
 import { GitVersioner } from './adapters/git-versioner';
@@ -50,6 +51,7 @@ import { MembersService } from './services/members-service';
 import { AccountService } from './services/account-service';
 import { PasswordResetService } from './services/password-reset-service';
 import { EmailVerificationService } from './services/email-verification-service';
+import { MailService } from './services/mail-service';
 import { ApplicationController } from './http/application-controller';
 import { JobController } from './http/job-controller';
 import { AtsController } from './http/ats-controller';
@@ -74,6 +76,7 @@ import { AuthController } from './http/auth-controller';
 import { MembersController } from './http/members-controller';
 import { AccountController } from './http/account-controller';
 import { PasswordResetController } from './http/password-reset-controller';
+import { MailController } from './http/mail-controller';
 
 /** Composition root: wires every port to its production adapter (no decorators). */
 export function buildContainer(config: AppConfig = loadConfig(), db?: Db): AwilixContainer {
@@ -112,6 +115,8 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     passwordHasher: asClass(ScryptPasswordHasher).singleton(),
     // Transactional email: console by default, SMTP (nodemailer) when configured.
     mailer: asFunction(({ config: c, logger }) => createMailer({ config: c, logger })).singleton(),
+    // Inbox reading for reply detection: IMAP when configured, else disabled.
+    inboxSource: asFunction(({ config: c }) => createInboxSource({ config: c })).singleton(),
     pdfArchive: asClass(FsPdfArchive).singleton(),
     // Git versioning only makes sense for the file store; with Postgres there are
     // no JSON files to commit (and committing would needlessly fire git hooks).
@@ -161,6 +166,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     accountService: asClass(AccountService).singleton(),
     passwordResetService: asClass(PasswordResetService).singleton(),
     emailVerificationService: asClass(EmailVerificationService).singleton(),
+    mailService: asClass(MailService).singleton(),
     applicationController: asClass(ApplicationController).singleton(),
     jobController: asClass(JobController).singleton(),
     atsController: asClass(AtsController).singleton(),
@@ -185,6 +191,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     membersController: asClass(MembersController).singleton(),
     accountController: asClass(AccountController).singleton(),
     passwordResetController: asClass(PasswordResetController).singleton(),
+    mailController: asClass(MailController).singleton(),
   });
   return container;
 }

@@ -65,6 +65,19 @@ export interface MailConfig {
   resetTokenTtlMs: number;
   /** SMTP relay settings, used when transport === 'smtp'. */
   smtp: { host: string; port: number; secure: boolean; user: string; pass: string };
+  /**
+   * IMAP mailbox settings for reply detection (the outcome loop's automatic
+   * signal). Reply sync is enabled iff `host` is set.
+   */
+  imap: {
+    host: string;
+    port: number;
+    secure: boolean;
+    user: string;
+    pass: string;
+    /** How often the server polls the inbox for replies (minutes). */
+    pollMinutes: number;
+  };
 }
 
 /** Security configuration, resolved from the environment. */
@@ -235,6 +248,15 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
         secure: env.SMTP_SECURE === 'true' || Number(env.SMTP_PORT) === 465,
         user: env.SMTP_USER ?? '',
         pass: env.SMTP_PASS ?? '',
+      },
+      imap: {
+        host: env.MAIL_IMAP_HOST ?? '',
+        port: Number(env.MAIL_IMAP_PORT) || 993,
+        // IMAP almost universally runs implicit TLS on 993; opt out explicitly.
+        secure: env.MAIL_IMAP_SECURE !== 'false',
+        user: env.MAIL_IMAP_USER ?? '',
+        pass: env.MAIL_IMAP_PASS ?? '',
+        pollMinutes: Math.max(1, Number(env.MAIL_IMAP_POLL_MINUTES) || 15),
       },
     },
   };

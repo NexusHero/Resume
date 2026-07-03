@@ -38,6 +38,8 @@ import { MatchService } from '../../src/services/match-service';
 import { AssistantService } from '../../src/services/assistant-service';
 import { AssistantController } from '../../src/http/assistant-controller';
 import { ArtifactController } from '../../src/http/artifact-controller';
+import { MailController } from '../../src/http/mail-controller';
+import { MailService } from '../../src/services/mail-service';
 import { UsageService } from '../../src/services/usage-service';
 import { ForecastService } from '../../src/services/forecast-service';
 import { InterviewObservationService } from '../../src/services/interview-observation-service';
@@ -78,6 +80,7 @@ import {
   InMemoryPasswordResetTokenStore,
   InMemoryEmailVerificationTokenStore,
   RecordingMailer,
+  FakeInboxSource,
   fakePasswordHasher,
   FakePdfRenderer,
   FakePdfMerger,
@@ -94,6 +97,7 @@ function makeApp(
     mailer?: RecordingMailer;
     passwordResetTokenStore?: InMemoryPasswordResetTokenStore;
     emailVerificationTokenStore?: InMemoryEmailVerificationTokenStore;
+    inboxSource?: FakeInboxSource;
   } = {},
 ): Express {
   const service = new ApplicationService({
@@ -271,6 +275,16 @@ function makeApp(
     artifactLogRepository,
     clock: new FixedClock(),
   });
+  const mailController = new MailController({
+    mailService: new MailService({
+      config,
+      mailer,
+      inboxSource: opts.inboxSource ?? new FakeInboxSource(),
+      talentRepository,
+      artifactLogRepository,
+      logger: noopLogger,
+    }),
+  });
   const documentController = new DocumentController({ documentService, documentAiService });
   const matchAiController = new MatchAiController({ mandateRepository, documentAiService });
   const usageController = new UsageController({
@@ -357,6 +371,7 @@ function makeApp(
     observationController,
     assistantController,
     artifactController,
+    mailController,
     documentController,
     attachmentController,
     authController,
@@ -1973,6 +1988,105 @@ describe('REST API /api/v1', () => {
     expect(
       (await agent.post('/api/v1/artifacts/nope/outcome').send({ outcome: 'replied' })).status,
     ).toBe(404);
+  });
+
+  it('Mail_Unauthenticated_Returns401', async () => {
+    expect((await request(app).get('/api/v1/mail/status')).status).toBe(401);
+    expect((await request(app).post('/api/v1/mail/sync-replies')).status).toBe(401);
+  });
+
+  it('Mail_SendOutreach_DeliversAndValidates', async () => {
+    const mailer = new RecordingMailer();
+    const mailApp = makeApp(loadConfig({}), { mailer });
+    const agent = request.agent(mailApp);
+    await agent
+      .post('/api/v1/auth/register')
+      .send({ email: 'sender@example.com', password: 'correct horse battery' });
+    const withEmail = await agent
+      .post('/api/v1/talents')
+      .send({ name: 'Mia Roth', email: 'mia@example.com' });
+    const noEmail = await agent.post('/api/v1/talents').send({ name: 'No Mail' });
+
+    const sent = await agent
+      .post(`/api/v1/talents/${withEmail.body.talent.id}/outreach/send`)
+      .send({ subject: 'Opportunity', body: 'Hello Mia' });
+    expect(sent.status).toBe(200);
+    expect(sent.body).toEqual({ sent: true, to: 'mia@example.com' });
+    // register fires a verification mail through the same mailer — filter it out
+    expect(mailer.sent.filter((m) => m.to === 'mia@example.com')).toEqual([
+      { to: 'mia@example.com', subject: 'Opportunity', text: 'Hello Mia' },
+    ]);
+
+    // Talent without an address → 400; empty subject → 400; ghost talent → 404.
+    expect(
+      (
+        await agent
+          .post(`/api/v1/talents/${noEmail.body.talent.id}/outreach/send`)
+          .send({ subject: 'Hi', body: 'Text' })
+      ).status,
+    ).toBe(400);
+    expect(
+      (
+        await agent
+          .post(`/api/v1/talents/${withEmail.body.talent.id}/outreach/send`)
+          .send({ subject: '', body: 'Text' })
+      ).status,
+    ).toBe(400);
+    expect(
+      (await agent.post('/api/v1/talents/ghost/outreach/send').send({ subject: 'Hi', body: 'T' }))
+        .status,
+    ).toBe(404);
+  });
+
+  it('Mail_SyncReplies_StampsPendingOutreachFromInbox', async () => {
+    // IMAP configured + a scripted inbox: the loop closes without manual stamping.
+    const base = loadConfig({});
+    const config = {
+      ...base,
+      mail: { ...base.mail, imap: { ...base.mail.imap, host: 'imap.example.com' } },
+    };
+    const inboxSource = new FakeInboxSource();
+    const syncApp = makeApp(config, { inboxSource });
+    const agent = request.agent(syncApp);
+    await agent
+      .post('/api/v1/auth/register')
+      .send({ email: 'desk@example.com', password: 'correct horse battery' });
+
+    const status = await agent.get('/api/v1/mail/status');
+    expect(status.body).toMatchObject({ replySync: true, sendTransport: 'console' });
+
+    const talent = await agent
+      .post('/api/v1/talents')
+      .send({ name: 'Lena Falk', email: 'lena@example.com' });
+    const talentId = talent.body.talent.id;
+    await agent
+      .post(`/api/v1/talents/${talentId}/documents/outreach`)
+      .send({ audience: 'candidate', channel: 'email' });
+
+    // The talent writes back after the outreach was generated (FixedClock).
+    inboxSource.messages = [
+      {
+        from: 'Lena Falk <Lena@Example.com>',
+        receivedAt: '2026-06-26T08:00:00.000Z',
+        subject: 'Re',
+      },
+    ];
+    const sync = await agent.post('/api/v1/mail/sync-replies');
+    expect(sync.status).toBe(200);
+    expect(sync.body).toEqual({ checked: 1, messages: 1, replies: 1 });
+    const list = await agent.get(`/api/v1/artifacts?talentId=${talentId}`);
+    expect(list.body[0]).toMatchObject({
+      outcome: 'replied',
+      outcomeAt: '2026-06-26T08:00:00.000Z',
+    });
+  });
+
+  it('Mail_SyncReplies_WithoutMailbox_Returns400', async () => {
+    const agent = request.agent(app);
+    await agent
+      .post('/api/v1/auth/register')
+      .send({ email: 'nomailbox@example.com', password: 'correct horse battery' });
+    expect((await agent.post('/api/v1/mail/sync-replies')).status).toBe(400);
   });
 
   it('ApiDocs_OpenApiSpec_IsServed', async () => {

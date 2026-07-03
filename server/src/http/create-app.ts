@@ -30,6 +30,7 @@ import { corsMiddleware, securityHeaders, recruitingCsp, RECRUITING_KIT_PREFIX }
 import { registerApiDocs } from './api-docs';
 import type { AssistantController } from './assistant-controller';
 import type { ArtifactController } from './artifact-controller';
+import type { MailController } from './mail-controller';
 
 export interface AppDeps {
   applicationController: ApplicationController;
@@ -50,6 +51,7 @@ export interface AppDeps {
   observationController: ObservationController;
   assistantController: AssistantController;
   artifactController: ArtifactController;
+  mailController: MailController;
   documentController: DocumentController;
   attachmentController: AttachmentController;
   authController: AuthController;
@@ -81,6 +83,7 @@ export function createApp(deps: AppDeps): Express {
     observationController: observations,
     assistantController: assistant,
     artifactController: artifacts,
+    mailController: mail,
     documentController: docs,
     attachmentController: att,
     authController: auth,
@@ -220,6 +223,10 @@ export function createApp(deps: AppDeps): Express {
   api.get('/artifacts', requireAuth, asyncHandler(artifacts.list));
   api.get('/artifacts/stats', requireAuth, asyncHandler(artifacts.stats));
   api.post('/artifacts/:id/outcome', requireAuth, asyncHandler(artifacts.setOutcome));
+  // Email integration: send drafted outreach + reply detection for the loop.
+  api.post('/talents/:id/outreach/send', requireAuth, asyncHandler(mail.sendOutreach));
+  api.post('/mail/sync-replies', requireAuth, asyncHandler(mail.syncReplies));
+  api.get('/mail/status', requireAuth, asyncHandler(mail.status));
   // The provider choice is per user (persisted); signed-out callers see the default.
   api.get('/settings/llm', asyncHandler(auth.attachUser), asyncHandler(llm.settings));
   api.put('/settings/llm', requireAuth, asyncHandler(llm.setProvider));

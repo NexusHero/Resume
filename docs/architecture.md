@@ -58,7 +58,9 @@ See [`docs/umls/03_system_context.puml`](umls/03_system_context.puml).
 - API → **LLM providers** (Claude / Gemini) with the user's own key and persisted
   provider choice (ADR-0011), for AI features — optional.
 - API → **job boards** (Arbeitnow / Bundesagentur / Adzuna) for search — resilient composite.
-- API → **SMTP mailer** for email verification and password-reset links (console in dev).
+- API → **SMTP mailer** for email verification, password-reset links and sending drafted
+  outreach (console in dev); API → **IMAP mailbox** (optional, `MAIL_IMAP_*`) polled for
+  replies to close the outcome loop — envelopes only, no message bodies (ADR-0015).
 - API → **Puppeteer** (headless Chromium) to render PDFs.
 - API → **Postgres** (`STORE=sql`) or the **filesystem** (default) for persistence.
 

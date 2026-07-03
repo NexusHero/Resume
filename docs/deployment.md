@@ -40,6 +40,7 @@ Resolved from the environment (see `server/src/config.ts`):
 | `S3_PREFIX`                                                 | `pdf-archive`                                              | Key prefix within the bucket.                                                                                                        |
 | `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY`                 | —                                                          | Explicit credentials; omit to use the SDK's default chain (env `AWS_*` / IAM role).                                                  |
 | `S3_FORCE_PATH_STYLE`                                       | _(off)_                                                    | `true` for path-style addressing (some non-AWS endpoints, e.g. MinIO).                                                               |
+| `PDF_RENDER_CONCURRENCY`                                    | `2`                                                        | Max simultaneous headless-Chromium PDF renders per instance (bounds memory under load).                                              |
 | `CORS_ORIGINS`                                              | _(empty)_                                                  | Comma-separated browser origins allowed to call the API.                                                                             |
 | `COOKIE_SECURE`                                             | _(off)_                                                    | `true` sends the session cookie Secure (HTTPS-only). Auto-on when `NODE_ENV=production`.                                             |
 | `SESSION_TTL_DAYS`                                          | `30`                                                       | Server-side session lifetime; older sessions are rejected.                                                                           |
@@ -93,8 +94,11 @@ periodic jobs (assistant playbook, IMAP reply sync, retention sweep) are guarded
 by a Postgres advisory-lock leader election (ADR-0030), so each fires once per
 interval cluster-wide, not once per instance. No dedicated worker or external
 scheduler is needed. With the filesystem store the no-op lock applies (a single
-instance is always the leader). PDF rendering (Puppeteer) and the object-storage
-move for the archive are the remaining scale follow-ups (roadmap D2/D4).
+instance is always the leader). Move the PDF archive to a shared bucket with
+`PDF_ARCHIVE=s3` (ADR-0031) so instances don't each keep their own copy. PDF
+rendering reuses one Chromium per instance with a bounded page pool
+(`PDF_RENDER_CONCURRENCY`, ADR-0032) so a burst of exports can't exhaust memory;
+size it per instance and scale out for more throughput.
 
 ## Notes
 

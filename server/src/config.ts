@@ -51,6 +51,8 @@ export interface AppConfig {
   store: 'fs' | 'sql';
   /** Where finished application PDFs are archived (filesystem or S3). */
   pdfArchive: PdfArchiveConfig;
+  /** Max concurrent headless-Chromium PDF renders (bounds memory under load). */
+  pdfRenderConcurrency: number;
   /** Postgres connection string, used when store === 'sql'. */
   databaseUrl: string;
   /** Authentication wiring (session cookie + social-login availability). */
@@ -298,6 +300,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
         forcePathStyle: env.S3_FORCE_PATH_STYLE === 'true',
       },
     },
+    pdfRenderConcurrency: Math.max(1, Number(env.PDF_RENDER_CONCURRENCY) || 2),
     auth: {
       sessionCookieName: env.SESSION_COOKIE_NAME ?? 'myjob_session',
       // Secure cookies require HTTPS; on by default in production, or opt in via

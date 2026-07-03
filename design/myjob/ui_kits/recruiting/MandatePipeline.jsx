@@ -380,7 +380,12 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
                       <button onClick={() => openPrep(mm.talentId, mm.name)} title="Create candidate prep" style={{ flexShrink: 0, cursor: 'pointer', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '10.5px', padding: '4px 9px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                         <MP.Icon name="award" size={12} /> Prep
                       </button>
-                      <MP.MatchIndicator value={mm.score} variant="chip" />
+                      <span title={typeof mm.skillScore === 'number' ? `Hybrid score: skills ${mm.skillScore}/100 (70%) + text similarity ${mm.semanticScore}/100 (30%)` : undefined} style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <MP.MatchIndicator value={mm.score} variant="chip" />
+                        {typeof mm.skillScore === 'number' && (
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9.5px', color: 'var(--text-soft)', whiteSpace: 'nowrap' }}>S{mm.skillScore} · T{mm.semanticScore}</span>
+                        )}
+                      </span>
                       {mm.inPipeline ? (
                         <span style={{ flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-soft)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                           <MP.Icon name="check" size={12} /> In pipeline

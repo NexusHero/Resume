@@ -19,9 +19,42 @@ export interface TalentMatch {
   name: string;
   role: string;
   location: string;
-  score: number; // 0–100 fit
+  score: number; // 0–100 hybrid fit (skills + text similarity)
+  skillScore: number; // 0–100, the skill/ontology component
+  semanticScore: number; // 0–100, embedding similarity of ad ↔ profile text
   matched: string[]; // candidate skills the job mentions
   inPipeline: boolean; // already a candidacy for this mandate
+}
+
+/** How the hybrid blends: skills stay the primary signal, text breaks ties. */
+export const HYBRID_WEIGHTS = { skills: 0.7, semantic: 0.3 } as const;
+
+/**
+ * Matching v2 (ADR-0017): blend the skill/ontology score with embedding
+ * similarity between the ad and the candidate's profile text. The semantic
+ * side catches what skill lists miss (domain vocabulary in bullets, German
+ * compounds, typos); the 70/30 split keeps demonstrated skills decisive.
+ */
+export function hybridScore(skillScore: number, semanticScore: number): number {
+  return Math.min(
+    100,
+    Math.round(HYBRID_WEIGHTS.skills * skillScore + HYBRID_WEIGHTS.semantic * semanticScore),
+  );
+}
+
+/** The candidate's profile as one text — what the ad's embedding is compared to. */
+export function matchText(talent: Talent, documents: TalentDocuments | null): string {
+  const resume = documents?.resume;
+  return [
+    talent.role,
+    talent.headline,
+    talent.skills.join(' '),
+    resume?.summary ?? '',
+    ...(resume?.experience.flatMap((e) => [e.role, e.company, ...e.bullets, ...e.skills]) ?? []),
+    ...(resume?.skillGroups.flatMap((g) => g.items) ?? []),
+  ]
+    .filter(Boolean)
+    .join('\n');
 }
 
 /** Gather a candidate's skills from the talent record plus their documents. */

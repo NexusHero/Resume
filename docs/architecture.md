@@ -16,6 +16,13 @@ job-application toolkit:
 - **AI assistance** — the differentiator: skill matching, explainable match, interview
   kits, candidate prep, client pitch + outreach, ATS gap analysis, AGG compliance — all
   with deterministic fallbacks and a grounding self-check over generated text.
+- **CoRecruiter** — an in-process agent (ADR-0013) that prepares the desk proactively
+  (shortlists, stalled-pipeline nudges, data-gap flags) and, in its top `autopilot` gear
+  (ADR-0019), builds complete tailored application packets for strong matches and stages
+  them for one-click approval — sourced from received job postings or own mandates.
+- **Evidence layer** — an outcome loop (ADR-0014), learned stage-probability forecast
+  (ADR-0016) and a KI-Audit-Trail with retention automation (ADR-0018) make the AI
+  auditable: what it did, what it cost, and whether it worked.
 - **Documents** — an interactive CV, a cover letter, and a Bewerbungsmappe/dossier
   builder with vector-quality PDF export.
 - **REST API** — a TypeScript, hexagonal Node/Express backend under `/api/v1`.
@@ -72,6 +79,9 @@ See [`docs/umls/03_system_context.puml`](umls/03_system_context.puml).
 | Portability     | Every repository behind a port; file store default, Postgres opt-in.                       | 0003             |
 | Trust           | Deterministic LLM fallback + grounding self-check; no scraping, first-party data only.     | 0005, 0006, 0009 |
 | Security        | Auth + RBAC + team scope; CORS allow-list, headers, rate-limited creds, encrypted secrets. | 0004, 0010       |
+| Agency          | One in-process agent, single autonomy scale (`suggest`→`act`→`autopilot`), staged review.  | 0013, 0019       |
+| Matching        | Local hashed embeddings + hybrid lexical/semantic ranking; fully offline.                  | 0007, 0017       |
+| Evidence        | Outcome loop + learned forecast + KI-Audit-Trail and retention automation (EU-AI-Act).     | 0014, 0016, 0018 |
 
 ## 5. Building Block View
 
@@ -114,6 +124,16 @@ analogous):
 placement with its fee; mandate submitted/interview counts and the revenue forecast are
 derived from the live pipeline, never stored twice.
 
+**CoRecruiter autopilot** — on a scheduler tick (or manual run) in `autopilot` mode,
+`AssistantService` pulls openings from the configured source (received job postings or
+own mandates), normalizes each to an `ApplicationTarget`, ranks the pool against it and —
+for strong, not-yet-applied matches, bounded by a per-run build cap and a minimum score —
+calls the isolated `ApplicationBuilder` to tailor a CV + cover letter (in the ad's
+language) and select certificates. The packet is stored as a **snapshot** on an
+`application` suggestion (never overwriting the candidate's documents) and staged for
+approval; approving materializes a mandate from a posting if needed and adds the candidacy.
+The outward submission stays a manual step (ADR-0019).
+
 ## 7. Deployment View
 
 - **Local:** `npm run serve` runs the TypeScript server (`tsx`); it serves both the REST
@@ -131,8 +151,13 @@ derived from the live pipeline, never stored twice.
   provider choice is per user and persisted (ADR-0011); grounding self-check (ADR-0009);
   first-party data, no scraping (ADR-0006).
 - **Cost transparency:** every LLM-backed response carries `usage` (tokens + estimated
-  USD) shown at the result; the settings card aggregates per provider and feature.
-- **Skills:** canonicalised (ADR-0008) then matched semantically offline (ADR-0007).
+  USD) shown at the result; the settings card aggregates per provider and feature; the
+  KI-Audit-Trail (ADR-0018) keeps a per-call record for DSGVO/EU-AI-Act transparency.
+- **Agency:** one in-process agent, a single autonomy scale (`suggest`→`act`→`autopilot`),
+  every finding staged in a team-scoped review queue; nothing outward-facing or
+  destructive runs alone, and token spend is bounded per run (ADR-0013, ADR-0019).
+- **Skills:** canonicalised (ADR-0008) then matched semantically offline (ADR-0007), with
+  local hashed embeddings + hybrid lexical/semantic ranking (ADR-0017).
 - **Auth & tenancy:** sessions + RBAC (ADR-0004); recruiting data is team-scoped (ADR-0010).
 - **API contract:** hand-maintained OpenAPI 3.1 + self-hosted Swagger UI (ADR-0012),
   extended in the same PR as any route change.
@@ -162,6 +187,13 @@ Full log in [`docs/adr/`](adr). Summary:
 | 0010 | Team scope as the ownership boundary for recruiting data      | Accepted                       |
 | 0011 | Per-user, persisted LLM provider choice                       | Accepted                       |
 | 0012 | Hand-maintained OpenAPI contract + self-hosted Swagger UI     | Accepted                       |
+| 0013 | In-process assistant agent with staged-suggestion autonomy    | Accepted (extended by 0019)    |
+| 0014 | First-party outcome loop (artefact → result tracking)         | Accepted                       |
+| 0015 | First-party email integration (send outreach, detect replies) | Accepted                       |
+| 0016 | Learned stage-transition probabilities for the forecast       | Accepted                       |
+| 0017 | Local hashed embeddings + hybrid matching                     | Accepted                       |
+| 0018 | Compliance automation (audit trail, retention, AGG engine)    | Accepted                       |
+| 0019 | Autopilot: the auto-apply gear of the one agent (CoRecruiter) | Accepted                       |
 
 ## 10. Quality Requirements
 
@@ -187,6 +219,12 @@ See [requirements.md](requirements.md) for the full FR/NFR catalogue. Verificati
   scope/userId naming drift fixed. Remaining known debt: the triple manual wiring lists
   (container / AppDeps / index imports) and one domain→ports type import
   (`usage.ts` → `llm-provider`).
+- **God classes to watch:** `DocumentAiService` now carries ten AI features behind one
+  `runLlm` scaffold, and `AssistantService` gained the autopilot orchestration. Both are
+  candidates for a follow-up split (the `ApplicationBuilder` extraction in ADR-0019 was a
+  first step); the shared LLM idioms are also ripe for a small helper module.
+- **Embeddings are hashed-lexical, not neural** (ADR-0017): fully offline and deterministic
+  by design, but a pluggable neural provider behind the same port is a future upgrade.
 - OpenAPI covers the full surface but is hand-kept, not generated from zod — drift is
   guarded only by review discipline and the docs acceptance tests (ADR-0012).
 - Some ports still have only a file adapter (e.g. `PdfArchive`); object storage is a

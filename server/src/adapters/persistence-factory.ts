@@ -39,6 +39,8 @@ import { FsApiKeyStore } from './fs-api-key-store';
 import { FsUsageMeter } from './fs-usage-meter';
 import { FsInterviewObservationRepository } from './fs-interview-observation-repository';
 import { FsAssistantSettingsStore, FsAssistantSuggestionRepository } from './fs-assistant-store';
+import { FsRetentionPolicyStore } from './fs-retention-policy-store';
+import type { RetentionPolicyStore } from '../ports/retention-policy-store';
 import { FsArtifactLogRepository } from './fs-artifact-log-repository';
 import { FsStageTransitionRepository } from './fs-stage-transition-repository';
 import { SecretCipher } from './secret-cipher';
@@ -62,6 +64,7 @@ import {
   SqlAssistantSettingsStore,
   SqlAssistantSuggestionRepository,
 } from './sql/sql-assistant-store';
+import { SqlRetentionPolicyStore } from './sql/sql-retention-policy-store';
 import { SqlArtifactLogRepository } from './sql/sql-artifact-log-repository';
 import { SqlStageTransitionRepository } from './sql/sql-stage-transition-repository';
 import type { Db } from './sql/db';
@@ -85,6 +88,7 @@ export interface Persistence {
   usageMeter: UsageMeter;
   interviewObservationRepository: InterviewObservationRepository;
   assistantSettingsStore: AssistantSettingsStore;
+  retentionPolicyStore: RetentionPolicyStore;
   assistantSuggestionRepository: AssistantSuggestionRepository;
   artifactLogRepository: ArtifactLogRepository;
   stageTransitionRepository: StageTransitionRepository;
@@ -118,6 +122,7 @@ export function createPersistence(deps: { config: AppConfig; clock: Clock; db?: 
       usageMeter: new SqlUsageMeter({ db }),
       interviewObservationRepository: new SqlInterviewObservationRepository({ db }),
       assistantSettingsStore: new SqlAssistantSettingsStore({ db }),
+      retentionPolicyStore: new SqlRetentionPolicyStore({ db }),
       assistantSuggestionRepository: new SqlAssistantSuggestionRepository({ db }),
       artifactLogRepository: new SqlArtifactLogRepository({ db }),
       stageTransitionRepository: new SqlStageTransitionRepository({ db }),
@@ -141,6 +146,7 @@ export function createPersistence(deps: { config: AppConfig; clock: Clock; db?: 
     usageMeter: new FsUsageMeter({ config }),
     interviewObservationRepository: new FsInterviewObservationRepository({ config }),
     assistantSettingsStore: new FsAssistantSettingsStore({ config }),
+    retentionPolicyStore: new FsRetentionPolicyStore({ config }),
     assistantSuggestionRepository: new FsAssistantSuggestionRepository({ config }),
     artifactLogRepository: new FsArtifactLogRepository({ config }),
     stageTransitionRepository: new FsStageTransitionRepository({ config }),

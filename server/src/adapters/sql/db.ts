@@ -194,6 +194,10 @@ export async function migrate(pool: Pool): Promise<void> {
       owner_id text PRIMARY KEY,
       settings jsonb NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS retention_policies (
+      owner_id text PRIMARY KEY,
+      policy jsonb NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS assistant_suggestions (
       id text PRIMARY KEY,
       owner_id text NOT NULL,

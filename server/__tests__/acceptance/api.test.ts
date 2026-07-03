@@ -83,6 +83,7 @@ import {
   RecordingMailer,
   FakeInboxSource,
   InMemoryStageTransitionRepository,
+  InMemoryRetentionPolicyStore,
   fakePasswordHasher,
   FakePdfRenderer,
   FakePdfMerger,
@@ -218,7 +219,9 @@ function makeApp(
       candidacyRepository,
       documentRepository,
       attachmentStore,
+      retentionPolicyStore: new InMemoryRetentionPolicyStore(),
       clock: new FixedClock(),
+      logger: noopLogger,
     }),
     authorizer: new RoleAuthorizer(),
   });
@@ -1360,6 +1363,16 @@ describe('REST API /api/v1', () => {
       expect(res.status).toBe(401);
     });
 
+    it('AggRewrite_ProducesNeutralDraft', async () => {
+      const res = await agent
+        .post('/api/v1/compliance/agg-rewrite')
+        .send({ text: 'Junges dynamisches Team sucht Digital Natives.' });
+      expect(res.status).toBe(200);
+      expect(res.body.changed).toBe(true);
+      expect(res.body.text).toContain('motiviertes Team');
+      expect(res.body.text).not.toMatch(/digital natives/i);
+    });
+
     // --- Pipeline revenue forecast ---
     it('Forecast_WeightsPipelineByStage', async () => {
       const m = await agent.post('/api/v1/mandates').send({
@@ -1457,6 +1470,55 @@ describe('REST API /api/v1', () => {
 
     it('Retention_Unauthenticated_Returns401', async () => {
       expect((await request(app).get('/api/v1/retention/report')).status).toBe(401);
+    });
+
+    it('Retention_PolicyRoundTrips_AndClamps', async () => {
+      const put = await agent
+        .put('/api/v1/retention/policy')
+        .send({ deletionDays: 90, reviewDays: 300, autoAnonymize: true });
+      expect(put.status).toBe(200);
+      // review may not fire after the deletion deadline
+      expect(put.body).toMatchObject({ reviewDays: 90, deletionDays: 90, autoAnonymize: true });
+      const get = await agent.get('/api/v1/retention/policy');
+      expect(get.body).toMatchObject({ reviewDays: 90, deletionDays: 90, autoAnonymize: true });
+    });
+
+    it('Retention_AnonymizeOverdue_ReturnsSweepResult', async () => {
+      // With the shortest allowed deadline (1 day) a just-created talent is not
+      // yet overdue — the sweep is a no-op but returns a well-formed result.
+      // (Overdue detection over time is covered exhaustively by the unit tests.)
+      await agent.put('/api/v1/retention/policy').send({ reviewDays: 1, deletionDays: 1 });
+      const sweep = await agent.post('/api/v1/retention/anonymize-overdue');
+      expect(sweep.status).toBe(200);
+      expect(sweep.body).toMatchObject({
+        overdue: expect.any(Number),
+        anonymized: expect.any(Number),
+        talentIds: expect.any(Array),
+      });
+    });
+
+    it('Retention_PolicyRecruiterForbidden_Returns403', async () => {
+      const recruiter = request.agent(app);
+      await recruiter
+        .post('/api/v1/auth/register')
+        .send({ email: 'policy-mate@example.com', password: 'correct horse battery' });
+      expect((await recruiter.get('/api/v1/retention/policy')).status).toBe(403);
+      expect(
+        (await recruiter.put('/api/v1/retention/policy').send({ autoAnonymize: true })).status,
+      ).toBe(403);
+      expect((await recruiter.post('/api/v1/retention/anonymize-overdue')).status).toBe(403);
+    });
+
+    it('Audit_TrailAndCsvExport', async () => {
+      // no AI key configured → no metered calls, but the endpoints still work
+      const json = await agent.get('/api/v1/settings/usage/audit');
+      expect(json.status).toBe(200);
+      expect(Array.isArray(json.body)).toBe(true);
+      const csv = await agent.get('/api/v1/settings/usage/audit.csv');
+      expect(csv.status).toBe(200);
+      expect(csv.headers['content-type']).toContain('text/csv');
+      expect(csv.headers['content-disposition']).toContain('ai-audit-trail.csv');
+      expect(csv.text).toContain('timestamp');
     });
 
     it('Members_AdminListsTeam_WithRoles', async () => {

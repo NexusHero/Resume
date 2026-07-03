@@ -4,6 +4,8 @@ import {
   summarizeUsage,
   toUsageEvent,
   type UsageEvent,
+  buildAuditTrail,
+  auditTrailToCsv,
 } from '../../src/domain/usage';
 import { UsageService } from '../../src/services/usage-service';
 import { InMemoryUsageMeter } from '../support/fakes';
@@ -112,5 +114,45 @@ describe('UsageService', () => {
     const summary = await svc.summaryFor('u1');
     expect(summary.requests).toBe(1);
     expect(summary.inputTokens).toBe(100);
+  });
+});
+
+describe('KI-Audit-Trail (ADR-0018)', () => {
+  const evt = (over) => ({
+    userId: 'u1',
+    provider: 'claude',
+    feature: 'pitch',
+    inputTokens: 100,
+    outputTokens: 50,
+    at: '2026-07-01T10:00:00.000Z',
+    ...over,
+  });
+
+  it('BuildAuditTrail_OneRowPerCall_NewestFirst_WithCost', () => {
+    const trail = buildAuditTrail([
+      evt({ at: '2026-07-01T10:00:00.000Z' }),
+      evt({ at: '2026-07-03T10:00:00.000Z', feature: 'ats' }),
+    ]);
+    expect(trail.map((e) => e.at)).toEqual([
+      '2026-07-03T10:00:00.000Z',
+      '2026-07-01T10:00:00.000Z',
+    ]);
+    // claude 3/15 per M: 100 in + 50 out = 0.00105, rounded to 4 dp → 0.0011
+    expect(trail[0]?.costUsd).toBe(0.0011);
+  });
+
+  it('AuditTrailToCsv_QuotedHeaderAndRows', () => {
+    const csv = auditTrailToCsv(buildAuditTrail([evt({})]));
+    const lines = csv.trimEnd().split('\r\n');
+    expect(lines[0]).toBe(
+      '"timestamp","provider","feature","input_tokens","output_tokens","cost_usd"',
+    );
+    expect(lines[1]).toContain('"claude"');
+    expect(lines[1]).toContain('"pitch"');
+  });
+
+  it('AuditTrailToCsv_Empty_IsHeaderOnly', () => {
+    const csv = auditTrailToCsv([]);
+    expect(csv.trimEnd().split('\r\n')).toHaveLength(1);
   });
 });

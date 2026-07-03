@@ -178,6 +178,9 @@ export function createApp(deps: AppDeps): Express {
   api.delete('/candidacies/:id', requireAuth, asyncHandler(cand.remove));
   // DSGVO retention (admin-only, enforced in the controller via Authorizer).
   api.get('/retention/report', requireAuth, asyncHandler(retention.report));
+  api.get('/retention/policy', requireAuth, asyncHandler(retention.getPolicy));
+  api.put('/retention/policy', requireAuth, asyncHandler(retention.updatePolicy));
+  api.post('/retention/anonymize-overdue', requireAuth, asyncHandler(retention.anonymizeOverdue));
   api.post('/talents/:id/anonymize', requireAuth, asyncHandler(retention.anonymize));
   // A talent's resume + cover-letter documents (team-scoped).
   api.get('/talents/:id/documents', requireAuth, asyncHandler(docs.get));
@@ -208,8 +211,12 @@ export function createApp(deps: AppDeps): Express {
   api.delete('/account', requireAuth, asyncHandler(account.remove));
   // Per-user AI usage (requests, tokens, rough cost) for the settings card.
   api.get('/settings/usage', requireAuth, asyncHandler(usage.summary));
-  // AGG (anti-discrimination) language check for job ads / outreach text.
+  // KI-Audit-Trail: the caller's per-call AI processing record (JSON + CSV export).
+  api.get('/settings/usage/audit', requireAuth, asyncHandler(usage.audit));
+  api.get('/settings/usage/audit.csv', requireAuth, asyncHandler(usage.auditCsv));
+  // AGG (anti-discrimination) language check + neutral rewrite for job ads / outreach.
   api.post('/compliance/agg-check', requireAuth, asyncHandler(compliance.aggCheck));
+  api.post('/compliance/agg-rewrite', requireAuth, asyncHandler(compliance.aggRewrite));
   // Weighted pipeline revenue forecast across the team's live mandates.
   api.get('/forecast', requireAuth, asyncHandler(forecast.get));
   // The assistant: settings, manual run, and the reviewable suggestion queue.

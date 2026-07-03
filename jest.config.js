@@ -50,6 +50,7 @@ module.exports = {
     '!server/src/adapters/sql/sql-assistant-store.ts',
     '!server/src/adapters/sql/sql-artifact-log-repository.ts',
     '!server/src/adapters/sql/sql-stage-transition-repository.ts',
+    '!server/src/adapters/sql/sql-retention-policy-store.ts',
     '!server/src/adapters/sql/sql-email-verification-token-store.ts',
     // IMAP reply detection talks to a real mailbox (imapflow) — exercised by
     // deployment, not unit-covered; the matching domain and the port fake are.

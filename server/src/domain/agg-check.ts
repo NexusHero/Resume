@@ -35,6 +35,12 @@ interface Rule {
   re: RegExp;
   issue: string;
   suggestion: string;
+  /**
+   * Deterministic neutral replacement for the writing aid. `$1` etc. refer to
+   * the rule's capture groups; omitted when no safe automatic rewrite exists
+   * (the phrase is flagged but left for the recruiter to resolve).
+   */
+  replacement?: string;
 }
 
 /** The curated rule set. Each `re` is global + case-insensitive for matchAll. */
@@ -46,6 +52,7 @@ const RULES: Rule[] = [
     re: /jung\w*\s+(?:dynamisch\w*\s+)?team/gi,
     issue: 'Altersbezogene Teambeschreibung',
     suggestion: 'Kultur ohne Altersbezug beschreiben, z. B. „motiviertes Team".',
+    replacement: 'motiviertes Team',
   },
   {
     category: 'alter',
@@ -53,6 +60,7 @@ const RULES: Rule[] = [
     re: /digital natives?/gi,
     issue: 'Alterscodierter Begriff',
     suggestion: 'Konkrete Fähigkeit fordern, z. B. „sicherer Umgang mit digitalen Tools".',
+    replacement: 'sicherer Umgang mit digitalen Tools',
   },
   {
     category: 'alter',
@@ -90,6 +98,7 @@ const RULES: Rule[] = [
     re: /muttersprachler(?:in)?|als muttersprache|perfektes?\s+deutsch/gi,
     issue: 'Herkunftsbezogene Sprachanforderung',
     suggestion: 'Sprachniveau fordern, z. B. „verhandlungssicheres Deutsch (C1)".',
+    replacement: 'verhandlungssicheres Deutsch (C1)',
   },
   {
     category: 'herkunft',
@@ -113,6 +122,7 @@ const RULES: Rule[] = [
     re: /(?:körperlich\s+)?(?:voll\s+)?belastbar|ohne\s+(?:gesundheitliche\s+)?einschränkungen|körperlich\s+fit/gi,
     issue: 'Kann Menschen mit Behinderung ausschließen',
     suggestion: 'Konkrete, tätigkeitsbezogene Anforderungen statt Pauschalfitness nennen.',
+    replacement: 'den tätigkeitsbezogenen Anforderungen gewachsen',
   },
 ];
 
@@ -185,4 +195,47 @@ export function checkAgg(text: string): AggCheckResult {
         (hasGenderMarker ? '.' : ' — außerdem fehlt ein „(m/w/d)"-Zusatz.');
 
   return { findings, riskLevel, hasGenderMarker, summary };
+}
+
+export interface AggRewriteEdit {
+  category: AggCategory;
+  from: string;
+  to: string;
+}
+
+export interface AggRewriteResult {
+  /** The text with every safely-rewritable phrase replaced by a neutral one. */
+  text: string;
+  changed: boolean;
+  edits: AggRewriteEdit[];
+  /** Findings with no safe automatic rewrite — left for the recruiter to resolve. */
+  unresolved: AggFinding[];
+}
+
+/**
+ * The AGG writing aid: deterministically replace every flagged phrase that has
+ * a safe neutral rewrite, and report the phrases that don't (an age limit or a
+ * hard exclusion needs a human decision, not a mechanical swap). Rule-based, so
+ * the recruiter sees exactly what changed and why — a drafting aid, not legal
+ * advice.
+ */
+export function rewriteAgg(text: string): AggRewriteResult {
+  let out = text;
+  const edits: AggRewriteEdit[] = [];
+  const seen = new Set<string>();
+  for (const rule of RULES) {
+    if (!rule.replacement) continue;
+    // Snapshot the matches before mutating, so `from` reflects the original.
+    for (const match of out.matchAll(rule.re)) {
+      const from = match[0].trim();
+      const key = `${rule.category}:${from.toLowerCase()}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      edits.push({ category: rule.category, from, to: rule.replacement });
+    }
+    out = out.replace(rule.re, rule.replacement);
+  }
+  // Anything still flagged after the rewrite has no safe automatic fix.
+  const unresolved = checkAgg(out).findings;
+  return { text: out, changed: out !== text, edits, unresolved };
 }

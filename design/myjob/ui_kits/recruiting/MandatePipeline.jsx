@@ -85,6 +85,8 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
   const [matchLoading, setMatchLoading] = React.useState(false);
   const [agg, setAgg] = React.useState(null); // null = not run yet
   const [aggLoading, setAggLoading] = React.useState(false);
+  const [aggRewrite, setAggRewrite] = React.useState(null); // the neutral draft
+  const [aggRewriteLoading, setAggRewriteLoading] = React.useState(false);
   const [explains, setExplains] = React.useState({}); // talentId -> { loading, open, data }
   const [interview, setInterview] = React.useState(null); // { name, loading, data } | null
   const [prep, setPrep] = React.useState(null); // { name, loading, data } | null
@@ -115,11 +117,28 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
     setAggLoading(true);
     try {
       setAgg(await window.RecruitApi.aggCheck(matchQuery));
+      setAggRewrite(null);
     } catch {
       setAgg({ findings: [], riskLevel: 'none', hasGenderMarker: false, summary: 'Check failed.' });
     } finally {
       setAggLoading(false);
     }
+  };
+  const runAggRewrite = async () => {
+    setAggRewriteLoading(true);
+    try {
+      setAggRewrite(await window.RecruitApi.aggRewrite(matchQuery));
+    } catch {
+      setAggRewrite(null);
+    } finally {
+      setAggRewriteLoading(false);
+    }
+  };
+  const applyAggRewrite = () => {
+    if (!aggRewrite) return;
+    setMatchQuery(aggRewrite.text);
+    setAgg(null);
+    setAggRewrite(null);
   };
   const runMatch = async () => {
     setMatchLoading(true);
@@ -343,9 +362,42 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
                       </div>
                     ))}
                   </div>
+                  {agg.findings.length > 0 && (
+                    <div style={{ marginTop: '10px' }}>
+                      <MP.Button variant="outline" size="sm" iconLeft={<MP.Icon name="zap" size={14} />} disabled={aggRewriteLoading} onClick={runAggRewrite}>
+                        {aggRewriteLoading ? 'Rewriting…' : 'Suggest neutral draft'}
+                      </MP.Button>
+                    </div>
+                  )}
                 </div>
               );
             })()}
+
+            {aggRewrite !== null && (
+              <div style={{ marginTop: '10px', border: '1px solid var(--accent-border)', borderRadius: 'var(--radius-md)', padding: '12px 14px', background: 'var(--accent-soft)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '8px' }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--accent-strong)' }}>Neutral draft</span>
+                  {aggRewrite.changed && (
+                    <MP.Button variant="primary" size="sm" onClick={applyAggRewrite}>Use this text</MP.Button>
+                  )}
+                </div>
+                {aggRewrite.changed ? (
+                  <>
+                    <div style={{ fontSize: '12.5px', color: 'var(--text-heading)', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{aggRewrite.text}</div>
+                    <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {aggRewrite.edits.map((e, i) => (
+                        <span key={i} style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-soft)', background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '2px 8px' }}>“{e.from}” → “{e.to}”</span>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ fontSize: '12px', color: 'var(--text-soft)' }}>No automatic rewrite available — these phrases need a human decision.</div>
+                )}
+                {aggRewrite.unresolved && aggRewrite.unresolved.length > 0 && (
+                  <div style={{ fontSize: '11.5px', color: 'var(--danger)', marginTop: '8px' }}>Still needs review: {aggRewrite.unresolved.map((f) => `“${f.term}”`).join(', ')}</div>
+                )}
+              </div>
+            )}
 
             <div style={{ marginTop: '14px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {matches !== null && matches.length === 0 && (

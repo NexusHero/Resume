@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { aggCheckSchema, checkAgg } from '../domain/agg-check';
+import { aggCheckSchema, checkAgg, rewriteAgg } from '../domain/agg-check';
 
 /** Compliance tooling under /api/v1/compliance. */
 export class ComplianceController {
@@ -7,5 +7,11 @@ export class ComplianceController {
   aggCheck = async (req: Request, res: Response): Promise<void> => {
     const { text } = aggCheckSchema.parse(req.body);
     res.json(checkAgg(text));
+  };
+
+  /** POST /compliance/agg-rewrite — produce a neutral draft of the text. */
+  aggRewrite = async (req: Request, res: Response): Promise<void> => {
+    const { text } = aggCheckSchema.parse(req.body);
+    res.json(rewriteAgg(text));
   };
 }

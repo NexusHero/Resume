@@ -1,28 +1,34 @@
 @startuml 03_system_context
-title Résumé / myJob Suite — System Context (UML)
+title myJob Recruiting Suite — System Context (UML)
 
 skinparam shadowing false
 skinparam defaultTextAlignment center
 left to right direction
 
-actor "Applicant\n(owner)" as Owner
+actor "Recruiter /\nAdmin" as Recruiter
+actor "Candidate\n(data subject)" as Candidate
 actor "External app" as Ext
 
-rectangle "Résumé / myJob Suite" as System {
-  component "REST API\n/api/v1" as API
-  component "Web UIs\n(CV, cover letter, myJob)" as UI
+rectangle "myJob Recruiting Suite" as System {
+  component "REST API\n/api/v1\n(OpenAPI + Swagger UI at /docs)" as API
+  component "Recruiting Workspace\n(Vite/React, self-hosted assets)" as UI
 }
 
-node "Headless Chromium\n(Puppeteer)" as Chromium
-database "Filesystem\nbewerbungen/" as FS
-node "git" as Git
+cloud "LLM providers\nClaude - Gemini\n(per-user keys, optional)" as LLM
+cloud "Job boards\nArbeitnow - Bundesagentur - Adzuna\n(optional; offline sample otherwise)" as Jobs
+node "SMTP mailer\n(verification - password reset)" as Mail
+node "Headless Chromium\n(Puppeteer, PDF render)" as Chromium
+database "Store\nFilesystem (default)\nor Postgres (STORE=sql)" as Store
 
-Owner --> UI : uses (browser)
-Owner --> API : records / builds applications
-Ext --> API : integrates (HTTP/JSON)
+Recruiter --> UI : runs the desk\n(browser, session cookie)
+UI --> API : HTTP/JSON, same origin
+Ext --> API : integrates (HTTP/JSON,\nsee /api/v1/docs)
+Candidate ..> API : data subject of\nexport / erasure / retention
 
-API --> Chromium : render HTML -> PDF
-API --> FS : read/write store + archived PDFs
-API --> Git : version every change
+API --> LLM : generate (parse, ATS, pitch,\noutreach, translate, kits, prep)
+API --> Jobs : search postings
+API --> Mail : send verification / reset links
+API --> Chromium : render HTML -> PDF\n(documents, dossier)
+API --> Store : persist (repositories\nbehind ports)
 
 @enduml

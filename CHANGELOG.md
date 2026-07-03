@@ -48,6 +48,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
   (and its Reports funnel card) are hidden until they have a real data source
   — same call as the Inbox.
 
+### Changed
+
+- **arc42 documentation brought current** — both UML diagrams (system context,
+  building blocks) redrawn for the recruiting suite (they still showed the
+  original applicant-only system), and the stale sections refreshed: per-user
+  provider choice + call-usage in the runtime view, API contract / self-hosted
+  assets / cost transparency as cross-cutting concepts, ADR 0011/0012 in the
+  decision log, release pipeline in the deployment view.
+
 ### Added
 
 - **A browsable API reference** — the OpenAPI 3.1 contract in

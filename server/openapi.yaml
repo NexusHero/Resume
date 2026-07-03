@@ -1,216 +1,1524 @@
 openapi: 3.1.0
 info:
-  title: Résumé / myJob Application API
+  title: myJob Recruiting Suite API
   version: 1.0.0
-  description: >
-    Records job applications, keeps an append-only audit trail, and builds
-    print-quality application PDFs (CV + cover letter + attachments).
-    Unauthenticated by design — intended for a trusted personal domain.
+  description: |
+    The REST API behind the **myJob** recruiting workspace: mandates, talent
+    pool, pipeline (candidacies), placements, the document editor (résumé +
+    cover letter, PDF/dossier export), AI assistance (parse, ATS, pitch,
+    outreach, translation, match explanations, interview kits, candidate
+    prep), team accounts with roles, per-user AI settings/usage and DSGVO
+    tooling — plus the applicant-side application log and job search.
+
+    ### Authentication
+    Cookie sessions. `POST /auth/register` or `POST /auth/login` set an
+    opaque, HttpOnly session cookie; authenticated endpoints return
+    `401` (problem+json) without it. There are no API tokens.
+
+    ### Errors
+    Errors follow RFC 9457 `application/problem+json` — see the `Problem`
+    schema. Validation failures return `400`, missing/foreign records `404`,
+    missing session `401`, missing role `403`, rejected upstream AI keys `502`.
+
+    ### AI features
+    Every AI feature resolves the caller's stored key for their chosen
+    provider (Settings → AI models), meters token spend per user, and — except
+    translation, which requires a provider — falls back to a deterministic
+    template (`provider: "template"`). LLM-backed responses carry a `usage`
+    object (tokens + estimated USD) so clients can show what a call cost.
   license:
     name: MIT
+    identifier: MIT
 servers:
   - url: /api/v1
+tags:
+  - name: Health
+  - name: Auth
+    description: Registration, login, sessions, email verification, password reset
+  - name: Talents
+    description: The shared team talent pool
+  - name: Mandates
+    description: Client mandates (searches) incl. matching and AI helpers
+  - name: Pipeline
+    description: Candidacies — a talent's progress through one mandate's stages
+  - name: Placements
+  - name: Documents
+    description: Per-talent résumé + cover letter, PDF/dossier export, AI assistance
+  - name: Attachments
+  - name: Jobs & Applications
+    description: Job search and the applicant-side application log
+  - name: Saved searches
+  - name: Settings
+    description: AI provider choice, per-user API keys, usage
+  - name: Team
+    description: Members and roles (admin)
+  - name: Compliance & DSGVO
+  - name: Reports
+
 paths:
   /health:
     get:
+      tags: [Health]
       summary: Liveness probe
+      operationId: getHealth
       responses:
         '200':
-          description: Service is up
+          description: The service is up.
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   status: { type: string, example: ok }
-  /applications:
-    get:
-      summary: List all applications
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Create an account (and start a session)
+      description: |
+        The first account of an instance becomes `admin`; later ones are
+        `recruiter`. Sends a verification email (soft — nothing is locked
+        while unverified). Sets the session cookie.
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Credentials' }
+      responses:
+        '201':
+          description: Account created; session cookie set.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: '#/components/schemas/User' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '409':
+          description: The email is already registered.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Sign in
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Credentials' }
       responses:
         '200':
-          description: The application list
+          description: Signed in; session cookie set.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Sign out (revokes the server-side session)
+      operationId: logout
+      responses:
+        '204': { description: Session revoked; cookie cleared. }
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: 'The signed-in user (or `user: null`)'
+      operationId: me
+      responses:
+        '200':
+          description: The current session's user; `null` without a session.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    oneOf:
+                      - $ref: '#/components/schemas/User'
+                      - type: 'null'
+
+  /auth/providers:
+    get:
+      tags: [Auth]
+      summary: Which auth mechanisms are available
+      operationId: authProviders
+      responses:
+        '200':
+          description: Password auth availability (no OAuth providers yet).
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+
+  /auth/verify-email/request:
+    post:
+      tags: [Auth]
+      summary: (Re-)send the verification email to the signed-in user
+      operationId: requestEmailVerification
+      security:
+        - cookieSession: []
+      responses:
+        '202': { description: Verification email queued. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /auth/verify-email/confirm:
+    post:
+      tags: [Auth]
+      summary: Confirm the emailed verification token
+      operationId: confirmEmailVerification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string }
+      responses:
+        '200':
+          description: Email verified; the user now carries `verifiedAt`.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: '#/components/schemas/User' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /auth/password-reset/request:
+    post:
+      tags: [Auth]
+      summary: Request a password-reset email
+      description: Always `202` — whether the address exists is never revealed.
+      operationId: requestPasswordReset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        '202': { description: If the account exists, a reset email was sent. }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /auth/password-reset/confirm:
+    post:
+      tags: [Auth]
+      summary: Set a new password with the emailed token
+      operationId: confirmPasswordReset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password]
+              properties:
+                token: { type: string }
+                password: { type: string, minLength: 8 }
+      responses:
+        '204': { description: Password replaced; all sessions revoked. }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /talents:
+    get:
+      tags: [Talents]
+      summary: List the talent pool
+      description: |
+        Each talent carries `effectiveSkills` — stored skills merged with the
+        skills their saved documents prove, canonicalized — which is what
+        Matching scores against.
+      operationId: listTalents
+      security:
+        - cookieSession: []
+      responses:
+        '200':
+          description: All talents in the team pool.
           content:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/Application' }
+                items: { $ref: '#/components/schemas/Talent' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
     post:
-      summary: Record an application (optionally with a finished PDF)
+      tags: [Talents]
+      summary: Add a talent
+      operationId: createTalent
+      security:
+        - cookieSession: []
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/CreateApplication' }
+            schema: { $ref: '#/components/schemas/TalentInput' }
       responses:
         '201':
-          description: Created
+          description: Created.
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  application: { $ref: '#/components/schemas/Application' }
-        '400': { $ref: '#/components/responses/Problem' }
-  /applications/build:
-    post:
-      summary: Render CV + cover letter, merge attachments, archive and record
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/BuildApplication' }
-      responses:
-        '201':
-          description: Built and recorded
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  application: { $ref: '#/components/schemas/Application' }
-                  pdfBase64: { type: string }
-        '400': { $ref: '#/components/responses/Problem' }
-  /applications/{id}:
+                  talent: { $ref: '#/components/schemas/Talent' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /talents/{id}:
     patch:
-      summary: Update mutable fields of an application
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: string }
+      tags: [Talents]
+      summary: Update a talent (partial)
+      operationId: updateTalent
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/UpdateApplication' }
+            schema: { $ref: '#/components/schemas/TalentInput' }
       responses:
         '200':
-          description: Updated
+          description: Updated.
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  application: { $ref: '#/components/schemas/Application' }
-        '404': { $ref: '#/components/responses/Problem' }
-  /history:
-    get:
-      summary: Read the append-only audit trail
+                  talent: { $ref: '#/components/schemas/Talent' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Talents]
+      summary: Delete a talent (cascades to documents, attachments, candidacies)
+      operationId: deleteTalent
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses:
+        '204': { description: Deleted. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /talents/{id}/anonymize:
+    post:
+      tags: [Compliance & DSGVO]
+      summary: Anonymize a talent (DSGVO erasure that keeps the statistics)
+      operationId: anonymizeTalent
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
       responses:
         '200':
-          description: Audit events
+          description: Personal fields blanked; pipeline/statistics rows kept.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  talent: { $ref: '#/components/schemas/Talent' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /talents/{id}/candidacies:
+    get:
+      tags: [Pipeline]
+      summary: A talent's candidacies across all mandates
+      operationId: candidaciesForTalent
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses:
+        '200':
+          description: The talent's pipeline rows (with mandate context).
           content:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/AuditEvent' }
+                items: { $ref: '#/components/schemas/Candidacy' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /talents/{id}/documents:
+    get:
+      tags: [Documents]
+      summary: The talent's stored documents (contact, résumé, letter, style)
+      operationId: getDocuments
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses:
+        '200':
+          description: The stored document set (empty defaults if never saved).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  documents: { $ref: '#/components/schemas/TalentDocuments' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Documents]
+      summary: Save the talent's documents (the editor's autosave)
+      operationId: saveDocuments
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TalentDocuments' }
+      responses:
+        '200':
+          description: Saved (missing fields are filled with defaults).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  documents: { $ref: '#/components/schemas/TalentDocuments' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /talents/{id}/documents/pdf:
+    get:
+      tags: [Documents]
+      summary: Render the documents as a PDF (résumé + letter)
+      operationId: documentsPdf
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses:
+        '200':
+          description: The rendered PDF (inline).
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /talents/{id}/dossier/pdf:
+    get:
+      tags: [Documents]
+      summary: Render the client dossier (documents + selected attachments)
+      operationId: dossierPdf
+      security:
+        - cookieSession: []
+      parameters:
+        - $ref: '#/components/parameters/id'
+        - name: attachments
+          in: query
+          required: false
+          description: Comma-separated attachment ids to merge into the PDF.
+          schema: { type: string }
+      responses:
+        '200':
+          description: The merged dossier PDF.
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /talents/{id}/documents/ai:
+    post:
+      tags: [Documents]
+      summary: 'AI tailor: rewrite the summary or draft cover-letter paragraphs'
+      description: Output language follows the candidate's documents. Falls back to a deterministic template without a provider.
+      operationId: aiSuggest
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action: { type: string, enum: [summary, letter] }
+                company: { type: string }
+                role: { type: string }
+      responses:
+        '200':
+          description: The staged suggestion (applied client-side on Accept).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  suggestion: { $ref: '#/components/schemas/AiSuggestion' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '502': { $ref: '#/components/responses/UpstreamProblem' }
+
+  /talents/{id}/documents/parse:
+    post:
+      tags: [Documents]
+      summary: Parse pasted CV text into structured contact + résumé
+      operationId: parseCv
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text: { type: string, maxLength: 100000 }
+      responses:
+        '200':
+          description: The parsed structure (raw text kept as summary without a provider).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  parsed: { $ref: '#/components/schemas/ParsedDocument' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '502': { $ref: '#/components/responses/UpstreamProblem' }
+
+  /talents/{id}/documents/parse-pdf:
+    post:
+      tags: [Documents]
+      summary: Parse an uploaded CV PDF (text layer) into structured fields
+      operationId: parseCvPdf
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [dataBase64]
+              properties:
+                dataBase64: { type: string, description: Base64-encoded PDF bytes. }
+      responses:
+        '200':
+          description: |
+            The parsed structure; `extractedChars: 0` marks a scanned/image-only
+            PDF (nothing to parse — paste the text instead).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  parsed:
+                    allOf:
+                      - $ref: '#/components/schemas/ParsedDocument'
+                      - type: object
+                        properties:
+                          extractedChars: { type: integer }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '502': { $ref: '#/components/responses/UpstreamProblem' }
+
+  /talents/{id}/documents/ats:
+    post:
+      tags: [Documents]
+      summary: Score the résumé against a job ad (ATS check)
+      operationId: atsScore
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [jobText]
+              properties:
+                jobText: { type: string, maxLength: 50000 }
+      responses:
+        '200':
+          description: Score, matched/missing keywords and concrete suggestions.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ats: { $ref: '#/components/schemas/AtsScore' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '502': { $ref: '#/components/responses/UpstreamProblem' }
+
+  /talents/{id}/documents/pitch:
+    post:
+      tags: [Documents]
+      summary: Draft a "why this candidate" pitch for the client
+      description: Grounding-checked — unsupported factual claims are flagged.
+      operationId: pitchCandidate
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                mandateContext: { type: string, maxLength: 50000 }
+      responses:
+        '200':
+          description: Headline, paragraphs, highlights + grounding report.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pitch: { $ref: '#/components/schemas/Pitch' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '502': { $ref: '#/components/responses/UpstreamProblem' }
+
+  /talents/{id}/documents/outreach:
+    post:
+      tags: [Documents]
+      summary: Draft a first-contact message (candidate/client, email/LinkedIn)
+      operationId: outreachMessage
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                audience: { type: string, enum: [candidate, client], default: candidate }
+                channel: { type: string, enum: [email, linkedin], default: email }
+                tone: { type: string, maxLength: 80, example: 'locker, Du' }
+                mandateContext: { type: string, maxLength: 50000 }
+                recruiterName: { type: string, maxLength: 120 }
+      responses:
+        '200':
+          description: Subject (email only) + body, grounding-checked.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { $ref: '#/components/schemas/OutreachMessage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '502': { $ref: '#/components/responses/UpstreamProblem' }
+
+  /talents/{id}/documents/translate:
+    post:
+      tags: [Documents]
+      summary: Create the other-language variant of the documents (EN↔DE)
+      description: |
+        Idempotent — an existing variant is returned with `created: false`.
+        Requires an AI provider; without a key the API asks for one (`400`)
+        instead of fabricating a translation.
+      operationId: translateDocuments
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [lang]
+              properties:
+                lang: { type: string, enum: [en, de] }
+      responses:
+        '200':
+          description: The stored translation variant.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  lang: { type: string, enum: [en, de] }
+                  created: { type: boolean }
+                  translation: { type: object, additionalProperties: true }
+                  usage: { $ref: '#/components/schemas/CallUsage' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '502': { $ref: '#/components/responses/UpstreamProblem' }
+
+  /talents/{id}/attachments:
+    get:
+      tags: [Attachments]
+      summary: List a talent's attachments
+      operationId: listAttachments
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses:
+        '200':
+          description: Attachment metadata (never the bytes).
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Attachment' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [Attachments]
+      summary: Upload an attachment (base64, ~15 MB raw max)
+      operationId: uploadAttachment
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, dataBase64]
+              properties:
+                name: { type: string, maxLength: 200 }
+                contentType: { type: string, default: application/pdf }
+                dataBase64: { type: string }
+      responses:
+        '201':
+          description: Stored.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  attachment: { $ref: '#/components/schemas/Attachment' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /attachments/{id}:
+    get:
+      tags: [Attachments]
+      summary: Download an attachment
+      operationId: downloadAttachment
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses:
+        '200':
+          description: The file bytes with its stored content type.
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Attachments]
+      summary: Delete an attachment
+      operationId: deleteAttachment
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses:
+        '204': { description: Deleted. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /mandates:
+    get:
+      tags: [Mandates]
+      summary: List mandates
+      operationId: listMandates
+      security:
+        - cookieSession: []
+      responses:
+        '200':
+          description: All mandates of the team.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Mandate' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Mandates]
+      summary: Create a mandate
+      operationId: createMandate
+      security:
+        - cookieSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MandateInput' }
+      responses:
+        '201':
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mandate: { $ref: '#/components/schemas/Mandate' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /mandates/{id}:
+    patch:
+      tags: [Mandates]
+      summary: Update a mandate (partial)
+      operationId: updateMandate
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MandateInput' }
+      responses:
+        '200':
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mandate: { $ref: '#/components/schemas/Mandate' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Mandates]
+      summary: Delete a mandate (cascades to its candidacies)
+      operationId: deleteMandate
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses:
+        '204': { description: Deleted. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /mandates/{id}/match:
+    post:
+      tags: [Mandates]
+      summary: Rank the talent pool against the mandate (semantic matching)
+      operationId: matchMandate
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                jobText:
+                  type: string
+                  maxLength: 50000
+                  description: Overrides the mandate's stored job ad for this run.
+                limit: { type: integer, minimum: 1, maximum: 50 }
+      responses:
+        '200':
+          description: Ranked matches with per-talent matched skills.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/MatchResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /mandates/{id}/candidates/{talentId}/explain:
+    post:
+      tags: [Mandates]
+      summary: Explain why a candidate fits the mandate (grounded reasons)
+      operationId: explainMatch
+      security:
+        - cookieSession: []
+      parameters:
+        - $ref: '#/components/parameters/id'
+        - $ref: '#/components/parameters/talentId'
+      responses:
+        '200':
+          description: Summary + reasons; AI-phrased when a provider is available.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  summary: { type: string }
+                  reasons: { type: array, items: { type: string } }
+                  provider: { $ref: '#/components/schemas/ProviderId' }
+                  usage: { $ref: '#/components/schemas/CallUsage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '502': { $ref: '#/components/responses/UpstreamProblem' }
+
+  /mandates/{id}/candidates/{talentId}/interview-kit:
+    post:
+      tags: [Mandates]
+      summary: Generate an interview kit (questions + scorecard)
+      operationId: interviewKit
+      security:
+        - cookieSession: []
+      parameters:
+        - $ref: '#/components/parameters/id'
+        - $ref: '#/components/parameters/talentId'
+      responses:
+        '200':
+          description: Focus, categorized questions with look-fors, scorecard.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  focus: { type: string }
+                  questions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        category: { type: string }
+                        question: { type: string }
+                        lookFor: { type: string }
+                  scorecard: { type: array, items: { type: string } }
+                  provider: { $ref: '#/components/schemas/ProviderId' }
+                  usage: { $ref: '#/components/schemas/CallUsage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '502': { $ref: '#/components/responses/UpstreamProblem' }
+
+  /mandates/{id}/candidates/{talentId}/prep:
+    post:
+      tags: [Mandates]
+      summary: Candidate-facing interview preparation pack
+      description: |
+        The grounded parts (company interview style, obligations from the ad,
+        requirement coverage, matching strengths) are computed
+        deterministically; the LLM only refines the coaching narrative.
+        Recorded interview observations of the company override the archetype.
+      operationId: candidatePrep
+      security:
+        - cookieSession: []
+      parameters:
+        - $ref: '#/components/parameters/id'
+        - $ref: '#/components/parameters/talentId'
+      responses:
+        '200':
+          description: The prep pack.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  prep: { $ref: '#/components/schemas/CandidatePrep' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '502': { $ref: '#/components/responses/UpstreamProblem' }
+
+  /mandates/{id}/observations:
+    get:
+      tags: [Mandates]
+      summary: Recorded interview observations for the mandate's company
+      operationId: observationsForMandate
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses:
+        '200':
+          description: Observations + the aggregated company profile.
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [Mandates]
+      summary: Record how an interview at this company actually ran
+      operationId: recordObservation
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                talentId: { type: string }
+                rounds: { type: integer, minimum: 0, maximum: 20, default: 1 }
+                formats: { type: array, items: { type: string } }
+                difficulty: { type: string, enum: [low, medium, high], default: medium }
+                notes: { type: string, maxLength: 2000 }
+      responses:
+        '201':
+          description: Recorded; future prep packs use it.
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /mandates/{id}/candidacies:
+    get:
+      tags: [Pipeline]
+      summary: The mandate's pipeline board (candidacies with talent info)
+      operationId: candidacyBoard
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses:
+        '200':
+          description: Cards, ordered within their stages.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Candidacy' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [Pipeline]
+      summary: Add a talent to the mandate's pipeline
+      operationId: addCandidacy
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [talentId]
+              properties:
+                talentId: { type: string }
+                stage: { $ref: '#/components/schemas/CandidacyStage' }
+                note: { type: string, maxLength: 2000 }
+      responses:
+        '201':
+          description: Added (unique per mandate + talent).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  candidacy: { $ref: '#/components/schemas/Candidacy' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: The talent is already in this pipeline.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+  /candidacies/{id}:
+    patch:
+      tags: [Pipeline]
+      summary: Move / reorder / annotate a candidacy
+      description: Moving to `placed` auto-creates a placement.
+      operationId: updateCandidacy
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                stage: { $ref: '#/components/schemas/CandidacyStage' }
+                note: { type: string, maxLength: 2000 }
+                order: { type: integer, minimum: 0 }
+      responses:
+        '200':
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  candidacy: { $ref: '#/components/schemas/Candidacy' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Pipeline]
+      summary: Remove a candidacy from the pipeline
+      operationId: removeCandidacy
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses:
+        '204': { description: Removed. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /placements:
+    get:
+      tags: [Placements]
+      summary: List placements
+      operationId: listPlacements
+      security:
+        - cookieSession: []
+      responses:
+        '200':
+          description: All placements.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Placement' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Placements]
+      summary: Record a placement
+      operationId: createPlacement
+      security:
+        - cookieSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PlacementInput' }
+      responses:
+        '201':
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  placement: { $ref: '#/components/schemas/Placement' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /placements/{id}:
+    patch:
+      tags: [Placements]
+      summary: Update a placement (partial)
+      operationId: updatePlacement
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PlacementInput' }
+      responses:
+        '200':
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  placement: { $ref: '#/components/schemas/Placement' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Placements]
+      summary: Delete a placement
+      operationId: deletePlacement
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses:
+        '204': { description: Deleted. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
   /jobs:
     get:
-      summary: Two-tier, skill-matched job search
-      description: >
-        Searches connected job sources, scores each posting against the
-        candidate's skills, and splits the result into strong fits
-        (match >= threshold) and stretch / new-domain opportunities below it.
-        With no query parameters it runs the candidate's pre-configured default
-        search so the screen is never empty.
+      tags: [Jobs & Applications]
+      summary: Search job postings (live sources or the offline sample)
+      operationId: searchJobs
       parameters:
-        - { name: q, in: query, required: false, schema: { type: string } }
-        - { name: country, in: query, required: false, schema: { type: string } }
-        - { name: city, in: query, required: false, schema: { type: string } }
-        - name: sources
-          in: query
-          required: false
-          description: Restrict to specific job sources (repeatable)
-          schema: { type: array, items: { type: string } }
+        - { name: q, in: query, schema: { type: string } }
+        - { name: country, in: query, schema: { type: string } }
+        - { name: city, in: query, schema: { type: string } }
         - name: threshold
           in: query
-          required: false
-          description: Tier boundary in percent (default 80)
           schema: { type: integer, minimum: 0, maximum: 100, default: 80 }
       responses:
         '200':
-          description: Two-tier search result
+          description: Scored postings; `source` says which backend produced them (e.g. `offline-sample`).
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/JobSearchResult' }
-  /ats:
+              schema: { type: object, additionalProperties: true }
+
+  /applications:
+    get:
+      tags: [Jobs & Applications]
+      summary: List logged applications (applicant side)
+      operationId: listApplications
+      responses:
+        '200':
+          description: The application log.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { type: object, additionalProperties: true }
     post:
-      summary: ATS keyword gap analysis of a posting against the candidate profile
-      description: >
-        Declared skills are unioned with skills extracted from the role + free
-        text, then compared to the candidate's profile. Returns a coverage score,
-        matched and missing keywords, and recommendations.
+      tags: [Jobs & Applications]
+      summary: Log a sent application (stores the sent PDF)
+      operationId: createApplication
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/AtsRequest' }
+            schema:
+              type: object
+              required: [company, pdfBase64]
+              properties:
+                company: { type: string }
+                position: { type: string }
+                reference: { type: string }
+                status: { type: string }
+                pdfBase64: { type: string }
       responses:
-        '200':
-          description: Gap report
+        '201':
+          description: Logged.
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/AtsReport' }
-        '400': { $ref: '#/components/responses/Problem' }
-  /searches:
-    get:
-      summary: List the candidate's named searches
+              schema: { type: object, additionalProperties: true }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+
+  /applications/build:
+    post:
+      tags: [Jobs & Applications]
+      summary: Build the tailored application PDF and log it in one step
+      operationId: buildApplication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [company]
+              properties:
+                company: { type: string }
+                contactName: { type: string }
+                street: { type: string }
+                postalCodeCity: { type: string }
+                position: { type: string }
+                reference: { type: string }
+                language: { type: string, enum: [de, en], default: de }
+                attachments:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name: { type: string }
+                      base64: { type: string }
+      responses:
+        '201':
+          description: Built + logged; returns the application row and PDF.
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+
+  /applications/{id}:
+    patch:
+      tags: [Jobs & Applications]
+      summary: Update a logged application (e.g. its status)
+      operationId: updateApplication
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
       responses:
         '200':
-          description: Saved searches
+          description: Updated.
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /history:
+    get:
+      tags: [Jobs & Applications]
+      summary: The append-only application audit history
+      operationId: applicationHistory
+      responses:
+        '200':
+          description: Audit events, oldest first.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { type: object, additionalProperties: true }
+
+  /ats:
+    post:
+      tags: [Jobs & Applications]
+      summary: Keyword ATS check of the applicant's own profile vs a job text
+      operationId: applicantAts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [jobText]
+              properties:
+                jobText: { type: string }
+      responses:
+        '200':
+          description: Deterministic keyword score.
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+
+  /searches:
+    get:
+      tags: [Saved searches]
+      summary: List saved job searches
+      operationId: listSavedSearches
+      responses:
+        '200':
+          description: All saved searches.
           content:
             application/json:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/SavedSearch' }
     post:
-      summary: Name and store a search
+      tags: [Saved searches]
+      summary: Save a job search
+      operationId: createSavedSearch
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/CreateSavedSearch' }
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                q: { type: string }
+                city: { type: string }
+                country: { type: string }
+                threshold: { type: integer, minimum: 0, maximum: 100, default: 80 }
       responses:
         '201':
-          description: Created
+          description: Saved.
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   search: { $ref: '#/components/schemas/SavedSearch' }
-        '400': { $ref: '#/components/responses/Problem' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+
   /searches/{id}:
     delete:
+      tags: [Saved searches]
       summary: Delete a saved search
-      parameters:
-        - { name: id, in: path, required: true, schema: { type: string } }
+      operationId: deleteSavedSearch
+      parameters: [{ $ref: '#/components/parameters/id' }]
       responses:
-        '204': { description: Deleted }
-        '404': { $ref: '#/components/responses/Problem' }
+        '204': { description: Deleted. }
+        '404': { $ref: '#/components/responses/NotFound' }
+
   /searches/{id}/run:
     get:
-      summary: Run a saved search and return its two-tier result
-      parameters:
-        - { name: id, in: path, required: true, schema: { type: string } }
+      tags: [Saved searches]
+      summary: Run a saved search now
+      operationId: runSavedSearch
+      parameters: [{ $ref: '#/components/parameters/id' }]
       responses:
         '200':
-          description: Two-tier search result
+          description: The search's current results.
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/JobSearchResult' }
-        '404': { $ref: '#/components/responses/Problem' }
-  /settings/llm:
+              schema: { type: object, additionalProperties: true }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /members:
     get:
-      summary: Current LLM provider and availability
+      tags: [Team]
+      summary: List team members (admin)
+      operationId: listMembers
+      security:
+        - cookieSession: []
       responses:
         '200':
-          description: Provider settings
+          description: All accounts with their roles.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /members/{id}/roles:
+    patch:
+      tags: [Team]
+      summary: Set a member's roles (admin)
+      operationId: setMemberRoles
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [roles]
+              properties:
+                roles:
+                  type: array
+                  minItems: 1
+                  items: { type: string, enum: [admin, recruiter] }
+      responses:
+        '200':
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: '#/components/schemas/User' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /account/export:
+    get:
+      tags: [Compliance & DSGVO]
+      summary: Export the caller's data (DSGVO Art. 20)
+      operationId: exportAccount
+      security:
+        - cookieSession: []
+      responses:
+        '200':
+          description: A JSON export of the account's data.
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /account:
+    delete:
+      tags: [Compliance & DSGVO]
+      summary: Delete the caller's account (DSGVO Art. 17)
+      operationId: deleteAccount
+      security:
+        - cookieSession: []
+      responses:
+        '204': { description: Account, keys, sessions and usage removed. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /retention/report:
+    get:
+      tags: [Compliance & DSGVO]
+      summary: Retention report — stale talents that may need anonymizing (admin)
+      operationId: retentionReport
+      security:
+        - cookieSession: []
+      responses:
+        '200':
+          description: Talents past the retention threshold.
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /compliance/agg-check:
+    post:
+      tags: [Compliance & DSGVO]
+      summary: AGG (anti-discrimination) language check for ads / outreach text
+      operationId: aggCheck
+      security:
+        - cookieSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                text: { type: string, maxLength: 50000 }
+      responses:
+        '200':
+          description: Findings with the offending term, issue and a suggestion.
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /forecast:
+    get:
+      tags: [Reports]
+      summary: Weighted pipeline revenue forecast across live mandates
+      operationId: forecast
+      security:
+        - cookieSession: []
+      responses:
+        '200':
+          description: Stage-weighted expected fees.
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /settings/llm:
+    get:
+      tags: [Settings]
+      summary: The caller's AI provider + availability
+      description: Signed-out callers see the server's configured default.
+      operationId: getLlmSettings
+      responses:
+        '200':
+          description: Current provider and the wired providers.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/LlmSettings' }
     put:
-      summary: Switch the active LLM provider
+      tags: [Settings]
+      summary: Switch the caller's AI provider (persisted per user)
+      operationId: setLlmProvider
+      security:
+        - cookieSession: []
       requestBody:
         required: true
         content:
@@ -222,17 +1530,86 @@ paths:
                 provider: { type: string, enum: [claude, gemini] }
       responses:
         '200':
-          description: Updated provider settings
+          description: The caller's updated settings.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/LlmSettings' }
-        '400': { $ref: '#/components/responses/Problem' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /settings/keys:
+    get:
+      tags: [Settings]
+      summary: Which providers the caller has a key for (booleans, never keys)
+      operationId: keysStatus
+      security:
+        - cookieSession: []
+      responses:
+        '200':
+          description: Per-provider key presence.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  claude: { type: boolean }
+                  gemini: { type: boolean }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /settings/keys/{provider}:
+    put:
+      tags: [Settings]
+      summary: Store the caller's API key (encrypted server-side)
+      operationId: setKey
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/provider' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [key]
+              properties:
+                key: { type: string }
+      responses:
+        '204': { description: Stored. }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    delete:
+      tags: [Settings]
+      summary: Remove the caller's API key
+      operationId: removeKey
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/provider' }]
+      responses:
+        '204': { description: Removed. }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /settings/usage:
+    get:
+      tags: [Settings]
+      summary: The caller's AI usage (requests, tokens, estimated cost)
+      operationId: usageSummary
+      security:
+        - cookieSession: []
+      responses:
+        '200':
+          description: Totals plus per-provider and per-feature breakdowns.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UsageSummary' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
   /cover-letter:
     post:
-      summary: Generate a tailored cover letter via the active LLM provider
-      description: >
-        Uses the selected provider (Claude or Gemini); falls back to a
-        deterministic template when no provider is configured or a call fails.
+      tags: [Documents]
+      summary: Generate a tailored cover letter (applicant flow)
+      description: Uses the signed-in caller's own key/provider when present; open route with template fallback.
+      operationId: coverLetter
       requestBody:
         required: true
         content:
@@ -247,170 +1624,387 @@ paths:
                 skills: { type: array, items: { type: string } }
       responses:
         '200':
-          description: Generated cover letter
+          description: The letter text and which backend produced it.
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   text: { type: string }
-                  provider: { type: string, enum: [claude, gemini, template] }
-        '400': { $ref: '#/components/responses/Problem' }
+                  provider: { $ref: '#/components/schemas/ProviderId' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '502': { $ref: '#/components/responses/UpstreamProblem' }
+
 components:
+  securitySchemes:
+    cookieSession:
+      type: apiKey
+      in: cookie
+      name: myjob_session
+      description: Opaque HttpOnly session cookie set by register/login.
+
+  parameters:
+    id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string }
+    talentId:
+      name: talentId
+      in: path
+      required: true
+      schema: { type: string }
+    provider:
+      name: provider
+      in: path
+      required: true
+      schema: { type: string, enum: [claude, gemini] }
+
   responses:
-    Problem:
-      description: RFC 9457 problem document
+    ValidationProblem:
+      description: The request failed validation.
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
+    Unauthorized:
+      description: No (valid) session.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Forbidden:
+      description: The session lacks the required role.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    NotFound:
+      description: No such record in the caller's scope.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    RateLimited:
+      description: Too many attempts — try again later.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    UpstreamProblem:
+      description: The AI provider rejected the request (e.g. an invalid API key).
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+
   schemas:
-    ApplicationStatus:
-      type: string
-      enum: [sent, screening, interview, offer, hired, rejected]
-    Application:
+    Problem:
       type: object
-      required:
-        [id, date, company, position, address, reference, status, pdfPath, source, createdAt]
+      description: RFC 9457 problem details.
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+      additionalProperties: true
+
+    Credentials:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8 }
+
+    User:
+      type: object
       properties:
         id: { type: string }
-        date: { type: string, example: '2026-06-25' }
-        company: { type: string }
-        position: { type: string }
-        address: { type: string }
-        reference: { type: string }
-        status: { $ref: '#/components/schemas/ApplicationStatus' }
-        pdfPath: { type: [string, 'null'] }
-        source: { type: string }
+        email: { type: string, format: email }
+        roles:
+          type: array
+          items: { type: string, enum: [admin, recruiter] }
         createdAt: { type: string, format: date-time }
-        updatedAt: { type: string, format: date-time }
-        commit: { type: string }
-    CreateApplication:
+        verifiedAt: { type: string, format: date-time }
+
+    ProviderId:
+      type: string
+      description: Which backend produced the result; `template` = deterministic fallback, no AI.
+      enum: [claude, gemini, template]
+
+    CallUsage:
       type: object
-      required: [company]
+      description: What one LLM call cost. Absent on template results — nothing was spent.
       properties:
-        company: { type: string }
-        position: { type: string }
-        address: { type: string }
-        contactName: { type: string }
-        street: { type: string }
-        postalCodeCity: { type: string }
-        reference: { type: string }
-        status: { $ref: '#/components/schemas/ApplicationStatus' }
-        source: { type: string }
-        pdfBase64: { type: string }
-    UpdateApplication:
+        inputTokens: { type: integer }
+        outputTokens: { type: integer }
+        costUsd:
+          type: number
+          description: Estimate from public list prices, not a bill.
+
+    Grounding:
       type: object
+      description: Self-check flagging factual claims the CV + mandate do not support.
       properties:
-        company: { type: string }
-        position: { type: string }
-        address: { type: string }
-        reference: { type: string }
-        status: { $ref: '#/components/schemas/ApplicationStatus' }
-        source: { type: string }
-    BuildApplication:
-      type: object
-      required: [company]
-      properties:
-        company: { type: string }
-        contactName: { type: string }
-        street: { type: string }
-        postalCodeCity: { type: string }
-        position: { type: string }
-        reference: { type: string }
-        location: { type: string }
-        date: { type: string }
-        language: { type: string, enum: [de, en] }
-        status: { $ref: '#/components/schemas/ApplicationStatus' }
-        attachments:
+        grounded: { type: boolean }
+        unsupported:
           type: array
           items:
             type: object
             properties:
-              name: { type: string }
-              base64: { type: string }
-    AuditEvent:
+              kind: { type: string, enum: [number, skill] }
+              text: { type: string }
+
+    Talent:
       type: object
-      properties:
-        ts: { type: string, format: date-time }
-        action: { type: string, enum: [create, update, commit] }
-        id: { type: string }
-        by: { type: string }
-        commit: { type: string }
-    ScoredJob:
-      type: object
-      required: [id, company, role, city, country, mode, skills, source, match]
-      properties:
-        id: { type: string }
-        company: { type: string }
-        role: { type: string }
-        city: { type: string }
-        country: { type: string }
-        mode: { type: string }
-        salary: { type: string }
-        posted: { type: string }
-        skills: { type: array, items: { type: string } }
-        snippet: { type: string }
-        source: { type: string }
-        url: { type: string }
-        match: { type: integer, minimum: 0, maximum: 100 }
-        matchedSkills: { type: array, items: { type: string } }
-        missingSkills: { type: array, items: { type: string } }
-    JobSearchResult:
-      type: object
-      required: [threshold, top, more, counts]
-      properties:
-        threshold: { type: integer }
-        top:
-          type: array
-          items: { $ref: '#/components/schemas/ScoredJob' }
-        more:
-          type: array
-          items: { $ref: '#/components/schemas/ScoredJob' }
-        counts:
-          type: object
-          properties:
-            total: { type: integer }
-            top: { type: integer }
-            more: { type: integer }
-    AtsRequest:
-      type: object
-      description: At least one of role, text or skills must be present.
-      properties:
-        role: { type: string }
-        text: { type: string }
-        skills: { type: array, items: { type: string } }
-    AtsReport:
-      type: object
-      required: [score, requiredSkills, matched, missing, recommendations]
-      properties:
-        score: { type: integer, minimum: 0, maximum: 100 }
-        requiredSkills: { type: array, items: { type: string } }
-        matched: { type: array, items: { type: string } }
-        missing: { type: array, items: { type: string } }
-        recommendations: { type: array, items: { type: string } }
-    SavedSearch:
-      type: object
-      required: [id, name, query, createdAt]
       properties:
         id: { type: string }
         name: { type: string }
-        query:
+        role: { type: string }
+        headline: { type: string }
+        location: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        availability: { type: string }
+        salary: { type: string }
+        skills: { type: array, items: { type: string } }
+        effectiveSkills:
+          type: array
+          items: { type: string }
+          description: Stored skills merged with what the documents prove (canonicalized).
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    TalentInput:
+      type: object
+      properties:
+        name: { type: string }
+        role: { type: string }
+        headline: { type: string }
+        location: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        availability: { type: string }
+        salary: { type: string }
+        skills: { type: array, items: { type: string } }
+
+    Mandate:
+      allOf:
+        - $ref: '#/components/schemas/MandateInput'
+        - type: object
+          properties:
+            id: { type: string }
+            createdAt: { type: string, format: date-time }
+            updatedAt: { type: string, format: date-time }
+
+    MandateInput:
+      type: object
+      properties:
+        client: { type: string }
+        role: { type: string }
+        location: { type: string }
+        fee: { type: string, example: '25%' }
+        feeValue: { type: string, example: '28.000 €' }
+        deadline: { type: string }
+        priority: { type: string, enum: [high, medium, low], default: medium }
+        status: { type: string, enum: [active, paused, closed], default: active }
+        submitted: { type: integer, minimum: 0 }
+        interviews: { type: integer, minimum: 0 }
+        jobText:
+          type: string
+          maxLength: 50000
+          description: The job ad — powers matching, ATS, prep and the language of AI output.
+
+    CandidacyStage:
+      type: string
+      enum: [sourced, screening, interview, offer, placed, rejected]
+
+    Candidacy:
+      type: object
+      properties:
+        id: { type: string }
+        mandateId: { type: string }
+        talentId: { type: string }
+        stage: { $ref: '#/components/schemas/CandidacyStage' }
+        note: { type: string }
+        order: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      additionalProperties: true
+
+    Placement:
+      allOf:
+        - $ref: '#/components/schemas/PlacementInput'
+        - type: object
+          properties:
+            id: { type: string }
+            createdAt: { type: string, format: date-time }
+            updatedAt: { type: string, format: date-time }
+
+    PlacementInput:
+      type: object
+      properties:
+        candidateName: { type: string }
+        candidateRole: { type: string }
+        client: { type: string }
+        start: { type: string }
+        fee: { type: string }
+        status: { type: string, enum: [probation, invoiced, paid], default: probation }
+
+    Attachment:
+      type: object
+      properties:
+        id: { type: string }
+        talentId: { type: string }
+        name: { type: string }
+        contentType: { type: string }
+        size: { type: integer }
+
+    TalentDocuments:
+      type: object
+      description: The editor's document set. All parts are optional on save; missing fields get defaults.
+      properties:
+        contact:
+          type: object
+          additionalProperties: true
+          description: Name, role, email, phone, location, links, photo (data URI).
+        resume:
           type: object
           properties:
-            q: { type: string }
-            city: { type: string }
-            country: { type: string }
-            threshold: { type: integer }
-        createdAt: { type: string, format: date-time }
-    CreateSavedSearch:
+            summary: { type: string }
+            experience:
+              type: array
+              items:
+                type: object
+                properties:
+                  role: { type: string }
+                  company: { type: string }
+                  period: { type: string }
+                  location: { type: string }
+                  bullets: { type: array, items: { type: string } }
+                  skills: { type: array, items: { type: string } }
+            education:
+              type: array
+              items: { type: object, additionalProperties: true }
+            skillGroups:
+              type: array
+              items:
+                type: object
+                properties:
+                  label: { type: string }
+                  items: { type: array, items: { type: string } }
+        letter:
+          type: object
+          properties:
+            firma: { type: string }
+            betreff: { type: string }
+            absaetze: { type: array, items: { type: string } }
+        style: { type: object, additionalProperties: true }
+        translations: { type: object, additionalProperties: true }
+
+    AiSuggestion:
       type: object
-      required: [name]
       properties:
+        action: { type: string, enum: [summary, letter] }
+        text: { type: string, description: Present for a summary suggestion. }
+        paragraphs:
+          type: array
+          items: { type: string }
+          description: Present for a cover-letter suggestion.
+        provider: { $ref: '#/components/schemas/ProviderId' }
+        usage: { $ref: '#/components/schemas/CallUsage' }
+
+    ParsedDocument:
+      type: object
+      properties:
+        contact: { type: object, additionalProperties: true }
+        resume: { type: object, additionalProperties: true }
+        provider: { $ref: '#/components/schemas/ProviderId' }
+        usage: { $ref: '#/components/schemas/CallUsage' }
+
+    AtsScore:
+      type: object
+      properties:
+        score: { type: integer, minimum: 0, maximum: 100 }
+        matched: { type: array, items: { type: string } }
+        missing: { type: array, items: { type: string } }
+        suggestions: { type: array, items: { type: string } }
+        provider: { $ref: '#/components/schemas/ProviderId' }
+        usage: { $ref: '#/components/schemas/CallUsage' }
+
+    Pitch:
+      type: object
+      properties:
+        headline: { type: string }
+        paragraphs: { type: array, items: { type: string } }
+        highlights: { type: array, items: { type: string } }
+        provider: { $ref: '#/components/schemas/ProviderId' }
+        usage: { $ref: '#/components/schemas/CallUsage' }
+        grounding: { $ref: '#/components/schemas/Grounding' }
+
+    OutreachMessage:
+      type: object
+      properties:
+        subject: { type: string, description: Empty for LinkedIn DMs. }
+        body: { type: string }
+        provider: { $ref: '#/components/schemas/ProviderId' }
+        usage: { $ref: '#/components/schemas/CallUsage' }
+        grounding: { $ref: '#/components/schemas/Grounding' }
+
+    MatchResult:
+      type: object
+      properties:
+        talentId: { type: string }
+        name: { type: string }
+        role: { type: string }
+        score: { type: integer, minimum: 0, maximum: 100 }
+        matched: { type: array, items: { type: string } }
+        inPipeline: { type: boolean }
+      additionalProperties: true
+
+    CandidatePrep:
+      type: object
+      properties:
+        companyLabel: { type: string }
+        companySource: { type: string, enum: [archetype, observed] }
+        companyConfidence: { type: string, enum: [low, medium, high] }
+        formats: { type: array, items: { type: string } }
+        emphasis: { type: array, items: { type: string } }
+        rounds: { type: string }
+        obligations: { type: array, items: { type: string } }
+        processHints: { type: array, items: { type: string } }
+        strengths: { type: array, items: { type: string } }
+        requirementChecks:
+          type: array
+          items:
+            type: object
+            properties:
+              text: { type: string }
+              covered: { type: boolean }
+        likelyQuestions:
+          type: array
+          items:
+            type: object
+            properties:
+              category: { type: string }
+              question: { type: string }
+              why: { type: string }
+        starAnswers:
+          type: array
+          items:
+            type: object
+            properties:
+              competency: { type: string }
+              prompt: { type: string }
+              scaffold: { type: string }
+        candidateQuestions: { type: array, items: { type: string } }
+        provider: { $ref: '#/components/schemas/ProviderId' }
+        usage: { $ref: '#/components/schemas/CallUsage' }
+
+    SavedSearch:
+      type: object
+      properties:
+        id: { type: string }
         name: { type: string }
         q: { type: string }
         city: { type: string }
         country: { type: string }
-        threshold: { type: integer, minimum: 0, maximum: 100, default: 80 }
+        threshold: { type: integer }
+
     LlmSettings:
       type: object
       properties:
@@ -422,12 +2016,37 @@ components:
             properties:
               id: { type: string, enum: [claude, gemini] }
               label: { type: string }
-              available: { type: boolean }
-    Problem:
+              available:
+                type: boolean
+                description: Whether the server holds credentials for it (user keys are separate).
+
+    UsageBucket:
       type: object
       properties:
-        type: { type: string }
-        title: { type: string }
-        status: { type: integer }
-        detail: { type: string }
-        errors: {}
+        requests: { type: integer }
+        inputTokens: { type: integer }
+        outputTokens: { type: integer }
+        totalTokens: { type: integer }
+        costUsd: { type: number }
+
+    UsageSummary:
+      allOf:
+        - $ref: '#/components/schemas/UsageBucket'
+        - type: object
+          properties:
+            byProvider:
+              type: array
+              items:
+                allOf:
+                  - $ref: '#/components/schemas/UsageBucket'
+                  - type: object
+                    properties:
+                      provider: { type: string }
+            byFeature:
+              type: array
+              items:
+                allOf:
+                  - $ref: '#/components/schemas/UsageBucket'
+                  - type: object
+                    properties:
+                      feature: { type: string }

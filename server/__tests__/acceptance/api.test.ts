@@ -1790,6 +1790,26 @@ describe('REST API /api/v1', () => {
     expect(res.headers.location).toBe('/design/myjob/ui_kits/recruiting/dist/index.html');
   });
 
+  it('ApiDocs_OpenApiSpec_IsServed', async () => {
+    const res = await request(app).get('/api/v1/openapi.yaml');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('openapi: 3.1.0');
+    expect(res.text).toContain('/settings/llm:'); // covers the recruiting surface
+  });
+
+  it('ApiDocs_SwaggerUi_IsServedSelfHostedWithCsp', async () => {
+    const page = await request(app).get('/api/v1/docs');
+    expect(page.status).toBe(200);
+    expect(page.text).toContain('swagger-ui-bundle.js');
+    expect(page.text).not.toContain('https://'); // no CDN — everything same-origin
+    expect(page.headers['content-security-policy']).toContain("script-src 'self'");
+    const asset = await request(app).get('/api/v1/docs/swagger-ui-bundle.js');
+    expect(asset.status).toBe(200);
+    const init = await request(app).get('/api/v1/docs/swagger-initializer.js');
+    expect(init.status).toBe(200);
+    expect(init.text).toContain('/api/v1/openapi.yaml');
+  });
+
   it('LlmSettings_Get_ReturnsProvidersAndCurrent', async () => {
     const res = await request(app).get('/api/v1/settings/llm');
     expect(res.status).toBe(200);

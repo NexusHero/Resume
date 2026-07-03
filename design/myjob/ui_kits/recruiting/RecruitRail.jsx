@@ -35,8 +35,8 @@ const NAV_SECTIONS = [
     items: [{ id: 'berichte', label: 'Reports', icon: 'trend' }],
   },
   {
-    label: 'Automation',
-    items: [{ id: 'assistant', label: 'Assistant', icon: 'zap' }],
+    label: 'AI',
+    items: [{ id: 'assistant', label: 'CoRecruiter', icon: 'zap' }],
   },
 ];
 

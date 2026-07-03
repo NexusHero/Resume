@@ -9,7 +9,7 @@ and Bewerbungsmappe builder, and a small REST API behind it all.
 [![CI](https://github.com/NexusHero/Resume/actions/workflows/ci.yml/badge.svg)](https://github.com/NexusHero/Resume/actions/workflows/ci.yml)
 ![Node](https://img.shields.io/badge/node-%E2%89%A524-339933?logo=node.js&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-760%2B%20·%2090%25%20coverage-success)
+![Tests](https://img.shields.io/badge/tests-970%2B%20·%2090%25%20coverage-success)
 ![Built with AI](https://img.shields.io/badge/built%20with-Claude%20Code-d97706)
 
 </div>
@@ -26,10 +26,20 @@ A recruiting product (**myJob**) plus the personal job-application toolkit it gr
   deadline), a **talent pool**, a candidacy **pipeline**, **placements**, a dashboard and
   reports. Multi-user, authenticated, **team-scoped**, with GDPR export/erasure/retention
   built in.
-- **AI assistance** — the differentiator: skill **matching** against a mandate, an
+- **CoRecruiter** — the AI agent that works the desk beside you, with one autonomy scale:
+  **Suggest** (stages everything for review) → **Act** (applies internal reversible actions
+  itself) → **Autopilot** (builds complete applications — CV tailored to the ad, cover
+  letter in the ad's language, Bewerbungsmappe with certificates — for strong matches, ready
+  for one-click approval). It runs on the server on a schedule (also while you are signed
+  out), never sends anything out on its own, and never overwrites a candidate's real CV.
+- **AI assistance** — skill **matching** (local embeddings, hybrid) against a mandate, an
   explainable "why this candidate", **interview kits**, **candidate prep**, client
-  **pitch** + **outreach**, ATS gap analysis and an AGG compliance check — every LLM
-  feature has a deterministic fallback and a **grounding self-check** over its output.
+  **pitch** + **outreach**, ATS gap analysis and an AGG check — every LLM feature has a
+  deterministic fallback, a **grounding self-check**, and per-call **cost/token** display.
+- **First-party moats** — an **outcome loop** (which drafts actually get replies, template
+  vs AI), a **learned revenue forecast** (stage probabilities from your own resolved
+  pipeline), **email integration** (send outreach + IMAP reply detection that closes the
+  loop), and **compliance automation** (KI-Audit-Trail, Löschfristen-Automatik, AGG rewrite).
 - **Documents** — an interactive **CV** (EN/DE, accent themes, PDF export), a **cover
   letter**, and a **Bewerbungsmappe** builder.
 - **REST API** — a TypeScript, hexagonal Node/Express backend (Zod, problem+json),
@@ -75,25 +85,45 @@ See **[docs/deployment.md](docs/deployment.md)** for configuration (`STORE`, `DA
 
 ## Feature highlights
 
+- **CoRecruiter agent** — one agent, three gears (Suggest → Act → **Autopilot**). It
+  shortlists pool candidates for active mandates, flags stalled pipeline cards and empty
+  profiles, and on Autopilot builds the whole application for a strong match — tailored CV +
+  cover letter in the ad's language + Bewerbungsmappe with certificates — and stages it for
+  one-click approval, with a "Download Mappe" preview and a grounding warning. A single
+  **source** switch aims it at the job postings received from the boards or at your own
+  mandates. Runs server-side on a schedule; sending stays your click ([ADR-0019](docs/adr/0019-autopilot-auto-apply-agent.md)).
 - **Recruiting core** — create/edit mandates, talents, candidacies and placements through
   real forms; a candidacy **pipeline** (reaching `placed` books a placement), dashboard
   KPIs, a revenue **forecast** and fee-per-client reports computed from your live data.
-- **AI matching & prep** — rank the pool against a mandate by skill fit (skills
-  canonicalised to a taxonomy, matched semantically), explain _why_ a candidate fits,
-  generate **interview kits** and a **candidate prep kit** (gaps, employer Auflagen, STAR
-  prompts) tailored from the job ad + a company archetype and real interview observations.
+- **Matching v2 (hybrid, offline)** — rank the pool against a mandate by skill fit (skills
+  canonicalised to a taxonomy) blended with **local embedding** similarity between the ad
+  and each profile, so fit in the bullets counts too — deterministic, no network, DSGVO-safe.
+- **AI prep & explanations** — explain _why_ a candidate fits, generate **interview kits**
+  and a **candidate prep kit** (gaps, employer Auflagen, STAR prompts) tailored from the job
+  ad + a company archetype and real interview observations captured on the desk.
 - **AI pitch & outreach, grounded** — draft a client pitch and first-contact outreach
-  (candidate/client, email/LinkedIn); a **grounding self-check** flags any claim
-  (inflated years, fabricated skill) the CV + mandate don't support, before you send.
+  (candidate/client, email/LinkedIn); a **grounding self-check** flags any claim the CV +
+  mandate don't support, and every result shows its **cost/tokens** right where it appears.
+- **The outcome loop** — every generated outreach/pitch is logged (kind, provider, channel —
+  never the text) and stamped with its fate; Reports shows honest reply rates by kind and by
+  provider (template vs AI), so you learn which drafts actually work for _this_ desk.
+- **Email integration** — send drafted outreach straight from the app (SMTP), and an IMAP
+  reply-watcher stamps pending outreach as replied automatically — closing the outcome loop.
+- **Learned revenue forecast** — the pipeline forecast learns stage win-probabilities from
+  your own resolved candidacies (falling back to industry defaults until there's enough
+  data, and always declaring which), plus per-client interview→placement intelligence.
 - **Auth, teams & RBAC** — email/password accounts, opaque httpOnly sessions with
   server-side expiry + `Secure` cookies, **team-scoped** recruiting data and admin role
   management. Per-user, encrypted LLM keys with per-feature **usage metering**.
-- **GDPR/DSGVO** — one-click **data export** (JSON) and **account erasure**; an admin
-  **retention report** + talent **anonymisation**. First-party data only — no scraping.
+- **GDPR/DSGVO & compliance automation** — one-click **data export** (JSON) and **account
+  erasure**; a retention report + **Löschfristen-Automatik** (a deletion deadline with an
+  opt-in background anonymise sweep); a **KI-Audit-Trail** CSV of every AI call; and an
+  **AGG writing aid** that rewrites a flagged job ad into a neutral draft. First-party data
+  only — no scraping.
 - **AI cover letters** — `POST /api/v1/cover-letter` writes a tailored Anschreiben via
-  Claude or Gemini, switchable at runtime; deterministic template fallback when no key.
-- **Job search & ATS** — skill-matched two-tier search across job boards, a JobScan-style
-  gap analysis and an AGG compliance check (`/api/v1/jobs`, `/api/v1/ats`, `/compliance`).
+  Claude or Gemini, per-user switchable and persisted; deterministic template fallback.
+- **Job search & ATS** — skill-matched two-tier search across job boards (honest offline
+  sample when live sources are down), a JobScan-style gap analysis and an AGG check.
 - **Hardened & honest** — CORS allow-list, baseline security headers, rate-limited
   credentials, and **no fabricated data**: views show real records, a loading or an error
   state — never silent sample data.
@@ -157,22 +187,27 @@ generation are open.
 a self-hosted **Swagger UI** (no CDN — [ADR-0012](docs/adr/0012-self-hosted-swagger-ui.md))
 runs at [`/api/v1/docs`](http://localhost:4178/api/v1/docs).
 
-| Endpoint                                                 | What it does                                          |
-| -------------------------------------------------------- | ----------------------------------------------------- |
-| `POST /auth/register` · `/auth/login`                    | create / sign in to an account                        |
-| `GET·POST·PATCH·DELETE /mandates`                        | client search mandates (team-scoped)                  |
-| `GET·POST·PATCH·DELETE /talents`                         | the talent pool                                       |
-| `POST /mandates/:id/match`                               | rank the pool against the mandate by skill fit        |
-| `… /mandates/:id/candidacies` · `PATCH /candidacies`     | the candidacy pipeline (→ placement on `placed`)      |
-| `GET·POST·PATCH·DELETE /placements` · `GET /forecast`    | booked placements + fees · revenue forecast           |
-| `POST /talents/:id/documents/pitch` · `…/outreach`       | AI client pitch · outreach (grounded)                 |
-| `POST /mandates/:id/candidates/:tid/prep`                | candidate prep kit (gaps · Auflagen · STAR)           |
-| `… /mandates/:id/observations`                           | capture interview observations (the flywheel)         |
-| `GET /account/export` · `DELETE /account`                | GDPR data export / account erasure                    |
-| `GET /retention/report` · `POST /talents/:id/anonymize`  | DSGVO retention report · anonymise a talent           |
-| `GET /members` · `PATCH /members/:id/roles`              | team members · RBAC role management (admin)           |
-| `GET /jobs` · `POST /ats` · `POST /compliance/agg-check` | job search · ATS gap · AGG compliance check           |
-| `POST /cover-letter` · `PUT /settings/llm` · `…/keys`    | AI Anschreiben · switch Claude/Gemini · per-user keys |
+| Endpoint                                                          | What it does                                               |
+| ----------------------------------------------------------------- | ---------------------------------------------------------- |
+| `POST /auth/register` · `/auth/login`                             | create / sign in to an account                             |
+| `GET·POST·PATCH·DELETE /mandates`                                 | client search mandates (team-scoped)                       |
+| `GET·POST·PATCH·DELETE /talents`                                  | the talent pool                                            |
+| `POST /mandates/:id/match`                                        | rank the pool against the mandate by skill fit             |
+| `… /mandates/:id/candidacies` · `PATCH /candidacies`              | the candidacy pipeline (→ placement on `placed`)           |
+| `GET·POST·PATCH·DELETE /placements` · `GET /forecast`             | booked placements + fees · revenue forecast                |
+| `POST /talents/:id/documents/pitch` · `…/outreach`                | AI client pitch · outreach (grounded)                      |
+| `POST /mandates/:id/candidates/:tid/prep`                         | candidate prep kit (gaps · Auflagen · STAR)                |
+| `… /mandates/:id/observations`                                    | capture interview observations (the flywheel)              |
+| `GET·PUT /assistant` · `POST /assistant/run`                      | CoRecruiter settings (gear, source) · run the playbook now |
+| `GET /assistant/suggestions` · `…/:id/accept`·`/dossier.pdf`      | the review queue · approve · download a staged Mappe       |
+| `GET /artifacts` · `/artifacts/stats` · `…/:id/outcome`           | the outcome loop — artifacts, reply rates, stamp a fate    |
+| `POST /talents/:id/outreach/send` · `POST /mail/sync-replies`     | send outreach by email · IMAP reply detection              |
+| `GET /account/export` · `DELETE /account`                         | GDPR data export / account erasure                         |
+| `GET·PUT /retention/policy` · `POST /retention/anonymize-overdue` | Löschfristen policy · bulk anonymise overdue               |
+| `GET /settings/usage/audit.csv` · `POST /compliance/agg-rewrite`  | KI-Audit-Trail export · AGG neutral rewrite                |
+| `GET /members` · `PATCH /members/:id/roles`                       | team members · RBAC role management (admin)                |
+| `GET /jobs` · `POST /ats` · `POST /compliance/agg-check`          | job search · ATS gap · AGG compliance check                |
+| `POST /cover-letter` · `PUT /settings/llm` · `…/keys`             | AI Anschreiben · switch Claude/Gemini · per-user keys      |
 
 ## npm scripts
 

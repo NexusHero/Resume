@@ -33,7 +33,7 @@ test.describe('UI acceptance — the suite renders in English', () => {
     await expect(nav).toContainText('Workspace');
     await expect(nav).toContainText('Talent Pool');
     await expect(nav).toContainText('Mandates');
-    await expect(nav).toContainText('Assistant');
+    await expect(nav).toContainText('CoRecruiter');
     // Applications is hidden until it has a live data source.
     await expect(nav).not.toContainText('Applications');
     // No German leaked into the navigation.

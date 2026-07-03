@@ -9,7 +9,7 @@ const TITLES = {
   bewerbungen: ['Applications', 'Pipeline of all submissions and your own dossiers'],
   platzierungen: ['Placements', 'Booked placements and fees'],
   berichte: ['Reports', 'Fees, funnel and utilization'],
-  assistant: ['Assistant', 'Your agent prepares the desk — you approve'],
+  assistant: ['CoRecruiter', 'Your AI recruiter — prepares the desk and, on Autopilot, builds applications; you approve'],
   postfach: ['Inbox', 'Messages from clients and companies'],
   einstellungen: ['Settings', 'API key, AI framework & agentic mode'],
 };

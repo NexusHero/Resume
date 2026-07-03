@@ -31,14 +31,22 @@ const stubCache = new Map();
 
 function makeStubComponent(name) {
   function Stub(props) {
-    const { children, ...rest } = props || {};
-    const handlers = {};
+    const { children, disabled, title, ...rest } = props || {};
+    const forward = {};
     for (const key of Object.keys(rest)) {
-      if (/^on[A-Z]/.test(key) && typeof rest[key] === 'function') handlers[key] = rest[key];
+      // Forward event handlers and standard, safe DOM attributes so a test can
+      // observe interaction and accessible state; drop design-system-only props
+      // (variant, size, iconLeft, …) that would trip React's unknown-attr check.
+      if (/^on[A-Z]/.test(key) && typeof rest[key] === 'function') forward[key] = rest[key];
+      else if (key.startsWith('aria-')) forward[key] = rest[key];
     }
-    const clickable = typeof handlers.onClick === 'function';
-    const hostProps = { 'data-ds': name, ...handlers };
-    if (clickable) hostProps.type = 'button';
+    const clickable = typeof forward.onClick === 'function';
+    const hostProps = { 'data-ds': name, ...forward };
+    if (title != null) hostProps.title = title;
+    if (clickable) {
+      hostProps.type = 'button';
+      if (disabled != null) hostProps.disabled = disabled; // valid only on the button host
+    }
     return React.createElement(clickable ? 'button' : 'div', hostProps, children);
   }
   Stub.displayName = `DSStub(${name})`;

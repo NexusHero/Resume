@@ -331,7 +331,8 @@ const RecruitApi = {
       req: Array.isArray(j.skills) ? j.skills : [],
     }));
     // 'Sample' = the server's offline fallback — the UI says so honestly.
-    return { jobs, sample: data.source === 'Sample' };
+    // liveDown = live sources ARE configured but all failed on this search.
+    return { jobs, sample: data.source === 'Sample', liveDown: !!data.liveSourcesDown };
   },
   // --- Recruiting pipeline (candidacies) ---
   async mandateCandidacies(mandateId) {

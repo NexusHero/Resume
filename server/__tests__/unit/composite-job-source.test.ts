@@ -1,6 +1,6 @@
 import { CompositeJobSource } from '../../src/adapters/composite-job-source';
 import type { Job, JobQuery } from '../../src/domain/job';
-import type { JobSource } from '../../src/ports/job-source';
+import { AllJobSourcesFailedError, type JobSource } from '../../src/ports/job-source';
 import { noopLogger } from '../support/fakes';
 
 function stub(name: string, jobs: Job[]): JobSource {
@@ -39,5 +39,17 @@ describe('CompositeJobSource', () => {
     const c = new CompositeJobSource([failing('Down'), stub('B', [job('B', '2')])], noopLogger);
     const jobs = await c.search(anyQuery);
     expect(jobs.map((j) => j.id)).toEqual(['2']);
+  });
+
+  it('Search_AllSourcesFail_ThrowsInsteadOfFakingNoHits', async () => {
+    const c = new CompositeJobSource([failing('A'), failing('B')], noopLogger);
+    await expect(c.search(anyQuery)).rejects.toBeInstanceOf(AllJobSourcesFailedError);
+    await expect(c.search(anyQuery)).rejects.toMatchObject({ sources: ['A', 'B'] });
+  });
+
+  it('Search_HealthySourceWithZeroHits_IsNotAFailure', async () => {
+    // an empty result from a working source is a legitimate "no hits"
+    const c = new CompositeJobSource([failing('Down'), stub('B', [])], noopLogger);
+    expect(await c.search(anyQuery)).toEqual([]);
   });
 });

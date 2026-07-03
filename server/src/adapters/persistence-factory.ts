@@ -20,6 +20,7 @@ import type {
   AssistantSuggestionRepository,
 } from '../ports/assistant-store';
 import type { ArtifactLogRepository } from '../ports/artifact-log-repository';
+import type { StageTransitionRepository } from '../ports/stage-transition-repository';
 import type { Clock } from '../ports/clock';
 import { FsApplicationRepository } from './fs-application-repository';
 import { FsAuditLog } from './fs-audit-log';
@@ -39,6 +40,7 @@ import { FsUsageMeter } from './fs-usage-meter';
 import { FsInterviewObservationRepository } from './fs-interview-observation-repository';
 import { FsAssistantSettingsStore, FsAssistantSuggestionRepository } from './fs-assistant-store';
 import { FsArtifactLogRepository } from './fs-artifact-log-repository';
+import { FsStageTransitionRepository } from './fs-stage-transition-repository';
 import { SecretCipher } from './secret-cipher';
 import { SqlApplicationRepository } from './sql/sql-application-repository';
 import { SqlAuditLog } from './sql/sql-audit-log';
@@ -61,6 +63,7 @@ import {
   SqlAssistantSuggestionRepository,
 } from './sql/sql-assistant-store';
 import { SqlArtifactLogRepository } from './sql/sql-artifact-log-repository';
+import { SqlStageTransitionRepository } from './sql/sql-stage-transition-repository';
 import type { Db } from './sql/db';
 
 /** The storage ports, resolved to one backend. */
@@ -84,6 +87,7 @@ export interface Persistence {
   assistantSettingsStore: AssistantSettingsStore;
   assistantSuggestionRepository: AssistantSuggestionRepository;
   artifactLogRepository: ArtifactLogRepository;
+  stageTransitionRepository: StageTransitionRepository;
 }
 
 /**
@@ -116,6 +120,7 @@ export function createPersistence(deps: { config: AppConfig; clock: Clock; db?: 
       assistantSettingsStore: new SqlAssistantSettingsStore({ db }),
       assistantSuggestionRepository: new SqlAssistantSuggestionRepository({ db }),
       artifactLogRepository: new SqlArtifactLogRepository({ db }),
+      stageTransitionRepository: new SqlStageTransitionRepository({ db }),
     };
   }
   return {
@@ -138,5 +143,6 @@ export function createPersistence(deps: { config: AppConfig; clock: Clock; db?: 
     assistantSettingsStore: new FsAssistantSettingsStore({ config }),
     assistantSuggestionRepository: new FsAssistantSuggestionRepository({ config }),
     artifactLogRepository: new FsArtifactLogRepository({ config }),
+    stageTransitionRepository: new FsStageTransitionRepository({ config }),
   };
 }

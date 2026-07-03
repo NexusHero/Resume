@@ -222,5 +222,16 @@ export async function migrate(pool: Pool): Promise<void> {
       outcome_at text
     );
     CREATE INDEX IF NOT EXISTS artifact_logs_owner_idx ON artifact_logs (owner_id, talent_id);
+    CREATE TABLE IF NOT EXISTS stage_transitions (
+      id text PRIMARY KEY,
+      owner_id text NOT NULL,
+      candidacy_id text NOT NULL,
+      mandate_id text NOT NULL,
+      talent_id text NOT NULL,
+      from_stage text,
+      to_stage text NOT NULL,
+      at text NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS stage_transitions_owner_idx ON stage_transitions (owner_id, candidacy_id);
   `);
 }

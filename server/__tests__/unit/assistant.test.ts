@@ -24,6 +24,7 @@ import {
   FixedClock,
   SequenceIdGenerator,
   noopLogger,
+  InMemoryStageTransitionRepository,
 } from '../support/fakes';
 
 const OWNER = 'team';
@@ -103,8 +104,10 @@ function ctx() {
       clock,
       idGenerator: new SequenceIdGenerator('p'),
     }),
+    stageTransitionRepository: new InMemoryStageTransitionRepository(),
     clock,
     idGenerator: new SequenceIdGenerator('c'),
+    logger: noopLogger,
   });
   const service = new AssistantService({
     assistantSettingsStore: settingsStore,

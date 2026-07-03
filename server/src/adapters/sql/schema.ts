@@ -225,6 +225,18 @@ export const artifactLogs = pgTable('artifact_logs', {
   outcomeAt: text('outcome_at'),
 });
 
+/** Pipeline stage-transition log (mirrors domain `StageTransition`). Team-scoped. */
+export const stageTransitions = pgTable('stage_transitions', {
+  id: text('id').primaryKey(),
+  ownerId: text('owner_id').notNull(),
+  candidacyId: text('candidacy_id').notNull(),
+  mandateId: text('mandate_id').notNull(),
+  talentId: text('talent_id').notNull(),
+  fromStage: text('from_stage'),
+  toStage: text('to_stage').notNull(),
+  at: text('at').notNull(),
+});
+
 /** Append-only meter of LLM calls (mirrors domain `UsageEvent`). Per user. */
 export const usageEvents = pgTable('usage_events', {
   seq: serial('seq').primaryKey(),

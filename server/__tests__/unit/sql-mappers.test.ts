@@ -23,6 +23,8 @@ import {
   assistantSuggestionToRow,
   rowToArtifactLog,
   artifactLogToRow,
+  rowToStageTransition,
+  stageTransitionToRow,
 } from '../../src/adapters/sql/mappers';
 import type { Application, AuditEvent } from '../../src/domain/application';
 import type { SavedSearch } from '../../src/domain/saved-search';
@@ -363,6 +365,24 @@ describe('assistant suggestion mappers', () => {
         >,
       ),
     ).toEqual(suggestion);
+  });
+});
+
+describe('stage transition mappers', () => {
+  it('StageTransition_RoundTrips_WithAndWithoutFrom', () => {
+    const move = {
+      id: 's1',
+      ownerId: 'team',
+      candidacyId: 'c1',
+      mandateId: 'm1',
+      talentId: 't1',
+      from: 'sourced' as const,
+      to: 'interview' as const,
+      at: '2026-07-03T10:00:00.000Z',
+    };
+    expect(rowToStageTransition(stageTransitionToRow(move) as never)).toEqual(move);
+    const entry = { ...move, id: 's2', from: null, to: 'sourced' as const };
+    expect(rowToStageTransition(stageTransitionToRow(entry) as never)).toEqual(entry);
   });
 });
 

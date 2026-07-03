@@ -1,6 +1,10 @@
 import { forecastPipeline, parseFeeValue, STAGE_WIN_PROBABILITY } from '../../src/domain/forecast';
 import { ForecastService } from '../../src/services/forecast-service';
-import { InMemoryMandateRepository, InMemoryCandidacyRepository } from '../support/fakes';
+import {
+  InMemoryMandateRepository,
+  InMemoryCandidacyRepository,
+  InMemoryStageTransitionRepository,
+} from '../support/fakes';
 import type { Mandate } from '../../src/domain/mandate';
 import type { Candidacy, CandidacyStage } from '../../src/domain/candidacy';
 
@@ -114,11 +118,13 @@ describe('ForecastService', () => {
   function ctx() {
     const mandates = new InMemoryMandateRepository();
     const candidacies = new InMemoryCandidacyRepository();
+    const transitions = new InMemoryStageTransitionRepository();
     const service = new ForecastService({
       mandateRepository: mandates,
       candidacyRepository: candidacies,
+      stageTransitionRepository: transitions,
     });
-    return { service, mandates, candidacies };
+    return { service, mandates, candidacies, transitions };
   }
 
   it('Forecast_ExcludesClosedMandates', async () => {
@@ -135,6 +141,80 @@ describe('ForecastService', () => {
     const c = ctx();
     await c.mandates.add(mandate('m1'));
     const f = await c.service.forecast(SCOPE);
-    expect(f).toEqual({ totalWeighted: 0, totalFaceValue: 0, mandates: [] });
+    expect(f).toEqual({
+      totalWeighted: 0,
+      totalFaceValue: 0,
+      mandates: [],
+      probabilities: expect.any(Array),
+      insights: [],
+    });
+    // v2: without history every stage keeps its transparent default
+    expect(f.probabilities.every((p) => p.source === 'default')).toBe(true);
+  });
+
+  it('ForecastV2_EnoughHistory_UsesTheDeskCurve', async () => {
+    const c = ctx();
+    await c.mandates.add(mandate('m1', { feeValue: '10.000 €' }));
+    await c.candidacies.add(candidacy('open1', 'm1', 'offer'));
+    // 5 resolved journeys through offer, all placed → observed p(offer)=1
+    for (let i = 0; i < 5; i++) {
+      const cid = `hist${i}`;
+      await c.transitions.add({
+        id: `${cid}-a`,
+        ownerId: SCOPE,
+        candidacyId: cid,
+        mandateId: 'm1',
+        talentId: cid,
+        from: null,
+        to: 'offer',
+        at: `2026-06-0${i + 1}T10:00:00.000Z`,
+      });
+      await c.transitions.add({
+        id: `${cid}-b`,
+        ownerId: SCOPE,
+        candidacyId: cid,
+        mandateId: 'm1',
+        talentId: cid,
+        from: 'offer',
+        to: 'placed',
+        at: `2026-06-0${i + 1}T11:00:00.000Z`,
+      });
+    }
+    const f = await c.service.forecast(SCOPE);
+    const offer = f.probabilities.find((p) => p.stage === 'offer')!;
+    expect(offer).toMatchObject({ source: 'observed', probability: 1, sample: 5, wins: 5 });
+    // the open offer-stage candidacy is now weighted with the observed 1.0
+    expect(f.mandates[0]?.probability).toBe(1);
+    expect(f.mandates[0]?.weightedValue).toBe(10000);
+  });
+
+  it('ForecastV2_ReportsClientInterviewInsights', async () => {
+    const c = ctx();
+    await c.mandates.add(mandate('m1', { client: 'Acme' }));
+    for (let i = 0; i < 3; i++) {
+      const cid = `j${i}`;
+      await c.transitions.add({
+        id: `${cid}-a`,
+        ownerId: SCOPE,
+        candidacyId: cid,
+        mandateId: 'm1',
+        talentId: cid,
+        from: null,
+        to: 'interview',
+        at: `2026-06-0${i + 1}T10:00:00.000Z`,
+      });
+      await c.transitions.add({
+        id: `${cid}-b`,
+        ownerId: SCOPE,
+        candidacyId: cid,
+        mandateId: 'm1',
+        talentId: cid,
+        from: 'interview',
+        to: i === 0 ? 'placed' : 'rejected',
+        at: `2026-06-0${i + 1}T11:00:00.000Z`,
+      });
+    }
+    const f = await c.service.forecast(SCOPE);
+    expect(f.insights).toEqual([{ client: 'Acme', interviews: 3, placements: 1, rate: 33 }]);
   });
 });

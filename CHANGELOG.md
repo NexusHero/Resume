@@ -56,6 +56,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Added
 
+- **Forecast v2 — the prediction flywheel** — every pipeline stage move is now
+  logged, and the revenue forecast learns its stage probabilities from the
+  desk's own resolved candidacies instead of one-size-fits-all industry
+  constants (ADR-0016). Provenance is always declared: each stage shows
+  whether its number is "yours" (with the sample size) or still the default —
+  below 5 resolved journeys per stage nothing changes. The same log yields
+  interview intelligence: per-client interview→placement conversion on the
+  forecast card (min. 3 resolved interviews).
 - **Email integration** — drafted outreach can be sent straight from the app
   ("Send email" in the outreach modal, via the configured SMTP/console
   transport), and the outcome loop closes itself: point `MAIL_IMAP_*` at the

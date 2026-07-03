@@ -25,6 +25,7 @@ import {
   FsAssistantSuggestionRepository,
 } from '../../src/adapters/fs-assistant-store';
 import { FsArtifactLogRepository } from '../../src/adapters/fs-artifact-log-repository';
+import { FsStageTransitionRepository } from '../../src/adapters/fs-stage-transition-repository';
 import { SecretCipher } from '../../src/adapters/secret-cipher';
 import { FixedClock } from '../support/fakes';
 import type { Application, AuditEvent } from '../../src/domain/application';
@@ -62,6 +63,7 @@ function tmpConfig(): AppConfig {
     assistantSettingsFile: path.join(storeDir, 'assistant-settings.json'),
     assistantSuggestionsFile: path.join(storeDir, 'assistant-suggestions.json'),
     artifactLogFile: path.join(storeDir, 'artifact-log.json'),
+    stageTransitionsFile: path.join(storeDir, 'stage-transitions.json'),
     staticDir: rootDir,
     versionedPaths: ['bewerbungen'],
     candidateProfile: { skills: [] },
@@ -93,6 +95,7 @@ function tmpConfig(): AppConfig {
       appBaseUrl: 'http://localhost:0',
       resetTokenTtlMs: 60 * 60 * 1000,
       smtp: { host: '', port: 587, secure: false, user: '', pass: '' },
+      imap: { host: '', port: 993, secure: true, user: '', pass: '', pollMinutes: 15 },
     },
   };
 }
@@ -1145,5 +1148,37 @@ describe('FsArtifactLogRepository', () => {
     await fs.mkdir(config.storeDir, { recursive: true });
     await fs.writeFile(config.artifactLogFile, 'not json');
     expect(await new FsArtifactLogRepository({ config }).list('team')).toEqual([]);
+  });
+});
+
+describe('FsStageTransitionRepository', () => {
+  const transition = (id: string, at: string) => ({
+    id,
+    ownerId: 'team',
+    candidacyId: 'c1',
+    mandateId: 'm1',
+    talentId: 't1',
+    from: null,
+    to: 'sourced' as const,
+    at,
+  });
+
+  it('AddThenList_RoundTripsOldestFirst_ScopedToOwner', async () => {
+    const config = tmpConfig();
+    const repo = new FsStageTransitionRepository({ config });
+    await repo.add(transition('t2', '2026-07-02T10:00:00.000Z'));
+    await repo.add(transition('t1', '2026-07-01T10:00:00.000Z'));
+    await repo.add({ ...transition('x1', '2026-07-01T09:00:00.000Z'), ownerId: 'other' });
+    // A fresh instance (restart) sees the same log, oldest first.
+    const fresh = new FsStageTransitionRepository({ config });
+    expect((await fresh.list('team')).map((t) => t.id)).toEqual(['t1', 't2']);
+    expect(await fresh.list('nobody')).toEqual([]);
+  });
+
+  it('MalformedFile_ListsNothing', async () => {
+    const config = tmpConfig();
+    await fs.mkdir(config.storeDir, { recursive: true });
+    await fs.writeFile(config.stageTransitionsFile, 'not json');
+    expect(await new FsStageTransitionRepository({ config }).list('team')).toEqual([]);
   });
 });

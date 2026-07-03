@@ -381,12 +381,12 @@ export class DocumentAiService {
   > {
     const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
     const built = tailorPrompt(documents, target, target.lang);
-    const res = await this.runLlm(userId, 'suggest', MAX_TOKENS.tailor, built);
+    const res = await this.runLlm(userId, 'tailor', MAX_TOKENS.tailor, built);
 
     let content: TailoredApplication;
     let provider: LlmProviderId | 'template' = 'template';
     let usage: CallUsage | undefined;
-    const parsed = res ? this.parseReply('suggest', res.reply, tailorResultSchema) : null;
+    const parsed = res ? this.parseReply('tailor', res.reply, tailorResultSchema) : null;
     if (res && parsed) {
       content = normalizeTailored(parsed);
       provider = res.provider;

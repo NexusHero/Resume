@@ -77,7 +77,7 @@ import type { PdfTextExtractor } from '../ports/pdf-text-extractor';
 import type { UsageMeter } from '../ports/usage-meter';
 import type { Clock } from '../ports/clock';
 import type { Logger } from '../ports/logger';
-import { type UsageFeature, toUsageEvent } from '../domain/usage';
+import { type CallUsage, type UsageFeature, callUsage, toUsageEvent } from '../domain/usage';
 import type { DocumentService } from './document-service';
 import type { LlmService } from './llm-service';
 
@@ -89,12 +89,15 @@ export interface DocumentAiSuggestion {
   paragraphs?: string[];
   /** Which backend produced it — 'template' when the deterministic fallback ran. */
   provider: LlmProviderId | 'template';
+  /** What this call cost — absent on a template result (nothing was spent). */
+  usage?: CallUsage;
 }
 
 export interface ParsedDocument {
   contact: DocumentContact;
   resume: ResumeContent;
   provider: LlmProviderId | 'template';
+  usage?: CallUsage;
 }
 
 /** A CV parsed from an uploaded PDF; `extractedChars` is 0 for a scanned PDF. */
@@ -208,7 +211,7 @@ export class DocumentAiService {
     maxTokens: number,
     built: BuiltPrompt,
     resolved: { provider: LlmProvider; apiKey?: string },
-  ): Promise<{ reply: string; provider: LlmProviderId }> {
+  ): Promise<{ reply: string; provider: LlmProviderId; usage: CallUsage }> {
     const { text, usage } = await resolved.provider.generate({
       system: built.system,
       prompt: built.prompt,
@@ -216,7 +219,11 @@ export class DocumentAiService {
       ...(resolved.apiKey ? { apiKey: resolved.apiKey } : {}),
     });
     await this.meter(userId, resolved.provider.id, feature, usage);
-    return { reply: text, provider: resolved.provider.id };
+    return {
+      reply: text,
+      provider: resolved.provider.id,
+      usage: callUsage(resolved.provider.id, usage),
+    };
   }
 
   /**
@@ -230,7 +237,7 @@ export class DocumentAiService {
     feature: UsageFeature,
     maxTokens: number,
     built: BuiltPrompt,
-  ): Promise<{ reply: string; provider: LlmProviderId } | null> {
+  ): Promise<{ reply: string; provider: LlmProviderId; usage: CallUsage } | null> {
     const resolved = await this.resolveProvider(userId);
     if (!resolved) return null;
     try {
@@ -285,8 +292,8 @@ export class DocumentAiService {
 
     if (res) {
       return action === 'summary'
-        ? { action, text: res.reply.trim(), provider: res.provider }
-        : { action, paragraphs: toParagraphs(res.reply), provider: res.provider };
+        ? { action, text: res.reply.trim(), provider: res.provider, usage: res.usage }
+        : { action, paragraphs: toParagraphs(res.reply), provider: res.provider, usage: res.usage };
     }
 
     return action === 'summary'
@@ -311,6 +318,7 @@ export class DocumentAiService {
     const res = await this.runLlm(userId, 'parse', MAX_TOKENS.parse, parsePrompt(text));
     const raw: unknown = res ? extractJson(res.reply) : null;
     const provider: LlmProviderId | 'template' = res && raw ? res.provider : 'template';
+    const usage = res && raw ? res.usage : undefined;
 
     // Validate whatever we have (LLM JSON or fallback) through the save schema,
     // which fills defaults for any missing/invalid field.
@@ -319,7 +327,7 @@ export class DocumentAiService {
       resume?: unknown;
     };
     const validated = saveDocumentsSchema.parse({ contact: source.contact, resume: source.resume });
-    return { contact: validated.contact, resume: validated.resume, provider };
+    return { contact: validated.contact, resume: validated.resume, provider, usage };
   }
 
   /**
@@ -370,13 +378,13 @@ export class DocumentAiService {
     userId: string,
     talentId: string,
     jobText: string,
-  ): Promise<AtsScore & { provider: LlmProviderId | 'template' }> {
+  ): Promise<AtsScore & { provider: LlmProviderId | 'template'; usage?: CallUsage }> {
     const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
 
     const res = await this.runLlm(userId, 'ats', MAX_TOKENS.ats, atsPrompt(documents, jobText));
     if (res) {
       const parsed = this.parseReply('ats', res.reply, atsResultSchema);
-      if (parsed) return { ...normalizeAts(parsed), provider: res.provider };
+      if (parsed) return { ...normalizeAts(parsed), provider: res.provider, usage: res.usage };
     }
 
     return { ...fallbackAts(documents, jobText), provider: 'template' };
@@ -394,7 +402,11 @@ export class DocumentAiService {
     talentId: string,
     mandateContext: string,
   ): Promise<
-    CandidatePitch & { provider: LlmProviderId | 'template'; grounding: GroundingReport }
+    CandidatePitch & {
+      provider: LlmProviderId | 'template';
+      grounding: GroundingReport;
+      usage?: CallUsage;
+    }
   > {
     const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
     const source = groundingSource(documents, mandateContext);
@@ -403,9 +415,11 @@ export class DocumentAiService {
     const withGrounding = <T extends CandidatePitch>(
       pitch: T,
       provider: LlmProviderId | 'template',
+      usage?: CallUsage,
     ) => ({
       ...pitch,
       provider,
+      usage,
       grounding: checkGrounding([pitch.headline, ...pitch.paragraphs].join(' '), source),
     });
 
@@ -420,7 +434,7 @@ export class DocumentAiService {
       if (parsed) {
         const pitch = normalizePitch(parsed);
         if (pitch.headline || pitch.paragraphs.length) {
-          return withGrounding(pitch, res.provider);
+          return withGrounding(pitch, res.provider, res.usage);
         }
       }
     }
@@ -440,7 +454,11 @@ export class DocumentAiService {
     talentId: string,
     opts: OutreachOptions,
   ): Promise<
-    OutreachMessage & { provider: LlmProviderId | 'template'; grounding: GroundingReport }
+    OutreachMessage & {
+      provider: LlmProviderId | 'template';
+      grounding: GroundingReport;
+      usage?: CallUsage;
+    }
   > {
     const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
     const source = groundingSource(documents, opts.mandateContext ?? '');
@@ -448,9 +466,14 @@ export class DocumentAiService {
     const lang = detectLanguage(
       (opts.mandateContext ?? '').trim() || groundingSource(documents, ''),
     );
-    const withGrounding = (message: OutreachMessage, provider: LlmProviderId | 'template') => ({
+    const withGrounding = (
+      message: OutreachMessage,
+      provider: LlmProviderId | 'template',
+      usage?: CallUsage,
+    ) => ({
       ...message,
       provider,
+      usage,
       grounding: checkGrounding([message.subject, message.body].join(' '), source),
     });
 
@@ -464,7 +487,7 @@ export class DocumentAiService {
       const parsed = this.parseReply('outreach', res.reply, outreachResultSchema);
       if (parsed) {
         const message = normalizeOutreach(parsed, opts.channel);
-        if (message.body) return withGrounding(message, res.provider);
+        if (message.body) return withGrounding(message, res.provider, res.usage);
       }
     }
 
@@ -483,7 +506,12 @@ export class DocumentAiService {
     userId: string,
     talentId: string,
     targetLang: OutputLang,
-  ): Promise<{ lang: OutputLang; translation: DocumentTranslation; created: boolean }> {
+  ): Promise<{
+    lang: OutputLang;
+    translation: DocumentTranslation;
+    created: boolean;
+    usage?: CallUsage;
+  }> {
     const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
 
     const sourceLang = detectLanguage(
@@ -508,7 +536,7 @@ export class DocumentAiService {
     }
 
     // No fallback here: a generation failure propagates rather than degrading.
-    const { reply, provider } = await this.generateAndMeter(
+    const { reply, provider, usage } = await this.generateAndMeter(
       userId,
       'translate',
       MAX_TOKENS.translate,
@@ -528,7 +556,7 @@ export class DocumentAiService {
       updatedAt: this.clock.isoNow(),
     };
     await this.documents.saveTranslation(scope, talentId, targetLang, translation);
-    return { lang: targetLang, translation, created: true };
+    return { lang: targetLang, translation, created: true, usage };
   }
 
   /**
@@ -542,7 +570,7 @@ export class DocumentAiService {
     userId: string,
     talentId: string,
     mandate: MandateContext,
-  ): Promise<MatchExplanation & { provider: LlmProviderId | 'template' }> {
+  ): Promise<MatchExplanation & { provider: LlmProviderId | 'template'; usage?: CallUsage }> {
     const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
     const matchedSkills = matchedForMandate(documents, mandate);
 
@@ -556,7 +584,9 @@ export class DocumentAiService {
       const parsed = this.parseReply('matchExplain', res.reply, explanationResultSchema);
       if (parsed) {
         const explanation = normalizeExplanation(parsed, matchedSkills);
-        if (explanation.reasons.length) return { ...explanation, provider: res.provider };
+        if (explanation.reasons.length) {
+          return { ...explanation, provider: res.provider, usage: res.usage };
+        }
       }
     }
 
@@ -573,7 +603,7 @@ export class DocumentAiService {
     userId: string,
     talentId: string,
     mandate: MandateContext,
-  ): Promise<InterviewKit & { provider: LlmProviderId | 'template' }> {
+  ): Promise<InterviewKit & { provider: LlmProviderId | 'template'; usage?: CallUsage }> {
     const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
 
     const res = await this.runLlm(
@@ -586,7 +616,7 @@ export class DocumentAiService {
       const parsed = this.parseReply('interviewKit', res.reply, interviewKitResultSchema);
       if (parsed) {
         const kit = normalizeInterviewKit(parsed);
-        if (kit.questions.length) return { ...kit, provider: res.provider };
+        if (kit.questions.length) return { ...kit, provider: res.provider, usage: res.usage };
       }
     }
 
@@ -606,7 +636,7 @@ export class DocumentAiService {
     talentId: string,
     mandate: MandateContext,
     jobText: string,
-  ): Promise<CandidatePrep & { provider: LlmProviderId | 'template' }> {
+  ): Promise<CandidatePrep & { provider: LlmProviderId | 'template'; usage?: CallUsage }> {
     const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
     // Blend real observations of this company over the archetype guess (flywheel).
     const observed = aggregateObservations(
@@ -628,7 +658,7 @@ export class DocumentAiService {
     if (res) {
       const parsed = this.parseReply('candidatePrep', res.reply, prepResultSchema);
       if (parsed) {
-        return { ...mergePrep(base, parsed), provider: res.provider };
+        return { ...mergePrep(base, parsed), provider: res.provider, usage: res.usage };
       }
     }
 

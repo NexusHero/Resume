@@ -424,6 +424,9 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '4px' }}>
               <span style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)' }}>Interview kit</span>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-soft)' }}>{interview.name} · {mandate.role}</span>
+              {interview.data && (
+                <span style={{ marginLeft: 'auto' }}><window.ProviderBadge provider={interview.data.provider} usage={interview.data.usage} /></span>
+              )}
             </div>
 
             {interview.loading ? (
@@ -475,6 +478,9 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '2px' }}>
               <span style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)' }}>Candidate prep</span>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-soft)' }}>{prep.name} · {mandate.role}</span>
+              {prep.data && (
+                <span style={{ marginLeft: 'auto' }}><window.ProviderBadge provider={prep.data.provider} usage={prep.data.usage} /></span>
+              )}
             </div>
             <div style={{ fontSize: '11.5px', color: 'var(--text-soft)', marginBottom: '8px' }}>For sharing with the candidate. Company details are estimates — verify before the interview.</div>
 

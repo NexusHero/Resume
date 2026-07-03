@@ -1,4 +1,5 @@
 import {
+  callUsage,
   estimateCost,
   summarizeUsage,
   toUsageEvent,
@@ -31,6 +32,17 @@ describe('usage domain', () => {
     it('UnknownProvider_CostsZero', () => {
       // a provider added to the type but not the price table must not throw
       expect(estimateCost('openai' as never, 1_000_000, 1_000_000)).toBe(0);
+    });
+  });
+
+  describe('callUsage', () => {
+    it('CarriesTokensAndRoundsTheCost', () => {
+      // 1000 in @ $3/M + 500 out @ $15/M = $0.0105 — kept at 4 decimals
+      expect(callUsage('claude', { inputTokens: 1000, outputTokens: 500 })).toEqual({
+        inputTokens: 1000,
+        outputTokens: 500,
+        costUsd: 0.0105,
+      });
     });
   });
 

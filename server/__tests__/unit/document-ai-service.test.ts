@@ -132,6 +132,22 @@ describe('DocumentAiService', () => {
     expect(letter.paragraphs).toEqual(['AI PARA ONE.', 'AI PARA TWO.', 'AI PARA THREE.']);
   });
 
+  it('Suggest_WithProvider_AttachesPerCallUsage', async () => {
+    const c = ctx();
+    await c.talents.add(talent('t1'));
+    await c.keys.set(OWNER, 'claude', 'sk-user');
+    const summary = await c.service.suggest(OWNER, OWNER, 't1', 'summary');
+    // ctx's provider stub reports 5 in / 7 out; claude 5·$3/M + 7·$15/M ≈ $0.0001
+    expect(summary.usage).toEqual({ inputTokens: 5, outputTokens: 7, costUsd: 0.0001 });
+  });
+
+  it('Suggest_TemplateFallback_HasNoUsage', async () => {
+    const c = ctx(); // no provider → template, nothing was spent
+    await c.talents.add(talent('t1'));
+    const summary = await c.service.suggest(OWNER, OWNER, 't1', 'summary');
+    expect(summary.usage).toBeUndefined();
+  });
+
   it('Suggest_NoKeyNoServerCredential_FallsBackToTemplate', async () => {
     const c = ctx(); // provider.available=false and no user key → no provider
     await c.talents.add(talent('t1'));

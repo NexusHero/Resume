@@ -105,6 +105,7 @@ function AtsModal({ talentId, onClose }) {
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
             <span style={{ fontFamily: 'var(--font-display)', fontSize: '30px', fontWeight: 700, color: ats.score >= 75 ? 'var(--positive, #1F8A5B)' : ats.score >= 50 ? 'var(--accent-strong)' : 'var(--danger)' }}>{ats.score}</span>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>/ 100 match</span>
+            <span style={{ marginLeft: 'auto' }}><EdmProviderBadge provider={ats.provider} usage={ats.usage} /></span>
           </div>
           {ats.matched && ats.matched.length > 0 && (
             <div style={{ marginTop: '10px' }}>
@@ -171,7 +172,7 @@ function PitchModal({ talentId, onClose }) {
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 700, color: 'var(--text-heading)' }}>{pitch.headline}</div>
             <span style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-              <EdmProviderBadge provider={pitch.provider} />
+              <EdmProviderBadge provider={pitch.provider} usage={pitch.usage} />
               <EdmPillButton icon={pitchCopied ? 'check' : 'fileText'} onClick={copyPitch}>{pitchCopied ? 'Copied' : 'Copy'}</EdmPillButton>
             </span>
           </div>
@@ -267,7 +268,7 @@ function OutreachModal({ talentId, defaultEmail, onClose }) {
       {outMsg && (
         <div style={{ marginTop: '18px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', marginBottom: '10px' }}>
-            <EdmProviderBadge provider={outMsg.provider} />
+            <EdmProviderBadge provider={outMsg.provider} usage={outMsg.usage} />
             {outChannel === 'email' && (
               <EdmPillButton icon="send" onClick={openOutreachMail}>Open in email</EdmPillButton>
             )}

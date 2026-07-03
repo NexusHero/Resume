@@ -51,6 +51,24 @@ function roundCost(usd: number): number {
   return Math.round(usd * 10_000) / 10_000;
 }
 
+/**
+ * The per-call token/cost payload attached to each AI response, so the UI can
+ * show what a single generation cost right where the result appears — not
+ * only in the settings aggregate.
+ */
+export interface CallUsage extends TokenUsage {
+  costUsd: number;
+}
+
+/** Build the per-call usage payload from a completed generation. */
+export function callUsage(provider: LlmProviderId, usage: TokenUsage): CallUsage {
+  return {
+    inputTokens: usage.inputTokens,
+    outputTokens: usage.outputTokens,
+    costUsd: roundCost(estimateCost(provider, usage.inputTokens, usage.outputTokens)),
+  };
+}
+
 interface Bucket {
   requests: number;
   inputTokens: number;

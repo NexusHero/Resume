@@ -2,6 +2,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import type { AppConfig } from '../config';
 import type { User, Role } from '../domain/user';
+import type { LlmProviderId } from '../ports/llm-provider';
 import type { UserRepository } from '../ports/user-repository';
 
 /** File-backed repository: the JSON array in bewerbungen/users.json. */
@@ -60,6 +61,12 @@ export class FsUserRepository implements UserRepository {
   async markVerified(id: string, at: string): Promise<void> {
     const all = await this.list();
     const next = all.map((u) => (u.id === id ? { ...u, verifiedAt: at } : u));
+    await this.write(next);
+  }
+
+  async setLlmProvider(id: string, provider: LlmProviderId): Promise<void> {
+    const all = await this.list();
+    const next = all.map((u) => (u.id === id ? { ...u, llmProvider: provider } : u));
     await this.write(next);
   }
 

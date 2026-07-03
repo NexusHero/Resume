@@ -200,8 +200,9 @@ export function createApp(deps: AppDeps): Express {
   api.post('/compliance/agg-check', requireAuth, asyncHandler(compliance.aggCheck));
   // Weighted pipeline revenue forecast across the team's live mandates.
   api.get('/forecast', requireAuth, asyncHandler(forecast.get));
-  api.get('/settings/llm', asyncHandler(llm.settings));
-  api.put('/settings/llm', asyncHandler(llm.setProvider));
+  // The provider choice is per user (persisted); signed-out callers see the default.
+  api.get('/settings/llm', asyncHandler(auth.attachUser), asyncHandler(llm.settings));
+  api.put('/settings/llm', requireAuth, asyncHandler(llm.setProvider));
   // API keys are per-user, not team-shared (encrypted server-side).
   api.get('/settings/keys', requireAuth, asyncHandler(llm.keysStatus));
   api.put('/settings/keys/:provider', requireAuth, asyncHandler(llm.setKey));

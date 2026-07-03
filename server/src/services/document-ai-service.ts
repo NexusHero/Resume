@@ -73,6 +73,7 @@ import {
 } from '../domain/talent-documents';
 import type { LlmProvider, LlmProviderId, TokenUsage } from '../ports/llm-provider';
 import type { ApiKeyStore } from '../ports/api-key-store';
+import type { UserRepository } from '../ports/user-repository';
 import type { PdfTextExtractor } from '../ports/pdf-text-extractor';
 import type { UsageMeter } from '../ports/usage-meter';
 import type { Clock } from '../ports/clock';
@@ -109,6 +110,7 @@ export interface DocumentAiServiceDeps {
   documentService: DocumentService;
   llmService: LlmService;
   apiKeyStore: ApiKeyStore;
+  userRepository: UserRepository;
   pdfTextExtractor: PdfTextExtractor;
   usageMeter: UsageMeter;
   interviewObservationRepository: InterviewObservationRepository;
@@ -151,6 +153,7 @@ export class DocumentAiService {
   private readonly documents: DocumentService;
   private readonly llm: LlmService;
   private readonly keys: ApiKeyStore;
+  private readonly users: UserRepository;
   private readonly pdfText: PdfTextExtractor;
   private readonly usage: UsageMeter;
   private readonly observations: InterviewObservationRepository;
@@ -161,6 +164,7 @@ export class DocumentAiService {
     this.documents = deps.documentService;
     this.llm = deps.llmService;
     this.keys = deps.apiKeyStore;
+    this.users = deps.userRepository;
     this.pdfText = deps.pdfTextExtractor;
     this.usage = deps.usageMeter;
     this.observations = deps.interviewObservationRepository;
@@ -192,7 +196,10 @@ export class DocumentAiService {
   private async resolveProvider(
     userId: string,
   ): Promise<{ provider: LlmProvider; apiKey?: string } | null> {
-    const currentId = this.llm.currentProvider();
+    // The user's persisted choice wins (it survives restarts and is not shared
+    // across the team); without one, the server's configured default applies.
+    const stored = (await this.users.findById(userId))?.llmProvider;
+    const currentId = stored && this.llm.get(stored) ? stored : this.llm.currentProvider();
     const current = this.llm.get(currentId);
     const apiKey = await this.keys.get(userId, currentId);
     if (current && apiKey) return { provider: current, apiKey };

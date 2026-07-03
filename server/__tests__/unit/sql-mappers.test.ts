@@ -194,6 +194,18 @@ describe('user mappers', () => {
     };
     expect(rowToUser(userToRow(user) as Required<typeof user>)).toEqual(user);
   });
+
+  it('User_RoundTrips_WithLlmProvider', () => {
+    const user: User = {
+      id: 'u2',
+      email: 'b@example.com',
+      passwordHash: 'scrypt$salt$key',
+      roles: ['recruiter'],
+      createdAt: '2026-06-25T10:00:00.000Z',
+      llmProvider: 'gemini',
+    };
+    expect(rowToUser(userToRow(user) as Required<typeof user>)).toEqual(user);
+  });
 });
 
 describe('placement mappers', () => {

@@ -16,6 +16,7 @@ export const users = pgTable('users', {
   roles: jsonb('roles').$type<Role[]>().notNull(),
   createdAt: text('created_at').notNull(),
   verifiedAt: text('verified_at'),
+  llmProvider: text('llm_provider'),
 });
 
 /** Opaque server-side sessions: a token maps to a user id, with a creation time. */

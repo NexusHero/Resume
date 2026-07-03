@@ -22,6 +22,7 @@ export async function migrate(pool: Pool): Promise<void> {
     );
     ALTER TABLE users ADD COLUMN IF NOT EXISTS roles jsonb NOT NULL DEFAULT '["recruiter"]'::jsonb;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS verified_at text;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS llm_provider text;
     CREATE TABLE IF NOT EXISTS sessions (
       token text PRIMARY KEY,
       user_id text NOT NULL,

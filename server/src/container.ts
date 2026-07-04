@@ -60,6 +60,7 @@ import { MatchAiService } from './services/match-ai-service';
 import { AttachmentService } from './services/attachment-service';
 import { AuthService } from './services/auth-service';
 import { MembersService } from './services/members-service';
+import { InviteService } from './services/invite-service';
 import { AccountService } from './services/account-service';
 import { PasswordResetService } from './services/password-reset-service';
 import { EmailVerificationService } from './services/email-verification-service';
@@ -86,6 +87,7 @@ import { DocumentController } from './http/document-controller';
 import { AttachmentController } from './http/attachment-controller';
 import { AuthController } from './http/auth-controller';
 import { MembersController } from './http/members-controller';
+import { InviteController } from './http/invite-controller';
 import { AccountController } from './http/account-controller';
 import { PasswordResetController } from './http/password-reset-controller';
 import { MailController } from './http/mail-controller';
@@ -118,6 +120,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     sessionStore: asValue(persistence.sessionStore),
     passwordResetTokenStore: asValue(persistence.passwordResetTokenStore),
     emailVerificationTokenStore: asValue(persistence.emailVerificationTokenStore),
+    inviteRepository: asValue(persistence.inviteRepository),
     apiKeyStore: asValue(persistence.apiKeyStore),
     usageMeter: asValue(persistence.usageMeter),
     interviewObservationRepository: asValue(persistence.interviewObservationRepository),
@@ -198,6 +201,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     attachmentService: asClass(AttachmentService).singleton(),
     authService: asClass(AuthService).singleton(),
     membersService: asClass(MembersService).singleton(),
+    inviteService: asClass(InviteService).singleton(),
     accountService: asClass(AccountService).singleton(),
     passwordResetService: asClass(PasswordResetService).singleton(),
     emailVerificationService: asClass(EmailVerificationService).singleton(),
@@ -224,6 +228,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     attachmentController: asClass(AttachmentController).singleton(),
     authController: asClass(AuthController).singleton(),
     membersController: asClass(MembersController).singleton(),
+    inviteController: asClass(InviteController).singleton(),
     accountController: asClass(AccountController).singleton(),
     passwordResetController: asClass(PasswordResetController).singleton(),
     mailController: asClass(MailController).singleton(),

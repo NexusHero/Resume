@@ -22,6 +22,7 @@ export interface AppConfig {
   sessionsFile: string;
   passwordResetTokensFile: string;
   emailVerificationTokensFile: string;
+  inviteTokensFile: string;
   apiKeysFile: string;
   usageFile: string;
   interviewObservationsFile: string;
@@ -73,6 +74,8 @@ export interface MailConfig {
   appBaseUrl: string;
   /** Lifetime of a password-reset token in milliseconds. */
   resetTokenTtlMs: number;
+  /** Lifetime of a tenant invitation in milliseconds (ADR-0035). */
+  inviteTtlMs: number;
   /** SMTP relay settings, used when transport === 'smtp'. */
   smtp: { host: string; port: number; secure: boolean; user: string; pass: string };
   /**
@@ -224,6 +227,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     sessionsFile: path.join(storeDir, 'sessions.json'),
     passwordResetTokensFile: path.join(storeDir, 'password-reset-tokens.json'),
     emailVerificationTokensFile: path.join(storeDir, 'email-verification-tokens.json'),
+    inviteTokensFile: path.join(storeDir, 'tenant-invites.json'),
     apiKeysFile: path.join(storeDir, 'api-keys.json'),
     usageFile: path.join(storeDir, 'usage.json'),
     interviewObservationsFile: path.join(storeDir, 'interview-observations.json'),
@@ -323,6 +327,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       // Public origin the app is reached at; drives the link inside reset emails.
       appBaseUrl: (env.APP_BASE_URL ?? `http://localhost:${port}`).replace(/\/+$/, ''),
       resetTokenTtlMs: (Number(env.RESET_TOKEN_TTL_MINUTES) || 60) * 60 * 1000,
+      inviteTtlMs: (Number(env.INVITE_TTL_DAYS) || 7) * 24 * 60 * 60 * 1000,
       smtp: {
         host: env.SMTP_HOST ?? '',
         port: Number(env.SMTP_PORT) || 587,

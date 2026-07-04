@@ -36,6 +36,16 @@ export const emailVerificationTokens = pgTable('email_verification_tokens', {
   createdAt: text('created_at').notNull(),
 });
 
+/** Pending tenant invitations (mirrors domain `TenantInvite`, ADR-0035). */
+export const tenantInvites = pgTable('tenant_invites', {
+  token: text('token').primaryKey(),
+  email: text('email').notNull(),
+  tenantId: text('tenant_id').notNull(),
+  roles: jsonb('roles').$type<Role[]>().notNull(),
+  invitedBy: text('invited_by').notNull(),
+  createdAt: text('created_at').notNull(),
+});
+
 /** One-time, expiring password-reset tokens: an opaque token maps to a user id. */
 export const passwordResetTokens = pgTable('password_reset_tokens', {
   token: text('token').primaryKey(),

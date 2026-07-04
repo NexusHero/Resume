@@ -35,6 +35,7 @@ import type { DocumentController } from './http/document-controller';
 import type { AttachmentController } from './http/attachment-controller';
 import type { AuthController } from './http/auth-controller';
 import type { MembersController } from './http/members-controller';
+import type { InviteController } from './http/invite-controller';
 import type { AccountController } from './http/account-controller';
 import type { PasswordResetController } from './http/password-reset-controller';
 import type { PlanProvider } from './ports/plan-provider';
@@ -99,6 +100,7 @@ async function main(): Promise<void> {
     attachmentController: container.resolve<AttachmentController>('attachmentController'),
     authController: container.resolve<AuthController>('authController'),
     membersController: container.resolve<MembersController>('membersController'),
+    inviteController: container.resolve<InviteController>('inviteController'),
     accountController: container.resolve<AccountController>('accountController'),
     passwordResetController: container.resolve<PasswordResetController>('passwordResetController'),
     planProvider: container.resolve<PlanProvider>('planProvider'),

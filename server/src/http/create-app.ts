@@ -22,6 +22,7 @@ import type { DocumentController } from './document-controller';
 import type { AttachmentController } from './attachment-controller';
 import type { AuthController } from './auth-controller';
 import type { MembersController } from './members-controller';
+import type { InviteController } from './invite-controller';
 import type { AccountController } from './account-controller';
 import type { PasswordResetController } from './password-reset-controller';
 import { asyncHandler } from './async-handler';
@@ -58,6 +59,7 @@ export interface AppDeps {
   attachmentController: AttachmentController;
   authController: AuthController;
   membersController: MembersController;
+  inviteController: InviteController;
   accountController: AccountController;
   passwordResetController: PasswordResetController;
   planProvider: PlanProvider;
@@ -91,6 +93,7 @@ export function createApp(deps: AppDeps): Express {
     attachmentController: att,
     authController: auth,
     membersController: members,
+    inviteController: invites,
     accountController: account,
     passwordResetController: passwordReset,
   } = deps;
@@ -124,6 +127,9 @@ export function createApp(deps: AppDeps): Express {
   });
   api.post('/auth/register', authLimiter, asyncHandler(auth.register));
   api.post('/auth/login', authLimiter, asyncHandler(auth.login));
+  // Accept a tenant invitation: the token IS the credential, so it's open but
+  // throttled like the other auth routes (ADR-0035).
+  api.post('/auth/accept-invite', authLimiter, asyncHandler(invites.accept));
   // Password reset: request a link, then set a new password with the token.
   // Rate-limited like the other credential endpoints.
   api.post('/auth/password-reset/request', authLimiter, asyncHandler(passwordReset.request));
@@ -233,6 +239,9 @@ export function createApp(deps: AppDeps): Express {
   // Team members (admin-only mutations enforced in the controller via Authorizer).
   api.get('/members', requireAuth, asyncHandler(members.list));
   api.patch('/members/:id/roles', requireAuth, asyncHandler(members.setRoles));
+  // Tenant invitations (admin-only; ADR-0035): create + list pending for the tenant.
+  api.post('/members/invites', requireAuth, asyncHandler(invites.create));
+  api.get('/members/invites', requireAuth, asyncHandler(invites.list));
   api.get('/account/export', requireAuth, asyncHandler(account.export));
   api.delete('/account', requireAuth, asyncHandler(account.remove));
   // Per-user AI usage (requests, tokens, rough cost) for the settings card.

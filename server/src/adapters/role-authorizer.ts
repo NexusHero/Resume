@@ -9,8 +9,8 @@ import type { Authorizer, AuthPrincipal, AuthResource } from '../ports/authorize
  * adapter later needs no changes at the call sites.
  */
 const POLICY: Record<string, Record<string, Role[]>> = {
-  // Team administration — only admins manage members and their roles.
-  member: { list: ['admin'], setRoles: ['admin'] },
+  // Team administration — only admins manage members, their roles, and invites.
+  member: { list: ['admin'], setRoles: ['admin'], invite: ['admin'], listInvites: ['admin'] },
   // DSGVO retention review + anonymize — admin-only (no recruiter rule).
   retention: {},
   // Recruiting work is shared across the team: any recruiter (or admin) may do it.

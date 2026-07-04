@@ -13,7 +13,7 @@ Everything that describes the system, reachable from here.
 | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | **Architecture (here)**  | Chapters 1–12 below                                                                                                                    | arc42: goals, constraints, context, building blocks, runtime, deployment, risks.             |
 | **Scope & requirements** | [Requirements](requirements.md) · [Use cases](use-cases.md)                                                                            | FR/NFR catalogue (traced to modules + ADRs); 15 use cases, **each with a sequence diagram**. |
-| **Decisions**            | [Architecture Decision Records](adr/README.md) — **40 ADRs**                                                                           | Every significant, hard-to-reverse choice as MADR (context → decision → consequences).       |
+| **Decisions**            | [Architecture Decision Records](adr/README.md) — **41 ADRs**                                                                           | Every significant, hard-to-reverse choice as MADR (context → decision → consequences).       |
 | **Views & diagrams**     | [System context](umls/03_system_context.puml) · [Building blocks](umls/05_building_blocks.puml) · [runtime & use-case sequences](umls) | UML: 1 context, 1 building-block, 5 runtime-flow + 15 use-case sequence diagrams.            |
 | **Security**             | [Security concept](security.md)                                                                                                        | Trust boundary, controls→ADR→verification table, and the honest open gaps.                   |
 | **Operations**           | [Deployment](deployment.md) · [Deployment blueprint](deployment-blueprint.md) · [Native app](native-app.md)                            | Run/build/release, the production topology, and the Capacitor native wrapper.                |
@@ -310,48 +310,49 @@ a picture earns its place.
 
 Full log in [`docs/adr/`](adr). Summary:
 
-| ADR  | Decision                                                         | Status                          |
-| ---- | ---------------------------------------------------------------- | ------------------------------- |
-| 0001 | Hexagonal TypeScript backend (ports & adapters, SOLID)           | Accepted                        |
-| 0002 | Awilix DI with a single composition root                         | Accepted                        |
-| 0003 | File store default, Postgres via `STORE=sql`                     | Accepted                        |
-| 0004 | Authenticated, team-scoped, RBAC API                             | Accepted (supersedes open API)  |
-| 0005 | Deterministic fallback + per-user keys + metering for all AI     | Accepted                        |
-| 0006 | First-party observation flywheel; no scraping of review sites    | Accepted                        |
-| 0007 | Offline semantic skill matching (ontology + trigram fuzzy)       | Accepted                        |
-| 0008 | Skill canonicalization taxonomy                                  | Accepted                        |
-| 0009 | Grounding self-check over generated text                         | Accepted                        |
-| 0010 | Team scope as the ownership boundary for recruiting data         | Accepted                        |
-| 0011 | Per-user, persisted LLM provider choice                          | Accepted                        |
-| 0012 | Hand-maintained OpenAPI contract + self-hosted Swagger UI        | Accepted                        |
-| 0013 | In-process assistant agent with staged-suggestion autonomy       | Accepted (extended by 0019)     |
-| 0014 | First-party outcome loop (artefact → result tracking)            | Accepted                        |
-| 0015 | First-party email integration (send outreach, detect replies)    | Accepted                        |
-| 0016 | Learned stage-transition probabilities for the forecast          | Accepted                        |
-| 0017 | Local hashed embeddings + hybrid matching                        | Accepted                        |
-| 0018 | Compliance automation (audit trail, retention, AGG engine)       | Accepted                        |
-| 0019 | Autopilot: the auto-apply gear of the one agent (CoRecruiter)    | Accepted                        |
-| 0020 | Pluggable neural embeddings (Ollama, OpenAI) behind the port     | Accepted                        |
-| 0021 | Pro/Free plan gating at one HTTP seam (license deferred)         | Accepted                        |
-| 0022 | Split DocumentAiService into a runner + five services            | Accepted                        |
-| 0023 | Frontend unit/component test base with Vitest (jsdom)            | Accepted                        |
-| 0024 | Split the MandatePipeline god-component (board + 5 modals)       | Accepted                        |
-| 0025 | Responsive app shell (matchMedia hook + mobile drawer)           | Accepted (E1 slice 1)           |
-| 0026 | Responsive dense views (dashboard grids + scrollable tables)     | Accepted (E1 slice 2)           |
-| 0027 | Responsive CV profile, editor, and form modals                   | Accepted (E1 slice 3)           |
-| 0028 | Installable PWA (manifest + hand-rolled service worker)          | Accepted (E2)                   |
-| 0029 | Fail-fast production readiness gate (Postgres, APP_SECRET)       | Accepted (D-series slice 1)     |
-| 0030 | Scheduler leader election via Postgres advisory locks            | Accepted (D-series slice 2)     |
-| 0031 | PDF archive to S3-compatible object storage                      | Accepted (D-series slice 3)     |
-| 0032 | Bounded PDF render pool (concurrency semaphore)                  | Accepted (D-series slice 4)     |
-| 0033 | Multi-tenant scope foundation (tenantId, default 'team')         | Accepted (D-series slice 6·1)   |
-| 0034 | Tenant-scoped member management (roster + role admin)            | Accepted (D-series slice 6·2)   |
-| 0035 | Tenant onboarding by invitation (admin invite → accept)          | Accepted (D-series slice 6·3)   |
-| 0036 | Tenant registry + self-serve creation (SELF_SERVE_TENANTS)       | Accepted (D-series slice 6·4·1) |
-| 0037 | Super-admin capability + cross-tenant registry read              | Accepted (D-series slice 6·4·2) |
-| 0038 | Cross-tenant management + tenant suspension (enforced)           | Accepted (D-series slice 6·4·3) |
-| 0039 | Richer offline experience (offline banner + SWR service worker)  | Accepted                        |
-| 0040 | Capacitor native app wrapper (web-side wiring; native is manual) | Accepted                        |
+| ADR  | Decision                                                          | Status                          |
+| ---- | ----------------------------------------------------------------- | ------------------------------- |
+| 0001 | Hexagonal TypeScript backend (ports & adapters, SOLID)            | Accepted                        |
+| 0002 | Awilix DI with a single composition root                          | Accepted                        |
+| 0003 | File store default, Postgres via `STORE=sql`                      | Accepted                        |
+| 0004 | Authenticated, team-scoped, RBAC API                              | Accepted (supersedes open API)  |
+| 0005 | Deterministic fallback + per-user keys + metering for all AI      | Accepted                        |
+| 0006 | First-party observation flywheel; no scraping of review sites     | Accepted                        |
+| 0007 | Offline semantic skill matching (ontology + trigram fuzzy)        | Accepted                        |
+| 0008 | Skill canonicalization taxonomy                                   | Accepted                        |
+| 0009 | Grounding self-check over generated text                          | Accepted                        |
+| 0010 | Team scope as the ownership boundary for recruiting data          | Accepted                        |
+| 0011 | Per-user, persisted LLM provider choice                           | Accepted                        |
+| 0012 | Hand-maintained OpenAPI contract + self-hosted Swagger UI         | Accepted                        |
+| 0013 | In-process assistant agent with staged-suggestion autonomy        | Accepted (extended by 0019)     |
+| 0014 | First-party outcome loop (artefact → result tracking)             | Accepted                        |
+| 0015 | First-party email integration (send outreach, detect replies)     | Accepted                        |
+| 0016 | Learned stage-transition probabilities for the forecast           | Accepted                        |
+| 0017 | Local hashed embeddings + hybrid matching                         | Accepted                        |
+| 0018 | Compliance automation (audit trail, retention, AGG engine)        | Accepted                        |
+| 0019 | Autopilot: the auto-apply gear of the one agent (CoRecruiter)     | Accepted                        |
+| 0020 | Pluggable neural embeddings (Ollama, OpenAI) behind the port      | Accepted                        |
+| 0021 | Pro/Free plan gating at one HTTP seam (license deferred)          | Accepted                        |
+| 0022 | Split DocumentAiService into a runner + five services             | Accepted                        |
+| 0023 | Frontend unit/component test base with Vitest (jsdom)             | Accepted                        |
+| 0024 | Split the MandatePipeline god-component (board + 5 modals)        | Accepted                        |
+| 0025 | Responsive app shell (matchMedia hook + mobile drawer)            | Accepted (E1 slice 1)           |
+| 0026 | Responsive dense views (dashboard grids + scrollable tables)      | Accepted (E1 slice 2)           |
+| 0027 | Responsive CV profile, editor, and form modals                    | Accepted (E1 slice 3)           |
+| 0028 | Installable PWA (manifest + hand-rolled service worker)           | Accepted (E2)                   |
+| 0029 | Fail-fast production readiness gate (Postgres, APP_SECRET)        | Accepted (D-series slice 1)     |
+| 0030 | Scheduler leader election via Postgres advisory locks             | Accepted (D-series slice 2)     |
+| 0031 | PDF archive to S3-compatible object storage                       | Accepted (D-series slice 3)     |
+| 0032 | Bounded PDF render pool (concurrency semaphore)                   | Accepted (D-series slice 4)     |
+| 0033 | Multi-tenant scope foundation (tenantId, default 'team')          | Accepted (D-series slice 6·1)   |
+| 0034 | Tenant-scoped member management (roster + role admin)             | Accepted (D-series slice 6·2)   |
+| 0035 | Tenant onboarding by invitation (admin invite → accept)           | Accepted (D-series slice 6·3)   |
+| 0036 | Tenant registry + self-serve creation (SELF_SERVE_TENANTS)        | Accepted (D-series slice 6·4·1) |
+| 0037 | Super-admin capability + cross-tenant registry read               | Accepted (D-series slice 6·4·2) |
+| 0038 | Cross-tenant management + tenant suspension (enforced)            | Accepted (D-series slice 6·4·3) |
+| 0039 | Richer offline experience (offline banner + SWR service worker)   | Accepted                        |
+| 0040 | Capacitor native app wrapper (web-side wiring; native is manual)  | Accepted                        |
+| 0041 | Workbox service worker (vite-plugin-pwa; supersedes 0028/0039 SW) | Accepted                        |
 
 ## 10. Quality Requirements
 
@@ -430,13 +431,16 @@ watching). If you are scanning for current exposure, read §11.2.
   crushing it) all adapt via the `useViewport` hook — the core app is usable on a phone. The
   board is touch-usable via the stage `<select>`; touch drag-and-drop is intentionally not
   implemented.
-- **Installable PWA** (ADR-0028): a web app manifest + a hand-rolled service worker (offline
-  shell, `/api` never cached) + generated PNG icons make the kit installable to the home
-  screen and launchable standalone. On-device install (Android/iOS, HTTPS) is a **manual
-  acceptance step** — it can't be exercised in CI; the source-level wiring is unit-tested.
-  The **richer offline** pass (ADR-0039) adds an offline status banner (`useOnline` hook), a
-  stale-while-revalidate service worker (v2) so redeploys refresh assets without a hard reload,
-  and a cold-install offline fallback page. Offline still covers the shell, not data — `/api`
+- **Installable PWA** (ADR-0028): a web app manifest + a service worker (offline shell, `/api`
+  never cached) + generated PNG icons make the kit installable to the home screen and
+  launchable standalone. On-device install (Android/iOS, HTTPS) is a **manual acceptance
+  step** — it can't be exercised in CI; the source-level wiring is unit-tested. The **richer
+  offline** pass (ADR-0039) adds an offline status banner (`useOnline` hook), stale-while-
+  revalidate assets so redeploys refresh without a hard reload, and an offline shell fallback.
+  The worker itself is now **Workbox via `vite-plugin-pwa`** (ADR-0041, superseding the
+  original hand-rolled worker): `injectManifest` mode keeps our relative-base/subpath routing
+  while Workbox precaches every built asset with a content-revision hash — redeploys propagate
+  by hash instead of a manual `CACHE_VERSION` bump. Offline still covers the shell, not data — `/api`
   is network-only by design (privacy), so offline data editing / a write queue remains a
   follow-up. A **Capacitor** wrapper (ADR-0040) ships the same web build to the App Store /
   Play Store; the repo carries the web-side wiring (`capacitor.config.ts`, `cap:*` scripts),

@@ -1,6 +1,8 @@
 # ADR-0028 — Installable PWA (manifest + hand-rolled service worker)
 
-- **Status:** Accepted (E2)
+- **Status:** Accepted (E2) — the **service-worker** part is superseded by
+  ADR-0041 (Workbox via vite-plugin-pwa); the manifest, PNG icons, registration
+  guard and offline-shell scope below still stand.
 - **Relates to:** ADR-0025/0026/0027 (the responsive UI this makes installable), ADR-0004 (the strict recruiting-kit CSP)
 
 ## Context

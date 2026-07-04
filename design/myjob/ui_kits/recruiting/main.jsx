@@ -32,14 +32,15 @@ import './Login.jsx';
 import './app.jsx';
 
 import { createRoot } from 'react-dom/client';
+// Workbox service-worker registration, injected by vite-plugin-pwa (ADR-0028).
+// This is a bundled, same-origin module — no inline script — so it satisfies the
+// kit's strict CSP (`script-src 'self'`, ADR-0004). registerSW feature-checks
+// `serviceWorker` support itself, so a failure (no HTTPS in dev, unsupported
+// browser) is a no-op and never breaks the app.
+import { registerSW } from 'virtual:pwa-register';
 
 createRoot(document.getElementById('root')).render(window.React.createElement(window.App));
 
-// Register the service worker for installability + offline shell (ADR-0028).
-// Fire-and-forget: a failure (no HTTPS in dev, unsupported browser) must never
-// break the app. The SW lives next to this bundle so its scope is the kit.
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(() => {});
-  });
-}
+// `autoUpdate` (vite.config.ts): a redeployed worker takes over and reloads to
+// the fresh shell without a user prompt. Fire-and-forget.
+registerSW({ immediate: true });

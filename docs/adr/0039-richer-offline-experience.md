@@ -1,7 +1,12 @@
 # ADR-0039 — Richer offline experience
 
-- **Status:** Accepted
-- **Relates to:** ADR-0028 (installable PWA)
+- **Status:** Accepted — the **service-worker v2** implementation below is
+  superseded by ADR-0041 (Workbox via vite-plugin-pwa), which keeps the same
+  strategy (SWR assets, `/api` network-only, offline shell) but replaces the
+  hand-rolled worker and the manual `CACHE_VERSION` with revision-hashed
+  precaching. The connectivity feedback (`useOnline`/`OfflineBanner`) is
+  unaffected.
+- **Relates to:** ADR-0028 (installable PWA), ADR-0041 (Workbox service worker)
 
 ## Context
 

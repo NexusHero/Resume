@@ -12,14 +12,9 @@ and Bewerbungsmappe builder, and a small REST API behind it all.
 ![Tests](https://img.shields.io/badge/tests-1070%2B%20·%2090%25%20coverage-success)
 ![Built with AI](https://img.shields.io/badge/built%20with-Claude%20Code-d97706)
 
-**📖 API reference (Swagger UI)** — the live OpenAPI contract, straight from
-[`server/openapi.yaml`](server/openapi.yaml):
-
-- [**Open in Swagger UI (no setup)**](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/NexusHero/Resume/main/server/openapi.yaml)
-  — renders the spec instantly via a public viewer.
-- [**GitHub Pages (self-hosted)**](https://nexushero.github.io/Resume/) — the same UI
-  bundled with no third-party request, once Pages is enabled
-  (Settings → Pages → Source = "GitHub Actions").
+[**📖 API reference (Swagger UI)**](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/NexusHero/Resume/main/server/openapi.yaml)
+— the live OpenAPI contract, rendered straight from
+[`server/openapi.yaml`](server/openapi.yaml).
 
 </div>
 

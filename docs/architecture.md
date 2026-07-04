@@ -238,10 +238,8 @@ a picture earns its place.
   a tenant to lock its members out immediately (ADR-0037/0038); it surfaces as a Platform card
   in Settings when `/auth/me` reports `isSuperAdmin`.
 - **API contract:** hand-maintained OpenAPI 3.1 + self-hosted Swagger UI (ADR-0012),
-  extended in the same PR as any route change. Browsable two ways from the same
-  `server/openapi.yaml`: in-app at `/api/v1/docs`, and published to **GitHub Pages**
-  (`https://nexushero.github.io/Resume/`) by the `pages.yml` workflow — both use the
-  bundled `swagger-ui-dist`, no CDN. A zod→spec drift test guards the request shapes.
+  extended in the same PR as any route change. Browsable in-app at `/api/v1/docs`
+  (bundled `swagger-ui-dist`, no CDN); a zod→spec drift test guards the request shapes.
 - **Self-hosted assets:** fonts and the Swagger UI ship from this origin — no CDN, no
   third-party request leaves the browser (DSGVO); strict CSP on the built kit and docs.
 - **DI discipline:** new ports must be registered in `container.ts`; unit tests won't catch

@@ -16,6 +16,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "docs:check": "node tools/check-docs.mjs",
     "test": "jest --coverage",
     "test:watch": "jest --watch",
     "test:e2e": "playwright test",

@@ -38,6 +38,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Docs check (diagram/link/ADR freshness)
+        run: npm run docs:check
+
       - name: Test
         run: npm test
 

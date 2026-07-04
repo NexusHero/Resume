@@ -38,12 +38,17 @@ export class AtsAiService {
   ): Promise<AtsScore & { provider: LlmProviderId | 'template'; usage?: CallUsage }> {
     const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
 
-    const res = await this.runner.run(userId, 'ats', MAX_TOKENS.ats, atsPrompt(documents, jobText));
-    if (res) {
-      const parsed = this.runner.parseReply('ats', res.reply, atsResultSchema);
-      if (parsed) return { ...normalizeAts(parsed), provider: res.provider, usage: res.usage };
-    }
-
-    return { ...fallbackAts(documents, jobText), provider: 'template' };
+    const { content, provider, usage } = await this.runner.runFeature(
+      userId,
+      'ats',
+      MAX_TOKENS.ats,
+      atsPrompt(documents, jobText),
+      {
+        schema: atsResultSchema,
+        normalize: normalizeAts,
+        fallback: () => fallbackAts(documents, jobText),
+      },
+    );
+    return { ...content, provider, usage };
   }
 }

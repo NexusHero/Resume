@@ -112,20 +112,17 @@ export class DocumentAssistService {
     }
   > {
     const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
-    const built = tailorPrompt(documents, target, target.lang);
-    const res = await this.runner.run(userId, 'tailor', MAX_TOKENS.tailor, built);
-
-    let content: TailoredApplication;
-    let provider: LlmProviderId | 'template' = 'template';
-    let usage: CallUsage | undefined;
-    const parsed = res ? this.runner.parseReply('tailor', res.reply, tailorResultSchema) : null;
-    if (res && parsed) {
-      content = normalizeTailored(parsed);
-      provider = res.provider;
-      usage = res.usage;
-    } else {
-      content = fallbackTailor(documents, target, target.lang);
-    }
+    const { content, provider, usage } = await this.runner.runFeature(
+      userId,
+      'tailor',
+      MAX_TOKENS.tailor,
+      tailorPrompt(documents, target, target.lang),
+      {
+        schema: tailorResultSchema,
+        normalize: normalizeTailored,
+        fallback: () => fallbackTailor(documents, target, target.lang),
+      },
+    );
 
     // Flag any claim the CV + ad don't support — trust matters most on autopilot.
     const grounded = this.runner.withGrounding(

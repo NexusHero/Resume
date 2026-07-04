@@ -120,25 +120,20 @@ export class OutreachAiService {
         usage,
       );
 
-    const res = await this.runner.run(
+    const { content, provider, usage } = await this.runner.runFeature(
       userId,
       'pitch',
       MAX_TOKENS.pitch,
       pitchPrompt(documents, mandateContext, lang),
+      {
+        schema: pitchResultSchema,
+        normalize: normalizePitch,
+        accept: (pitch) => Boolean(pitch.headline || pitch.paragraphs.length),
+        fallback: () => fallbackPitch(documents, mandateContext, lang),
+      },
     );
-    if (res) {
-      const parsed = this.runner.parseReply('pitch', res.reply, pitchResultSchema);
-      if (parsed) {
-        const pitch = normalizePitch(parsed);
-        if (pitch.headline || pitch.paragraphs.length) {
-          await this.logArtifact(scope, 'pitch', talentId, res.provider);
-          return grounded(pitch, res.provider, res.usage);
-        }
-      }
-    }
-
-    await this.logArtifact(scope, 'pitch', talentId, 'template');
-    return grounded(fallbackPitch(documents, mandateContext, lang), 'template');
+    await this.logArtifact(scope, 'pitch', talentId, provider);
+    return grounded(content, provider, usage);
   }
 
   /**
@@ -178,25 +173,20 @@ export class OutreachAiService {
         usage,
       );
 
-    const res = await this.runner.run(
+    const outreachContext = { channel: opts.channel, audience: opts.audience };
+    const { content, provider, usage } = await this.runner.runFeature(
       userId,
       'outreach',
       MAX_TOKENS.outreach,
       outreachPrompt(documents, opts, lang),
+      {
+        schema: outreachResultSchema,
+        normalize: (parsed) => normalizeOutreach(parsed, opts.channel),
+        accept: (message) => Boolean(message.body),
+        fallback: () => fallbackOutreach(documents, opts, lang),
+      },
     );
-    const outreachContext = { channel: opts.channel, audience: opts.audience };
-    if (res) {
-      const parsed = this.runner.parseReply('outreach', res.reply, outreachResultSchema);
-      if (parsed) {
-        const message = normalizeOutreach(parsed, opts.channel);
-        if (message.body) {
-          await this.logArtifact(scope, 'outreach', talentId, res.provider, outreachContext);
-          return grounded(message, res.provider, res.usage);
-        }
-      }
-    }
-
-    await this.logArtifact(scope, 'outreach', talentId, 'template', outreachContext);
-    return grounded(fallbackOutreach(documents, opts, lang), 'template');
+    await this.logArtifact(scope, 'outreach', talentId, provider, outreachContext);
+    return grounded(content, provider, usage);
   }
 }

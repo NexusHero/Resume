@@ -23,7 +23,10 @@
     "test:web:watch": "vitest",
     "package": "bash scripts/build-artifact.sh",
     "hooks:install": "git config core.hooksPath scripts/hooks && echo 'Git hooks installed (core.hooksPath=scripts/hooks)'",
-    "build:web": "vite build"
+    "build:web": "vite build",
+    "cap:sync": "npm run build:web && cap sync",
+    "cap:add:android": "cap add android",
+    "cap:add:ios": "cap add ios"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1079.0",
@@ -43,6 +46,8 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@capacitor/cli": "^6.2.1",
+    "@capacitor/core": "^6.2.1",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.48.0",
     "@testing-library/dom": "^10.4.1",

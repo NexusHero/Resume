@@ -56,6 +56,21 @@ describe('service worker', () => {
   it('Sw_NeverCachesTheApi', () => {
     expect(sw).toMatch(/pathname\.startsWith\('\/api'\)/);
   });
+
+  it('Sw_StaleWhileRevalidate_RefreshesAssetsInBackground', () => {
+    // Both a cache read and a background network fetch feed the asset response.
+    expect(sw).toContain('caches.match(req)');
+    expect(sw).toContain('return hit || network');
+  });
+
+  it('Sw_ServesAnOfflineFallbackOnAColdInstall', () => {
+    expect(sw).toContain('offlineResponse()');
+    expect(sw).toMatch(/You.re offline/);
+  });
+
+  it('Sw_BumpsTheCacheVersion', () => {
+    expect(sw).toMatch(/CACHE_VERSION = 'myjob-v2'/);
+  });
 });
 
 describe('service worker registration', () => {

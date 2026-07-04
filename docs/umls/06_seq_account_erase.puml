@@ -1,0 +1,36 @@
+@startuml 06_seq_account_erase
+title DSGVO account erase via the personal-data registry (FR-60, security §10)
+
+skinparam shadowing false
+autonumber
+
+actor Recruiter
+participant "AccountController" as Ctrl
+participant "AccountService" as Svc
+participant "UserErasureStep[]\n(registered in container.ts)" as Reg
+participant "each container\n(keys, sessions, reset-,\nverification-tokens, usage)" as Stores
+participant "UserRepository" as Users
+
+Recruiter -> Ctrl : DELETE /account
+activate Ctrl
+Ctrl -> Svc : erase(userId)
+activate Svc
+
+loop for each registered erasure step
+  Svc -> Reg : step.erase(userId)
+  Reg -> Stores : destroyForUser / removeForUser
+  Stores --> Reg : done (idempotent)
+end
+note right of Reg : the list lives once, in the composition root.\nemail-verification tokens are a registered step —\nthe leak where erase forgot them cannot recur.
+
+Svc -> Users : remove(userId)
+note right of Users : account row removed **last** —\nit is the identity the rest hangs off
+Users --> Svc : done
+Svc --> Ctrl : void
+deactivate Svc
+Ctrl --> Recruiter : 204 + clear session cookie
+deactivate Ctrl
+
+note over Svc : team-owned data (mandates, talents, …) is left —\none member leaving cannot wipe the team's work
+
+@enduml

@@ -1,0 +1,49 @@
+@startuml 06_seq_ai_generation
+title AI generation with grounding, provider resolution, fallback & metering (FR-30/31/38)
+
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+autonumber
+
+actor Recruiter
+participant "Controller" as Ctrl
+participant "AI feature service\n(e.g. OutreachAiService)" as Svc
+participant "LlmFeatureRunner" as Runner
+participant "ApiKeyStore\n(secret-cipher)" as Keys
+participant "LlmService\n→ provider" as Llm
+participant "grounding\n(domain, pure)" as Ground
+participant "UsageMeter" as Meter
+
+Recruiter -> Ctrl : POST /talents/:id/documents/pitch
+activate Ctrl
+Ctrl -> Ctrl : zod-validate body
+Ctrl -> Svc : pitchForMandate(...)
+activate Svc
+
+Svc -> Runner : run(feature, prompt, schema)
+activate Runner
+Runner -> Runner : resolveProvider()\n(User.llmProvider ADR-0011, else default)
+
+alt user key or server credentials present
+  Runner -> Keys : decrypt per-user key
+  Keys --> Runner : key
+  Runner -> Llm : generate(prompt)
+  Llm --> Runner : raw reply
+  Runner -> Runner : parseReply<T>() — schema validate
+  Runner -> Meter : record(requests, tokens, cost)
+  note right of Meter : metering never blocks;\nfailures are swallowed
+  Runner --> Svc : { data, provider, usage }
+else no key AND no server creds
+  Runner --> Svc : null  (signal: fall back)
+  note over Svc : deterministic template result,\nprovider = "Template · no AI"
+end
+deactivate Runner
+
+Svc -> Ground : checkGrounding(text, CV + mandate)
+Ground --> Svc : { supported, unsupported[] }
+Svc --> Ctrl : { …pitch, provider, usage, grounding }
+deactivate Svc
+Ctrl --> Recruiter : 200 — badge (AI·provider·tokens·$ / Template)\n+ "nicht belegte Angaben" if unsupported ≠ ∅
+deactivate Ctrl
+
+@enduml

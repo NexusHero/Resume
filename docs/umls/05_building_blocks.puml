@@ -17,9 +17,10 @@ package "HTTP" {
 }
 
 package "Application (services)" {
-  [DocumentAiService\n(suggest, parse, ATS, pitch, outreach,\ntranslate, explain, kits, prep)] as AiSvc
+  [LlmFeatureRunner\n(provider resolve, generate + meter,\nschema-validate, fallback signal,\ngrounding envelope)] as Runner
+  [AI feature services\n(document-assist, cv-parse, ats-ai,\noutreach-ai, match-ai) +\nDocumentAiService facade] as AiSvc
   [recruiting services\n(talent, mandate, candidacy,\nplacement, match, forecast,\nretention, members, usage)] as RecSvc
-  [auth services\n(auth, password reset,\nemail verification, account)] as AuthSvc
+  [auth services\n(auth, password reset,\nemail verification, account\n+ personal-data registry)] as AuthSvc
   [LlmService\n(provider registry + default)] as LlmSvc
 }
 
@@ -55,9 +56,10 @@ Ctrl ..> Problem
 Ctrl --> AiSvc
 Ctrl --> RecSvc
 Ctrl --> AuthSvc
-AiSvc --> LlmSvc
+AiSvc --> Runner
+Runner --> LlmSvc
+Runner --> Keys
 AiSvc --> AiDomain
-AiSvc --> Keys
 RecSvc --> Model
 AuthSvc --> AuthPorts
 AiSvc --> Repos

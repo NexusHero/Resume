@@ -28,6 +28,9 @@ describe('Capacitor package wiring', () => {
   it('Package_DeclaresCapacitorDevDependencies', () => {
     expect(pkg.devDependencies['@capacitor/cli']).toBeTruthy();
     expect(pkg.devDependencies['@capacitor/core']).toBeTruthy();
+    // Pinned (not left to `cap add android` to fetch) so the CI Android build
+    // (native-android.yml) is deterministic and needs no network install step.
+    expect(pkg.devDependencies['@capacitor/android']).toBeTruthy();
   });
 
   it('Package_ShipsTheCapScripts', () => {

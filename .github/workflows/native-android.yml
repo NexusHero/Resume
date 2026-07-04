@@ -1,0 +1,63 @@
+name: Native — Android
+
+# Builds an installable, unsigned debug APK of the Capacitor native wrapper
+# (ADR-0040) and uploads it as a workflow artifact. Manual only — this is a
+# heavier, on-demand build, not part of the required verify gate.
+#
+# `android/` is gitignored (docs/native-app.md) and generated fresh each run
+# via `cap add android`; @capacitor/android is a pinned devDependency so that
+# step needs no network install of its own.
+#
+# Debug builds are signed with Gradle's auto-generated debug keystore, so the
+# APK installs straight onto a device/emulator for testing — no Play Store
+# signing key involved. A signed *release* build (Play Store submission) is a
+# separate, deliberately unbuilt step: it needs a real signing keystore stored
+# as a secret, which is a one-time setup left for whoever owns the store
+# listing. iOS is not built here at all — that needs a macOS runner and an
+# Apple Developer account (signing), see docs/native-app.md.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    name: Build unsigned debug APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build the web bundle Capacitor wraps
+        run: npm run build:web
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Generate the Android platform project
+        run: npm run cap:add:android
+
+      - name: Sync the web build + plugins into the native project
+        run: npx cap sync android
+
+      - name: Build the debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: myjob-android-debug
+          path: android/app/build/outputs/apk/debug/*.apk

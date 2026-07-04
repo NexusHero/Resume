@@ -4,16 +4,16 @@ import {
   type RegisterInput,
   type LoginInput,
   toUserView,
-} from '../domain/user';
-import { defaultWorkspaceName, type Tenant } from '../domain/tenant';
-import { ConflictError, UnauthorizedError } from '../domain/errors';
-import type { UserRepository } from '../ports/user-repository';
-import type { SessionStore } from '../ports/session-store';
-import type { PasswordHasher } from '../ports/password-hasher';
-import type { Clock } from '../ports/clock';
-import type { IdGenerator } from '../ports/id-generator';
-import type { TenantRepository } from '../ports/tenant-repository';
-import type { AppConfig } from '../config';
+} from '../domain/user.js';
+import { defaultWorkspaceName, type Tenant } from '../domain/tenant.js';
+import { ConflictError, UnauthorizedError } from '../domain/errors.js';
+import type { UserRepository } from '../ports/user-repository.js';
+import type { SessionStore } from '../ports/session-store.js';
+import type { PasswordHasher } from '../ports/password-hasher.js';
+import type { Clock } from '../ports/clock.js';
+import type { IdGenerator } from '../ports/id-generator.js';
+import type { TenantRepository } from '../ports/tenant-repository.js';
+import type { AppConfig } from '../config.js';
 
 export interface AuthServiceDeps {
   userRepository: UserRepository;

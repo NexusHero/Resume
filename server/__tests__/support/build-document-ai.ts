@@ -1,21 +1,21 @@
-import { DocumentAiService } from '../../src/services/document-ai-service';
-import { LlmFeatureRunner } from '../../src/services/llm-feature-runner';
-import { DocumentAssistService } from '../../src/services/document-assist-service';
-import { CvParseService } from '../../src/services/cv-parse-service';
-import { AtsAiService } from '../../src/services/ats-ai-service';
-import { OutreachAiService } from '../../src/services/outreach-ai-service';
-import { MatchAiService } from '../../src/services/match-ai-service';
-import type { DocumentService } from '../../src/services/document-service';
-import type { LlmService } from '../../src/services/llm-service';
-import type { ApiKeyStore } from '../../src/ports/api-key-store';
-import type { UserRepository } from '../../src/ports/user-repository';
-import type { PdfTextExtractor } from '../../src/ports/pdf-text-extractor';
-import type { UsageMeter } from '../../src/ports/usage-meter';
-import type { InterviewObservationRepository } from '../../src/ports/interview-observation-repository';
-import type { ArtifactLogRepository } from '../../src/ports/artifact-log-repository';
-import type { IdGenerator } from '../../src/ports/id-generator';
-import type { Clock } from '../../src/ports/clock';
-import type { Logger } from '../../src/ports/logger';
+import { DocumentAiService } from '../../src/services/document-ai-service.js';
+import { LlmFeatureRunner } from '../../src/services/llm-feature-runner.js';
+import { DocumentAssistService } from '../../src/services/document-assist-service.js';
+import { CvParseService } from '../../src/services/cv-parse-service.js';
+import { AtsAiService } from '../../src/services/ats-ai-service.js';
+import { OutreachAiService } from '../../src/services/outreach-ai-service.js';
+import { MatchAiService } from '../../src/services/match-ai-service.js';
+import type { DocumentService } from '../../src/services/document-service.js';
+import type { LlmService } from '../../src/services/llm-service.js';
+import type { ApiKeyStore } from '../../src/ports/api-key-store.js';
+import type { UserRepository } from '../../src/ports/user-repository.js';
+import type { PdfTextExtractor } from '../../src/ports/pdf-text-extractor.js';
+import type { UsageMeter } from '../../src/ports/usage-meter.js';
+import type { InterviewObservationRepository } from '../../src/ports/interview-observation-repository.js';
+import type { ArtifactLogRepository } from '../../src/ports/artifact-log-repository.js';
+import type { IdGenerator } from '../../src/ports/id-generator.js';
+import type { Clock } from '../../src/ports/clock.js';
+import type { Logger } from '../../src/ports/logger.js';
 
 /**
  * Assemble the DocumentAiService facade from its leaf dependencies (ADR-0022) —

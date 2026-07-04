@@ -1,5 +1,5 @@
-import { RoleAuthorizer } from '../../src/adapters/role-authorizer';
-import type { AuthPrincipal } from '../../src/ports/authorizer';
+import { RoleAuthorizer } from '../../src/adapters/role-authorizer.js';
+import type { AuthPrincipal } from '../../src/ports/authorizer.js';
 
 const authz = new RoleAuthorizer();
 const admin: AuthPrincipal = { id: 'a', roles: ['admin', 'recruiter'] };

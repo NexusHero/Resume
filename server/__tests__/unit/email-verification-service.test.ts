@@ -1,14 +1,14 @@
-import { EmailVerificationService } from '../../src/services/email-verification-service';
-import { loadConfig } from '../../src/config';
-import { UnauthorizedError } from '../../src/domain/errors';
+import { EmailVerificationService } from '../../src/services/email-verification-service.js';
+import { loadConfig } from '../../src/config.js';
+import { UnauthorizedError } from '../../src/domain/errors.js';
 import {
   InMemoryUserRepository,
   InMemoryEmailVerificationTokenStore,
   RecordingMailer,
   FixedClock,
   noopLogger,
-} from '../support/fakes';
-import type { User } from '../../src/domain/user';
+} from '../support/fakes.js';
+import type { User } from '../../src/domain/user.js';
 
 const user: User = {
   id: 'user1',

@@ -1,11 +1,12 @@
-import { TalentImportService } from '../../src/services/talent-import-service';
-import { TalentService } from '../../src/services/talent-service';
-import { DocumentService } from '../../src/services/document-service';
-import { buildDocumentAiService } from '../support/build-document-ai';
-import { LlmService } from '../../src/services/llm-service';
-import { importedName, importedSkills } from '../../src/domain/talent-import';
-import { emptyResume } from '../../src/domain/talent-documents';
-import type { LlmProvider } from '../../src/ports/llm-provider';
+import { jest } from '@jest/globals';
+import { TalentImportService } from '../../src/services/talent-import-service.js';
+import { TalentService } from '../../src/services/talent-service.js';
+import { DocumentService } from '../../src/services/document-service.js';
+import { buildDocumentAiService } from '../support/build-document-ai.js';
+import { LlmService } from '../../src/services/llm-service.js';
+import { importedName, importedSkills } from '../../src/domain/talent-import.js';
+import { emptyResume } from '../../src/domain/talent-documents.js';
+import type { LlmProvider } from '../../src/ports/llm-provider.js';
 import {
   InMemoryArtifactLogRepository,
   InMemoryTalentRepository,
@@ -21,8 +22,8 @@ import {
   FixedClock,
   SequenceIdGenerator,
   noopLogger,
-} from '../support/fakes';
-import { buildTalentDataPurgers } from '../support/talent-purgers';
+} from '../support/fakes.js';
+import { buildTalentDataPurgers } from '../support/talent-purgers.js';
 
 const OWNER = 'owner1';
 const b64 = (s: string) => Buffer.from(s).toString('base64');

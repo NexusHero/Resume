@@ -1,19 +1,19 @@
-import { mandateToTarget, jobToTarget } from '../../src/domain/application-target';
+import { mandateToTarget, jobToTarget } from '../../src/domain/application-target.js';
 import {
   tailorPrompt,
   fallbackTailor,
   normalizeTailored,
   tailorResultSchema,
-} from '../../src/domain/application-tailor';
-import type { Mandate } from '../../src/domain/mandate';
-import type { Job } from '../../src/domain/job';
-import type { TalentDocuments } from '../../src/domain/talent-documents';
+} from '../../src/domain/application-tailor.js';
+import type { Mandate } from '../../src/domain/mandate.js';
+import type { Job } from '../../src/domain/job.js';
+import type { TalentDocuments } from '../../src/domain/talent-documents.js';
 import {
   emptyContact,
   emptyResume,
   emptyLetter,
   defaultStyle,
-} from '../../src/domain/talent-documents';
+} from '../../src/domain/talent-documents.js';
 
 const mandate = (over: Partial<Mandate> = {}): Mandate => ({
   id: 'm1',

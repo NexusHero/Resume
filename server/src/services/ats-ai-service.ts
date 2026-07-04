@@ -4,11 +4,11 @@ import {
   atsResultSchema,
   fallbackAts,
   normalizeAts,
-} from '../domain/ats-ai';
-import type { LlmProviderId } from '../ports/llm-provider';
-import { type CallUsage } from '../domain/usage';
-import { MAX_TOKENS, type LlmFeatureRunner } from './llm-feature-runner';
-import type { DocumentService } from './document-service';
+} from '../domain/ats-ai.js';
+import type { LlmProviderId } from '../ports/llm-provider.js';
+import { type CallUsage } from '../domain/usage.js';
+import { MAX_TOKENS, type LlmFeatureRunner } from './llm-feature-runner.js';
+import type { DocumentService } from './document-service.js';
 
 export interface AtsAiServiceDeps {
   llmFeatureRunner: LlmFeatureRunner;

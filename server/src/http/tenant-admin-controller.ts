@@ -1,10 +1,10 @@
 import type { Request, Response } from 'express';
-import { ForbiddenError } from '../domain/errors';
-import { setRolesSchema } from '../domain/user';
-import { setTenantStatusSchema } from '../domain/tenant';
-import type { TenantService } from '../services/tenant-service';
-import type { MembersService } from '../services/members-service';
-import { currentIsSuperAdmin } from './current-user';
+import { ForbiddenError } from '../domain/errors.js';
+import { setRolesSchema } from '../domain/user.js';
+import { setTenantStatusSchema } from '../domain/tenant.js';
+import type { TenantService } from '../services/tenant-service.js';
+import type { MembersService } from '../services/members-service.js';
+import { currentIsSuperAdmin } from './current-user.js';
 
 /**
  * The super-admin console (ADR-0037/0038), mounted under `/admin`. Every route

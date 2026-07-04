@@ -1,4 +1,4 @@
-import type { Candidacy } from '../domain/candidacy';
+import type { Candidacy } from '../domain/candidacy.js';
 
 /**
  * Persistence of pipeline candidacies (talent ↔ mandate links), scoped to an

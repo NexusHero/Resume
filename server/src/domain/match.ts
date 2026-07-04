@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import type { Talent } from './talent';
-import type { TalentDocuments } from './talent-documents';
-import { tokenize } from './ats-ai';
-import { jobClusters, skillMatchesJob } from './skill-semantics';
-import { canonicalizeSkills } from './skill-taxonomy';
+import type { Talent } from './talent.js';
+import type { TalentDocuments } from './talent-documents.js';
+import { tokenize } from './ats-ai.js';
+import { jobClusters, skillMatchesJob } from './skill-semantics.js';
+import { canonicalizeSkills } from './skill-taxonomy.js';
 
 /** POST /api/v1/mandates/:id/match — rank the pool against a mandate. */
 export const matchRequestSchema = z.object({

@@ -1,4 +1,4 @@
-import type { RetentionPolicy } from '../domain/retention';
+import type { RetentionPolicy } from '../domain/retention.js';
 
 /** Persistence of the team's retention policy (one row per scope). */
 export interface RetentionPolicyStore {

@@ -1,4 +1,4 @@
-import type { LlmProviderId } from './llm-provider';
+import type { LlmProviderId } from './llm-provider.js';
 
 /**
  * Per-user LLM provider API keys, stored server-side (encrypted at rest) instead

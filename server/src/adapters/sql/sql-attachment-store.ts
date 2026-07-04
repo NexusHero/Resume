@@ -1,9 +1,9 @@
 import { and, eq } from 'drizzle-orm';
-import type { Attachment } from '../../domain/attachment';
-import type { AttachmentBlob, AttachmentStore } from '../../ports/attachment-store';
-import type { Db } from './db';
-import { attachments } from './schema';
-import { rowToAttachment, attachmentToRow } from './mappers';
+import type { Attachment } from '../../domain/attachment.js';
+import type { AttachmentBlob, AttachmentStore } from '../../ports/attachment-store.js';
+import type { Db } from './db.js';
+import { attachments } from './schema.js';
+import { rowToAttachment, attachmentToRow } from './mappers.js';
 
 /**
  * Postgres-backed attachment store, scoped to an owner. Bytes are held as

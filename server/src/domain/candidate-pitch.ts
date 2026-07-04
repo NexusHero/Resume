@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import type { TalentDocuments } from './talent-documents';
-import type { OutputLang } from './language';
-import { candidateFacts } from './candidate-facts';
+import type { TalentDocuments } from './talent-documents.js';
+import type { OutputLang } from './language.js';
+import { candidateFacts } from './candidate-facts.js';
 
 /**
  * POST /api/v1/talents/:id/documents/pitch — an optional mandate/job context to

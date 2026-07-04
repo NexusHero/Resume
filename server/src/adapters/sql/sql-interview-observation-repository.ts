@@ -3,10 +3,10 @@ import type {
   Difficulty,
   InterviewFormat,
   InterviewObservation,
-} from '../../domain/interview-observation';
-import type { InterviewObservationRepository } from '../../ports/interview-observation-repository';
-import type { Db } from './db';
-import { interviewObservations } from './schema';
+} from '../../domain/interview-observation.js';
+import type { InterviewObservationRepository } from '../../ports/interview-observation-repository.js';
+import type { Db } from './db.js';
+import { interviewObservations } from './schema.js';
 
 /** Postgres-backed interview-observation repository, team-scoped. */
 export class SqlInterviewObservationRepository implements InterviewObservationRepository {

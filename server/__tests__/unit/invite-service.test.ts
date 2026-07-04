@@ -1,6 +1,6 @@
-import { InviteService } from '../../src/services/invite-service';
-import { loadConfig } from '../../src/config';
-import { ConflictError, UnauthorizedError } from '../../src/domain/errors';
+import { InviteService } from '../../src/services/invite-service.js';
+import { loadConfig } from '../../src/config.js';
+import { ConflictError, UnauthorizedError } from '../../src/domain/errors.js';
 import {
   InMemoryInviteRepository,
   InMemoryUserRepository,
@@ -9,10 +9,10 @@ import {
   SequenceIdGenerator,
   fakePasswordHasher,
   noopLogger,
-} from '../support/fakes';
-import { MemorySessionStore } from '../../src/adapters/memory-session-store';
-import type { User } from '../../src/domain/user';
-import type { TenantInvite } from '../../src/domain/tenant-invite';
+} from '../support/fakes.js';
+import { MemorySessionStore } from '../../src/adapters/memory-session-store.js';
+import type { User } from '../../src/domain/user.js';
+import type { TenantInvite } from '../../src/domain/tenant-invite.js';
 
 const NOW = '2026-06-25T10:00:00.000Z';
 

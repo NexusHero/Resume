@@ -1,9 +1,9 @@
 import { and, eq } from 'drizzle-orm';
-import type { Talent } from '../../domain/talent';
-import type { TalentRepository } from '../../ports/talent-repository';
-import type { Db } from './db';
-import { talents } from './schema';
-import { rowToTalent, talentToRow } from './mappers';
+import type { Talent } from '../../domain/talent.js';
+import type { TalentRepository } from '../../ports/talent-repository.js';
+import type { Db } from './db.js';
+import { talents } from './schema.js';
+import { rowToTalent, talentToRow } from './mappers.js';
 
 /** Postgres-backed repository for represented talents, scoped to an owner. */
 export class SqlTalentRepository implements TalentRepository {

@@ -1,15 +1,15 @@
 import { randomBytes } from 'node:crypto';
-import type { InviteRepository } from '../ports/invite-repository';
-import type { UserRepository } from '../ports/user-repository';
-import type { SessionStore } from '../ports/session-store';
-import type { PasswordHasher } from '../ports/password-hasher';
-import type { IdGenerator } from '../ports/id-generator';
-import type { Clock } from '../ports/clock';
-import type { Mailer } from '../ports/mailer';
-import type { Logger } from '../ports/logger';
-import type { AppConfig } from '../config';
-import { type User, type UserView, toUserView } from '../domain/user';
-import { ConflictError, UnauthorizedError } from '../domain/errors';
+import type { InviteRepository } from '../ports/invite-repository.js';
+import type { UserRepository } from '../ports/user-repository.js';
+import type { SessionStore } from '../ports/session-store.js';
+import type { PasswordHasher } from '../ports/password-hasher.js';
+import type { IdGenerator } from '../ports/id-generator.js';
+import type { Clock } from '../ports/clock.js';
+import type { Mailer } from '../ports/mailer.js';
+import type { Logger } from '../ports/logger.js';
+import type { AppConfig } from '../config.js';
+import { type User, type UserView, toUserView } from '../domain/user.js';
+import { ConflictError, UnauthorizedError } from '../domain/errors.js';
 import {
   type CreateInviteInput,
   type AcceptInviteInput,
@@ -18,7 +18,7 @@ import {
   toInviteView,
   tenantInviteUrl,
   tenantInviteEmail,
-} from '../domain/tenant-invite';
+} from '../domain/tenant-invite.js';
 
 export interface InviteServiceDeps {
   inviteRepository: InviteRepository;

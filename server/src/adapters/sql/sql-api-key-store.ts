@@ -1,9 +1,9 @@
 import { and, eq } from 'drizzle-orm';
-import type { ApiKeyStore } from '../../ports/api-key-store';
-import type { LlmProviderId } from '../../ports/llm-provider';
-import type { SecretCipher } from '../secret-cipher';
-import type { Db } from './db';
-import { apiKeys } from './schema';
+import type { ApiKeyStore } from '../../ports/api-key-store.js';
+import type { LlmProviderId } from '../../ports/llm-provider.js';
+import type { SecretCipher } from '../secret-cipher.js';
+import type { Db } from './db.js';
+import { apiKeys } from './schema.js';
 
 /** Postgres-backed, encrypted per-user API-key store. */
 export class SqlApiKeyStore implements ApiKeyStore {

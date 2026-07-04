@@ -1,9 +1,9 @@
-import type { ApplicationTarget } from '../domain/application-target';
-import type { ApplicationPayload } from '../domain/assistant';
-import type { TalentDocuments } from '../domain/talent-documents';
-import type { DocumentAiService } from './document-ai-service';
-import type { DocumentService } from './document-service';
-import type { AttachmentService } from './attachment-service';
+import type { ApplicationTarget } from '../domain/application-target.js';
+import type { ApplicationPayload } from '../domain/assistant.js';
+import type { TalentDocuments } from '../domain/talent-documents.js';
+import type { DocumentAiService } from './document-ai-service.js';
+import type { DocumentService } from './document-service.js';
+import type { AttachmentService } from './attachment-service.js';
 
 export interface ApplicationBuilderDeps {
   documentAiService: DocumentAiService;

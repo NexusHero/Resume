@@ -4,8 +4,8 @@ import {
   auditTrailToCsv,
   type UsageSummary,
   type AuditEntry,
-} from '../domain/usage';
-import type { UsageMeter } from '../ports/usage-meter';
+} from '../domain/usage.js';
+import type { UsageMeter } from '../ports/usage-meter.js';
 
 export interface UsageServiceDeps {
   usageMeter: UsageMeter;

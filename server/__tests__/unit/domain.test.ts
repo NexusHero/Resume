@@ -4,7 +4,7 @@ import {
   buildApplicationSchema,
   applicationStatusSchema,
   composeAddress,
-} from '../../src/domain/application';
+} from '../../src/domain/application.js';
 
 describe('createApplicationSchema', () => {
   it('CreateApplication_MinimalInput_AppliesDefaults', () => {

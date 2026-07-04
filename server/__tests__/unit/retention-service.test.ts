@@ -1,12 +1,12 @@
-import { RetentionService } from '../../src/services/retention-service';
-import { ANONYMIZED_NAME } from '../../src/domain/talent';
-import { NotFoundError } from '../../src/domain/errors';
+import { RetentionService } from '../../src/services/retention-service.js';
+import { ANONYMIZED_NAME } from '../../src/domain/talent.js';
+import { NotFoundError } from '../../src/domain/errors.js';
 import {
   emptyContact,
   emptyResume,
   emptyLetter,
   defaultStyle,
-} from '../../src/domain/talent-documents';
+} from '../../src/domain/talent-documents.js';
 import {
   InMemoryTalentRepository,
   InMemoryCandidacyRepository,
@@ -15,10 +15,10 @@ import {
   FixedClock,
   InMemoryRetentionPolicyStore,
   noopLogger,
-} from '../support/fakes';
-import { buildTalentDataPurgers } from '../support/talent-purgers';
-import type { Talent } from '../../src/domain/talent';
-import type { Attachment } from '../../src/domain/attachment';
+} from '../support/fakes.js';
+import { buildTalentDataPurgers } from '../support/talent-purgers.js';
+import type { Talent } from '../../src/domain/talent.js';
+import type { Attachment } from '../../src/domain/attachment.js';
 
 const SCOPE = 'team';
 const NOW = '2026-06-25T10:00:00.000Z';

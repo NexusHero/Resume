@@ -5,8 +5,8 @@ import {
   observedConfidence,
   createObservationSchema,
   type InterviewObservation,
-} from '../../src/domain/interview-observation';
-import { companyInterviewProfile } from '../../src/domain/company-archetype';
+} from '../../src/domain/interview-observation.js';
+import { companyInterviewProfile } from '../../src/domain/company-archetype.js';
 
 const obs = (over: Partial<InterviewObservation> = {}): InterviewObservation => ({
   id: 'o1',

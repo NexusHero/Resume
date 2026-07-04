@@ -1,13 +1,13 @@
-import { extractJson } from '../domain/document-parse';
-import { type GroundingReport, checkGrounding } from '../domain/grounding';
-import { type CallUsage, type UsageFeature, callUsage, toUsageEvent } from '../domain/usage';
-import type { LlmProvider, LlmProviderId, TokenUsage } from '../ports/llm-provider';
-import type { ApiKeyStore } from '../ports/api-key-store';
-import type { UserRepository } from '../ports/user-repository';
-import type { UsageMeter } from '../ports/usage-meter';
-import type { Clock } from '../ports/clock';
-import type { Logger } from '../ports/logger';
-import type { LlmService } from './llm-service';
+import { extractJson } from '../domain/document-parse.js';
+import { type GroundingReport, checkGrounding } from '../domain/grounding.js';
+import { type CallUsage, type UsageFeature, callUsage, toUsageEvent } from '../domain/usage.js';
+import type { LlmProvider, LlmProviderId, TokenUsage } from '../ports/llm-provider.js';
+import type { ApiKeyStore } from '../ports/api-key-store.js';
+import type { UserRepository } from '../ports/user-repository.js';
+import type { UsageMeter } from '../ports/usage-meter.js';
+import type { Clock } from '../ports/clock.js';
+import type { Logger } from '../ports/logger.js';
+import type { LlmService } from './llm-service.js';
 
 /** Max output tokens per generation, sized to each feature's expected reply. */
 export const MAX_TOKENS = {

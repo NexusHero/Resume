@@ -7,23 +7,23 @@ import {
   isStale,
   daysStale,
   suggestionKey,
-} from '../domain/assistant';
-import { ConflictError, NotFoundError } from '../domain/errors';
+} from '../domain/assistant.js';
+import { ConflictError, NotFoundError } from '../domain/errors.js';
 import type {
   AssistantSettingsStore,
   AssistantSuggestionRepository,
-} from '../ports/assistant-store';
-import type { Mandate } from '../domain/mandate';
-import type { MandateRepository } from '../ports/mandate-repository';
-import type { TalentRepository } from '../ports/talent-repository';
-import type { DocumentRepository } from '../ports/document-repository';
-import type { CandidacyRepository } from '../ports/candidacy-repository';
-import type { Clock } from '../ports/clock';
-import type { IdGenerator } from '../ports/id-generator';
-import type { Logger } from '../ports/logger';
-import type { MatchService } from './match-service';
-import type { CandidacyService } from './candidacy-service';
-import type { AutopilotService } from './autopilot-service';
+} from '../ports/assistant-store.js';
+import type { Mandate } from '../domain/mandate.js';
+import type { MandateRepository } from '../ports/mandate-repository.js';
+import type { TalentRepository } from '../ports/talent-repository.js';
+import type { DocumentRepository } from '../ports/document-repository.js';
+import type { CandidacyRepository } from '../ports/candidacy-repository.js';
+import type { Clock } from '../ports/clock.js';
+import type { IdGenerator } from '../ports/id-generator.js';
+import type { Logger } from '../ports/logger.js';
+import type { MatchService } from './match-service.js';
+import type { CandidacyService } from './candidacy-service.js';
+import type { AutopilotService } from './autopilot-service.js';
 
 export interface AssistantRunResult {
   runId: string;

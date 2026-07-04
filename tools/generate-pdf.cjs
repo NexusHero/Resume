@@ -9,7 +9,7 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { launch, renderCV, renderCoverLetter } = require('./render');
+const { launch, renderCV, renderCoverLetter } = require('./render.cjs');
 
 const ROOT = path.join(__dirname, '..');
 const write = (name, buf) => {

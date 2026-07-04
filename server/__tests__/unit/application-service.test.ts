@@ -1,11 +1,11 @@
-import { ApplicationService } from '../../src/services/application-service';
-import { slug } from '../../src/domain/slug';
+import { ApplicationService } from '../../src/services/application-service.js';
+import { slug } from '../../src/domain/slug.js';
 import {
   createApplicationSchema,
   updateApplicationSchema,
   buildApplicationSchema,
-} from '../../src/domain/application';
-import { NotFoundError } from '../../src/domain/errors';
+} from '../../src/domain/application.js';
+import { NotFoundError } from '../../src/domain/errors.js';
 import {
   InMemoryApplicationRepository,
   InMemoryAuditLog,
@@ -16,7 +16,7 @@ import {
   FixedClock,
   SequenceIdGenerator,
   noopLogger,
-} from '../support/fakes';
+} from '../support/fakes.js';
 
 function makeService(versioner: FakeVersioner = new FakeVersioner('abc1234')) {
   const repo = new InMemoryApplicationRepository();

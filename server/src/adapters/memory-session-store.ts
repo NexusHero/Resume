@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
-import type { SessionStore } from '../ports/session-store';
-import type { Clock } from '../ports/clock';
+import type { SessionStore } from '../ports/session-store.js';
+import type { Clock } from '../ports/clock.js';
 
 /**
  * In-memory session store: a random token → user id map. Sessions do not

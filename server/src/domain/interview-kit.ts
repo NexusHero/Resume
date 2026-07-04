@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import type { TalentDocuments } from './talent-documents';
-import { type MandateContext, documentSkills, matchedForMandate } from './match-explain';
-import { candidateFacts } from './candidate-facts';
+import type { TalentDocuments } from './talent-documents.js';
+import { type MandateContext, documentSkills, matchedForMandate } from './match-explain.js';
+import { candidateFacts } from './candidate-facts.js';
 
 /**
  * An interview kit for a candidate against a mandate: a handful of tailored

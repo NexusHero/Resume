@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { roleSchema, type Role } from './user';
+import { roleSchema, type Role } from './user.js';
 
 /**
  * A tenant invitation (ADR-0035). An admin invites an email address into their

@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
-import { setRolesSchema } from '../domain/user';
-import type { MembersService } from '../services/members-service';
-import { currentScope } from './current-user';
+import { setRolesSchema } from '../domain/user.js';
+import type { MembersService } from '../services/members-service.js';
+import { currentScope } from './current-user.js';
 
 /** Team member management under /api/v1/members. Admin-only, gated at the route (requireCan). */
 export class MembersController {

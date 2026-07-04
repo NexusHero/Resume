@@ -1,24 +1,24 @@
-import { PasswordResetService } from '../../src/services/password-reset-service';
-import { ConsoleMailer } from '../../src/adapters/console-mailer';
-import { createMailer } from '../../src/adapters/mailer-factory';
-import { SmtpMailer } from '../../src/adapters/smtp-mailer';
+import { PasswordResetService } from '../../src/services/password-reset-service.js';
+import { ConsoleMailer } from '../../src/adapters/console-mailer.js';
+import { createMailer } from '../../src/adapters/mailer-factory.js';
+import { SmtpMailer } from '../../src/adapters/smtp-mailer.js';
 import {
   requestResetSchema,
   confirmResetSchema,
   passwordResetUrl,
   passwordResetEmail,
-} from '../../src/domain/password-reset';
-import { UnauthorizedError } from '../../src/domain/errors';
-import { loadConfig, type AppConfig } from '../../src/config';
+} from '../../src/domain/password-reset.js';
+import { UnauthorizedError } from '../../src/domain/errors.js';
+import { loadConfig, type AppConfig } from '../../src/config.js';
 import {
   InMemoryUserRepository,
   InMemoryPasswordResetTokenStore,
   RecordingMailer,
   fakePasswordHasher,
   noopLogger,
-} from '../support/fakes';
-import { MemorySessionStore } from '../../src/adapters/memory-session-store';
-import type { User } from '../../src/domain/user';
+} from '../support/fakes.js';
+import { MemorySessionStore } from '../../src/adapters/memory-session-store.js';
+import type { User } from '../../src/domain/user.js';
 
 const TS = '2026-06-30T12:00:00.000Z';
 const user: User = {

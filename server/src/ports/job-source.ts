@@ -1,4 +1,4 @@
-import type { Job, JobQuery } from '../domain/job';
+import type { Job, JobQuery } from '../domain/job.js';
 
 /**
  * A source of job postings (a board / aggregator). Production adapters wrap

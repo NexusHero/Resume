@@ -1,8 +1,8 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import type { AppConfig } from '../config';
-import type { Attachment } from '../domain/attachment';
-import type { AttachmentBlob, AttachmentStore } from '../ports/attachment-store';
+import type { AppConfig } from '../config.js';
+import type { Attachment } from '../domain/attachment.js';
+import type { AttachmentBlob, AttachmentStore } from '../ports/attachment-store.js';
 
 /**
  * File-backed attachment store: metadata in bewerbungen/attachments.json, the

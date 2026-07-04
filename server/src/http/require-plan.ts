@@ -1,9 +1,9 @@
 import type { Request, RequestHandler } from 'express';
-import { type Plan, planSatisfies } from '../domain/plan';
-import { PlanRequiredError } from '../domain/errors';
-import type { PlanProvider } from '../ports/plan-provider';
-import { asyncHandler } from './async-handler';
-import { currentScope } from './current-user';
+import { type Plan, planSatisfies } from '../domain/plan.js';
+import { PlanRequiredError } from '../domain/errors.js';
+import type { PlanProvider } from '../ports/plan-provider.js';
+import { asyncHandler } from './async-handler.js';
+import { currentScope } from './current-user.js';
 
 /**
  * The single plan-enforcement seam (ADR-0021). `requirePlan('pro')` is dropped

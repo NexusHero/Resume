@@ -5,18 +5,18 @@ import {
   defaultStyle,
   emptyResume,
   emptyLetter,
-} from '../domain/talent-documents';
-import { detectLanguage } from '../domain/language';
-import type { OutputLang } from '../domain/language';
-import { documentsToHtml } from '../domain/documents-html';
-import { NotFoundError } from '../domain/errors';
-import type { DocumentRepository } from '../ports/document-repository';
-import type { TalentRepository } from '../ports/talent-repository';
-import type { UserRepository } from '../ports/user-repository';
-import type { AttachmentStore } from '../ports/attachment-store';
-import type { PdfRenderer } from '../ports/pdf-renderer';
-import type { PdfMerger } from '../ports/pdf-merger';
-import type { Clock } from '../ports/clock';
+} from '../domain/talent-documents.js';
+import { detectLanguage } from '../domain/language.js';
+import type { OutputLang } from '../domain/language.js';
+import { documentsToHtml } from '../domain/documents-html.js';
+import { NotFoundError } from '../domain/errors.js';
+import type { DocumentRepository } from '../ports/document-repository.js';
+import type { TalentRepository } from '../ports/talent-repository.js';
+import type { UserRepository } from '../ports/user-repository.js';
+import type { AttachmentStore } from '../ports/attachment-store.js';
+import type { PdfRenderer } from '../ports/pdf-renderer.js';
+import type { PdfMerger } from '../ports/pdf-merger.js';
+import type { Clock } from '../ports/clock.js';
 
 export interface DocumentServiceDeps {
   documentRepository: DocumentRepository;

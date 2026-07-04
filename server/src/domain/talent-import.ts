@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { DocumentContact, ResumeContent } from './talent-documents';
+import type { DocumentContact, ResumeContent } from './talent-documents.js';
 
 /**
  * Bulk CV import: a batch of PDF CVs, each base64-encoded, that become talents

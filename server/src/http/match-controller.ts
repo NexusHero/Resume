@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
-import { matchRequestSchema } from '../domain/match';
-import type { MatchService } from '../services/match-service';
-import { currentScope } from './current-user';
+import { matchRequestSchema } from '../domain/match.js';
+import type { MatchService } from '../services/match-service.js';
+import { currentScope } from './current-user.js';
 
 /** Mandate → shortlist ranking under /api/v1/mandates/:id/match. */
 export class MatchController {

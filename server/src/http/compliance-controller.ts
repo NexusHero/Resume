@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { aggCheckSchema, checkAgg, rewriteAgg } from '../domain/agg-check';
+import { aggCheckSchema, checkAgg, rewriteAgg } from '../domain/agg-check.js';
 
 /** Compliance tooling under /api/v1/compliance. */
 export class ComplianceController {

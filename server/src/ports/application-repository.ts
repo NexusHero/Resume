@@ -1,4 +1,4 @@
-import type { Application } from '../domain/application';
+import type { Application } from '../domain/application.js';
 
 /** Persistence of application records (the source of truth list). */
 export interface ApplicationRepository {

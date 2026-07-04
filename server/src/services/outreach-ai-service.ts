@@ -4,7 +4,7 @@ import {
   pitchResultSchema,
   fallbackPitch,
   normalizePitch,
-} from '../domain/candidate-pitch';
+} from '../domain/candidate-pitch.js';
 import {
   type OutreachMessage,
   type OutreachOptions,
@@ -12,18 +12,18 @@ import {
   outreachResultSchema,
   fallbackOutreach,
   normalizeOutreach,
-} from '../domain/outreach';
-import { type GroundingReport, groundingSource } from '../domain/grounding';
-import { detectLanguage } from '../domain/language';
-import type { ArtifactKind } from '../domain/artifact';
-import type { LlmProviderId } from '../ports/llm-provider';
-import type { ArtifactLogRepository } from '../ports/artifact-log-repository';
-import type { IdGenerator } from '../ports/id-generator';
-import type { Clock } from '../ports/clock';
-import type { Logger } from '../ports/logger';
-import { type CallUsage } from '../domain/usage';
-import { MAX_TOKENS, errMessage, type LlmFeatureRunner } from './llm-feature-runner';
-import type { DocumentService } from './document-service';
+} from '../domain/outreach.js';
+import { type GroundingReport, groundingSource } from '../domain/grounding.js';
+import { detectLanguage } from '../domain/language.js';
+import type { ArtifactKind } from '../domain/artifact.js';
+import type { LlmProviderId } from '../ports/llm-provider.js';
+import type { ArtifactLogRepository } from '../ports/artifact-log-repository.js';
+import type { IdGenerator } from '../ports/id-generator.js';
+import type { Clock } from '../ports/clock.js';
+import type { Logger } from '../ports/logger.js';
+import { type CallUsage } from '../domain/usage.js';
+import { MAX_TOKENS, errMessage, type LlmFeatureRunner } from './llm-feature-runner.js';
+import type { DocumentService } from './document-service.js';
 
 export interface OutreachAiServiceDeps {
   llmFeatureRunner: LlmFeatureRunner;

@@ -1,4 +1,4 @@
-import type { TalentDocuments } from '../domain/talent-documents';
+import type { TalentDocuments } from '../domain/talent-documents.js';
 
 /**
  * Persistence of a talent's document set (resume + cover letter + style),

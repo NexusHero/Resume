@@ -1,18 +1,18 @@
-import { type Talent, anonymizeTalent } from '../domain/talent';
+import { type Talent, anonymizeTalent } from '../domain/talent.js';
 import {
   type RetentionReviewItem,
   type RetentionPolicy,
   type UpdateRetentionPolicyInput,
   DEFAULT_RETENTION_POLICY,
   buildRetentionReport,
-} from '../domain/retention';
-import { NotFoundError } from '../domain/errors';
-import type { TalentRepository } from '../ports/talent-repository';
-import type { CandidacyRepository } from '../ports/candidacy-repository';
-import type { TalentDataPurger } from '../ports/talent-data';
-import type { RetentionPolicyStore } from '../ports/retention-policy-store';
-import type { Clock } from '../ports/clock';
-import type { Logger } from '../ports/logger';
+} from '../domain/retention.js';
+import { NotFoundError } from '../domain/errors.js';
+import type { TalentRepository } from '../ports/talent-repository.js';
+import type { CandidacyRepository } from '../ports/candidacy-repository.js';
+import type { TalentDataPurger } from '../ports/talent-data.js';
+import type { RetentionPolicyStore } from '../ports/retention-policy-store.js';
+import type { Clock } from '../ports/clock.js';
+import type { Logger } from '../ports/logger.js';
 
 export interface RetentionServiceDeps {
   talentRepository: TalentRepository;

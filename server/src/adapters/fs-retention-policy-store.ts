@@ -1,8 +1,8 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import type { AppConfig } from '../config';
-import type { RetentionPolicy } from '../domain/retention';
-import type { RetentionPolicyStore } from '../ports/retention-policy-store';
+import type { AppConfig } from '../config.js';
+import type { RetentionPolicy } from '../domain/retention.js';
+import type { RetentionPolicyStore } from '../ports/retention-policy-store.js';
 
 /** File-backed policy: a JSON object keyed by owner in retention-policy.json. */
 export class FsRetentionPolicyStore implements RetentionPolicyStore {

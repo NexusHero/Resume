@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
-import { createSavedSearchSchema } from '../domain/saved-search';
-import type { SavedSearchService } from '../services/saved-search-service';
+import { createSavedSearchSchema } from '../domain/saved-search.js';
+import type { SavedSearchService } from '../services/saved-search-service.js';
 
 /** CRUD + run for named searches under /api/v1/searches. */
 export class SavedSearchController {

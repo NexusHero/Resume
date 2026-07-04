@@ -1,10 +1,10 @@
 import { randomBytes } from 'node:crypto';
 import { eq } from 'drizzle-orm';
-import type { AppConfig } from '../../config';
-import type { Clock } from '../../ports/clock';
-import type { EmailVerificationTokenStore } from '../../ports/email-verification-token-store';
-import type { Db } from './db';
-import { emailVerificationTokens } from './schema';
+import type { AppConfig } from '../../config.js';
+import type { Clock } from '../../ports/clock.js';
+import type { EmailVerificationTokenStore } from '../../ports/email-verification-token-store.js';
+import type { Db } from './db.js';
+import { emailVerificationTokens } from './schema.js';
 
 /**
  * Postgres-backed email-verification tokens. Tokens are opaque 256-bit random

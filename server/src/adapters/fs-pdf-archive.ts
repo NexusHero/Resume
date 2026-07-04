@@ -1,7 +1,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import type { AppConfig } from '../config';
-import type { PdfArchive } from '../ports/pdf-archive';
+import type { AppConfig } from '../config.js';
+import type { PdfArchive } from '../ports/pdf-archive.js';
 
 /** Writes archived PDFs into the store directory and returns their repo-relative path. */
 export class FsPdfArchive implements PdfArchive {

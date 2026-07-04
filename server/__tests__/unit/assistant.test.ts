@@ -1,30 +1,31 @@
+import { jest } from '@jest/globals';
 import {
   DEFAULT_ASSISTANT_SETTINGS,
   isDue,
   isStale,
   suggestionKey,
   parseApplicationPayload,
-} from '../../src/domain/assistant';
-import { AssistantService } from '../../src/services/assistant-service';
-import { AutopilotService } from '../../src/services/autopilot-service';
-import { MatchService } from '../../src/services/match-service';
-import { HashedEmbeddingProvider } from '../../src/adapters/hashed-embedding-provider';
-import { CandidacyService } from '../../src/services/candidacy-service';
-import { PlacementService } from '../../src/services/placement-service';
-import { MandateService } from '../../src/services/mandate-service';
-import { JobSearchService } from '../../src/services/job-search-service';
-import { DocumentService } from '../../src/services/document-service';
-import { AttachmentService } from '../../src/services/attachment-service';
-import { buildDocumentAiService } from '../support/build-document-ai';
-import { ApplicationBuilder } from '../../src/services/application-builder';
-import { LlmService } from '../../src/services/llm-service';
-import { SampleJobSource } from '../../src/adapters/sample-job-source';
-import { KeywordSkillExtractor } from '../../src/adapters/keyword-skill-extractor';
-import { ConflictError, NotFoundError } from '../../src/domain/errors';
-import type { Candidacy } from '../../src/domain/candidacy';
-import type { Mandate } from '../../src/domain/mandate';
-import type { Talent } from '../../src/domain/talent';
-import { saveDocumentsSchema } from '../../src/domain/talent-documents';
+} from '../../src/domain/assistant.js';
+import { AssistantService } from '../../src/services/assistant-service.js';
+import { AutopilotService } from '../../src/services/autopilot-service.js';
+import { MatchService } from '../../src/services/match-service.js';
+import { HashedEmbeddingProvider } from '../../src/adapters/hashed-embedding-provider.js';
+import { CandidacyService } from '../../src/services/candidacy-service.js';
+import { PlacementService } from '../../src/services/placement-service.js';
+import { MandateService } from '../../src/services/mandate-service.js';
+import { JobSearchService } from '../../src/services/job-search-service.js';
+import { DocumentService } from '../../src/services/document-service.js';
+import { AttachmentService } from '../../src/services/attachment-service.js';
+import { buildDocumentAiService } from '../support/build-document-ai.js';
+import { ApplicationBuilder } from '../../src/services/application-builder.js';
+import { LlmService } from '../../src/services/llm-service.js';
+import { SampleJobSource } from '../../src/adapters/sample-job-source.js';
+import { KeywordSkillExtractor } from '../../src/adapters/keyword-skill-extractor.js';
+import { ConflictError, NotFoundError } from '../../src/domain/errors.js';
+import type { Candidacy } from '../../src/domain/candidacy.js';
+import type { Mandate } from '../../src/domain/mandate.js';
+import type { Talent } from '../../src/domain/talent.js';
+import { saveDocumentsSchema } from '../../src/domain/talent-documents.js';
 import {
   InMemoryAssistantSettingsStore,
   InMemoryAssistantSuggestionRepository,
@@ -46,7 +47,7 @@ import {
   FakePdfRenderer,
   FakePdfMerger,
   FakePdfTextExtractor,
-} from '../support/fakes';
+} from '../support/fakes.js';
 
 const OWNER = 'team';
 const NOW = '2026-07-03T10:00:00.000Z';

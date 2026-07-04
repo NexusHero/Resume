@@ -1,8 +1,8 @@
-import type { AppConfig } from '../config';
-import type { PdfArchive } from '../ports/pdf-archive';
-import { FsPdfArchive } from './fs-pdf-archive';
-import { S3PdfArchive } from './s3-pdf-archive';
-import { AwsS3Putter } from './aws-s3-putter';
+import type { AppConfig } from '../config.js';
+import type { PdfArchive } from '../ports/pdf-archive.js';
+import { FsPdfArchive } from './fs-pdf-archive.js';
+import { S3PdfArchive } from './s3-pdf-archive.js';
+import { AwsS3Putter } from './aws-s3-putter.js';
 
 /**
  * Select the PDF archive backend from config (ADR-0031): the filesystem store

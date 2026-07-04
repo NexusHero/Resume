@@ -1,5 +1,5 @@
-import { documentsToHtml } from '../../src/domain/documents-html';
-import type { TalentDocuments } from '../../src/domain/talent-documents';
+import { documentsToHtml } from '../../src/domain/documents-html.js';
+import type { TalentDocuments } from '../../src/domain/talent-documents.js';
 
 const documents: TalentDocuments = {
   ownerId: 'owner1',

@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
-import { addCandidacySchema, updateCandidacySchema } from '../domain/candidacy';
-import type { CandidacyService } from '../services/candidacy-service';
-import { currentScope } from './current-user';
+import { addCandidacySchema, updateCandidacySchema } from '../domain/candidacy.js';
+import type { CandidacyService } from '../services/candidacy-service.js';
+import { currentScope } from './current-user.js';
 
 /** The recruiting pipeline: talents in a mandate's stages (team-scoped). */
 export class CandidacyController {

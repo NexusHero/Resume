@@ -1,5 +1,5 @@
-import { DocumentService } from '../../src/services/document-service';
-import { NotFoundError } from '../../src/domain/errors';
+import { DocumentService } from '../../src/services/document-service.js';
+import { NotFoundError } from '../../src/domain/errors.js';
 import {
   InMemoryTalentRepository,
   InMemoryDocumentRepository,
@@ -8,9 +8,9 @@ import {
   FakePdfRenderer,
   FakePdfMerger,
   FixedClock,
-} from '../support/fakes';
-import type { Talent } from '../../src/domain/talent';
-import type { SaveDocumentsInput } from '../../src/domain/talent-documents';
+} from '../support/fakes.js';
+import type { Talent } from '../../src/domain/talent.js';
+import type { SaveDocumentsInput } from '../../src/domain/talent-documents.js';
 
 const OWNER = 'owner1';
 

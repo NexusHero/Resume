@@ -1,9 +1,9 @@
-import { emptyContact } from '../../src/domain/talent-documents';
-import type { TalentDataPurger } from '../../src/ports/talent-data';
-import type { DocumentRepository } from '../../src/ports/document-repository';
-import type { AttachmentStore } from '../../src/ports/attachment-store';
-import type { CandidacyRepository } from '../../src/ports/candidacy-repository';
-import type { Clock } from '../../src/ports/clock';
+import { emptyContact } from '../../src/domain/talent-documents.js';
+import type { TalentDataPurger } from '../../src/ports/talent-data.js';
+import type { DocumentRepository } from '../../src/ports/document-repository.js';
+import type { AttachmentStore } from '../../src/ports/attachment-store.js';
+import type { CandidacyRepository } from '../../src/ports/candidacy-repository.js';
+import type { Clock } from '../../src/ports/clock.js';
 
 /**
  * The talent-data purge registry as `container.ts` wires it, for tests. Building

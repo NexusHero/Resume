@@ -1,5 +1,5 @@
-import { embed } from '../domain/embedding';
-import type { EmbeddingProvider } from '../ports/embedding-provider';
+import { embed } from '../domain/embedding.js';
+import type { EmbeddingProvider } from '../ports/embedding-provider.js';
 
 /** The default embedding backend: local hashed lexical vectors (ADR-0017). */
 export class HashedEmbeddingProvider implements EmbeddingProvider {

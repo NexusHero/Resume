@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
-import { createObservationSchema } from '../domain/interview-observation';
-import type { InterviewObservationService } from '../services/interview-observation-service';
-import { currentScope } from './current-user';
+import { createObservationSchema } from '../domain/interview-observation.js';
+import type { InterviewObservationService } from '../services/interview-observation-service.js';
+import { currentScope } from './current-user.js';
 
 /** Interview-observation flywheel under /api/v1/mandates/:id/observations. */
 export class ObservationController {

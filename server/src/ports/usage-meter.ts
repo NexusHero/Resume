@@ -1,4 +1,4 @@
-import type { UsageEvent } from '../domain/usage';
+import type { UsageEvent } from '../domain/usage.js';
 
 /**
  * Append-only meter of metered LLM calls, scoped to a user (the account whose

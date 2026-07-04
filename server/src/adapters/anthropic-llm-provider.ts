@@ -1,11 +1,11 @@
-import { UpstreamProviderError } from '../domain/errors';
+import { UpstreamProviderError } from '../domain/errors.js';
 import type {
   LlmGenerateInput,
   LlmGenerateResult,
   LlmProvider,
   LlmProviderId,
-} from '../ports/llm-provider';
-import type { HttpFetch } from '../ports/http-fetch';
+} from '../ports/llm-provider.js';
+import type { HttpFetch } from '../ports/http-fetch.js';
 
 const ENDPOINT = 'https://api.anthropic.com/v1/messages';
 const API_VERSION = '2023-06-01';

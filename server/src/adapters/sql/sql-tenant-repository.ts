@@ -1,8 +1,8 @@
 import { eq, asc } from 'drizzle-orm';
-import type { TenantRepository } from '../../ports/tenant-repository';
-import type { Tenant, TenantStatus } from '../../domain/tenant';
-import type { Db } from './db';
-import { tenants } from './schema';
+import type { TenantRepository } from '../../ports/tenant-repository.js';
+import type { Tenant, TenantStatus } from '../../domain/tenant.js';
+import type { Db } from './db.js';
+import { tenants } from './schema.js';
 
 /** Postgres-backed tenant records — shared across instances. */
 export class SqlTenantRepository implements TenantRepository {

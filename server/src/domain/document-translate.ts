@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import type { OutputLang } from './language';
-import { type TalentDocuments, resumeSchema, letterSchema } from './talent-documents';
+import type { OutputLang } from './language.js';
+import { type TalentDocuments, resumeSchema, letterSchema } from './talent-documents.js';
 
 /**
  * Translate a talent's documents (resume + cover letter) into another language.

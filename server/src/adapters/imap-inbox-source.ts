@@ -1,7 +1,7 @@
 import { ImapFlow } from 'imapflow';
-import type { AppConfig } from '../config';
-import type { InboxMessage } from '../domain/mail-sync';
-import type { InboxSource } from '../ports/inbox-source';
+import type { AppConfig } from '../config.js';
+import type { InboxMessage } from '../domain/mail-sync.js';
+import type { InboxSource } from '../ports/inbox-source.js';
 
 /**
  * Reads the desk's inbox over IMAP (imapflow) for reply detection. A fresh

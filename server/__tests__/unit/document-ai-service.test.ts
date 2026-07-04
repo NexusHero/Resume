@@ -1,9 +1,10 @@
-import type { DocumentAiService } from '../../src/services/document-ai-service';
-import { buildDocumentAiService } from '../support/build-document-ai';
-import { DocumentService } from '../../src/services/document-service';
-import { LlmService } from '../../src/services/llm-service';
-import { NotFoundError, ValidationError } from '../../src/domain/errors';
-import type { LlmGenerateInput, LlmProvider, LlmProviderId } from '../../src/ports/llm-provider';
+import { jest } from '@jest/globals';
+import type { DocumentAiService } from '../../src/services/document-ai-service.js';
+import { buildDocumentAiService } from '../support/build-document-ai.js';
+import { DocumentService } from '../../src/services/document-service.js';
+import { LlmService } from '../../src/services/llm-service.js';
+import { NotFoundError, ValidationError } from '../../src/domain/errors.js';
+import type { LlmGenerateInput, LlmProvider, LlmProviderId } from '../../src/ports/llm-provider.js';
 import {
   InMemoryArtifactLogRepository,
   InMemoryTalentRepository,
@@ -17,9 +18,9 @@ import {
   FixedClock,
   SequenceIdGenerator,
   noopLogger,
-} from '../support/fakes';
-import type { Talent } from '../../src/domain/talent';
-import { saveDocumentsSchema } from '../../src/domain/talent-documents';
+} from '../support/fakes.js';
+import type { Talent } from '../../src/domain/talent.js';
+import { saveDocumentsSchema } from '../../src/domain/talent-documents.js';
 
 const OWNER = 'owner1';
 const talent = (id: string): Talent => ({

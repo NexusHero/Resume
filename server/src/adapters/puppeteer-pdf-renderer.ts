@@ -1,9 +1,9 @@
 import path from 'node:path';
 import puppeteer, { type Browser, type Page } from 'puppeteer';
-import type { AppConfig } from '../config';
-import type { Logger } from '../ports/logger';
-import type { CoverLetterOptions, PdfRenderer } from '../ports/pdf-renderer';
-import { Semaphore } from './semaphore';
+import type { AppConfig } from '../config.js';
+import type { Logger } from '../ports/logger.js';
+import type { CoverLetterOptions, PdfRenderer } from '../ports/pdf-renderer.js';
+import { Semaphore } from './semaphore.js';
 
 // `document` is only referenced inside functions serialized to the browser by
 // Puppeteer; this is a Node project without the DOM lib, so declare it loosely.

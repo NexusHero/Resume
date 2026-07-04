@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { type CandidateProfile, scoreJob } from './skill';
+import { type CandidateProfile, scoreJob } from './skill.js';
 
 /**
  * ATS-style gap analysis (JobScan-style): how well the candidate's profile covers

@@ -1,8 +1,8 @@
 import type { Request, Response } from 'express';
-import type { AccountService } from '../services/account-service';
-import type { Clock } from '../ports/clock';
-import type { AppConfig } from '../config';
-import { currentUserId, currentScope } from './current-user';
+import type { AccountService } from '../services/account-service.js';
+import type { Clock } from '../ports/clock.js';
+import type { AppConfig } from '../config.js';
+import { currentUserId, currentScope } from './current-user.js';
 
 /**
  * DSGVO account endpoints under /api/v1/account: export everything the

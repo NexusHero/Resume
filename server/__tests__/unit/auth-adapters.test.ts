@@ -1,5 +1,5 @@
-import { ScryptPasswordHasher } from '../../src/adapters/scrypt-password-hasher';
-import { MemorySessionStore } from '../../src/adapters/memory-session-store';
+import { ScryptPasswordHasher } from '../../src/adapters/scrypt-password-hasher.js';
+import { MemorySessionStore } from '../../src/adapters/memory-session-store.js';
 
 describe('ScryptPasswordHasher', () => {
   const hasher = new ScryptPasswordHasher();

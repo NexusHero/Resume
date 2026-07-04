@@ -3,8 +3,8 @@ import {
   createApplicationSchema,
   updateApplicationSchema,
   buildApplicationSchema,
-} from '../domain/application';
-import type { ApplicationService } from '../services/application-service';
+} from '../domain/application.js';
+import type { ApplicationService } from '../services/application-service.js';
 
 /** Translates HTTP requests into ApplicationService calls. Validation throws ZodError. */
 export class ApplicationController {

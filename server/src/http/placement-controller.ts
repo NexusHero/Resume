@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
-import { createPlacementSchema, updatePlacementSchema } from '../domain/placement';
-import type { PlacementService } from '../services/placement-service';
-import { currentScope } from './current-user';
+import { createPlacementSchema, updatePlacementSchema } from '../domain/placement.js';
+import type { PlacementService } from '../services/placement-service.js';
+import { currentScope } from './current-user.js';
 
 /** CRUD for booked placements under /api/v1/placements. */
 export class PlacementController {

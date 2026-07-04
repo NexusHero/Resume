@@ -1,4 +1,4 @@
-import type { Attachment } from '../domain/attachment';
+import type { Attachment } from '../domain/attachment.js';
 
 /** An attachment plus its bytes. */
 export interface AttachmentBlob {

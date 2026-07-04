@@ -1,7 +1,10 @@
-import { NeuralEmbeddingProvider, type NeuralEmbeddingRequest } from './neural-embedding-provider';
-import type { EmbeddingProvider } from '../ports/embedding-provider';
-import type { HttpFetch } from '../ports/http-fetch';
-import type { Logger } from '../ports/logger';
+import {
+  NeuralEmbeddingProvider,
+  type NeuralEmbeddingRequest,
+} from './neural-embedding-provider.js';
+import type { EmbeddingProvider } from '../ports/embedding-provider.js';
+import type { HttpFetch } from '../ports/http-fetch.js';
+import type { Logger } from '../ports/logger.js';
 
 export interface OllamaEmbeddingConfig {
   /** Base URL of the Ollama server, e.g. http://localhost:11434 (no trailing slash). */

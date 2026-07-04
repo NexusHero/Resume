@@ -1,11 +1,11 @@
-import { type TalentMatch, scoreTalent, hybridScore, matchText } from '../domain/match';
-import { similarityScore } from '../domain/embedding';
-import { NotFoundError } from '../domain/errors';
-import type { MandateRepository } from '../ports/mandate-repository';
-import type { TalentRepository } from '../ports/talent-repository';
-import type { DocumentRepository } from '../ports/document-repository';
-import type { CandidacyRepository } from '../ports/candidacy-repository';
-import type { EmbeddingProvider } from '../ports/embedding-provider';
+import { type TalentMatch, scoreTalent, hybridScore, matchText } from '../domain/match.js';
+import { similarityScore } from '../domain/embedding.js';
+import { NotFoundError } from '../domain/errors.js';
+import type { MandateRepository } from '../ports/mandate-repository.js';
+import type { TalentRepository } from '../ports/talent-repository.js';
+import type { DocumentRepository } from '../ports/document-repository.js';
+import type { CandidacyRepository } from '../ports/candidacy-repository.js';
+import type { EmbeddingProvider } from '../ports/embedding-provider.js';
 
 export interface MatchServiceDeps {
   mandateRepository: MandateRepository;

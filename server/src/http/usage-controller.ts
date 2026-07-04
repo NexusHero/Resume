@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
-import type { UsageService } from '../services/usage-service';
-import { currentUserId } from './current-user';
+import type { UsageService } from '../services/usage-service.js';
+import { currentUserId } from './current-user.js';
 
 /** Per-user AI usage summary under /api/v1/settings/usage. */
 export class UsageController {

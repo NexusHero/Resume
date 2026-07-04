@@ -1,8 +1,8 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import type { AppConfig } from '../config';
-import type { Application } from '../domain/application';
-import type { ApplicationRepository } from '../ports/application-repository';
+import type { AppConfig } from '../config.js';
+import type { Application } from '../domain/application.js';
+import type { ApplicationRepository } from '../ports/application-repository.js';
 
 /** File-backed repository: the JSON array in bewerbungen/log.json. */
 export class FsApplicationRepository implements ApplicationRepository {

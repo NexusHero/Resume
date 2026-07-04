@@ -1,5 +1,5 @@
-import type { Role } from '../domain/user';
-import type { Authorizer, AuthPrincipal, AuthResource } from '../ports/authorizer';
+import type { Role } from '../domain/user.js';
+import type { Authorizer, AuthPrincipal, AuthResource } from '../ports/authorizer.js';
 
 /**
  * A small, readable RBAC policy table: resource kind → action → roles allowed.

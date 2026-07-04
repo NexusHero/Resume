@@ -1,9 +1,9 @@
 import { asc } from 'drizzle-orm';
-import type { AuditEvent } from '../../domain/application';
-import type { AuditLog } from '../../ports/audit-log';
-import type { Db } from './db';
-import { auditEvents } from './schema';
-import { auditEventToRow, rowToAuditEvent } from './mappers';
+import type { AuditEvent } from '../../domain/application.js';
+import type { AuditLog } from '../../ports/audit-log.js';
+import type { Db } from './db.js';
+import { auditEvents } from './schema.js';
+import { auditEventToRow, rowToAuditEvent } from './mappers.js';
 
 /** Postgres-backed append-only audit log, ordered by insertion. */
 export class SqlAuditLog implements AuditLog {

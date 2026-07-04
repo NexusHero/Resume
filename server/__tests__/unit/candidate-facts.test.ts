@@ -1,5 +1,5 @@
-import { candidateFacts, documentSkills } from '../../src/domain/candidate-facts';
-import type { TalentDocuments } from '../../src/domain/talent-documents';
+import { candidateFacts, documentSkills } from '../../src/domain/candidate-facts.js';
+import type { TalentDocuments } from '../../src/domain/talent-documents.js';
 
 const documents: TalentDocuments = {
   ownerId: 'o',

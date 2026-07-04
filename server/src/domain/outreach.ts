@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import type { OutputLang } from './language';
-import type { TalentDocuments } from './talent-documents';
-import { candidateFacts } from './candidate-facts';
+import type { OutputLang } from './language.js';
+import type { TalentDocuments } from './talent-documents.js';
+import { candidateFacts } from './candidate-facts.js';
 
 /** Who the message is written to. */
 export const outreachAudiences = ['candidate', 'client'] as const;

@@ -1,10 +1,10 @@
-import { type SavedSearch, type CreateSavedSearchInput } from '../domain/saved-search';
-import { jobQuerySchema, type JobSearchResult } from '../domain/job';
-import { NotFoundError } from '../domain/errors';
-import type { SavedSearchRepository } from '../ports/saved-search-repository';
-import type { Clock } from '../ports/clock';
-import type { IdGenerator } from '../ports/id-generator';
-import type { JobSearchService } from './job-search-service';
+import { type SavedSearch, type CreateSavedSearchInput } from '../domain/saved-search.js';
+import { jobQuerySchema, type JobSearchResult } from '../domain/job.js';
+import { NotFoundError } from '../domain/errors.js';
+import type { SavedSearchRepository } from '../ports/saved-search-repository.js';
+import type { Clock } from '../ports/clock.js';
+import type { IdGenerator } from '../ports/id-generator.js';
+import type { JobSearchService } from './job-search-service.js';
 
 export interface SavedSearchServiceDeps {
   savedSearchRepository: SavedSearchRepository;

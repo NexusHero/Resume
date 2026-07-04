@@ -1,4 +1,4 @@
-import { NoopVersioner } from '../../src/adapters/noop-versioner';
+import { NoopVersioner } from '../../src/adapters/noop-versioner.js';
 
 describe('NoopVersioner', () => {
   it('Commit_AlwaysReturnsNull', async () => {

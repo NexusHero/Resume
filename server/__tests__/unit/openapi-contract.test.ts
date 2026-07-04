@@ -1,8 +1,9 @@
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { createMandateSchema } from '../../src/domain/mandate';
-import { createTalentSchema } from '../../src/domain/talent';
-import { createPlacementSchema } from '../../src/domain/placement';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { createMandateSchema } from '../../src/domain/mandate.js';
+import { createTalentSchema } from '../../src/domain/talent.js';
+import { createPlacementSchema } from '../../src/domain/placement.js';
 
 /**
  * Drift guard for the hand-maintained OpenAPI spec (ADR-0012). The zod schemas
@@ -15,7 +16,10 @@ import { createPlacementSchema } from '../../src/domain/placement';
  * directional (zod → spec): the compiler already keeps zod and the handlers in
  * sync, and this closes the remaining gap to the published contract.
  */
-const SPEC = readFileSync(join(__dirname, '..', '..', 'openapi.yaml'), 'utf8');
+const SPEC = readFileSync(
+  join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'openapi.yaml'),
+  'utf8',
+);
 
 /** Property keys declared under `components/schemas/<name>`. */
 function openApiProps(name: string): string[] {

@@ -1,9 +1,9 @@
 import { and, eq } from 'drizzle-orm';
-import type { TalentDocuments } from '../../domain/talent-documents';
-import type { DocumentRepository } from '../../ports/document-repository';
-import type { Db } from './db';
-import { talentDocuments } from './schema';
-import { rowToTalentDocuments, talentDocumentsToRow } from './mappers';
+import type { TalentDocuments } from '../../domain/talent-documents.js';
+import type { DocumentRepository } from '../../ports/document-repository.js';
+import type { Db } from './db.js';
+import { talentDocuments } from './schema.js';
+import { rowToTalentDocuments, talentDocumentsToRow } from './mappers.js';
 
 /** Postgres-backed document store, scoped to an owner; one row per (owner, talent). */
 export class SqlDocumentRepository implements DocumentRepository {

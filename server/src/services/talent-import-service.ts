@@ -1,4 +1,4 @@
-import { createTalentSchema } from '../domain/talent';
+import { createTalentSchema } from '../domain/talent.js';
 import {
   type ImportPdfsInput,
   type ImportResult,
@@ -6,12 +6,12 @@ import {
   importedName,
   importedSkills,
   DEFAULT_IMPORT_NAME,
-} from '../domain/talent-import';
-import { saveDocumentsSchema } from '../domain/talent-documents';
-import type { Logger } from '../ports/logger';
-import type { TalentService } from './talent-service';
-import type { DocumentService } from './document-service';
-import type { DocumentAiService } from './document-ai-service';
+} from '../domain/talent-import.js';
+import { saveDocumentsSchema } from '../domain/talent-documents.js';
+import type { Logger } from '../ports/logger.js';
+import type { TalentService } from './talent-service.js';
+import type { DocumentService } from './document-service.js';
+import type { DocumentAiService } from './document-ai-service.js';
 
 export interface TalentImportServiceDeps {
   talentService: TalentService;

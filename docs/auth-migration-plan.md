@@ -1,9 +1,12 @@
 # Plan — Authentication hardening & migration
 
-> **Status: Plan (not yet decided).** This is a proposal to be turned into ADRs
-> when approved — it changes nothing on its own. It follows the suite's rule that
-> significant choices are captured as [ADRs](adr/README.md); the phases below map
-> to future ADRs, one per accepted slice.
+> **Status: decided — adopting a framework (Better-Auth + embedded SQLite).**
+> The options below were weighed and the call is to delegate auth to **Better-Auth**
+> (§4 option C), self-hosted with embedded SQLite so offline-first holds. Because
+> Better-Auth is ESM-only and the server was CommonJS, the **prerequisite ESM/
+> nodenext migration** was done first ([ADR-0042](adr/0042-esm-nodenext-migration.md));
+> Better-Auth itself lands next behind the existing `AuthService` seam (a follow-up ADR).
+> The primitives/hardening route below is retained as rationale and fallback.
 >
 > Companion reading: [security concept](security.md) · [architecture](architecture.md)
 > · [decisions](adr/README.md). Auth touches ADR-0002 (Awilix DI, no decorators),

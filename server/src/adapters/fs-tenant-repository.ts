@@ -1,8 +1,8 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import type { AppConfig } from '../config';
-import type { TenantRepository } from '../ports/tenant-repository';
-import type { Tenant, TenantStatus } from '../domain/tenant';
+import type { AppConfig } from '../config.js';
+import type { TenantRepository } from '../ports/tenant-repository.js';
+import type { Tenant, TenantStatus } from '../domain/tenant.js';
 
 /** File-backed tenant records (the JSON array in tenants.json). */
 export class FsTenantRepository implements TenantRepository {

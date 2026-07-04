@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import type { TalentDocuments } from './talent-documents';
-import { tokenize } from './ats-ai';
-import { jobClusters, skillMatchesJob } from './skill-semantics';
-import { documentSkills, type MandateContext } from './match-explain';
-import type { CompanyProfile } from './company-archetype';
-import type { JobRequirements } from './job-requirements';
+import type { TalentDocuments } from './talent-documents.js';
+import { tokenize } from './ats-ai.js';
+import { jobClusters, skillMatchesJob } from './skill-semantics.js';
+import { documentSkills, type MandateContext } from './match-explain.js';
+import type { CompanyProfile } from './company-archetype.js';
+import type { JobRequirements } from './job-requirements.js';
 
 /**
  * The candidate-facing preparation pack: the recruiter's way of helping the

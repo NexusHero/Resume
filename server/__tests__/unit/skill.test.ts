@@ -1,4 +1,4 @@
-import { normalizeSkill, scoreJob, type CandidateProfile } from '../../src/domain/skill';
+import { normalizeSkill, scoreJob, type CandidateProfile } from '../../src/domain/skill.js';
 
 const profile: CandidateProfile = {
   skills: [

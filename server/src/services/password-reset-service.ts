@@ -1,12 +1,12 @@
-import type { UserRepository } from '../ports/user-repository';
-import type { SessionStore } from '../ports/session-store';
-import type { PasswordResetTokenStore } from '../ports/password-reset-token-store';
-import type { PasswordHasher } from '../ports/password-hasher';
-import type { Mailer } from '../ports/mailer';
-import type { Logger } from '../ports/logger';
-import type { AppConfig } from '../config';
-import { UnauthorizedError } from '../domain/errors';
-import { passwordResetEmail, passwordResetUrl } from '../domain/password-reset';
+import type { UserRepository } from '../ports/user-repository.js';
+import type { SessionStore } from '../ports/session-store.js';
+import type { PasswordResetTokenStore } from '../ports/password-reset-token-store.js';
+import type { PasswordHasher } from '../ports/password-hasher.js';
+import type { Mailer } from '../ports/mailer.js';
+import type { Logger } from '../ports/logger.js';
+import type { AppConfig } from '../config.js';
+import { UnauthorizedError } from '../domain/errors.js';
+import { passwordResetEmail, passwordResetUrl } from '../domain/password-reset.js';
 
 export interface PasswordResetServiceDeps {
   userRepository: UserRepository;

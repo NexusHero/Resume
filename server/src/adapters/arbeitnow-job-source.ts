@@ -1,8 +1,8 @@
-import type { Job, JobQuery } from '../domain/job';
-import type { JobSource } from '../ports/job-source';
-import type { HttpFetch } from '../ports/http-fetch';
-import type { Logger } from '../ports/logger';
-import { snippetFrom } from './html-text';
+import type { Job, JobQuery } from '../domain/job.js';
+import type { JobSource } from '../ports/job-source.js';
+import type { HttpFetch } from '../ports/http-fetch.js';
+import type { Logger } from '../ports/logger.js';
+import { snippetFrom } from './html-text.js';
 
 const ENDPOINT = 'https://www.arbeitnow.com/api/job-board-api';
 

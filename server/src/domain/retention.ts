@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import type { Talent } from './talent';
-import type { Candidacy } from './candidacy';
+import type { Talent } from './talent.js';
+import type { Candidacy } from './candidacy.js';
 
 /**
  * Default review window: a candidate with no active pipeline for longer than

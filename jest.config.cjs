@@ -1,15 +1,22 @@
 /** @type {import('ts-jest').JestConfigWithTsJest} */
 module.exports = {
-  preset: 'ts-jest',
   testEnvironment: 'node',
   roots: ['<rootDir>/server'],
   testMatch: ['**/__tests__/**/*.test.ts'],
+  // ESM (ADR-0042): the project is native ESM, so ts-jest emits ESM and Jest
+  // runs under `node --experimental-vm-modules` (see the `test` script).
+  extensionsToTreatAsEsm: ['.ts'],
+  // nodenext source imports carry `.js` extensions; strip them so the resolver
+  // finds the `.ts` sources (the standard ts-jest ESM mapping).
+  moduleNameMapper: {
+    '^(\\.{1,2}/.*)\\.js$': '$1',
+  },
   // Transpile-only: skip ts-jest's per-suite type-checking of the whole import
   // graph (the dominant cost — it made every suite pay ~40s and drove the CI
   // run to ~9 min). Type safety is not lost: `npm run typecheck` (tsc) is a
   // separate, required CI gate that checks the whole project once.
   transform: {
-    '^.+\\.ts$': ['ts-jest', { isolatedModules: true }],
+    '^.+\\.ts$': ['ts-jest', { isolatedModules: true, useESM: true }],
   },
   collectCoverageFrom: [
     'server/src/**/*.ts',

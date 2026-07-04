@@ -1,8 +1,8 @@
 import type { Request, Response } from 'express';
-import { NotFoundError } from '../domain/errors';
-import type { MandateRepository } from '../ports/mandate-repository';
-import type { DocumentAiService } from '../services/document-ai-service';
-import { currentScope, currentUserId } from './current-user';
+import { NotFoundError } from '../domain/errors.js';
+import type { MandateRepository } from '../ports/mandate-repository.js';
+import type { DocumentAiService } from '../services/document-ai-service.js';
+import { currentScope, currentUserId } from './current-user.js';
 
 /**
  * AI on top of matching: explain why a candidate fits a mandate (and, later,

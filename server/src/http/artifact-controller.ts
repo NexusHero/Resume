@@ -1,9 +1,9 @@
 import type { Request, Response } from 'express';
-import { setOutcomeSchema, summarizeArtifacts } from '../domain/artifact';
-import { NotFoundError } from '../domain/errors';
-import type { ArtifactLogRepository } from '../ports/artifact-log-repository';
-import type { Clock } from '../ports/clock';
-import { currentScope } from './current-user';
+import { setOutcomeSchema, summarizeArtifacts } from '../domain/artifact.js';
+import { NotFoundError } from '../domain/errors.js';
+import type { ArtifactLogRepository } from '../ports/artifact-log-repository.js';
+import type { Clock } from '../ports/clock.js';
+import { currentScope } from './current-user.js';
 
 /**
  * The outcome loop's HTTP surface (authenticated, team-scoped):

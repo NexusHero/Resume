@@ -1,11 +1,11 @@
-import { type Talent, type CreateTalentInput, type UpdateTalentInput } from '../domain/talent';
-import { candidateSkills } from '../domain/match';
-import { NotFoundError } from '../domain/errors';
-import type { TalentRepository } from '../ports/talent-repository';
-import type { DocumentRepository } from '../ports/document-repository';
-import type { TalentDataPurger } from '../ports/talent-data';
-import type { Clock } from '../ports/clock';
-import type { IdGenerator } from '../ports/id-generator';
+import { type Talent, type CreateTalentInput, type UpdateTalentInput } from '../domain/talent.js';
+import { candidateSkills } from '../domain/match.js';
+import { NotFoundError } from '../domain/errors.js';
+import type { TalentRepository } from '../ports/talent-repository.js';
+import type { DocumentRepository } from '../ports/document-repository.js';
+import type { TalentDataPurger } from '../ports/talent-data.js';
+import type { Clock } from '../ports/clock.js';
+import type { IdGenerator } from '../ports/id-generator.js';
 
 /** A listed talent: stored fields plus the skills their documents prove. */
 export type TalentWithSkills = Talent & { effectiveSkills: string[] };

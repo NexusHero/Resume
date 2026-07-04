@@ -1,4 +1,4 @@
-import { checkAgg, aggCheckSchema, rewriteAgg } from '../../src/domain/agg-check';
+import { checkAgg, aggCheckSchema, rewriteAgg } from '../../src/domain/agg-check.js';
 
 describe('agg-check domain', () => {
   it('CleanText_NoMarker_ReportsNoneButHintsMarker', () => {

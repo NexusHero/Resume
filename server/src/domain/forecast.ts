@@ -1,5 +1,5 @@
-import type { Mandate } from './mandate';
-import type { Candidacy, CandidacyStage } from './candidacy';
+import type { Mandate } from './mandate.js';
+import type { Candidacy, CandidacyStage } from './candidacy.js';
 
 /**
  * Weighted pipeline forecast — the agency-economics view. Each open candidacy

@@ -1,8 +1,8 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import type { AppConfig } from '../config';
-import type { Logger } from '../ports/logger';
-import type { Versioner } from '../ports/versioner';
+import type { AppConfig } from '../config.js';
+import type { Logger } from '../ports/logger.js';
+import type { Versioner } from '../ports/versioner.js';
 
 const exec = promisify(execFile);
 

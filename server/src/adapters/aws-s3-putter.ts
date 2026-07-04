@@ -1,6 +1,6 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import type { ObjectPutter } from './s3-pdf-archive';
-import type { PdfArchiveConfig } from '../config';
+import type { ObjectPutter } from './s3-pdf-archive.js';
+import type { PdfArchiveConfig } from '../config.js';
 
 /**
  * Real S3 `ObjectPutter` over the AWS SDK. Talks to any S3-compatible endpoint

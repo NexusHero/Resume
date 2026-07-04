@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
-import { sendOutreachSchema } from '../domain/mail-sync';
-import type { MailService } from '../services/mail-service';
-import { currentScope } from './current-user';
+import { sendOutreachSchema } from '../domain/mail-sync.js';
+import type { MailService } from '../services/mail-service.js';
+import { currentScope } from './current-user.js';
 
 /**
  * The email integration's HTTP surface (authenticated, team-scoped):

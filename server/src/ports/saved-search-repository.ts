@@ -1,4 +1,4 @@
-import type { SavedSearch } from '../domain/saved-search';
+import type { SavedSearch } from '../domain/saved-search.js';
 
 /** Persistence of the candidate's named searches. */
 export interface SavedSearchRepository {

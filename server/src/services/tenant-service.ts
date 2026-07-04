@@ -1,8 +1,8 @@
-import { DEFAULT_TENANT } from '../domain/user';
-import type { Tenant, TenantOverview, TenantStatus } from '../domain/tenant';
-import { NotFoundError } from '../domain/errors';
-import type { TenantRepository } from '../ports/tenant-repository';
-import type { UserRepository } from '../ports/user-repository';
+import { DEFAULT_TENANT } from '../domain/user.js';
+import type { Tenant, TenantOverview, TenantStatus } from '../domain/tenant.js';
+import { NotFoundError } from '../domain/errors.js';
+import type { TenantRepository } from '../ports/tenant-repository.js';
+import type { UserRepository } from '../ports/user-repository.js';
 
 export interface TenantServiceDeps {
   tenantRepository: TenantRepository;

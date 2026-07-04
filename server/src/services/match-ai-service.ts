@@ -6,33 +6,33 @@ import {
   fallbackExplanation,
   matchedForMandate,
   normalizeExplanation,
-} from '../domain/match-explain';
+} from '../domain/match-explain.js';
 import {
   type InterviewKit,
   interviewKitPrompt,
   interviewKitResultSchema,
   fallbackInterviewKit,
   normalizeInterviewKit,
-} from '../domain/interview-kit';
+} from '../domain/interview-kit.js';
 import {
   type CandidatePrep,
   prepPrompt,
   prepResultSchema,
   fallbackPrep,
   mergePrep,
-} from '../domain/candidate-prep';
-import { companyInterviewProfile } from '../domain/company-archetype';
-import { extractRequirements } from '../domain/job-requirements';
+} from '../domain/candidate-prep.js';
+import { companyInterviewProfile } from '../domain/company-archetype.js';
+import { extractRequirements } from '../domain/job-requirements.js';
 import {
   aggregateObservations,
   applyObserved,
   companyKeyOf,
-} from '../domain/interview-observation';
-import type { InterviewObservationRepository } from '../ports/interview-observation-repository';
-import type { LlmProviderId } from '../ports/llm-provider';
-import { type CallUsage } from '../domain/usage';
-import { MAX_TOKENS, type LlmFeatureRunner } from './llm-feature-runner';
-import type { DocumentService } from './document-service';
+} from '../domain/interview-observation.js';
+import type { InterviewObservationRepository } from '../ports/interview-observation-repository.js';
+import type { LlmProviderId } from '../ports/llm-provider.js';
+import { type CallUsage } from '../domain/usage.js';
+import { MAX_TOKENS, type LlmFeatureRunner } from './llm-feature-runner.js';
+import type { DocumentService } from './document-service.js';
 
 export interface MatchAiServiceDeps {
   llmFeatureRunner: LlmFeatureRunner;

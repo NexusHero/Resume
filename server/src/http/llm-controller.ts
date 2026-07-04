@@ -1,13 +1,13 @@
 import { z } from 'zod';
 import type { Request, Response } from 'express';
-import { coverLetterRequestSchema } from '../domain/cover-letter';
-import { ValidationError } from '../domain/errors';
-import type { LlmProviderId } from '../ports/llm-provider';
-import type { ApiKeyStore } from '../ports/api-key-store';
-import type { UserRepository } from '../ports/user-repository';
-import type { LlmService } from '../services/llm-service';
-import type { CoverLetterService } from '../services/cover-letter-service';
-import { currentUserId, optionalUserId } from './current-user';
+import { coverLetterRequestSchema } from '../domain/cover-letter.js';
+import { ValidationError } from '../domain/errors.js';
+import type { LlmProviderId } from '../ports/llm-provider.js';
+import type { ApiKeyStore } from '../ports/api-key-store.js';
+import type { UserRepository } from '../ports/user-repository.js';
+import type { LlmService } from '../services/llm-service.js';
+import type { CoverLetterService } from '../services/cover-letter-service.js';
+import { currentUserId, optionalUserId } from './current-user.js';
 
 const setProviderSchema = z.object({ provider: z.string().min(1) });
 const setKeySchema = z.object({ key: z.string().min(1, 'key is required') });

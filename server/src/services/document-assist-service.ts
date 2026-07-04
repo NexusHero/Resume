@@ -6,7 +6,7 @@ import {
   toParagraphs,
   fallbackSummary,
   fallbackLetter,
-} from '../domain/document-ai';
+} from '../domain/document-ai.js';
 import {
   type TailorTarget,
   type TailoredApplication,
@@ -14,18 +14,18 @@ import {
   tailorResultSchema,
   fallbackTailor,
   normalizeTailored,
-} from '../domain/application-tailor';
-import { extractJson } from '../domain/document-parse';
-import { type GroundingReport, groundingSource } from '../domain/grounding';
-import { detectLanguage, type OutputLang } from '../domain/language';
-import { translatePrompt, translateResultSchema } from '../domain/document-translate';
-import { ValidationError } from '../domain/errors';
-import { type DocumentTranslation } from '../domain/talent-documents';
-import type { LlmProviderId } from '../ports/llm-provider';
-import type { Clock } from '../ports/clock';
-import { type CallUsage } from '../domain/usage';
-import { MAX_TOKENS, type LlmFeatureRunner } from './llm-feature-runner';
-import type { DocumentService } from './document-service';
+} from '../domain/application-tailor.js';
+import { extractJson } from '../domain/document-parse.js';
+import { type GroundingReport, groundingSource } from '../domain/grounding.js';
+import { detectLanguage, type OutputLang } from '../domain/language.js';
+import { translatePrompt, translateResultSchema } from '../domain/document-translate.js';
+import { ValidationError } from '../domain/errors.js';
+import { type DocumentTranslation } from '../domain/talent-documents.js';
+import type { LlmProviderId } from '../ports/llm-provider.js';
+import type { Clock } from '../ports/clock.js';
+import { type CallUsage } from '../domain/usage.js';
+import { MAX_TOKENS, type LlmFeatureRunner } from './llm-feature-runner.js';
+import type { DocumentService } from './document-service.js';
 
 export interface DocumentAiSuggestion {
   action: DocumentAiAction;

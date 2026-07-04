@@ -1,12 +1,12 @@
 import { and, eq } from 'drizzle-orm';
-import type { AssistantSettings, AssistantSuggestion } from '../../domain/assistant';
+import type { AssistantSettings, AssistantSuggestion } from '../../domain/assistant.js';
 import type {
   AssistantSettingsStore,
   AssistantSuggestionRepository,
-} from '../../ports/assistant-store';
-import type { Db } from './db';
-import { assistantSettings, assistantSuggestions } from './schema';
-import { rowToAssistantSuggestion, assistantSuggestionToRow } from './mappers';
+} from '../../ports/assistant-store.js';
+import type { Db } from './db.js';
+import { assistantSettings, assistantSuggestions } from './schema.js';
+import { rowToAssistantSuggestion, assistantSuggestionToRow } from './mappers.js';
 
 /** Postgres-backed assistant configuration (one row per team scope). */
 export class SqlAssistantSettingsStore implements AssistantSettingsStore {

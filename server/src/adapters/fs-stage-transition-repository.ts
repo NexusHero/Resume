@@ -1,8 +1,8 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import type { AppConfig } from '../config';
-import type { StageTransition } from '../domain/stage-history';
-import type { StageTransitionRepository } from '../ports/stage-transition-repository';
+import type { AppConfig } from '../config.js';
+import type { StageTransition } from '../domain/stage-history.js';
+import type { StageTransitionRepository } from '../ports/stage-transition-repository.js';
 
 /** File-backed repository: the JSON array in stage-transitions.json. */
 export class FsStageTransitionRepository implements StageTransitionRepository {

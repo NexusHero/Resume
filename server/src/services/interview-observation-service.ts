@@ -4,12 +4,12 @@ import {
   type ObservedProfile,
   aggregateObservations,
   companyKeyOf,
-} from '../domain/interview-observation';
-import { NotFoundError } from '../domain/errors';
-import type { InterviewObservationRepository } from '../ports/interview-observation-repository';
-import type { MandateRepository } from '../ports/mandate-repository';
-import type { Clock } from '../ports/clock';
-import type { IdGenerator } from '../ports/id-generator';
+} from '../domain/interview-observation.js';
+import { NotFoundError } from '../domain/errors.js';
+import type { InterviewObservationRepository } from '../ports/interview-observation-repository.js';
+import type { MandateRepository } from '../ports/mandate-repository.js';
+import type { Clock } from '../ports/clock.js';
+import type { IdGenerator } from '../ports/id-generator.js';
 
 export interface InterviewObservationServiceDeps {
   interviewObservationRepository: InterviewObservationRepository;

@@ -1,8 +1,8 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import type { AppConfig } from '../config';
-import type { SavedSearch } from '../domain/saved-search';
-import type { SavedSearchRepository } from '../ports/saved-search-repository';
+import type { AppConfig } from '../config.js';
+import type { SavedSearch } from '../domain/saved-search.js';
+import type { SavedSearchRepository } from '../ports/saved-search-repository.js';
 
 /** File-backed repository: the JSON array in bewerbungen/saved-searches.json. */
 export class FsSavedSearchRepository implements SavedSearchRepository {

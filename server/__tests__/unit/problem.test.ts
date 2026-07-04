@@ -1,8 +1,9 @@
+import { jest } from '@jest/globals';
 import { z } from 'zod';
 import type { Request, Response } from 'express';
-import { errorHandler, notFound, sendProblem } from '../../src/http/problem';
-import { NotFoundError, ValidationError } from '../../src/domain/errors';
-import type { Logger } from '../../src/ports/logger';
+import { errorHandler, notFound, sendProblem } from '../../src/http/problem.js';
+import { NotFoundError, ValidationError } from '../../src/domain/errors.js';
+import type { Logger } from '../../src/ports/logger.js';
 
 function mockRes(headersSent = false) {
   const res = {

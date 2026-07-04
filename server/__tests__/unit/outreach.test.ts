@@ -4,8 +4,8 @@ import {
   normalizeOutreach,
   outreachRequestSchema,
   type OutreachOptions,
-} from '../../src/domain/outreach';
-import type { TalentDocuments } from '../../src/domain/talent-documents';
+} from '../../src/domain/outreach.js';
+import type { TalentDocuments } from '../../src/domain/talent-documents.js';
 
 const documents: TalentDocuments = {
   ownerId: 'o',

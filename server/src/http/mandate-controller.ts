@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
-import { createMandateSchema, updateMandateSchema } from '../domain/mandate';
-import type { MandateService } from '../services/mandate-service';
-import { currentScope } from './current-user';
+import { createMandateSchema, updateMandateSchema } from '../domain/mandate.js';
+import type { MandateService } from '../services/mandate-service.js';
+import { currentScope } from './current-user.js';
 
 /** CRUD for client mandates under /api/v1/mandates. */
 export class MandateController {

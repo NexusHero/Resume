@@ -1,9 +1,9 @@
 import type { Request, Response } from 'express';
-import { createTalentSchema, updateTalentSchema } from '../domain/talent';
-import { importPdfsSchema } from '../domain/talent-import';
-import type { TalentService } from '../services/talent-service';
-import type { TalentImportService } from '../services/talent-import-service';
-import { currentScope, currentUserId } from './current-user';
+import { createTalentSchema, updateTalentSchema } from '../domain/talent.js';
+import { importPdfsSchema } from '../domain/talent-import.js';
+import type { TalentService } from '../services/talent-service.js';
+import type { TalentImportService } from '../services/talent-import-service.js';
+import { currentScope, currentUserId } from './current-user.js';
 
 /** CRUD for the talent pool under /api/v1/talents. */
 export class TalentController {

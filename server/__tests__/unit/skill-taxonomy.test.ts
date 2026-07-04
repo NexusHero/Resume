@@ -1,4 +1,4 @@
-import { canonicalizeSkill, canonicalizeSkills } from '../../src/domain/skill-taxonomy';
+import { canonicalizeSkill, canonicalizeSkills } from '../../src/domain/skill-taxonomy.js';
 
 describe('skill-taxonomy', () => {
   describe('canonicalizeSkill', () => {

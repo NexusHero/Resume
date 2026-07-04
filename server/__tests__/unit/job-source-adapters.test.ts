@@ -1,9 +1,9 @@
-import { ArbeitnowJobSource } from '../../src/adapters/arbeitnow-job-source';
-import { BundesagenturJobSource } from '../../src/adapters/bundesagentur-job-source';
-import { AdzunaJobSource } from '../../src/adapters/adzuna-job-source';
-import { jobQuerySchema } from '../../src/domain/job';
-import type { HttpFetch } from '../../src/ports/http-fetch';
-import { noopLogger } from '../support/fakes';
+import { ArbeitnowJobSource } from '../../src/adapters/arbeitnow-job-source.js';
+import { BundesagenturJobSource } from '../../src/adapters/bundesagentur-job-source.js';
+import { AdzunaJobSource } from '../../src/adapters/adzuna-job-source.js';
+import { jobQuerySchema } from '../../src/domain/job.js';
+import type { HttpFetch } from '../../src/ports/http-fetch.js';
+import { noopLogger } from '../support/fakes.js';
 
 /** A fake HttpFetch that records the URL/headers and returns a canned body. */
 function fakeHttp(

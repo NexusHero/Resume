@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { OutputLang } from './language';
+import type { OutputLang } from './language.js';
 
 export const MANDATE_PRIORITIES = ['high', 'medium', 'low'] as const;
 export type MandatePriority = (typeof MANDATE_PRIORITIES)[number];

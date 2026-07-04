@@ -1,9 +1,9 @@
 import { eq } from 'drizzle-orm';
-import type { SavedSearch } from '../../domain/saved-search';
-import type { SavedSearchRepository } from '../../ports/saved-search-repository';
-import type { Db } from './db';
-import { savedSearches } from './schema';
-import { rowToSavedSearch, savedSearchToRow } from './mappers';
+import type { SavedSearch } from '../../domain/saved-search.js';
+import type { SavedSearchRepository } from '../../ports/saved-search-repository.js';
+import type { Db } from './db.js';
+import { savedSearches } from './schema.js';
+import { rowToSavedSearch, savedSearchToRow } from './mappers.js';
 
 /** Postgres-backed repository for named searches. */
 export class SqlSavedSearchRepository implements SavedSearchRepository {

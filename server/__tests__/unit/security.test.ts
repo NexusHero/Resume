@@ -5,7 +5,7 @@ import {
   securityHeaders,
   recruitingCsp,
   RECRUITING_KIT_PREFIX,
-} from '../../src/http/security';
+} from '../../src/http/security.js';
 
 function appWith(origins: string[]) {
   const app = express();

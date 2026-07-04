@@ -1,12 +1,12 @@
 import type { Request, Response, NextFunction } from 'express';
-import { registerSchema, loginSchema, DEFAULT_TENANT } from '../domain/user';
-import { UnauthorizedError } from '../domain/errors';
-import type { AuthService } from '../services/auth-service';
-import type { EmailVerificationService } from '../services/email-verification-service';
-import { confirmVerificationSchema } from '../domain/email-verification';
-import type { AppConfig } from '../config';
-import type { PlanProvider } from '../ports/plan-provider';
-import { currentScope } from './current-user';
+import { registerSchema, loginSchema, DEFAULT_TENANT } from '../domain/user.js';
+import { UnauthorizedError } from '../domain/errors.js';
+import type { AuthService } from '../services/auth-service.js';
+import type { EmailVerificationService } from '../services/email-verification-service.js';
+import { confirmVerificationSchema } from '../domain/email-verification.js';
+import type { AppConfig } from '../config.js';
+import type { PlanProvider } from '../ports/plan-provider.js';
+import { currentScope } from './current-user.js';
 
 /** Reads a single cookie value from the raw Cookie header (no cookie-parser dep). */
 function readCookie(req: Request, name: string): string | undefined {

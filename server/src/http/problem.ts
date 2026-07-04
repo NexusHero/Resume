@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
-import { DomainError, ValidationError } from '../domain/errors';
-import type { Logger } from '../ports/logger';
+import { DomainError, ValidationError } from '../domain/errors.js';
+import type { Logger } from '../ports/logger.js';
 
 /** RFC 9457 problem detail. */
 export interface Problem {

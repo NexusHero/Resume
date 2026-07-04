@@ -3,11 +3,11 @@ import {
   mergePrep,
   prepPrompt,
   prepResultSchema,
-} from '../../src/domain/candidate-prep';
-import { companyInterviewProfile } from '../../src/domain/company-archetype';
-import { extractRequirements } from '../../src/domain/job-requirements';
-import type { MandateContext } from '../../src/domain/match-explain';
-import type { TalentDocuments } from '../../src/domain/talent-documents';
+} from '../../src/domain/candidate-prep.js';
+import { companyInterviewProfile } from '../../src/domain/company-archetype.js';
+import { extractRequirements } from '../../src/domain/job-requirements.js';
+import type { MandateContext } from '../../src/domain/match-explain.js';
+import type { TalentDocuments } from '../../src/domain/talent-documents.js';
 
 const docs = (over: Partial<TalentDocuments['resume']> = {}): TalentDocuments => ({
   ownerId: 'team',

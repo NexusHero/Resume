@@ -1,11 +1,11 @@
-import { STAGE_WIN_PROBABILITY } from '../../src/domain/forecast';
+import { STAGE_WIN_PROBABILITY } from '../../src/domain/forecast.js';
 import {
   clientInsights,
   learnStageProbabilities,
   winProbabilityFrom,
   MIN_SAMPLE,
   type StageTransition,
-} from '../../src/domain/stage-history';
+} from '../../src/domain/stage-history.js';
 
 let seq = 0;
 const t = (

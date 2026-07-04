@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { OutputLang } from './language';
+import type { OutputLang } from './language.js';
 
 /** Who the letter is written as — drives the signature and self-description. */
 export interface CandidateIdentity {

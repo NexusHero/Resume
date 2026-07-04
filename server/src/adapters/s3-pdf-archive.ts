@@ -1,4 +1,4 @@
-import type { PdfArchive } from '../ports/pdf-archive';
+import type { PdfArchive } from '../ports/pdf-archive.js';
 
 /**
  * The one object-storage operation the archive needs. Keeping it a tiny

@@ -1,5 +1,9 @@
-import { trigramSimilarity, jobClusters, skillMatchesJob } from '../../src/domain/skill-semantics';
-import { tokenize } from '../../src/domain/ats-ai';
+import {
+  trigramSimilarity,
+  jobClusters,
+  skillMatchesJob,
+} from '../../src/domain/skill-semantics.js';
+import { tokenize } from '../../src/domain/ats-ai.js';
 
 const tokens = (s: string) => tokenize(s);
 

@@ -1,8 +1,8 @@
-import { type CandidateProfile, scoreJob, unionSkills } from '../domain/skill';
-import type { Job, JobQuery, JobSearchResult, ScoredJob } from '../domain/job';
-import { AllJobSourcesFailedError, type JobSource } from '../ports/job-source';
-import type { SkillExtractor } from '../ports/skill-extractor';
-import type { Logger } from '../ports/logger';
+import { type CandidateProfile, scoreJob, unionSkills } from '../domain/skill.js';
+import type { Job, JobQuery, JobSearchResult, ScoredJob } from '../domain/job.js';
+import { AllJobSourcesFailedError, type JobSource } from '../ports/job-source.js';
+import type { SkillExtractor } from '../ports/skill-extractor.js';
+import type { Logger } from '../ports/logger.js';
 
 export interface JobSearchServiceDeps {
   jobSource: JobSource;

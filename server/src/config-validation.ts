@@ -1,4 +1,4 @@
-import { DEV_ENCRYPTION_SECRET, type AppConfig } from './config';
+import { DEV_ENCRYPTION_SECRET, type AppConfig } from './config.js';
 
 /** The outcome of a production-readiness check. */
 export interface ReadinessReport {

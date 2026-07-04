@@ -36,7 +36,8 @@ module.exports = tseslint.config(
     },
   },
   {
-    files: ['*.config.js', 'eslint.config.js'],
+    // CommonJS config/tooling files (`.cjs`) under a `type: module` project.
+    files: ['**/*.cjs', '*.config.js'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'commonjs',

@@ -1,15 +1,15 @@
-import { parsePrompt, extractJson, fallbackParsed } from '../domain/document-parse';
+import { parsePrompt, extractJson, fallbackParsed } from '../domain/document-parse.js';
 import {
   type DocumentContact,
   type ResumeContent,
   saveDocumentsSchema,
-} from '../domain/talent-documents';
-import type { LlmProviderId } from '../ports/llm-provider';
-import type { PdfTextExtractor } from '../ports/pdf-text-extractor';
-import type { Logger } from '../ports/logger';
-import { type CallUsage } from '../domain/usage';
-import { MAX_TOKENS, errMessage, type LlmFeatureRunner } from './llm-feature-runner';
-import type { DocumentService } from './document-service';
+} from '../domain/talent-documents.js';
+import type { LlmProviderId } from '../ports/llm-provider.js';
+import type { PdfTextExtractor } from '../ports/pdf-text-extractor.js';
+import type { Logger } from '../ports/logger.js';
+import { type CallUsage } from '../domain/usage.js';
+import { MAX_TOKENS, errMessage, type LlmFeatureRunner } from './llm-feature-runner.js';
+import type { DocumentService } from './document-service.js';
 
 export interface ParsedDocument {
   contact: DocumentContact;

@@ -1,5 +1,5 @@
-import type { User, Role } from '../domain/user';
-import type { LlmProviderId } from './llm-provider';
+import type { User, Role } from '../domain/user.js';
+import type { LlmProviderId } from './llm-provider.js';
 
 /** Persistence of registered accounts. */
 export interface UserRepository {

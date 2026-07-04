@@ -1,8 +1,8 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import type { AppConfig } from '../config';
-import type { Candidacy } from '../domain/candidacy';
-import type { CandidacyRepository } from '../ports/candidacy-repository';
+import type { AppConfig } from '../config.js';
+import type { Candidacy } from '../domain/candidacy.js';
+import type { CandidacyRepository } from '../ports/candidacy-repository.js';
 
 /** File-backed repository: the JSON array in the store's candidacies.json. */
 export class FsCandidacyRepository implements CandidacyRepository {

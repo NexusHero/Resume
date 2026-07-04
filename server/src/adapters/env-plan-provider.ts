@@ -1,5 +1,5 @@
-import type { Plan } from '../domain/plan';
-import type { PlanProvider } from '../ports/plan-provider';
+import type { Plan } from '../domain/plan.js';
+import type { PlanProvider } from '../ports/plan-provider.js';
 
 /**
  * The default plan source (ADR-0021): a single instance-wide plan from config

@@ -1,12 +1,12 @@
-import type { AppConfig } from '../config';
-import type { JobSource } from '../ports/job-source';
-import type { HttpFetch } from '../ports/http-fetch';
-import type { Logger } from '../ports/logger';
-import { ArbeitnowJobSource } from './arbeitnow-job-source';
-import { BundesagenturJobSource } from './bundesagentur-job-source';
-import { AdzunaJobSource } from './adzuna-job-source';
-import { CompositeJobSource } from './composite-job-source';
-import { SampleJobSource } from './sample-job-source';
+import type { AppConfig } from '../config.js';
+import type { JobSource } from '../ports/job-source.js';
+import type { HttpFetch } from '../ports/http-fetch.js';
+import type { Logger } from '../ports/logger.js';
+import { ArbeitnowJobSource } from './arbeitnow-job-source.js';
+import { BundesagenturJobSource } from './bundesagentur-job-source.js';
+import { AdzunaJobSource } from './adzuna-job-source.js';
+import { CompositeJobSource } from './composite-job-source.js';
+import { SampleJobSource } from './sample-job-source.js';
 
 export interface JobSourceFactoryDeps {
   config: AppConfig;

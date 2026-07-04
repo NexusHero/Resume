@@ -1,9 +1,9 @@
 import { and, eq } from 'drizzle-orm';
-import type { ArtifactLog } from '../../domain/artifact';
-import type { ArtifactLogRepository } from '../../ports/artifact-log-repository';
-import type { Db } from './db';
-import { artifactLogs } from './schema';
-import { rowToArtifactLog, artifactLogToRow } from './mappers';
+import type { ArtifactLog } from '../../domain/artifact.js';
+import type { ArtifactLogRepository } from '../../ports/artifact-log-repository.js';
+import type { Db } from './db.js';
+import { artifactLogs } from './schema.js';
+import { rowToArtifactLog, artifactLogToRow } from './mappers.js';
 
 /** Postgres-backed AI-artifact outcome log. */
 export class SqlArtifactLogRepository implements ArtifactLogRepository {

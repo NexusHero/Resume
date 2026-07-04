@@ -1,10 +1,10 @@
 import { randomBytes } from 'node:crypto';
 import { eq } from 'drizzle-orm';
-import type { AppConfig } from '../../config';
-import type { SessionStore } from '../../ports/session-store';
-import type { Clock } from '../../ports/clock';
-import type { Db } from './db';
-import { sessions } from './schema';
+import type { AppConfig } from '../../config.js';
+import type { SessionStore } from '../../ports/session-store.js';
+import type { Clock } from '../../ports/clock.js';
+import type { Db } from './db.js';
+import { sessions } from './schema.js';
 
 /**
  * Postgres-backed session store. Tokens are opaque 256-bit random strings;

@@ -1,5 +1,5 @@
-import { checkGrounding, groundingSource } from '../../src/domain/grounding';
-import type { TalentDocuments } from '../../src/domain/talent-documents';
+import { checkGrounding, groundingSource } from '../../src/domain/grounding.js';
+import type { TalentDocuments } from '../../src/domain/talent-documents.js';
 
 const docs = (over: Partial<TalentDocuments['resume']> = {}): TalentDocuments => ({
   ownerId: 'team',

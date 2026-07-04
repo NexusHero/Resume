@@ -1,22 +1,22 @@
-import type { ArtifactLog } from '../../src/domain/artifact';
+import type { ArtifactLog } from '../../src/domain/artifact.js';
 import {
   earliestPendingSince,
   matchReplies,
   normalizeAddress,
   sendOutreachSchema,
-} from '../../src/domain/mail-sync';
-import type { Talent } from '../../src/domain/talent';
-import { loadConfig, type AppConfig } from '../../src/config';
-import { MailService } from '../../src/services/mail-service';
-import { createInboxSource, DisabledInboxSource } from '../../src/adapters/inbox-source-factory';
-import { ImapInboxSource } from '../../src/adapters/imap-inbox-source';
+} from '../../src/domain/mail-sync.js';
+import type { Talent } from '../../src/domain/talent.js';
+import { loadConfig, type AppConfig } from '../../src/config.js';
+import { MailService } from '../../src/services/mail-service.js';
+import { createInboxSource, DisabledInboxSource } from '../../src/adapters/inbox-source-factory.js';
+import { ImapInboxSource } from '../../src/adapters/imap-inbox-source.js';
 import {
   FakeInboxSource,
   InMemoryArtifactLogRepository,
   InMemoryTalentRepository,
   RecordingMailer,
   noopLogger,
-} from '../support/fakes';
+} from '../support/fakes.js';
 
 const artifact = (over: Partial<ArtifactLog>): ArtifactLog => ({
   id: 'a1',

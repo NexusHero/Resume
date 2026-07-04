@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
-import { uploadAttachmentSchema } from '../domain/attachment';
-import type { AttachmentService } from '../services/attachment-service';
-import { currentScope } from './current-user';
+import { uploadAttachmentSchema } from '../domain/attachment.js';
+import type { AttachmentService } from '../services/attachment-service.js';
+import { currentScope } from './current-user.js';
 
 /** Talent attachments: /api/v1/talents/:id/attachments and /api/v1/attachments/:id. */
 export class AttachmentController {

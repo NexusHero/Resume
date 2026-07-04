@@ -3,8 +3,8 @@ import {
   fallbackPitch,
   normalizePitch,
   pitchRequestSchema,
-} from '../../src/domain/candidate-pitch';
-import type { TalentDocuments } from '../../src/domain/talent-documents';
+} from '../../src/domain/candidate-pitch.js';
+import type { TalentDocuments } from '../../src/domain/talent-documents.js';
 
 const documents: TalentDocuments = {
   ownerId: 'o',

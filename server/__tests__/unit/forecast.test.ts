@@ -1,12 +1,16 @@
-import { forecastPipeline, parseFeeValue, STAGE_WIN_PROBABILITY } from '../../src/domain/forecast';
-import { ForecastService } from '../../src/services/forecast-service';
+import {
+  forecastPipeline,
+  parseFeeValue,
+  STAGE_WIN_PROBABILITY,
+} from '../../src/domain/forecast.js';
+import { ForecastService } from '../../src/services/forecast-service.js';
 import {
   InMemoryMandateRepository,
   InMemoryCandidacyRepository,
   InMemoryStageTransitionRepository,
-} from '../support/fakes';
-import type { Mandate } from '../../src/domain/mandate';
-import type { Candidacy, CandidacyStage } from '../../src/domain/candidacy';
+} from '../support/fakes.js';
+import type { Mandate } from '../../src/domain/mandate.js';
+import type { Candidacy, CandidacyStage } from '../../src/domain/candidacy.js';
 
 const SCOPE = 'team';
 

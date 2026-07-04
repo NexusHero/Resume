@@ -1,7 +1,7 @@
 import type { Request } from 'express';
-import { UnauthorizedError } from '../domain/errors';
-import { DEFAULT_TENANT, type Role } from '../domain/user';
-import type { AuthPrincipal } from '../ports/authorizer';
+import { UnauthorizedError } from '../domain/errors.js';
+import { DEFAULT_TENANT, type Role } from '../domain/user.js';
+import type { AuthPrincipal } from '../ports/authorizer.js';
 
 type AuthedRequest = Request & {
   userId?: string;

@@ -1,4 +1,4 @@
-import { companyInterviewProfile } from '../../src/domain/company-archetype';
+import { companyInterviewProfile } from '../../src/domain/company-archetype.js';
 
 describe('company-archetype', () => {
   describe('curated overlay (high confidence)', () => {

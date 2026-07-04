@@ -1,13 +1,13 @@
-import { AttachmentService } from '../../src/services/attachment-service';
-import { NotFoundError, ValidationError } from '../../src/domain/errors';
+import { AttachmentService } from '../../src/services/attachment-service.js';
+import { NotFoundError, ValidationError } from '../../src/domain/errors.js';
 import {
   InMemoryTalentRepository,
   InMemoryUserRepository,
   InMemoryAttachmentStore,
   FixedClock,
   SequenceIdGenerator,
-} from '../support/fakes';
-import type { Talent } from '../../src/domain/talent';
+} from '../support/fakes.js';
+import type { Talent } from '../../src/domain/talent.js';
 
 const OWNER = 'owner1';
 const talent = (id: string, ownerId = OWNER): Talent => ({

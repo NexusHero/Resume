@@ -1,9 +1,9 @@
 import { and, eq } from 'drizzle-orm';
-import type { Placement } from '../../domain/placement';
-import type { PlacementRepository } from '../../ports/placement-repository';
-import type { Db } from './db';
-import { placements } from './schema';
-import { rowToPlacement, placementToRow } from './mappers';
+import type { Placement } from '../../domain/placement.js';
+import type { PlacementRepository } from '../../ports/placement-repository.js';
+import type { Db } from './db.js';
+import { placements } from './schema.js';
+import { rowToPlacement, placementToRow } from './mappers.js';
 
 /** Postgres-backed repository for booked placements, scoped to an owner. */
 export class SqlPlacementRepository implements PlacementRepository {

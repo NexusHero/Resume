@@ -1,4 +1,4 @@
-import { Semaphore } from '../../src/adapters/semaphore';
+import { Semaphore } from '../../src/adapters/semaphore.js';
 
 const flush = () => new Promise((r) => setImmediate(r));
 

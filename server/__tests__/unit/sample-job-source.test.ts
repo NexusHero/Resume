@@ -1,5 +1,5 @@
-import { SampleJobSource } from '../../src/adapters/sample-job-source';
-import { jobQuerySchema } from '../../src/domain/job';
+import { SampleJobSource } from '../../src/adapters/sample-job-source.js';
+import { jobQuerySchema } from '../../src/domain/job.js';
 
 const source = new SampleJobSource();
 

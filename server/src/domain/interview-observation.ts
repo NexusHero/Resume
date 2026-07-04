@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { CompanyProfile } from './company-archetype';
+import type { CompanyProfile } from './company-archetype.js';
 
 /**
  * The recruiter-observation flywheel: after a candidate goes through a real

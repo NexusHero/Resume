@@ -1,12 +1,12 @@
-import { MandateService } from '../../src/services/mandate-service';
-import { createMandateSchema, updateMandateSchema } from '../../src/domain/mandate';
-import { NotFoundError } from '../../src/domain/errors';
+import { MandateService } from '../../src/services/mandate-service.js';
+import { createMandateSchema, updateMandateSchema } from '../../src/domain/mandate.js';
+import { NotFoundError } from '../../src/domain/errors.js';
 import {
   InMemoryMandateRepository,
   InMemoryCandidacyRepository,
   FixedClock,
   SequenceIdGenerator,
-} from '../support/fakes';
+} from '../support/fakes.js';
 
 const OWNER = 'owner1';
 

@@ -6,9 +6,9 @@ import {
   type UsageEvent,
   buildAuditTrail,
   auditTrailToCsv,
-} from '../../src/domain/usage';
-import { UsageService } from '../../src/services/usage-service';
-import { InMemoryUsageMeter } from '../support/fakes';
+} from '../../src/domain/usage.js';
+import { UsageService } from '../../src/services/usage-service.js';
+import { InMemoryUsageMeter } from '../support/fakes.js';
 
 const ev = (over: Partial<UsageEvent> = {}): UsageEvent => ({
   userId: 'u1',

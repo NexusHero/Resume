@@ -1,4 +1,4 @@
-import type { ArtifactLog } from '../domain/artifact';
+import type { ArtifactLog } from '../domain/artifact.js';
 
 /** Persistence of the AI-artifact outcome log, scoped to an owner. */
 export interface ArtifactLogRepository {

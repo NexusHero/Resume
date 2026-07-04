@@ -1,5 +1,9 @@
-import { NoopSchedulerLock } from '../../src/adapters/noop-scheduler-lock';
-import { PgAdvisorySchedulerLock, lockId } from '../../src/adapters/sql/pg-advisory-scheduler-lock';
+import { jest } from '@jest/globals';
+import { NoopSchedulerLock } from '../../src/adapters/noop-scheduler-lock.js';
+import {
+  PgAdvisorySchedulerLock,
+  lockId,
+} from '../../src/adapters/sql/pg-advisory-scheduler-lock.js';
 import type { Pool } from 'pg';
 
 describe('NoopSchedulerLock', () => {

@@ -3,14 +3,14 @@ import {
   type CoverLetterRequest,
   coverLetterPrompt,
   coverLetterTemplate,
-} from '../domain/cover-letter';
-import type { Logger } from '../ports/logger';
-import type { LlmProviderId } from '../ports/llm-provider';
-import type { UsageMeter } from '../ports/usage-meter';
-import type { Clock } from '../ports/clock';
-import { toUsageEvent } from '../domain/usage';
-import { detectLanguage } from '../domain/language';
-import type { LlmService } from './llm-service';
+} from '../domain/cover-letter.js';
+import type { Logger } from '../ports/logger.js';
+import type { LlmProviderId } from '../ports/llm-provider.js';
+import type { UsageMeter } from '../ports/usage-meter.js';
+import type { Clock } from '../ports/clock.js';
+import { toUsageEvent } from '../domain/usage.js';
+import { detectLanguage } from '../domain/language.js';
+import type { LlmService } from './llm-service.js';
 
 export interface CoverLetterResult {
   text: string;

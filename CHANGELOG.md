@@ -56,8 +56,10 @@ See **Breaking** below before upgrading a live deployment.
   worker with a richer offline experience — an offline banner and
   stale-while-revalidate caching (ADR-0039).
 - **Capacitor native app wrapper** (ADR-0040): the same web build wraps into an
-  installable iOS/Android app (web-side wiring; the native build/signing step
-  is a manual, documented walkthrough — `docs/native-app.md`).
+  installable iOS/Android app. The Android platform project now builds
+  on demand in CI (**Native — Android** workflow) into an installable,
+  unsigned debug APK artifact; iOS and any signed release build remain a
+  manual, documented walkthrough — `docs/native-app.md`.
 - **Fully responsive UI** (ADR-0025–0027): a `matchMedia` viewport hook, a
   mobile navigation drawer, responsive dashboard grids and scrollable tables,
   and a responsive CV profile/editor/modals — the whole recruiting kit down to

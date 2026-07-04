@@ -1,0 +1,48 @@
+@startuml 06_seq_invite_accept
+title Tenant onboarding by invitation — admin invite → invitee accepts (ADR-0035)
+
+skinparam shadowing false
+autonumber
+
+actor Admin
+actor Invitee
+participant "MembersController" as MCtrl
+participant "InviteService" as Invites
+participant "Mailer" as Mail
+participant "AuthController" as ACtrl
+participant "AuthService" as Auth
+participant "UserRepository" as Users
+
+== Invite (admin, inside a tenant) ==
+Admin -> MCtrl : POST /members/invites { email }
+activate MCtrl
+MCtrl -> Invites : invite(email, tenantId, invitedBy)
+activate Invites
+Invites -> Invites : mint one-time invite token\n(bound to tenant + email)
+Invites -> Mail : send invite link (?invite_token=…)
+Invites --> MCtrl : { invite }
+deactivate Invites
+MCtrl --> Admin : 201
+deactivate MCtrl
+Mail -> Invitee : email with accept link
+
+== Accept (invitee, sets password) ==
+Invitee -> ACtrl : POST /auth/accept-invite\n{ invite_token, password }
+activate ACtrl
+ACtrl -> Auth : acceptInvite(token, password)
+activate Auth
+Auth -> Invites : consume(token)
+Invites --> Auth : { email, tenantId } | invalid
+alt token valid & unused
+  Auth -> Users : create user in tenantId\n(scrypt hash)
+  Auth --> ACtrl : session token
+  ACtrl --> Invitee : 204 + Set-Cookie → lands in that tenant
+else invalid / expired / used
+  Auth --> ACtrl : error
+  ACtrl --> Invitee : 400/401 problem+json
+end
+deactivate Auth
+deactivate ACtrl
+note over Users : plain /register is left untouched,\nso fresh installs stay single-tenant
+
+@enduml

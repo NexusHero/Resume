@@ -1,0 +1,45 @@
+@startuml 06_seq_login
+title Login + session issuance, with tenant-suspension enforcement (FR-01, ADR-0038)
+
+skinparam shadowing false
+autonumber
+
+actor User
+participant "AuthController" as Ctrl
+participant "AuthService" as Auth
+participant "UserRepository" as Users
+participant "PasswordHasher\n(scrypt)" as Hash
+participant "TenantRepository" as Tenants
+participant "SessionStore" as Sessions
+
+User -> Ctrl : POST /auth/login { email, password }
+activate Ctrl
+note right of Ctrl : rate-limited (15-min window)\nbefore reaching the service
+Ctrl -> Auth : login(email, password)
+activate Auth
+Auth -> Users : findByEmail(email)
+Users --> Auth : user | null
+Auth -> Hash : verify(password, user.passwordHash)
+Hash --> Auth : ok?
+
+alt credentials invalid
+  Auth --> Ctrl : UnauthorizedError
+  Ctrl --> User : 401 problem+json
+else credentials valid
+  Auth -> Tenants : status(user.tenantId)
+  Tenants --> Auth : status
+  alt tenant suspended (ADR-0038)
+    Auth --> Ctrl : UnauthorizedError("workspace suspended")
+    note over Auth : same check also runs on every\nsession resolve → live sessions die too
+    Ctrl --> User : 401 problem+json
+  else active (or default 'team', never suspendable)
+    Auth -> Sessions : create(userId)
+    Sessions --> Auth : opaque token
+    Auth --> Ctrl : token
+    Ctrl --> User : 204 + Set-Cookie\n(httpOnly, SameSite=Lax, Secure)
+  end
+end
+deactivate Auth
+deactivate Ctrl
+
+@enduml

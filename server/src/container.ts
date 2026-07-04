@@ -7,6 +7,8 @@ import {
   type AwilixContainer,
 } from 'awilix';
 import { loadConfig, type AppConfig } from './config';
+import { toUserView } from './domain/user';
+import type { UserErasureStep, UserExportSection } from './ports/personal-data';
 import { createLogger } from './adapters/pino-logger';
 import { SystemClock } from './adapters/system-clock';
 import { RandomIdGenerator } from './adapters/random-id-generator';
@@ -206,6 +208,51 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     membersService: asClass(MembersService).singleton(),
     inviteService: asClass(InviteService).singleton(),
     tenantService: asClass(TenantService).singleton(),
+    // DSGVO personal-data registry (ports/personal-data.ts): every container that
+    // holds a user's own footprint registers one erase step and, where the data
+    // belongs in a data export, one export section — here, once, next to all the
+    // others. AccountService iterates these instead of hand-listing stores, so a
+    // forgotten container (as email-verification tokens once were) can't recur.
+    userErasureSteps: asFunction((cradle): UserErasureStep[] => [
+      {
+        label: 'api-keys',
+        erase: async (userId) => {
+          for (const provider of await cradle.apiKeyStore.providersFor(userId)) {
+            await cradle.apiKeyStore.remove(userId, provider);
+          }
+        },
+      },
+      { label: 'sessions', erase: (userId) => cradle.sessionStore.destroyForUser(userId) },
+      {
+        label: 'password-reset-tokens',
+        erase: (userId) => cradle.passwordResetTokenStore.destroyForUser(userId),
+      },
+      {
+        label: 'email-verification-tokens',
+        erase: (userId) => cradle.emailVerificationTokenStore.destroyForUser(userId),
+      },
+      { label: 'usage', erase: (userId) => cradle.usageMeter.removeForUser(userId) },
+    ]).singleton(),
+    userExportSections: asFunction((cradle): UserExportSection[] => [
+      {
+        key: 'account',
+        collect: async (userId) => {
+          const user = await cradle.userRepository.findById(userId);
+          return user ? toUserView(user) : null;
+        },
+      },
+      { key: 'mandates', collect: (_userId, scope) => cradle.mandateRepository.list(scope) },
+      { key: 'talents', collect: (_userId, scope) => cradle.talentRepository.list(scope) },
+      { key: 'placements', collect: (_userId, scope) => cradle.placementRepository.list(scope) },
+      {
+        key: 'observations',
+        collect: (_userId, scope) => cradle.interviewObservationRepository.list(scope),
+      },
+      {
+        key: 'artifactLogs',
+        collect: (_userId, scope) => cradle.artifactLogRepository.list(scope),
+      },
+    ]).singleton(),
     accountService: asClass(AccountService).singleton(),
     passwordResetService: asClass(PasswordResetService).singleton(),
     emailVerificationService: asClass(EmailVerificationService).singleton(),

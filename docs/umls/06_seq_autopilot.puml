@@ -1,0 +1,43 @@
+@startuml 06_seq_autopilot
+title CoRecruiter autopilot — proactive tailored packets, staged for approval (ADR-0013/0019)
+
+skinparam shadowing false
+autonumber
+
+participant "Scheduler tick\n(or manual run)" as Tick
+participant "AssistantService" as Asst
+participant "job source /\nown mandates" as Source
+participant "MatchService" as Match
+participant "ApplicationBuilder\n(isolated)" as Builder
+participant "SuggestionRepository\n(review queue)" as Queue
+actor Recruiter
+
+Tick -> Asst : run(mode = autopilot, scope)
+activate Asst
+Asst -> Source : pull openings
+Source --> Asst : postings[]
+
+loop each opening (bounded by per-run build cap)
+  Asst -> Asst : normalize → ApplicationTarget
+  Asst -> Match : rank(pool, target)
+  Match --> Asst : ranked candidates
+  alt strong match, not yet applied, score ≥ min
+    Asst -> Builder : build(candidate, target)
+    activate Builder
+    Builder -> Builder : tailor CV + cover letter\n(in the ad's language), pick certificates
+    Builder --> Asst : packet snapshot
+    deactivate Builder
+    Asst -> Queue : stage application suggestion\n(snapshot; never overwrites documents)
+  else weak / duplicate / budget exhausted
+    Asst -> Asst : skip (log reason)
+  end
+end
+Asst --> Tick : done (token spend bounded per run)
+deactivate Asst
+
+== Human gate ==
+Recruiter -> Queue : review → Approve
+Queue -> Asst : materialize mandate (if from posting)\n+ add candidacy
+note over Recruiter : outward submission stays manual —\nnothing outward-facing runs alone
+
+@enduml

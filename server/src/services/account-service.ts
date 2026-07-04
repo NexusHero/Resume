@@ -1,34 +1,17 @@
-import { type UserView, toUserView } from '../domain/user';
-import type { Mandate } from '../domain/mandate';
-import type { Talent } from '../domain/talent';
-import type { Placement } from '../domain/placement';
 import type { UserRepository } from '../ports/user-repository';
-import type { MandateRepository } from '../ports/mandate-repository';
-import type { TalentRepository } from '../ports/talent-repository';
-import type { PlacementRepository } from '../ports/placement-repository';
-import type { ApiKeyStore } from '../ports/api-key-store';
-import type { SessionStore } from '../ports/session-store';
-import type { PasswordResetTokenStore } from '../ports/password-reset-token-store';
-import type { UsageMeter } from '../ports/usage-meter';
+import type { UserErasureStep, UserExportSection } from '../ports/personal-data';
 
 export interface AccountServiceDeps {
   userRepository: UserRepository;
-  mandateRepository: MandateRepository;
-  talentRepository: TalentRepository;
-  placementRepository: PlacementRepository;
-  apiKeyStore: ApiKeyStore;
-  sessionStore: SessionStore;
-  passwordResetTokenStore: PasswordResetTokenStore;
-  usageMeter: UsageMeter;
+  userErasureSteps: UserErasureStep[];
+  userExportSections: UserExportSection[];
 }
 
 /** The signed-in recruiter's DSGVO payload: their account plus the team workspace. */
 export interface AccountExport {
   exportedAt: string; // the request's own timestamp, stamped by the caller
-  account: UserView | null;
-  mandates: Mandate[];
-  talents: Talent[];
-  placements: Placement[];
+  /** One entry per registered export section (account, mandates, talents, …). */
+  [section: string]: unknown;
 }
 
 /**
@@ -36,59 +19,45 @@ export interface AccountExport {
  * individual, so:
  *  - export returns the caller's account plus the shared team workspace, and
  *  - erase removes only the person's own footprint (account, sessions, reset
- *    tokens, personal API keys) — the team's data stays so one member leaving
- *    can't wipe everyone's work.
+ *    and verification tokens, personal API keys, usage) — the team's data stays
+ *    so one member leaving can't wipe everyone's work.
+ *
+ * Neither list lives here: both are assembled from the personal-data registry
+ * (`ports/personal-data.ts`) in the composition root, so a new personal-data
+ * container is registered once rather than added to erase and export by hand.
+ * The account row itself is the one exception — it is removed here, explicitly
+ * last, because it is the identity every other footprint hangs off.
  */
 export class AccountService {
   private readonly users: UserRepository;
-  private readonly mandates: MandateRepository;
-  private readonly talents: TalentRepository;
-  private readonly placements: PlacementRepository;
-  private readonly keys: ApiKeyStore;
-  private readonly sessions: SessionStore;
-  private readonly resetTokens: PasswordResetTokenStore;
-  private readonly usage: UsageMeter;
+  private readonly erasureSteps: UserErasureStep[];
+  private readonly exportSections: UserExportSection[];
 
   constructor(deps: AccountServiceDeps) {
     this.users = deps.userRepository;
-    this.mandates = deps.mandateRepository;
-    this.talents = deps.talentRepository;
-    this.placements = deps.placementRepository;
-    this.keys = deps.apiKeyStore;
-    this.sessions = deps.sessionStore;
-    this.resetTokens = deps.passwordResetTokenStore;
-    this.usage = deps.usageMeter;
+    this.erasureSteps = deps.userErasureSteps;
+    this.exportSections = deps.userExportSections;
   }
 
   /** The caller's account plus the team workspace. `at` is the request time. */
   async exportFor(userId: string, teamScope: string, at: string): Promise<AccountExport> {
-    const [user, mandates, talents, placements] = await Promise.all([
-      this.users.findById(userId),
-      this.mandates.list(teamScope),
-      this.talents.list(teamScope),
-      this.placements.list(teamScope),
-    ]);
-    return {
-      exportedAt: at,
-      account: user ? toUserView(user) : null,
-      mandates,
-      talents,
-      placements,
-    };
+    const sections = await Promise.all(
+      this.exportSections.map(
+        async (section) => [section.key, await section.collect(userId, teamScope)] as const,
+      ),
+    );
+    return { exportedAt: at, ...Object.fromEntries(sections) };
   }
 
   /**
-   * Erase the person's own footprint: their personal API keys, every session and
-   * outstanding reset token, then the account itself. Shared team data is left
-   * untouched. Idempotent — erasing an already-gone account removes nothing.
+   * Erase the person's own footprint: run every registered erasure step, then
+   * remove the account row last. Idempotent — erasing an already-gone account
+   * removes nothing. Shared team data is left untouched.
    */
   async erase(userId: string): Promise<void> {
-    for (const provider of await this.keys.providersFor(userId)) {
-      await this.keys.remove(userId, provider);
+    for (const step of this.erasureSteps) {
+      await step.erase(userId);
     }
-    await this.sessions.destroyForUser(userId);
-    await this.resetTokens.destroyForUser(userId);
-    await this.usage.removeForUser(userId);
     await this.users.remove(userId);
   }
 }

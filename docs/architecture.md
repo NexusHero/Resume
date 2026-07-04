@@ -3,7 +3,7 @@
 > Documented with [arc42](https://arc42.org). Modeling language: **UML** (PlantUML sources in
 > [`docs/umls/`](umls), rendered to `.svg`). Companion docs:
 > [requirements](requirements.md) · [use cases](use-cases.md) ·
-> [architecture decisions](adr) · [roadmap](roadmap.md) ·
+> [architecture decisions](adr) · [security concept](security.md) · [roadmap](roadmap.md) ·
 > [EU AI Act brief](eu-ai-act.md) · [deployment blueprint](deployment-blueprint.md).
 
 ## 1. Introduction and Goals
@@ -93,21 +93,24 @@ The backend lives in `server/src/` and is strictly layered (dependencies point i
 > The diagram shows representative blocks per layer; the table below completes the
 > inventory.
 
-| Layer       | Building blocks (selected)                                                                                                                                                                                | Responsibility                                                                       |
-| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| HTTP        | `create-app`, `*-controller` (mandate, talent, candidacy, placement, match, match-ai, document, compliance, forecast, observation, members, …), `problem`, `security`                                     | Express routing, zod validation at the boundary, RFC-9457 errors, auth/CORS/headers. |
-| Application | `*-service` (mandate, talent, candidacy, placement, match, **document-ai**, forecast, retention, members, usage, job-search, …)                                                                           | Business rules only; depend on ports, never adapters.                                |
-| Domain      | `mandate`, `talent`, `candidacy`, `placement`, `match`, `skill-semantics`, **`skill-taxonomy`**, **`grounding`**, `candidate-prep`, `company-archetype`, `interview-*`, `agg-check`, `forecast`, `errors` | The model, its invariants, and pure deterministic algorithms. No I/O.                |
-| Ports       | `*-repository`, `session-store`, `llm-provider`, `api-key-store`, `usage-meter`, `skill-extractor`, `job-source`, `pdf-*`, `mailer`, `authorizer`, `clock`, …                                             | Interfaces the services depend on.                                                   |
-| Adapters    | `fs-*` / `sql/*` repositories, `anthropic`/`gemini` LLM providers, `*-job-source`, `puppeteer-pdf-renderer`, `pdf-lib-merger`, `scrypt-password-hasher`, `secret-cipher`, `pino`, …                       | Concrete I/O, wired in `container.ts` (Awilix).                                      |
+| Layer       | Building blocks (selected)                                                                                                                                                                                                                                                                        | Responsibility                                                                       |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| HTTP        | `create-app`, `*-controller` (mandate, talent, candidacy, placement, match, match-ai, document, compliance, forecast, observation, members, …), `problem`, `security`                                                                                                                             | Express routing, zod validation at the boundary, RFC-9457 errors, auth/CORS/headers. |
+| Application | `*-service` (mandate, talent, candidacy, placement, match, forecast, retention, members, usage, job-search, …); the AI services (`document-assist`, `cv-parse`, `ats-ai`, `outreach-ai`, `match-ai`) over the shared **`LlmFeatureRunner`** (ADR-0022), with `DocumentAiService` as a thin facade | Business rules only; depend on ports, never adapters.                                |
+| Domain      | `mandate`, `talent`, `candidacy`, `placement`, `match`, `skill-semantics`, **`skill-taxonomy`**, **`grounding`**, `candidate-prep`, `company-archetype`, `interview-*`, `agg-check`, `forecast`, `errors`                                                                                         | The model, its invariants, and pure deterministic algorithms. No I/O.                |
+| Ports       | `*-repository`, `session-store`, `llm-provider`, `api-key-store`, `usage-meter`, `skill-extractor`, `job-source`, `pdf-*`, `mailer`, `authorizer`, `clock`, …                                                                                                                                     | Interfaces the services depend on.                                                   |
+| Adapters    | `fs-*` / `sql/*` repositories, `anthropic`/`gemini` LLM providers, `*-job-source`, `puppeteer-pdf-renderer`, `pdf-lib-merger`, `scrypt-password-hasher`, `secret-cipher`, `pino`, …                                                                                                               | Concrete I/O, wired in `container.ts` (Awilix).                                      |
 
 The composition root (`container.ts`) is the single place that knows which adapter
 implements each port — see ADR-0002 for the registration discipline this demands.
 
 ## 6. Runtime View
 
-**AI generation with grounding** — `POST /api/v1/talents/:id/documents/pitch` (outreach is
-analogous):
+> Each flow is tagged with the requirements and decisions it realises, so the
+> chain runs requirement → feature → flow → ADR (see the [traceability matrix](#traceability-matrix)).
+
+**AI generation with grounding** _(FR-30, FR-31, FR-38 · ADR-0005/0009/0011)_ —
+`POST /api/v1/talents/:id/documents/pitch` (outreach is analogous):
 
 1. The controller validates the body (zod) and calls `DocumentAiService.pitchForMandate`.
 2. The service resolves the provider: the user's **persisted choice** (`User.llmProvider`,
@@ -121,11 +124,11 @@ analogous):
    $0.0011" / "Template · no AI") and, if `grounding.unsupported` is non-empty, a
    "nicht belegte Angaben" warning for the recruiter to resolve before sending.
 
-**Pipeline → placement** — advancing a candidacy to `placed` cascades to create a
+**Pipeline → placement** _(FR-12, FR-13, FR-14)_ — advancing a candidacy to `placed` cascades to create a
 placement with its fee; mandate submitted/interview counts and the revenue forecast are
 derived from the live pipeline, never stored twice.
 
-**CoRecruiter autopilot** — on a scheduler tick (or manual run) in `autopilot` mode,
+**CoRecruiter autopilot** _(ADR-0013/0019 · FR-30, FR-32, FR-42)_ — on a scheduler tick (or manual run) in `autopilot` mode,
 `AssistantService` pulls openings from the configured source (received job postings or
 own mandates), normalizes each to an `ApplicationTarget`, ranks the pool against it and —
 for strong, not-yet-applied matches, bounded by a per-run build cap and a minimum score —
@@ -134,6 +137,59 @@ language) and select certificates. The packet is stored as a **snapshot** on an
 `application` suggestion (never overwriting the candidate's documents) and staged for
 approval; approving materializes a mandate from a posting if needed and adds the candidacy.
 The outward submission stays a manual step (ADR-0019).
+
+### Sequence diagrams
+
+The multi-actor / multi-branch flows above are drawn as UML sequence diagrams
+(PlantUML sources in [`docs/umls/`](umls)); each carries its branches and notes
+so the behaviour — not just the call order — is legible.
+
+**AI generation with grounding, fallback & metering** (FR-30/31/38) — provider
+resolution, the key-or-fallback branch, schema validation and non-blocking metering:
+
+![AI generation sequence](umls/06_seq_ai_generation.svg)
+
+**Login + session, suspension-enforced** (FR-01, ADR-0038) — the invalid-credentials
+and suspended-tenant branches, and why a suspension also kills live sessions:
+
+![Login sequence](umls/06_seq_login.svg)
+
+**Invite → accept onboarding** (ADR-0035) — the two-actor admin-invite / invitee-accept
+round-trip that leaves plain `register` untouched:
+
+![Invite/accept sequence](umls/06_seq_invite_accept.svg)
+
+**CoRecruiter autopilot** (ADR-0013/0019) — the bounded build loop, the skip branches,
+and the human approval gate before anything materialises:
+
+![Autopilot sequence](umls/06_seq_autopilot.svg)
+
+**DSGVO account erase via the personal-data registry** (FR-60) — the registry loop,
+account-row-last ordering, and why the verification-token leak cannot recur:
+
+![Account erase sequence](umls/06_seq_account_erase.svg)
+
+### Traceability matrix
+
+The requirement catalogue ([requirements.md](requirements.md)) lists FR → module.
+This matrix closes the loop the other way — requirement → **runtime flow /
+sequence diagram** → ADR — so a reviewer can walk from a requirement to the
+behaviour that realises it, not just the file that holds it. Sequence sources are
+in [`docs/umls/`](umls).
+
+| Requirement         | Feature / module                           | Runtime flow (sequence)                                                | ADR                 |
+| ------------------- | ------------------------------------------ | ---------------------------------------------------------------------- | ------------------- |
+| FR-30, FR-31, FR-38 | AI services + `LlmFeatureRunner`           | [AI generation w/ fallback + metering](umls/06_seq_ai_generation.puml) | 0005, 0009, 0011    |
+| FR-01               | `auth-service`, `session-store`            | [Login + session, suspension-checked](umls/06_seq_login.puml)          | 0004, 0038          |
+| FR-04 (onboarding)  | `invite-service`, `auth-service`           | [Invite → accept onboarding](umls/06_seq_invite_accept.puml)           | 0035                |
+| FR-30, FR-32, FR-42 | `assistant-service`, `application-builder` | [CoRecruiter autopilot](umls/06_seq_autopilot.puml)                    | 0013, 0019          |
+| FR-60               | `account-service` + personal-data registry | [DSGVO erase via registry](umls/06_seq_account_erase.puml)             | 0004 · security §10 |
+| FR-12, FR-13, FR-14 | `candidacy-service`, `placement-service`   | Pipeline → placement (§6, prose)                                       | 0010                |
+| FR-61               | `retention-service`                        | Retention report + anonymise sweep (§6 companion, ADR-0018)            | 0018                |
+
+Rows without a sequence diagram are single-collaborator flows adequately covered
+by prose; the five diagrammed flows are the multi-actor / multi-branch ones where
+a picture earns its place.
 
 ## 7. Deployment View
 
@@ -159,6 +215,14 @@ The outward submission stays a manual step (ADR-0019).
   destructive runs alone, and token spend is bounded per run (ADR-0013, ADR-0019).
 - **Skills:** canonicalised (ADR-0008) then matched semantically offline (ADR-0007), with
   local hashed embeddings + hybrid lexical/semantic ranking (ADR-0017).
+- **Security:** the posture is documented end-to-end in the [security concept](security.md) —
+  trust boundary, authentication (opaque `httpOnly`/`SameSite=Lax` sessions, scrypt
+  passwords), authorization (RBAC + the `requireAuth`/`requirePlan` route seams),
+  per-tenant isolation, the config-only non-escalatable super-admin, suspension enforced
+  in the auth path, AES-256-GCM-encrypted per-user keys, CORS allow-list + CSP + security
+  headers, auth rate-limiting, and the honest gaps (no CSRF token under today's
+  `SameSite=Lax`, no key-rotation runbook). The controls→ADR→verification table lives there;
+  the tenancy detail below expands the isolation model.
 - **Auth & tenancy:** sessions + RBAC (ADR-0004); recruiting data is scope-owned (ADR-0010).
   `currentScope(req)` resolves to the user's `tenantId`, defaulting to `'team'` when absent
   (ADR-0033) — the seam is multi-tenant-ready while every current install stays single-tenant.
@@ -234,40 +298,61 @@ Full log in [`docs/adr/`](adr). Summary:
 
 See [requirements.md](requirements.md) for the full FR/NFR catalogue. Verification:
 
-| Quality         | Requirement | Verified by                                     |
-| --------------- | ----------- | ----------------------------------------------- |
-| Maintainability | NFR-01      | Jest coverage gate (≥ 90 %) in CI               |
-| Correctness     | NFR-02      | acceptance (supertest) tests                    |
-| Type safety     | NFR-03      | `npm run typecheck` in CI                       |
-| Persistence     | NFR-04      | `DATABASE_URL`-gated Postgres integration tests |
-| Trust / honesty | NFR-05      | Playwright e2e + grounding unit tests           |
-| Frontend logic  | NFR-01      | Vitest jsdom unit/component tests (`test:web`)  |
-| Security        | NFR-06      | CodeQL + security workflow; `security.ts`       |
-| Consistency     | NFR-09      | Conventional-commit + format/lint checks in CI  |
+| Quality         | Requirement | Verified by                                                                |
+| --------------- | ----------- | -------------------------------------------------------------------------- |
+| Maintainability | NFR-01      | Jest coverage gate (≥ 90 %) in CI                                          |
+| Correctness     | NFR-02      | acceptance (supertest) tests                                               |
+| Type safety     | NFR-03      | `npm run typecheck` in CI                                                  |
+| Persistence     | NFR-04      | `DATABASE_URL`-gated Postgres integration tests                            |
+| Trust / honesty | NFR-05      | Playwright e2e + grounding unit tests                                      |
+| Frontend logic  | (ungated)   | Vitest jsdom tests (`test:web`) — run, not a coverage gate (see §11)       |
+| Security        | NFR-06      | [security concept](security.md); CodeQL + security workflow; `security.ts` |
+| Consistency     | NFR-09      | Conventional-commit + format/lint checks in CI                             |
 
 ## 11. Risks and Technical Debt
+
+This chapter separates **paid-down debt** (kept as a short changelog so a reader
+knows it was addressed, not overlooked) from **open risk** (what still needs
+watching). If you are scanning for current exposure, read §11.2.
+
+### 11.1 Resolved debt (changelog)
 
 - ✅ **Clean-code review done** (roadmap 0.9) — a three-dimension audit (clean code,
   architecture conformance, UX walkthrough) confirmed the layering holds; the found debt
   was paid down: the per-feature LLM scaffold collapsed into one `runLlm()` helper, five
   duplicated `candidateFacts` builders unified, PII/sample data removed from the shipped
   bundle, the remaining German UI chrome translated, dead exports deleted and the
-  scope/userId naming drift fixed. Remaining known debt: the triple manual wiring lists
-  (container / AppDeps / index imports) and one domain→ports type import
+  scope/userId naming drift fixed.
+- ✅ **Backend god classes split (ADR-0022):** `DocumentAiService`'s ten AI features became a
+  shared `LlmFeatureRunner` plus five single-concern services, with the old class kept as a
+  thin logic-free facade so callers are unchanged; the shared LLM idiom now has one home.
+  `AssistantService`'s playbook `run()` (was ~120 lines mixing four strategies) was decomposed
+  into single-concern private steps (`proposeShortlists`, `proposeStalledFollowUps`,
+  `proposeDataGaps`) over a shared `stage()` helper, with the token-spending autopilot step
+  already its own service (`AutopilotService`, ADR-0019/PR5). **No backend god class remains.**
+- ✅ **Frontend god-component split (ADR-0024):** `MandatePipeline` (was ~720 lines) became a
+  board-only orchestrator plus five feature modals that each own their state, locked by 22 new
+  Vitest tests.
+- ✅ **DSGVO erase/export registered, not hand-listed:** account erase and export now run off a
+  personal-data registry in the composition root (`ports/personal-data.ts`) instead of a
+  per-store list — closing a real leak where erase never cleared email-verification tokens. A
+  new personal-data container is one registration, and the compiler + a regression test guard
+  against a forgotten one. See the [security concept §10](security.md).
+
+### 11.2 Open risks and technical debt
+
+- **Largest remaining frontend components:** `Editor` and `SettingsView` are now the biggest
+  and are the next split candidates should one be wanted. **Web coverage is intentionally not
+  gated** — it rises as more components gain tests; the server keeps its 90 % Jest gate. This
+  is a deliberate asymmetry, not an oversight.
+- **Authorization is split between two styles:** plan/auth gating is declarative at the route
+  edge (`requireAuth`/`requirePlan`), but a few admin-only role checks are still imperative
+  inside controllers (e.g. `retention-controller`). The next authz cleanup is a
+  `requireRole('admin')` seam to match — see the [security concept §3](security.md).
+- **Triple manual wiring lists:** adding a service still means editing the container, the
+  `AppDeps` type, and the `index` imports in lockstep; a missing registration is caught only by
+  the e2e boot, not a unit test (ADR-0002). One domain→ports type import remains
   (`usage.ts` → `llm-provider`).
-- **God classes to watch:** `DocumentAiService`'s ten AI features were split (ADR-0022)
-  into a shared `LlmFeatureRunner` plus five single-concern services, with the old class
-  kept as a thin logic-free facade so callers are unchanged; the shared LLM idiom now has
-  one home. `AssistantService`'s playbook `run()` (was ~120 lines mixing four strategies)
-  was decomposed into single-concern private steps (`proposeShortlists`,
-  `proposeStalledFollowUps`, `proposeDataGaps`) over a shared `stage()` helper, with the
-  token-spending autopilot step already its own service (`AutopilotService`, ADR-0019/PR5) —
-  no backend god class remains.
-- **Frontend god-components:** `MandatePipeline` (was ~720 lines) was split (ADR-0024) into
-  a board-only orchestrator plus five feature modals that each own their state, locked by 22
-  new Vitest tests. `Editor` and `SettingsView` are now the largest remaining components and
-  the next candidates should a further split be wanted. Web coverage is still intentionally
-  **not gated** — it rises as more components gain tests; the server keeps its 90 % Jest gate.
 - **Embeddings default to hashed-lexical** (ADR-0017): fully offline and deterministic.
   Neural backends are now opt-in behind the same port (ADR-0020) — `ollama` (local,
   first-party) or `openai` (third-party API) — each degrading to hashed on any error, so
@@ -295,8 +380,11 @@ See [requirements.md](requirements.md) for the full FR/NFR catalogue. Verificati
   step (no Android SDK/Xcode in CI) — see [native-app.md](native-app.md).
 - OpenAPI covers the full surface but is hand-kept, not generated from zod — drift is
   guarded only by review discipline and the docs acceptance tests (ADR-0012).
-- Some ports still have only a file adapter (e.g. `PdfArchive`); object storage is a
-  follow-up (roadmap 1.1).
+- **Port coverage is deliberately partial, not accidental:** the file store is the default
+  everywhere, with production adapters added where a deployment needs them — `PdfArchive` now
+  has an S3-compatible adapter (ADR-0031), the scheduler a Postgres-advisory-lock one
+  (ADR-0030). Ports without a second adapter yet are a known, bounded follow-up, not a claim
+  that one is missing.
 
 ## 12. Glossary
 

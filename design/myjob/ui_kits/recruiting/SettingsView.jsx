@@ -216,6 +216,103 @@ function TeamCard() {
   );
 }
 
+/* InvitesCard — admin-only tenant onboarding (ADR-0035): invite a colleague by
+   email into this workspace with a role, and see pending invitations. The
+   returned accept link is shown so it can be shared even without SMTP. */
+function InvitesCard() {
+  const [isAdmin, setIsAdmin] = React.useState(null); // null = unknown
+  const [invites, setInvites] = React.useState(null); // null = loading
+  const [email, setEmail] = React.useState('');
+  const [roles, setRoles] = React.useState(['recruiter']);
+  const [busy, setBusy] = React.useState(false);
+  const [error, setError] = React.useState('');
+  const [lastLink, setLastLink] = React.useState('');
+
+  const reload = React.useCallback(() => {
+    return window.RecruitApi.listInvites().then(setInvites).catch(() => setInvites([]));
+  }, []);
+
+  React.useEffect(() => {
+    let alive = true;
+    // The invite endpoints are admin-only; resolve the role first so a non-admin
+    // never fires a call that would 403.
+    window.RecruitApi.authMe()
+      .then((me) => {
+        const admin = !!(me && me.roles && me.roles.includes('admin'));
+        if (!alive) return;
+        setIsAdmin(admin);
+        if (admin) reload();
+      })
+      .catch(() => { if (alive) { setIsAdmin(false); } });
+    return () => { alive = false; };
+  }, [reload]);
+
+  const toggleRole = (role) => {
+    setRoles((rs) => {
+      const next = rs.includes(role) ? rs.filter((r) => r !== role) : [...rs, role];
+      return next.length ? next : rs; // keep at least one role
+    });
+  };
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (busy || !email.trim()) return;
+    setBusy(true);
+    setError('');
+    setLastLink('');
+    try {
+      const { acceptUrl } = await window.RecruitApi.createInvite(email.trim(), roles);
+      setLastLink(acceptUrl || '');
+      setEmail('');
+      await reload();
+    } catch (err) {
+      setError((err && err.message) || 'Could not send the invitation.');
+    }
+    setBusy(false);
+  };
+
+  if (isAdmin === false) return null; // inviting is admin-only
+
+  const fieldStyle = { flex: 1, minWidth: 0, border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', background: 'var(--surface-card)', fontSize: '13px', color: 'var(--text-heading)', padding: '9px 11px', outline: 'none' };
+
+  return (
+    <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '22px 24px' }}>
+      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>Invite a colleague</h2>
+      <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Send an email invite to join this workspace. They set a password and land in your team with the roles you pick.</div>
+
+      <form onSubmit={submit} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px', marginTop: '14px' }}>
+        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="colleague@example.com" aria-label="Invite email" autoComplete="off" style={fieldStyle} />
+        {TEAM_ROLES.map((role) => (
+          <label key={role} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', color: roles.includes(role) ? 'var(--text-heading)' : 'var(--text-soft)', cursor: 'pointer' }}>
+            <input type="checkbox" checked={roles.includes(role)} onChange={() => toggleRole(role)} /> {role}
+          </label>
+        ))}
+        <SV.Button size="sm" disabled={busy || email.trim().length === 0} onClick={submit}>{busy ? 'Sending…' : 'Send invite'}</SV.Button>
+      </form>
+
+      {error && <div role="alert" style={{ fontSize: '12.5px', color: 'var(--danger)', marginTop: '10px' }}>{error}</div>}
+      {lastLink && (
+        <div style={{ marginTop: '12px', padding: '10px 12px', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
+          <div style={{ fontSize: '11.5px', color: 'var(--text-soft)', marginBottom: '4px' }}>Invitation sent. If email isn’t configured, share this link:</div>
+          <input readOnly value={lastLink} aria-label="Invite link" onFocus={(e) => e.target.select()} style={{ width: '100%', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-card)', fontFamily: 'var(--font-mono)', fontSize: '11.5px', color: 'var(--text-heading)', padding: '6px 8px' }} />
+        </div>
+      )}
+
+      {invites && invites.length > 0 && (
+        <div style={{ marginTop: '14px' }}>
+          {invites.map((i) => (
+            <div key={i.email} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-heading)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{i.email}</span>
+              <span style={{ marginLeft: 'auto', display: 'inline-flex', gap: '5px' }}>{(i.roles || []).map((r) => <RoleBadge key={r} role={r} />)}</span>
+              <span style={{ flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Pending</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ComplianceCard — DSGVO retention review (admin only): candidates due for
    review, with a per-row Anonymize action. Never auto-deletes. */
 function ComplianceCard() {
@@ -570,6 +667,7 @@ function SettingsView({ user }) {
 
       <UsageCard />
       <TeamCard />
+      <InvitesCard />
       <ComplianceCard />
       <DataPrivacyCard />
     </div>

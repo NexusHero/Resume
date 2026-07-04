@@ -80,6 +80,11 @@ const email = z
 export const registerSchema = z.object({
   email,
   password: z.string().min(8, 'password must be at least 8 characters'),
+  /**
+   * Names the workspace created for a self-serve registration (ADR-0036);
+   * ignored when self-serve tenants are off. Absent → a default is derived.
+   */
+  workspaceName: z.string().trim().max(80).optional(),
 });
 export type RegisterInput = z.infer<typeof registerSchema>;
 

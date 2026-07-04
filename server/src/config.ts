@@ -23,6 +23,7 @@ export interface AppConfig {
   passwordResetTokensFile: string;
   emailVerificationTokensFile: string;
   inviteTokensFile: string;
+  tenantsFile: string;
   apiKeysFile: string;
   usageFile: string;
   interviewObservationsFile: string;
@@ -50,6 +51,12 @@ export interface AppConfig {
   jobSources: JobSourcesConfig;
   /** Storage backend: 'fs' (JSON files, default) or 'sql' (Postgres). */
   store: 'fs' | 'sql';
+  /**
+   * When true, a fresh registration creates its own new tenant (the registrant
+   * becomes its admin) instead of joining the single default team (ADR-0036).
+   * Off by default, so a plain install stays single-tenant.
+   */
+  selfServeTenants: boolean;
   /** Where finished application PDFs are archived (filesystem or S3). */
   pdfArchive: PdfArchiveConfig;
   /** Max concurrent headless-Chromium PDF renders (bounds memory under load). */
@@ -228,6 +235,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     passwordResetTokensFile: path.join(storeDir, 'password-reset-tokens.json'),
     emailVerificationTokensFile: path.join(storeDir, 'email-verification-tokens.json'),
     inviteTokensFile: path.join(storeDir, 'tenant-invites.json'),
+    tenantsFile: path.join(storeDir, 'tenants.json'),
     apiKeysFile: path.join(storeDir, 'api-keys.json'),
     usageFile: path.join(storeDir, 'usage.json'),
     interviewObservationsFile: path.join(storeDir, 'interview-observations.json'),
@@ -291,6 +299,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       },
     },
     store: env.STORE === 'sql' ? 'sql' : 'fs',
+    selfServeTenants: env.SELF_SERVE_TENANTS === 'true',
     databaseUrl: env.DATABASE_URL ?? '',
     pdfArchive: {
       provider: env.PDF_ARCHIVE === 's3' ? 's3' : 'fs',

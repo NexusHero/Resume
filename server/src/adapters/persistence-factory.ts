@@ -13,6 +13,7 @@ import type { SessionStore } from '../ports/session-store';
 import type { PasswordResetTokenStore } from '../ports/password-reset-token-store';
 import type { EmailVerificationTokenStore } from '../ports/email-verification-token-store';
 import type { InviteRepository } from '../ports/invite-repository';
+import type { TenantRepository } from '../ports/tenant-repository';
 import type { ApiKeyStore } from '../ports/api-key-store';
 import type { UsageMeter } from '../ports/usage-meter';
 import type { InterviewObservationRepository } from '../ports/interview-observation-repository';
@@ -37,6 +38,7 @@ import { FsSessionStore } from './fs-session-store';
 import { FsPasswordResetTokenStore } from './fs-password-reset-token-store';
 import { FsEmailVerificationTokenStore } from './fs-email-verification-token-store';
 import { FsInviteRepository } from './fs-invite-repository';
+import { FsTenantRepository } from './fs-tenant-repository';
 import { FsApiKeyStore } from './fs-api-key-store';
 import { FsUsageMeter } from './fs-usage-meter';
 import { FsInterviewObservationRepository } from './fs-interview-observation-repository';
@@ -60,6 +62,7 @@ import { SqlSessionStore } from './sql/sql-session-store';
 import { SqlPasswordResetTokenStore } from './sql/sql-password-reset-token-store';
 import { SqlEmailVerificationTokenStore } from './sql/sql-email-verification-token-store';
 import { SqlInviteRepository } from './sql/sql-invite-repository';
+import { SqlTenantRepository } from './sql/sql-tenant-repository';
 import { SqlApiKeyStore } from './sql/sql-api-key-store';
 import { SqlUsageMeter } from './sql/sql-usage-meter';
 import { SqlInterviewObservationRepository } from './sql/sql-interview-observation-repository';
@@ -88,6 +91,7 @@ export interface Persistence {
   passwordResetTokenStore: PasswordResetTokenStore;
   emailVerificationTokenStore: EmailVerificationTokenStore;
   inviteRepository: InviteRepository;
+  tenantRepository: TenantRepository;
   apiKeyStore: ApiKeyStore;
   usageMeter: UsageMeter;
   interviewObservationRepository: InterviewObservationRepository;
@@ -123,6 +127,7 @@ export function createPersistence(deps: { config: AppConfig; clock: Clock; db?: 
       passwordResetTokenStore: new SqlPasswordResetTokenStore({ db, clock, config }),
       emailVerificationTokenStore: new SqlEmailVerificationTokenStore({ db, clock, config }),
       inviteRepository: new SqlInviteRepository({ db }),
+      tenantRepository: new SqlTenantRepository({ db }),
       apiKeyStore: new SqlApiKeyStore({ db, secretCipher }),
       usageMeter: new SqlUsageMeter({ db }),
       interviewObservationRepository: new SqlInterviewObservationRepository({ db }),
@@ -148,6 +153,7 @@ export function createPersistence(deps: { config: AppConfig; clock: Clock; db?: 
     passwordResetTokenStore: new FsPasswordResetTokenStore({ config, clock }),
     emailVerificationTokenStore: new FsEmailVerificationTokenStore({ config, clock }),
     inviteRepository: new FsInviteRepository({ config }),
+    tenantRepository: new FsTenantRepository({ config }),
     apiKeyStore: new FsApiKeyStore({ config, secretCipher }),
     usageMeter: new FsUsageMeter({ config }),
     interviewObservationRepository: new FsInterviewObservationRepository({ config }),

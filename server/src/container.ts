@@ -121,6 +121,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     passwordResetTokenStore: asValue(persistence.passwordResetTokenStore),
     emailVerificationTokenStore: asValue(persistence.emailVerificationTokenStore),
     inviteRepository: asValue(persistence.inviteRepository),
+    tenantRepository: asValue(persistence.tenantRepository),
     apiKeyStore: asValue(persistence.apiKeyStore),
     usageMeter: asValue(persistence.usageMeter),
     interviewObservationRepository: asValue(persistence.interviewObservationRepository),

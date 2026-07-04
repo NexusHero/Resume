@@ -5,12 +5,15 @@ import {
   type LoginInput,
   toUserView,
 } from '../domain/user';
+import { defaultWorkspaceName, type Tenant } from '../domain/tenant';
 import { ConflictError, UnauthorizedError } from '../domain/errors';
 import type { UserRepository } from '../ports/user-repository';
 import type { SessionStore } from '../ports/session-store';
 import type { PasswordHasher } from '../ports/password-hasher';
 import type { Clock } from '../ports/clock';
 import type { IdGenerator } from '../ports/id-generator';
+import type { TenantRepository } from '../ports/tenant-repository';
+import type { AppConfig } from '../config';
 
 export interface AuthServiceDeps {
   userRepository: UserRepository;
@@ -18,6 +21,9 @@ export interface AuthServiceDeps {
   passwordHasher: PasswordHasher;
   clock: Clock;
   idGenerator: IdGenerator;
+  /** Optional (ADR-0036): present enables self-serve tenant creation on register. */
+  tenantRepository?: TenantRepository;
+  config?: AppConfig;
 }
 
 /** The result of a successful register/login: the public user + a session token. */
@@ -33,6 +39,8 @@ export class AuthService {
   private readonly hasher: PasswordHasher;
   private readonly clock: Clock;
   private readonly ids: IdGenerator;
+  private readonly tenants?: TenantRepository;
+  private readonly selfServe: boolean;
 
   constructor(deps: AuthServiceDeps) {
     this.users = deps.userRepository;
@@ -40,20 +48,41 @@ export class AuthService {
     this.hasher = deps.passwordHasher;
     this.clock = deps.clock;
     this.ids = deps.idGenerator;
+    this.tenants = deps.tenantRepository;
+    this.selfServe = deps.config?.selfServeTenants ?? false;
   }
 
   async register(input: RegisterInput): Promise<AuthResult> {
     const existing = await this.users.findByEmail(input.email);
     if (existing) throw new ConflictError('An account with this email already exists');
-    // Bootstrap: the very first account owns the team and becomes admin; every
-    // later sign-up joins as a recruiter (an admin can promote them).
-    const first = (await this.users.list()).length === 0;
+
+    // Self-serve (ADR-0036): each registration spins up its own workspace and the
+    // registrant is its admin. Off by default, so a plain install keeps the single
+    // shared team — the first account owns it as admin, later ones join as recruiter.
+    let tenantId: string | undefined;
+    let roles: User['roles'];
+    if (this.selfServe && this.tenants) {
+      const tenant: Tenant = {
+        id: this.ids.next(),
+        name: input.workspaceName?.trim() || defaultWorkspaceName(input.email),
+        createdAt: this.clock.isoNow(),
+        status: 'active',
+      };
+      await this.tenants.create(tenant);
+      tenantId = tenant.id;
+      roles = ['admin', 'recruiter'];
+    } else {
+      const first = (await this.users.list()).length === 0;
+      roles = first ? ['admin', 'recruiter'] : ['recruiter'];
+    }
+
     const user: User = {
       id: this.ids.next(),
       email: input.email,
       passwordHash: await this.hasher.hash(input.password),
-      roles: first ? ['admin', 'recruiter'] : ['recruiter'],
+      roles,
       createdAt: this.clock.isoNow(),
+      ...(tenantId ? { tenantId } : {}),
     };
     await this.users.add(user);
     const token = await this.sessions.create(user.id);

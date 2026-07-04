@@ -36,6 +36,14 @@ export const emailVerificationTokens = pgTable('email_verification_tokens', {
   createdAt: text('created_at').notNull(),
 });
 
+/** Tenant records (mirrors domain `Tenant`, ADR-0036). */
+export const tenants = pgTable('tenants', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  createdAt: text('created_at').notNull(),
+  status: text('status').notNull().default('active'),
+});
+
 /** Pending tenant invitations (mirrors domain `TenantInvite`, ADR-0035). */
 export const tenantInvites = pgTable('tenant_invites', {
   token: text('token').primaryKey(),

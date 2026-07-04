@@ -12,6 +12,8 @@ coverage/
 playwright-report/
 test-results/
 *.tsbuildinfo
+# Generated Swagger UI site (built in CI, published to GitHub Pages — see docs:pages)
+/site/
 
 # Secrets / local env
 .env

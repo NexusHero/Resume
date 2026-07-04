@@ -1,10 +1,10 @@
-import { HashedEmbeddingProvider } from './hashed-embedding-provider';
-import { OllamaEmbeddingProvider } from './ollama-embedding-provider';
-import { OpenAiEmbeddingProvider } from './openai-embedding-provider';
-import type { EmbeddingConfig } from '../config';
-import type { EmbeddingProvider } from '../ports/embedding-provider';
-import type { HttpFetch } from '../ports/http-fetch';
-import type { Logger } from '../ports/logger';
+import { HashedEmbeddingProvider } from './hashed-embedding-provider.js';
+import { OllamaEmbeddingProvider } from './ollama-embedding-provider.js';
+import { OpenAiEmbeddingProvider } from './openai-embedding-provider.js';
+import type { EmbeddingConfig } from '../config.js';
+import type { EmbeddingProvider } from '../ports/embedding-provider.js';
+import type { HttpFetch } from '../ports/http-fetch.js';
+import type { Logger } from '../ports/logger.js';
 
 /**
  * Select the embedding backend from config (ADR-0020). The default is the

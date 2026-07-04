@@ -1,4 +1,4 @@
-import type { Clock } from '../ports/clock';
+import type { Clock } from '../ports/clock.js';
 
 /** Real wall-clock implementation. */
 export class SystemClock implements Clock {

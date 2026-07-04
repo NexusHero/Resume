@@ -1,15 +1,15 @@
-import { SavedSearchService } from '../../src/services/saved-search-service';
-import { JobSearchService } from '../../src/services/job-search-service';
-import { SampleJobSource } from '../../src/adapters/sample-job-source';
-import { createSavedSearchSchema } from '../../src/domain/saved-search';
-import { NotFoundError } from '../../src/domain/errors';
+import { SavedSearchService } from '../../src/services/saved-search-service.js';
+import { JobSearchService } from '../../src/services/job-search-service.js';
+import { SampleJobSource } from '../../src/adapters/sample-job-source.js';
+import { createSavedSearchSchema } from '../../src/domain/saved-search.js';
+import { NotFoundError } from '../../src/domain/errors.js';
 import {
   InMemorySavedSearchRepository,
   FixedClock,
   SequenceIdGenerator,
   noopLogger,
   noopSkillExtractor,
-} from '../support/fakes';
+} from '../support/fakes.js';
 
 function makeService() {
   const repo = new InMemorySavedSearchRepository();

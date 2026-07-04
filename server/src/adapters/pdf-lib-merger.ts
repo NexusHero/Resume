@@ -1,5 +1,5 @@
 import { PDFDocument } from 'pdf-lib';
-import type { PdfMerger } from '../ports/pdf-merger';
+import type { PdfMerger } from '../ports/pdf-merger.js';
 
 /** Merges PDF documents into one using pdf-lib. */
 export class PdfLibMerger implements PdfMerger {

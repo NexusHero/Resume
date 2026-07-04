@@ -1,4 +1,4 @@
-import { extractRequirements } from '../../src/domain/job-requirements';
+import { extractRequirements } from '../../src/domain/job-requirements.js';
 
 describe('job-requirements extraction', () => {
   it('EmptyText_AllBucketsEmpty', () => {

@@ -1,4 +1,4 @@
-import type { LlmProviderId, TokenUsage } from '../ports/llm-provider';
+import type { LlmProviderId, TokenUsage } from '../ports/llm-provider.js';
 
 /** The AI features whose token spend we meter, one per user-facing action. */
 export const USAGE_FEATURES = [

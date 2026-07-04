@@ -1,5 +1,5 @@
-import type { Job, JobQuery } from '../domain/job';
-import type { JobSource } from '../ports/job-source';
+import type { Job, JobQuery } from '../domain/job.js';
+import type { JobSource } from '../ports/job-source.js';
 
 /**
  * Offline job source — a curated, deterministic list so the two-tier search

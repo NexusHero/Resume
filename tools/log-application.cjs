@@ -10,7 +10,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const store = require('./store');
+const store = require('./store.cjs');
 
 const ROOT = path.join(__dirname, '..');
 function fail(m) { console.error('\n✗ ' + m + '\n'); process.exit(1); }

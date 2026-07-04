@@ -1,4 +1,4 @@
-import { SecretCipher } from '../../src/adapters/secret-cipher';
+import { SecretCipher } from '../../src/adapters/secret-cipher.js';
 
 const cipher = (secret = 'unit-secret') =>
   new SecretCipher({ config: { security: { encryptionSecret: secret } } });

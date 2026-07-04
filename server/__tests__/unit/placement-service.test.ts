@@ -1,7 +1,7 @@
-import { PlacementService } from '../../src/services/placement-service';
-import { createPlacementSchema, updatePlacementSchema } from '../../src/domain/placement';
-import { NotFoundError } from '../../src/domain/errors';
-import { InMemoryPlacementRepository, FixedClock, SequenceIdGenerator } from '../support/fakes';
+import { PlacementService } from '../../src/services/placement-service.js';
+import { createPlacementSchema, updatePlacementSchema } from '../../src/domain/placement.js';
+import { NotFoundError } from '../../src/domain/errors.js';
+import { InMemoryPlacementRepository, FixedClock, SequenceIdGenerator } from '../support/fakes.js';
 
 const OWNER = 'owner1';
 

@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import type { TalentDocuments } from './talent-documents';
-import { candidateFacts } from './candidate-facts';
-import type { OutputLang } from './language';
+import type { TalentDocuments } from './talent-documents.js';
+import { candidateFacts } from './candidate-facts.js';
+import type { OutputLang } from './language.js';
 
 /** What the editor can ask the AI to (re)write. */
 export type DocumentAiAction = 'summary' | 'letter';

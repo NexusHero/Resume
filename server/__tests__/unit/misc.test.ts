@@ -1,8 +1,8 @@
-import { SystemClock } from '../../src/adapters/system-clock';
-import { RandomIdGenerator } from '../../src/adapters/random-id-generator';
-import { loadConfig } from '../../src/config';
-import { planSatisfies } from '../../src/domain/plan';
-import { EnvPlanProvider } from '../../src/adapters/env-plan-provider';
+import { SystemClock } from '../../src/adapters/system-clock.js';
+import { RandomIdGenerator } from '../../src/adapters/random-id-generator.js';
+import { loadConfig } from '../../src/config.js';
+import { planSatisfies } from '../../src/domain/plan.js';
+import { EnvPlanProvider } from '../../src/adapters/env-plan-provider.js';
 
 describe('plan (ADR-0021)', () => {
   it('planSatisfies_ProCoversEverything_FreeCoversOnlyFree', () => {

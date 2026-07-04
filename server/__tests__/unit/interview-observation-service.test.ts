@@ -1,12 +1,12 @@
-import { InterviewObservationService } from '../../src/services/interview-observation-service';
-import { NotFoundError } from '../../src/domain/errors';
+import { InterviewObservationService } from '../../src/services/interview-observation-service.js';
+import { NotFoundError } from '../../src/domain/errors.js';
 import {
   InMemoryInterviewObservationRepository,
   InMemoryMandateRepository,
   FixedClock,
   SequenceIdGenerator,
-} from '../support/fakes';
-import type { Mandate } from '../../src/domain/mandate';
+} from '../support/fakes.js';
+import type { Mandate } from '../../src/domain/mandate.js';
 
 const SCOPE = 'team';
 

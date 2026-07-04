@@ -1,4 +1,4 @@
-import type { TalentDocuments } from './talent-documents';
+import type { TalentDocuments } from './talent-documents.js';
 
 /** Escape text for safe interpolation into HTML. */
 function esc(value: unknown): string {

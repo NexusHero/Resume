@@ -1,12 +1,12 @@
-import { UpstreamProviderError } from '../../src/domain/errors';
-import { AnthropicLlmProvider } from '../../src/adapters/anthropic-llm-provider';
-import { GeminiLlmProvider } from '../../src/adapters/gemini-llm-provider';
-import { LlmService } from '../../src/services/llm-service';
-import { CoverLetterService } from '../../src/services/cover-letter-service';
-import { coverLetterTemplate, coverLetterPrompt } from '../../src/domain/cover-letter';
-import type { HttpFetch } from '../../src/ports/http-fetch';
-import type { LlmGenerateResult, LlmProvider } from '../../src/ports/llm-provider';
-import { noopLogger, InMemoryUsageMeter, FixedClock } from '../support/fakes';
+import { UpstreamProviderError } from '../../src/domain/errors.js';
+import { AnthropicLlmProvider } from '../../src/adapters/anthropic-llm-provider.js';
+import { GeminiLlmProvider } from '../../src/adapters/gemini-llm-provider.js';
+import { LlmService } from '../../src/services/llm-service.js';
+import { CoverLetterService } from '../../src/services/cover-letter-service.js';
+import { coverLetterTemplate, coverLetterPrompt } from '../../src/domain/cover-letter.js';
+import type { HttpFetch } from '../../src/ports/http-fetch.js';
+import type { LlmGenerateResult, LlmProvider } from '../../src/ports/llm-provider.js';
+import { noopLogger, InMemoryUsageMeter, FixedClock } from '../support/fakes.js';
 
 /** A generate() result with the given text and token usage (defaults to zero). */
 function result(text: string, inputTokens = 0, outputTokens = 0): LlmGenerateResult {

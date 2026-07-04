@@ -1,7 +1,7 @@
-import { TalentService } from '../../src/services/talent-service';
-import { createTalentSchema, updateTalentSchema } from '../../src/domain/talent';
-import { emptyResume, emptyLetter, defaultStyle } from '../../src/domain/talent-documents';
-import { NotFoundError } from '../../src/domain/errors';
+import { TalentService } from '../../src/services/talent-service.js';
+import { createTalentSchema, updateTalentSchema } from '../../src/domain/talent.js';
+import { emptyResume, emptyLetter, defaultStyle } from '../../src/domain/talent-documents.js';
+import { NotFoundError } from '../../src/domain/errors.js';
 import {
   InMemoryTalentRepository,
   InMemoryDocumentRepository,
@@ -9,8 +9,8 @@ import {
   InMemoryCandidacyRepository,
   FixedClock,
   SequenceIdGenerator,
-} from '../support/fakes';
-import { buildTalentDataPurgers } from '../support/talent-purgers';
+} from '../support/fakes.js';
+import { buildTalentDataPurgers } from '../support/talent-purgers.js';
 
 const OWNER = 'owner1';
 

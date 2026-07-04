@@ -5,9 +5,9 @@ import {
   DEFAULT_TENANT,
   toUserView,
   isAdmin,
-} from '../domain/user';
-import { NotFoundError, ValidationError } from '../domain/errors';
-import type { UserRepository } from '../ports/user-repository';
+} from '../domain/user.js';
+import { NotFoundError, ValidationError } from '../domain/errors.js';
+import type { UserRepository } from '../ports/user-repository.js';
 
 export interface MembersServiceDeps {
   userRepository: UserRepository;

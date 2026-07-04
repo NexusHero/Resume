@@ -1,11 +1,11 @@
-import { OllamaEmbeddingProvider } from '../../src/adapters/ollama-embedding-provider';
-import { OpenAiEmbeddingProvider } from '../../src/adapters/openai-embedding-provider';
-import { HashedEmbeddingProvider } from '../../src/adapters/hashed-embedding-provider';
-import { createEmbeddingProvider } from '../../src/adapters/create-embedding-provider';
-import { embed } from '../../src/domain/embedding';
-import type { EmbeddingConfig } from '../../src/config';
-import type { HttpFetch, HttpResponse } from '../../src/ports/http-fetch';
-import { noopLogger } from '../support/fakes';
+import { OllamaEmbeddingProvider } from '../../src/adapters/ollama-embedding-provider.js';
+import { OpenAiEmbeddingProvider } from '../../src/adapters/openai-embedding-provider.js';
+import { HashedEmbeddingProvider } from '../../src/adapters/hashed-embedding-provider.js';
+import { createEmbeddingProvider } from '../../src/adapters/create-embedding-provider.js';
+import { embed } from '../../src/domain/embedding.js';
+import type { EmbeddingConfig } from '../../src/config.js';
+import type { HttpFetch, HttpResponse } from '../../src/ports/http-fetch.js';
+import { noopLogger } from '../support/fakes.js';
 
 const hashed = new HashedEmbeddingProvider();
 

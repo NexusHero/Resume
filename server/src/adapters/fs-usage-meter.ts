@@ -1,8 +1,8 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import type { AppConfig } from '../config';
-import type { UsageEvent } from '../domain/usage';
-import type { UsageMeter } from '../ports/usage-meter';
+import type { AppConfig } from '../config.js';
+import type { UsageEvent } from '../domain/usage.js';
+import type { UsageMeter } from '../ports/usage-meter.js';
 
 /** File-backed usage meter: an append-only JSON array in the store's usage.json. */
 export class FsUsageMeter implements UsageMeter {

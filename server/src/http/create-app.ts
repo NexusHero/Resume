@@ -1,42 +1,47 @@
 import express, { type Express } from 'express';
 import { rateLimit } from 'express-rate-limit';
-import type { AppConfig } from '../config';
-import type { Logger } from '../ports/logger';
-import type { ApplicationController } from './application-controller';
-import type { JobController } from './job-controller';
-import type { AtsController } from './ats-controller';
-import type { SavedSearchController } from './saved-search-controller';
-import type { LlmController } from './llm-controller';
-import type { MandateController } from './mandate-controller';
-import type { TalentController } from './talent-controller';
-import type { PlacementController } from './placement-controller';
-import type { CandidacyController } from './candidacy-controller';
-import type { RetentionController } from './retention-controller';
-import type { MatchController } from './match-controller';
-import type { MatchAiController } from './match-ai-controller';
-import type { UsageController } from './usage-controller';
-import type { ComplianceController } from './compliance-controller';
-import type { ForecastController } from './forecast-controller';
-import type { ObservationController } from './observation-controller';
-import type { DocumentController } from './document-controller';
-import type { AttachmentController } from './attachment-controller';
-import type { AuthController } from './auth-controller';
-import type { MembersController } from './members-controller';
-import type { InviteController } from './invite-controller';
-import type { TenantAdminController } from './tenant-admin-controller';
-import type { AccountController } from './account-controller';
-import type { PasswordResetController } from './password-reset-controller';
-import { asyncHandler } from './async-handler';
-import { makeRequirePlan } from './require-plan';
-import { makeRequireCan } from './require-can';
-import type { PlanProvider } from '../ports/plan-provider';
-import type { Authorizer } from '../ports/authorizer';
-import { errorHandler, notFound, sendProblem } from './problem';
-import { corsMiddleware, securityHeaders, recruitingCsp, RECRUITING_KIT_PREFIX } from './security';
-import { registerApiDocs } from './api-docs';
-import type { AssistantController } from './assistant-controller';
-import type { ArtifactController } from './artifact-controller';
-import type { MailController } from './mail-controller';
+import type { AppConfig } from '../config.js';
+import type { Logger } from '../ports/logger.js';
+import type { ApplicationController } from './application-controller.js';
+import type { JobController } from './job-controller.js';
+import type { AtsController } from './ats-controller.js';
+import type { SavedSearchController } from './saved-search-controller.js';
+import type { LlmController } from './llm-controller.js';
+import type { MandateController } from './mandate-controller.js';
+import type { TalentController } from './talent-controller.js';
+import type { PlacementController } from './placement-controller.js';
+import type { CandidacyController } from './candidacy-controller.js';
+import type { RetentionController } from './retention-controller.js';
+import type { MatchController } from './match-controller.js';
+import type { MatchAiController } from './match-ai-controller.js';
+import type { UsageController } from './usage-controller.js';
+import type { ComplianceController } from './compliance-controller.js';
+import type { ForecastController } from './forecast-controller.js';
+import type { ObservationController } from './observation-controller.js';
+import type { DocumentController } from './document-controller.js';
+import type { AttachmentController } from './attachment-controller.js';
+import type { AuthController } from './auth-controller.js';
+import type { MembersController } from './members-controller.js';
+import type { InviteController } from './invite-controller.js';
+import type { TenantAdminController } from './tenant-admin-controller.js';
+import type { AccountController } from './account-controller.js';
+import type { PasswordResetController } from './password-reset-controller.js';
+import { asyncHandler } from './async-handler.js';
+import { makeRequirePlan } from './require-plan.js';
+import { makeRequireCan } from './require-can.js';
+import type { PlanProvider } from '../ports/plan-provider.js';
+import type { Authorizer } from '../ports/authorizer.js';
+import { errorHandler, notFound, sendProblem } from './problem.js';
+import {
+  corsMiddleware,
+  securityHeaders,
+  recruitingCsp,
+  RECRUITING_KIT_PREFIX,
+} from './security.js';
+import { registerApiDocs } from './api-docs.js';
+import type { AssistantController } from './assistant-controller.js';
+import type { ArtifactController } from './artifact-controller.js';
+import type { MailController } from './mail-controller.js';
 
 export interface AppDeps {
   applicationController: ApplicationController;

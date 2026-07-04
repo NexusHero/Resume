@@ -1,8 +1,8 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import type { AppConfig } from '../config';
-import type { TalentDocuments } from '../domain/talent-documents';
-import type { DocumentRepository } from '../ports/document-repository';
+import type { AppConfig } from '../config.js';
+import type { TalentDocuments } from '../domain/talent-documents.js';
+import type { DocumentRepository } from '../ports/document-repository.js';
 
 /** File-backed repository: the JSON array in bewerbungen/documents.json. */
 export class FsDocumentRepository implements DocumentRepository {

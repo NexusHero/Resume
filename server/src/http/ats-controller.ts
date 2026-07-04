@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
-import { atsRequestSchema } from '../domain/ats';
-import type { AtsService } from '../services/ats-service';
+import { atsRequestSchema } from '../domain/ats.js';
+import type { AtsService } from '../services/ats-service.js';
 
 /** POST /api/v1/ats — keyword gap analysis of a posting against the profile. */
 export class AtsController {

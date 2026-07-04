@@ -1,4 +1,4 @@
-import { loadConfig } from '../../src/config';
+import { loadConfig } from '../../src/config.js';
 
 describe('loadConfig — auth hardening', () => {
   it('Defaults_CookieInsecure_And30DayTtl', () => {

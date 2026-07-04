@@ -1,6 +1,6 @@
-import type { OutputLang } from './language';
-import type { TalentDocuments } from './talent-documents';
-import { canonicalizeSkills } from './skill-taxonomy';
+import type { OutputLang } from './language.js';
+import type { TalentDocuments } from './talent-documents.js';
+import { canonicalizeSkills } from './skill-taxonomy.js';
 
 /**
  * The one canonical "candidate facts" block that every LLM prompt builds on

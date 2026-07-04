@@ -1,7 +1,7 @@
-import type { TalentDocuments } from './talent-documents';
-import { tokenize } from './ats-ai';
-import { jobClusters, skillMatchesJob, isKnownSkillToken } from './skill-semantics';
-import { documentSkills } from './match-explain';
+import type { TalentDocuments } from './talent-documents.js';
+import { tokenize } from './ats-ai.js';
+import { jobClusters, skillMatchesJob, isKnownSkillToken } from './skill-semantics.js';
+import { documentSkills } from './match-explain.js';
 
 /**
  * Grounding self-check — a deterministic verifier that flags factual claims in

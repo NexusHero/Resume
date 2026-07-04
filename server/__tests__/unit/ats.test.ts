@@ -1,7 +1,7 @@
-import { analyzeGap, atsRequestSchema } from '../../src/domain/ats';
-import { AtsService } from '../../src/services/ats-service';
-import type { CandidateProfile } from '../../src/domain/skill';
-import { KeywordSkillExtractor } from '../../src/adapters/keyword-skill-extractor';
+import { analyzeGap, atsRequestSchema } from '../../src/domain/ats.js';
+import { AtsService } from '../../src/services/ats-service.js';
+import type { CandidateProfile } from '../../src/domain/skill.js';
+import { KeywordSkillExtractor } from '../../src/adapters/keyword-skill-extractor.js';
 
 const profile: CandidateProfile = {
   skills: [

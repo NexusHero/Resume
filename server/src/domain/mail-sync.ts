@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { ArtifactLog } from './artifact';
+import type { ArtifactLog } from './artifact.js';
 
 /**
  * Automatic reply detection for the outcome loop (ADR-0015): outreach sent by

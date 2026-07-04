@@ -1,5 +1,5 @@
-import { loadConfig } from '../../src/config';
-import { checkProductionReadiness } from '../../src/config-validation';
+import { loadConfig } from '../../src/config.js';
+import { checkProductionReadiness } from '../../src/config-validation.js';
 
 /** A fully production-ready environment; individual tests weaken one axis. */
 const PROD_ENV: NodeJS.ProcessEnv = {

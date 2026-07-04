@@ -1,5 +1,5 @@
-import type { LlmProvider, LlmProviderId } from '../ports/llm-provider';
-import type { Logger } from '../ports/logger';
+import type { LlmProvider, LlmProviderId } from '../ports/llm-provider.js';
+import type { Logger } from '../ports/logger.js';
 
 export interface LlmProviderInfo {
   id: LlmProviderId;

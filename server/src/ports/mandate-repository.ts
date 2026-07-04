@@ -1,4 +1,4 @@
-import type { Mandate } from '../domain/mandate';
+import type { Mandate } from '../domain/mandate.js';
 
 /** Persistence of client search mandates, scoped to an owner (the recruiter). */
 export interface MandateRepository {

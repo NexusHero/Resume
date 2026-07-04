@@ -1,4 +1,4 @@
-import { detectLanguage } from '../../src/domain/language';
+import { detectLanguage } from '../../src/domain/language.js';
 
 describe('detectLanguage', () => {
   it('GermanJobAd_DetectsDe', () => {

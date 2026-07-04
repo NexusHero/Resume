@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { OutputLang } from './language';
+import type { OutputLang } from './language.js';
 
 /**
  * The two documents an agency prepares for a candidate — a Lebenslauf (resume)

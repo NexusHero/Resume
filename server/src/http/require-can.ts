@@ -1,7 +1,7 @@
 import type { RequestHandler } from 'express';
-import { ForbiddenError } from '../domain/errors';
-import type { Authorizer } from '../ports/authorizer';
-import { currentPrincipal } from './current-user';
+import { ForbiddenError } from '../domain/errors.js';
+import type { Authorizer } from '../ports/authorizer.js';
+import { currentPrincipal } from './current-user.js';
 
 /**
  * The single role/permission-enforcement seam, dropped in front of a route just

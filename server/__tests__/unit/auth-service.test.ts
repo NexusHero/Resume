@@ -1,15 +1,15 @@
-import { AuthService } from '../../src/services/auth-service';
-import { registerSchema, loginSchema } from '../../src/domain/user';
-import { ConflictError, UnauthorizedError } from '../../src/domain/errors';
-import { MemorySessionStore } from '../../src/adapters/memory-session-store';
+import { AuthService } from '../../src/services/auth-service.js';
+import { registerSchema, loginSchema } from '../../src/domain/user.js';
+import { ConflictError, UnauthorizedError } from '../../src/domain/errors.js';
+import { MemorySessionStore } from '../../src/adapters/memory-session-store.js';
 import {
   InMemoryUserRepository,
   InMemoryTenantRepository,
   fakePasswordHasher,
   FixedClock,
   SequenceIdGenerator,
-} from '../support/fakes';
-import { loadConfig } from '../../src/config';
+} from '../support/fakes.js';
+import { loadConfig } from '../../src/config.js';
 
 function makeService() {
   const repo = new InMemoryUserRepository();

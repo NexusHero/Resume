@@ -1,12 +1,12 @@
-import type { UserRepository } from '../ports/user-repository';
-import type { EmailVerificationTokenStore } from '../ports/email-verification-token-store';
-import type { Mailer } from '../ports/mailer';
-import type { Logger } from '../ports/logger';
-import type { Clock } from '../ports/clock';
-import type { AppConfig } from '../config';
-import type { User } from '../domain/user';
-import { UnauthorizedError } from '../domain/errors';
-import { emailVerificationEmail, emailVerificationUrl } from '../domain/email-verification';
+import type { UserRepository } from '../ports/user-repository.js';
+import type { EmailVerificationTokenStore } from '../ports/email-verification-token-store.js';
+import type { Mailer } from '../ports/mailer.js';
+import type { Logger } from '../ports/logger.js';
+import type { Clock } from '../ports/clock.js';
+import type { AppConfig } from '../config.js';
+import type { User } from '../domain/user.js';
+import { UnauthorizedError } from '../domain/errors.js';
+import { emailVerificationEmail, emailVerificationUrl } from '../domain/email-verification.js';
 
 export interface EmailVerificationServiceDeps {
   userRepository: UserRepository;

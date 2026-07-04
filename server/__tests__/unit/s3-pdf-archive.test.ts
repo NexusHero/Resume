@@ -1,7 +1,7 @@
-import { S3PdfArchive, type ObjectPutter } from '../../src/adapters/s3-pdf-archive';
-import { createPdfArchive } from '../../src/adapters/create-pdf-archive';
-import { FsPdfArchive } from '../../src/adapters/fs-pdf-archive';
-import { loadConfig } from '../../src/config';
+import { S3PdfArchive, type ObjectPutter } from '../../src/adapters/s3-pdf-archive.js';
+import { createPdfArchive } from '../../src/adapters/create-pdf-archive.js';
+import { FsPdfArchive } from '../../src/adapters/fs-pdf-archive.js';
+import { loadConfig } from '../../src/config.js';
 
 function recordingPutter() {
   const calls: { key: string; body: Buffer; contentType: string }[] = [];

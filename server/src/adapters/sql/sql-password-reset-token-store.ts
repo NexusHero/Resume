@@ -1,10 +1,10 @@
 import { randomBytes } from 'node:crypto';
 import { eq } from 'drizzle-orm';
-import type { AppConfig } from '../../config';
-import type { Clock } from '../../ports/clock';
-import type { PasswordResetTokenStore } from '../../ports/password-reset-token-store';
-import type { Db } from './db';
-import { passwordResetTokens } from './schema';
+import type { AppConfig } from '../../config.js';
+import type { Clock } from '../../ports/clock.js';
+import type { PasswordResetTokenStore } from '../../ports/password-reset-token-store.js';
+import type { Db } from './db.js';
+import { passwordResetTokens } from './schema.js';
 
 /**
  * Postgres-backed password-reset tokens. Tokens are opaque 256-bit random

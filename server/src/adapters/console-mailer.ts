@@ -1,5 +1,5 @@
-import type { Logger } from '../ports/logger';
-import type { Mailer, MailMessage } from '../ports/mailer';
+import type { Logger } from '../ports/logger.js';
+import type { Mailer, MailMessage } from '../ports/mailer.js';
 
 /**
  * Development mailer: instead of sending, it logs the message (subject + body) so

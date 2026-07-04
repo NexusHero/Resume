@@ -1,12 +1,12 @@
-import type { DocumentAssistService } from './document-assist-service';
-import type { CvParseService } from './cv-parse-service';
-import type { AtsAiService } from './ats-ai-service';
-import type { OutreachAiService } from './outreach-ai-service';
-import type { MatchAiService } from './match-ai-service';
+import type { DocumentAssistService } from './document-assist-service.js';
+import type { CvParseService } from './cv-parse-service.js';
+import type { AtsAiService } from './ats-ai-service.js';
+import type { OutreachAiService } from './outreach-ai-service.js';
+import type { MatchAiService } from './match-ai-service.js';
 
 // Result types keep their old import path so callers are unaffected by the split.
-export type { DocumentAiSuggestion } from './document-assist-service';
-export type { ParsedDocument, ParsedPdfDocument } from './cv-parse-service';
+export type { DocumentAiSuggestion } from './document-assist-service.js';
+export type { ParsedDocument, ParsedPdfDocument } from './cv-parse-service.js';
 
 export interface DocumentAiServiceDeps {
   documentAssistService: DocumentAssistService;

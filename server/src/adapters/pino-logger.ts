@@ -1,5 +1,5 @@
 import pino from 'pino';
-import type { Logger } from '../ports/logger';
+import type { Logger } from '../ports/logger.js';
 
 /** Production logger backed by pino. */
 export function createLogger(env: NodeJS.ProcessEnv = process.env): Logger {

@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
-import type { ForecastService } from '../services/forecast-service';
-import { currentScope } from './current-user';
+import type { ForecastService } from '../services/forecast-service.js';
+import { currentScope } from './current-user.js';
 
 /** Weighted pipeline revenue forecast under /api/v1/forecast. */
 export class ForecastController {

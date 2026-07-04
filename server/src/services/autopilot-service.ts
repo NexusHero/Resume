@@ -6,21 +6,25 @@ import {
   applicationPayloadSchema,
   parseApplicationPayload,
   toSuggestionPayload,
-} from '../domain/assistant';
-import { type ApplicationTarget, mandateToTarget, jobToTarget } from '../domain/application-target';
-import { jobQuerySchema } from '../domain/job';
-import { createMandateSchema } from '../domain/mandate';
-import { ConflictError } from '../domain/errors';
-import type { AssistantSuggestionRepository } from '../ports/assistant-store';
-import type { MandateRepository } from '../ports/mandate-repository';
-import type { Clock } from '../ports/clock';
-import type { IdGenerator } from '../ports/id-generator';
-import type { Logger } from '../ports/logger';
-import type { MatchService } from './match-service';
-import type { CandidacyService } from './candidacy-service';
-import type { MandateService } from './mandate-service';
-import type { JobSearchService } from './job-search-service';
-import type { ApplicationBuilder } from './application-builder';
+} from '../domain/assistant.js';
+import {
+  type ApplicationTarget,
+  mandateToTarget,
+  jobToTarget,
+} from '../domain/application-target.js';
+import { jobQuerySchema } from '../domain/job.js';
+import { createMandateSchema } from '../domain/mandate.js';
+import { ConflictError } from '../domain/errors.js';
+import type { AssistantSuggestionRepository } from '../ports/assistant-store.js';
+import type { MandateRepository } from '../ports/mandate-repository.js';
+import type { Clock } from '../ports/clock.js';
+import type { IdGenerator } from '../ports/id-generator.js';
+import type { Logger } from '../ports/logger.js';
+import type { MatchService } from './match-service.js';
+import type { CandidacyService } from './candidacy-service.js';
+import type { MandateService } from './mandate-service.js';
+import type { JobSearchService } from './job-search-service.js';
+import type { ApplicationBuilder } from './application-builder.js';
 
 export interface AutopilotServiceDeps {
   assistantSuggestionRepository: AssistantSuggestionRepository;

@@ -4,8 +4,8 @@ import {
   toParagraphs,
   fallbackSummary,
   fallbackLetter,
-} from '../../src/domain/document-ai';
-import type { TalentDocuments } from '../../src/domain/talent-documents';
+} from '../../src/domain/document-ai.js';
+import type { TalentDocuments } from '../../src/domain/talent-documents.js';
 
 const documents: TalentDocuments = {
   ownerId: 'o',

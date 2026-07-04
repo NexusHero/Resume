@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
-import { updateRetentionPolicySchema } from '../domain/retention';
-import type { RetentionService } from '../services/retention-service';
-import { currentScope } from './current-user';
+import { updateRetentionPolicySchema } from '../domain/retention.js';
+import type { RetentionService } from '../services/retention-service.js';
+import { currentScope } from './current-user.js';
 
 /** DSGVO retention: review report, policy + anonymize actions. Admin-only, gated at the route (requireCan). */
 export class RetentionController {

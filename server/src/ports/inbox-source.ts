@@ -1,4 +1,4 @@
-import type { InboxMessage } from '../domain/mail-sync';
+import type { InboxMessage } from '../domain/mail-sync.js';
 
 /**
  * Read access to the desk's mailbox, reduced to what reply detection needs.

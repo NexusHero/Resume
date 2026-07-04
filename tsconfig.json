@@ -1,11 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "CommonJS",
-    "moduleResolution": "Node",
-    // TS 6 deprecates node10 resolution (removed in TS 7). We stay on CommonJS
-    // with extensionless imports for now; nodenext migration is a follow-up.
-    "ignoreDeprecations": "6.0",
+    // ESM (ADR-0042): the server is native ESM so modern ESM-only packages load
+    // without interop hacks. `nodenext` requires explicit .js extensions on
+    // relative imports (the source uses them) and reads packages' exports maps.
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "rootDir": "server/src",
     "outDir": "server/dist",
     "lib": ["ES2022"],

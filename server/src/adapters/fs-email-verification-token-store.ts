@@ -1,10 +1,10 @@
 import { promises as fs } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import path from 'node:path';
-import type { AppConfig } from '../config';
-import type { Clock } from '../ports/clock';
-import type { EmailVerificationTokenStore } from '../ports/email-verification-token-store';
-import type { EmailVerificationToken } from '../domain/email-verification';
+import type { AppConfig } from '../config.js';
+import type { Clock } from '../ports/clock.js';
+import type { EmailVerificationTokenStore } from '../ports/email-verification-token-store.js';
+import type { EmailVerificationToken } from '../domain/email-verification.js';
 
 /**
  * File-backed email-verification tokens (the JSON array in

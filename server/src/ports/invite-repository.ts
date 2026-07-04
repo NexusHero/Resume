@@ -1,4 +1,4 @@
-import type { TenantInvite } from '../domain/tenant-invite';
+import type { TenantInvite } from '../domain/tenant-invite.js';
 
 /**
  * Persistence of pending tenant invitations (ADR-0035). Invites are keyed by

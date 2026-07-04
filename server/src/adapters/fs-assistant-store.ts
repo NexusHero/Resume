@@ -1,11 +1,11 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import type { AppConfig } from '../config';
-import type { AssistantSettings, AssistantSuggestion } from '../domain/assistant';
+import type { AppConfig } from '../config.js';
+import type { AssistantSettings, AssistantSuggestion } from '../domain/assistant.js';
 import type {
   AssistantSettingsStore,
   AssistantSuggestionRepository,
-} from '../ports/assistant-store';
+} from '../ports/assistant-store.js';
 
 /** File-backed settings: a JSON object keyed by owner in assistant-settings.json. */
 export class FsAssistantSettingsStore implements AssistantSettingsStore {

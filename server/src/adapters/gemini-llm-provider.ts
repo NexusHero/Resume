@@ -1,11 +1,11 @@
-import { UpstreamProviderError } from '../domain/errors';
+import { UpstreamProviderError } from '../domain/errors.js';
 import type {
   LlmGenerateInput,
   LlmGenerateResult,
   LlmProvider,
   LlmProviderId,
-} from '../ports/llm-provider';
-import type { HttpFetch } from '../ports/http-fetch';
+} from '../ports/llm-provider.js';
+import type { HttpFetch } from '../ports/http-fetch.js';
 
 const BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 

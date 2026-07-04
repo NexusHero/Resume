@@ -1,6 +1,6 @@
-import { CandidacyService } from '../../src/services/candidacy-service';
-import { PlacementService } from '../../src/services/placement-service';
-import { NotFoundError, ConflictError } from '../../src/domain/errors';
+import { CandidacyService } from '../../src/services/candidacy-service.js';
+import { PlacementService } from '../../src/services/placement-service.js';
+import { NotFoundError, ConflictError } from '../../src/domain/errors.js';
 import {
   InMemoryCandidacyRepository,
   InMemoryMandateRepository,
@@ -10,9 +10,9 @@ import {
   SequenceIdGenerator,
   InMemoryStageTransitionRepository,
   noopLogger,
-} from '../support/fakes';
-import type { Talent } from '../../src/domain/talent';
-import type { Mandate } from '../../src/domain/mandate';
+} from '../support/fakes.js';
+import type { Talent } from '../../src/domain/talent.js';
+import type { Mandate } from '../../src/domain/mandate.js';
 
 const OWNER = 'owner1';
 

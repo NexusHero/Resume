@@ -1,4 +1,4 @@
-import type { Role } from '../domain/user';
+import type { Role } from '../domain/user.js';
 
 /** The acting user, as far as authorization cares: an id and a set of roles. */
 export interface AuthPrincipal {

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { LlmProviderId } from '../ports/llm-provider';
+import type { LlmProviderId } from '../ports/llm-provider.js';
 
 /**
  * Team roles a user can hold. Roles are a set — a person can be several at once

@@ -1,9 +1,9 @@
 import { eq } from 'drizzle-orm';
-import type { Application } from '../../domain/application';
-import type { ApplicationRepository } from '../../ports/application-repository';
-import type { Db } from './db';
-import { applications } from './schema';
-import { applicationToRow, rowToApplication } from './mappers';
+import type { Application } from '../../domain/application.js';
+import type { ApplicationRepository } from '../../ports/application-repository.js';
+import type { Db } from './db.js';
+import { applications } from './schema.js';
+import { applicationToRow, rowToApplication } from './mappers.js';
 
 /** Postgres-backed application repository. */
 export class SqlApplicationRepository implements ApplicationRepository {

@@ -1,15 +1,15 @@
-import { MatchService } from '../../src/services/match-service';
-import { HashedEmbeddingProvider } from '../../src/adapters/hashed-embedding-provider';
-import { NotFoundError } from '../../src/domain/errors';
+import { MatchService } from '../../src/services/match-service.js';
+import { HashedEmbeddingProvider } from '../../src/adapters/hashed-embedding-provider.js';
+import { NotFoundError } from '../../src/domain/errors.js';
 import {
   InMemoryMandateRepository,
   InMemoryTalentRepository,
   InMemoryDocumentRepository,
   InMemoryCandidacyRepository,
-} from '../support/fakes';
-import type { Talent } from '../../src/domain/talent';
-import type { Mandate } from '../../src/domain/mandate';
-import type { Candidacy } from '../../src/domain/candidacy';
+} from '../support/fakes.js';
+import type { Talent } from '../../src/domain/talent.js';
+import type { Mandate } from '../../src/domain/mandate.js';
+import type { Candidacy } from '../../src/domain/candidacy.js';
 
 const SCOPE = 'team';
 

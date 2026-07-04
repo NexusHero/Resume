@@ -1,15 +1,19 @@
-import { forecastPipeline, STAGE_WIN_PROBABILITY, type PipelineForecast } from '../domain/forecast';
+import {
+  forecastPipeline,
+  STAGE_WIN_PROBABILITY,
+  type PipelineForecast,
+} from '../domain/forecast.js';
 import {
   clientInsights,
   learnStageProbabilities,
   winProbabilityFrom,
   type ClientInsight,
   type StageProbability,
-} from '../domain/stage-history';
-import type { Candidacy } from '../domain/candidacy';
-import type { MandateRepository } from '../ports/mandate-repository';
-import type { CandidacyRepository } from '../ports/candidacy-repository';
-import type { StageTransitionRepository } from '../ports/stage-transition-repository';
+} from '../domain/stage-history.js';
+import type { Candidacy } from '../domain/candidacy.js';
+import type { MandateRepository } from '../ports/mandate-repository.js';
+import type { CandidacyRepository } from '../ports/candidacy-repository.js';
+import type { StageTransitionRepository } from '../ports/stage-transition-repository.js';
 
 export interface ForecastServiceDeps {
   mandateRepository: MandateRepository;

@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import type { TalentDocuments } from './talent-documents';
-import { candidateFacts } from './candidate-facts';
-import { fallbackSummary, fallbackLetter } from './document-ai';
-import type { OutputLang } from './language';
+import type { TalentDocuments } from './talent-documents.js';
+import { candidateFacts } from './candidate-facts.js';
+import { fallbackSummary, fallbackLetter } from './document-ai.js';
+import type { OutputLang } from './language.js';
 
 /**
  * Tailoring a candidate's application to one job ad (ADR-0019): from the

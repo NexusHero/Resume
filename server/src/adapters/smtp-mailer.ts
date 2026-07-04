@@ -1,6 +1,6 @@
 import nodemailer, { type Transporter } from 'nodemailer';
-import type { AppConfig } from '../config';
-import type { Mailer, MailMessage } from '../ports/mailer';
+import type { AppConfig } from '../config.js';
+import type { Mailer, MailMessage } from '../ports/mailer.js';
 
 /**
  * SMTP mailer (nodemailer). Provider-agnostic: point SMTP_HOST/PORT/USER/PASS at

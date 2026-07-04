@@ -1,8 +1,8 @@
 import type { Request, Response } from 'express';
-import { updateAssistantSettingsSchema } from '../domain/assistant';
-import { ValidationError } from '../domain/errors';
-import type { AssistantService } from '../services/assistant-service';
-import { currentScope } from './current-user';
+import { updateAssistantSettingsSchema } from '../domain/assistant.js';
+import { ValidationError } from '../domain/errors.js';
+import type { AssistantService } from '../services/assistant-service.js';
+import { currentScope } from './current-user.js';
 
 /**
  * The assistant's HTTP surface (all authenticated, team-scoped):

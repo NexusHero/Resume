@@ -1,7 +1,8 @@
 import path from 'node:path';
-import type { CandidateProfile } from './domain/skill';
-import type { CandidateIdentity } from './domain/cover-letter';
-import type { LlmProviderId } from './ports/llm-provider';
+import { fileURLToPath } from 'node:url';
+import type { CandidateProfile } from './domain/skill.js';
+import type { CandidateIdentity } from './domain/cover-letter.js';
+import type { LlmProviderId } from './ports/llm-provider.js';
 
 /** Runtime configuration, resolved from the environment and repo layout. */
 export interface AppConfig {
@@ -207,7 +208,7 @@ const CANDIDATE_PROFILE: CandidateProfile = {
 };
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
-  const rootDir = path.resolve(__dirname, '..', '..');
+  const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
   const storeDir = path.join(rootDir, 'archive', 'bewerbungen');
 
   // JOB_SOURCES is a comma list, e.g. "arbeitnow,bundesagentur,adzuna".

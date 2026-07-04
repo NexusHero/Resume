@@ -1,8 +1,8 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import type { AppConfig } from '../config';
-import type { ArtifactLog } from '../domain/artifact';
-import type { ArtifactLogRepository } from '../ports/artifact-log-repository';
+import type { AppConfig } from '../config.js';
+import type { ArtifactLog } from '../domain/artifact.js';
+import type { ArtifactLogRepository } from '../ports/artifact-log-repository.js';
 
 /** File-backed repository: the JSON array in artifact-log.json. */
 export class FsArtifactLogRepository implements ArtifactLogRepository {

@@ -1,6 +1,6 @@
-import type { Job, JobQuery } from '../domain/job';
-import { AllJobSourcesFailedError, type JobSource } from '../ports/job-source';
-import type { Logger } from '../ports/logger';
+import type { Job, JobQuery } from '../domain/job.js';
+import { AllJobSourcesFailedError, type JobSource } from '../ports/job-source.js';
+import type { Logger } from '../ports/logger.js';
 
 /**
  * Fans a search out across several job sources in parallel and merges the

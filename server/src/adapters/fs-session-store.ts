@@ -1,9 +1,9 @@
 import { promises as fs } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import path from 'node:path';
-import type { AppConfig } from '../config';
-import type { SessionStore } from '../ports/session-store';
-import type { Clock } from '../ports/clock';
+import type { AppConfig } from '../config.js';
+import type { SessionStore } from '../ports/session-store.js';
+import type { Clock } from '../ports/clock.js';
 
 /** One persisted session row: an opaque token mapped to its owning user. */
 interface SessionRecord {

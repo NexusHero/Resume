@@ -1,4 +1,4 @@
-import type { CandidacyStage } from './candidacy';
+import type { CandidacyStage } from './candidacy.js';
 
 /**
  * The prediction flywheel (ADR-0016): every pipeline stage change is logged,

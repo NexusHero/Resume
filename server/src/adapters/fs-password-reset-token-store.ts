@@ -1,10 +1,10 @@
 import { promises as fs } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import path from 'node:path';
-import type { AppConfig } from '../config';
-import type { Clock } from '../ports/clock';
-import type { PasswordResetTokenStore } from '../ports/password-reset-token-store';
-import type { PasswordResetToken } from '../domain/password-reset';
+import type { AppConfig } from '../config.js';
+import type { Clock } from '../ports/clock.js';
+import type { PasswordResetTokenStore } from '../ports/password-reset-token-store.js';
+import type { PasswordResetToken } from '../domain/password-reset.js';
 
 /**
  * File-backed password-reset tokens (the JSON array in

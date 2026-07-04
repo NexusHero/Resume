@@ -1,14 +1,14 @@
 import type { Request, Response } from 'express';
-import { saveDocumentsSchema } from '../domain/talent-documents';
-import { aiSuggestSchema } from '../domain/document-ai';
-import { parseRequestSchema, parsePdfRequestSchema } from '../domain/document-parse';
-import { atsRequestSchema } from '../domain/ats-ai';
-import { pitchRequestSchema } from '../domain/candidate-pitch';
-import { outreachRequestSchema } from '../domain/outreach';
-import { translateRequestSchema } from '../domain/document-translate';
-import type { DocumentService } from '../services/document-service';
-import type { DocumentAiService } from '../services/document-ai-service';
-import { currentScope, currentUserId } from './current-user';
+import { saveDocumentsSchema } from '../domain/talent-documents.js';
+import { aiSuggestSchema } from '../domain/document-ai.js';
+import { parseRequestSchema, parsePdfRequestSchema } from '../domain/document-parse.js';
+import { atsRequestSchema } from '../domain/ats-ai.js';
+import { pitchRequestSchema } from '../domain/candidate-pitch.js';
+import { outreachRequestSchema } from '../domain/outreach.js';
+import { translateRequestSchema } from '../domain/document-translate.js';
+import type { DocumentService } from '../services/document-service.js';
+import type { DocumentAiService } from '../services/document-ai-service.js';
+import { currentScope, currentUserId } from './current-user.js';
 
 /**
  * A talent's resume + cover-letter documents under /api/v1/talents/:id/documents.

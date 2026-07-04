@@ -1,4 +1,4 @@
-import type { AssistantSettings, AssistantSuggestion } from '../domain/assistant';
+import type { AssistantSettings, AssistantSuggestion } from '../domain/assistant.js';
 
 /** Persistence of the team's assistant configuration (one row per scope). */
 export interface AssistantSettingsStore {

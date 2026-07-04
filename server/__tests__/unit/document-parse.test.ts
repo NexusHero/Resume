@@ -3,7 +3,7 @@ import {
   extractJson,
   fallbackParsed,
   parsePdfRequestSchema,
-} from '../../src/domain/document-parse';
+} from '../../src/domain/document-parse.js';
 
 describe('document-parse', () => {
   it('ParsePdfRequest_RequiresNonEmptyData', () => {

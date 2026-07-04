@@ -1,4 +1,4 @@
-import type { Talent } from '../domain/talent';
+import type { Talent } from '../domain/talent.js';
 
 /** Persistence of the talent pool, scoped to an owner (the recruiter). */
 export interface TalentRepository {

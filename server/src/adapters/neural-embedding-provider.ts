@@ -1,7 +1,7 @@
-import { l2normalize } from '../domain/embedding';
-import type { EmbeddingProvider } from '../ports/embedding-provider';
-import type { HttpFetch } from '../ports/http-fetch';
-import type { Logger } from '../ports/logger';
+import { l2normalize } from '../domain/embedding.js';
+import type { EmbeddingProvider } from '../ports/embedding-provider.js';
+import type { HttpFetch } from '../ports/http-fetch.js';
+import type { Logger } from '../ports/logger.js';
 
 /** The POST an embedding backend needs for one text. */
 export interface NeuralEmbeddingRequest {

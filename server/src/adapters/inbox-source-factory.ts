@@ -1,7 +1,7 @@
-import type { AppConfig } from '../config';
-import type { InboxMessage } from '../domain/mail-sync';
-import type { InboxSource } from '../ports/inbox-source';
-import { ImapInboxSource } from './imap-inbox-source';
+import type { AppConfig } from '../config.js';
+import type { InboxMessage } from '../domain/mail-sync.js';
+import type { InboxSource } from '../ports/inbox-source.js';
+import { ImapInboxSource } from './imap-inbox-source.js';
 
 /** Null object for deployments without a configured mailbox: an empty inbox. */
 export class DisabledInboxSource implements InboxSource {

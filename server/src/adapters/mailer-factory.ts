@@ -1,8 +1,8 @@
-import type { AppConfig } from '../config';
-import type { Logger } from '../ports/logger';
-import type { Mailer } from '../ports/mailer';
-import { ConsoleMailer } from './console-mailer';
-import { SmtpMailer } from './smtp-mailer';
+import type { AppConfig } from '../config.js';
+import type { Logger } from '../ports/logger.js';
+import type { Mailer } from '../ports/mailer.js';
+import { ConsoleMailer } from './console-mailer.js';
+import { SmtpMailer } from './smtp-mailer.js';
 
 /**
  * Chooses the mail transport from `config.mail.transport`: `smtp` uses nodemailer

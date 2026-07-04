@@ -1,6 +1,6 @@
-import { candidateSkills, scoreTalent, matchRequestSchema } from '../../src/domain/match';
-import type { Talent } from '../../src/domain/talent';
-import type { TalentDocuments } from '../../src/domain/talent-documents';
+import { candidateSkills, scoreTalent, matchRequestSchema } from '../../src/domain/match.js';
+import type { Talent } from '../../src/domain/talent.js';
+import type { TalentDocuments } from '../../src/domain/talent-documents.js';
 
 const talent = (over: Partial<Talent> = {}): Talent => ({
   id: 't1',

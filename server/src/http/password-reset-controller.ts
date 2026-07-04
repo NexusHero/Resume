@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
-import { requestResetSchema, confirmResetSchema } from '../domain/password-reset';
-import type { PasswordResetService } from '../services/password-reset-service';
+import { requestResetSchema, confirmResetSchema } from '../domain/password-reset.js';
+import type { PasswordResetService } from '../services/password-reset-service.js';
 
 /**
  * Password-reset endpoints under /api/v1/auth/password-reset. The request route

@@ -1,8 +1,8 @@
 import type { Request, Response } from 'express';
-import { createInviteSchema, acceptInviteSchema } from '../domain/tenant-invite';
-import type { InviteService } from '../services/invite-service';
-import type { AppConfig } from '../config';
-import { currentScope, currentUserId } from './current-user';
+import { createInviteSchema, acceptInviteSchema } from '../domain/tenant-invite.js';
+import type { InviteService } from '../services/invite-service.js';
+import type { AppConfig } from '../config.js';
+import { currentScope, currentUserId } from './current-user.js';
 
 /**
  * Tenant invitations (ADR-0035). Admin-only create/list under `/members/invites`

@@ -2,8 +2,8 @@ import {
   translatePrompt,
   translateResultSchema,
   translateRequestSchema,
-} from '../../src/domain/document-translate';
-import type { TalentDocuments } from '../../src/domain/talent-documents';
+} from '../../src/domain/document-translate.js';
+import type { TalentDocuments } from '../../src/domain/talent-documents.js';
 
 const docs = (): TalentDocuments => ({
   ownerId: 'team',

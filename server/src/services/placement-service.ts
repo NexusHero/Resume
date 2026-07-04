@@ -2,11 +2,11 @@ import {
   type Placement,
   type CreatePlacementInput,
   type UpdatePlacementInput,
-} from '../domain/placement';
-import { NotFoundError } from '../domain/errors';
-import type { PlacementRepository } from '../ports/placement-repository';
-import type { Clock } from '../ports/clock';
-import type { IdGenerator } from '../ports/id-generator';
+} from '../domain/placement.js';
+import { NotFoundError } from '../domain/errors.js';
+import type { PlacementRepository } from '../ports/placement-repository.js';
+import type { Clock } from '../ports/clock.js';
+import type { IdGenerator } from '../ports/id-generator.js';
 
 export interface PlacementServiceDeps {
   placementRepository: PlacementRepository;

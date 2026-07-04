@@ -1,4 +1,4 @@
-import type { Tenant, TenantStatus } from '../domain/tenant';
+import type { Tenant, TenantStatus } from '../domain/tenant.js';
 
 /**
  * Persistence of tenant records (ADR-0036). Self-serve registration creates

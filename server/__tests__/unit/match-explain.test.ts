@@ -6,8 +6,8 @@ import {
   normalizeExplanation,
   explanationResultSchema,
   type MandateContext,
-} from '../../src/domain/match-explain';
-import type { TalentDocuments } from '../../src/domain/talent-documents';
+} from '../../src/domain/match-explain.js';
+import type { TalentDocuments } from '../../src/domain/talent-documents.js';
 
 const docs = (over: Partial<TalentDocuments['resume']> = {}, name = 'Lena'): TalentDocuments => ({
   ownerId: 'team',

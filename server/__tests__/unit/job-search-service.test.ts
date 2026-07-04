@@ -1,11 +1,11 @@
-import { JobSearchService } from '../../src/services/job-search-service';
-import { AllJobSourcesFailedError } from '../../src/ports/job-source';
-import { SampleJobSource } from '../../src/adapters/sample-job-source';
-import { jobQuerySchema, type Job } from '../../src/domain/job';
-import type { JobSource } from '../../src/ports/job-source';
-import type { CandidateProfile } from '../../src/domain/skill';
-import { KeywordSkillExtractor } from '../../src/adapters/keyword-skill-extractor';
-import { noopLogger, noopSkillExtractor } from '../support/fakes';
+import { JobSearchService } from '../../src/services/job-search-service.js';
+import { AllJobSourcesFailedError } from '../../src/ports/job-source.js';
+import { SampleJobSource } from '../../src/adapters/sample-job-source.js';
+import { jobQuerySchema, type Job } from '../../src/domain/job.js';
+import type { JobSource } from '../../src/ports/job-source.js';
+import type { CandidateProfile } from '../../src/domain/skill.js';
+import { KeywordSkillExtractor } from '../../src/adapters/keyword-skill-extractor.js';
+import { noopLogger, noopSkillExtractor } from '../support/fakes.js';
 
 class StubJobSource implements JobSource {
   readonly name = 'Stub';

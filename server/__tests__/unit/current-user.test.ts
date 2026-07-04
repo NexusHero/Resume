@@ -6,9 +6,9 @@ import {
   currentPrincipal,
   currentScope,
   TEAM_SCOPE,
-} from '../../src/http/current-user';
-import { DEFAULT_TENANT } from '../../src/domain/user';
-import { UnauthorizedError } from '../../src/domain/errors';
+} from '../../src/http/current-user.js';
+import { DEFAULT_TENANT } from '../../src/domain/user.js';
+import { UnauthorizedError } from '../../src/domain/errors.js';
 
 const req = (over: Record<string, unknown> = {}): Request => over as unknown as Request;
 

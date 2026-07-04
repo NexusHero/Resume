@@ -1,4 +1,4 @@
-import type { Placement } from '../domain/placement';
+import type { Placement } from '../domain/placement.js';
 
 /** Persistence of booked placements, scoped to an owner (the recruiter). */
 export interface PlacementRepository {

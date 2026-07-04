@@ -1,7 +1,7 @@
 import {
   KeywordSkillExtractor,
   type SkillDefinition,
-} from '../../src/adapters/keyword-skill-extractor';
+} from '../../src/adapters/keyword-skill-extractor.js';
 
 const extractor = new KeywordSkillExtractor();
 

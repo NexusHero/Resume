@@ -1,4 +1,4 @@
-import type { SkillExtractor } from '../ports/skill-extractor';
+import type { SkillExtractor } from '../ports/skill-extractor.js';
 
 /** One canonical skill plus the surface forms that should map to it. */
 export interface SkillDefinition {

@@ -1,8 +1,8 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import type { AppConfig } from '../config';
-import type { Placement } from '../domain/placement';
-import type { PlacementRepository } from '../ports/placement-repository';
+import type { AppConfig } from '../config.js';
+import type { Placement } from '../domain/placement.js';
+import type { PlacementRepository } from '../ports/placement-repository.js';
 
 /** File-backed repository: the JSON array in bewerbungen/placements.json. */
 export class FsPlacementRepository implements PlacementRepository {

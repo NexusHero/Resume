@@ -1,4 +1,4 @@
-import { stripHtml, truncate, snippetFrom } from '../../src/adapters/html-text';
+import { stripHtml, truncate, snippetFrom } from '../../src/adapters/html-text.js';
 
 describe('stripHtml', () => {
   it('StripHtml_TagsAndEntities_AreRemoved', () => {

@@ -1,4 +1,4 @@
-import type { Versioner } from '../ports/versioner';
+import type { Versioner } from '../ports/versioner.js';
 
 /**
  * A versioner that does nothing. Used when the store is not the file system

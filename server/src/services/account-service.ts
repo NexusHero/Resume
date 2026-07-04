@@ -1,5 +1,5 @@
-import type { UserRepository } from '../ports/user-repository';
-import type { UserErasureStep, UserExportSection } from '../ports/personal-data';
+import type { UserRepository } from '../ports/user-repository.js';
+import type { UserErasureStep, UserExportSection } from '../ports/personal-data.js';
 
 export interface AccountServiceDeps {
   userRepository: UserRepository;

@@ -1,10 +1,10 @@
 import { eq } from 'drizzle-orm';
-import type { User, Role } from '../../domain/user';
-import type { LlmProviderId } from '../../ports/llm-provider';
-import type { UserRepository } from '../../ports/user-repository';
-import type { Db } from './db';
-import { users } from './schema';
-import { rowToUser, userToRow } from './mappers';
+import type { User, Role } from '../../domain/user.js';
+import type { LlmProviderId } from '../../ports/llm-provider.js';
+import type { UserRepository } from '../../ports/user-repository.js';
+import type { Db } from './db.js';
+import { users } from './schema.js';
+import { rowToUser, userToRow } from './mappers.js';
 
 /** Postgres-backed repository for registered accounts. */
 export class SqlUserRepository implements UserRepository {

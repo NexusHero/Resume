@@ -1,4 +1,4 @@
-import type { SchedulerLock } from '../ports/scheduler-lock';
+import type { SchedulerLock } from '../ports/scheduler-lock.js';
 
 /**
  * Single-instance default (ADR-0030): this process is always the leader, so

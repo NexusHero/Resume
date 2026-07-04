@@ -1,6 +1,6 @@
-import { cosine, embed, similarityScore, EMBEDDING_DIM } from '../../src/domain/embedding';
-import { hybridScore, matchText, HYBRID_WEIGHTS } from '../../src/domain/match';
-import type { Talent } from '../../src/domain/talent';
+import { cosine, embed, similarityScore, EMBEDDING_DIM } from '../../src/domain/embedding.js';
+import { hybridScore, matchText, HYBRID_WEIGHTS } from '../../src/domain/match.js';
+import type { Talent } from '../../src/domain/talent.js';
 
 const talent = (over: Partial<Talent>): Talent => ({
   id: 't1',

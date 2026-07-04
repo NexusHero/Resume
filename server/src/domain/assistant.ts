@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import type { Candidacy } from './candidacy';
-import { APPLICATION_SOURCES, type ApplicationSource } from './application-target';
+import type { Candidacy } from './candidacy.js';
+import { APPLICATION_SOURCES, type ApplicationSource } from './application-target.js';
 
 /**
  * The assistant: one in-process agent that prepares the desk, with a single

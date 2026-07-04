@@ -3,9 +3,9 @@ import {
   fallbackInterviewKit,
   normalizeInterviewKit,
   interviewKitResultSchema,
-} from '../../src/domain/interview-kit';
-import type { MandateContext } from '../../src/domain/match-explain';
-import type { TalentDocuments } from '../../src/domain/talent-documents';
+} from '../../src/domain/interview-kit.js';
+import type { MandateContext } from '../../src/domain/match-explain.js';
+import type { TalentDocuments } from '../../src/domain/talent-documents.js';
 
 const docs = (over: Partial<TalentDocuments['resume']> = {}): TalentDocuments => ({
   ownerId: 'team',

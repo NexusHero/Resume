@@ -1,8 +1,8 @@
 import { eq } from 'drizzle-orm';
-import type { RetentionPolicy } from '../../domain/retention';
-import type { RetentionPolicyStore } from '../../ports/retention-policy-store';
-import type { Db } from './db';
-import { retentionPolicies } from './schema';
+import type { RetentionPolicy } from '../../domain/retention.js';
+import type { RetentionPolicyStore } from '../../ports/retention-policy-store.js';
+import type { Db } from './db.js';
+import { retentionPolicies } from './schema.js';
 
 /** Postgres-backed retention policy (one row per scope; jsonb payload). */
 export class SqlRetentionPolicyStore implements RetentionPolicyStore {

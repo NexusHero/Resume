@@ -1,7 +1,7 @@
-import { buildRetentionReport, RETENTION_REVIEW_DAYS } from '../../src/domain/retention';
-import { anonymizeTalent, ANONYMIZED_NAME } from '../../src/domain/talent';
-import type { Talent } from '../../src/domain/talent';
-import type { Candidacy } from '../../src/domain/candidacy';
+import { buildRetentionReport, RETENTION_REVIEW_DAYS } from '../../src/domain/retention.js';
+import { anonymizeTalent, ANONYMIZED_NAME } from '../../src/domain/talent.js';
+import type { Talent } from '../../src/domain/talent.js';
+import type { Candidacy } from '../../src/domain/candidacy.js';
 
 const NOW = '2026-07-01T00:00:00.000Z';
 

@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
-import { jobQuerySchema } from '../domain/job';
-import type { AppConfig } from '../config';
-import type { JobSearchService } from '../services/job-search-service';
+import { jobQuerySchema } from '../domain/job.js';
+import type { AppConfig } from '../config.js';
+import type { JobSearchService } from '../services/job-search-service.js';
 
 /**
  * GET /api/v1/jobs — two-tier, skill-matched job search.

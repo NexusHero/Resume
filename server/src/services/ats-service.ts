@@ -1,6 +1,6 @@
-import { type AtsReport, type AtsRequest, analyzeGap } from '../domain/ats';
-import { type CandidateProfile, unionSkills } from '../domain/skill';
-import type { SkillExtractor } from '../ports/skill-extractor';
+import { type AtsReport, type AtsRequest, analyzeGap } from '../domain/ats.js';
+import { type CandidateProfile, unionSkills } from '../domain/skill.js';
+import type { SkillExtractor } from '../ports/skill-extractor.js';
 
 export interface AtsServiceDeps {
   skillExtractor: SkillExtractor;

@@ -4,17 +4,17 @@ import {
   type UpdateCandidacyInput,
   SUBMITTED_STAGES,
   INTERVIEW_STAGES,
-} from '../domain/candidacy';
-import { NotFoundError, ConflictError } from '../domain/errors';
-import type { StageTransition } from '../domain/stage-history';
-import type { CandidacyRepository } from '../ports/candidacy-repository';
-import type { StageTransitionRepository } from '../ports/stage-transition-repository';
-import type { Logger } from '../ports/logger';
-import type { MandateRepository } from '../ports/mandate-repository';
-import type { TalentRepository } from '../ports/talent-repository';
-import type { PlacementService } from './placement-service';
-import type { Clock } from '../ports/clock';
-import type { IdGenerator } from '../ports/id-generator';
+} from '../domain/candidacy.js';
+import { NotFoundError, ConflictError } from '../domain/errors.js';
+import type { StageTransition } from '../domain/stage-history.js';
+import type { CandidacyRepository } from '../ports/candidacy-repository.js';
+import type { StageTransitionRepository } from '../ports/stage-transition-repository.js';
+import type { Logger } from '../ports/logger.js';
+import type { MandateRepository } from '../ports/mandate-repository.js';
+import type { TalentRepository } from '../ports/talent-repository.js';
+import type { PlacementService } from './placement-service.js';
+import type { Clock } from '../ports/clock.js';
+import type { IdGenerator } from '../ports/id-generator.js';
 
 /** A candidacy plus the talent summary the board needs to render a card. */
 export interface CandidacyCard extends Candidacy {

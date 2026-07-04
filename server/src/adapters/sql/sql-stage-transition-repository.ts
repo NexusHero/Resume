@@ -1,9 +1,9 @@
 import { eq } from 'drizzle-orm';
-import type { StageTransition } from '../../domain/stage-history';
-import type { StageTransitionRepository } from '../../ports/stage-transition-repository';
-import type { Db } from './db';
-import { stageTransitions } from './schema';
-import { rowToStageTransition, stageTransitionToRow } from './mappers';
+import type { StageTransition } from '../../domain/stage-history.js';
+import type { StageTransitionRepository } from '../../ports/stage-transition-repository.js';
+import type { Db } from './db.js';
+import { stageTransitions } from './schema.js';
+import { rowToStageTransition, stageTransitionToRow } from './mappers.js';
 
 /** Postgres-backed stage-transition log. */
 export class SqlStageTransitionRepository implements StageTransitionRepository {

@@ -1,9 +1,9 @@
 import { asc, eq } from 'drizzle-orm';
-import type { UsageEvent, UsageFeature } from '../../domain/usage';
-import type { LlmProviderId } from '../../ports/llm-provider';
-import type { UsageMeter } from '../../ports/usage-meter';
-import type { Db } from './db';
-import { usageEvents } from './schema';
+import type { UsageEvent, UsageFeature } from '../../domain/usage.js';
+import type { LlmProviderId } from '../../ports/llm-provider.js';
+import type { UsageMeter } from '../../ports/usage-meter.js';
+import type { Db } from './db.js';
+import { usageEvents } from './schema.js';
 
 /** Postgres-backed usage meter, ordered by insertion (`seq`). */
 export class SqlUsageMeter implements UsageMeter {

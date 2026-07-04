@@ -1,11 +1,11 @@
 import { z } from 'zod';
-import type { TalentDocuments } from './talent-documents';
-import { tokenize } from './ats-ai';
-import { candidateFacts, documentSkills } from './candidate-facts';
-import { jobClusters, skillMatchesJob } from './skill-semantics';
+import type { TalentDocuments } from './talent-documents.js';
+import { tokenize } from './ats-ai.js';
+import { candidateFacts, documentSkills } from './candidate-facts.js';
+import { jobClusters, skillMatchesJob } from './skill-semantics.js';
 
 // Re-exported from its new home so existing consumers keep one import path.
-export { documentSkills } from './candidate-facts';
+export { documentSkills } from './candidate-facts.js';
 
 /**
  * "Why does this candidate fit?" — a short, grounded justification of a

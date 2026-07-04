@@ -5,18 +5,18 @@ import {
   type UpdateApplicationInput,
   type BuildApplicationInput,
   composeAddress,
-} from '../domain/application';
-import { NotFoundError } from '../domain/errors';
-import { slug } from '../domain/slug';
-import type { ApplicationRepository } from '../ports/application-repository';
-import type { AuditLog } from '../ports/audit-log';
-import type { PdfArchive } from '../ports/pdf-archive';
-import type { PdfRenderer } from '../ports/pdf-renderer';
-import type { PdfMerger } from '../ports/pdf-merger';
-import type { Versioner } from '../ports/versioner';
-import type { Clock } from '../ports/clock';
-import type { IdGenerator } from '../ports/id-generator';
-import type { Logger } from '../ports/logger';
+} from '../domain/application.js';
+import { NotFoundError } from '../domain/errors.js';
+import { slug } from '../domain/slug.js';
+import type { ApplicationRepository } from '../ports/application-repository.js';
+import type { AuditLog } from '../ports/audit-log.js';
+import type { PdfArchive } from '../ports/pdf-archive.js';
+import type { PdfRenderer } from '../ports/pdf-renderer.js';
+import type { PdfMerger } from '../ports/pdf-merger.js';
+import type { Versioner } from '../ports/versioner.js';
+import type { Clock } from '../ports/clock.js';
+import type { IdGenerator } from '../ports/id-generator.js';
+import type { Logger } from '../ports/logger.js';
 
 export interface ApplicationServiceDeps {
   applicationRepository: ApplicationRepository;

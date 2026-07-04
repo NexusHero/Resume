@@ -1,10 +1,10 @@
-import { type Attachment, type UploadAttachmentInput } from '../domain/attachment';
-import { NotFoundError, ValidationError } from '../domain/errors';
-import type { AttachmentStore, AttachmentBlob } from '../ports/attachment-store';
-import type { TalentRepository } from '../ports/talent-repository';
-import type { UserRepository } from '../ports/user-repository';
-import type { Clock } from '../ports/clock';
-import type { IdGenerator } from '../ports/id-generator';
+import { type Attachment, type UploadAttachmentInput } from '../domain/attachment.js';
+import { NotFoundError, ValidationError } from '../domain/errors.js';
+import type { AttachmentStore, AttachmentBlob } from '../ports/attachment-store.js';
+import type { TalentRepository } from '../ports/talent-repository.js';
+import type { UserRepository } from '../ports/user-repository.js';
+import type { Clock } from '../ports/clock.js';
+import type { IdGenerator } from '../ports/id-generator.js';
 
 export interface AttachmentServiceDeps {
   attachmentStore: AttachmentStore;

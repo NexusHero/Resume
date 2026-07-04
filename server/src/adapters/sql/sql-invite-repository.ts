@@ -1,9 +1,9 @@
 import { eq, desc } from 'drizzle-orm';
-import type { InviteRepository } from '../../ports/invite-repository';
-import type { TenantInvite } from '../../domain/tenant-invite';
-import type { Role } from '../../domain/user';
-import type { Db } from './db';
-import { tenantInvites } from './schema';
+import type { InviteRepository } from '../../ports/invite-repository.js';
+import type { TenantInvite } from '../../domain/tenant-invite.js';
+import type { Role } from '../../domain/user.js';
+import type { Db } from './db.js';
+import { tenantInvites } from './schema.js';
 
 /**
  * Postgres-backed tenant invitations — mirrors the file-backed store but shared

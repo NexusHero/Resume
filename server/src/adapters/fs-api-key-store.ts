@@ -1,9 +1,9 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import type { AppConfig } from '../config';
-import type { ApiKeyStore } from '../ports/api-key-store';
-import type { LlmProviderId } from '../ports/llm-provider';
-import type { SecretCipher } from './secret-cipher';
+import type { AppConfig } from '../config.js';
+import type { ApiKeyStore } from '../ports/api-key-store.js';
+import type { LlmProviderId } from '../ports/llm-provider.js';
+import type { SecretCipher } from './secret-cipher.js';
 
 /** One stored key row: the encrypted value, scoped to (ownerId, provider). */
 interface KeyRow {

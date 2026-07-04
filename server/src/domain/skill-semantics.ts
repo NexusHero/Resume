@@ -1,4 +1,4 @@
-import { tokenize } from './ats-ai';
+import { tokenize } from './ats-ai.js';
 
 /**
  * A lightweight, deterministic semantic layer over skill matching. Pure keyword

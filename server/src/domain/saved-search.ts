@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { jobQuerySchema } from './job';
+import { jobQuerySchema } from './job.js';
 
 /** A named, reusable job search. */
 export interface SavedSearch {

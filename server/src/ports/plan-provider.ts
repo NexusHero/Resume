@@ -1,4 +1,4 @@
-import type { Plan } from '../domain/plan';
+import type { Plan } from '../domain/plan.js';
 
 /**
  * Resolves the subscription plan for a scope (team). The port exists so the

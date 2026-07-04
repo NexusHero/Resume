@@ -1,10 +1,14 @@
-import { type Mandate, type CreateMandateInput, type UpdateMandateInput } from '../domain/mandate';
-import { detectLanguage } from '../domain/language';
-import { NotFoundError } from '../domain/errors';
-import type { MandateRepository } from '../ports/mandate-repository';
-import type { CandidacyRepository } from '../ports/candidacy-repository';
-import type { Clock } from '../ports/clock';
-import type { IdGenerator } from '../ports/id-generator';
+import {
+  type Mandate,
+  type CreateMandateInput,
+  type UpdateMandateInput,
+} from '../domain/mandate.js';
+import { detectLanguage } from '../domain/language.js';
+import { NotFoundError } from '../domain/errors.js';
+import type { MandateRepository } from '../ports/mandate-repository.js';
+import type { CandidacyRepository } from '../ports/candidacy-repository.js';
+import type { Clock } from '../ports/clock.js';
+import type { IdGenerator } from '../ports/id-generator.js';
 
 export interface MandateServiceDeps {
   mandateRepository: MandateRepository;

@@ -1,16 +1,16 @@
-import type { AppConfig } from '../config';
-import { NotFoundError, ValidationError } from '../domain/errors';
+import type { AppConfig } from '../config.js';
+import { NotFoundError, ValidationError } from '../domain/errors.js';
 import {
   earliestPendingSince,
   isAwaitingEmailReply,
   matchReplies,
   type SendOutreachInput,
-} from '../domain/mail-sync';
-import type { ArtifactLogRepository } from '../ports/artifact-log-repository';
-import type { InboxSource } from '../ports/inbox-source';
-import type { Logger } from '../ports/logger';
-import type { Mailer } from '../ports/mailer';
-import type { TalentRepository } from '../ports/talent-repository';
+} from '../domain/mail-sync.js';
+import type { ArtifactLogRepository } from '../ports/artifact-log-repository.js';
+import type { InboxSource } from '../ports/inbox-source.js';
+import type { Logger } from '../ports/logger.js';
+import type { Mailer } from '../ports/mailer.js';
+import type { TalentRepository } from '../ports/talent-repository.js';
 
 /** What the send endpoint reports back. */
 export interface SendOutreachResult {

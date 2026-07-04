@@ -1,5 +1,5 @@
 import type { Pool } from 'pg';
-import type { SchedulerLock } from '../../ports/scheduler-lock';
+import type { SchedulerLock } from '../../ports/scheduler-lock.js';
 
 /**
  * Postgres advisory-lock leader election (ADR-0030). Each tick tries a

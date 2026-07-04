@@ -1,4 +1,4 @@
-import { summarizeArtifacts, type ArtifactLog } from '../../src/domain/artifact';
+import { summarizeArtifacts, type ArtifactLog } from '../../src/domain/artifact.js';
 
 const log = (over: Partial<ArtifactLog>): ArtifactLog => ({
   id: 'a1',

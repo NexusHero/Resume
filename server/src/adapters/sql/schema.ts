@@ -5,10 +5,10 @@ import type {
   LetterContent,
   DocumentStyle,
   TalentDocuments,
-} from '../../domain/talent-documents';
-import type { Role } from '../../domain/user';
-import type { AssistantSettings } from '../../domain/assistant';
-import type { RetentionPolicy } from '../../domain/retention';
+} from '../../domain/talent-documents.js';
+import type { Role } from '../../domain/user.js';
+import type { AssistantSettings } from '../../domain/assistant.js';
+import type { RetentionPolicy } from '../../domain/retention.js';
 
 /** Registered accounts (mirrors domain `User`). */
 export const users = pgTable('users', {

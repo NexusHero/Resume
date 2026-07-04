@@ -1,9 +1,9 @@
 import { and, eq } from 'drizzle-orm';
-import type { Mandate } from '../../domain/mandate';
-import type { MandateRepository } from '../../ports/mandate-repository';
-import type { Db } from './db';
-import { mandates } from './schema';
-import { rowToMandate, mandateToRow } from './mappers';
+import type { Mandate } from '../../domain/mandate.js';
+import type { MandateRepository } from '../../ports/mandate-repository.js';
+import type { Db } from './db.js';
+import { mandates } from './schema.js';
+import { rowToMandate, mandateToRow } from './mappers.js';
 
 /** Postgres-backed repository for client mandates, scoped to an owner. */
 export class SqlMandateRepository implements MandateRepository {

@@ -13,7 +13,7 @@ Everything that describes the system, reachable from here.
 | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | **Architecture (here)**  | Chapters 1–12 below                                                                                                                    | arc42: goals, constraints, context, building blocks, runtime, deployment, risks.              |
 | **Scope & requirements** | [Requirements](requirements.md) · [Use cases](use-cases.md)                                                                            | FR/NFR catalogue (traced to modules + ADRs); 15 use cases, **each with a sequence diagram**.  |
-| **Decisions**            | [Architecture Decision Records](adr/README.md) — **41 ADRs**                                                                           | Every significant, hard-to-reverse choice as MADR (context → decision → consequences).        |
+| **Decisions**            | [Architecture Decision Records](adr/README.md) — **42 ADRs**                                                                           | Every significant, hard-to-reverse choice as MADR (context → decision → consequences).        |
 | **Views & diagrams**     | [System context](umls/03_system_context.puml) · [Building blocks](umls/05_building_blocks.puml) · [runtime & use-case sequences](umls) | UML: 1 context, 1 building-block, 5 runtime-flow + 15 use-case sequence diagrams.             |
 | **Security**             | [Security concept](security.md)                                                                                                        | Trust boundary, controls→ADR→verification table, and the honest open gaps.                    |
 | **Operations**           | [Deployment](deployment.md) · [Deployment blueprint](deployment-blueprint.md) · [Native app](native-app.md)                            | Run/build/release, the production topology, and the Capacitor native wrapper.                 |
@@ -354,6 +354,7 @@ Full log in [`docs/adr/`](adr). Summary:
 | 0039 | Richer offline experience (offline banner + SWR service worker)   | Accepted                        |
 | 0040 | Capacitor native app wrapper (web-side wiring; native is manual)  | Accepted                        |
 | 0041 | Workbox service worker (vite-plugin-pwa; supersedes 0028/0039 SW) | Accepted                        |
+| 0042 | Server migrated to ESM (nodenext); unblocks modern ESM-only deps  | Accepted                        |
 
 ## 10. Quality Requirements
 

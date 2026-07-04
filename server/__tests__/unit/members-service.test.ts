@@ -1,7 +1,7 @@
-import { MembersService } from '../../src/services/members-service';
-import { NotFoundError, ValidationError } from '../../src/domain/errors';
-import { InMemoryUserRepository } from '../support/fakes';
-import type { User, Role } from '../../src/domain/user';
+import { MembersService } from '../../src/services/members-service.js';
+import { NotFoundError, ValidationError } from '../../src/domain/errors.js';
+import { InMemoryUserRepository } from '../support/fakes.js';
+import type { User, Role } from '../../src/domain/user.js';
 
 const user = (id: string, roles: Role[], createdAt: string, tenantId?: string): User => ({
   id,

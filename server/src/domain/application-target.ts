@@ -1,7 +1,7 @@
-import type { OutputLang } from './language';
-import { detectLanguage } from './language';
-import type { Mandate } from './mandate';
-import type { Job } from './job';
+import type { OutputLang } from './language.js';
+import { detectLanguage } from './language.js';
+import type { Mandate } from './mandate.js';
+import type { Job } from './job.js';
 
 /**
  * The auto-apply agent applies candidates to two kinds of opening — the

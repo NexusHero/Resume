@@ -1,7 +1,7 @@
-import { TenantService } from '../../src/services/tenant-service';
-import { InMemoryTenantRepository, InMemoryUserRepository } from '../support/fakes';
-import type { User, Role } from '../../src/domain/user';
-import type { Tenant } from '../../src/domain/tenant';
+import { TenantService } from '../../src/services/tenant-service.js';
+import { InMemoryTenantRepository, InMemoryUserRepository } from '../support/fakes.js';
+import type { User, Role } from '../../src/domain/user.js';
+import type { Tenant } from '../../src/domain/tenant.js';
 
 const user = (id: string, tenantId?: string, roles: Role[] = ['recruiter']): User => ({
   id,
@@ -91,7 +91,7 @@ describe('TenantService.setStatus (ADR-0038)', () => {
 
   it('UnknownTenant_Throws404', async () => {
     const c = ctx();
-    const { NotFoundError } = await import('../../src/domain/errors');
+    const { NotFoundError } = await import('../../src/domain/errors.js');
     await expect(c.service.setStatus('ghost', 'suspended')).rejects.toBeInstanceOf(NotFoundError);
   });
 });

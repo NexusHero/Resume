@@ -1,5 +1,5 @@
-import { atsPrompt, fallbackAts, normalizeAts } from '../../src/domain/ats-ai';
-import type { TalentDocuments } from '../../src/domain/talent-documents';
+import { atsPrompt, fallbackAts, normalizeAts } from '../../src/domain/ats-ai.js';
+import type { TalentDocuments } from '../../src/domain/talent-documents.js';
 
 const documents: TalentDocuments = {
   ownerId: 'o',

@@ -1,4 +1,4 @@
-import type { PdfTextExtractor } from '../ports/pdf-text-extractor';
+import type { PdfTextExtractor } from '../ports/pdf-text-extractor.js';
 
 // pdfjs-dist v4 ships as ESM only. This project compiles to CommonJS, where
 // `import()` would be transpiled to `require()` — which cannot load an ESM

@@ -1,7 +1,7 @@
-import { AccountService } from '../../src/services/account-service';
-import { toUserView } from '../../src/domain/user';
-import { MemorySessionStore } from '../../src/adapters/memory-session-store';
-import type { UserErasureStep, UserExportSection } from '../../src/ports/personal-data';
+import { AccountService } from '../../src/services/account-service.js';
+import { toUserView } from '../../src/domain/user.js';
+import { MemorySessionStore } from '../../src/adapters/memory-session-store.js';
+import type { UserErasureStep, UserExportSection } from '../../src/ports/personal-data.js';
 import {
   InMemoryMandateRepository,
   InMemoryTalentRepository,
@@ -13,11 +13,11 @@ import {
   InMemoryUsageMeter,
   InMemoryInterviewObservationRepository,
   InMemoryArtifactLogRepository,
-} from '../support/fakes';
-import type { Mandate } from '../../src/domain/mandate';
-import type { Talent } from '../../src/domain/talent';
-import type { Placement } from '../../src/domain/placement';
-import type { User } from '../../src/domain/user';
+} from '../support/fakes.js';
+import type { Mandate } from '../../src/domain/mandate.js';
+import type { Talent } from '../../src/domain/talent.js';
+import type { Placement } from '../../src/domain/placement.js';
+import type { User } from '../../src/domain/user.js';
 
 const USER = 'user1';
 const TEAM = 'team';

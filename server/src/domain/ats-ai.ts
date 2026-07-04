@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { TalentDocuments } from './talent-documents';
+import type { TalentDocuments } from './talent-documents.js';
 
 /** POST /api/v1/talents/:id/documents/ats */
 export const atsRequestSchema = z.object({

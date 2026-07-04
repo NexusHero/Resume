@@ -1,8 +1,8 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import type { AppConfig } from '../config';
-import type { AuditEvent } from '../domain/application';
-import type { AuditLog } from '../ports/audit-log';
+import type { AppConfig } from '../config.js';
+import type { AuditEvent } from '../domain/application.js';
+import type { AuditLog } from '../ports/audit-log.js';
 
 /** Append-only JSONL audit trail: bewerbungen/history.jsonl. */
 export class FsAuditLog implements AuditLog {

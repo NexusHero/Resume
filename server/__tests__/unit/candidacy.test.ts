@@ -2,7 +2,7 @@ import {
   CANDIDACY_STAGES,
   addCandidacySchema,
   updateCandidacySchema,
-} from '../../src/domain/candidacy';
+} from '../../src/domain/candidacy.js';
 
 describe('candidacy domain', () => {
   it('AddCandidacy_AppliesDefaults', () => {

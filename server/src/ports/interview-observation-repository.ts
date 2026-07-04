@@ -1,4 +1,4 @@
-import type { InterviewObservation } from '../domain/interview-observation';
+import type { InterviewObservation } from '../domain/interview-observation.js';
 
 /**
  * Persistence of recorded interview experiences, team-scoped. Observations are

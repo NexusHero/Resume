@@ -1,7 +1,7 @@
-import { CompositeJobSource } from '../../src/adapters/composite-job-source';
-import type { Job, JobQuery } from '../../src/domain/job';
-import { AllJobSourcesFailedError, type JobSource } from '../../src/ports/job-source';
-import { noopLogger } from '../support/fakes';
+import { CompositeJobSource } from '../../src/adapters/composite-job-source.js';
+import type { Job, JobQuery } from '../../src/domain/job.js';
+import { AllJobSourcesFailedError, type JobSource } from '../../src/ports/job-source.js';
+import { noopLogger } from '../support/fakes.js';
 
 function stub(name: string, jobs: Job[]): JobSource {
   return { name, search: async () => jobs };

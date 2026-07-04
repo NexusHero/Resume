@@ -25,16 +25,16 @@ import {
   artifactLogToRow,
   rowToStageTransition,
   stageTransitionToRow,
-} from '../../src/adapters/sql/mappers';
-import type { Application, AuditEvent } from '../../src/domain/application';
-import type { SavedSearch } from '../../src/domain/saved-search';
-import type { Mandate } from '../../src/domain/mandate';
-import type { Talent } from '../../src/domain/talent';
-import type { Placement } from '../../src/domain/placement';
-import type { Candidacy } from '../../src/domain/candidacy';
-import type { User } from '../../src/domain/user';
-import type { TalentDocuments } from '../../src/domain/talent-documents';
-import type { Attachment } from '../../src/domain/attachment';
+} from '../../src/adapters/sql/mappers.js';
+import type { Application, AuditEvent } from '../../src/domain/application.js';
+import type { SavedSearch } from '../../src/domain/saved-search.js';
+import type { Mandate } from '../../src/domain/mandate.js';
+import type { Talent } from '../../src/domain/talent.js';
+import type { Placement } from '../../src/domain/placement.js';
+import type { Candidacy } from '../../src/domain/candidacy.js';
+import type { User } from '../../src/domain/user.js';
+import type { TalentDocuments } from '../../src/domain/talent-documents.js';
+import type { Attachment } from '../../src/domain/attachment.js';
 
 describe('application mappers', () => {
   it('Application_RoundTrips_PreservingNullAndUndefined', () => {

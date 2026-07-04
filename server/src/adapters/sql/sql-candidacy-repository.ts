@@ -1,9 +1,9 @@
 import { and, eq } from 'drizzle-orm';
-import type { Candidacy } from '../../domain/candidacy';
-import type { CandidacyRepository } from '../../ports/candidacy-repository';
-import type { Db } from './db';
-import { candidacies } from './schema';
-import { rowToCandidacy, candidacyToRow } from './mappers';
+import type { Candidacy } from '../../domain/candidacy.js';
+import type { CandidacyRepository } from '../../ports/candidacy-repository.js';
+import type { Db } from './db.js';
+import { candidacies } from './schema.js';
+import { rowToCandidacy, candidacyToRow } from './mappers.js';
 
 /** Postgres-backed pipeline candidacies, scoped to an owner. */
 export class SqlCandidacyRepository implements CandidacyRepository {

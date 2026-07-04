@@ -1,9 +1,9 @@
-import { createJobSource } from '../../src/adapters/job-source-factory';
-import { CompositeJobSource } from '../../src/adapters/composite-job-source';
-import { SampleJobSource } from '../../src/adapters/sample-job-source';
-import { loadConfig, type AppConfig } from '../../src/config';
-import type { HttpFetch } from '../../src/ports/http-fetch';
-import { noopLogger } from '../support/fakes';
+import { createJobSource } from '../../src/adapters/job-source-factory.js';
+import { CompositeJobSource } from '../../src/adapters/composite-job-source.js';
+import { SampleJobSource } from '../../src/adapters/sample-job-source.js';
+import { loadConfig, type AppConfig } from '../../src/config.js';
+import type { HttpFetch } from '../../src/ports/http-fetch.js';
+import { noopLogger } from '../support/fakes.js';
 
 const noHttp: HttpFetch = async () => ({ ok: true, status: 200, json: async () => ({}) });
 

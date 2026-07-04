@@ -1,15 +1,19 @@
-import type { Application, AuditEvent } from '../../domain/application';
-import type { SavedSearch } from '../../domain/saved-search';
-import type { Mandate, MandatePriority, MandateStatus } from '../../domain/mandate';
-import type { Talent } from '../../domain/talent';
-import type { Placement, PlacementStatus } from '../../domain/placement';
-import type { Candidacy, CandidacyStage } from '../../domain/candidacy';
-import type { User, Role } from '../../domain/user';
-import type { TalentDocuments } from '../../domain/talent-documents';
-import type { Attachment } from '../../domain/attachment';
-import type { AssistantSuggestion, SuggestionKind, SuggestionStatus } from '../../domain/assistant';
-import type { ArtifactKind, ArtifactLog, ArtifactOutcome } from '../../domain/artifact';
-import type { StageTransition } from '../../domain/stage-history';
+import type { Application, AuditEvent } from '../../domain/application.js';
+import type { SavedSearch } from '../../domain/saved-search.js';
+import type { Mandate, MandatePriority, MandateStatus } from '../../domain/mandate.js';
+import type { Talent } from '../../domain/talent.js';
+import type { Placement, PlacementStatus } from '../../domain/placement.js';
+import type { Candidacy, CandidacyStage } from '../../domain/candidacy.js';
+import type { User, Role } from '../../domain/user.js';
+import type { TalentDocuments } from '../../domain/talent-documents.js';
+import type { Attachment } from '../../domain/attachment.js';
+import type {
+  AssistantSuggestion,
+  SuggestionKind,
+  SuggestionStatus,
+} from '../../domain/assistant.js';
+import type { ArtifactKind, ArtifactLog, ArtifactOutcome } from '../../domain/artifact.js';
+import type { StageTransition } from '../../domain/stage-history.js';
 import {
   applications,
   auditEvents,
@@ -24,7 +28,7 @@ import {
   assistantSuggestions,
   artifactLogs,
   stageTransitions,
-} from './schema';
+} from './schema.js';
 
 type ApplicationRow = typeof applications.$inferSelect;
 type ApplicationInsert = typeof applications.$inferInsert;

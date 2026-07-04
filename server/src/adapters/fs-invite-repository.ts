@@ -1,8 +1,8 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import type { AppConfig } from '../config';
-import type { InviteRepository } from '../ports/invite-repository';
-import type { TenantInvite } from '../domain/tenant-invite';
+import type { AppConfig } from '../config.js';
+import type { InviteRepository } from '../ports/invite-repository.js';
+import type { TenantInvite } from '../domain/tenant-invite.js';
 
 /**
  * File-backed tenant invitations (the JSON array in tenant-invites.json).

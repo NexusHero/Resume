@@ -59,6 +59,7 @@ import { MembersService } from '../../src/services/members-service';
 import { InviteService } from '../../src/services/invite-service';
 import { TenantService } from '../../src/services/tenant-service';
 import { AccountService } from '../../src/services/account-service';
+import { toUserView } from '../../src/domain/user';
 import { PasswordResetService } from '../../src/services/password-reset-service';
 import { MemorySessionStore } from '../../src/adapters/memory-session-store';
 import { CoverLetterService } from '../../src/services/cover-letter-service';
@@ -382,13 +383,43 @@ function makeApp(
   const accountController = new AccountController({
     accountService: new AccountService({
       userRepository,
-      mandateRepository,
-      talentRepository,
-      placementRepository,
-      apiKeyStore,
-      sessionStore,
-      passwordResetTokenStore,
-      usageMeter,
+      userErasureSteps: [
+        {
+          label: 'api-keys',
+          erase: async (userId) => {
+            for (const provider of await apiKeyStore.providersFor(userId)) {
+              await apiKeyStore.remove(userId, provider);
+            }
+          },
+        },
+        { label: 'sessions', erase: (userId) => sessionStore.destroyForUser(userId) },
+        {
+          label: 'password-reset-tokens',
+          erase: (userId) => passwordResetTokenStore.destroyForUser(userId),
+        },
+        {
+          label: 'email-verification-tokens',
+          erase: (userId) => emailVerificationTokenStore.destroyForUser(userId),
+        },
+        { label: 'usage', erase: (userId) => usageMeter.removeForUser(userId) },
+      ],
+      userExportSections: [
+        {
+          key: 'account',
+          collect: async (userId) => {
+            const found = await userRepository.findById(userId);
+            return found ? toUserView(found) : null;
+          },
+        },
+        { key: 'mandates', collect: (_userId, scope) => mandateRepository.list(scope) },
+        { key: 'talents', collect: (_userId, scope) => talentRepository.list(scope) },
+        { key: 'placements', collect: (_userId, scope) => placementRepository.list(scope) },
+        {
+          key: 'observations',
+          collect: (_userId, scope) => interviewObservationRepository.list(scope),
+        },
+        { key: 'artifactLogs', collect: (_userId, scope) => artifactLogRepository.list(scope) },
+      ],
     }),
     clock: new FixedClock(),
     config,

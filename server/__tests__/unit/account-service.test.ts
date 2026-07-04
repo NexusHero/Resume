@@ -1,5 +1,7 @@
 import { AccountService } from '../../src/services/account-service';
+import { toUserView } from '../../src/domain/user';
 import { MemorySessionStore } from '../../src/adapters/memory-session-store';
+import type { UserErasureStep, UserExportSection } from '../../src/ports/personal-data';
 import {
   InMemoryMandateRepository,
   InMemoryTalentRepository,
@@ -7,7 +9,10 @@ import {
   InMemoryApiKeyStore,
   InMemoryUserRepository,
   InMemoryPasswordResetTokenStore,
+  InMemoryEmailVerificationTokenStore,
   InMemoryUsageMeter,
+  InMemoryInterviewObservationRepository,
+  InMemoryArtifactLogRepository,
 } from '../support/fakes';
 import type { Mandate } from '../../src/domain/mandate';
 import type { Talent } from '../../src/domain/talent';
@@ -18,6 +23,11 @@ const USER = 'user1';
 const TEAM = 'team';
 const TS = '2026-06-30T12:00:00.000Z';
 
+/**
+ * Mirrors the composition root's personal-data registry (container.ts) so the
+ * test exercises the same erase/export wiring the app ships. Adding a store here
+ * mirrors adding it there — a forgotten container fails a test, not production.
+ */
 function makeService() {
   const mandateRepository = new InMemoryMandateRepository();
   const talentRepository = new InMemoryTalentRepository();
@@ -26,17 +36,47 @@ function makeService() {
   const userRepository = new InMemoryUserRepository();
   const sessionStore = new MemorySessionStore();
   const passwordResetTokenStore = new InMemoryPasswordResetTokenStore();
+  const emailVerificationTokenStore = new InMemoryEmailVerificationTokenStore();
   const usageMeter = new InMemoryUsageMeter();
-  const service = new AccountService({
-    mandateRepository,
-    talentRepository,
-    placementRepository,
-    apiKeyStore,
-    userRepository,
-    sessionStore,
-    passwordResetTokenStore,
-    usageMeter,
-  });
+  const observationRepository = new InMemoryInterviewObservationRepository();
+  const artifactLogRepository = new InMemoryArtifactLogRepository();
+
+  const userErasureSteps: UserErasureStep[] = [
+    {
+      label: 'api-keys',
+      erase: async (userId) => {
+        for (const provider of await apiKeyStore.providersFor(userId)) {
+          await apiKeyStore.remove(userId, provider);
+        }
+      },
+    },
+    { label: 'sessions', erase: (userId) => sessionStore.destroyForUser(userId) },
+    {
+      label: 'password-reset-tokens',
+      erase: (userId) => passwordResetTokenStore.destroyForUser(userId),
+    },
+    {
+      label: 'email-verification-tokens',
+      erase: (userId) => emailVerificationTokenStore.destroyForUser(userId),
+    },
+    { label: 'usage', erase: (userId) => usageMeter.removeForUser(userId) },
+  ];
+  const userExportSections: UserExportSection[] = [
+    {
+      key: 'account',
+      collect: async (userId) => {
+        const user = await userRepository.findById(userId);
+        return user ? toUserView(user) : null;
+      },
+    },
+    { key: 'mandates', collect: (_userId, scope) => mandateRepository.list(scope) },
+    { key: 'talents', collect: (_userId, scope) => talentRepository.list(scope) },
+    { key: 'placements', collect: (_userId, scope) => placementRepository.list(scope) },
+    { key: 'observations', collect: (_userId, scope) => observationRepository.list(scope) },
+    { key: 'artifactLogs', collect: (_userId, scope) => artifactLogRepository.list(scope) },
+  ];
+
+  const service = new AccountService({ userRepository, userErasureSteps, userExportSections });
   return {
     service,
     mandateRepository,
@@ -46,6 +86,7 @@ function makeService() {
     userRepository,
     sessionStore,
     passwordResetTokenStore,
+    emailVerificationTokenStore,
     usageMeter,
   };
 }
@@ -122,6 +163,27 @@ describe('AccountService', () => {
     expect(result.placements).toHaveLength(1);
   });
 
+  it('ExportFor_IncludesEveryRegisteredSection', async () => {
+    const ctx = makeService();
+    await ctx.userRepository.add(user(USER));
+
+    const result = await ctx.service.exportFor(USER, TEAM, TS);
+
+    // The export payload carries one key per registered section — a new
+    // personal-data container shows up here without touching AccountService.
+    expect(Object.keys(result).sort()).toEqual(
+      [
+        'account',
+        'artifactLogs',
+        'exportedAt',
+        'mandates',
+        'observations',
+        'placements',
+        'talents',
+      ].sort(),
+    );
+  });
+
   it('ExportFor_UnknownAccount_ReturnsNullAccount', async () => {
     const ctx = makeService();
     const result = await ctx.service.exportFor(USER, TEAM, TS);
@@ -155,6 +217,19 @@ describe('AccountService', () => {
     expect(await ctx.usageMeter.list(USER)).toEqual([]); // usage history erased
     // the shared team workspace stays
     expect(await ctx.mandateRepository.list(TEAM)).toHaveLength(1);
+  });
+
+  it('Erase_AlsoDestroysEmailVerificationTokens', async () => {
+    const ctx = makeService();
+    await ctx.userRepository.add(user(USER));
+    await ctx.emailVerificationTokenStore.create(USER);
+    await ctx.emailVerificationTokenStore.create('other'); // a different user's token stays
+
+    await ctx.service.erase(USER);
+
+    // Regression guard: verification tokens (and the invites hanging off them)
+    // used to survive account deletion because erase never touched this store.
+    expect(ctx.emailVerificationTokenStore.tokens.map((t) => t.userId)).toEqual(['other']);
   });
 
   it('Erase_AlreadyGoneAccount_IsNoOp', async () => {

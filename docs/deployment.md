@@ -3,6 +3,11 @@
 The app is a single Node service that serves the REST API and the static web
 UIs. It runs in two storage modes; production uses Postgres.
 
+> For a prescriptive production topology (stateless app tier + backing services),
+> a minimal env set, and a go-live checklist, see the
+> [deployment blueprint](deployment-blueprint.md). This page is the full
+> variable-by-variable reference.
+
 ## Quick start (Docker Compose)
 
 ```bash

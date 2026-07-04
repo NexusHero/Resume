@@ -4,7 +4,7 @@
 > [`docs/umls/`](umls), rendered to `.svg`). Companion docs:
 > [requirements](requirements.md) · [use cases](use-cases.md) ·
 > [architecture decisions](adr) · [roadmap](roadmap.md) ·
-> [EU AI Act brief](eu-ai-act.md).
+> [EU AI Act brief](eu-ai-act.md) · [deployment blueprint](deployment-blueprint.md).
 
 ## 1. Introduction and Goals
 

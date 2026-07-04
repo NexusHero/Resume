@@ -7,9 +7,10 @@
 > nodenext migration** was done first ([ADR-0042](adr/0042-esm-nodenext-migration.md));
 > Better-Auth itself lands behind the existing `AuthService` seam
 > ([ADR-0043](adr/0043-better-auth-sqlite-engine.md); engine done **and live** —
-> `AuthService`, invites and password-reset run on it, with scrypt→engine
-> rehash-on-login so no user is forced to reset).
-> The primitives/hardening route below is retained as rationale and fallback.
+> `AuthService`, invites and password-reset run on it, and the legacy scrypt hasher
+> plus the hand-rolled `SessionStore` have been removed entirely).
+> The primitives/hardening route below is retained as rationale and fallback, and
+> the "today" inventory in §2 describes the **pre-migration** state.
 >
 > Companion reading: [security concept](security.md) · [architecture](architecture.md)
 > · [decisions](adr/README.md). Auth touches ADR-0002 (Awilix DI, no decorators),

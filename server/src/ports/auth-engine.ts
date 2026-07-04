@@ -2,9 +2,10 @@
  * The credential + session engine (ADR-0043).
  *
  * A deliberately narrow boundary around "verify a password, issue and resolve an
- * opaque session token" — so the current hand-rolled pair (scrypt hasher +
- * SessionStore) and a real auth framework (Better-Auth, backed by embedded
- * SQLite) are interchangeable behind it, and the app never learns which is wired.
+ * opaque session token" — implemented by Better-Auth on embedded SQLite. It
+ * replaced the original hand-rolled pair (scrypt hasher + `SessionStore`), which
+ * has since been removed; the port stays so a different engine could be swapped
+ * in without the app learning which is wired.
  *
  * The engine owns *credentials and sessions only*. The domain `User`
  * (roles, tenant, profile) stays in `UserRepository` — the two are linked by

@@ -34,7 +34,7 @@ activate Auth
 Auth -> Invites : consume(token)
 Invites --> Auth : { email, tenantId } | invalid
 alt token valid & unused
-  Auth -> Users : create user in tenantId\n(scrypt hash)
+  Auth -> Users : create user in tenantId\n(credential minted in the auth engine)
   Auth --> ACtrl : session token
   ACtrl --> Invitee : 204 + Set-Cookie → lands in that tenant
 else invalid / expired / used

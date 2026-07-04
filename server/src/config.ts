@@ -20,7 +20,6 @@ export interface AppConfig {
   attachmentsFile: string;
   attachmentsDir: string;
   usersFile: string;
-  sessionsFile: string;
   passwordResetTokensFile: string;
   emailVerificationTokensFile: string;
   inviteTokensFile: string;
@@ -240,7 +239,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     attachmentsFile: path.join(storeDir, 'attachments.json'),
     attachmentsDir: path.join(storeDir, 'attachments'),
     usersFile: path.join(storeDir, 'users.json'),
-    sessionsFile: path.join(storeDir, 'sessions.json'),
     passwordResetTokensFile: path.join(storeDir, 'password-reset-tokens.json'),
     emailVerificationTokensFile: path.join(storeDir, 'email-verification-tokens.json'),
     inviteTokensFile: path.join(storeDir, 'tenant-invites.json'),

@@ -26,7 +26,6 @@ import type { Attachment } from '../../src/domain/attachment.js';
 import type { AttachmentBlob, AttachmentStore } from '../../src/ports/attachment-store.js';
 import type { User, Role } from '../../src/domain/user.js';
 import type { UserRepository } from '../../src/ports/user-repository.js';
-import type { PasswordHasher } from '../../src/ports/password-hasher.js';
 import type { AuthEngine, AuthEngineSession, AuthEngineUser } from '../../src/ports/auth-engine.js';
 import type { PasswordResetTokenStore } from '../../src/ports/password-reset-token-store.js';
 import type { EmailVerificationTokenStore } from '../../src/ports/email-verification-token-store.js';
@@ -376,9 +375,6 @@ export class InMemoryUserRepository implements UserRepository {
   async add(user: User): Promise<void> {
     this.users.push(user);
   }
-  async updatePassword(id: string, passwordHash: string): Promise<void> {
-    this.users = this.users.map((u) => (u.id === id ? { ...u, passwordHash } : u));
-  }
   async updateRoles(id: string, roles: Role[]): Promise<void> {
     this.users = this.users.map((u) => (u.id === id ? { ...u, roles } : u));
   }
@@ -626,16 +622,6 @@ export class InMemoryArtifactLogRepository implements ArtifactLogRepository {
     this.rows = this.rows.map((l) => (l.ownerId === log.ownerId && l.id === log.id ? log : l));
   }
 }
-
-/** A deterministic, fast hasher for tests — NOT for production use. */
-export const fakePasswordHasher: PasswordHasher = {
-  async hash(plaintext: string): Promise<string> {
-    return `hashed:${plaintext}`;
-  },
-  async verify(plaintext: string, hash: string): Promise<boolean> {
-    return hash === `hashed:${plaintext}`;
-  },
-};
 
 /**
  * In-memory AuthEngine for tests — mirrors BetterAuthEngine's contract without

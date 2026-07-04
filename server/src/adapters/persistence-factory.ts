@@ -9,7 +9,6 @@ import type { CandidacyRepository } from '../ports/candidacy-repository.js';
 import type { DocumentRepository } from '../ports/document-repository.js';
 import type { AttachmentStore } from '../ports/attachment-store.js';
 import type { UserRepository } from '../ports/user-repository.js';
-import type { SessionStore } from '../ports/session-store.js';
 import type { PasswordResetTokenStore } from '../ports/password-reset-token-store.js';
 import type { EmailVerificationTokenStore } from '../ports/email-verification-token-store.js';
 import type { InviteRepository } from '../ports/invite-repository.js';
@@ -34,7 +33,6 @@ import { FsCandidacyRepository } from './fs-candidacy-repository.js';
 import { FsDocumentRepository } from './fs-document-repository.js';
 import { FsAttachmentStore } from './fs-attachment-store.js';
 import { FsUserRepository } from './fs-user-repository.js';
-import { FsSessionStore } from './fs-session-store.js';
 import { FsPasswordResetTokenStore } from './fs-password-reset-token-store.js';
 import { FsEmailVerificationTokenStore } from './fs-email-verification-token-store.js';
 import { FsInviteRepository } from './fs-invite-repository.js';
@@ -58,7 +56,6 @@ import { SqlCandidacyRepository } from './sql/sql-candidacy-repository.js';
 import { SqlDocumentRepository } from './sql/sql-document-repository.js';
 import { SqlAttachmentStore } from './sql/sql-attachment-store.js';
 import { SqlUserRepository } from './sql/sql-user-repository.js';
-import { SqlSessionStore } from './sql/sql-session-store.js';
 import { SqlPasswordResetTokenStore } from './sql/sql-password-reset-token-store.js';
 import { SqlEmailVerificationTokenStore } from './sql/sql-email-verification-token-store.js';
 import { SqlInviteRepository } from './sql/sql-invite-repository.js';
@@ -87,7 +84,6 @@ export interface Persistence {
   documentRepository: DocumentRepository;
   attachmentStore: AttachmentStore;
   userRepository: UserRepository;
-  sessionStore: SessionStore;
   passwordResetTokenStore: PasswordResetTokenStore;
   emailVerificationTokenStore: EmailVerificationTokenStore;
   inviteRepository: InviteRepository;
@@ -123,7 +119,6 @@ export function createPersistence(deps: { config: AppConfig; clock: Clock; db?: 
       documentRepository: new SqlDocumentRepository({ db }),
       attachmentStore: new SqlAttachmentStore({ db }),
       userRepository: new SqlUserRepository({ db }),
-      sessionStore: new SqlSessionStore({ db, clock, config }),
       passwordResetTokenStore: new SqlPasswordResetTokenStore({ db, clock, config }),
       emailVerificationTokenStore: new SqlEmailVerificationTokenStore({ db, clock, config }),
       inviteRepository: new SqlInviteRepository({ db }),
@@ -149,7 +144,6 @@ export function createPersistence(deps: { config: AppConfig; clock: Clock; db?: 
     documentRepository: new FsDocumentRepository({ config }),
     attachmentStore: new FsAttachmentStore({ config }),
     userRepository: new FsUserRepository({ config }),
-    sessionStore: new FsSessionStore({ config, clock }),
     passwordResetTokenStore: new FsPasswordResetTokenStore({ config, clock }),
     emailVerificationTokenStore: new FsEmailVerificationTokenStore({ config, clock }),
     inviteRepository: new FsInviteRepository({ config }),

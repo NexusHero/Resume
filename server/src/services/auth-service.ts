@@ -9,7 +9,6 @@ import { defaultWorkspaceName, type Tenant } from '../domain/tenant.js';
 import { ConflictError, UnauthorizedError } from '../domain/errors.js';
 import type { UserRepository } from '../ports/user-repository.js';
 import type { AuthEngine } from '../ports/auth-engine.js';
-import type { PasswordHasher } from '../ports/password-hasher.js';
 import type { Clock } from '../ports/clock.js';
 import type { IdGenerator } from '../ports/id-generator.js';
 import type { TenantRepository } from '../ports/tenant-repository.js';
@@ -19,8 +18,6 @@ export interface AuthServiceDeps {
   userRepository: UserRepository;
   /** Credential + session authority (Better-Auth, ADR-0043). */
   authEngine: AuthEngine;
-  /** Legacy scrypt verifier — only for migrating pre-Better-Auth accounts. */
-  passwordHasher: PasswordHasher;
   clock: Clock;
   idGenerator: IdGenerator;
   /** Optional (ADR-0036): present enables self-serve tenant creation on register. */
@@ -42,7 +39,6 @@ export interface AuthResult {
 export class AuthService {
   private readonly users: UserRepository;
   private readonly engine: AuthEngine;
-  private readonly hasher: PasswordHasher;
   private readonly clock: Clock;
   private readonly ids: IdGenerator;
   private readonly tenants?: TenantRepository;
@@ -51,7 +47,6 @@ export class AuthService {
   constructor(deps: AuthServiceDeps) {
     this.users = deps.userRepository;
     this.engine = deps.authEngine;
-    this.hasher = deps.passwordHasher;
     this.clock = deps.clock;
     this.ids = deps.idGenerator;
     this.tenants = deps.tenantRepository;
@@ -109,20 +104,8 @@ export class AuthService {
   }
 
   async login(input: LoginInput): Promise<AuthResult> {
-    let session = await this.engine.signIn(input.email, input.password);
+    const session = await this.engine.signIn(input.email, input.password);
     const user = await this.users.findByEmail(input.email);
-    // Migration (ADR-0043): a pre-Better-Auth account still carries a legacy
-    // scrypt hash and has no engine credential yet. Verify it once, mint the
-    // engine credential, and drop the legacy hash — a transparent rehash on
-    // login, so no user is forced to reset.
-    if (
-      !session &&
-      user?.passwordHash &&
-      (await this.hasher.verify(input.password, user.passwordHash))
-    ) {
-      session = await this.engine.signUp(input.email, input.password);
-      await this.users.updatePassword(user.id, '');
-    }
     if (!session || !user) throw new UnauthorizedError('Invalid email or password');
     if (await this.isTenantSuspended(user.tenantId)) {
       throw new UnauthorizedError('This workspace has been suspended');

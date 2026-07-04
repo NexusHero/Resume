@@ -1,11 +1,10 @@
 import { AuthService } from '../../src/services/auth-service.js';
-import { registerSchema, loginSchema, type User } from '../../src/domain/user.js';
+import { registerSchema, loginSchema } from '../../src/domain/user.js';
 import { ConflictError, UnauthorizedError } from '../../src/domain/errors.js';
 import {
   InMemoryUserRepository,
   InMemoryTenantRepository,
   FakeAuthEngine,
-  fakePasswordHasher,
   FixedClock,
   SequenceIdGenerator,
 } from '../support/fakes.js';
@@ -17,7 +16,6 @@ function makeService() {
   const service = new AuthService({
     userRepository: repo,
     authEngine: engine,
-    passwordHasher: fakePasswordHasher,
     clock: new FixedClock(),
     idGenerator: new SequenceIdGenerator('user'),
   });
@@ -80,29 +78,6 @@ describe('AuthService', () => {
     ).rejects.toBeInstanceOf(UnauthorizedError);
   });
 
-  it('Login_LegacyScryptUser_MigratesToEngineOnFirstLogin', async () => {
-    // Migration (ADR-0043): a pre-Better-Auth account carries a scrypt hash and
-    // no engine credential. The first login verifies the hash, mints the engine
-    // credential, and drops the legacy hash — no forced reset.
-    const { service, repo, engine } = makeService();
-    const legacy: User = {
-      id: 'legacy1',
-      email: 'old@example.com',
-      passwordHash: 'hashed:oldpassword', // the fake hasher's format
-      roles: ['recruiter'],
-      createdAt: '2020-01-01T00:00:00.000Z',
-    };
-    await repo.add(legacy);
-
-    const res = await service.login(
-      loginSchema.parse({ email: 'old@example.com', password: 'oldpassword' }),
-    );
-    expect(res.user.email).toBe('old@example.com');
-    // The legacy hash is cleared, and the engine now authenticates directly.
-    expect(repo.users[0]?.passwordHash).toBe('');
-    expect(await engine.signIn('old@example.com', 'oldpassword')).not.toBeNull();
-  });
-
   it('CurrentUser_ValidToken_ReturnsUser', async () => {
     const { service } = makeService();
     const { token } = await service.register(reg('a@example.com'));
@@ -146,7 +121,6 @@ describe('AuthService — self-serve tenants (ADR-0036)', () => {
     const service = new AuthService({
       userRepository: repo,
       authEngine: new FakeAuthEngine(),
-      passwordHasher: fakePasswordHasher,
       clock: new FixedClock(),
       idGenerator: new SequenceIdGenerator('id'),
       tenantRepository: tenants,
@@ -209,7 +183,6 @@ describe('AuthService — suspended-tenant enforcement (ADR-0038)', () => {
     const service = new AuthService({
       userRepository: repo,
       authEngine: engine,
-      passwordHasher: fakePasswordHasher,
       clock: new FixedClock(),
       idGenerator: new SequenceIdGenerator('id'),
       tenantRepository: tenants,

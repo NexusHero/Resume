@@ -132,7 +132,7 @@ describe('PasswordResetService', () => {
     await expect(service.request('recruiter@example.com')).resolves.toBeUndefined();
   });
 
-  it('Confirm_ValidToken_SetsNewEnginePassword_KillsSessions_ClearsLegacyHash', async () => {
+  it('Confirm_ValidToken_SetsNewEnginePassword_KillsSessions', async () => {
     const c = ctx();
     await c.userRepository.add(user);
     // A migrated account: the engine already holds the credential and a live session.
@@ -142,8 +142,7 @@ describe('PasswordResetService', () => {
 
     await c.service.confirm(token, 'brand-new-password');
 
-    // The new password lives in the engine; the legacy hash is cleared (ADR-0043).
-    expect((await c.userRepository.findById('u1'))!.passwordHash).toBe('');
+    // The new password lives in the engine — the sole credential authority (ADR-0043).
     expect(await c.authEngine.signIn('recruiter@example.com', 'brand-new-password')).not.toBeNull();
     expect(await c.authEngine.resolve(live.token)).toBeNull(); // all sessions dropped
     expect(c.passwordResetTokenStore.tokens).toEqual([]); // token consumed
@@ -158,7 +157,6 @@ describe('PasswordResetService', () => {
 
     await c.service.confirm(token, 'brand-new-password');
 
-    expect((await c.userRepository.findById('u1'))!.passwordHash).toBe('');
     expect(await c.authEngine.signIn('recruiter@example.com', 'brand-new-password')).not.toBeNull();
   });
 

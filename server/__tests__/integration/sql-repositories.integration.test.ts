@@ -7,7 +7,6 @@ import { SqlMandateRepository } from '../../src/adapters/sql/sql-mandate-reposit
 import { SqlTalentRepository } from '../../src/adapters/sql/sql-talent-repository.js';
 import { SqlPlacementRepository } from '../../src/adapters/sql/sql-placement-repository.js';
 import { SqlUserRepository } from '../../src/adapters/sql/sql-user-repository.js';
-import { SqlSessionStore } from '../../src/adapters/sql/sql-session-store.js';
 import { SqlPasswordResetTokenStore } from '../../src/adapters/sql/sql-password-reset-token-store.js';
 import { SqlEmailVerificationTokenStore } from '../../src/adapters/sql/sql-email-verification-token-store.js';
 import { SqlApiKeyStore } from '../../src/adapters/sql/sql-api-key-store.js';
@@ -220,8 +219,6 @@ suite('SQL repositories (real Postgres)', () => {
     expect(await repo.findByEmail('a@example.com')).toEqual(user('u1', 'a@example.com'));
     expect(await repo.findById('u1')).toMatchObject({ id: 'u1' });
     expect(await repo.findByEmail('none@example.com')).toBeNull();
-    await repo.updatePassword('u1', 'scrypt$new$hash');
-    expect((await repo.findById('u1'))!.passwordHash).toBe('scrypt$new$hash');
     expect(await repo.remove('u1')).toBe(true);
     expect(await repo.remove('u1')).toBe(false);
     expect(await repo.findById('u1')).toBeNull();
@@ -277,36 +274,6 @@ suite('SQL repositories (real Postgres)', () => {
     const old = await store.create('u3');
     nowIso = '2026-01-01T02:00:00.000Z'; // > 60 minutes later
     expect(await store.consume(old)).toBeNull();
-  });
-
-  it('Sessions_CreateLookupDestroy_RespectExpiry', async () => {
-    let nowIso = '2026-01-01T00:00:00.000Z';
-    const clock = {
-      isoNow: () => nowIso,
-      now: () => new Date(nowIso),
-      today: () => nowIso.slice(0, 10),
-    };
-    const config = loadConfig({}); // 30-day TTL
-    const store = new SqlSessionStore({ db, clock, config });
-
-    const a1 = await store.create('u1');
-    const a2 = await store.create('u1');
-    const b1 = await store.create('u2');
-    expect(await store.userIdFor(a1)).toBe('u1');
-
-    // destroyForUser removes only that user's sessions
-    await store.destroyForUser('u1');
-    expect(await store.userIdFor(a1)).toBeNull();
-    expect(await store.userIdFor(a2)).toBeNull();
-    expect(await store.userIdFor(b1)).toBe('u2');
-
-    // expiry: a session past the TTL is rejected and pruned
-    const old = await store.create('u3');
-    nowIso = '2026-03-01T00:00:00.000Z'; // > 30 days later
-    expect(await store.userIdFor(old)).toBeNull();
-
-    await store.destroy(b1);
-    expect(await store.userIdFor(b1)).toBeNull();
   });
 
   it('ApiKeys_EncryptedRoundTrip_OwnerScoped', async () => {

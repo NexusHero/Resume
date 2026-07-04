@@ -157,8 +157,8 @@ The backend lives in `server/src/` and is strictly layered (dependencies point i
 | HTTP        | `create-app`, `*-controller` (mandate, talent, candidacy, placement, match, match-ai, document, compliance, forecast, observation, members, …), `problem`, `security`                                                                                                                             | Express routing, zod validation at the boundary, RFC-9457 errors, auth/CORS/headers. |
 | Application | `*-service` (mandate, talent, candidacy, placement, match, forecast, retention, members, usage, job-search, …); the AI services (`document-assist`, `cv-parse`, `ats-ai`, `outreach-ai`, `match-ai`) over the shared **`LlmFeatureRunner`** (ADR-0022), with `DocumentAiService` as a thin facade | Business rules only; depend on ports, never adapters.                                |
 | Domain      | `mandate`, `talent`, `candidacy`, `placement`, `match`, `skill-semantics`, **`skill-taxonomy`**, **`grounding`**, `candidate-prep`, `company-archetype`, `interview-*`, `agg-check`, `forecast`, `errors`                                                                                         | The model, its invariants, and pure deterministic algorithms. No I/O.                |
-| Ports       | `*-repository`, `session-store`, `llm-provider`, `api-key-store`, `usage-meter`, `skill-extractor`, `job-source`, `pdf-*`, `mailer`, `authorizer`, `clock`, …                                                                                                                                     | Interfaces the services depend on.                                                   |
-| Adapters    | `fs-*` / `sql/*` repositories, `anthropic`/`gemini` LLM providers, `*-job-source`, `puppeteer-pdf-renderer`, `pdf-lib-merger`, `scrypt-password-hasher`, `secret-cipher`, `pino`, …                                                                                                               | Concrete I/O, wired in `container.ts` (Awilix).                                      |
+| Ports       | `*-repository`, `auth-engine`, `llm-provider`, `api-key-store`, `usage-meter`, `skill-extractor`, `job-source`, `pdf-*`, `mailer`, `authorizer`, `clock`, …                                                                                                                                       | Interfaces the services depend on.                                                   |
+| Adapters    | `fs-*` / `sql/*` repositories, `better-auth/` engine, `anthropic`/`gemini` LLM providers, `*-job-source`, `puppeteer-pdf-renderer`, `pdf-lib-merger`, `secret-cipher`, `pino`, …                                                                                                                  | Concrete I/O, wired in `container.ts` (Awilix).                                      |
 
 The composition root (`container.ts`) is the single place that knows which adapter
 implements each port — see ADR-0002 for the registration discipline this demands.
@@ -275,8 +275,8 @@ a picture earns its place.
 - **Skills:** canonicalised (ADR-0008) then matched semantically offline (ADR-0007), with
   local hashed embeddings + hybrid lexical/semantic ranking (ADR-0017).
 - **Security:** the posture is documented end-to-end in the [security concept](security.md) —
-  trust boundary, authentication (opaque `httpOnly`/`SameSite=Lax` sessions, scrypt
-  passwords), authorization (RBAC + the `requireAuth`/`requirePlan` route seams),
+  trust boundary, authentication (opaque `httpOnly`/`SameSite=Lax` sessions, credentials
+  via the Better-Auth engine — ADR-0043), authorization (RBAC + the `requireAuth`/`requirePlan` route seams),
   per-tenant isolation, the config-only non-escalatable super-admin, suspension enforced
   in the auth path, AES-256-GCM-encrypted per-user keys, CORS allow-list + CSP + security
   headers, auth rate-limiting, and the honest gaps (no CSRF token under today's

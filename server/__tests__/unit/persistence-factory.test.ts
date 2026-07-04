@@ -6,7 +6,6 @@ import { FsPlacementRepository } from '../../src/adapters/fs-placement-repositor
 import { FsDocumentRepository } from '../../src/adapters/fs-document-repository.js';
 import { FsAttachmentStore } from '../../src/adapters/fs-attachment-store.js';
 import { FsUserRepository } from '../../src/adapters/fs-user-repository.js';
-import { FsSessionStore } from '../../src/adapters/fs-session-store.js';
 import { FsPasswordResetTokenStore } from '../../src/adapters/fs-password-reset-token-store.js';
 import { SqlApplicationRepository } from '../../src/adapters/sql/sql-application-repository.js';
 import { SqlSavedSearchRepository } from '../../src/adapters/sql/sql-saved-search-repository.js';
@@ -16,7 +15,6 @@ import { SqlPlacementRepository } from '../../src/adapters/sql/sql-placement-rep
 import { SqlDocumentRepository } from '../../src/adapters/sql/sql-document-repository.js';
 import { SqlAttachmentStore } from '../../src/adapters/sql/sql-attachment-store.js';
 import { SqlUserRepository } from '../../src/adapters/sql/sql-user-repository.js';
-import { SqlSessionStore } from '../../src/adapters/sql/sql-session-store.js';
 import { SqlPasswordResetTokenStore } from '../../src/adapters/sql/sql-password-reset-token-store.js';
 import { FsApiKeyStore } from '../../src/adapters/fs-api-key-store.js';
 import { SqlApiKeyStore } from '../../src/adapters/sql/sql-api-key-store.js';
@@ -37,7 +35,6 @@ describe('createPersistence', () => {
     expect(p.documentRepository).toBeInstanceOf(FsDocumentRepository);
     expect(p.attachmentStore).toBeInstanceOf(FsAttachmentStore);
     expect(p.userRepository).toBeInstanceOf(FsUserRepository);
-    expect(p.sessionStore).toBeInstanceOf(FsSessionStore);
     expect(p.passwordResetTokenStore).toBeInstanceOf(FsPasswordResetTokenStore);
     expect(p.apiKeyStore).toBeInstanceOf(FsApiKeyStore);
   });
@@ -52,7 +49,6 @@ describe('createPersistence', () => {
     expect(p.documentRepository).toBeInstanceOf(SqlDocumentRepository);
     expect(p.attachmentStore).toBeInstanceOf(SqlAttachmentStore);
     expect(p.userRepository).toBeInstanceOf(SqlUserRepository);
-    expect(p.sessionStore).toBeInstanceOf(SqlSessionStore);
     expect(p.passwordResetTokenStore).toBeInstanceOf(SqlPasswordResetTokenStore);
     expect(p.apiKeyStore).toBeInstanceOf(SqlApiKeyStore);
   });

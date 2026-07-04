@@ -47,15 +47,23 @@ async function main(): Promise<void> {
 
   // Fail fast on an unsafe production config before touching the DB (ADR-0029).
   // The logger lives in the container (not built yet), so boot diagnostics go to
-  // the console.
-  if (process.env.NODE_ENV === 'production') {
-    const { errors, warnings } = checkProductionReadiness(config);
-    for (const w of warnings) console.warn(`[config] warning: ${w}`);
-    if (errors.length > 0) {
+  // the console. The readiness check always runs; NODE_ENV only decides whether
+  // an unsafe config is fatal or merely a loud warning (security audit #7) — so a
+  // real deployment that forgot NODE_ENV=production can't boot silently on the
+  // dev secret / filesystem store / non-Secure cookies.
+  const { errors, warnings } = checkProductionReadiness(config);
+  for (const w of warnings) console.warn(`[config] warning: ${w}`);
+  if (errors.length > 0) {
+    if (process.env.NODE_ENV === 'production') {
       for (const e of errors) console.error(`[config] error: ${e}`);
       console.error('[config] Refusing to start: fix the production configuration above.');
       process.exit(1);
     }
+    console.warn(
+      '[config] Running with development defaults (NODE_ENV is not "production") — ' +
+        'NOT safe for a real deployment. Set NODE_ENV=production and fix:',
+    );
+    for (const e of errors) console.warn(`[config]   - ${e}`);
   }
 
   let db: Db | undefined;

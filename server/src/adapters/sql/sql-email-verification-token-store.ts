@@ -5,11 +5,13 @@ import type { Clock } from '../../ports/clock.js';
 import type { EmailVerificationTokenStore } from '../../ports/email-verification-token-store.js';
 import type { Db } from './db.js';
 import { emailVerificationTokens } from './schema.js';
+import { hashToken } from '../token-hash.js';
 
 /**
  * Postgres-backed email-verification tokens. Tokens are opaque 256-bit random
  * strings, single-use, and expire after the configured TTL — mirroring the
- * file-backed store, but shared across server instances.
+ * file-backed store, but shared across server instances. Only the token's
+ * SHA-256 hash is persisted in the `token` column (ADR-0004).
  */
 export class SqlEmailVerificationTokenStore implements EmailVerificationTokenStore {
   private readonly db: Db;
@@ -26,14 +28,14 @@ export class SqlEmailVerificationTokenStore implements EmailVerificationTokenSto
     const token = randomBytes(32).toString('hex');
     await this.db
       .insert(emailVerificationTokens)
-      .values({ token, userId, createdAt: this.clock.isoNow() });
+      .values({ token: hashToken(token), userId, createdAt: this.clock.isoNow() });
     return token;
   }
 
   async consume(token: string): Promise<string | null> {
     const rows = await this.db
       .delete(emailVerificationTokens)
-      .where(eq(emailVerificationTokens.token, token))
+      .where(eq(emailVerificationTokens.token, hashToken(token)))
       .returning();
     const row = rows[0];
     if (!row) return null;

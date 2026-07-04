@@ -4,10 +4,11 @@ import path from 'node:path';
 import type { AppConfig } from '../config.js';
 import type { SessionStore } from '../ports/session-store.js';
 import type { Clock } from '../ports/clock.js';
+import { hashToken } from './token-hash.js';
 
-/** One persisted session row: an opaque token mapped to its owning user. */
+/** One persisted session row: a token *hash* mapped to its owning user. */
 interface SessionRecord {
-  token: string;
+  tokenHash: string;
   userId: string;
   createdAt: string; // ISO 8601
 }
@@ -15,7 +16,9 @@ interface SessionRecord {
 /**
  * File-backed session store: the JSON array in bewerbungen/sessions.json.
  * Unlike the in-memory store, sessions survive a server restart, so users
- * stay logged in across deploys. Tokens are opaque 256-bit random strings.
+ * stay logged in across deploys. Tokens are opaque 256-bit random strings;
+ * only their SHA-256 hash is persisted (ADR-0004), so a leak of the file does
+ * not yield usable sessions.
  */
 export class FsSessionStore implements SessionStore {
   private readonly file: string;
@@ -48,26 +51,28 @@ export class FsSessionStore implements SessionStore {
   async create(userId: string): Promise<string> {
     const token = randomBytes(32).toString('hex');
     const all = await this.readAll();
-    all.push({ token, userId, createdAt: this.clock.isoNow() });
+    all.push({ tokenHash: hashToken(token), userId, createdAt: this.clock.isoNow() });
     await this.write(all);
     return token;
   }
 
   async userIdFor(token: string): Promise<string | null> {
+    const hash = hashToken(token);
     const all = await this.readAll();
-    const record = all.find((s) => s.token === token);
+    const record = all.find((s) => s.tokenHash === hash);
     if (!record) return null;
     // Reject (and prune) sessions older than the configured lifetime.
     if (Date.parse(record.createdAt) + this.ttlMs <= Date.parse(this.clock.isoNow())) {
-      await this.write(all.filter((s) => s.token !== token));
+      await this.write(all.filter((s) => s.tokenHash !== hash));
       return null;
     }
     return record.userId;
   }
 
   async destroy(token: string): Promise<void> {
+    const hash = hashToken(token);
     const all = await this.readAll();
-    const next = all.filter((s) => s.token !== token);
+    const next = all.filter((s) => s.tokenHash !== hash);
     if (next.length !== all.length) await this.write(next);
   }
 

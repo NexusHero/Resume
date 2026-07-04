@@ -5,11 +5,14 @@ import type { AppConfig } from '../config.js';
 import type { Clock } from '../ports/clock.js';
 import type { PasswordResetTokenStore } from '../ports/password-reset-token-store.js';
 import type { PasswordResetToken } from '../domain/password-reset.js';
+import { hashToken } from './token-hash.js';
 
 /**
  * File-backed password-reset tokens (the JSON array in
  * bewerbungen/password-reset-tokens.json). Tokens are opaque 256-bit random
- * strings, single-use, and expire after the configured TTL.
+ * strings, single-use, and expire after the configured TTL. Only the token's
+ * SHA-256 hash is persisted (the `token` field holds the hash, ADR-0004); the
+ * raw token lives only in the emailed reset link.
  */
 export class FsPasswordResetTokenStore implements PasswordResetTokenStore {
   private readonly file: string;
@@ -42,17 +45,18 @@ export class FsPasswordResetTokenStore implements PasswordResetTokenStore {
   async create(userId: string): Promise<string> {
     const token = randomBytes(32).toString('hex');
     const all = await this.readAll();
-    all.push({ token, userId, createdAt: this.clock.isoNow() });
+    all.push({ token: hashToken(token), userId, createdAt: this.clock.isoNow() });
     await this.write(all);
     return token;
   }
 
   async consume(token: string): Promise<string | null> {
+    const hash = hashToken(token);
     const all = await this.readAll();
-    const record = all.find((t) => t.token === token);
+    const record = all.find((t) => t.token === hash);
     if (!record) return null;
     // Single-use: remove it whether or not it has expired.
-    await this.write(all.filter((t) => t.token !== token));
+    await this.write(all.filter((t) => t.token !== hash));
     if (Date.parse(record.createdAt) + this.ttlMs <= Date.parse(this.clock.isoNow())) {
       return null;
     }

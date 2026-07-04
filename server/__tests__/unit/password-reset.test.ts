@@ -14,10 +14,9 @@ import {
   InMemoryUserRepository,
   InMemoryPasswordResetTokenStore,
   RecordingMailer,
-  fakePasswordHasher,
+  FakeAuthEngine,
   noopLogger,
 } from '../support/fakes.js';
-import { MemorySessionStore } from '../../src/adapters/memory-session-store.js';
 import type { User } from '../../src/domain/user.js';
 
 const TS = '2026-06-30T12:00:00.000Z';
@@ -84,20 +83,19 @@ describe('ConsoleMailer / mailer factory', () => {
 describe('PasswordResetService', () => {
   function ctx() {
     const userRepository = new InMemoryUserRepository();
-    const sessionStore = new MemorySessionStore();
+    const authEngine = new FakeAuthEngine();
     const passwordResetTokenStore = new InMemoryPasswordResetTokenStore();
     const mailer = new RecordingMailer();
     const config = loadConfig({});
     const service = new PasswordResetService({
       userRepository,
-      sessionStore,
+      authEngine,
       passwordResetTokenStore,
-      passwordHasher: fakePasswordHasher,
       mailer,
       logger: noopLogger,
       config,
     });
-    return { service, userRepository, sessionStore, passwordResetTokenStore, mailer };
+    return { service, userRepository, authEngine, passwordResetTokenStore, mailer };
   }
 
   it('Request_KnownEmail_MintsTokenAndEmailsLink', async () => {
@@ -125,9 +123,8 @@ describe('PasswordResetService', () => {
     await userRepository.add(user);
     const service = new PasswordResetService({
       userRepository,
-      sessionStore: new MemorySessionStore(),
+      authEngine: new FakeAuthEngine(),
       passwordResetTokenStore: new InMemoryPasswordResetTokenStore(),
-      passwordHasher: fakePasswordHasher,
       mailer: new RecordingMailer(new Error('smtp down')),
       logger: noopLogger,
       config: loadConfig({}),
@@ -135,17 +132,34 @@ describe('PasswordResetService', () => {
     await expect(service.request('recruiter@example.com')).resolves.toBeUndefined();
   });
 
-  it('Confirm_ValidToken_SetsNewHashAndKillsSessions', async () => {
+  it('Confirm_ValidToken_SetsNewEnginePassword_KillsSessions_ClearsLegacyHash', async () => {
     const c = ctx();
     await c.userRepository.add(user);
-    const liveSession = await c.sessionStore.create('u1');
+    // A migrated account: the engine already holds the credential and a live session.
+    await c.authEngine.signUp('recruiter@example.com', 'old-password');
+    const live = (await c.authEngine.signIn('recruiter@example.com', 'old-password'))!;
     const token = await c.passwordResetTokenStore.create('u1');
 
     await c.service.confirm(token, 'brand-new-password');
 
-    expect((await c.userRepository.findById('u1'))!.passwordHash).toBe('hashed:brand-new-password');
-    expect(await c.sessionStore.userIdFor(liveSession)).toBeNull(); // all sessions dropped
+    // The new password lives in the engine; the legacy hash is cleared (ADR-0043).
+    expect((await c.userRepository.findById('u1'))!.passwordHash).toBe('');
+    expect(await c.authEngine.signIn('recruiter@example.com', 'brand-new-password')).not.toBeNull();
+    expect(await c.authEngine.resolve(live.token)).toBeNull(); // all sessions dropped
     expect(c.passwordResetTokenStore.tokens).toEqual([]); // token consumed
+  });
+
+  it('Confirm_UnmigratedAccount_MintsEngineCredential', async () => {
+    // An account that predates Better-Auth has no engine credential yet; confirm
+    // must create one with the new password rather than fail.
+    const c = ctx();
+    await c.userRepository.add(user);
+    const token = await c.passwordResetTokenStore.create('u1');
+
+    await c.service.confirm(token, 'brand-new-password');
+
+    expect((await c.userRepository.findById('u1'))!.passwordHash).toBe('');
+    expect(await c.authEngine.signIn('recruiter@example.com', 'brand-new-password')).not.toBeNull();
   });
 
   it('Confirm_UnknownToken_Throws401', async () => {

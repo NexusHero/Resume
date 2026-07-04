@@ -36,4 +36,10 @@ export interface AuthEngine {
   resolve(token: string): Promise<AuthEngineUser | null>;
   /** Revoke a single session (logout). Idempotent — an unknown token is a no-op. */
   signOut(token: string): Promise<void>;
+  /** Set a new password for the account. No-op if the email is unknown. */
+  setPassword(email: string, newPassword: string): Promise<void>;
+  /** Revoke every session for the account (used after a password reset). */
+  revokeSessions(email: string): Promise<void>;
+  /** Remove the account entirely — credential + all sessions (DSGVO erasure). */
+  erase(email: string): Promise<void>;
 }

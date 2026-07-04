@@ -6,7 +6,9 @@
 > Better-Auth is ESM-only and the server was CommonJS, the **prerequisite ESM/
 > nodenext migration** was done first ([ADR-0042](adr/0042-esm-nodenext-migration.md));
 > Better-Auth itself lands behind the existing `AuthService` seam
-> ([ADR-0043](adr/0043-better-auth-sqlite-engine.md); engine done, live cutover staged).
+> ([ADR-0043](adr/0043-better-auth-sqlite-engine.md); engine done **and live** —
+> `AuthService`, invites and password-reset run on it, with scrypt→engine
+> rehash-on-login so no user is forced to reset).
 > The primitives/hardening route below is retained as rationale and fallback.
 >
 > Companion reading: [security concept](security.md) · [architecture](architecture.md)

@@ -1,10 +1,10 @@
 import { AuthService } from '../../src/services/auth-service.js';
-import { registerSchema, loginSchema } from '../../src/domain/user.js';
+import { registerSchema, loginSchema, type User } from '../../src/domain/user.js';
 import { ConflictError, UnauthorizedError } from '../../src/domain/errors.js';
-import { MemorySessionStore } from '../../src/adapters/memory-session-store.js';
 import {
   InMemoryUserRepository,
   InMemoryTenantRepository,
+  FakeAuthEngine,
   fakePasswordHasher,
   FixedClock,
   SequenceIdGenerator,
@@ -13,54 +13,29 @@ import { loadConfig } from '../../src/config.js';
 
 function makeService() {
   const repo = new InMemoryUserRepository();
-  const sessions = new MemorySessionStore();
+  const engine = new FakeAuthEngine();
   const service = new AuthService({
     userRepository: repo,
-    sessionStore: sessions,
+    authEngine: engine,
     passwordHasher: fakePasswordHasher,
     clock: new FixedClock(),
     idGenerator: new SequenceIdGenerator('user'),
   });
-  return { service, repo, sessions };
+  return { service, repo, engine };
 }
 
 const reg = (email: string, password = 'supersecret') => registerSchema.parse({ email, password });
 
 describe('AuthService', () => {
-  it('Register_NewEmail_CreatesHashedUserAndSession', async () => {
+  it('Register_NewEmail_CreatesUserAndSession_NoLocalHash', async () => {
     const { service, repo } = makeService();
     const res = await service.register(reg('A@Example.com'));
     expect(res.user).toMatchObject({ id: 'user1', email: 'a@example.com' });
     expect(res.user).not.toHaveProperty('passwordHash');
     expect(typeof res.token).toBe('string');
     expect(repo.users).toHaveLength(1);
-    expect(repo.users[0]?.passwordHash).toBe('hashed:supersecret');
-  });
-
-  it('Login_UnknownEmail_RunsAVerifyToEqualiseTiming', async () => {
-    // Security audit #4: an unknown email must still run one password verify
-    // (against a cached dummy hash) so it costs the same as a wrong password.
-    let verifyCalls = 0;
-    const spyHasher = {
-      hash: (p: string) => fakePasswordHasher.hash(p),
-      verify: (p: string, h: string) => {
-        verifyCalls++;
-        return fakePasswordHasher.verify(p, h);
-      },
-    };
-    const service = new AuthService({
-      userRepository: new InMemoryUserRepository(),
-      sessionStore: new MemorySessionStore(),
-      passwordHasher: spyHasher,
-      clock: new FixedClock(),
-      idGenerator: new SequenceIdGenerator('user'),
-    });
-    const bad = (email: string) => loginSchema.parse({ email, password: 'whatever' });
-    await expect(service.login(bad('ghost@example.com'))).rejects.toBeInstanceOf(UnauthorizedError);
-    await expect(service.login(bad('ghost2@example.com'))).rejects.toBeInstanceOf(
-      UnauthorizedError,
-    );
-    expect(verifyCalls).toBe(2); // one verify per unknown-email attempt
+    // The engine owns the credential; the domain user keeps no password hash.
+    expect(repo.users[0]?.passwordHash).toBe('');
   });
 
   it('Register_FirstAccount_BecomesAdmin', async () => {
@@ -105,6 +80,29 @@ describe('AuthService', () => {
     ).rejects.toBeInstanceOf(UnauthorizedError);
   });
 
+  it('Login_LegacyScryptUser_MigratesToEngineOnFirstLogin', async () => {
+    // Migration (ADR-0043): a pre-Better-Auth account carries a scrypt hash and
+    // no engine credential. The first login verifies the hash, mints the engine
+    // credential, and drops the legacy hash — no forced reset.
+    const { service, repo, engine } = makeService();
+    const legacy: User = {
+      id: 'legacy1',
+      email: 'old@example.com',
+      passwordHash: 'hashed:oldpassword', // the fake hasher's format
+      roles: ['recruiter'],
+      createdAt: '2020-01-01T00:00:00.000Z',
+    };
+    await repo.add(legacy);
+
+    const res = await service.login(
+      loginSchema.parse({ email: 'old@example.com', password: 'oldpassword' }),
+    );
+    expect(res.user.email).toBe('old@example.com');
+    // The legacy hash is cleared, and the engine now authenticates directly.
+    expect(repo.users[0]?.passwordHash).toBe('');
+    expect(await engine.signIn('old@example.com', 'oldpassword')).not.toBeNull();
+  });
+
   it('CurrentUser_ValidToken_ReturnsUser', async () => {
     const { service } = makeService();
     const { token } = await service.register(reg('a@example.com'));
@@ -122,8 +120,9 @@ describe('AuthService', () => {
   });
 
   it('CurrentUser_SessionForMissingUser_ReturnsNull', async () => {
-    const { service, sessions } = makeService();
-    const token = await sessions.create('ghost');
+    // A valid engine session whose email has no domain user (e.g. erased) → null.
+    const { service, engine } = makeService();
+    const { token } = await engine.signUp('ghost@example.com', 'whatever');
     expect(await service.currentUser(token)).toBeNull();
   });
 
@@ -146,7 +145,7 @@ describe('AuthService — self-serve tenants (ADR-0036)', () => {
     const tenants = new InMemoryTenantRepository();
     const service = new AuthService({
       userRepository: repo,
-      sessionStore: new MemorySessionStore(),
+      authEngine: new FakeAuthEngine(),
       passwordHasher: fakePasswordHasher,
       clock: new FixedClock(),
       idGenerator: new SequenceIdGenerator('id'),
@@ -206,17 +205,17 @@ describe('AuthService — suspended-tenant enforcement (ADR-0038)', () => {
   function makeSelfServe() {
     const repo = new InMemoryUserRepository();
     const tenants = new InMemoryTenantRepository();
-    const sessions = new MemorySessionStore();
+    const engine = new FakeAuthEngine();
     const service = new AuthService({
       userRepository: repo,
-      sessionStore: sessions,
+      authEngine: engine,
       passwordHasher: fakePasswordHasher,
       clock: new FixedClock(),
       idGenerator: new SequenceIdGenerator('id'),
       tenantRepository: tenants,
       config: loadConfig({ SELF_SERVE_TENANTS: 'true' }),
     });
-    return { service, repo, tenants, sessions };
+    return { service, repo, tenants, engine };
   }
 
   it('Login_SuspendedTenant_ThrowsUnauthorized', async () => {

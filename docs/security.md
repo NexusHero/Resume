@@ -48,24 +48,23 @@ same actors; this boundary is the security lens over it.
 
 ## 3. Authorization (ADR-0004, ADR-0021)
 
-Authorization is applied at two declarative route seams plus role checks:
+Authorization is applied at three declarative route seams:
 
-| Seam                | Where                                 | Guards                                                       |
-| ------------------- | ------------------------------------- | ------------------------------------------------------------ |
-| `requireAuth`       | route middleware (`create-app.ts`)    | a valid session must exist                                   |
-| `requirePlan` (Pro) | `makeRequirePlan` (ADR-0021)          | plan-gated features, in one seam, never branched in services |
-| **RBAC roles**      | `role-authorizer` + controller checks | admin-only actions (member re-role, retention, tenant admin) |
+| Seam                   | Where                                | Guards                                                       |
+| ---------------------- | ------------------------------------ | ------------------------------------------------------------ |
+| `requireAuth`          | route middleware (`create-app.ts`)   | a valid session must exist                                   |
+| `requirePlan` (Pro)    | `makeRequirePlan` (ADR-0021)         | plan-gated features, in one seam, never branched in services |
+| `requireCan(kind,act)` | `makeRequireCan` + `role-authorizer` | admin-only actions (member re-role, retention, invites)      |
 
 Roles today: **recruiter** (default) and **admin** (member + compliance + tenant
 administration). The last-admin invariant is enforced per tenant so a team can
 never lock itself out of administration.
 
-> **Known inconsistency (tracked):** plan/auth gating is declarative at the route
-> edge, but a few admin-only role checks are still _imperative inside
-> controllers_ (e.g. `retention-controller.ts` throws `ForbiddenError` by hand).
-> This works and is tested, but the asymmetry is the next authz cleanup — a
-> `requireRole('admin')` seam alongside `requireAuth`. See
-> [architecture.md §11](architecture.md#11-risks-and-technical-debt).
+All three seams sit at the **route edge**: `requireCan('member', 'setRoles')` is
+dropped in front of a route just like `requireAuth`, so admin-only routes are
+declared once in the router and no controller re-checks a role by hand. The
+policy stays in one `(principal, resource, action)` table (`role-authorizer`),
+so it can move to a policy engine later without touching the call sites.
 
 ## 4. Tenant isolation (ADR-0033/0034)
 

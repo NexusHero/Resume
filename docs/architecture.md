@@ -338,6 +338,15 @@ watching). If you are scanning for current exposure, read §11.2.
   per-store list — closing a real leak where erase never cleared email-verification tokens. A
   new personal-data container is one registration, and the compiler + a regression test guard
   against a forgotten one. See the [security concept §10](security.md).
+- ✅ **AI feature orchestration collapsed into `runFeature`:** every structured AI feature
+  hand-copied the same run → parseReply → normalize → guard → fallback block. It now lives once
+  in `LlmFeatureRunner.runFeature`; each feature service passes only its schema, normalize,
+  optional guard and deterministic fallback. A new grounded/structured AI feature is now a
+  prompt + schema + a `runFeature` call, not a copied orchestration block (the "AI factory").
+- ✅ **Authorization unified at the route edge:** the admin-only role checks that were imperative
+  inside the members/retention/invite controllers moved to a single declarative
+  `requireCan(kind, action)` seam next to `requireAuth`/`requirePlan` (ADR-0021). The three
+  controllers lost their `Authorizer` dependency; the policy table is unchanged.
 
 ### 11.2 Open risks and technical debt
 
@@ -345,10 +354,6 @@ watching). If you are scanning for current exposure, read §11.2.
   and are the next split candidates should one be wanted. **Web coverage is intentionally not
   gated** — it rises as more components gain tests; the server keeps its 90 % Jest gate. This
   is a deliberate asymmetry, not an oversight.
-- **Authorization is split between two styles:** plan/auth gating is declarative at the route
-  edge (`requireAuth`/`requirePlan`), but a few admin-only role checks are still imperative
-  inside controllers (e.g. `retention-controller`). The next authz cleanup is a
-  `requireRole('admin')` seam to match — see the [security concept §3](security.md).
 - **Triple manual wiring lists:** adding a service still means editing the container, the
   `AppDeps` type, and the `index` imports in lockstep; a missing registration is caught only by
   the e2e boot, not a unit test (ADR-0002). One domain→ports type import remains

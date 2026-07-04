@@ -184,6 +184,45 @@ export class LlmFeatureRunner {
   }
 
   /**
+   * The full "structured AI feature" path in one call: resolve → generate →
+   * meter → schema-validate → normalize → guard, with a deterministic fallback.
+   * Every JSON-shaped feature (ATS, explain, kit, prep, pitch, outreach, tailor)
+   * shared this exact block; it now lives here once. The caller passes only the
+   * feature-specific pieces:
+   *  - `schema`  — the reply's zod schema,
+   *  - `normalize` — turns a validated reply into the feature's content type,
+   *  - `accept` — an optional guard rejecting a technically-valid-but-empty
+   *    result (e.g. no reasons, no questions) so it falls back instead,
+   *  - `fallback` — the deterministic template content.
+   * Returns the content plus which backend produced it and the call usage
+   * (`provider: 'template'`, no usage, when the fallback ran).
+   */
+  async runFeature<P, T>(
+    userId: string,
+    feature: UsageFeature,
+    maxTokens: number,
+    built: BuiltPrompt,
+    spec: {
+      schema: { safeParse: (value: unknown) => { success: true; data: P } | { success: false } };
+      normalize: (parsed: P) => T;
+      accept?: (content: T) => boolean;
+      fallback: () => T;
+    },
+  ): Promise<{ content: T; provider: LlmProviderId | 'template'; usage?: CallUsage }> {
+    const res = await this.run(userId, feature, maxTokens, built);
+    if (res) {
+      const parsed = this.parseReply(feature, res.reply, spec.schema);
+      if (parsed) {
+        const content = spec.normalize(parsed);
+        if (!spec.accept || spec.accept(content)) {
+          return { content, provider: res.provider, usage: res.usage };
+        }
+      }
+    }
+    return { content: spec.fallback(), provider: 'template' };
+  }
+
+  /**
    * Wrap a generated content object in the standard AI-response envelope: which
    * backend produced it, what the call cost, and a grounding self-check over the
    * supplied text against the CV+context source. Shared by every grounded

@@ -71,23 +71,19 @@ export class MatchAiService {
     const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
     const matchedSkills = matchedForMandate(documents, mandate);
 
-    const res = await this.runner.run(
+    const { content, provider, usage } = await this.runner.runFeature(
       userId,
       'matchExplain',
       MAX_TOKENS.matchExplain,
       explainPrompt(documents, mandate, matchedSkills),
+      {
+        schema: explanationResultSchema,
+        normalize: (parsed) => normalizeExplanation(parsed, matchedSkills),
+        accept: (explanation) => explanation.reasons.length > 0,
+        fallback: () => fallbackExplanation(documents, mandate, matchedSkills),
+      },
     );
-    if (res) {
-      const parsed = this.runner.parseReply('matchExplain', res.reply, explanationResultSchema);
-      if (parsed) {
-        const explanation = normalizeExplanation(parsed, matchedSkills);
-        if (explanation.reasons.length) {
-          return { ...explanation, provider: res.provider, usage: res.usage };
-        }
-      }
-    }
-
-    return { ...fallbackExplanation(documents, mandate, matchedSkills), provider: 'template' };
+    return { ...content, provider, usage };
   }
 
   /**
@@ -103,21 +99,19 @@ export class MatchAiService {
   ): Promise<InterviewKit & { provider: LlmProviderId | 'template'; usage?: CallUsage }> {
     const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
 
-    const res = await this.runner.run(
+    const { content, provider, usage } = await this.runner.runFeature(
       userId,
       'interviewKit',
       MAX_TOKENS.interviewKit,
       interviewKitPrompt(documents, mandate),
+      {
+        schema: interviewKitResultSchema,
+        normalize: normalizeInterviewKit,
+        accept: (kit) => kit.questions.length > 0,
+        fallback: () => fallbackInterviewKit(documents, mandate),
+      },
     );
-    if (res) {
-      const parsed = this.runner.parseReply('interviewKit', res.reply, interviewKitResultSchema);
-      if (parsed) {
-        const kit = normalizeInterviewKit(parsed);
-        if (kit.questions.length) return { ...kit, provider: res.provider, usage: res.usage };
-      }
-    }
-
-    return { ...fallbackInterviewKit(documents, mandate), provider: 'template' };
+    return { ...content, provider, usage };
   }
 
   /**
@@ -146,19 +140,17 @@ export class MatchAiService {
     const requirements = extractRequirements(jobText);
     const base = fallbackPrep(documents, mandate, company, requirements, jobText);
 
-    const res = await this.runner.run(
+    const { content, provider, usage } = await this.runner.runFeature(
       userId,
       'candidatePrep',
       MAX_TOKENS.candidatePrep,
       prepPrompt(documents, mandate, company, base.strengths),
+      {
+        schema: prepResultSchema,
+        normalize: (parsed) => mergePrep(base, parsed),
+        fallback: () => base,
+      },
     );
-    if (res) {
-      const parsed = this.runner.parseReply('candidatePrep', res.reply, prepResultSchema);
-      if (parsed) {
-        return { ...mergePrep(base, parsed), provider: res.provider, usage: res.usage };
-      }
-    }
-
-    return { ...base, provider: 'template' };
+    return { ...content, provider, usage };
   }
 }

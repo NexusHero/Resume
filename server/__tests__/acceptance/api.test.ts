@@ -235,7 +235,6 @@ function makeApp(
       clock: new FixedClock(),
       logger: noopLogger,
     }),
-    authorizer: new RoleAuthorizer(),
   });
   const matchService = new MatchService({
     mandateRepository,
@@ -437,7 +436,6 @@ function makeApp(
   });
   const membersController = new MembersController({
     membersService: new MembersService({ userRepository }),
-    authorizer: new RoleAuthorizer(),
   });
   const inviteController = new InviteController({
     inviteService: new InviteService({
@@ -451,7 +449,6 @@ function makeApp(
       logger: noopLogger,
       config,
     }),
-    authorizer: new RoleAuthorizer(),
     config,
   });
   const tenantAdminController = new TenantAdminController({
@@ -487,6 +484,7 @@ function makeApp(
     accountController,
     passwordResetController,
     planProvider,
+    authorizer: new RoleAuthorizer(),
     config,
     logger: noopLogger,
   });

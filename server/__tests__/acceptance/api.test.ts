@@ -28,6 +28,7 @@ import { DocumentController } from '../../src/http/document-controller';
 import { AttachmentController } from '../../src/http/attachment-controller';
 import { AuthController } from '../../src/http/auth-controller';
 import { MembersController } from '../../src/http/members-controller';
+import { InviteController } from '../../src/http/invite-controller';
 import { AccountController } from '../../src/http/account-controller';
 import { PasswordResetController } from '../../src/http/password-reset-controller';
 import { LlmService } from '../../src/services/llm-service';
@@ -54,6 +55,7 @@ import { AttachmentService } from '../../src/services/attachment-service';
 import { AuthService } from '../../src/services/auth-service';
 import { EmailVerificationService } from '../../src/services/email-verification-service';
 import { MembersService } from '../../src/services/members-service';
+import { InviteService } from '../../src/services/invite-service';
 import { AccountService } from '../../src/services/account-service';
 import { PasswordResetService } from '../../src/services/password-reset-service';
 import { MemorySessionStore } from '../../src/adapters/memory-session-store';
@@ -79,6 +81,7 @@ import {
   InMemoryDocumentRepository,
   InMemoryAttachmentStore,
   InMemoryUserRepository,
+  InMemoryInviteRepository,
   InMemoryApiKeyStore,
   InMemoryUsageMeter,
   InMemoryInterviewObservationRepository,
@@ -397,6 +400,21 @@ function makeApp(
     membersService: new MembersService({ userRepository }),
     authorizer: new RoleAuthorizer(),
   });
+  const inviteController = new InviteController({
+    inviteService: new InviteService({
+      inviteRepository: new InMemoryInviteRepository(),
+      userRepository,
+      sessionStore,
+      passwordHasher: fakePasswordHasher,
+      idGenerator: new SequenceIdGenerator('invite'),
+      clock: new FixedClock(),
+      mailer,
+      logger: noopLogger,
+      config,
+    }),
+    authorizer: new RoleAuthorizer(),
+    config,
+  });
   return createApp({
     applicationController: controller,
     jobController,
@@ -421,6 +439,7 @@ function makeApp(
     attachmentController,
     authController,
     membersController,
+    inviteController,
     accountController,
     passwordResetController,
     planProvider,
@@ -618,6 +637,58 @@ describe('REST API /api/v1', () => {
         (await teammate.patch(`/api/v1/mandates/${id}`).send({ status: 'paused' })).status,
       ).toBe(200);
       expect((await agent.get('/api/v1/mandates')).body[0].status).toBe('paused');
+    });
+
+    it('Invites_AdminCreatesAndInviteeAccepts_JoinsTheTenant', async () => {
+      // The admin invites an email with a role.
+      const created = await agent
+        .post('/api/v1/members/invites')
+        .send({ email: 'invitee@example.com', roles: ['recruiter'] });
+      expect(created.status).toBe(201);
+      expect(created.body.invite).toMatchObject({
+        email: 'invitee@example.com',
+        roles: ['recruiter'],
+      });
+      expect(created.body.invite).not.toHaveProperty('token');
+      const token = new URL(created.body.acceptUrl).searchParams.get('invite_token');
+      expect(token).toBeTruthy();
+
+      // It shows up in the pending list (no token leaked).
+      const pending = await agent.get('/api/v1/members/invites');
+      expect(pending.body.map((i: { email: string }) => i.email)).toContain('invitee@example.com');
+
+      // The invitee accepts, which creates their account and opens a session.
+      const invitee = request.agent(app);
+      const accepted = await invitee
+        .post('/api/v1/auth/accept-invite')
+        .send({ token, password: 'a fine long passphrase' });
+      expect(accepted.status).toBe(201);
+      expect(accepted.body.user).toMatchObject({
+        email: 'invitee@example.com',
+        roles: ['recruiter'],
+      });
+      // The session works — /me resolves the new account.
+      expect((await invitee.get('/api/v1/auth/me')).body.user.email).toBe('invitee@example.com');
+      // The invite was single-use.
+      expect((await agent.get('/api/v1/members/invites')).body).toHaveLength(0);
+    });
+
+    it('Invites_UnknownToken_Returns401', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/accept-invite')
+        .send({ token: 'nope', password: 'a fine long passphrase' });
+      expect(res.status).toBe(401);
+    });
+
+    it('Invites_NonAdmin_CannotCreate_Returns403', async () => {
+      const recruiter = request.agent(app);
+      await recruiter
+        .post('/api/v1/auth/register')
+        .send({ email: 'plainuser@example.com', password: 'correct horse battery' });
+      const res = await recruiter
+        .post('/api/v1/members/invites')
+        .send({ email: 'x@example.com', roles: ['recruiter'] });
+      expect(res.status).toBe(403);
     });
 
     it('Talents_GetEmpty_ReturnsArray', async () => {

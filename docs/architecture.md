@@ -163,7 +163,10 @@ The outward submission stays a manual step (ADR-0019).
   `currentScope(req)` resolves to the user's `tenantId`, defaulting to `'team'` when absent
   (ADR-0033) — the seam is multi-tenant-ready while every current install stays single-tenant.
   Member management (roster + role admin) is tenant-scoped too (ADR-0034): an admin only sees
-  and re-roles their own tenant, and the last-admin invariant is enforced per tenant.
+  and re-roles their own tenant, and the last-admin invariant is enforced per tenant. A user
+  acquires a non-default tenant by **invitation** (ADR-0035): an admin invites an email
+  (`POST /members/invites`), the invitee accepts by setting a password (`POST /auth/accept-invite`)
+  and lands in that tenant — `register` is left untouched, so fresh installs stay single-tenant.
 - **API contract:** hand-maintained OpenAPI 3.1 + self-hosted Swagger UI (ADR-0012),
   extended in the same PR as any route change.
 - **Self-hosted assets:** fonts and the Swagger UI ship from this origin — no CDN, no
@@ -214,6 +217,7 @@ Full log in [`docs/adr/`](adr). Summary:
 | 0032 | Bounded PDF render pool (concurrency semaphore)               | Accepted (D-series slice 4)    |
 | 0033 | Multi-tenant scope foundation (tenantId, default 'team')      | Accepted (D-series slice 6·1)  |
 | 0034 | Tenant-scoped member management (roster + role admin)         | Accepted (D-series slice 6·2)  |
+| 0035 | Tenant onboarding by invitation (admin invite → accept)       | Accepted (D-series slice 6·3)  |
 
 ## 10. Quality Requirements
 

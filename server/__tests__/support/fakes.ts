@@ -29,6 +29,8 @@ import type { UserRepository } from '../../src/ports/user-repository';
 import type { PasswordHasher } from '../../src/ports/password-hasher';
 import type { PasswordResetTokenStore } from '../../src/ports/password-reset-token-store';
 import type { EmailVerificationTokenStore } from '../../src/ports/email-verification-token-store';
+import type { InviteRepository } from '../../src/ports/invite-repository';
+import type { TenantInvite } from '../../src/domain/tenant-invite';
 import type { Mailer, MailMessage } from '../../src/ports/mailer';
 import type { InboxSource } from '../../src/ports/inbox-source';
 import type { StageTransitionRepository } from '../../src/ports/stage-transition-repository';
@@ -387,6 +389,26 @@ export class InMemoryUserRepository implements UserRepository {
     const before = this.users.length;
     this.users = this.users.filter((u) => u.id !== id);
     return this.users.length < before;
+  }
+}
+
+/** In-memory tenant invitations (deterministic tests). */
+export class InMemoryInviteRepository implements InviteRepository {
+  invites: TenantInvite[] = [];
+  async create(invite: TenantInvite): Promise<void> {
+    this.invites.push({ ...invite });
+  }
+  async consume(token: string): Promise<TenantInvite | null> {
+    const record = this.invites.find((i) => i.token === token);
+    if (!record) return null;
+    this.invites = this.invites.filter((i) => i.token !== token);
+    return record;
+  }
+  async listByTenant(tenantId: string): Promise<TenantInvite[]> {
+    return this.invites
+      .filter((i) => i.tenantId === tenantId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map((i) => ({ ...i }));
   }
 }
 

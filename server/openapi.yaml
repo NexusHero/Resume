@@ -108,6 +108,47 @@ paths:
               schema: { $ref: '#/components/schemas/Problem' }
         '429': { $ref: '#/components/responses/RateLimited' }
 
+  /auth/accept-invite:
+    post:
+      tags: [Auth]
+      summary: Accept a tenant invitation (create the account, start a session)
+      description: |
+        The invitee sets a password against a valid invite token; the new
+        account is created bound to the inviting tenant and its roles, and the
+        session cookie is set. Single-use — expired or unknown tokens are 401.
+      operationId: acceptInvite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password]
+              properties:
+                token: { type: string }
+                password: { type: string, minLength: 8 }
+      responses:
+        '201':
+          description: Account created; session cookie set.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: '#/components/schemas/User' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401':
+          description: The invitation is invalid, already used, or expired.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+        '409':
+          description: An account with this email already exists.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
   /auth/login:
     post:
       tags: [Auth]
@@ -1506,6 +1547,61 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
 
+  /members/invites:
+    get:
+      tags: [Team]
+      summary: List pending tenant invitations (admin)
+      operationId: listInvites
+      security:
+        - cookieSession: []
+      responses:
+        '200':
+          description: Pending invitations for the admin's tenant (no tokens).
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/TenantInviteView' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Team]
+      summary: Invite an email into the admin's tenant (admin)
+      operationId: createInvite
+      security:
+        - cookieSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, roles]
+              properties:
+                email: { type: string, format: email }
+                roles:
+                  type: array
+                  minItems: 1
+                  items: { type: string, enum: [admin, recruiter] }
+      responses:
+        '201':
+          description: Invitation created; the accept link is also returned.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  invite: { $ref: '#/components/schemas/TenantInviteView' }
+                  acceptUrl: { type: string, format: uri }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: An account with this email already exists.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
   /account/export:
     get:
       tags: [Compliance & DSGVO]
@@ -2329,7 +2425,21 @@ components:
           type: array
           items: { type: string, enum: [admin, recruiter] }
         createdAt: { type: string, format: date-time }
+        tenantId:
+          type: string
+          description: The tenant the account belongs to; absent means the default single tenant `team` (ADR-0033).
         verifiedAt: { type: string, format: date-time }
+
+    TenantInviteView:
+      type: object
+      description: A pending tenant invitation (ADR-0035). Never carries the token — that is a secret shared only via the accept link.
+      properties:
+        email: { type: string, format: email }
+        roles:
+          type: array
+          items: { type: string, enum: [admin, recruiter] }
+        invitedBy: { type: string, description: The inviting admin's user id. }
+        createdAt: { type: string, format: date-time }
 
     ProviderId:
       type: string

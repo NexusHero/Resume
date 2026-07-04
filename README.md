@@ -12,9 +12,10 @@ and Bewerbungsmappe builder, and a small REST API behind it all.
 ![Tests](https://img.shields.io/badge/tests-1070%2B%20·%2090%25%20coverage-success)
 ![Built with AI](https://img.shields.io/badge/built%20with-Claude%20Code-d97706)
 
-[**📖 API reference (Swagger UI)**](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/NexusHero/Resume/main/server/openapi.yaml)
-— the live OpenAPI contract, rendered straight from
-[`server/openapi.yaml`](server/openapi.yaml).
+[**📖 API reference (Swagger UI)**](https://nexushero.github.io/Resume/)
+— a self-hosted, read-only mirror of the OpenAPI contract in
+[`server/openapi.yaml`](server/openapi.yaml) ([ADR-0044](docs/adr/0044-github-pages-api-docs-mirror.md);
+no third-party viewer, unlike the old Petstore-hosted link this replaces).
 
 </div>
 
@@ -190,7 +191,9 @@ generation are open.
 **Full, browsable reference:** the complete OpenAPI 3.1 contract lives in
 [`server/openapi.yaml`](server/openapi.yaml) and is served at `/api/v1/openapi.yaml`;
 a self-hosted **Swagger UI** (no CDN — [ADR-0012](docs/adr/0012-self-hosted-swagger-ui.md))
-runs at [`/api/v1/docs`](http://localhost:4178/api/v1/docs).
+runs at [`/api/v1/docs`](http://localhost:4178/api/v1/docs). A read-only mirror
+(no "Try it out") is published at [nexushero.github.io/Resume](https://nexushero.github.io/Resume/)
+for browsing without running the server ([ADR-0044](docs/adr/0044-github-pages-api-docs-mirror.md)).
 
 | Endpoint                                                          | What it does                                               |
 | ----------------------------------------------------------------- | ---------------------------------------------------------- |

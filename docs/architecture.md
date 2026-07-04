@@ -299,6 +299,8 @@ a picture earns its place.
 - **API contract:** hand-maintained OpenAPI 3.1 + self-hosted Swagger UI (ADR-0012),
   extended in the same PR as any route change. Browsable in-app at `/api/v1/docs`
   (bundled `swagger-ui-dist`, no CDN); a zod→spec drift test guards the request shapes.
+  A read-only mirror (no "Try it out") publishes to GitHub Pages on every spec change
+  (ADR-0044), so the contract is browsable without running the server.
 - **Self-hosted assets:** fonts and the Swagger UI ship from this origin — no CDN, no
   third-party request leaves the browser (DSGVO); strict CSP on the built kit and docs.
 - **DI discipline:** new ports must be registered in `container.ts`; unit tests won't catch
@@ -356,6 +358,7 @@ Full log in [`docs/adr/`](adr). Summary:
 | 0041 | Workbox service worker (vite-plugin-pwa; supersedes 0028/0039 SW) | Accepted                        |
 | 0042 | Server migrated to ESM (nodenext); unblocks modern ESM-only deps  | Accepted                        |
 | 0043 | Better-Auth credential/session engine (embedded SQLite)           | Accepted (engine live)          |
+| 0044 | Read-only Swagger UI mirror on GitHub Pages                       | Accepted                        |
 
 ## 10. Quality Requirements
 

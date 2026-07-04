@@ -11,7 +11,7 @@ let PlatzierungenView;
 beforeAll(async () => {
   await import('../use-viewport.jsx');
   await import('../Workspace.jsx');
-  await import('../VermittlerViews.jsx');
+  await import('../AgencyViews.jsx');
   Dashboard = window.Dashboard;
   PlatzierungenView = window.PlatzierungenView;
 });

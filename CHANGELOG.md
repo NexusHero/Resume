@@ -8,6 +8,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+### Added
+
+- **A read-only Swagger UI mirror on GitHub Pages** (ADR-0044): the same
+  self-hosted OpenAPI reference as `/api/v1/docs`, published as a static site
+  on every push that touches `server/openapi.yaml` — no server required to
+  browse the contract. "Try it out" is disabled on this mirror; the
+  interactive version that can execute real requests stays at `/api/v1/docs`.
+
 ## [2.0.0] - 2026-07-04
 
 A major version: the highest-consequence hand-rolled component — authentication

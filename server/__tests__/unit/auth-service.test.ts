@@ -4,10 +4,12 @@ import { ConflictError, UnauthorizedError } from '../../src/domain/errors';
 import { MemorySessionStore } from '../../src/adapters/memory-session-store';
 import {
   InMemoryUserRepository,
+  InMemoryTenantRepository,
   fakePasswordHasher,
   FixedClock,
   SequenceIdGenerator,
 } from '../support/fakes';
+import { loadConfig } from '../../src/config';
 
 function makeService() {
   const repo = new InMemoryUserRepository();
@@ -109,5 +111,67 @@ describe('AuthService', () => {
   it('Logout_NoToken_NoOp', async () => {
     const { service } = makeService();
     await expect(service.logout(undefined)).resolves.toBeUndefined();
+  });
+});
+
+describe('AuthService — self-serve tenants (ADR-0036)', () => {
+  function makeSelfServe() {
+    const repo = new InMemoryUserRepository();
+    const tenants = new InMemoryTenantRepository();
+    const service = new AuthService({
+      userRepository: repo,
+      sessionStore: new MemorySessionStore(),
+      passwordHasher: fakePasswordHasher,
+      clock: new FixedClock(),
+      idGenerator: new SequenceIdGenerator('id'),
+      tenantRepository: tenants,
+      config: loadConfig({ SELF_SERVE_TENANTS: 'true' }),
+    });
+    return { service, repo, tenants };
+  }
+
+  it('Register_CreatesOwnTenant_AndMakesUserItsAdmin', async () => {
+    const { service, repo, tenants } = makeSelfServe();
+    const res = await service.register(reg('founder@acme.io'));
+    expect(tenants.tenants).toHaveLength(1);
+    const tenant = tenants.tenants[0]!;
+    expect(tenant.status).toBe('active');
+    expect(tenant.name).toBe("founder's workspace"); // derived default
+    expect(res.user.tenantId).toBe(tenant.id);
+    expect(res.user.roles).toEqual(['admin', 'recruiter']);
+    expect(repo.users[0]?.tenantId).toBe(tenant.id);
+  });
+
+  it('Register_UsesProvidedWorkspaceName', async () => {
+    const { service, tenants } = makeSelfServe();
+    await service.register(
+      registerSchema.parse({
+        email: 'a@acme.io',
+        password: 'supersecret',
+        workspaceName: 'Acme Recruiting',
+      }),
+    );
+    expect(tenants.tenants[0]?.name).toBe('Acme Recruiting');
+  });
+
+  it('Register_EachSignupIsAnIsolatedTenant', async () => {
+    const { service, tenants } = makeSelfServe();
+    const a = await service.register(reg('a@acme.io'));
+    const b = await service.register(reg('b@globex.io'));
+    expect(a.user.tenantId).not.toBe(b.user.tenantId);
+    expect(tenants.tenants).toHaveLength(2);
+    // Both are admins of their own workspace (no shared "first user" bootstrap).
+    expect(a.user.roles).toEqual(['admin', 'recruiter']);
+    expect(b.user.roles).toEqual(['admin', 'recruiter']);
+  });
+
+  it('SelfServeOff_KeepsSingleTeamBootstrap', async () => {
+    const { service, repo } = makeService(); // no tenantRepository/config
+    const first = await service.register(reg('boss@acme.io'));
+    const second = await service.register(reg('hire@acme.io'));
+    expect(first.user.tenantId).toBeUndefined(); // implicit default 'team'
+    expect(first.user.roles).toEqual(['admin', 'recruiter']);
+    expect(second.user.roles).toEqual(['recruiter']);
+    expect(repo.users.every((u) => u.tenantId === undefined)).toBe(true);
   });
 });

@@ -31,6 +31,8 @@ import type { PasswordResetTokenStore } from '../../src/ports/password-reset-tok
 import type { EmailVerificationTokenStore } from '../../src/ports/email-verification-token-store';
 import type { InviteRepository } from '../../src/ports/invite-repository';
 import type { TenantInvite } from '../../src/domain/tenant-invite';
+import type { TenantRepository } from '../../src/ports/tenant-repository';
+import type { Tenant, TenantStatus } from '../../src/domain/tenant';
 import type { Mailer, MailMessage } from '../../src/ports/mailer';
 import type { InboxSource } from '../../src/ports/inbox-source';
 import type { StageTransitionRepository } from '../../src/ports/stage-transition-repository';
@@ -409,6 +411,34 @@ export class InMemoryInviteRepository implements InviteRepository {
       .filter((i) => i.tenantId === tenantId)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
       .map((i) => ({ ...i }));
+  }
+}
+
+/** In-memory tenant records (deterministic tests). */
+export class InMemoryTenantRepository implements TenantRepository {
+  tenants: Tenant[] = [];
+  async create(tenant: Tenant): Promise<void> {
+    this.tenants.push({ ...tenant });
+  }
+  async findById(id: string): Promise<Tenant | null> {
+    return this.tenants.find((t) => t.id === id) ?? null;
+  }
+  async list(): Promise<Tenant[]> {
+    return this.tenants
+      .slice()
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+      .map((t) => ({ ...t }));
+  }
+  async setStatus(id: string, status: TenantStatus): Promise<boolean> {
+    let changed = false;
+    this.tenants = this.tenants.map((t) => {
+      if (t.id === id && t.status !== status) {
+        changed = true;
+        return { ...t, status };
+      }
+      return t;
+    });
+    return changed;
   }
 }
 

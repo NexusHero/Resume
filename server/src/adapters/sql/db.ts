@@ -36,6 +36,12 @@ export async function migrate(pool: Pool): Promise<void> {
       created_at text NOT NULL
     );
     CREATE INDEX IF NOT EXISTS password_reset_tokens_user_id_idx ON password_reset_tokens (user_id);
+    CREATE TABLE IF NOT EXISTS tenants (
+      id text PRIMARY KEY,
+      name text NOT NULL,
+      created_at text NOT NULL,
+      status text NOT NULL DEFAULT 'active'
+    );
     CREATE TABLE IF NOT EXISTS tenant_invites (
       token text PRIMARY KEY,
       email text NOT NULL,

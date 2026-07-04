@@ -156,6 +156,32 @@ const RecruitApi = {
     );
     return data.member;
   },
+  async listInvites() {
+    const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/members/invites`));
+    return Array.isArray(data) ? data : []; // [{ email, roles, invitedBy, createdAt }]
+  },
+  async createInvite(email, roles) {
+    // { invite, acceptUrl } — the URL carries the single-use token for offline sharing.
+    return _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/members/invites`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email, roles }),
+      }),
+    );
+  },
+  async acceptInvite(token, password) {
+    const res = await fetch(`${RECRUIT_API_BASE}/auth/accept-invite`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ token, password }),
+    });
+    if (!res.ok)
+      throw new Error(
+        (await res.json().catch(() => ({}))).detail || 'This invitation is invalid or has expired',
+      );
+    return (await res.json()).user;
+  },
   async retentionReport(days) {
     const q = Number.isFinite(days) ? `?days=${days}` : '';
     const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/retention/report${q}`));

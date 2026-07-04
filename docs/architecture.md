@@ -164,9 +164,10 @@ The outward submission stays a manual step (ADR-0019).
   (ADR-0033) — the seam is multi-tenant-ready while every current install stays single-tenant.
   Member management (roster + role admin) is tenant-scoped too (ADR-0034): an admin only sees
   and re-roles their own tenant, and the last-admin invariant is enforced per tenant. A user
-  acquires a non-default tenant by **invitation** (ADR-0035): an admin invites an email
-  (`POST /members/invites`), the invitee accepts by setting a password (`POST /auth/accept-invite`)
-  and lands in that tenant — `register` is left untouched, so fresh installs stay single-tenant.
+  acquires a non-default tenant by **invitation** (ADR-0035): an admin invites an email from
+  Settings (`POST /members/invites`), the invitee opens the emailed link and accepts by setting a
+  password (the login screen's `?invite_token=` mode → `POST /auth/accept-invite`) and lands in
+  that tenant — `register` is left untouched, so fresh installs stay single-tenant.
 - **API contract:** hand-maintained OpenAPI 3.1 + self-hosted Swagger UI (ADR-0012),
   extended in the same PR as any route change.
 - **Self-hosted assets:** fonts and the Swagger UI ship from this origin — no CDN, no

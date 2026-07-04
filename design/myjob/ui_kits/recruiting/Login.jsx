@@ -12,9 +12,9 @@ const POINTS = [
   'Fees and funnel at a glance',
 ];
 
-function readResetToken() {
+function readQueryToken(name) {
   try {
-    return new URLSearchParams(window.location.search).get('reset_token') || '';
+    return new URLSearchParams(window.location.search).get(name) || '';
   } catch {
     return '';
   }
@@ -38,9 +38,11 @@ function SocialButton({ href, mark, children }) {
 }
 
 function LoginScreen({ providers, onAuthed, initialNotice }) {
-  const initialToken = React.useState(readResetToken)[0];
-  // modes: 'login' | 'register' | 'forgot' | 'reset'
-  const [mode, setMode] = React.useState(initialToken ? 'reset' : 'login');
+  const initialToken = React.useState(() => readQueryToken('reset_token'))[0];
+  // An emailed invitation opens the app with ?invite_token= — accept it here (ADR-0035).
+  const inviteToken = React.useState(() => readQueryToken('invite_token'))[0];
+  // modes: 'login' | 'register' | 'forgot' | 'reset' | 'invite'
+  const [mode, setMode] = React.useState(inviteToken ? 'invite' : initialToken ? 'reset' : 'login');
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [confirm, setConfirm] = React.useState('');
@@ -51,13 +53,16 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
   const isRegister = mode === 'register';
   const isForgot = mode === 'forgot';
   const isReset = mode === 'reset';
-  const needsConfirm = isRegister || isReset;
+  const isInvite = mode === 'invite';
+  // Invite + reset are both "set a password" flows: no email field, confirm required.
+  const passwordOnly = isReset || isInvite;
+  const needsConfirm = isRegister || passwordOnly;
   const mismatch = needsConfirm && confirm.length > 0 && confirm !== password;
   const canSubmit =
     !loading &&
     (isForgot
       ? email.length > 0
-      : isReset
+      : passwordOnly
         ? !mismatch && password.length >= 8 && confirm.length > 0
         : email.length > 0 &&
           password.length > 0 &&
@@ -91,6 +96,15 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
         setConfirm('');
         setMode('login');
         setNotice('Your password has been reset. Please log in.');
+      } else if (isInvite) {
+        const user = await window.RecruitApi.acceptInvite(inviteToken, password);
+        // Drop the token from the URL so a refresh doesn't reopen the accept form.
+        try {
+          window.history.replaceState({}, '', window.location.pathname);
+        } catch {
+          /* ignore */
+        }
+        onAuthed(user);
       } else {
         const user = isRegister
           ? await window.RecruitApi.authRegister(email, password)
@@ -120,25 +134,31 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
 
   const title = isForgot
     ? 'Reset your password'
-    : isReset
-      ? 'Choose a new password'
-      : isRegister
-        ? 'Create your account'
-        : 'Welcome back';
+    : isInvite
+      ? 'Accept your invitation'
+      : isReset
+        ? 'Choose a new password'
+        : isRegister
+          ? 'Create your account'
+          : 'Welcome back';
   const subtitle = isForgot
     ? 'Enter your email and we’ll send you a reset link.'
-    : isReset
-      ? 'Pick a new password for your account.'
-      : isRegister
-        ? 'Start running your recruiting desk.'
-        : 'Pick up where you left off.';
+    : isInvite
+      ? 'Set a password to join your team’s workspace.'
+      : isReset
+        ? 'Pick a new password for your account.'
+        : isRegister
+          ? 'Start running your recruiting desk.'
+          : 'Pick up where you left off.';
   const submitLabel = isForgot
     ? 'Send reset link'
-    : isReset
-      ? 'Set new password'
-      : isRegister
-        ? 'Create account'
-        : 'Log in';
+    : isInvite
+      ? 'Accept invitation'
+      : isReset
+        ? 'Set new password'
+        : isRegister
+          ? 'Create account'
+          : 'Log in';
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--app-bg)' }}>
@@ -192,7 +212,7 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
       {/* form card */}
       <main style={{ flex: 1, display: 'grid', placeItems: 'center', padding: '32px' }}>
         <form onSubmit={submit} aria-label={title} style={{ width: '100%', maxWidth: '380px' }}>
-          {!isForgot && !isReset && (
+          {!isForgot && !passwordOnly && (
             <div style={{ display: 'flex', gap: '4px', padding: '4px', borderRadius: 'var(--radius-pill)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', marginBottom: '24px' }}>
               {[['login', 'Log in'], ['register', 'Create account']].map(([m, label]) => (
                 <button
@@ -225,7 +245,7 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
             </p>
           )}
 
-          {!isForgot && !isReset && (providers.google || providers.linkedin) && (
+          {!isForgot && !passwordOnly && (providers.google || providers.linkedin) && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', marginBottom: '18px' }}>
               {providers.google && (
                 <SocialButton href="/api/v1/auth/google/login" mark="G">Continue with Google</SocialButton>
@@ -241,7 +261,7 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
             </div>
           )}
 
-          {!isReset && (
+          {!passwordOnly && (
             <label style={labelStyle}>
               <span style={labelText}>Email</span>
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" placeholder="you@example.com" style={fieldStyle} />
@@ -250,7 +270,7 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
 
           {!isForgot && (
             <label style={labelStyle}>
-              <span style={labelText}>{isReset ? 'New password' : 'Password'}</span>
+              <span style={labelText}>{passwordOnly ? 'New password' : 'Password'}</span>
               <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete={needsConfirm ? 'new-password' : 'current-password'} placeholder="••••••••" style={fieldStyle} />
             </label>
           )}
@@ -264,7 +284,7 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
             </label>
           )}
 
-          {!isForgot && !isReset && !isRegister && (
+          {!isForgot && !passwordOnly && !isRegister && (
             <p style={{ textAlign: 'right', margin: '-6px 0 16px' }}>
               <button type="button" onClick={() => goMode('forgot')} style={linkButton}>
                 Forgot password?
@@ -290,7 +310,7 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
             {loading ? 'Please wait…' : submitLabel}
           </button>
 
-          {(isForgot || isReset) && (
+          {(isForgot || passwordOnly) && (
             <p style={{ fontSize: '13px', color: 'var(--text-soft)', textAlign: 'center', marginTop: '18px' }}>
               <button type="button" onClick={() => goMode('login')} style={linkButton}>
                 ← Back to log in
@@ -298,7 +318,7 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
             </p>
           )}
 
-          {!isForgot && !isReset && (
+          {!isForgot && !passwordOnly && (
             <p style={{ fontSize: '13px', color: 'var(--text-soft)', textAlign: 'center', marginTop: '18px' }}>
               {isRegister ? 'Already have an account? ' : 'New to myJob? '}
               <button type="button" onClick={() => goMode(isRegister ? 'login' : 'register')} style={linkButton}>

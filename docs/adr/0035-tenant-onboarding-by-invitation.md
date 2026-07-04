@@ -54,6 +54,9 @@ Add an invitation round-trip, leaving the existing `register` flow untouched:
   expiry, cross-registration conflict) and an HTTP round-trip acceptance test
   (admin invites → invitee accepts → joins the tenant; non-admin is 403;
   unknown token is 401).
-- Still out of scope (later slices): the accept-invite **UI** (the kit reads
-  `invite_token` on load), an admin **invite UI** in Settings, revoking a
-  pending invite, and **new-tenant** creation / a cross-tenant super-admin.
+- The **UI** landed in a follow-up slice: the login screen gains an
+  `?invite_token=` accept mode (set a password → join), and Settings gains an
+  admin "Invite a colleague" card (email + roles, showing the accept link for
+  offline sharing) plus a pending-invite list.
+- Still out of scope (later slices): revoking a pending invite, and **new-tenant**
+  creation / a cross-tenant super-admin.

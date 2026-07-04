@@ -1,0 +1,27 @@
+@startuml uc06_pitch_outreach
+title UC-06 — Draft a client pitch and outreach message (FR-37, FR-38, FR-30)
+
+skinparam shadowing false
+autonumber
+actor Recruiter
+participant DocumentController as Ctrl
+participant OutreachAiService as Svc
+participant LlmFeatureRunner as Runner
+participant "grounding\n(domain)" as Ground
+participant ArtifactLogRepository as Log
+
+Recruiter -> Ctrl : POST /talents/:id/documents/pitch (or /outreach)
+activate Ctrl
+Ctrl -> Svc : pitchForMandate / outreach(scope, user, id, ctx)
+activate Svc
+Svc -> Svc : detectLanguage(job ad, else CV)
+Svc -> Runner : runFeature(feature, prompt(lang),\n{ schema, normalize, accept: non-empty, fallback: template })
+Runner --> Svc : { content, provider, usage }
+Svc -> Ground : checkGrounding(text, CV + mandate)
+Ground --> Svc : { supported, unsupported[] }
+Svc -> Log : add(artifact, provider, outcome=pending)\n(feeds the outcome loop, ADR-0014)
+Svc --> Ctrl : { …text, provider, usage, grounding }
+deactivate Svc
+Ctrl --> Recruiter : draft + provider badge\n+ "nicht belegte Angaben" warning if any
+deactivate Ctrl
+@enduml

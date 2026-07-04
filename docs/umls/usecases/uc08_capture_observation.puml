@@ -1,0 +1,24 @@
+@startuml uc08_capture_observation
+title UC-08 — Capture what actually happened, the flywheel (FR-39)
+
+skinparam shadowing false
+autonumber
+actor Recruiter
+participant ObservationController as Ctrl
+participant InterviewObservationService as Svc
+participant InterviewObservationRepository as Repo
+
+Recruiter -> Ctrl : POST /mandates/:id/observations\n{ how it went, questions asked, tone }
+activate Ctrl
+Ctrl -> Ctrl : zod-validate
+Ctrl -> Svc : record(scope, mandate.client, observation)
+activate Svc
+Svc -> Svc : derive companyKey from client
+Svc -> Repo : add(observation, ownerId = scope)
+Repo --> Svc : ok
+Svc --> Ctrl : stored
+deactivate Svc
+Ctrl --> Recruiter : 201
+deactivate Ctrl
+note over Repo : first-party evidence — future prep (UC-05)\nnow overrides the archetype guess for this company
+@enduml

@@ -1,0 +1,26 @@
+@startuml uc09_pipeline_placement
+title UC-09 — Move the pipeline and book the fee (FR-12, FR-13, FR-14)
+
+skinparam shadowing false
+autonumber
+actor Recruiter
+participant CandidacyController as Ctrl
+participant CandidacyService as Svc
+participant CandidacyRepository as CRepo
+participant PlacementService as PS
+
+Recruiter -> Ctrl : PATCH /candidacies/:id { stage }
+activate Ctrl
+Ctrl -> Svc : update(scope, id, { stage })
+activate Svc
+Svc -> CRepo : update(candidacy)
+alt stage reaches 'placed'
+  Svc -> PS : create placement (fee from mandate)
+  PS --> Svc : placement
+  note right of Svc : mandate submitted/interview counts and the\nrevenue forecast are DERIVED from the live\npipeline — never stored twice
+end
+Svc --> Ctrl : candidacy (+ placement if booked)
+deactivate Svc
+Ctrl --> Recruiter : 200
+deactivate Ctrl
+@enduml

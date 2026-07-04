@@ -1,0 +1,27 @@
+@startuml uc05_prep_kit
+title UC-05 — Prepare the candidate for the interview (FR-36, FR-39)
+
+skinparam shadowing false
+autonumber
+actor Recruiter
+participant MatchAiController as Ctrl
+participant MatchAiService as Svc
+participant InterviewObservationRepository as Obs
+participant "company-archetype\n(domain)" as Arch
+participant LlmFeatureRunner as Runner
+
+Recruiter -> Ctrl : POST /mandates/:id/talents/:tid/prep
+activate Ctrl
+Ctrl -> Svc : candidatePrep(scope, user, tid, mandate, jobText)
+activate Svc
+Svc -> Obs : listForCompany(scope, companyKey)
+Obs --> Svc : first-party observations
+Svc -> Arch : companyInterviewProfile(client, role, jobText)
+Svc -> Svc : applyObserved(archetype, observations)\n+ extract Auflagen + requirement coverage (deterministic base)
+Svc -> Runner : runFeature('candidatePrep', prompt(base.strengths),\n{ schema, normalize: mergePrep(base,·), fallback: base })
+Runner --> Svc : refined coaching narrative (or base)
+Svc --> Ctrl : { gaps, Auflagen, STAR, questions, provider }
+deactivate Svc
+Ctrl --> Recruiter : prep kit (observed knowledge overrides the guess)
+deactivate Ctrl
+@enduml

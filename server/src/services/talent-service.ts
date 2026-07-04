@@ -3,8 +3,7 @@ import { candidateSkills } from '../domain/match';
 import { NotFoundError } from '../domain/errors';
 import type { TalentRepository } from '../ports/talent-repository';
 import type { DocumentRepository } from '../ports/document-repository';
-import type { AttachmentStore } from '../ports/attachment-store';
-import type { CandidacyRepository } from '../ports/candidacy-repository';
+import type { TalentDataPurger } from '../ports/talent-data';
 import type { Clock } from '../ports/clock';
 import type { IdGenerator } from '../ports/id-generator';
 
@@ -14,8 +13,7 @@ export type TalentWithSkills = Talent & { effectiveSkills: string[] };
 export interface TalentServiceDeps {
   talentRepository: TalentRepository;
   documentRepository: DocumentRepository;
-  attachmentStore: AttachmentStore;
-  candidacyRepository: CandidacyRepository;
+  talentDataPurgers: TalentDataPurger[];
   clock: Clock;
   idGenerator: IdGenerator;
 }
@@ -24,16 +22,14 @@ export interface TalentServiceDeps {
 export class TalentService {
   private readonly repo: TalentRepository;
   private readonly documents: DocumentRepository;
-  private readonly attachments: AttachmentStore;
-  private readonly candidacies: CandidacyRepository;
+  private readonly purgers: TalentDataPurger[];
   private readonly clock: Clock;
   private readonly ids: IdGenerator;
 
   constructor(deps: TalentServiceDeps) {
     this.repo = deps.talentRepository;
     this.documents = deps.documentRepository;
-    this.attachments = deps.attachmentStore;
-    this.candidacies = deps.candidacyRepository;
+    this.purgers = deps.talentDataPurgers;
     this.clock = deps.clock;
     this.ids = deps.idGenerator;
   }
@@ -95,9 +91,12 @@ export class TalentService {
   async remove(ownerId: string, id: string): Promise<void> {
     const removed = await this.repo.remove(ownerId, id);
     if (!removed) throw new NotFoundError(`Talent ${id} not found`);
-    // Cascade: a talent's documents, attachments and candidacies go with it.
-    await this.documents.removeForTalent(ownerId, id);
-    await this.attachments.removeForTalent(ownerId, id);
-    await this.candidacies.removeForTalent(ownerId, id);
+    // Cascade: run every registered talent-data purger in `erase` mode, so the
+    // talent's documents, attachments and candidacies all go with them. The
+    // erase/anonymize divergence (anonymize keeps candidacies) lives in the
+    // registry, not in two divergent method bodies.
+    for (const purger of this.purgers) {
+      await purger.purge(ownerId, id, 'erase');
+    }
   }
 }

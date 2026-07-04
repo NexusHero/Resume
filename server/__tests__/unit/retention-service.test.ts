@@ -16,6 +16,7 @@ import {
   InMemoryRetentionPolicyStore,
   noopLogger,
 } from '../support/fakes';
+import { buildTalentDataPurgers } from '../support/talent-purgers';
 import type { Talent } from '../../src/domain/talent';
 import type { Attachment } from '../../src/domain/attachment';
 
@@ -55,13 +56,18 @@ function ctx() {
   const documents = new InMemoryDocumentRepository();
   const attachments = new InMemoryAttachmentStore();
   const policies = new InMemoryRetentionPolicyStore();
+  const clock = new FixedClock(NOW);
   const service = new RetentionService({
     talentRepository: talents,
     candidacyRepository: candidacies,
-    documentRepository: documents,
-    attachmentStore: attachments,
+    talentDataPurgers: buildTalentDataPurgers({
+      documentRepository: documents,
+      attachmentStore: attachments,
+      candidacyRepository: candidacies,
+      clock,
+    }),
     retentionPolicyStore: policies,
-    clock: new FixedClock(NOW),
+    clock,
     logger: noopLogger,
   });
   return { service, talents, candidacies, documents, attachments, policies };
@@ -127,6 +133,28 @@ describe('RetentionService', () => {
     expect((await c.documents.get(SCOPE, 't1'))?.contact.email).toBe('');
     // raw attachments (CVs) removed
     expect(await c.attachments.list(SCOPE, 't1')).toEqual([]);
+  });
+
+  it('Anonymize_KeepsCandidacies_ThePipelineHistory', async () => {
+    const c = ctx();
+    await c.talents.add(talent('t1'));
+    await c.candidacies.add({
+      id: 'c1',
+      ownerId: SCOPE,
+      mandateId: 'm1',
+      talentId: 't1',
+      stage: 'placed',
+      note: '',
+      order: 0,
+      createdAt: NOW,
+      updatedAt: NOW,
+    });
+
+    await c.service.anonymize(SCOPE, 't1');
+
+    // The intended divergence from a hard delete: anonymize strips PII but keeps
+    // the non-identifying pipeline history for stats/forecast.
+    expect(await c.candidacies.listForTalent(SCOPE, 't1')).toHaveLength(1);
   });
 
   it('Anonymize_Idempotent_KeepsFirstTimestamp', async () => {

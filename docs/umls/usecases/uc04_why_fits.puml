@@ -1,0 +1,24 @@
+@startuml uc04_why_fits
+title UC-04 — Understand why a candidate fits (FR-33, FR-30)
+
+skinparam shadowing false
+autonumber
+actor Recruiter
+participant MatchAiController as Ctrl
+participant MatchAiService as Svc
+participant "match-explain\n(domain)" as Dom
+participant LlmFeatureRunner as Runner
+
+Recruiter -> Ctrl : POST /mandates/:id/talents/:tid/explain
+activate Ctrl
+Ctrl -> Svc : explainMatch(scope, user, tid, mandate)
+activate Svc
+Svc -> Dom : matchedForMandate(docs, mandate)\n(deterministic skill overlap)
+Svc -> Runner : runFeature('matchExplain', prompt,\n{ schema, normalize, accept: reasons>0, fallback })
+Runner --> Svc : { content, provider, usage }
+note right of Runner : no key / empty reply →\ntemplate reasons from the same facts
+Svc --> Ctrl : { reasons, provider, usage }
+deactivate Svc
+Ctrl --> Recruiter : grounded "Warum passt?" summary
+deactivate Ctrl
+@enduml

@@ -1,0 +1,29 @@
+@startuml uc03_find_matches
+title UC-03 — Find matches for a mandate (FR-32, FR-34 · ADR-0007)
+
+skinparam shadowing false
+autonumber
+actor Recruiter
+participant MatchController as Ctrl
+participant MatchService as Svc
+participant "skill-taxonomy\n(domain)" as Tax
+participant "embeddingProvider" as Emb
+participant CandidacyController as CC
+
+Recruiter -> Ctrl : POST /mandates/:id/match
+activate Ctrl
+Ctrl -> Svc : rank(scope, mandateId)
+activate Svc
+Svc -> Tax : canonicalize skills (React.js → react)
+Svc -> Emb : hashed/neural vectors (hybrid lexical+semantic)
+Svc -> Svc : score pool vs mandate
+Svc --> Ctrl : ranked candidates + scores
+deactivate Svc
+Ctrl --> Recruiter : shortlist (strong first)
+deactivate Ctrl
+
+opt add a promising talent
+  Recruiter -> CC : POST /mandates/:id/candidacies { talentId }
+  CC --> Recruiter : 201 candidacy (enters the pipeline)
+end
+@enduml

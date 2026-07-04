@@ -22,6 +22,7 @@ import {
   SequenceIdGenerator,
   noopLogger,
 } from '../support/fakes';
+import { buildTalentDataPurgers } from '../support/talent-purgers';
 
 const OWNER = 'owner1';
 const b64 = (s: string) => Buffer.from(s).toString('base64');
@@ -40,8 +41,12 @@ function ctx(generate?: (p: string) => string, pdfText = 'Extracted CV text.') {
   const talentService = new TalentService({
     talentRepository: talents,
     documentRepository: documents,
-    attachmentStore: new InMemoryAttachmentStore(),
-    candidacyRepository: new InMemoryCandidacyRepository(),
+    talentDataPurgers: buildTalentDataPurgers({
+      documentRepository: documents,
+      attachmentStore: new InMemoryAttachmentStore(),
+      candidacyRepository: new InMemoryCandidacyRepository(),
+      clock: new FixedClock(),
+    }),
     clock: new FixedClock(),
     idGenerator: new SequenceIdGenerator('talent'),
   });

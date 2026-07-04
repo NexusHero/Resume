@@ -1,5 +1,4 @@
 import { type Talent, anonymizeTalent } from '../domain/talent';
-import { emptyContact } from '../domain/talent-documents';
 import {
   type RetentionReviewItem,
   type RetentionPolicy,
@@ -10,8 +9,7 @@ import {
 import { NotFoundError } from '../domain/errors';
 import type { TalentRepository } from '../ports/talent-repository';
 import type { CandidacyRepository } from '../ports/candidacy-repository';
-import type { DocumentRepository } from '../ports/document-repository';
-import type { AttachmentStore } from '../ports/attachment-store';
+import type { TalentDataPurger } from '../ports/talent-data';
 import type { RetentionPolicyStore } from '../ports/retention-policy-store';
 import type { Clock } from '../ports/clock';
 import type { Logger } from '../ports/logger';
@@ -19,8 +17,7 @@ import type { Logger } from '../ports/logger';
 export interface RetentionServiceDeps {
   talentRepository: TalentRepository;
   candidacyRepository: CandidacyRepository;
-  documentRepository: DocumentRepository;
-  attachmentStore: AttachmentStore;
+  talentDataPurgers: TalentDataPurger[];
   retentionPolicyStore: RetentionPolicyStore;
   clock: Clock;
   logger: Logger;
@@ -46,8 +43,7 @@ export interface AnonymizeSweepResult {
 export class RetentionService {
   private readonly talents: TalentRepository;
   private readonly candidacies: CandidacyRepository;
-  private readonly documents: DocumentRepository;
-  private readonly attachments: AttachmentStore;
+  private readonly purgers: TalentDataPurger[];
   private readonly policies: RetentionPolicyStore;
   private readonly clock: Clock;
   private readonly logger: Logger;
@@ -55,8 +51,7 @@ export class RetentionService {
   constructor(deps: RetentionServiceDeps) {
     this.talents = deps.talentRepository;
     this.candidacies = deps.candidacyRepository;
-    this.documents = deps.documentRepository;
-    this.attachments = deps.attachmentStore;
+    this.purgers = deps.talentDataPurgers;
     this.policies = deps.retentionPolicyStore;
     this.clock = deps.clock;
     this.logger = deps.logger;
@@ -102,25 +97,22 @@ export class RetentionService {
   }
 
   /**
-   * Anonymize a candidate (idempotent): clear the talent's identifying fields
-   * and its document contact block, and delete the raw attachments (CVs) — the
-   * heaviest personal data. Role, skills and pipeline history are kept.
+   * Anonymize a candidate (idempotent): clear the talent's identifying fields,
+   * then run every registered talent-data purger in `anonymize` mode — which
+   * clears the document contact block and deletes the raw attachments (the
+   * heaviest personal data) while keeping the résumé body and the pipeline
+   * history. Role, skills and non-identifying stats are kept.
    */
   async anonymize(scope: string, talentId: string): Promise<Talent> {
     const talent = await this.talents.findById(scope, talentId);
     if (!talent) throw new NotFoundError(`Talent ${talentId} not found`);
     if (talent.anonymizedAt) return talent; // already anonymized
 
-    const now = this.clock.isoNow();
-    const anonymized = anonymizeTalent(talent, now);
+    const anonymized = anonymizeTalent(talent, this.clock.isoNow());
     await this.talents.update(anonymized);
-
-    const documents = await this.documents.get(scope, talentId);
-    if (documents) {
-      await this.documents.save({ ...documents, contact: { ...emptyContact }, updatedAt: now });
+    for (const purger of this.purgers) {
+      await purger.purge(scope, talentId, 'anonymize');
     }
-    await this.attachments.removeForTalent(scope, talentId);
-
     return anonymized;
   }
 

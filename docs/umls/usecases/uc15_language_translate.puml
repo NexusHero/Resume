@@ -1,0 +1,38 @@
+@startuml uc15_language_translate
+title UC-15 — Apply in the job's language (FR-42, FR-23, FR-43)
+
+skinparam shadowing false
+autonumber
+actor Recruiter
+participant DocumentController as Ctrl
+participant DocumentAssistService as Svc
+participant "language\n(domain, deterministic)" as Lang
+participant LlmFeatureRunner as Runner
+participant DocumentRepository as Repo
+
+note over Svc : generated pitch/outreach/letters already follow the\nJOB AD's language (detected), independent of the app UI
+
+== Explicit document translation (editor) ==
+Recruiter -> Ctrl : POST /talents/:id/documents/translate { targetLang }
+activate Ctrl
+Ctrl -> Svc : translateDocuments(scope, user, id, targetLang)
+activate Svc
+Svc -> Lang : detectLanguage(resume)
+alt targetLang == source, or variant already exists
+  Svc --> Ctrl : ValidationError / existing variant (created:false)
+else needs translating
+  Svc -> Runner : resolveProvider(user)
+  alt no provider
+    Runner --> Svc : null
+    Svc --> Ctrl : ValidationError ("add a key")  — no fallback here
+  else provider available
+    Svc -> Runner : generateAndMeter('translate', prompt)
+    Runner --> Svc : translated { resume, letter }
+    Svc -> Repo : saveTranslation(scope, id, targetLang)
+    Svc --> Ctrl : variant (created:true) + usage
+  end
+end
+deactivate Svc
+Ctrl --> Recruiter : other-language variant (reviewed before sending)
+deactivate Ctrl
+@enduml

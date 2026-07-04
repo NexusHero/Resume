@@ -48,6 +48,44 @@ job-application toolkit:
   builder with vector-quality PDF export.
 - **REST API** — a TypeScript, hexagonal Node/Express backend under `/api/v1`.
 
+### Architecture at a glance
+
+| Aspect            | Choice                                                                                                                                                      |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Style**         | Hexagonal **ports & adapters** with a pure, I/O-free domain core — a **modular monolith**, not microservices (ADR-0001).                                    |
+| **Composition**   | One **Awilix DI composition root** wires every port to its production adapter; no decorators, no service locator (ADR-0002).                                |
+| **Persistence**   | **File store by default** (zero external dependency, offline, CI-friendly); **Postgres** via `STORE=sql` behind the same repository ports (ADR-0003).       |
+| **AI**            | **Optional throughout**: per-user keys, a deterministic template fallback on every feature, and a grounding self-check over generated text (ADR-0005/0009). |
+| **API**           | TypeScript/Express under `/api/v1`; **zod** at the boundary, **RFC-9457** errors, hand-kept OpenAPI + Swagger UI (ADR-0012).                                |
+| **Frontend**      | Vite/React recruiting kit; installable **PWA**; a **Capacitor** native wrapper over the same build (ADR-0028/0040).                                         |
+| **Multi-tenancy** | Scope-owned data, a **config-only, non-escalatable super-admin**, tenant suspension enforced in the auth path (ADR-0033–0038).                              |
+
+**Why this shape.** The forces are a very small team, a product that must run
+**fully offline with no external service** (a recruiter can install it and work
+without a database, an LLM key, or the internet), **AI as an optional accelerator
+rather than a hard dependency**, and **DSGVO by construction**. Hexagonal ports &
+adapters fall out of exactly those forces: a pure domain keeps the business rules
+testable in memory (the ≥ 90 % gate lives here), and every side effect — store,
+LLM, PDF, mail, job boards — sits behind a port with a file/offline adapter as the
+default and a production adapter opt-in. The **modular monolith** is a deliberate
+choice over microservices: one deployable, one transaction boundary, no network
+between modules and no distributed-systems tax — which a team this size should not
+pay until scale demands it. Where horizontal scale _does_ bite, it is addressed
+surgically rather than by re-architecting: sessions live in the store (not memory),
+and background schedulers use **Postgres advisory-lock leader election** (ADR-0030)
+so multiple instances stay safe.
+
+**The trade-off — honestly.** This buys testability, portability, offline-first
+operation and reversible decisions (swap an adapter, not a rewrite). It costs:
+(1) the domain-purity discipline needs explicit wiring — adding a service still
+touches three lists (container / `AppDeps` / imports), caught by the e2e boot not
+the compiler; (2) the OpenAPI contract is hand-maintained, so drift is guarded by a
+zod→spec test rather than generated; (3) the modular monolith scales **vertically**
+first — true horizontal partitioning (per-tenant sharding, extracting the AI
+pipeline into its own service) is a future step the ports make _possible_ but not
+free. These are the right trade-offs for the current stage, and the seams are drawn
+so none of them is a one-way door — see [§11 Risks and Technical Debt](#11-risks-and-technical-debt).
+
 ### Quality goals
 
 | #   | Quality         | Scenario                                                                             |

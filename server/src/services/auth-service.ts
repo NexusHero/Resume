@@ -41,6 +41,9 @@ export class AuthService {
   private readonly ids: IdGenerator;
   private readonly tenants?: TenantRepository;
   private readonly selfServe: boolean;
+  /** A throwaway hash, computed once, verified against on the unknown-email path
+   *  so a missing account costs the same scrypt work as a wrong password. */
+  private dummyHashCache?: Promise<string>;
 
   constructor(deps: AuthServiceDeps) {
     this.users = deps.userRepository;
@@ -100,9 +103,18 @@ export class AuthService {
     return tenant?.status === 'suspended';
   }
 
+  /** Lazily computed once and cached; used to equalise unknown-email timing. */
+  private dummyHash(): Promise<string> {
+    return (this.dummyHashCache ??= this.hasher.hash('timing-equaliser'));
+  }
+
   async login(input: LoginInput): Promise<AuthResult> {
     const user = await this.users.findByEmail(input.email);
-    const ok = user ? await this.hasher.verify(input.password, user.passwordHash) : false;
+    // Always run one password verification — against the real hash, or a dummy
+    // when the email is unknown — so a non-existent account and a wrong password
+    // take the same time. No account-existence timing oracle (security audit #4).
+    const hash = user?.passwordHash ?? (await this.dummyHash());
+    const ok = await this.hasher.verify(input.password, hash);
     if (!user || !ok) throw new UnauthorizedError('Invalid email or password');
     if (await this.isTenantSuspended(user.tenantId)) {
       throw new UnauthorizedError('This workspace has been suspended');

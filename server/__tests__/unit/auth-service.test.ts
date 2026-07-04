@@ -37,6 +37,32 @@ describe('AuthService', () => {
     expect(repo.users[0]?.passwordHash).toBe('hashed:supersecret');
   });
 
+  it('Login_UnknownEmail_RunsAVerifyToEqualiseTiming', async () => {
+    // Security audit #4: an unknown email must still run one password verify
+    // (against a cached dummy hash) so it costs the same as a wrong password.
+    let verifyCalls = 0;
+    const spyHasher = {
+      hash: (p: string) => fakePasswordHasher.hash(p),
+      verify: (p: string, h: string) => {
+        verifyCalls++;
+        return fakePasswordHasher.verify(p, h);
+      },
+    };
+    const service = new AuthService({
+      userRepository: new InMemoryUserRepository(),
+      sessionStore: new MemorySessionStore(),
+      passwordHasher: spyHasher,
+      clock: new FixedClock(),
+      idGenerator: new SequenceIdGenerator('user'),
+    });
+    const bad = (email: string) => loginSchema.parse({ email, password: 'whatever' });
+    await expect(service.login(bad('ghost@example.com'))).rejects.toBeInstanceOf(UnauthorizedError);
+    await expect(service.login(bad('ghost2@example.com'))).rejects.toBeInstanceOf(
+      UnauthorizedError,
+    );
+    expect(verifyCalls).toBe(2); // one verify per unknown-email attempt
+  });
+
   it('Register_FirstAccount_BecomesAdmin', async () => {
     const { service, repo } = makeService();
     const first = await service.register(reg('boss@example.com'));

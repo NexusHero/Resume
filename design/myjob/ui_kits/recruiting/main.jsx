@@ -13,7 +13,7 @@ import './DataStates.jsx';
 import './RecruitRail.jsx';
 import './PipelineBoard.jsx';
 import './Workspace.jsx';
-import './VermittlerViews.jsx';
+import './AgencyViews.jsx';
 import './MandatePipelineModals.jsx'; // feature modals, published before the orchestrator mounts them
 import './MandatePipeline.jsx';
 import './TalentProfile.jsx';
@@ -23,7 +23,7 @@ import './EditorShared.jsx';
 import './EditorDocs.jsx';
 import './EditorModals.jsx';
 import './Editor.jsx';
-import './MappeModal.jsx';
+import './DossierModal.jsx';
 import './RecordFormModal.jsx';
 import './Matching.jsx';
 import './AssistantView.jsx';

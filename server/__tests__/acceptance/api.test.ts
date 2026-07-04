@@ -52,6 +52,7 @@ import { ForecastService } from '../../src/services/forecast-service';
 import { InterviewObservationService } from '../../src/services/interview-observation-service';
 import { DocumentService } from '../../src/services/document-service';
 import { buildDocumentAiService } from '../support/build-document-ai';
+import { buildTalentDataPurgers } from '../support/talent-purgers';
 import { AttachmentService } from '../../src/services/attachment-service';
 import { AuthService } from '../../src/services/auth-service';
 import { EmailVerificationService } from '../../src/services/email-verification-service';
@@ -198,11 +199,16 @@ function makeApp(
     idGenerator: new SequenceIdGenerator('mandate'),
   });
   const mandateController = new MandateController({ mandateService });
-  const talentService = new TalentService({
-    talentRepository,
+  const talentDataPurgers = buildTalentDataPurgers({
     documentRepository,
     attachmentStore,
     candidacyRepository,
+    clock: new FixedClock(),
+  });
+  const talentService = new TalentService({
+    talentRepository,
+    documentRepository,
+    talentDataPurgers,
     clock: new FixedClock(),
     idGenerator: new SequenceIdGenerator('talent'),
   });
@@ -229,8 +235,7 @@ function makeApp(
     retentionService: new RetentionService({
       talentRepository,
       candidacyRepository,
-      documentRepository,
-      attachmentStore,
+      talentDataPurgers,
       retentionPolicyStore: new InMemoryRetentionPolicyStore(),
       clock: new FixedClock(),
       logger: noopLogger,

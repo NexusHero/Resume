@@ -10,6 +10,7 @@ import {
   FixedClock,
   SequenceIdGenerator,
 } from '../support/fakes';
+import { buildTalentDataPurgers } from '../support/talent-purgers';
 
 const OWNER = 'owner1';
 
@@ -18,12 +19,17 @@ function makeService() {
   const documents = new InMemoryDocumentRepository();
   const attachments = new InMemoryAttachmentStore();
   const candidacies = new InMemoryCandidacyRepository();
+  const clock = new FixedClock();
   const service = new TalentService({
     talentRepository: repo,
     documentRepository: documents,
-    attachmentStore: attachments,
-    candidacyRepository: candidacies,
-    clock: new FixedClock(),
+    talentDataPurgers: buildTalentDataPurgers({
+      documentRepository: documents,
+      attachmentStore: attachments,
+      candidacyRepository: candidacies,
+      clock,
+    }),
+    clock,
     idGenerator: new SequenceIdGenerator('talent'),
   });
   return { service, repo, documents, attachments, candidacies };

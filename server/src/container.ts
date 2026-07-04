@@ -8,7 +8,9 @@ import {
 } from 'awilix';
 import { loadConfig, type AppConfig } from './config';
 import { toUserView } from './domain/user';
+import { emptyContact } from './domain/talent-documents';
 import type { UserErasureStep, UserExportSection } from './ports/personal-data';
+import type { TalentDataPurger } from './ports/talent-data';
 import { createLogger } from './adapters/pino-logger';
 import { SystemClock } from './adapters/system-clock';
 import { RandomIdGenerator } from './adapters/random-id-generator';
@@ -181,6 +183,46 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     savedSearchService: asClass(SavedSearchService).singleton(),
     coverLetterService: asClass(CoverLetterService).singleton(),
     mandateService: asClass(MandateService).singleton(),
+    // DSGVO talent-data purge registry (ports/talent-data.ts): every container
+    // holding a candidate's satellite data registers one purger that handles both
+    // the hard-delete (erase) and the soft DSGVO strip (anonymize). Shared by
+    // TalentService.remove and RetentionService.anonymize, so the erase/anonymize
+    // divergence lives here once instead of drifting across two method bodies.
+    talentDataPurgers: asFunction((cradle): TalentDataPurger[] => [
+      {
+        label: 'documents',
+        purge: async (scope, talentId, mode) => {
+          if (mode === 'erase') {
+            await cradle.documentRepository.removeForTalent(scope, talentId);
+            return;
+          }
+          // anonymize: keep the résumé body, clear the identifying contact block.
+          const documents = await cradle.documentRepository.get(scope, talentId);
+          if (documents) {
+            await cradle.documentRepository.save({
+              ...documents,
+              contact: { ...emptyContact },
+              updatedAt: cradle.clock.isoNow(),
+            });
+          }
+        },
+      },
+      {
+        // Raw CVs are the heaviest personal data — removed on both erase and anonymize.
+        label: 'attachments',
+        purge: (scope, talentId) => cradle.attachmentStore.removeForTalent(scope, talentId),
+      },
+      {
+        label: 'candidacies',
+        purge: async (scope, talentId, mode) => {
+          // erase deletes the pipeline rows; anonymize keeps them as
+          // non-identifying history (stats, forecast) — the intended divergence.
+          if (mode === 'erase') {
+            await cradle.candidacyRepository.removeForTalent(scope, talentId);
+          }
+        },
+      },
+    ]).singleton(),
     talentService: asClass(TalentService).singleton(),
     talentImportService: asClass(TalentImportService).singleton(),
     placementService: asClass(PlacementService).singleton(),

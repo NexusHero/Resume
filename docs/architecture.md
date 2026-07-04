@@ -383,8 +383,12 @@ watching). If you are scanning for current exposure, read §11.2.
   Play Store; the repo carries the web-side wiring (`capacitor.config.ts`, `cap:*` scripts),
   while generating the native projects and building/submitting them is a manual dev-machine
   step (no Android SDK/Xcode in CI) — see [native-app.md](native-app.md).
-- OpenAPI covers the full surface but is hand-kept, not generated from zod — drift is
-  guarded only by review discipline and the docs acceptance tests (ADR-0012).
+- OpenAPI covers the full surface (101 operations, 1:1 with the routes) but is hand-kept,
+  not generated from zod (ADR-0012). Two guards now bound the drift: a **contract test**
+  (`openapi-contract.test.ts`) fails CI when a field added to a zod request schema is missing
+  from the spec, and the **docs guard** (`npm run docs:check`) fails on a broken diagram/link/
+  ADR reference. Full generation from zod (so the spec _falls out_ of the schemas) and
+  request/response examples on every operation remain the open follow-ups.
 - **Port coverage is deliberately partial, not accidental:** the file store is the default
   everywhere, with production adapters added where a deployment needs them — `PdfArchive` now
   has an S3-compatible adapter (ADR-0031), the scheduler a Postgres-advisory-lock one

@@ -159,6 +159,7 @@ paths:
         content:
           application/json:
             schema: { $ref: '#/components/schemas/Credentials' }
+            example: { email: recruiter@example.com, password: 's3cret-passphrase' }
       responses:
         '200':
           description: Signed in; session cookie set.
@@ -168,6 +169,12 @@ paths:
                 type: object
                 properties:
                   user: { $ref: '#/components/schemas/User' }
+              example:
+                user:
+                  id: usr_8Wq2aF
+                  email: recruiter@example.com
+                  roles: [recruiter]
+                  createdAt: '2026-06-01T09:00:00.000Z'
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/RateLimited' }
 
@@ -698,6 +705,8 @@ paths:
               type: object
               properties:
                 mandateContext: { type: string, maxLength: 50000 }
+            example:
+              mandateContext: Senior C++ Engineer at Aurora GmbH, Berlin — low-latency trading systems.
       responses:
         '200':
           description: Headline, paragraphs, highlights + grounding report.
@@ -707,6 +716,17 @@ paths:
                 type: object
                 properties:
                   pitch: { $ref: '#/components/schemas/Pitch' }
+              example:
+                pitch:
+                  headline: 8 years of low-latency C++ — a strong fit for Aurora's trading desk
+                  paragraphs:
+                    - Lena has shipped production C++17 order-routing systems handling 200k msg/s …
+                  highlights: [C++17, low-latency, order routing]
+                  provider: gemini
+                  usage: { inputTokens: 1180, outputTokens: 240, costUsd: 0.0011 }
+                  grounding:
+                    supported: [C++17, low-latency]
+                    unsupported: [] # empty → nothing to correct before sending
         '401': { $ref: '#/components/responses/Unauthorized' }
         # Representative Pro gate (ADR-0021); every generative route returns this
         # on a Free plan. Full per-route annotation follows when the plan goes live.
@@ -889,6 +909,15 @@ paths:
         content:
           application/json:
             schema: { $ref: '#/components/schemas/MandateInput' }
+            example:
+              client: Aurora GmbH
+              role: Senior C++ Engineer
+              location: Berlin
+              fee: '25%'
+              feeValue: '28.000 €'
+              deadline: '2026-09-30'
+              priority: high
+              jobText: 'Wir suchen eine:n Senior C++ Engineer (m/w/d) in Berlin …'
       responses:
         '201':
           description: Created.
@@ -898,6 +927,22 @@ paths:
                 type: object
                 properties:
                   mandate: { $ref: '#/components/schemas/Mandate' }
+              example:
+                mandate:
+                  id: mnd_3KpZ
+                  client: Aurora GmbH
+                  role: Senior C++ Engineer
+                  location: Berlin
+                  fee: '25%'
+                  feeValue: '28.000 €'
+                  deadline: '2026-09-30'
+                  priority: high
+                  status: active
+                  submitted: 0
+                  interviews: 0
+                  jobText: 'Wir suchen eine:n Senior C++ Engineer (m/w/d) in Berlin …'
+                  createdAt: '2026-07-01T08:15:00.000Z'
+                  updatedAt: '2026-07-01T08:15:00.000Z'
         '400': { $ref: '#/components/responses/ValidationProblem' }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
@@ -2483,31 +2528,61 @@ components:
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
+          example:
+            type: about:blank
+            title: Bad Request
+            status: 400
+            detail: 'client is required'
     Unauthorized:
       description: No (valid) session.
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
+          example:
+            type: about:blank
+            title: Unauthorized
+            status: 401
+            detail: Sign in to continue.
     Forbidden:
       description: The session lacks the required role.
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
+          example:
+            type: about:blank
+            title: Forbidden
+            status: 403
+            detail: This action requires an admin role.
     PlanRequired:
       description: The feature needs a higher subscription plan (ADR-0021). `type` is `about:blank#plan-required`.
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
+          example:
+            type: about:blank#plan-required
+            title: Payment Required
+            status: 402
+            detail: This feature requires the Pro plan.
     NotFound:
       description: No such record in the caller's scope.
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
+          example:
+            type: about:blank
+            title: Not Found
+            status: 404
+            detail: Talent tal_9Qz not found
     RateLimited:
       description: Too many attempts — try again later.
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
+          example:
+            type: about:blank
+            title: Too Many Requests
+            status: 429
+            detail: Too many attempts. Please wait a few minutes and try again.
     UpstreamProblem:
       description: The AI provider rejected the request (e.g. an invalid API key).
       content:

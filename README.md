@@ -9,8 +9,11 @@ and Bewerbungsmappe builder, and a small REST API behind it all.
 [![CI](https://github.com/NexusHero/Resume/actions/workflows/ci.yml/badge.svg)](https://github.com/NexusHero/Resume/actions/workflows/ci.yml)
 ![Node](https://img.shields.io/badge/node-%E2%89%A524-339933?logo=node.js&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-970%2B%20·%2090%25%20coverage-success)
+![Tests](https://img.shields.io/badge/tests-1070%2B%20·%2090%25%20coverage-success)
 ![Built with AI](https://img.shields.io/badge/built%20with-Claude%20Code-d97706)
+
+[**📖 API reference (Swagger UI)**](https://nexushero.github.io/Resume/) — the live OpenAPI
+contract, published from `server/openapi.yaml` to GitHub Pages.
 
 </div>
 

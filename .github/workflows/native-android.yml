@@ -42,7 +42,10 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          # Capacitor 8's Android Gradle Plugin compiles capacitor-android
+          # against Java 21 (compileDebugJavaWithJavac fails with "invalid
+          # source release: 21" on JDK 17) — verified against a real build.
+          java-version: '21'
 
       - uses: android-actions/setup-android@v3
 

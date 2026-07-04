@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 /**
  * A tenant is an isolated workspace (ADR-0036). Until now tenants were only a
  * string stamped on users (ADR-0033); this promotes them to first-class records
@@ -5,6 +7,12 @@
  * a user without one still belongs to the implicit `DEFAULT_TENANT`.
  */
 export type TenantStatus = 'active' | 'suspended';
+
+/** PATCH /api/v1/admin/tenants/:id — super-admin sets a tenant's status (ADR-0038). */
+export const setTenantStatusSchema = z.object({
+  status: z.enum(['active', 'suspended']),
+});
+export type SetTenantStatusInput = z.infer<typeof setTenantStatusSchema>;
 
 export interface Tenant {
   id: string;

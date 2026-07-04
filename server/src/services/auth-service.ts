@@ -89,10 +89,24 @@ export class AuthService {
     return { user: toUserView(user), token };
   }
 
+  /**
+   * Whether the user's workspace is suspended (ADR-0038). The default team has
+   * no registry row, so it can never be suspended — and users without an
+   * explicit tenant skip the lookup entirely (the common single-tenant case).
+   */
+  private async isTenantSuspended(tenantId?: string): Promise<boolean> {
+    if (!tenantId || !this.tenants) return false;
+    const tenant = await this.tenants.findById(tenantId);
+    return tenant?.status === 'suspended';
+  }
+
   async login(input: LoginInput): Promise<AuthResult> {
     const user = await this.users.findByEmail(input.email);
     const ok = user ? await this.hasher.verify(input.password, user.passwordHash) : false;
     if (!user || !ok) throw new UnauthorizedError('Invalid email or password');
+    if (await this.isTenantSuspended(user.tenantId)) {
+      throw new UnauthorizedError('This workspace has been suspended');
+    }
     const token = await this.sessions.create(user.id);
     return { user: toUserView(user), token };
   }
@@ -106,6 +120,9 @@ export class AuthService {
     const userId = await this.sessions.userIdFor(token);
     if (!userId) return null;
     const user = await this.users.findById(userId);
-    return user ? toUserView(user) : null;
+    if (!user) return null;
+    // A suspended workspace kills its members' sessions too, not just new logins.
+    if (await this.isTenantSuspended(user.tenantId)) return null;
+    return toUserView(user);
   }
 }

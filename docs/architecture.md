@@ -167,7 +167,12 @@ The outward submission stays a manual step (ADR-0019).
   acquires a non-default tenant by **invitation** (ADR-0035): an admin invites an email from
   Settings (`POST /members/invites`), the invitee opens the emailed link and accepts by setting a
   password (the login screen's `?invite_token=` mode → `POST /auth/accept-invite`) and lands in
-  that tenant — `register` is left untouched, so fresh installs stay single-tenant.
+  that tenant — `register` is left untouched, so fresh installs stay single-tenant. With
+  `SELF_SERVE_TENANTS` on, each sign-up instead spins up its own workspace (ADR-0036). An
+  instance **super-admin** (`SUPER_ADMIN_EMAIL`, config-only, never grantable via the API)
+  gets a cross-tenant console — list every workspace, re-role any tenant's members, and suspend
+  a tenant to lock its members out immediately (ADR-0037/0038); it surfaces as a Platform card
+  in Settings when `/auth/me` reports `isSuperAdmin`.
 - **API contract:** hand-maintained OpenAPI 3.1 + self-hosted Swagger UI (ADR-0012),
   extended in the same PR as any route change.
 - **Self-hosted assets:** fonts and the Swagger UI ship from this origin — no CDN, no
@@ -221,6 +226,7 @@ Full log in [`docs/adr/`](adr). Summary:
 | 0035 | Tenant onboarding by invitation (admin invite → accept)       | Accepted (D-series slice 6·3)   |
 | 0036 | Tenant registry + self-serve creation (SELF_SERVE_TENANTS)    | Accepted (D-series slice 6·4·1) |
 | 0037 | Super-admin capability + cross-tenant registry read           | Accepted (D-series slice 6·4·2) |
+| 0038 | Cross-tenant management + tenant suspension (enforced)        | Accepted (D-series slice 6·4·3) |
 
 ## 10. Quality Requirements
 

@@ -140,7 +140,9 @@ const RecruitApi = {
     const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/auth/me`));
     // Carry the plan (ADR-0021) on the user so the UI can gate Pro affordances;
     // the server middleware remains the real gate.
-    return data.user ? { ...data.user, plan: data.plan } : null;
+    return data.user
+      ? { ...data.user, plan: data.plan, isSuperAdmin: data.isSuperAdmin === true }
+      : null;
   },
   async listMembers() {
     const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/members`));
@@ -169,6 +171,40 @@ const RecruitApi = {
         body: JSON.stringify({ email, roles }),
       }),
     );
+  },
+  /* ---- Super-admin console (ADR-0037/0038) ---- */
+  async listTenants() {
+    const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/admin/tenants`));
+    return Array.isArray(data) ? data : []; // [{ id, name, createdAt, status, memberCount }]
+  },
+  async setTenantStatus(id, status) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/admin/tenants/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ status }),
+      }),
+    );
+    return data.tenant;
+  },
+  async listTenantMembers(id) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/admin/tenants/${encodeURIComponent(id)}/members`),
+    );
+    return Array.isArray(data) ? data : [];
+  },
+  async setTenantMemberRoles(tenantId, userId, roles) {
+    const data = await _jsonOrThrow(
+      await fetch(
+        `${RECRUIT_API_BASE}/admin/tenants/${encodeURIComponent(tenantId)}/members/${encodeURIComponent(userId)}/roles`,
+        {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ roles }),
+        },
+      ),
+    );
+    return data.member;
   },
   async acceptInvite(token, password) {
     const res = await fetch(`${RECRUIT_API_BASE}/auth/accept-invite`, {

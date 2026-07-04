@@ -248,6 +248,13 @@ export function createApp(deps: AppDeps): Express {
   // Super-admin console (ADR-0037): cross-tenant, gated in the controller on the
   // instance-level super-admin capability (a tenant admin has no access).
   api.get('/admin/tenants', requireAuth, asyncHandler(tenantAdmin.listTenants));
+  api.patch('/admin/tenants/:id', requireAuth, asyncHandler(tenantAdmin.setStatus));
+  api.get('/admin/tenants/:id/members', requireAuth, asyncHandler(tenantAdmin.listMembers));
+  api.patch(
+    '/admin/tenants/:id/members/:userId/roles',
+    requireAuth,
+    asyncHandler(tenantAdmin.setMemberRoles),
+  );
   api.get('/account/export', requireAuth, asyncHandler(account.export));
   api.delete('/account', requireAuth, asyncHandler(account.remove));
   // Per-user AI usage (requests, tokens, rough cost) for the settings card.

@@ -221,6 +221,7 @@ Full log in [`docs/adr/`](adr). Summary:
 | 0035 | Tenant onboarding by invitation (admin invite → accept)       | Accepted (D-series slice 6·3)   |
 | 0036 | Tenant registry + self-serve creation (SELF_SERVE_TENANTS)    | Accepted (D-series slice 6·4·1) |
 | 0037 | Super-admin capability + cross-tenant registry read           | Accepted (D-series slice 6·4·2) |
+| 0038 | Cross-tenant management + tenant suspension (enforced)        | Accepted (D-series slice 6·4·3) |
 
 ## 10. Quality Requirements
 

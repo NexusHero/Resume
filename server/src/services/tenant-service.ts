@@ -1,5 +1,6 @@
 import { DEFAULT_TENANT } from '../domain/user';
-import type { Tenant, TenantOverview } from '../domain/tenant';
+import type { Tenant, TenantOverview, TenantStatus } from '../domain/tenant';
+import { NotFoundError } from '../domain/errors';
 import type { TenantRepository } from '../ports/tenant-repository';
 import type { UserRepository } from '../ports/user-repository';
 
@@ -54,5 +55,16 @@ export class TenantService {
     }
 
     return overview;
+  }
+
+  /**
+   * Set a tenant's status (super-admin; ADR-0038). The implicit default team has
+   * no registry row and so cannot be suspended — a missing tenant is a 404.
+   */
+  async setStatus(id: string, status: TenantStatus): Promise<Tenant> {
+    const tenant = await this.tenants.findById(id);
+    if (!tenant) throw new NotFoundError(`Tenant ${id} not found`);
+    if (tenant.status !== status) await this.tenants.setStatus(id, status);
+    return { ...tenant, status };
   }
 }

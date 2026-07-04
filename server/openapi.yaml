@@ -1626,6 +1626,97 @@ paths:
                 items: { $ref: '#/components/schemas/TenantOverview' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
+    patch:
+      tags: [Team]
+      summary: Suspend or reactivate a tenant (super-admin)
+      operationId: setTenantStatus
+      description: |
+        Suspending a tenant kills its members' sessions and blocks their login
+        (ADR-0038). The implicit default team has no record and cannot be
+        suspended (404).
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [active, suspended] }
+      responses:
+        '200':
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tenant: { $ref: '#/components/schemas/Tenant' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/tenants/{id}/members:
+    get:
+      tags: [Team]
+      summary: List a tenant's members (super-admin)
+      operationId: listTenantMembers
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses:
+        '200':
+          description: The tenant's members.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/tenants/{id}/members/{userId}/roles:
+    patch:
+      tags: [Team]
+      summary: Set a member's roles in any tenant (super-admin)
+      operationId: setTenantMemberRoles
+      security:
+        - cookieSession: []
+      parameters:
+        - { $ref: '#/components/parameters/id' }
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [roles]
+              properties:
+                roles:
+                  type: array
+                  minItems: 1
+                  items: { type: string, enum: [admin, recruiter] }
+      responses:
+        '200':
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  member: { $ref: '#/components/schemas/User' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
 
   /account/export:
     get:
@@ -2455,15 +2546,22 @@ components:
           description: The tenant the account belongs to; absent means the default single tenant `team` (ADR-0033).
         verifiedAt: { type: string, format: date-time }
 
-    TenantOverview:
+    Tenant:
       type: object
-      description: A tenant as the super-admin console sees it (ADR-0037) — the record plus its member count.
+      description: A tenant workspace record (ADR-0036).
       properties:
         id: { type: string }
         name: { type: string }
         createdAt: { type: string, description: ISO 8601; empty for the synthesised default team. }
         status: { type: string, enum: [active, suspended] }
-        memberCount: { type: integer }
+
+    TenantOverview:
+      allOf:
+        - $ref: '#/components/schemas/Tenant'
+        - type: object
+          description: A tenant as the super-admin console sees it (ADR-0037) — the record plus its member count.
+          properties:
+            memberCount: { type: integer }
 
     TenantInviteView:
       type: object

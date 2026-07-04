@@ -73,3 +73,25 @@ describe('TenantService.list (ADR-0037)', () => {
     expect(await c.service.list()).toEqual([]);
   });
 });
+
+describe('TenantService.setStatus (ADR-0038)', () => {
+  it('SuspendsAndReactivatesAnExistingTenant', async () => {
+    const c = ctx();
+    c.tenants.tenants.push(tenant('acme', '2026-06-20T00:00:00.000Z'));
+    expect((await c.service.setStatus('acme', 'suspended')).status).toBe('suspended');
+    expect(c.tenants.tenants[0]?.status).toBe('suspended');
+    expect((await c.service.setStatus('acme', 'active')).status).toBe('active');
+  });
+
+  it('NoOpWhenStatusUnchanged', async () => {
+    const c = ctx();
+    c.tenants.tenants.push(tenant('acme', '2026-06-20T00:00:00.000Z')); // already active
+    expect((await c.service.setStatus('acme', 'active')).status).toBe('active');
+  });
+
+  it('UnknownTenant_Throws404', async () => {
+    const c = ctx();
+    const { NotFoundError } = await import('../../src/domain/errors');
+    await expect(c.service.setStatus('ghost', 'suspended')).rejects.toBeInstanceOf(NotFoundError);
+  });
+});

@@ -175,3 +175,47 @@ describe('AuthService — self-serve tenants (ADR-0036)', () => {
     expect(repo.users.every((u) => u.tenantId === undefined)).toBe(true);
   });
 });
+
+describe('AuthService — suspended-tenant enforcement (ADR-0038)', () => {
+  function makeSelfServe() {
+    const repo = new InMemoryUserRepository();
+    const tenants = new InMemoryTenantRepository();
+    const sessions = new MemorySessionStore();
+    const service = new AuthService({
+      userRepository: repo,
+      sessionStore: sessions,
+      passwordHasher: fakePasswordHasher,
+      clock: new FixedClock(),
+      idGenerator: new SequenceIdGenerator('id'),
+      tenantRepository: tenants,
+      config: loadConfig({ SELF_SERVE_TENANTS: 'true' }),
+    });
+    return { service, repo, tenants, sessions };
+  }
+
+  it('Login_SuspendedTenant_ThrowsUnauthorized', async () => {
+    const c = makeSelfServe();
+    const { user } = await c.service.register(reg('founder@acme.io'));
+    await c.tenants.setStatus(user.tenantId!, 'suspended');
+    await expect(
+      c.service.login(loginSchema.parse({ email: 'founder@acme.io', password: 'supersecret' })),
+    ).rejects.toBeInstanceOf(UnauthorizedError);
+  });
+
+  it('CurrentUser_SuspendedTenant_ReturnsNull_ThenBackWhenReactivated', async () => {
+    const c = makeSelfServe();
+    const { user, token } = await c.service.register(reg('founder@acme.io'));
+    expect(await c.service.currentUser(token)).not.toBeNull();
+    await c.tenants.setStatus(user.tenantId!, 'suspended');
+    expect(await c.service.currentUser(token)).toBeNull(); // session killed
+    await c.tenants.setStatus(user.tenantId!, 'active');
+    expect(await c.service.currentUser(token)).not.toBeNull(); // restored
+  });
+
+  it('DefaultTeamUser_NeverSuspended', async () => {
+    // A user without an explicit tenant (default team) skips the check entirely.
+    const c = makeService(); // no tenantRepository
+    const { token } = await c.service.register(reg('boss@acme.io'));
+    expect(await c.service.currentUser(token)).not.toBeNull();
+  });
+});

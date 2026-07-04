@@ -159,6 +159,9 @@ function makeApp(
   // Shared so per-user LLM keys set via /settings are seen by the AI helpers and
   // erased with the account.
   const apiKeyStore = new InMemoryApiKeyStore();
+  // Shared between AuthService (self-serve creation + suspension enforcement) and
+  // the super-admin console, so a tenant suspended via /admin is seen at login.
+  const tenantRepository = new InMemoryTenantRepository();
   const usageMeter = new InMemoryUsageMeter();
   // Shared so the per-user provider choice, auth and members management all
   // observe the same accounts.
@@ -362,6 +365,8 @@ function makeApp(
       passwordHasher: fakePasswordHasher,
       clock: new FixedClock(),
       idGenerator: new SequenceIdGenerator('user'),
+      tenantRepository,
+      config,
     }),
     emailVerificationService: new EmailVerificationService({
       userRepository,
@@ -419,10 +424,8 @@ function makeApp(
     config,
   });
   const tenantAdminController = new TenantAdminController({
-    tenantService: new TenantService({
-      tenantRepository: new InMemoryTenantRepository(),
-      userRepository,
-    }),
+    tenantService: new TenantService({ tenantRepository, userRepository }),
+    membersService: new MembersService({ userRepository }),
   });
   return createApp({
     applicationController: controller,
@@ -2598,5 +2601,79 @@ describe('Super-admin console (ADR-0037)', () => {
   it('Unauthenticated_CannotListTenants_Returns401', async () => {
     const app = makeApp(loadConfig({ SUPER_ADMIN_EMAIL: 'root@example.com' }));
     expect((await request(app).get('/api/v1/admin/tenants')).status).toBe(401);
+  });
+});
+
+describe('Super-admin cross-tenant management (ADR-0038)', () => {
+  // Self-serve so a second, isolated tenant with its own admin exists to manage.
+  const adminApp = () =>
+    makeApp(loadConfig({ SUPER_ADMIN_EMAIL: 'root@example.com', SELF_SERVE_TENANTS: 'true' }));
+
+  async function setup() {
+    const app = adminApp();
+    const root = request.agent(app);
+    await root
+      .post('/api/v1/auth/register')
+      .send({ email: 'root@example.com', password: 'correct horse battery' });
+    const founder = request.agent(app);
+    const reg = await founder
+      .post('/api/v1/auth/register')
+      .send({ email: 'founder@acme.io', password: 'correct horse battery' });
+    return { app, root, founder, acmeId: reg.body.user.tenantId as string };
+  }
+
+  it('SuperAdmin_ListsAndRerolesAnotherTenantsMembers', async () => {
+    const { root, acmeId } = await setup();
+    const members = await root.get(`/api/v1/admin/tenants/${acmeId}/members`);
+    expect(members.status).toBe(200);
+    expect(members.body.map((m: { email: string }) => m.email)).toEqual(['founder@acme.io']);
+    const founderId = members.body[0].id as string;
+
+    const patched = await root
+      .patch(`/api/v1/admin/tenants/${acmeId}/members/${founderId}/roles`)
+      .send({ roles: ['admin', 'recruiter'] });
+    expect(patched.status).toBe(200);
+    expect(patched.body.member.roles).toEqual(['admin', 'recruiter']);
+  });
+
+  it('SuperAdmin_SuspendsTenant_KillsMemberSessionsAndBlocksLogin', async () => {
+    const { root, founder, acmeId } = await setup();
+    // Before: the founder's session works.
+    expect((await founder.get('/api/v1/auth/me')).body.user.email).toBe('founder@acme.io');
+
+    const suspend = await root
+      .patch(`/api/v1/admin/tenants/${acmeId}`)
+      .send({ status: 'suspended' });
+    expect(suspend.status).toBe(200);
+    expect(suspend.body.tenant.status).toBe('suspended');
+
+    // The existing session is now dead, and a fresh login is refused.
+    expect((await founder.get('/api/v1/auth/me')).body.user).toBeNull();
+    const login = await founder
+      .post('/api/v1/auth/login')
+      .send({ email: 'founder@acme.io', password: 'correct horse battery' });
+    expect(login.status).toBe(401);
+
+    // Reactivating restores access.
+    await root.patch(`/api/v1/admin/tenants/${acmeId}`).send({ status: 'active' });
+    const back = await founder
+      .post('/api/v1/auth/login')
+      .send({ email: 'founder@acme.io', password: 'correct horse battery' });
+    expect(back.status).toBe(200);
+  });
+
+  it('SuperAdmin_SuspendUnknownTenant_Returns404', async () => {
+    const { root } = await setup();
+    expect(
+      (await root.patch('/api/v1/admin/tenants/ghost').send({ status: 'suspended' })).status,
+    ).toBe(404);
+  });
+
+  it('NonSuperAdmin_CannotManage_Returns403', async () => {
+    const { founder, acmeId } = await setup();
+    expect((await founder.get(`/api/v1/admin/tenants/${acmeId}/members`)).status).toBe(403);
+    expect(
+      (await founder.patch(`/api/v1/admin/tenants/${acmeId}`).send({ status: 'suspended' })).status,
+    ).toBe(403);
   });
 });

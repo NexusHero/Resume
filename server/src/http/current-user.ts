@@ -3,7 +3,12 @@ import { UnauthorizedError } from '../domain/errors';
 import { DEFAULT_TENANT, type Role } from '../domain/user';
 import type { AuthPrincipal } from '../ports/authorizer';
 
-type AuthedRequest = Request & { userId?: string; roles?: Role[]; tenantId?: string };
+type AuthedRequest = Request & {
+  userId?: string;
+  roles?: Role[];
+  tenantId?: string;
+  isSuperAdmin?: boolean;
+};
 
 /** The authenticated user's id, attached to the request by AuthController.requireAuth. */
 export function currentUserId(req: Request): string {
@@ -39,4 +44,13 @@ export function currentPrincipal(req: Request): AuthPrincipal {
 export const TEAM_SCOPE = DEFAULT_TENANT;
 export function currentScope(req: Request): string {
   return (req as AuthedRequest).tenantId ?? DEFAULT_TENANT;
+}
+
+/**
+ * Whether the acting user holds the instance-level **super-admin** capability
+ * (ADR-0037) — cross-tenant visibility/management. Stamped by requireAuth from
+ * the configured `superAdminEmails`; never derived from tenant roles.
+ */
+export function currentIsSuperAdmin(req: Request): boolean {
+  return (req as AuthedRequest).isSuperAdmin === true;
 }

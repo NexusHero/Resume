@@ -23,6 +23,7 @@ import type { AttachmentController } from './attachment-controller';
 import type { AuthController } from './auth-controller';
 import type { MembersController } from './members-controller';
 import type { InviteController } from './invite-controller';
+import type { TenantAdminController } from './tenant-admin-controller';
 import type { AccountController } from './account-controller';
 import type { PasswordResetController } from './password-reset-controller';
 import { asyncHandler } from './async-handler';
@@ -60,6 +61,7 @@ export interface AppDeps {
   authController: AuthController;
   membersController: MembersController;
   inviteController: InviteController;
+  tenantAdminController: TenantAdminController;
   accountController: AccountController;
   passwordResetController: PasswordResetController;
   planProvider: PlanProvider;
@@ -94,6 +96,7 @@ export function createApp(deps: AppDeps): Express {
     authController: auth,
     membersController: members,
     inviteController: invites,
+    tenantAdminController: tenantAdmin,
     accountController: account,
     passwordResetController: passwordReset,
   } = deps;
@@ -242,6 +245,9 @@ export function createApp(deps: AppDeps): Express {
   // Tenant invitations (admin-only; ADR-0035): create + list pending for the tenant.
   api.post('/members/invites', requireAuth, asyncHandler(invites.create));
   api.get('/members/invites', requireAuth, asyncHandler(invites.list));
+  // Super-admin console (ADR-0037): cross-tenant, gated in the controller on the
+  // instance-level super-admin capability (a tenant admin has no access).
+  api.get('/admin/tenants', requireAuth, asyncHandler(tenantAdmin.listTenants));
   api.get('/account/export', requireAuth, asyncHandler(account.export));
   api.delete('/account', requireAuth, asyncHandler(account.remove));
   // Per-user AI usage (requests, tokens, rough cost) for the settings card.

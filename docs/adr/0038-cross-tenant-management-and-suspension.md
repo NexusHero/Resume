@@ -45,5 +45,10 @@ All under the existing super-admin-gated `/admin` console:
 - **Behaviour-neutral by default**: no `SUPER_ADMIN_EMAIL` → the whole `/admin`
   surface is 403; `SELF_SERVE_TENANTS` off → no user has a registered tenant, so
   suspension enforcement never triggers.
-- Still out of scope: the super-admin **UI** (next slice) and deleting a tenant
-  (suspension is reversible and safer; hard delete is a DSGVO exercise on its own).
+- The super-admin **UI** landed in a follow-up commit: a "Platform — all
+  workspaces" card in Settings, shown only when `/auth/me` reports
+  `isSuperAdmin`. It lists every tenant (name · member count · status) with a
+  suspend/reactivate toggle (the default team's is disabled) and expands a tenant
+  to re-role its members.
+- Still out of scope: deleting a tenant (suspension is reversible and safer;
+  hard delete is a DSGVO exercise on its own).

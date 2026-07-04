@@ -313,6 +313,131 @@ function InvitesCard() {
   );
 }
 
+/* TenantMembers — the expanded cross-tenant member list inside SuperAdminCard.
+   A super-admin can re-role any tenant's members (ADR-0038). */
+function TenantMembers({ tenantId }) {
+  const [members, setMembers] = React.useState(null); // null = loading
+  const [note, setNote] = React.useState('');
+
+  const load = React.useCallback(() => {
+    window.RecruitApi.listTenantMembers(tenantId).then(setMembers).catch(() => setMembers([]));
+  }, [tenantId]);
+  React.useEffect(() => load(), [load]);
+
+  const toggleRole = async (m, role) => {
+    const has = m.roles.includes(role);
+    const next = has ? m.roles.filter((r) => r !== role) : [...m.roles, role];
+    if (next.length === 0) return;
+    setNote('');
+    try {
+      const updated = await window.RecruitApi.setTenantMemberRoles(tenantId, m.id, next);
+      setMembers((ms) => ms.map((x) => (x.id === m.id ? updated : x)));
+    } catch {
+      setNote('Could not update roles — the tenant must keep at least one admin.');
+      load();
+    }
+  };
+
+  if (members === null) return <div style={{ padding: '8px 0', fontSize: '12px', color: 'var(--text-soft)' }}>Loading members…</div>;
+  return (
+    <div style={{ padding: '4px 0 8px 12px' }}>
+      {members.map((m) => (
+        <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0' }}>
+          <span style={{ fontSize: '12.5px', color: 'var(--text-heading)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.email}</span>
+          <span style={{ marginLeft: 'auto', display: 'inline-flex', gap: '12px' }}>
+            {TEAM_ROLES.map((role) => (
+              <label key={role} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: m.roles.includes(role) ? 'var(--text-heading)' : 'var(--text-soft)', cursor: 'pointer' }}>
+                <input type="checkbox" aria-label={`${role} role for ${m.email}`} checked={m.roles.includes(role)} onChange={() => toggleRole(m, role)} /> {role}
+              </label>
+            ))}
+          </span>
+        </div>
+      ))}
+      {note && <div role="alert" style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '4px' }}>{note}</div>}
+    </div>
+  );
+}
+
+/* SuperAdminCard — the instance operator's console (ADR-0037/0038). Shown only to
+   super-admins (SUPER_ADMIN_EMAIL): every workspace with its member count and
+   status, a suspend/reactivate toggle, and per-tenant member role management. */
+function SuperAdminCard() {
+  const [isSuper, setIsSuper] = React.useState(null); // null = unknown
+  const [tenants, setTenants] = React.useState(null); // null = loading
+  const [busy, setBusy] = React.useState('');
+  const [expanded, setExpanded] = React.useState('');
+
+  const reload = React.useCallback(() => {
+    return window.RecruitApi.listTenants().then(setTenants).catch(() => setTenants([]));
+  }, []);
+
+  React.useEffect(() => {
+    let alive = true;
+    // The console is super-admin-only; resolve the capability first so a normal
+    // user never fires a call that would 403.
+    window.RecruitApi.authMe()
+      .then((me) => {
+        const su = !!(me && me.isSuperAdmin);
+        if (!alive) return;
+        setIsSuper(su);
+        if (su) reload();
+      })
+      .catch(() => { if (alive) setIsSuper(false); });
+    return () => { alive = false; };
+  }, [reload]);
+
+  const setStatus = async (t, status) => {
+    setBusy(t.id);
+    try {
+      await window.RecruitApi.setTenantStatus(t.id, status);
+      await reload();
+    } catch {
+      /* leave the row as-is; a reload would clear an optimistic state anyway */
+    }
+    setBusy('');
+  };
+
+  if (isSuper === false) return null; // console is super-admin-only
+
+  return (
+    <div style={{ background: 'var(--surface-card)', border: '1px solid var(--accent-border, var(--border-strong))', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '22px 24px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+        <div style={{ flex: 1 }}>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>Platform — all workspaces</h2>
+          <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Instance super-admin. Every tenant on this deployment; suspend one to lock its members out immediately, or change a member's roles.</div>
+        </div>
+        <span style={{ flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--accent-strong)', background: 'var(--accent-soft)', border: '1px solid var(--accent-border, var(--border))', borderRadius: 'var(--radius-pill)', padding: '3px 9px' }}>Super-admin</span>
+      </div>
+
+      {tenants === null ? (
+        <div style={{ padding: '22px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Loading…</div>
+      ) : tenants.length === 0 ? (
+        <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>No tenants yet.</div>
+      ) : (
+        <div style={{ marginTop: '12px' }}>
+          {tenants.map((t) => {
+            const suspended = t.status === 'suspended';
+            const open = expanded === t.id;
+            return (
+              <div key={t.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 0' }}>
+                  <button type="button" onClick={() => setExpanded(open ? '' : t.id)} style={{ cursor: 'pointer', background: 'none', border: 'none', padding: 0, fontFamily: 'var(--font-display)', fontSize: '13.5px', fontWeight: 600, color: 'var(--text-heading)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'left' }}>
+                    {open ? '▾ ' : '▸ '}{t.name}
+                  </button>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>{t.memberCount} member{t.memberCount === 1 ? '' : 's'}</span>
+                  <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.04em', textTransform: 'uppercase', color: suspended ? 'var(--danger)' : 'var(--status-hired-strong)', background: suspended ? 'var(--danger-soft, rgba(200,50,50,0.08))' : 'var(--status-hired-soft)', border: `1px solid ${suspended ? 'var(--danger)' : 'var(--status-hired-border)'}`, borderRadius: 'var(--radius-pill)', padding: '1px 8px' }}>{t.status}</span>
+                  <button type="button" disabled={busy === t.id || t.id === 'team'} title={t.id === 'team' ? 'The default team cannot be suspended' : ''} onClick={() => setStatus(t, suspended ? 'active' : 'suspended')} style={{ cursor: busy === t.id || t.id === 'team' ? 'default' : 'pointer', border: `1px solid ${suspended ? 'var(--status-hired-border)' : 'var(--status-rejected-border)'}`, borderRadius: 'var(--radius-pill)', background: 'none', color: suspended ? 'var(--status-hired-strong)' : 'var(--danger)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '4px 12px', opacity: t.id === 'team' ? 0.4 : 1 }}>{busy === t.id ? '…' : suspended ? 'Reactivate' : 'Suspend'}</button>
+                </div>
+                {open && <TenantMembers tenantId={t.id} />}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ComplianceCard — DSGVO retention review (admin only): candidates due for
    review, with a per-row Anonymize action. Never auto-deletes. */
 function ComplianceCard() {
@@ -669,6 +794,7 @@ function SettingsView({ user }) {
       <TeamCard />
       <InvitesCard />
       <ComplianceCard />
+      <SuperAdminCard />
       <DataPrivacyCard />
     </div>
   );

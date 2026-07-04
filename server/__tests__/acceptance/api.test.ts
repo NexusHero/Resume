@@ -62,7 +62,6 @@ import { TenantService } from '../../src/services/tenant-service.js';
 import { AccountService } from '../../src/services/account-service.js';
 import { toUserView } from '../../src/domain/user.js';
 import { PasswordResetService } from '../../src/services/password-reset-service.js';
-import { MemorySessionStore } from '../../src/adapters/memory-session-store.js';
 import { CoverLetterService } from '../../src/services/cover-letter-service.js';
 import { AnthropicLlmProvider } from '../../src/adapters/anthropic-llm-provider.js';
 import { GeminiLlmProvider } from '../../src/adapters/gemini-llm-provider.js';
@@ -97,6 +96,7 @@ import {
   InMemoryStageTransitionRepository,
   InMemoryRetentionPolicyStore,
   fakePasswordHasher,
+  FakeAuthEngine,
   FakePdfRenderer,
   FakePdfMerger,
   FakePdfTextExtractor,
@@ -188,7 +188,7 @@ function makeApp(
   const candidacyRepository = new InMemoryCandidacyRepository();
   const documentRepository = new InMemoryDocumentRepository();
   const attachmentStore = new InMemoryAttachmentStore();
-  const sessionStore = new MemorySessionStore();
+  const authEngine = new FakeAuthEngine();
   const passwordResetTokenStore =
     opts.passwordResetTokenStore ?? new InMemoryPasswordResetTokenStore();
   const mailer = opts.mailer ?? new RecordingMailer();
@@ -366,7 +366,7 @@ function makeApp(
   const authController = new AuthController({
     authService: new AuthService({
       userRepository,
-      sessionStore,
+      authEngine,
       passwordHasher: fakePasswordHasher,
       clock: new FixedClock(),
       idGenerator: new SequenceIdGenerator('user'),
@@ -396,7 +396,13 @@ function makeApp(
             }
           },
         },
-        { label: 'sessions', erase: (userId) => sessionStore.destroyForUser(userId) },
+        {
+          label: 'auth-credentials',
+          erase: async (userId) => {
+            const found = await userRepository.findById(userId);
+            if (found) await authEngine.erase(found.email);
+          },
+        },
         {
           label: 'password-reset-tokens',
           erase: (userId) => passwordResetTokenStore.destroyForUser(userId),
@@ -431,9 +437,8 @@ function makeApp(
   const passwordResetController = new PasswordResetController({
     passwordResetService: new PasswordResetService({
       userRepository,
-      sessionStore,
+      authEngine,
       passwordResetTokenStore,
-      passwordHasher: fakePasswordHasher,
       mailer,
       logger: noopLogger,
       config,
@@ -446,8 +451,7 @@ function makeApp(
     inviteService: new InviteService({
       inviteRepository: new InMemoryInviteRepository(),
       userRepository,
-      sessionStore,
-      passwordHasher: fakePasswordHasher,
+      authEngine,
       idGenerator: new SequenceIdGenerator('invite'),
       clock: new FixedClock(),
       mailer,

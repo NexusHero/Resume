@@ -1,6 +1,7 @@
 # ADR-0043 — Better-Auth credential/session engine (embedded SQLite)
 
-- **Status:** Accepted (engine landed; live cutover staged — see Consequences)
+- **Status:** Accepted (engine landed **and live** — `AuthService`, invites and
+  password-reset now run on the engine; see Consequences)
 - **Relates to:** ADR-0042 (the ESM migration that unblocked this), ADR-0002
   (Awilix DI, no decorators), ADR-0003 (file-store default / offline-first),
   ADR-0004 (authenticated, team-scoped API). Realises the framework option (C) of
@@ -49,11 +50,22 @@ Database(path), secret, emailAndPassword, plugins: [bearer()] })`. It is driven
   cost, accepted: a new native dependency (`better-sqlite3`, prebuilt binaries)
   and auth data living in SQLite alongside the JSON/Postgres domain store (two
   persistence mechanisms).
-- **The live cutover is staged, on purpose.** Re-pointing `AuthService` at the
-  engine (with the scrypt→Better-Auth **rehash-on-login** path so no user is
-  forced to reset, and DSGVO session revocation via the engine) is the follow-up
-  commit. Auth is breach-consequential and browser login cannot be exercised in
-  CI or this environment, so the cutover ships behind an on-device smoke-test —
-  the same honesty bound this project applies to every auth change. Until then the
-  proven scrypt/`SessionStore` path remains the default and behaviour is unchanged.
-- 2FA/passkeys (Better-Auth plugins) become incremental once the engine is live.
+- **The live cutover has landed.** `AuthService` (register / login / logout /
+  currentUser), `InviteService.accept` and `PasswordResetService.confirm` now go
+  through the engine; the domain `User` keeps `passwordHash: ''` since the engine
+  owns the credential. Legacy accounts migrate **on first login** via a
+  **rehash-on-login** path: login verifies the old scrypt hash, mints the engine
+  credential from the same plaintext, and clears the legacy hash — no user is
+  forced to reset. Password-reset covers un-migrated accounts too (mint the engine
+  credential if none exists yet, otherwise set the new password) and revokes every
+  session. DSGVO erasure removes the engine credential + all sessions by email.
+  Auth is breach-consequential and browser login cannot be exercised in CI or this
+  environment, so the cutover ships behind an on-device login/logout smoke-test —
+  the same honesty bound this project applies to every auth change.
+- The `AuthEngine` port gained `setPassword` / `revokeSessions` / `erase` to serve
+  password-reset and DSGVO erasure headlessly.
+- The legacy `SessionStore`/`PasswordHasher` are now vestigial: `PasswordHasher`
+  survives only as the reader in the rehash-on-login path; `SessionStore` is no
+  longer on the auth path. Removing them is a later cleanup once no un-migrated
+  scrypt hashes remain in the wild.
+- 2FA/passkeys (Better-Auth plugins) become incremental now that the engine is live.

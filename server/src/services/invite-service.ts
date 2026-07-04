@@ -1,8 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import type { InviteRepository } from '../ports/invite-repository.js';
 import type { UserRepository } from '../ports/user-repository.js';
-import type { SessionStore } from '../ports/session-store.js';
-import type { PasswordHasher } from '../ports/password-hasher.js';
+import type { AuthEngine } from '../ports/auth-engine.js';
 import type { IdGenerator } from '../ports/id-generator.js';
 import type { Clock } from '../ports/clock.js';
 import type { Mailer } from '../ports/mailer.js';
@@ -23,8 +22,7 @@ import {
 export interface InviteServiceDeps {
   inviteRepository: InviteRepository;
   userRepository: UserRepository;
-  sessionStore: SessionStore;
-  passwordHasher: PasswordHasher;
+  authEngine: AuthEngine;
   idGenerator: IdGenerator;
   clock: Clock;
   mailer: Mailer;
@@ -48,8 +46,7 @@ export interface AcceptResult {
 export class InviteService {
   private readonly invites: InviteRepository;
   private readonly users: UserRepository;
-  private readonly sessions: SessionStore;
-  private readonly hasher: PasswordHasher;
+  private readonly engine: AuthEngine;
   private readonly ids: IdGenerator;
   private readonly clock: Clock;
   private readonly mailer: Mailer;
@@ -60,8 +57,7 @@ export class InviteService {
   constructor(deps: InviteServiceDeps) {
     this.invites = deps.inviteRepository;
     this.users = deps.userRepository;
-    this.sessions = deps.sessionStore;
-    this.hasher = deps.passwordHasher;
+    this.engine = deps.authEngine;
     this.ids = deps.idGenerator;
     this.clock = deps.clock;
     this.mailer = deps.mailer;
@@ -126,16 +122,17 @@ export class InviteService {
     const existing = await this.users.findByEmail(invite.email);
     if (existing) throw new ConflictError('An account with this email already exists');
 
+    // The engine (Better-Auth) owns the credential + session (ADR-0043).
+    const { token } = await this.engine.signUp(invite.email, input.password);
     const user: User = {
       id: this.ids.next(),
       email: invite.email,
-      passwordHash: await this.hasher.hash(input.password),
+      passwordHash: '',
       roles: invite.roles,
       createdAt: this.clock.isoNow(),
       tenantId: invite.tenantId,
     };
     await this.users.add(user);
-    const token = await this.sessions.create(user.id);
     return { user: toUserView(user), token };
   }
 }

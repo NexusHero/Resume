@@ -27,6 +27,7 @@ import type { AttachmentBlob, AttachmentStore } from '../../src/ports/attachment
 import type { User, Role } from '../../src/domain/user.js';
 import type { UserRepository } from '../../src/ports/user-repository.js';
 import type { PasswordHasher } from '../../src/ports/password-hasher.js';
+import type { AuthEngine, AuthEngineSession, AuthEngineUser } from '../../src/ports/auth-engine.js';
 import type { PasswordResetTokenStore } from '../../src/ports/password-reset-token-store.js';
 import type { EmailVerificationTokenStore } from '../../src/ports/email-verification-token-store.js';
 import type { InviteRepository } from '../../src/ports/invite-repository.js';
@@ -635,3 +636,57 @@ export const fakePasswordHasher: PasswordHasher = {
     return hash === `hashed:${plaintext}`;
   },
 };
+
+/**
+ * In-memory AuthEngine for tests — mirrors BetterAuthEngine's contract without
+ * SQLite. Credentials are keyed by email; opaque tokens map back to the email.
+ */
+export class FakeAuthEngine implements AuthEngine {
+  private readonly creds = new Map<string, { id: string; password: string }>();
+  private readonly sessions = new Map<string, string>(); // token → email
+  private seq = 0;
+  private tok = 0;
+
+  async signUp(email: string, password: string): Promise<AuthEngineSession> {
+    if (this.creds.has(email)) throw new Error('email already registered');
+    const id = `eng-user-${++this.seq}`;
+    this.creds.set(email, { id, password });
+    return { user: { id, email }, token: this.open(email) };
+  }
+
+  async signIn(email: string, password: string): Promise<AuthEngineSession | null> {
+    const cred = this.creds.get(email);
+    if (!cred || cred.password !== password) return null;
+    return { user: { id: cred.id, email }, token: this.open(email) };
+  }
+
+  async resolve(token: string): Promise<AuthEngineUser | null> {
+    const email = this.sessions.get(token);
+    const cred = email ? this.creds.get(email) : undefined;
+    return cred && email ? { id: cred.id, email } : null;
+  }
+
+  async signOut(token: string): Promise<void> {
+    this.sessions.delete(token);
+  }
+
+  async setPassword(email: string, newPassword: string): Promise<void> {
+    const cred = this.creds.get(email);
+    if (cred) cred.password = newPassword;
+  }
+
+  async revokeSessions(email: string): Promise<void> {
+    for (const [t, e] of this.sessions) if (e === email) this.sessions.delete(t);
+  }
+
+  async erase(email: string): Promise<void> {
+    this.creds.delete(email);
+    await this.revokeSessions(email);
+  }
+
+  private open(email: string): string {
+    const token = `eng-token-${++this.tok}`;
+    this.sessions.set(token, email);
+    return token;
+  }
+}

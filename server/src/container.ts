@@ -16,6 +16,7 @@ import { SystemClock } from './adapters/system-clock.js';
 import { RandomIdGenerator } from './adapters/random-id-generator.js';
 import { createPdfArchive } from './adapters/create-pdf-archive.js';
 import { ScryptPasswordHasher } from './adapters/scrypt-password-hasher.js';
+import { BetterAuthEngine } from './adapters/better-auth/better-auth-engine.js';
 import { createMailer } from './adapters/mailer-factory.js';
 import { createInboxSource } from './adapters/inbox-source-factory.js';
 import { createPersistence } from './adapters/persistence-factory.js';
@@ -137,6 +138,14 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     artifactLogRepository: asValue(persistence.artifactLogRepository),
     stageTransitionRepository: asValue(persistence.stageTransitionRepository),
     passwordHasher: asClass(ScryptPasswordHasher).singleton(),
+    // Credential + session authority (ADR-0043): Better-Auth on embedded SQLite.
+    // Constructed synchronously; its schema migrates lazily on first use.
+    authEngine: asFunction(({ config: c }) =>
+      BetterAuthEngine.create({
+        dbPath: c.auth.betterAuthDbPath,
+        secret: c.security.encryptionSecret,
+      }),
+    ).singleton(),
     // Transactional email: console by default, SMTP (nodemailer) when configured.
     mailer: asFunction(({ config: c, logger }) => createMailer({ config: c, logger })).singleton(),
     // Inbox reading for reply detection: IMAP when configured, else disabled.
@@ -264,7 +273,15 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
           }
         },
       },
-      { label: 'sessions', erase: (userId) => cradle.sessionStore.destroyForUser(userId) },
+      {
+        // Better-Auth owns credentials + sessions (ADR-0043): erase the account
+        // there (removes the credential and every session) by email.
+        label: 'auth-credentials',
+        erase: async (userId) => {
+          const user = await cradle.userRepository.findById(userId);
+          if (user) await cradle.authEngine.erase(user.email);
+        },
+      },
       {
         label: 'password-reset-tokens',
         erase: (userId) => cradle.passwordResetTokenStore.destroyForUser(userId),

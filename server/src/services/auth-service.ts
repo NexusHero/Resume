@@ -8,7 +8,7 @@ import {
 import { defaultWorkspaceName, type Tenant } from '../domain/tenant.js';
 import { ConflictError, UnauthorizedError } from '../domain/errors.js';
 import type { UserRepository } from '../ports/user-repository.js';
-import type { SessionStore } from '../ports/session-store.js';
+import type { AuthEngine } from '../ports/auth-engine.js';
 import type { PasswordHasher } from '../ports/password-hasher.js';
 import type { Clock } from '../ports/clock.js';
 import type { IdGenerator } from '../ports/id-generator.js';
@@ -17,7 +17,9 @@ import type { AppConfig } from '../config.js';
 
 export interface AuthServiceDeps {
   userRepository: UserRepository;
-  sessionStore: SessionStore;
+  /** Credential + session authority (Better-Auth, ADR-0043). */
+  authEngine: AuthEngine;
+  /** Legacy scrypt verifier — only for migrating pre-Better-Auth accounts. */
   passwordHasher: PasswordHasher;
   clock: Clock;
   idGenerator: IdGenerator;
@@ -32,22 +34,23 @@ export interface AuthResult {
   token: string;
 }
 
-/** Email/password authentication with opaque server-side sessions. */
+/**
+ * Email/password authentication. Credentials and sessions are owned by the
+ * `AuthEngine` (Better-Auth); the domain `User` (roles, tenant, profile) stays
+ * the source of truth here, linked by email (ADR-0043).
+ */
 export class AuthService {
   private readonly users: UserRepository;
-  private readonly sessions: SessionStore;
+  private readonly engine: AuthEngine;
   private readonly hasher: PasswordHasher;
   private readonly clock: Clock;
   private readonly ids: IdGenerator;
   private readonly tenants?: TenantRepository;
   private readonly selfServe: boolean;
-  /** A throwaway hash, computed once, verified against on the unknown-email path
-   *  so a missing account costs the same scrypt work as a wrong password. */
-  private dummyHashCache?: Promise<string>;
 
   constructor(deps: AuthServiceDeps) {
     this.users = deps.userRepository;
-    this.sessions = deps.sessionStore;
+    this.engine = deps.authEngine;
     this.hasher = deps.passwordHasher;
     this.clock = deps.clock;
     this.ids = deps.idGenerator;
@@ -79,16 +82,18 @@ export class AuthService {
       roles = first ? ['admin', 'recruiter'] : ['recruiter'];
     }
 
+    // The engine owns the credential + session; the domain user carries no
+    // password hash of its own (ADR-0043).
+    const { token } = await this.engine.signUp(input.email, input.password);
     const user: User = {
       id: this.ids.next(),
       email: input.email,
-      passwordHash: await this.hasher.hash(input.password),
+      passwordHash: '',
       roles,
       createdAt: this.clock.isoNow(),
       ...(tenantId ? { tenantId } : {}),
     };
     await this.users.add(user);
-    const token = await this.sessions.create(user.id);
     return { user: toUserView(user), token };
   }
 
@@ -103,35 +108,37 @@ export class AuthService {
     return tenant?.status === 'suspended';
   }
 
-  /** Lazily computed once and cached; used to equalise unknown-email timing. */
-  private dummyHash(): Promise<string> {
-    return (this.dummyHashCache ??= this.hasher.hash('timing-equaliser'));
-  }
-
   async login(input: LoginInput): Promise<AuthResult> {
+    let session = await this.engine.signIn(input.email, input.password);
     const user = await this.users.findByEmail(input.email);
-    // Always run one password verification — against the real hash, or a dummy
-    // when the email is unknown — so a non-existent account and a wrong password
-    // take the same time. No account-existence timing oracle (security audit #4).
-    const hash = user?.passwordHash ?? (await this.dummyHash());
-    const ok = await this.hasher.verify(input.password, hash);
-    if (!user || !ok) throw new UnauthorizedError('Invalid email or password');
+    // Migration (ADR-0043): a pre-Better-Auth account still carries a legacy
+    // scrypt hash and has no engine credential yet. Verify it once, mint the
+    // engine credential, and drop the legacy hash — a transparent rehash on
+    // login, so no user is forced to reset.
+    if (
+      !session &&
+      user?.passwordHash &&
+      (await this.hasher.verify(input.password, user.passwordHash))
+    ) {
+      session = await this.engine.signUp(input.email, input.password);
+      await this.users.updatePassword(user.id, '');
+    }
+    if (!session || !user) throw new UnauthorizedError('Invalid email or password');
     if (await this.isTenantSuspended(user.tenantId)) {
       throw new UnauthorizedError('This workspace has been suspended');
     }
-    const token = await this.sessions.create(user.id);
-    return { user: toUserView(user), token };
+    return { user: toUserView(user), token: session.token };
   }
 
   async logout(token: string | undefined): Promise<void> {
-    if (token) await this.sessions.destroy(token);
+    if (token) await this.engine.signOut(token);
   }
 
   async currentUser(token: string | undefined): Promise<UserView | null> {
     if (!token) return null;
-    const userId = await this.sessions.userIdFor(token);
-    if (!userId) return null;
-    const user = await this.users.findById(userId);
+    const resolved = await this.engine.resolve(token);
+    if (!resolved) return null;
+    const user = await this.users.findByEmail(resolved.email);
     if (!user) return null;
     // A suspended workspace kills its members' sessions too, not just new logins.
     if (await this.isTenantSuspended(user.tenantId)) return null;

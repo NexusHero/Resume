@@ -132,6 +132,8 @@ export interface AuthConfig {
   cookieSecure: boolean;
   /** Server-side session lifetime in milliseconds; sessions older than this are rejected. */
   sessionTtlMs: number;
+  /** Path to the Better-Auth embedded-SQLite credential/session DB (ADR-0043). */
+  betterAuthDbPath: string;
   /** Social logins are "enabled" only when their credentials are configured. */
   google: { enabled: boolean };
   linkedin: { enabled: boolean };
@@ -331,6 +333,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       // COOKIE_SECURE so local http dev/tests keep working.
       cookieSecure: env.NODE_ENV === 'production' || env.COOKIE_SECURE === 'true',
       sessionTtlMs: (Number(env.SESSION_TTL_DAYS) || 30) * 24 * 60 * 60 * 1000,
+      betterAuthDbPath: env.BETTER_AUTH_DB_PATH ?? path.join(storeDir, 'auth.sqlite'),
       google: { enabled: Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET) },
       linkedin: { enabled: Boolean(env.LINKEDIN_CLIENT_ID && env.LINKEDIN_CLIENT_SECRET) },
     },

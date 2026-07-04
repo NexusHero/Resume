@@ -40,6 +40,7 @@ import type { TenantAdminController } from './http/tenant-admin-controller';
 import type { AccountController } from './http/account-controller';
 import type { PasswordResetController } from './http/password-reset-controller';
 import type { PlanProvider } from './ports/plan-provider';
+import type { Authorizer } from './ports/authorizer';
 
 async function main(): Promise<void> {
   const config = loadConfig();
@@ -106,6 +107,7 @@ async function main(): Promise<void> {
     accountController: container.resolve<AccountController>('accountController'),
     passwordResetController: container.resolve<PasswordResetController>('passwordResetController'),
     planProvider: container.resolve<PlanProvider>('planProvider'),
+    authorizer: container.resolve<Authorizer>('authorizer'),
     config,
     logger,
   });

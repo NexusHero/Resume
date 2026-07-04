@@ -28,7 +28,9 @@ import type { AccountController } from './account-controller';
 import type { PasswordResetController } from './password-reset-controller';
 import { asyncHandler } from './async-handler';
 import { makeRequirePlan } from './require-plan';
+import { makeRequireCan } from './require-can';
 import type { PlanProvider } from '../ports/plan-provider';
+import type { Authorizer } from '../ports/authorizer';
 import { errorHandler, notFound, sendProblem } from './problem';
 import { corsMiddleware, securityHeaders, recruitingCsp, RECRUITING_KIT_PREFIX } from './security';
 import { registerApiDocs } from './api-docs';
@@ -65,6 +67,7 @@ export interface AppDeps {
   accountController: AccountController;
   passwordResetController: PasswordResetController;
   planProvider: PlanProvider;
+  authorizer: Authorizer;
   config: AppConfig;
   logger: Logger;
 }
@@ -99,6 +102,7 @@ export function createApp(deps: AppDeps): Express {
     tenantAdminController: tenantAdmin,
     accountController: account,
     passwordResetController: passwordReset,
+    authorizer,
   } = deps;
   const app = express();
 
@@ -162,6 +166,9 @@ export function createApp(deps: AppDeps): Express {
   // marked with requirePlan('pro'); no feature branches on the plan itself.
   const requirePlan = makeRequirePlan(deps.planProvider);
   const requirePro = requirePlan('pro');
+  // The single RBAC seam (like requireAuth/requirePlan): admin-only routes are
+  // declared here, not re-checked inside each controller.
+  const requireCan = makeRequireCan(authorizer);
   api.get('/mandates', requireAuth, asyncHandler(m.list));
   api.post('/mandates', requireAuth, asyncHandler(m.create));
   api.patch('/mandates/:id', requireAuth, asyncHandler(m.update));
@@ -200,12 +207,37 @@ export function createApp(deps: AppDeps): Express {
   api.get('/talents/:id/candidacies', requireAuth, asyncHandler(cand.forTalent));
   api.patch('/candidacies/:id', requireAuth, asyncHandler(cand.update));
   api.delete('/candidacies/:id', requireAuth, asyncHandler(cand.remove));
-  // DSGVO retention (admin-only, enforced in the controller via Authorizer).
-  api.get('/retention/report', requireAuth, asyncHandler(retention.report));
-  api.get('/retention/policy', requireAuth, asyncHandler(retention.getPolicy));
-  api.put('/retention/policy', requireAuth, asyncHandler(retention.updatePolicy));
-  api.post('/retention/anonymize-overdue', requireAuth, asyncHandler(retention.anonymizeOverdue));
-  api.post('/talents/:id/anonymize', requireAuth, asyncHandler(retention.anonymize));
+  // DSGVO retention (admin-only, enforced at the route via requireCan).
+  api.get(
+    '/retention/report',
+    requireAuth,
+    requireCan('retention', 'read'),
+    asyncHandler(retention.report),
+  );
+  api.get(
+    '/retention/policy',
+    requireAuth,
+    requireCan('retention', 'read'),
+    asyncHandler(retention.getPolicy),
+  );
+  api.put(
+    '/retention/policy',
+    requireAuth,
+    requireCan('retention', 'anonymize'),
+    asyncHandler(retention.updatePolicy),
+  );
+  api.post(
+    '/retention/anonymize-overdue',
+    requireAuth,
+    requireCan('retention', 'anonymize'),
+    asyncHandler(retention.anonymizeOverdue),
+  );
+  api.post(
+    '/talents/:id/anonymize',
+    requireAuth,
+    requireCan('retention', 'anonymize'),
+    asyncHandler(retention.anonymize),
+  );
   // A talent's resume + cover-letter documents (team-scoped).
   api.get('/talents/:id/documents', requireAuth, asyncHandler(docs.get));
   api.put('/talents/:id/documents', requireAuth, asyncHandler(docs.save));
@@ -239,12 +271,27 @@ export function createApp(deps: AppDeps): Express {
   api.patch('/placements/:id', requireAuth, asyncHandler(p.update));
   api.delete('/placements/:id', requireAuth, asyncHandler(p.remove));
   // DSGVO: export everything the recruiter owns, or erase the account entirely.
-  // Team members (admin-only mutations enforced in the controller via Authorizer).
-  api.get('/members', requireAuth, asyncHandler(members.list));
-  api.patch('/members/:id/roles', requireAuth, asyncHandler(members.setRoles));
+  // Team members (admin-only, enforced at the route via requireCan).
+  api.get('/members', requireAuth, requireCan('member', 'list'), asyncHandler(members.list));
+  api.patch(
+    '/members/:id/roles',
+    requireAuth,
+    requireCan('member', 'setRoles'),
+    asyncHandler(members.setRoles),
+  );
   // Tenant invitations (admin-only; ADR-0035): create + list pending for the tenant.
-  api.post('/members/invites', requireAuth, asyncHandler(invites.create));
-  api.get('/members/invites', requireAuth, asyncHandler(invites.list));
+  api.post(
+    '/members/invites',
+    requireAuth,
+    requireCan('member', 'invite'),
+    asyncHandler(invites.create),
+  );
+  api.get(
+    '/members/invites',
+    requireAuth,
+    requireCan('member', 'listInvites'),
+    asyncHandler(invites.list),
+  );
   // Super-admin console (ADR-0037): cross-tenant, gated in the controller on the
   // instance-level super-admin capability (a tenant admin has no access).
   api.get('/admin/tenants', requireAuth, asyncHandler(tenantAdmin.listTenants));

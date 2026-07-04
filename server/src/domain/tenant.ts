@@ -18,3 +18,8 @@ export function defaultWorkspaceName(email: string): string {
   const local = (email.split('@')[0] || 'My').trim();
   return `${local}'s workspace`;
 }
+
+/** A tenant as the super-admin console sees it: the record plus its member count. */
+export interface TenantOverview extends Tenant {
+  memberCount: number;
+}

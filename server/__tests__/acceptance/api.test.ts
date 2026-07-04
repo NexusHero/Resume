@@ -29,6 +29,7 @@ import { AttachmentController } from '../../src/http/attachment-controller';
 import { AuthController } from '../../src/http/auth-controller';
 import { MembersController } from '../../src/http/members-controller';
 import { InviteController } from '../../src/http/invite-controller';
+import { TenantAdminController } from '../../src/http/tenant-admin-controller';
 import { AccountController } from '../../src/http/account-controller';
 import { PasswordResetController } from '../../src/http/password-reset-controller';
 import { LlmService } from '../../src/services/llm-service';
@@ -56,6 +57,7 @@ import { AuthService } from '../../src/services/auth-service';
 import { EmailVerificationService } from '../../src/services/email-verification-service';
 import { MembersService } from '../../src/services/members-service';
 import { InviteService } from '../../src/services/invite-service';
+import { TenantService } from '../../src/services/tenant-service';
 import { AccountService } from '../../src/services/account-service';
 import { PasswordResetService } from '../../src/services/password-reset-service';
 import { MemorySessionStore } from '../../src/adapters/memory-session-store';
@@ -82,6 +84,7 @@ import {
   InMemoryAttachmentStore,
   InMemoryUserRepository,
   InMemoryInviteRepository,
+  InMemoryTenantRepository,
   InMemoryApiKeyStore,
   InMemoryUsageMeter,
   InMemoryInterviewObservationRepository,
@@ -415,6 +418,12 @@ function makeApp(
     authorizer: new RoleAuthorizer(),
     config,
   });
+  const tenantAdminController = new TenantAdminController({
+    tenantService: new TenantService({
+      tenantRepository: new InMemoryTenantRepository(),
+      userRepository,
+    }),
+  });
   return createApp({
     applicationController: controller,
     jobController,
@@ -440,6 +449,7 @@ function makeApp(
     authController,
     membersController,
     inviteController,
+    tenantAdminController,
     accountController,
     passwordResetController,
     planProvider,
@@ -1733,7 +1743,11 @@ describe('REST API /api/v1', () => {
       const del = await agent.delete('/api/v1/account');
       expect(del.status).toBe(204);
       // the session is gone — /auth/me now reports no user
-      expect((await agent.get('/api/v1/auth/me')).body).toEqual({ user: null, plan: 'pro' });
+      expect((await agent.get('/api/v1/auth/me')).body).toEqual({
+        user: null,
+        plan: 'pro',
+        isSuperAdmin: false,
+      });
       // the team's shared data survives one member leaving: a new member sees it
       const teammate = request.agent(app);
       await teammate
@@ -2495,7 +2509,7 @@ describe('Plan gating (ADR-0021)', () => {
   it('FreePlan_MeReportsFreePlan', async () => {
     const app = freeApp();
     const res = await request(app).get('/api/v1/auth/me');
-    expect(res.body).toEqual({ user: null, plan: 'free' });
+    expect(res.body).toEqual({ user: null, plan: 'free', isSuperAdmin: false });
   });
 
   it('FreePlan_ProRoute_Returns402ProblemJson', async () => {
@@ -2550,5 +2564,39 @@ describe('Plan gating (ADR-0021)', () => {
       .post(`/api/v1/talents/${id}/documents/pitch`)
       .send({ mandateContext: 'x' });
     expect(res.status).toBe(200);
+  });
+});
+
+describe('Super-admin console (ADR-0037)', () => {
+  it('SuperAdmin_ListsTenants_WithTheDefaultTeam', async () => {
+    const app = makeApp(loadConfig({ SUPER_ADMIN_EMAIL: 'root@example.com' }));
+    const agent = request.agent(app);
+    await agent
+      .post('/api/v1/auth/register')
+      .send({ email: 'root@example.com', password: 'correct horse battery' });
+    // /me reports the capability so the UI can reveal the console.
+    expect((await agent.get('/api/v1/auth/me')).body.isSuperAdmin).toBe(true);
+
+    const res = await agent.get('/api/v1/admin/tenants');
+    expect(res.status).toBe(200);
+    // The registry is empty (no self-serve), so only the implicit default team shows.
+    expect(res.body).toEqual([
+      expect.objectContaining({ id: 'team', name: 'Default team', memberCount: 1 }),
+    ]);
+  });
+
+  it('NonSuperAdmin_CannotListTenants_Returns403', async () => {
+    const app = makeApp(); // no SUPER_ADMIN_EMAIL configured
+    const agent = request.agent(app);
+    await agent
+      .post('/api/v1/auth/register')
+      .send({ email: 'boss@example.com', password: 'correct horse battery' });
+    expect((await agent.get('/api/v1/auth/me')).body.isSuperAdmin).toBe(false);
+    expect((await agent.get('/api/v1/admin/tenants')).status).toBe(403);
+  });
+
+  it('Unauthenticated_CannotListTenants_Returns401', async () => {
+    const app = makeApp(loadConfig({ SUPER_ADMIN_EMAIL: 'root@example.com' }));
+    expect((await request(app).get('/api/v1/admin/tenants')).status).toBe(401);
   });
 });

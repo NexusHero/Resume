@@ -57,6 +57,12 @@ export interface AppConfig {
    * Off by default, so a plain install stays single-tenant.
    */
   selfServeTenants: boolean;
+  /**
+   * Emails granted the instance-level **super-admin** capability (ADR-0037):
+   * cross-tenant visibility and management. Set out-of-band (env), never
+   * grantable through the API, so it can't be escalated by a tenant admin.
+   */
+  superAdminEmails: string[];
   /** Where finished application PDFs are archived (filesystem or S3). */
   pdfArchive: PdfArchiveConfig;
   /** Max concurrent headless-Chromium PDF renders (bounds memory under load). */
@@ -300,6 +306,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     },
     store: env.STORE === 'sql' ? 'sql' : 'fs',
     selfServeTenants: env.SELF_SERVE_TENANTS === 'true',
+    superAdminEmails: (env.SUPER_ADMIN_EMAIL ?? '')
+      .split(',')
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean),
     databaseUrl: env.DATABASE_URL ?? '',
     pdfArchive: {
       provider: env.PDF_ARCHIVE === 's3' ? 's3' : 'fs',

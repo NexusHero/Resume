@@ -30,6 +30,7 @@ export class AuthController {
   private readonly cookieSecure: boolean;
   private readonly maxAgeMs: number;
   private readonly providers: { google: boolean; linkedin: boolean };
+  private readonly superAdminEmails: readonly string[];
 
   private readonly plans: PlanProvider;
 
@@ -50,6 +51,12 @@ export class AuthController {
       google: deps.config.auth.google.enabled,
       linkedin: deps.config.auth.linkedin.enabled,
     };
+    this.superAdminEmails = deps.config.superAdminEmails;
+  }
+
+  /** Instance-level super-admin capability, by configured email (ADR-0037). */
+  private isSuperAdmin(email: string): boolean {
+    return this.superAdminEmails.includes(email.toLowerCase());
   }
 
   private setSession(res: Response, token: string): void {
@@ -105,7 +112,8 @@ export class AuthController {
     // The plan drives the UI's Pro affordances; the server middleware is the
     // real gate. Instance-wide today (currentScope is constant).
     const plan = await this.plans.planFor(currentScope(req));
-    res.json({ user, plan });
+    const isSuperAdmin = user ? this.isSuperAdmin(user.email) : false;
+    res.json({ user, plan, isSuperAdmin });
   };
 
   providersInfo = async (_req: Request, res: Response): Promise<void> => {
@@ -119,12 +127,19 @@ export class AuthController {
   requireAuth = async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
     const user = await this.service.currentUser(readCookie(req, this.cookieName));
     if (!user) throw new UnauthorizedError();
-    const r = req as Request & { userId?: string; roles?: typeof user.roles; tenantId?: string };
+    const r = req as Request & {
+      userId?: string;
+      roles?: typeof user.roles;
+      tenantId?: string;
+      isSuperAdmin?: boolean;
+    };
     r.userId = user.id;
     r.roles = user.roles;
     // Stamp the tenant so currentScope() isolates data per tenant (ADR-0033);
     // absent on the user means the default single tenant.
     r.tenantId = user.tenantId ?? DEFAULT_TENANT;
+    // Instance-level super-admin capability (ADR-0037), by configured email.
+    r.isSuperAdmin = this.isSuperAdmin(user.email);
     next();
   };
 

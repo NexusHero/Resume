@@ -61,6 +61,7 @@ import { AttachmentService } from './services/attachment-service';
 import { AuthService } from './services/auth-service';
 import { MembersService } from './services/members-service';
 import { InviteService } from './services/invite-service';
+import { TenantService } from './services/tenant-service';
 import { AccountService } from './services/account-service';
 import { PasswordResetService } from './services/password-reset-service';
 import { EmailVerificationService } from './services/email-verification-service';
@@ -88,6 +89,7 @@ import { AttachmentController } from './http/attachment-controller';
 import { AuthController } from './http/auth-controller';
 import { MembersController } from './http/members-controller';
 import { InviteController } from './http/invite-controller';
+import { TenantAdminController } from './http/tenant-admin-controller';
 import { AccountController } from './http/account-controller';
 import { PasswordResetController } from './http/password-reset-controller';
 import { MailController } from './http/mail-controller';
@@ -203,6 +205,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     authService: asClass(AuthService).singleton(),
     membersService: asClass(MembersService).singleton(),
     inviteService: asClass(InviteService).singleton(),
+    tenantService: asClass(TenantService).singleton(),
     accountService: asClass(AccountService).singleton(),
     passwordResetService: asClass(PasswordResetService).singleton(),
     emailVerificationService: asClass(EmailVerificationService).singleton(),
@@ -230,6 +233,7 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     authController: asClass(AuthController).singleton(),
     membersController: asClass(MembersController).singleton(),
     inviteController: asClass(InviteController).singleton(),
+    tenantAdminController: asClass(TenantAdminController).singleton(),
     accountController: asClass(AccountController).singleton(),
     passwordResetController: asClass(PasswordResetController).singleton(),
     mailController: asClass(MailController).singleton(),

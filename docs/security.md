@@ -34,12 +34,15 @@ same actors; this boundary is the security lens over it.
 
 - **Sessions are opaque server-side tokens** in an `httpOnly`, `SameSite=Lax`
   cookie, `Secure` when `COOKIE_SECURE=true` (production), server-side-expiring
-  after `SESSION_TTL_DAYS` (`auth-controller.ts`, `session-store`). The token is
+  after `SESSION_TTL_DAYS` (`auth-controller.ts`; the opaque token is issued and
+  resolved by the Better-Auth engine, ADR-0043). The token is
   a random id, not a JWT — nothing sensitive lives in the cookie, and a session
   can be destroyed server-side (logout, erase, suspension) without waiting for
   expiry.
-- **Passwords** are hashed with **scrypt** (`scrypt-password-hasher`); the hash
-  is never returned by any endpoint (guarded by `toUserView`).
+- **Credentials + sessions** are owned by the **Better-Auth engine** on embedded
+  SQLite (ADR-0043): password hashing, session-token randomness and storage are
+  the framework's (audited) responsibility. No password hash ever lives on the
+  domain `User` or is returned by any endpoint (guarded by `toUserView`).
 - **Password reset** is a one-time token flow (FR-02, `password-reset-service`);
   **email verification** is a soft one-time token (`email-verification-service`).
 - **Unauthenticated surface** is deliberately small: register, login, request/
@@ -150,20 +153,20 @@ happened once with email-verification tokens. Retention/anonymisation
 
 ## 11. Controls → decisions → verification
 
-| Control                           | ADR / code                | Verified by                        |
-| --------------------------------- | ------------------------- | ---------------------------------- |
-| Cookie sessions, scrypt passwords | FR-01, `auth-service`     | acceptance (supertest) tests       |
-| RBAC + last-admin invariant       | 0004, `role-authorizer`   | acceptance + members-service tests |
-| Plan gating at one seam           | 0021, `makeRequirePlan`   | require-plan tests                 |
-| Tenant data isolation             | 0033/0034, `current-user` | acceptance tests per scope         |
-| Non-escalatable super-admin       | 0037, `SUPER_ADMIN_EMAIL` | auth/tenant-admin tests            |
-| Suspension enforced in auth       | 0038, `auth-service`      | auth-service tests                 |
-| Encrypted API keys at rest        | FR-31, `secret-cipher`    | secret-cipher unit tests           |
-| Production readiness gate         | 0029, `config` boot check | readiness-gate tests               |
-| CORS allow-list + headers + CSP   | NFR-06, `security.ts`     | security middleware tests          |
-| Auth rate limiting                | `create-app` limiter      | acceptance test (429)              |
-| RFC-9457 errors                   | NFR-02, `problem.ts`      | acceptance tests                   |
-| Static analysis                   | NFR-06                    | CodeQL + security workflow (CI)    |
+| Control                            | ADR / code                      | Verified by                        |
+| ---------------------------------- | ------------------------------- | ---------------------------------- |
+| Cookie sessions, Better-Auth creds | FR-01, ADR-0043, `auth-service` | acceptance (supertest) tests       |
+| RBAC + last-admin invariant        | 0004, `role-authorizer`         | acceptance + members-service tests |
+| Plan gating at one seam            | 0021, `makeRequirePlan`         | require-plan tests                 |
+| Tenant data isolation              | 0033/0034, `current-user`       | acceptance tests per scope         |
+| Non-escalatable super-admin        | 0037, `SUPER_ADMIN_EMAIL`       | auth/tenant-admin tests            |
+| Suspension enforced in auth        | 0038, `auth-service`            | auth-service tests                 |
+| Encrypted API keys at rest         | FR-31, `secret-cipher`          | secret-cipher unit tests           |
+| Production readiness gate          | 0029, `config` boot check       | readiness-gate tests               |
+| CORS allow-list + headers + CSP    | NFR-06, `security.ts`           | security middleware tests          |
+| Auth rate limiting                 | `create-app` limiter            | acceptance test (429)              |
+| RFC-9457 errors                    | NFR-02, `problem.ts`            | acceptance tests                   |
+| Static analysis                    | NFR-06                          | CodeQL + security workflow (CI)    |
 
 ## 12. Known gaps (tracked, not hidden)
 

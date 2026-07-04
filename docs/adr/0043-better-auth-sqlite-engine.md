@@ -53,19 +53,19 @@ Database(path), secret, emailAndPassword, plugins: [bearer()] })`. It is driven
 - **The live cutover has landed.** `AuthService` (register / login / logout /
   currentUser), `InviteService.accept` and `PasswordResetService.confirm` now go
   through the engine; the domain `User` keeps `passwordHash: ''` since the engine
-  owns the credential. Legacy accounts migrate **on first login** via a
-  **rehash-on-login** path: login verifies the old scrypt hash, mints the engine
-  credential from the same plaintext, and clears the legacy hash — no user is
-  forced to reset. Password-reset covers un-migrated accounts too (mint the engine
-  credential if none exists yet, otherwise set the new password) and revokes every
-  session. DSGVO erasure removes the engine credential + all sessions by email.
-  Auth is breach-consequential and browser login cannot be exercised in CI or this
-  environment, so the cutover ships behind an on-device login/logout smoke-test —
-  the same honesty bound this project applies to every auth change.
+  owns the credential. DSGVO erasure removes the engine credential + all sessions
+  by email. Auth is breach-consequential and browser login cannot be exercised in
+  CI or this environment, so the cutover ships behind an on-device login/logout
+  smoke-test — the same honesty bound this project applies to every auth change.
 - The `AuthEngine` port gained `setPassword` / `revokeSessions` / `erase` to serve
   password-reset and DSGVO erasure headlessly.
-- The legacy `SessionStore`/`PasswordHasher` are now vestigial: `PasswordHasher`
-  survives only as the reader in the rehash-on-login path; `SessionStore` is no
-  longer on the auth path. Removing them is a later cleanup once no un-migrated
-  scrypt hashes remain in the wild.
+- **The legacy stack is fully removed.** The hand-rolled `SessionStore` (fs / sql /
+  memory adapters + port), the `PasswordHasher` port + `ScryptPasswordHasher`, the
+  `UserRepository.updatePassword` method and the SQL `sessions` table are gone —
+  the engine is the sole credential + session authority. This is a **clean break,
+  not a rehash-on-login migration**: any account created before the cutover (a
+  non-empty `passwordHash` that never became an engine credential) can no longer
+  log in and must go through password-reset to mint one. The vestigial
+  `users.password_hash` column is kept (always `''` for new accounts) to avoid a
+  destructive schema migration; retiring it is a separate, optional step.
 - 2FA/passkeys (Better-Auth plugins) become incremental now that the engine is live.

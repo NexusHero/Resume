@@ -24,12 +24,6 @@ export async function migrate(pool: Pool): Promise<void> {
     ALTER TABLE users ADD COLUMN IF NOT EXISTS tenant_id text;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS verified_at text;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS llm_provider text;
-    CREATE TABLE IF NOT EXISTS sessions (
-      token text PRIMARY KEY,
-      user_id text NOT NULL,
-      created_at text NOT NULL
-    );
-    CREATE INDEX IF NOT EXISTS sessions_user_id_idx ON sessions (user_id);
     CREATE TABLE IF NOT EXISTS password_reset_tokens (
       token text PRIMARY KEY,
       user_id text NOT NULL,

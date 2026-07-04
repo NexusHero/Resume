@@ -95,7 +95,6 @@ import {
   FakeInboxSource,
   InMemoryStageTransitionRepository,
   InMemoryRetentionPolicyStore,
-  fakePasswordHasher,
   FakeAuthEngine,
   FakePdfRenderer,
   FakePdfMerger,
@@ -367,7 +366,6 @@ function makeApp(
     authService: new AuthService({
       userRepository,
       authEngine,
-      passwordHasher: fakePasswordHasher,
       clock: new FixedClock(),
       idGenerator: new SequenceIdGenerator('user'),
       tenantRepository,

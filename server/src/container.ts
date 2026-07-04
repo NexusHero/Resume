@@ -15,7 +15,6 @@ import { createLogger } from './adapters/pino-logger.js';
 import { SystemClock } from './adapters/system-clock.js';
 import { RandomIdGenerator } from './adapters/random-id-generator.js';
 import { createPdfArchive } from './adapters/create-pdf-archive.js';
-import { ScryptPasswordHasher } from './adapters/scrypt-password-hasher.js';
 import { BetterAuthEngine } from './adapters/better-auth/better-auth-engine.js';
 import { createMailer } from './adapters/mailer-factory.js';
 import { createInboxSource } from './adapters/inbox-source-factory.js';
@@ -122,9 +121,9 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     documentRepository: asValue(persistence.documentRepository),
     attachmentStore: asValue(persistence.attachmentStore),
     // Auth persistence follows the same store switch: file-backed by default,
-    // Postgres when STORE=sql (so sessions/users survive a multi-instance deploy).
+    // Postgres when STORE=sql (so users survive a multi-instance deploy).
+    // Credentials + sessions live in the Better-Auth engine (ADR-0043), not here.
     userRepository: asValue(persistence.userRepository),
-    sessionStore: asValue(persistence.sessionStore),
     passwordResetTokenStore: asValue(persistence.passwordResetTokenStore),
     emailVerificationTokenStore: asValue(persistence.emailVerificationTokenStore),
     inviteRepository: asValue(persistence.inviteRepository),
@@ -137,7 +136,6 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     assistantSuggestionRepository: asValue(persistence.assistantSuggestionRepository),
     artifactLogRepository: asValue(persistence.artifactLogRepository),
     stageTransitionRepository: asValue(persistence.stageTransitionRepository),
-    passwordHasher: asClass(ScryptPasswordHasher).singleton(),
     // Credential + session authority (ADR-0043): Better-Auth on embedded SQLite.
     // Constructed synchronously; its schema migrates lazily on first use.
     authEngine: asFunction(({ config: c }) =>

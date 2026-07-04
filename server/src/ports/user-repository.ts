@@ -8,8 +8,6 @@ export interface UserRepository {
   findByEmail(email: string): Promise<User | null>;
   findById(id: string): Promise<User | null>;
   add(user: User): Promise<void>;
-  /** Replace an account's password hash (used by the password-reset flow). */
-  updatePassword(id: string, passwordHash: string): Promise<void>;
   /** Replace an account's roles (admin member management). */
   updateRoles(id: string, roles: Role[]): Promise<void>;
   /** Stamp the account as email-verified (soft verification flow). */

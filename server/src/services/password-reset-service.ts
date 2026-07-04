@@ -77,10 +77,9 @@ export class PasswordResetService {
       } catch {
         await this.engine.setPassword(user.email, newPassword);
       }
-      // Drop every live session and any lingering legacy hash so the engine is
-      // now the sole authority for this account.
+      // Drop every live session so a leaked reset link can't outlive the reset —
+      // the engine is the sole credential authority (ADR-0043).
       await this.engine.revokeSessions(user.email);
-      await this.users.updatePassword(userId, '');
     }
     // A reset also invalidates any other outstanding reset link.
     await this.tokens.destroyForUser(userId);

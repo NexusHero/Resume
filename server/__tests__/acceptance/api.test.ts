@@ -2042,6 +2042,33 @@ describe('REST API /api/v1', () => {
     expect(res.headers['referrer-policy']).toBe('strict-origin-when-cross-origin');
   });
 
+  it('BodyLimit_OversizedJsonOnNonUploadRoute_Rejected413', async () => {
+    // Audit #3: a normal JSON endpoint must not buffer a huge body — the 1 MB
+    // default rejects an oversized (unauthenticated) request before auth work.
+    const big = 'x'.repeat(1_500_000); // 1.5 MB > 1 MB default
+    const res = await request(app)
+      .post('/api/v1/auth/login')
+      .send({ email: 'a@b.de', password: big });
+    expect(res.status).toBe(413);
+  });
+
+  it('BodyLimit_LargeUploadRoute_NotRejectedForSize', async () => {
+    // The bulk-import route keeps the large cap (base64 PDFs), so a 1.5 MB body
+    // is not a size error — it fails auth (401) or shape, never 413.
+    const big = 'x'.repeat(1_500_000);
+    const res = await request(app).post('/api/v1/talents/import').send({ blob: big });
+    expect(res.status).not.toBe(413);
+  });
+
+  it('BodyParse_MalformedJson_Returns400Problem', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/login')
+      .set('Content-Type', 'application/json')
+      .send('{"email": ');
+    expect(res.status).toBe(400);
+    expect(res.headers['content-type']).toMatch(/application\/problem\+json/);
+  });
+
   it('Jobs_GetNoParams_RunsPreconfiguredSearchInTwoTiers', async () => {
     const agent = await authed(app);
     const res = await agent.get('/api/v1/jobs');

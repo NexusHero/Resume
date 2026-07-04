@@ -113,7 +113,15 @@ export function createApp(deps: AppDeps): Express {
 
   app.use(securityHeaders);
   app.use(corsMiddleware(deps.config.security.corsOrigins));
-  app.use(express.json({ limit: '80mb' }));
+  // Body size (security audit #3, DoS): a small default for every JSON endpoint,
+  // with the large cap only on the routes that legitimately carry base64 uploads
+  // — the bulk PDF import, attachment upload, and the document PUT (a CV photo is
+  // embedded in it). One parser picks the limit by path, so an unauthenticated
+  // caller can't force an 80 MB buffer+parse on /auth/* and the other endpoints.
+  const smallJson = express.json({ limit: '1mb' });
+  const largeJson = express.json({ limit: '80mb' });
+  const LARGE_BODY = /^\/api\/v1\/talents\/(import|[^/]+\/(attachments|documents))$/;
+  app.use((req, res, next) => (LARGE_BODY.test(req.path) ? largeJson : smallJson)(req, res, next));
 
   const api = express.Router();
   api.get('/health', (_req, res) => res.json({ status: 'ok' }));

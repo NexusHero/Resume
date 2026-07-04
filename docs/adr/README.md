@@ -6,8 +6,19 @@ Decision → Consequences**, plus a status. Numbering is sequential and immutabl
 decision that replaces another **supersedes** it rather than editing history.
 
 These were written retroactively to document choices already made; new decisions get an
-ADR at the time they are taken. ADRs reference [`../requirements.md`](../requirements.md)
-where a decision satisfies a specific requirement.
+ADR at the time they are taken. **This is a hard rule, not a suggestion:** a PR that
+introduces or swaps a technology, or changes a cross-cutting architectural pattern, does
+not merge without a new or updated ADR in the same PR — see
+[`CONTRIBUTING.md`](../../CONTRIBUTING.md#ways-of-working). ADRs reference
+[`../requirements.md`](../requirements.md) where a decision satisfies a specific
+requirement.
+
+## Writing one
+
+Copy the newest file as a starting point, take the next free number, and keep the
+MADR shape: a short **Context** (the forces at play), the **Decision** in one or two
+sentences, and **Consequences** (what this enables, what it costs, what it forecloses).
+Add the row to the table below in number order.
 
 | ADR                                                | Decision                                                       | Status   |
 | -------------------------------------------------- | -------------------------------------------------------------- | -------- |

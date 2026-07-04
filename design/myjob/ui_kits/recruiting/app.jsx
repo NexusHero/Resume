@@ -380,11 +380,14 @@ function App() {
   if (auth.status === 'loading') return null;
   if (!auth.user) {
     return (
-      <window.LoginScreen
-        providers={providers}
-        initialNotice={verifyNotice ? verifyNotice.text : null}
-        onAuthed={(user) => setAuth({ status: 'ready', user })}
-      />
+      <React.Fragment>
+        <window.OfflineBanner />
+        <window.LoginScreen
+          providers={providers}
+          initialNotice={verifyNotice ? verifyNotice.text : null}
+          onAuthed={(user) => setAuth({ status: 'ready', user })}
+        />
+      </React.Fragment>
     );
   }
 
@@ -393,7 +396,12 @@ function App() {
       .catch(() => {})
       .then(() => setAuth({ status: 'ready', user: null }));
 
-  return <Workspace user={auth.user} onLogout={onLogout} />;
+  return (
+    <React.Fragment>
+      <window.OfflineBanner />
+      <Workspace user={auth.user} onLogout={onLogout} />
+    </React.Fragment>
+  );
 }
 
 Object.assign(window, { App });

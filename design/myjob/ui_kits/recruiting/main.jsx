@@ -7,6 +7,8 @@ import './setup-globals.js'; // sets window.React/ReactDOM first
 import '../../_ds_bundle.js'; // window.MyJobDesignSystem_f3658e (uses window.React)
 import './data.js';
 import './use-viewport.jsx'; // window.useViewport — read by the shell + views
+import './use-online.jsx'; // window.useOnline — connectivity for the offline banner
+import './OfflineBanner.jsx'; // window.OfflineBanner — shown while offline (ADR-0039)
 import './DataStates.jsx';
 import './RecruitRail.jsx';
 import './PipelineBoard.jsx';

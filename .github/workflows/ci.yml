@@ -102,7 +102,9 @@ jobs:
         run: npm ci
 
       - name: Run SQL integration tests
-        run: npx jest integration
+        # Uses the npm script so Jest is launched with --experimental-vm-modules
+        # (the project is ESM, ADR-0042); a bare `npx jest` would fail to parse.
+        run: npm run test:integration
         env:
           DATABASE_URL: postgres://myjob:myjob@localhost:5432/myjob
 

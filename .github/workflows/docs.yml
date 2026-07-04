@@ -20,20 +20,33 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Render *.puml to *.svg
+      - name: Render *.puml to *.svg (top-level + per-use-case)
         uses: docker://plantuml/plantuml:latest
         with:
-          args: -tsvg -nometadata docs/umls
+          args: -tsvg -nometadata docs/umls docs/umls/usecases
 
       - name: Upload rendered diagrams
         uses: actions/upload-artifact@v4
         with:
           name: uml-diagrams
-          path: docs/umls/*.svg
+          path: docs/umls/**/*.svg
 
       - name: Warn if committed SVGs look out of date
         run: |
           if [ -n "$(git status --porcelain docs/umls)" ]; then
-            echo "::warning::Rendered SVGs differ from the committed ones — re-run 'plantuml -tsvg -nometadata docs/umls' and commit them."
+            echo "::warning::Rendered SVGs differ from the committed ones — re-run 'plantuml -tsvg -nometadata docs/umls docs/umls/usecases' and commit them."
             git --no-pager diff --stat docs/umls
           fi
+
+  structure:
+    name: Docs structure (diagrams, links, ADRs)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      # Deterministic guard (no PlantUML needed): every .puml has an .svg, no
+      # orphan SVGs, every relative Markdown link and ADR reference resolves.
+      - name: docs:check
+        run: node tools/check-docs.mjs

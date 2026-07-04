@@ -12,6 +12,9 @@ npm run --silent format:check
 echo "▶ lint"
 npm run --silent lint
 
+echo "▶ docs:check"
+npm run --silent docs:check
+
 echo "▶ test"
 npm run --silent test
 

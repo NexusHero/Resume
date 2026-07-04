@@ -1,0 +1,31 @@
+@startuml uc13_manage_team
+title UC-13 — Manage the team (FR-04, FR-03)
+
+skinparam shadowing false
+autonumber
+actor Admin
+participant "requireCan('member',·)\n(route seam)" as Gate
+participant MembersController as Ctrl
+participant MembersService as Svc
+participant UserRepository as Repo
+
+Admin -> Gate : GET /members
+activate Gate
+alt not an admin
+  Gate -->x Admin : 403 ForbiddenError
+else admin
+  Gate -> Ctrl : list
+  Ctrl -> Svc : list(scope)
+  Svc -> Repo : members of this tenant only (ADR-0033)
+  Repo --> Ctrl : roster
+  Ctrl --> Admin : members
+end
+deactivate Gate
+
+Admin -> Gate : PATCH /members/:id/roles { roles }
+Gate -> Ctrl : setRoles (requireCan passed)
+Ctrl -> Svc : setRoles(id, roles, scope)
+note right of Svc : last-admin invariant enforced per tenant —\na team can't lock itself out of administration
+Svc --> Admin : updated member
+note over Admin : all members then share the team's recruiting data (team scope)
+@enduml

@@ -1,0 +1,34 @@
+@startuml uc02_build_pool
+title UC-02 — Build the talent pool (FR-11, FR-22, FR-20)
+
+skinparam shadowing false
+autonumber
+actor Recruiter
+participant TalentController as TC
+participant TalentService as TS
+participant "DocumentController\n(parse)" as DC
+participant CvParseService as CV
+participant "AttachmentController" as AC
+
+Recruiter -> TC : POST /talents { name, role, … }
+activate TC
+TC -> TS : create(scope, input)
+TS --> TC : talent
+deactivate TC
+TC --> Recruiter : 201 talent
+
+opt paste a CV (text or PDF)
+  Recruiter -> DC : POST /talents/:id/documents/parse
+  activate DC
+  DC -> CV : parse / parsePdf(scope, user, id, text)
+  CV -> CV : LLM extract → schema-validate\n(raw text kept as summary on fallback)
+  CV --> DC : { contact, resume, provider }
+  deactivate DC
+  DC --> Recruiter : structured resume (editable)
+end
+
+opt upload certificates
+  Recruiter -> AC : POST /talents/:id/attachments (multipart)
+  AC --> Recruiter : 201 attachment (owner-scoped)
+end
+@enduml

@@ -1,0 +1,31 @@
+@startuml uc12_dsgvo
+title UC-12 — Meet DSGVO obligations (FR-60, FR-61)
+
+skinparam shadowing false
+autonumber
+actor "Applicant\n(self-service)" as User
+actor Admin
+participant AccountController as AC
+participant AccountService as AS
+participant RetentionController as RC
+participant RetentionService as RS
+participant "personal-data /\ntalent-data registries" as Reg
+
+== Self-service (own account) ==
+User -> AC : GET /account/export
+AC -> AS : exportFor(user, scope) — iterate export sections
+AS --> User : portable JSON (account + team workspace)
+User -> AC : DELETE /account
+AC -> AS : erase(user) — iterate erasure steps, account row last
+AS -> Reg : each registered container cleared
+AS --> User : 204 + session cookie cleared
+
+== Admin (the pool) ==
+Admin -> RC : GET /retention/report   (requireCan retention)
+RC -> RS : report(scope) — candidates past their horizon
+RS --> Admin : review list (overdue flagged)
+Admin -> RC : POST /talents/:id/anonymize
+RC -> RS : anonymize(scope, id)
+RS -> Reg : talent-data purgers in 'anonymize' mode\n(strip PII, keep pipeline history)
+RS --> Admin : anonymized talent
+@enduml

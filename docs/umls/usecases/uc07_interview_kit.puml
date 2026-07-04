@@ -1,0 +1,21 @@
+@startuml uc07_interview_kit
+title UC-07 — Run the interview kit (FR-35)
+
+skinparam shadowing false
+autonumber
+actor Recruiter
+participant MatchAiController as Ctrl
+participant MatchAiService as Svc
+participant LlmFeatureRunner as Runner
+
+Recruiter -> Ctrl : POST /mandates/:id/talents/:tid/interview-kit
+activate Ctrl
+Ctrl -> Svc : interviewKit(scope, user, tid, mandate)
+activate Svc
+Svc -> Runner : runFeature('interviewKit', prompt,\n{ schema, normalize, accept: questions>0, fallback: template })
+Runner --> Svc : { content, provider, usage }
+Svc --> Ctrl : { questions[], scorecard, provider }
+deactivate Svc
+Ctrl --> Recruiter : structured questions + scorecard\n(always usable, LLM or template)
+deactivate Ctrl
+@enduml

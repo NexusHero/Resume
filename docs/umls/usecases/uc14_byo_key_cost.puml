@@ -1,0 +1,31 @@
+@startuml uc14_byo_key_cost
+title UC-14 — Bring your own AI key and watch the cost (FR-31, FR-30)
+
+skinparam shadowing false
+autonumber
+actor "Recruiter /\nAdmin" as User
+participant LlmController as LC
+participant "ApiKeyStore\n(secret-cipher)" as Keys
+participant UserRepository as Users
+participant UsageController as UC
+participant UsageMeter as Meter
+
+== Store a key + pick a provider ==
+User -> LC : PUT /settings/providers/:id/key { key }
+activate LC
+LC -> Keys : encrypt (AES-256-GCM) + store per user
+LC -> Users : persist llmProvider choice (ADR-0011)
+LC --> User : saved (key never returned)
+deactivate LC
+
+== Every AI call is metered ==
+note over Meter : each feature run records requests/tokens/cost\n(LlmFeatureRunner.meter — never blocks the feature)
+
+== See the spend ==
+User -> UC : GET /settings/usage
+activate UC
+UC -> Meter : list(user)
+Meter --> UC : per-provider / per-feature totals
+UC --> User : requests · tokens · rough $ (+ CSV audit trail)
+deactivate UC
+@enduml

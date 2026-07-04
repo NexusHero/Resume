@@ -1,0 +1,23 @@
+@startuml uc01_take_mandate
+title UC-01 — Take a mandate and paste the job ad (FR-10)
+
+skinparam shadowing false
+autonumber
+actor Recruiter
+participant MandateController as Ctrl
+participant MandateService as Svc
+participant MandateRepository as Repo
+
+Recruiter -> Ctrl : POST /mandates\n{ client, fee, deadline, jobText }
+activate Ctrl
+Ctrl -> Ctrl : zod-validate body
+Ctrl -> Svc : create(scope, input)
+activate Svc
+Svc -> Svc : stamp id + timestamps
+Svc -> Repo : add(mandate)  (scope-owned)
+Repo --> Svc : ok
+Svc --> Ctrl : mandate
+deactivate Svc
+Ctrl --> Recruiter : 201 mandate\n(jobText now feeds prep / ATS / AGG)
+deactivate Ctrl
+@enduml

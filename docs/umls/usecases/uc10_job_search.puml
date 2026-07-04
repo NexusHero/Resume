@@ -1,0 +1,33 @@
+@startuml uc10_job_search
+title UC-10 — Search external job boards (FR-50, FR-51)
+
+skinparam shadowing false
+autonumber
+actor "Recruiter /\nApplicant" as User
+participant JobController as Ctrl
+participant JobSearchService as Svc
+participant "composite JobSource\n(Arbeitnow · Bundesagentur · Adzuna)" as Src
+participant "SampleJobSource\n(offline fallback)" as Fallback
+participant SavedSearchController as SS
+
+User -> Ctrl : GET /jobs?q=…&skills=…
+activate Ctrl
+Ctrl -> Svc : search(query)
+activate Svc
+Svc -> Src : fetch across boards
+alt a source fails
+  Src -->x Svc : error (one board down)
+  note right of Svc : one failing source is skipped, not fatal;\nif all fail, the offline sample answers honestly
+  Svc -> Fallback : sample results
+end
+Svc -> Svc : two-tier rank (strong fits first, stretch below)
+Svc --> Ctrl : ranked results
+deactivate Svc
+Ctrl --> User : results
+deactivate Ctrl
+
+opt save the search
+  User -> SS : POST /searches { name, query }
+  SS --> User : 201 (re-runnable via GET /searches/:id/run)
+end
+@enduml

@@ -1,0 +1,27 @@
+@startuml uc11_agg_check
+title UC-11 — Check a job ad for AGG compliance (FR-41)
+
+skinparam shadowing false
+autonumber
+actor Recruiter
+participant ComplianceController as Ctrl
+participant "agg-check\n(domain, deterministic)" as Agg
+participant OutreachAiService as Svc
+
+Recruiter -> Ctrl : POST /compliance/agg-check { adText }
+activate Ctrl
+Ctrl -> Agg : scan(adText)
+Agg --> Ctrl : flags[] (age / gender / origin phrasing)
+Ctrl --> Recruiter : flagged phrases (Free — no LLM)
+deactivate Ctrl
+
+opt neutral rewrite (Pro)
+  Recruiter -> Ctrl : POST /compliance/agg-rewrite
+  activate Ctrl
+  note right of Ctrl : requirePro seam (ADR-0021) gates this route
+  Ctrl -> Svc : LLM neutral rewrite
+  Svc --> Ctrl : rewrite + provider
+  Ctrl --> Recruiter : neutral ad draft
+  deactivate Ctrl
+end
+@enduml

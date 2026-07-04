@@ -5,7 +5,8 @@
 > (§4 option C), self-hosted with embedded SQLite so offline-first holds. Because
 > Better-Auth is ESM-only and the server was CommonJS, the **prerequisite ESM/
 > nodenext migration** was done first ([ADR-0042](adr/0042-esm-nodenext-migration.md));
-> Better-Auth itself lands next behind the existing `AuthService` seam (a follow-up ADR).
+> Better-Auth itself lands behind the existing `AuthService` seam
+> ([ADR-0043](adr/0043-better-auth-sqlite-engine.md); engine done, live cutover staged).
 > The primitives/hardening route below is retained as rationale and fallback.
 >
 > Companion reading: [security concept](security.md) · [architecture](architecture.md)

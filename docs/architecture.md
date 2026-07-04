@@ -9,18 +9,18 @@
 
 Everything that describes the system, reachable from here.
 
-| Concern                  | Documents                                                                                                                              | What you'll find                                                                              |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| **Architecture (here)**  | Chapters 1–12 below                                                                                                                    | arc42: goals, constraints, context, building blocks, runtime, deployment, risks.              |
-| **Scope & requirements** | [Requirements](requirements.md) · [Use cases](use-cases.md)                                                                            | FR/NFR catalogue (traced to modules + ADRs); 15 use cases, **each with a sequence diagram**.  |
-| **Decisions**            | [Architecture Decision Records](adr/README.md) — **42 ADRs**                                                                           | Every significant, hard-to-reverse choice as MADR (context → decision → consequences).        |
-| **Views & diagrams**     | [System context](umls/03_system_context.puml) · [Building blocks](umls/05_building_blocks.puml) · [runtime & use-case sequences](umls) | UML: 1 context, 1 building-block, 5 runtime-flow + 15 use-case sequence diagrams.             |
-| **Security**             | [Security concept](security.md)                                                                                                        | Trust boundary, controls→ADR→verification table, and the honest open gaps.                    |
-| **Operations**           | [Deployment](deployment.md) · [Deployment blueprint](deployment-blueprint.md) · [Native app](native-app.md)                            | Run/build/release, the production topology, and the Capacitor native wrapper.                 |
-| **Compliance**           | [EU AI Act brief](eu-ai-act.md)                                                                                                        | Risk classification and the transparency/oversight controls, one page.                        |
-| **Product & roadmap**    | [Roadmap](roadmap.md) · [Produktreife-Roadmap](myjob-produktreife-roadmap.md)                                                          | What shipped, what's next, and the path to production maturity.                               |
-| **Forward plans**        | [Auth hardening & migration](auth-migration-plan.md)                                                                                   | Proposed, offline-first auth hardening (argon2id, Oslo primitives, phased) — not yet decided. |
-| **Design / UX**          | [Design brief](design/design-brief.md) · [IA & UX concept](design/ia-concept.md)                                                       | The design system prompt and the information-architecture concept.                            |
+| Concern                  | Documents                                                                                                                              | What you'll find                                                                                 |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| **Architecture (here)**  | Chapters 1–12 below                                                                                                                    | arc42: goals, constraints, context, building blocks, runtime, deployment, risks.                 |
+| **Scope & requirements** | [Requirements](requirements.md) · [Use cases](use-cases.md)                                                                            | FR/NFR catalogue (traced to modules + ADRs); 15 use cases, **each with a sequence diagram**.     |
+| **Decisions**            | [Architecture Decision Records](adr/README.md) — **43 ADRs**                                                                           | Every significant, hard-to-reverse choice as MADR (context → decision → consequences).           |
+| **Views & diagrams**     | [System context](umls/03_system_context.puml) · [Building blocks](umls/05_building_blocks.puml) · [runtime & use-case sequences](umls) | UML: 1 context, 1 building-block, 5 runtime-flow + 15 use-case sequence diagrams.                |
+| **Security**             | [Security concept](security.md)                                                                                                        | Trust boundary, controls→ADR→verification table, and the honest open gaps.                       |
+| **Operations**           | [Deployment](deployment.md) · [Deployment blueprint](deployment-blueprint.md) · [Native app](native-app.md)                            | Run/build/release, the production topology, and the Capacitor native wrapper.                    |
+| **Compliance**           | [EU AI Act brief](eu-ai-act.md)                                                                                                        | Risk classification and the transparency/oversight controls, one page.                           |
+| **Product & roadmap**    | [Roadmap](roadmap.md) · [Produktreife-Roadmap](myjob-produktreife-roadmap.md)                                                          | What shipped, what's next, and the path to production maturity.                                  |
+| **Forward plans**        | [Auth hardening & migration](auth-migration-plan.md)                                                                                   | Decided: offline-first framework auth — Better-Auth + embedded SQLite (ADR-0043), engine landed. |
+| **Design / UX**          | [Design brief](design/design-brief.md) · [IA & UX concept](design/ia-concept.md)                                                       | The design system prompt and the information-architecture concept.                               |
 
 **Reading paths.** New engineer → §1–6 + the building-block diagram. Reviewer / auditor
 → the [security concept](security.md) + the [ADR log](adr/README.md). Ops → [deployment](deployment.md).
@@ -311,50 +311,51 @@ a picture earns its place.
 
 Full log in [`docs/adr/`](adr). Summary:
 
-| ADR  | Decision                                                          | Status                          |
-| ---- | ----------------------------------------------------------------- | ------------------------------- |
-| 0001 | Hexagonal TypeScript backend (ports & adapters, SOLID)            | Accepted                        |
-| 0002 | Awilix DI with a single composition root                          | Accepted                        |
-| 0003 | File store default, Postgres via `STORE=sql`                      | Accepted                        |
-| 0004 | Authenticated, team-scoped, RBAC API                              | Accepted (supersedes open API)  |
-| 0005 | Deterministic fallback + per-user keys + metering for all AI      | Accepted                        |
-| 0006 | First-party observation flywheel; no scraping of review sites     | Accepted                        |
-| 0007 | Offline semantic skill matching (ontology + trigram fuzzy)        | Accepted                        |
-| 0008 | Skill canonicalization taxonomy                                   | Accepted                        |
-| 0009 | Grounding self-check over generated text                          | Accepted                        |
-| 0010 | Team scope as the ownership boundary for recruiting data          | Accepted                        |
-| 0011 | Per-user, persisted LLM provider choice                           | Accepted                        |
-| 0012 | Hand-maintained OpenAPI contract + self-hosted Swagger UI         | Accepted                        |
-| 0013 | In-process assistant agent with staged-suggestion autonomy        | Accepted (extended by 0019)     |
-| 0014 | First-party outcome loop (artefact → result tracking)             | Accepted                        |
-| 0015 | First-party email integration (send outreach, detect replies)     | Accepted                        |
-| 0016 | Learned stage-transition probabilities for the forecast           | Accepted                        |
-| 0017 | Local hashed embeddings + hybrid matching                         | Accepted                        |
-| 0018 | Compliance automation (audit trail, retention, AGG engine)        | Accepted                        |
-| 0019 | Autopilot: the auto-apply gear of the one agent (CoRecruiter)     | Accepted                        |
-| 0020 | Pluggable neural embeddings (Ollama, OpenAI) behind the port      | Accepted                        |
-| 0021 | Pro/Free plan gating at one HTTP seam (license deferred)          | Accepted                        |
-| 0022 | Split DocumentAiService into a runner + five services             | Accepted                        |
-| 0023 | Frontend unit/component test base with Vitest (jsdom)             | Accepted                        |
-| 0024 | Split the MandatePipeline god-component (board + 5 modals)        | Accepted                        |
-| 0025 | Responsive app shell (matchMedia hook + mobile drawer)            | Accepted (E1 slice 1)           |
-| 0026 | Responsive dense views (dashboard grids + scrollable tables)      | Accepted (E1 slice 2)           |
-| 0027 | Responsive CV profile, editor, and form modals                    | Accepted (E1 slice 3)           |
-| 0028 | Installable PWA (manifest + hand-rolled service worker)           | Accepted (E2)                   |
-| 0029 | Fail-fast production readiness gate (Postgres, APP_SECRET)        | Accepted (D-series slice 1)     |
-| 0030 | Scheduler leader election via Postgres advisory locks             | Accepted (D-series slice 2)     |
-| 0031 | PDF archive to S3-compatible object storage                       | Accepted (D-series slice 3)     |
-| 0032 | Bounded PDF render pool (concurrency semaphore)                   | Accepted (D-series slice 4)     |
-| 0033 | Multi-tenant scope foundation (tenantId, default 'team')          | Accepted (D-series slice 6·1)   |
-| 0034 | Tenant-scoped member management (roster + role admin)             | Accepted (D-series slice 6·2)   |
-| 0035 | Tenant onboarding by invitation (admin invite → accept)           | Accepted (D-series slice 6·3)   |
-| 0036 | Tenant registry + self-serve creation (SELF_SERVE_TENANTS)        | Accepted (D-series slice 6·4·1) |
-| 0037 | Super-admin capability + cross-tenant registry read               | Accepted (D-series slice 6·4·2) |
-| 0038 | Cross-tenant management + tenant suspension (enforced)            | Accepted (D-series slice 6·4·3) |
-| 0039 | Richer offline experience (offline banner + SWR service worker)   | Accepted                        |
-| 0040 | Capacitor native app wrapper (web-side wiring; native is manual)  | Accepted                        |
-| 0041 | Workbox service worker (vite-plugin-pwa; supersedes 0028/0039 SW) | Accepted                        |
-| 0042 | Server migrated to ESM (nodenext); unblocks modern ESM-only deps  | Accepted                        |
+| ADR  | Decision                                                          | Status                            |
+| ---- | ----------------------------------------------------------------- | --------------------------------- |
+| 0001 | Hexagonal TypeScript backend (ports & adapters, SOLID)            | Accepted                          |
+| 0002 | Awilix DI with a single composition root                          | Accepted                          |
+| 0003 | File store default, Postgres via `STORE=sql`                      | Accepted                          |
+| 0004 | Authenticated, team-scoped, RBAC API                              | Accepted (supersedes open API)    |
+| 0005 | Deterministic fallback + per-user keys + metering for all AI      | Accepted                          |
+| 0006 | First-party observation flywheel; no scraping of review sites     | Accepted                          |
+| 0007 | Offline semantic skill matching (ontology + trigram fuzzy)        | Accepted                          |
+| 0008 | Skill canonicalization taxonomy                                   | Accepted                          |
+| 0009 | Grounding self-check over generated text                          | Accepted                          |
+| 0010 | Team scope as the ownership boundary for recruiting data          | Accepted                          |
+| 0011 | Per-user, persisted LLM provider choice                           | Accepted                          |
+| 0012 | Hand-maintained OpenAPI contract + self-hosted Swagger UI         | Accepted                          |
+| 0013 | In-process assistant agent with staged-suggestion autonomy        | Accepted (extended by 0019)       |
+| 0014 | First-party outcome loop (artefact → result tracking)             | Accepted                          |
+| 0015 | First-party email integration (send outreach, detect replies)     | Accepted                          |
+| 0016 | Learned stage-transition probabilities for the forecast           | Accepted                          |
+| 0017 | Local hashed embeddings + hybrid matching                         | Accepted                          |
+| 0018 | Compliance automation (audit trail, retention, AGG engine)        | Accepted                          |
+| 0019 | Autopilot: the auto-apply gear of the one agent (CoRecruiter)     | Accepted                          |
+| 0020 | Pluggable neural embeddings (Ollama, OpenAI) behind the port      | Accepted                          |
+| 0021 | Pro/Free plan gating at one HTTP seam (license deferred)          | Accepted                          |
+| 0022 | Split DocumentAiService into a runner + five services             | Accepted                          |
+| 0023 | Frontend unit/component test base with Vitest (jsdom)             | Accepted                          |
+| 0024 | Split the MandatePipeline god-component (board + 5 modals)        | Accepted                          |
+| 0025 | Responsive app shell (matchMedia hook + mobile drawer)            | Accepted (E1 slice 1)             |
+| 0026 | Responsive dense views (dashboard grids + scrollable tables)      | Accepted (E1 slice 2)             |
+| 0027 | Responsive CV profile, editor, and form modals                    | Accepted (E1 slice 3)             |
+| 0028 | Installable PWA (manifest + hand-rolled service worker)           | Accepted (E2)                     |
+| 0029 | Fail-fast production readiness gate (Postgres, APP_SECRET)        | Accepted (D-series slice 1)       |
+| 0030 | Scheduler leader election via Postgres advisory locks             | Accepted (D-series slice 2)       |
+| 0031 | PDF archive to S3-compatible object storage                       | Accepted (D-series slice 3)       |
+| 0032 | Bounded PDF render pool (concurrency semaphore)                   | Accepted (D-series slice 4)       |
+| 0033 | Multi-tenant scope foundation (tenantId, default 'team')          | Accepted (D-series slice 6·1)     |
+| 0034 | Tenant-scoped member management (roster + role admin)             | Accepted (D-series slice 6·2)     |
+| 0035 | Tenant onboarding by invitation (admin invite → accept)           | Accepted (D-series slice 6·3)     |
+| 0036 | Tenant registry + self-serve creation (SELF_SERVE_TENANTS)        | Accepted (D-series slice 6·4·1)   |
+| 0037 | Super-admin capability + cross-tenant registry read               | Accepted (D-series slice 6·4·2)   |
+| 0038 | Cross-tenant management + tenant suspension (enforced)            | Accepted (D-series slice 6·4·3)   |
+| 0039 | Richer offline experience (offline banner + SWR service worker)   | Accepted                          |
+| 0040 | Capacitor native app wrapper (web-side wiring; native is manual)  | Accepted                          |
+| 0041 | Workbox service worker (vite-plugin-pwa; supersedes 0028/0039 SW) | Accepted                          |
+| 0042 | Server migrated to ESM (nodenext); unblocks modern ESM-only deps  | Accepted                          |
+| 0043 | Better-Auth credential/session engine (embedded SQLite)           | Accepted (engine; cutover staged) |
 
 ## 10. Quality Requirements
 

@@ -8,9 +8,9 @@ store presence — no separate codebase.
 
 This repo carries the **web-side wiring** (`capacitor.config.ts`, the
 `@capacitor/*` dev dependencies and the `cap:*` npm scripts). The **native
-platform projects** (`android/`, `ios/`) are generated on a developer machine
-and are gitignored, because generating and building them needs the Android SDK
-and/or Xcode, which CI here does not have.
+platform projects** (`android/`, `ios/`) are gitignored and generated on
+demand — `android/` can now be generated **and built** in CI (below); `ios/`
+still needs a developer machine, because that needs a Mac with Xcode.
 
 ## Prerequisites (developer machine)
 
@@ -56,6 +56,27 @@ Two modes (see the comments in `capacitor.config.ts`):
    `SameSite=None; Secure` session cookies, and you accept the usual third-party
    cookie friction. Prefer mode 1 unless you specifically need the assets bundled.
 
+## CI: on-demand unsigned Android APK
+
+The **Native — Android** workflow (`.github/workflows/native-android.yml`,
+manual `workflow_dispatch` only — it's a heavier, on-demand build, not part of
+the required verify gate) does the whole Android side in a plain
+`ubuntu-latest` runner: builds the web bundle, generates `android/` fresh via
+`cap add android` (`@capacitor/android` is a pinned devDependency so this step
+needs no network install of its own), syncs it, and runs
+`./gradlew assembleDebug`. The resulting **unsigned debug APK** — signed with
+Gradle's auto-generated debug keystore, so it installs straight onto a device
+or emulator for testing — is uploaded as a workflow artifact.
+
+This is deliberately **debug-only**. A signed **release** APK/AAB for the Play
+Store needs a real signing keystore held as a secret — a one-time setup left
+for whoever owns the store listing, not something to fake in CI. **iOS is not
+built in CI at all**: that needs a `macos-latest` runner (materially more
+expensive per minute) plus an Apple Developer account for code signing, since
+an unsigned iOS build only runs in the simulator, not on a device or in the
+App Store — not worth automating until that account exists. Both remain the
+manual dev-machine flow above.
+
 ## Store submission
 
 Signing, provisioning profiles, store listings and review are the normal
@@ -65,9 +86,13 @@ per release.
 
 ## What is verified here vs. on a device
 
-- **Verified in CI:** the config points `webDir` at the real Vite build output,
-  the `cap:*` scripts exist, and `capacitor.config.ts` carries the correct
-  `appId`/`appName` (a small source-level test locks these).
-- **Manual, on a dev machine / device (cannot run in this CI):** `cap add`, the
-  native build, install on a real phone, and store submission. Treat those as a
-  manual acceptance step.
+- **Verified in CI, on every push:** the config points `webDir` at the real
+  Vite build output, the `cap:*` scripts exist, and `capacitor.config.ts`
+  carries the correct `appId`/`appName` (a small source-level test locks
+  these).
+- **Buildable in CI, on demand:** the Android platform generates and the debug
+  APK builds (see above) — but installing it on a real phone and confirming it
+  actually launches is still a manual step, since no device is attached to CI.
+- **Manual, on a dev machine / device only:** the iOS build (needs a Mac +
+  Xcode), install on a real phone, signed release builds, and store
+  submission. Treat those as a manual acceptance step.

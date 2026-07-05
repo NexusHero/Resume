@@ -1,11 +1,10 @@
 import { AuthService } from '../../src/services/auth-service.js';
 import { registerSchema, loginSchema } from '../../src/domain/user.js';
 import { ConflictError, UnauthorizedError } from '../../src/domain/errors.js';
-import { MemorySessionStore } from '../../src/adapters/memory-session-store.js';
 import {
   InMemoryUserRepository,
   InMemoryTenantRepository,
-  fakePasswordHasher,
+  FakeAuthEngine,
   FixedClock,
   SequenceIdGenerator,
 } from '../support/fakes.js';
@@ -13,28 +12,28 @@ import { loadConfig } from '../../src/config.js';
 
 function makeService() {
   const repo = new InMemoryUserRepository();
-  const sessions = new MemorySessionStore();
+  const engine = new FakeAuthEngine();
   const service = new AuthService({
     userRepository: repo,
-    sessionStore: sessions,
-    passwordHasher: fakePasswordHasher,
+    authEngine: engine,
     clock: new FixedClock(),
     idGenerator: new SequenceIdGenerator('user'),
   });
-  return { service, repo, sessions };
+  return { service, repo, engine };
 }
 
 const reg = (email: string, password = 'supersecret') => registerSchema.parse({ email, password });
 
 describe('AuthService', () => {
-  it('Register_NewEmail_CreatesHashedUserAndSession', async () => {
+  it('Register_NewEmail_CreatesUserAndSession_NoLocalHash', async () => {
     const { service, repo } = makeService();
     const res = await service.register(reg('A@Example.com'));
     expect(res.user).toMatchObject({ id: 'user1', email: 'a@example.com' });
     expect(res.user).not.toHaveProperty('passwordHash');
     expect(typeof res.token).toBe('string');
     expect(repo.users).toHaveLength(1);
-    expect(repo.users[0]?.passwordHash).toBe('hashed:supersecret');
+    // The engine owns the credential; the domain user keeps no password hash.
+    expect(repo.users[0]?.passwordHash).toBe('');
   });
 
   it('Register_FirstAccount_BecomesAdmin', async () => {
@@ -96,8 +95,9 @@ describe('AuthService', () => {
   });
 
   it('CurrentUser_SessionForMissingUser_ReturnsNull', async () => {
-    const { service, sessions } = makeService();
-    const token = await sessions.create('ghost');
+    // A valid engine session whose email has no domain user (e.g. erased) → null.
+    const { service, engine } = makeService();
+    const { token } = await engine.signUp('ghost@example.com', 'whatever');
     expect(await service.currentUser(token)).toBeNull();
   });
 
@@ -120,8 +120,7 @@ describe('AuthService — self-serve tenants (ADR-0036)', () => {
     const tenants = new InMemoryTenantRepository();
     const service = new AuthService({
       userRepository: repo,
-      sessionStore: new MemorySessionStore(),
-      passwordHasher: fakePasswordHasher,
+      authEngine: new FakeAuthEngine(),
       clock: new FixedClock(),
       idGenerator: new SequenceIdGenerator('id'),
       tenantRepository: tenants,
@@ -180,17 +179,16 @@ describe('AuthService — suspended-tenant enforcement (ADR-0038)', () => {
   function makeSelfServe() {
     const repo = new InMemoryUserRepository();
     const tenants = new InMemoryTenantRepository();
-    const sessions = new MemorySessionStore();
+    const engine = new FakeAuthEngine();
     const service = new AuthService({
       userRepository: repo,
-      sessionStore: sessions,
-      passwordHasher: fakePasswordHasher,
+      authEngine: engine,
       clock: new FixedClock(),
       idGenerator: new SequenceIdGenerator('id'),
       tenantRepository: tenants,
       config: loadConfig({ SELF_SERVE_TENANTS: 'true' }),
     });
-    return { service, repo, tenants, sessions };
+    return { service, repo, tenants, engine };
   }
 
   it('Login_SuspendedTenant_ThrowsUnauthorized', async () => {

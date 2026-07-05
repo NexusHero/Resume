@@ -14,7 +14,6 @@ import { FsCandidacyRepository } from '../../src/adapters/fs-candidacy-repositor
 import { FsDocumentRepository } from '../../src/adapters/fs-document-repository.js';
 import { FsAttachmentStore } from '../../src/adapters/fs-attachment-store.js';
 import { FsUserRepository } from '../../src/adapters/fs-user-repository.js';
-import { FsSessionStore } from '../../src/adapters/fs-session-store.js';
 import { FsPasswordResetTokenStore } from '../../src/adapters/fs-password-reset-token-store.js';
 import { FsEmailVerificationTokenStore } from '../../src/adapters/fs-email-verification-token-store.js';
 import { FsApiKeyStore } from '../../src/adapters/fs-api-key-store.js';
@@ -55,7 +54,6 @@ function tmpConfig(): AppConfig {
     attachmentsFile: path.join(storeDir, 'attachments.json'),
     attachmentsDir: path.join(storeDir, 'attachments'),
     usersFile: path.join(storeDir, 'users.json'),
-    sessionsFile: path.join(storeDir, 'sessions.json'),
     passwordResetTokensFile: path.join(storeDir, 'password-reset-tokens.json'),
     emailVerificationTokensFile: path.join(storeDir, 'email-verification-tokens.json'),
     apiKeysFile: path.join(storeDir, 'api-keys.json'),
@@ -161,79 +159,6 @@ describe('FsUserRepository', () => {
 });
 
 const fixedClock = new FixedClock();
-
-describe('FsSessionStore', () => {
-  it('CreateThenLookup_ReturnsUserId', async () => {
-    const store = new FsSessionStore({ config: tmpConfig(), clock: fixedClock });
-    const token = await store.create('u1');
-    expect(await store.userIdFor(token)).toBe('u1');
-  });
-
-  it('Lookup_UnknownToken_ReturnsNull', async () => {
-    const store = new FsSessionStore({ config: tmpConfig(), clock: fixedClock });
-    expect(await store.userIdFor('nope')).toBeNull();
-  });
-
-  it('Sessions_PersistAcrossInstances', async () => {
-    const config = tmpConfig();
-    const token = await new FsSessionStore({ config, clock: fixedClock }).create('u1');
-    // A fresh instance (e.g. after a restart) still resolves the token.
-    expect(await new FsSessionStore({ config, clock: fixedClock }).userIdFor(token)).toBe('u1');
-  });
-
-  it('Destroy_RemovesSession', async () => {
-    const store = new FsSessionStore({ config: tmpConfig(), clock: fixedClock });
-    const token = await store.create('u1');
-    await store.destroy(token);
-    expect(await store.userIdFor(token)).toBeNull();
-  });
-
-  it('DestroyForUser_RemovesAllOfThatUsersSessions', async () => {
-    const store = new FsSessionStore({ config: tmpConfig(), clock: fixedClock });
-    const a1 = await store.create('u1');
-    const b1 = await store.create('u2');
-    await store.destroyForUser('u1');
-    expect(await store.userIdFor(a1)).toBeNull();
-    expect(await store.userIdFor(b1)).toBe('u2');
-    await store.destroyForUser('absent'); // no rows match — no throw, no change
-    expect(await store.userIdFor(b1)).toBe('u2');
-  });
-
-  it('Destroy_UnknownToken_NoOp', async () => {
-    const store = new FsSessionStore({ config: tmpConfig(), clock: fixedClock });
-    await store.create('u1');
-    await store.destroy('not-a-real-token'); // must not throw or drop other rows
-    expect(await store.userIdFor('not-a-real-token')).toBeNull();
-  });
-
-  it('Store_MalformedFile_TreatedAsEmpty', async () => {
-    const config = tmpConfig();
-    await fs.mkdir(config.storeDir, { recursive: true });
-    await fs.writeFile(config.sessionsFile, 'not json');
-    const store = new FsSessionStore({ config, clock: fixedClock });
-    expect(await store.userIdFor('anything')).toBeNull();
-    // A subsequent create recovers the file to a valid array.
-    const token = await store.create('u2');
-    expect(await store.userIdFor(token)).toBe('u2');
-  });
-
-  it('Session_PastTtl_RejectedAndPruned', async () => {
-    // A mutable clock lets time advance past the 30-day TTL between create/read.
-    let nowIso = '2026-01-01T00:00:00.000Z';
-    const clock = {
-      isoNow: () => nowIso,
-      now: () => new Date(nowIso),
-      today: () => nowIso.slice(0, 10),
-    };
-    const store = new FsSessionStore({ config: tmpConfig(), clock });
-    const token = await store.create('u1');
-    expect(await store.userIdFor(token)).toBe('u1'); // fresh → valid
-    nowIso = '2026-03-01T00:00:00.000Z'; // > 30 days later
-    expect(await store.userIdFor(token)).toBeNull(); // expired
-    nowIso = '2026-01-01T00:00:00.000Z'; // even rewinding, the row was pruned
-    expect(await store.userIdFor(token)).toBeNull();
-  });
-});
 
 describe('FsPasswordResetTokenStore', () => {
   it('Consume_ValidToken_ReturnsUserIdOnceThenGone', async () => {

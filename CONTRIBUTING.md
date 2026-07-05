@@ -6,6 +6,11 @@ This project follows a [Code of Conduct](CODE_OF_CONDUCT.md) — by participatin
 expected to uphold it. Pull requests use the [PR template](.github/pull_request_template.md);
 its checklist mirrors the quality gates below.
 
+This repo's process is one implementation of the cross-project standard in
+[`skills/ultimate-dev-process/SKILL.md`](skills/ultimate-dev-process/SKILL.md) — see that skill's
+"Recommended Upgrades" section for the two gaps worth closing here (Requirements Register,
+CI-blocking coverage gate).
+
 ## Ways of working
 
 - **We merge only via Pull Request — no direct pushes to `main`.** `main` is protected.

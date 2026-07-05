@@ -2,6 +2,7 @@
 name: ultimate-dev-process
 description: Vendor-neutral, stack-agnostic development governance that unifies architecture governance, TDD/testing discipline, implementation style, and commit/PR workflow into one Definition of Done for architects, engineers, and QA.
 ---
+
 # Ultimate Development Process
 
 Merged from two production processes (ElliotWaveAnalyzer, Résumé/myJob) and hardened with the
@@ -16,15 +17,15 @@ without being asked — the same way a senior engineer would not need reminding 
 
 ## Roles
 
-| Role | Owns |
-|------|------|
-| **Software Architect** | Requirements Register, ADRs, Quality Goals, the Tech Radar, architecture conformance in review |
-| **Software Engineer** | Implementation style (SOLID), TDD, the code itself, its unit/pure-logic tests |
-| **QA / Test Engineer** | Test strategy shape (the pyramid), test *quality* (not just the coverage %), acceptance/e2e tests, the security checklist |
-| **AI coding agent** | All of the above, applied on every change, without being asked |
+| Role                   | Owns                                                                                                                      |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| **Software Architect** | Requirements Register, ADRs, Quality Goals, the Tech Radar, architecture conformance in review                            |
+| **Software Engineer**  | Implementation style (SOLID), TDD, the code itself, its unit/pure-logic tests                                             |
+| **QA / Test Engineer** | Test strategy shape (the pyramid), test _quality_ (not just the coverage %), acceptance/e2e tests, the security checklist |
+| **AI coding agent**    | All of the above, applied on every change, without being asked                                                            |
 
 No role is a gate-keeper of last resort — each gate below is owned by whoever is closest to it,
-and checked by the *other* two roles in review (see **Reviewer Protocol**).
+and checked by the _other_ two roles in review (see **Reviewer Protocol**).
 
 ---
 
@@ -52,8 +53,8 @@ without the matching documentation is **not done** — exactly like a PR with a 
 ### 1.1 Requirements Register
 
 Every feature starts from a requirement with a stable id (`REQ-NNN`), tracked in a living register
-(`docs/architecture.md` §1 or equivalent). A ticket/issue is where the requirement is *discussed*;
-the register is where it is *tracked*. Each row carries: id, short statement, the issue/PR that
+(`docs/architecture.md` §1 or equivalent). A ticket/issue is where the requirement is _discussed_;
+the register is where it is _tracked_. Each row carries: id, short statement, the issue/PR that
 delivers it, status (`Proposed` → `In Progress` → `Fulfilled`).
 
 ### 1.2 ADRs — one decision, one file, never edited after acceptance
@@ -62,7 +63,7 @@ Any of the following **requires an ADR**, in the **same PR**:
 
 - adding, removing, or swapping a technology/library/external service,
 - introducing or changing a cross-layer boundary, an abstraction, or a major algorithm,
-- any decision a future maintainer would ask *"why was it done this way?"* about.
+- any decision a future maintainer would ask _"why was it done this way?"_ about.
 
 Routine dependency bumps and plain bug fixes don't need one.
 
@@ -105,7 +106,7 @@ pressure.
 
 Reviewed on every PR, weighted the same as the tests. The two violations to watch hardest:
 
-- **No god classes (SRP).** If a class fetches *and* calculates *and* orchestrates *and*
+- **No god classes (SRP).** If a class fetches _and_ calculates _and_ orchestrates _and_
   persists, split it. If you cannot state its single reason to change in one sentence, it's wrong.
   Business logic lives in small, pure, dependency-free classes; orchestration/glue stays thin.
 - **Depend on interfaces, not concretes, across a boundary (DIP).** Consumers depend on
@@ -157,12 +158,12 @@ test with `// ...` — show the whole thing.
 
 ### 3.3 The pyramid, and what each layer is for
 
-| Level | What it tests | Rule |
-|-------|---------------|------|
-| **Pure-logic / unit** | Deterministic cores — rule checkers, calculators, parsers, evaluators | No mocks needed — exhaustive fixtures, no I/O |
-| **Service / orchestration** | Delegation, provider selection, input validation | Mock the ports (interfaces), not the concretes |
-| **Acceptance / integration** | The real API against a real datastore | Only genuinely external systems (LLM, third-party API) are faked |
-| **Component / e2e** | UI against the real DOM/browser | Cover the golden path + empty/loading/error states |
+| Level                        | What it tests                                                         | Rule                                                             |
+| ---------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| **Pure-logic / unit**        | Deterministic cores — rule checkers, calculators, parsers, evaluators | No mocks needed — exhaustive fixtures, no I/O                    |
+| **Service / orchestration**  | Delegation, provider selection, input validation                      | Mock the ports (interfaces), not the concretes                   |
+| **Acceptance / integration** | The real API against a real datastore                                 | Only genuinely external systems (LLM, third-party API) are faked |
+| **Component / e2e**          | UI against the real DOM/browser                                       | Cover the golden path + empty/loading/error states               |
 
 **Never call a real external system (network, LLM, paid API) from a unit test.** Use seeded,
 deterministic fixtures — one shared fixture module, not ad-hoc arrays scattered across test files.
@@ -196,7 +197,7 @@ Keep a short, concrete checklist (adapt the specifics to the stack, keep the sha
   hits) are logged at a level that alerts.
 
 **Lightweight threat-model trigger:** any change that adds a new external integration or a new
-trust boundary gets a security-checklist pass *before* merge — not as an afterthought once
+trust boundary gets a security-checklist pass _before_ merge — not as an afterthought once
 something breaks in production.
 
 ---
@@ -219,7 +220,7 @@ Branches: `feat/`, `fix/`, `docs/`, `chore/`, `refactor/`, `test/`, `ci/` + shor
 - `pre-commit` runs the full local gate (format + lint + tests) — the same thing CI runs.
 - `commit-msg` rejects a commit whose subject doesn't match Conventional Commits.
 
-Provide **one script** that *is* the local gate and *is* what CI runs — `./test.sh` or equivalent —
+Provide **one script** that _is_ the local gate and _is_ what CI runs — `./test.sh` or equivalent —
 so "did you run the checks" is never a review question.
 
 ---
@@ -236,7 +237,7 @@ so "did you run the checks" is never a review question.
 
 ### Reviewer Protocol — the gap most process docs leave implicit
 
-The PR template checklist is the *author's* self-check. The reviewer's job is a distinct pass, not
+The PR template checklist is the _author's_ self-check. The reviewer's job is a distinct pass, not
 a re-read of the same checklist:
 
 1. **Architecture conformance** — does this match the ADRs and the Requirements Register, or does
@@ -272,7 +273,7 @@ A change is done, and its PR mergeable, only when **all** hold:
 
 ## 8. Observability & Rollback
 
-For anything architecturally relevant, answer *before* merging: **how will we know, in production,
+For anything architecturally relevant, answer _before_ merging: **how will we know, in production,
 if this breaks?** — a log line, a metric, or an alert. Not every PR needs new dashboards; every PR
 that changes a cross-cutting concern or a user-facing critical path needs an answer to this
 question, not silence.
@@ -301,17 +302,17 @@ would not need reminding to write a test.
 
 ## Appendix: Stack Adaptation (this repo)
 
-| Gate | Command |
-|------|---------|
+| Gate                         | Command                                               |
+| ---------------------------- | ----------------------------------------------------- |
 | Full local gate (mirrors CI) | `./test.sh` (format:check + lint + docs:check + test) |
-| Build | `npm run build` · `npm run build:web` |
-| Lint / format check | `npm run lint` · `npm run format:check` |
-| Unit / pure-logic tests | `npm test` (Jest, `--coverage`) |
-| Integration tests | `npm run test:integration` |
-| Web component tests | `npm run test:web` (Vitest) |
-| E2E tests | `npm run test:e2e` (Playwright) |
-| Type check | `npm run typecheck` |
-| Docs staleness gate | `npm run docs:check` (`tools/check-docs.mjs`) |
+| Build                        | `npm run build` · `npm run build:web`                 |
+| Lint / format check          | `npm run lint` · `npm run format:check`               |
+| Unit / pure-logic tests      | `npm test` (Jest, `--coverage`)                       |
+| Integration tests            | `npm run test:integration`                            |
+| Web component tests          | `npm run test:web` (Vitest)                           |
+| E2E tests                    | `npm run test:e2e` (Playwright)                       |
+| Type check                   | `npm run typecheck`                                   |
+| Docs staleness gate          | `npm run docs:check` (`tools/check-docs.mjs`)         |
 
 `scripts/hooks/` already implements the git-hooks automation from §5 (`pre-commit` runs
 `./test.sh`; `commit-msg` enforces Conventional Commits) — install with `npm run hooks:install`.
@@ -322,7 +323,7 @@ This repo already implements §1.2 (MADR-format ADRs with supersede), §1.5 (`do
 the deterministic staleness gate §1.5 describes), and §5 (git hooks) in full. Two gaps worth
 closing, ported from the sibling process (ElliotWaveAnalyzer):
 
-1. **Requirements Register (§1.1).** ADRs capture *decisions*; nothing currently traces a
+1. **Requirements Register (§1.1).** ADRs capture _decisions_; nothing currently traces a
    `REQ-NNN` id through to the sequence diagram that shows how it was actually built. Add a
    Requirements Register table to `docs/architecture.md` and start assigning ids to new features —
    retrofitting old ones is optional, but new work should carry an id from the issue onward.

@@ -66,6 +66,10 @@ module.exports = {
     // IMAP reply detection talks to a real mailbox (imapflow) — exercised by
     // deployment, not unit-covered; the matching domain and the port fake are.
     '!server/src/adapters/imap-inbox-source.ts',
+    // Better-Auth engine wraps the Better-Auth framework + native better-sqlite3;
+    // exercised end-to-end by better-auth-engine.test.ts (real SQLite), not
+    // unit-coverage-counted — same convention as the sql/smtp/s3 adapters.
+    '!server/src/adapters/better-auth/better-auth-engine.ts',
   ],
   coverageDirectory: 'coverage',
   coverageThreshold: {

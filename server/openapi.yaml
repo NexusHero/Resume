@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: myJob Recruiting Suite API
-  version: 1.0.0
+  version: 2.0.0
   description: |
     The REST API behind the **myJob** recruiting workspace: mandates, talent
     pool, pipeline (candidacies), placements, the document editor (résumé +

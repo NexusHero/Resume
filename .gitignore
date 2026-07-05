@@ -7,6 +7,7 @@ node_modules/
 
 # Build & tooling output
 dist/
+dist-pages/
 core/dist/
 coverage/
 playwright-report/
@@ -17,6 +18,12 @@ test-results/
 .env
 .env.*
 !.env.example
+
+# Better-Auth embedded SQLite database (runtime credential/session store, ADR-0043)
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
 
 # Generated résumé PDFs at repo root (the application archive is kept, see below)
 /*.pdf

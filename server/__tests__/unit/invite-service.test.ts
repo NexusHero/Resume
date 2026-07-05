@@ -7,10 +7,9 @@ import {
   RecordingMailer,
   FixedClock,
   SequenceIdGenerator,
-  fakePasswordHasher,
+  FakeAuthEngine,
   noopLogger,
 } from '../support/fakes.js';
-import { MemorySessionStore } from '../../src/adapters/memory-session-store.js';
 import type { User } from '../../src/domain/user.js';
 import type { TenantInvite } from '../../src/domain/tenant-invite.js';
 
@@ -19,19 +18,18 @@ const NOW = '2026-06-25T10:00:00.000Z';
 function ctx(mailer = new RecordingMailer()) {
   const invites = new InMemoryInviteRepository();
   const users = new InMemoryUserRepository();
-  const sessions = new MemorySessionStore();
+  const engine = new FakeAuthEngine();
   const service = new InviteService({
     inviteRepository: invites,
     userRepository: users,
-    sessionStore: sessions,
-    passwordHasher: fakePasswordHasher,
+    authEngine: engine,
     idGenerator: new SequenceIdGenerator('u'),
     clock: new FixedClock(NOW),
     mailer,
     logger: noopLogger,
     config: loadConfig({}),
   });
-  return { service, invites, users, sessions, mailer };
+  return { service, invites, users, engine, mailer };
 }
 
 const admin: User = {
@@ -114,8 +112,9 @@ describe('InviteService.accept', () => {
     expect(user.tenantId).toBe('acme'); // lands in the inviting tenant
     const stored = await c.users.findByEmail('new@acme.io');
     expect(stored?.tenantId).toBe('acme');
-    expect(stored?.passwordHash).toBe('hashed:hunter2secret');
-    expect(await c.sessions.userIdFor(session)).toBe(stored?.id);
+    // The engine owns the credential; the domain user keeps no password hash.
+    expect(stored?.passwordHash).toBe('');
+    expect((await c.engine.resolve(session))?.email).toBe('new@acme.io'); // session opened
     expect(c.invites.invites).toHaveLength(0); // single-use
   });
 

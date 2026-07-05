@@ -9,18 +9,18 @@
 
 Everything that describes the system, reachable from here.
 
-| Concern                  | Documents                                                                                                                              | What you'll find                                                                              |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| **Architecture (here)**  | Chapters 1–12 below                                                                                                                    | arc42: goals, constraints, context, building blocks, runtime, deployment, risks.              |
-| **Scope & requirements** | [Requirements](requirements.md) · [Use cases](use-cases.md)                                                                            | FR/NFR catalogue (traced to modules + ADRs); 15 use cases, **each with a sequence diagram**.  |
-| **Decisions**            | [Architecture Decision Records](adr/README.md) — **42 ADRs**                                                                           | Every significant, hard-to-reverse choice as MADR (context → decision → consequences).        |
-| **Views & diagrams**     | [System context](umls/03_system_context.puml) · [Building blocks](umls/05_building_blocks.puml) · [runtime & use-case sequences](umls) | UML: 1 context, 1 building-block, 5 runtime-flow + 15 use-case sequence diagrams.             |
-| **Security**             | [Security concept](security.md)                                                                                                        | Trust boundary, controls→ADR→verification table, and the honest open gaps.                    |
-| **Operations**           | [Deployment](deployment.md) · [Deployment blueprint](deployment-blueprint.md) · [Native app](native-app.md)                            | Run/build/release, the production topology, and the Capacitor native wrapper.                 |
-| **Compliance**           | [EU AI Act brief](eu-ai-act.md)                                                                                                        | Risk classification and the transparency/oversight controls, one page.                        |
-| **Product & roadmap**    | [Roadmap](roadmap.md) · [Produktreife-Roadmap](myjob-produktreife-roadmap.md)                                                          | What shipped, what's next, and the path to production maturity.                               |
-| **Forward plans**        | [Auth hardening & migration](auth-migration-plan.md)                                                                                   | Proposed, offline-first auth hardening (argon2id, Oslo primitives, phased) — not yet decided. |
-| **Design / UX**          | [Design brief](design/design-brief.md) · [IA & UX concept](design/ia-concept.md)                                                       | The design system prompt and the information-architecture concept.                            |
+| Concern                  | Documents                                                                                                                              | What you'll find                                                                                 |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| **Architecture (here)**  | Chapters 1–12 below                                                                                                                    | arc42: goals, constraints, context, building blocks, runtime, deployment, risks.                 |
+| **Scope & requirements** | [Requirements](requirements.md) · [Use cases](use-cases.md)                                                                            | FR/NFR catalogue (traced to modules + ADRs); 15 use cases, **each with a sequence diagram**.     |
+| **Decisions**            | [Architecture Decision Records](adr/README.md) — **43 ADRs**                                                                           | Every significant, hard-to-reverse choice as MADR (context → decision → consequences).           |
+| **Views & diagrams**     | [System context](umls/03_system_context.puml) · [Building blocks](umls/05_building_blocks.puml) · [runtime & use-case sequences](umls) | UML: 1 context, 1 building-block, 5 runtime-flow + 15 use-case sequence diagrams.                |
+| **Security**             | [Security concept](security.md)                                                                                                        | Trust boundary, controls→ADR→verification table, and the honest open gaps.                       |
+| **Operations**           | [Deployment](deployment.md) · [Deployment blueprint](deployment-blueprint.md) · [Native app](native-app.md)                            | Run/build/release, the production topology, and the Capacitor native wrapper.                    |
+| **Compliance**           | [EU AI Act brief](eu-ai-act.md)                                                                                                        | Risk classification and the transparency/oversight controls, one page.                           |
+| **Product & roadmap**    | [Roadmap](roadmap.md) · [Produktreife-Roadmap](myjob-produktreife-roadmap.md)                                                          | What shipped, what's next, and the path to production maturity.                                  |
+| **Forward plans**        | [Auth hardening & migration](auth-migration-plan.md)                                                                                   | Decided: offline-first framework auth — Better-Auth + embedded SQLite (ADR-0043), engine landed. |
+| **Design / UX**          | [Design brief](design/design-brief.md) · [IA & UX concept](design/ia-concept.md)                                                       | The design system prompt and the information-architecture concept.                               |
 
 **Reading paths.** New engineer → §1–6 + the building-block diagram. Reviewer / auditor
 → the [security concept](security.md) + the [ADR log](adr/README.md). Ops → [deployment](deployment.md).
@@ -157,8 +157,8 @@ The backend lives in `server/src/` and is strictly layered (dependencies point i
 | HTTP        | `create-app`, `*-controller` (mandate, talent, candidacy, placement, match, match-ai, document, compliance, forecast, observation, members, …), `problem`, `security`                                                                                                                             | Express routing, zod validation at the boundary, RFC-9457 errors, auth/CORS/headers. |
 | Application | `*-service` (mandate, talent, candidacy, placement, match, forecast, retention, members, usage, job-search, …); the AI services (`document-assist`, `cv-parse`, `ats-ai`, `outreach-ai`, `match-ai`) over the shared **`LlmFeatureRunner`** (ADR-0022), with `DocumentAiService` as a thin facade | Business rules only; depend on ports, never adapters.                                |
 | Domain      | `mandate`, `talent`, `candidacy`, `placement`, `match`, `skill-semantics`, **`skill-taxonomy`**, **`grounding`**, `candidate-prep`, `company-archetype`, `interview-*`, `agg-check`, `forecast`, `errors`                                                                                         | The model, its invariants, and pure deterministic algorithms. No I/O.                |
-| Ports       | `*-repository`, `session-store`, `llm-provider`, `api-key-store`, `usage-meter`, `skill-extractor`, `job-source`, `pdf-*`, `mailer`, `authorizer`, `clock`, …                                                                                                                                     | Interfaces the services depend on.                                                   |
-| Adapters    | `fs-*` / `sql/*` repositories, `anthropic`/`gemini` LLM providers, `*-job-source`, `puppeteer-pdf-renderer`, `pdf-lib-merger`, `scrypt-password-hasher`, `secret-cipher`, `pino`, …                                                                                                               | Concrete I/O, wired in `container.ts` (Awilix).                                      |
+| Ports       | `*-repository`, `auth-engine`, `llm-provider`, `api-key-store`, `usage-meter`, `skill-extractor`, `job-source`, `pdf-*`, `mailer`, `authorizer`, `clock`, …                                                                                                                                       | Interfaces the services depend on.                                                   |
+| Adapters    | `fs-*` / `sql/*` repositories, `better-auth/` engine, `anthropic`/`gemini` LLM providers, `*-job-source`, `puppeteer-pdf-renderer`, `pdf-lib-merger`, `secret-cipher`, `pino`, …                                                                                                                  | Concrete I/O, wired in `container.ts` (Awilix).                                      |
 
 The composition root (`container.ts`) is the single place that knows which adapter
 implements each port — see ADR-0002 for the registration discipline this demands.
@@ -275,8 +275,8 @@ a picture earns its place.
 - **Skills:** canonicalised (ADR-0008) then matched semantically offline (ADR-0007), with
   local hashed embeddings + hybrid lexical/semantic ranking (ADR-0017).
 - **Security:** the posture is documented end-to-end in the [security concept](security.md) —
-  trust boundary, authentication (opaque `httpOnly`/`SameSite=Lax` sessions, scrypt
-  passwords), authorization (RBAC + the `requireAuth`/`requirePlan` route seams),
+  trust boundary, authentication (opaque `httpOnly`/`SameSite=Lax` sessions, credentials
+  via the Better-Auth engine — ADR-0043), authorization (RBAC + the `requireAuth`/`requirePlan` route seams),
   per-tenant isolation, the config-only non-escalatable super-admin, suspension enforced
   in the auth path, AES-256-GCM-encrypted per-user keys, CORS allow-list + CSP + security
   headers, auth rate-limiting, and the honest gaps (no CSRF token under today's
@@ -299,6 +299,8 @@ a picture earns its place.
 - **API contract:** hand-maintained OpenAPI 3.1 + self-hosted Swagger UI (ADR-0012),
   extended in the same PR as any route change. Browsable in-app at `/api/v1/docs`
   (bundled `swagger-ui-dist`, no CDN); a zod→spec drift test guards the request shapes.
+  A read-only mirror (no "Try it out") publishes to GitHub Pages on every spec change
+  (ADR-0044), so the contract is browsable without running the server.
 - **Self-hosted assets:** fonts and the Swagger UI ship from this origin — no CDN, no
   third-party request leaves the browser (DSGVO); strict CSP on the built kit and docs.
 - **DI discipline:** new ports must be registered in `container.ts`; unit tests won't catch
@@ -355,6 +357,8 @@ Full log in [`docs/adr/`](adr). Summary:
 | 0040 | Capacitor native app wrapper (web-side wiring; native is manual)  | Accepted                        |
 | 0041 | Workbox service worker (vite-plugin-pwa; supersedes 0028/0039 SW) | Accepted                        |
 | 0042 | Server migrated to ESM (nodenext); unblocks modern ESM-only deps  | Accepted                        |
+| 0043 | Better-Auth credential/session engine (embedded SQLite)           | Accepted (engine live)          |
+| 0044 | Read-only Swagger UI mirror on GitHub Pages                       | Accepted                        |
 
 ## 10. Quality Requirements
 

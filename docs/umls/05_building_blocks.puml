@@ -34,7 +34,7 @@ package "Ports" {
   interface "repositories\n(user, talent, mandate, candidacy,\nplacement, documents, observations)" as Repos
   interface LlmProvider
   interface "ApiKeyStore /\nUsageMeter" as Keys
-  interface "SessionStore /\nPasswordHasher / Mailer" as AuthPorts
+  interface "AuthEngine / Mailer" as AuthPorts
   interface "PdfRenderer / PdfMerger /\nPdfTextExtractor" as PdfPorts
   interface JobSource
 }
@@ -42,7 +42,7 @@ package "Ports" {
 package "Adapters" {
   [fs-* (default)\nsql/* (Postgres)] as StoreAdapters
   [AnthropicLlmProvider\nGeminiLlmProvider] as LlmAdapters
-  [scrypt hasher - secret cipher\nSMTP/console mailer] as AuthAdapters
+  [Better-Auth engine (SQLite) - secret cipher\nSMTP/console mailer] as AuthAdapters
   [Puppeteer renderer - pdf-lib merger\npdfjs text extractor] as PdfAdapters
   [arbeitnow - bundesagentur - adzuna\n+ offline sample (composite)] as JobAdapters
 }

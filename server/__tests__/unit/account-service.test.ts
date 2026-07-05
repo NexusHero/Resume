@@ -1,6 +1,5 @@
 import { AccountService } from '../../src/services/account-service.js';
 import { toUserView } from '../../src/domain/user.js';
-import { MemorySessionStore } from '../../src/adapters/memory-session-store.js';
 import type { UserErasureStep, UserExportSection } from '../../src/ports/personal-data.js';
 import {
   InMemoryMandateRepository,
@@ -13,6 +12,7 @@ import {
   InMemoryUsageMeter,
   InMemoryInterviewObservationRepository,
   InMemoryArtifactLogRepository,
+  FakeAuthEngine,
 } from '../support/fakes.js';
 import type { Mandate } from '../../src/domain/mandate.js';
 import type { Talent } from '../../src/domain/talent.js';
@@ -34,7 +34,7 @@ function makeService() {
   const placementRepository = new InMemoryPlacementRepository();
   const apiKeyStore = new InMemoryApiKeyStore();
   const userRepository = new InMemoryUserRepository();
-  const sessionStore = new MemorySessionStore();
+  const authEngine = new FakeAuthEngine();
   const passwordResetTokenStore = new InMemoryPasswordResetTokenStore();
   const emailVerificationTokenStore = new InMemoryEmailVerificationTokenStore();
   const usageMeter = new InMemoryUsageMeter();
@@ -50,7 +50,13 @@ function makeService() {
         }
       },
     },
-    { label: 'sessions', erase: (userId) => sessionStore.destroyForUser(userId) },
+    {
+      label: 'auth-credentials',
+      erase: async (userId) => {
+        const found = await userRepository.findById(userId);
+        if (found) await authEngine.erase(found.email);
+      },
+    },
     {
       label: 'password-reset-tokens',
       erase: (userId) => passwordResetTokenStore.destroyForUser(userId),
@@ -84,7 +90,7 @@ function makeService() {
     placementRepository,
     apiKeyStore,
     userRepository,
-    sessionStore,
+    authEngine,
     passwordResetTokenStore,
     emailVerificationTokenStore,
     usageMeter,
@@ -196,7 +202,7 @@ describe('AccountService', () => {
     await ctx.userRepository.add(user(USER));
     await ctx.mandateRepository.add(mandate('m1')); // team-owned
     await ctx.apiKeyStore.set(USER, 'claude', 'sk-personal');
-    const token = await ctx.sessionStore.create(USER);
+    const { token } = await ctx.authEngine.signUp(`${USER}@example.com`, 'secret-pass');
     await ctx.passwordResetTokenStore.create(USER);
     await ctx.usageMeter.record({
       userId: USER,
@@ -211,7 +217,7 @@ describe('AccountService', () => {
 
     // the person's own footprint is gone
     expect(await ctx.userRepository.findById(USER)).toBeNull();
-    expect(await ctx.sessionStore.userIdFor(token)).toBeNull();
+    expect(await ctx.authEngine.resolve(token)).toBeNull(); // engine credential + session erased
     expect(ctx.passwordResetTokenStore.tokens).toEqual([]);
     expect(await ctx.apiKeyStore.providersFor(USER)).toEqual([]); // personal keys erased
     expect(await ctx.usageMeter.list(USER)).toEqual([]); // usage history erased

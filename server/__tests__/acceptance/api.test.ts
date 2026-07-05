@@ -62,7 +62,6 @@ import { TenantService } from '../../src/services/tenant-service.js';
 import { AccountService } from '../../src/services/account-service.js';
 import { toUserView } from '../../src/domain/user.js';
 import { PasswordResetService } from '../../src/services/password-reset-service.js';
-import { MemorySessionStore } from '../../src/adapters/memory-session-store.js';
 import { CoverLetterService } from '../../src/services/cover-letter-service.js';
 import { AnthropicLlmProvider } from '../../src/adapters/anthropic-llm-provider.js';
 import { GeminiLlmProvider } from '../../src/adapters/gemini-llm-provider.js';
@@ -96,7 +95,7 @@ import {
   FakeInboxSource,
   InMemoryStageTransitionRepository,
   InMemoryRetentionPolicyStore,
-  fakePasswordHasher,
+  FakeAuthEngine,
   FakePdfRenderer,
   FakePdfMerger,
   FakePdfTextExtractor,
@@ -188,7 +187,7 @@ function makeApp(
   const candidacyRepository = new InMemoryCandidacyRepository();
   const documentRepository = new InMemoryDocumentRepository();
   const attachmentStore = new InMemoryAttachmentStore();
-  const sessionStore = new MemorySessionStore();
+  const authEngine = new FakeAuthEngine();
   const passwordResetTokenStore =
     opts.passwordResetTokenStore ?? new InMemoryPasswordResetTokenStore();
   const mailer = opts.mailer ?? new RecordingMailer();
@@ -366,8 +365,7 @@ function makeApp(
   const authController = new AuthController({
     authService: new AuthService({
       userRepository,
-      sessionStore,
-      passwordHasher: fakePasswordHasher,
+      authEngine,
       clock: new FixedClock(),
       idGenerator: new SequenceIdGenerator('user'),
       tenantRepository,
@@ -396,7 +394,13 @@ function makeApp(
             }
           },
         },
-        { label: 'sessions', erase: (userId) => sessionStore.destroyForUser(userId) },
+        {
+          label: 'auth-credentials',
+          erase: async (userId) => {
+            const found = await userRepository.findById(userId);
+            if (found) await authEngine.erase(found.email);
+          },
+        },
         {
           label: 'password-reset-tokens',
           erase: (userId) => passwordResetTokenStore.destroyForUser(userId),
@@ -431,9 +435,8 @@ function makeApp(
   const passwordResetController = new PasswordResetController({
     passwordResetService: new PasswordResetService({
       userRepository,
-      sessionStore,
+      authEngine,
       passwordResetTokenStore,
-      passwordHasher: fakePasswordHasher,
       mailer,
       logger: noopLogger,
       config,
@@ -446,8 +449,7 @@ function makeApp(
     inviteService: new InviteService({
       inviteRepository: new InMemoryInviteRepository(),
       userRepository,
-      sessionStore,
-      passwordHasher: fakePasswordHasher,
+      authEngine,
       idGenerator: new SequenceIdGenerator('invite'),
       clock: new FixedClock(),
       mailer,
@@ -495,10 +497,33 @@ function makeApp(
   });
 }
 
+/** A supertest agent with a registered, logged-in session. The personal
+ *  endpoints (applications/history/searches/ats/jobs) require auth, so their
+ *  tests drive a logged-in agent — the same pattern as the recruiting block. */
+async function authed(app: Express) {
+  const agent = request.agent(app);
+  await agent
+    .post('/api/v1/auth/register')
+    .send({ email: 'me@example.com', password: 'correct horse battery' });
+  return agent;
+}
+
 describe('REST API /api/v1', () => {
   let app: Express;
   beforeEach(() => {
     app = makeApp();
+  });
+
+  it('PersonalEndpoints_Unauthenticated_Return401', async () => {
+    // Regression guard: the personal application/search/ATS/jobs endpoints must
+    // reject anonymous callers (no data leak, no spending the owner's AI budget).
+    expect((await request(app).get('/api/v1/applications')).status).toBe(401);
+    expect((await request(app).get('/api/v1/history')).status).toBe(401);
+    expect((await request(app).get('/api/v1/searches')).status).toBe(401);
+    expect((await request(app).get('/api/v1/jobs')).status).toBe(401);
+    expect((await request(app).post('/api/v1/ats').send({ role: 'x', text: 'y' })).status).toBe(
+      401,
+    );
   });
 
   it('Health_Get_ReturnsOk', async () => {
@@ -508,13 +533,15 @@ describe('REST API /api/v1', () => {
   });
 
   it('Applications_GetEmpty_ReturnsArray', async () => {
-    const res = await request(app).get('/api/v1/applications');
+    const agent = await authed(app);
+    const res = await agent.get('/api/v1/applications');
     expect(res.status).toBe(200);
     expect(res.body).toEqual([]);
   });
 
   it('Applications_PostValid_Creates201', async () => {
-    const res = await request(app)
+    const agent = await authed(app);
+    const res = await agent
       .post('/api/v1/applications')
       .send({ company: 'Aurora', position: 'Engineer' });
     expect(res.status).toBe(201);
@@ -524,35 +551,37 @@ describe('REST API /api/v1', () => {
       position: 'Engineer',
     });
 
-    const list = await request(app).post('/api/v1/applications').send({ company: 'Second' });
+    const list = await agent.post('/api/v1/applications').send({ company: 'Second' });
     expect(list.status).toBe(201);
   });
 
   it('Applications_PostMissingCompany_Returns400Problem', async () => {
-    const res = await request(app).post('/api/v1/applications').send({ position: 'x' });
+    const agent = await authed(app);
+    const res = await agent.post('/api/v1/applications').send({ position: 'x' });
     expect(res.status).toBe(400);
     expect(res.headers['content-type']).toMatch(/application\/problem\+json/);
     expect(res.body).toMatchObject({ title: 'Validation failed', status: 400 });
   });
 
   it('Applications_PatchExisting_Updates', async () => {
-    const created = await request(app).post('/api/v1/applications').send({ company: 'Aurora' });
+    const agent = await authed(app);
+    const created = await agent.post('/api/v1/applications').send({ company: 'Aurora' });
     const id = created.body.application.id;
-    const res = await request(app)
-      .patch(`/api/v1/applications/${id}`)
-      .send({ status: 'interview' });
+    const res = await agent.patch(`/api/v1/applications/${id}`).send({ status: 'interview' });
     expect(res.status).toBe(200);
     expect(res.body.application.status).toBe('interview');
   });
 
   it('Applications_PatchUnknown_Returns404Problem', async () => {
-    const res = await request(app).patch('/api/v1/applications/nope').send({ status: 'hired' });
+    const agent = await authed(app);
+    const res = await agent.patch('/api/v1/applications/nope').send({ status: 'hired' });
     expect(res.status).toBe(404);
     expect(res.body).toMatchObject({ status: 404, title: 'NotFoundError' });
   });
 
   it('Build_Post_Returns201WithPdf', async () => {
-    const res = await request(app)
+    const agent = await authed(app);
+    const res = await agent
       .post('/api/v1/applications/build')
       .send({ company: 'Aurora', language: 'en' });
     expect(res.status).toBe(201);
@@ -561,8 +590,9 @@ describe('REST API /api/v1', () => {
   });
 
   it('History_Get_ReturnsArray', async () => {
-    await request(app).post('/api/v1/applications').send({ company: 'Aurora' });
-    const res = await request(app).get('/api/v1/history');
+    const agent = await authed(app);
+    await agent.post('/api/v1/applications').send({ company: 'Aurora' });
+    const res = await agent.get('/api/v1/history');
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
     expect(res.body.length).toBeGreaterThan(0);
@@ -2014,8 +2044,36 @@ describe('REST API /api/v1', () => {
     expect(res.headers['referrer-policy']).toBe('strict-origin-when-cross-origin');
   });
 
+  it('BodyLimit_OversizedJsonOnNonUploadRoute_Rejected413', async () => {
+    // Audit #3: a normal JSON endpoint must not buffer a huge body — the 1 MB
+    // default rejects an oversized (unauthenticated) request before auth work.
+    const big = 'x'.repeat(1_500_000); // 1.5 MB > 1 MB default
+    const res = await request(app)
+      .post('/api/v1/auth/login')
+      .send({ email: 'a@b.de', password: big });
+    expect(res.status).toBe(413);
+  });
+
+  it('BodyLimit_LargeUploadRoute_NotRejectedForSize', async () => {
+    // The bulk-import route keeps the large cap (base64 PDFs), so a 1.5 MB body
+    // is not a size error — it fails auth (401) or shape, never 413.
+    const big = 'x'.repeat(1_500_000);
+    const res = await request(app).post('/api/v1/talents/import').send({ blob: big });
+    expect(res.status).not.toBe(413);
+  });
+
+  it('BodyParse_MalformedJson_Returns400Problem', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/login')
+      .set('Content-Type', 'application/json')
+      .send('{"email": ');
+    expect(res.status).toBe(400);
+    expect(res.headers['content-type']).toMatch(/application\/problem\+json/);
+  });
+
   it('Jobs_GetNoParams_RunsPreconfiguredSearchInTwoTiers', async () => {
-    const res = await request(app).get('/api/v1/jobs');
+    const agent = await authed(app);
+    const res = await agent.get('/api/v1/jobs');
     expect(res.status).toBe(200);
     expect(res.body.threshold).toBe(80);
     expect(Array.isArray(res.body.top)).toBe(true);
@@ -2030,7 +2088,8 @@ describe('REST API /api/v1', () => {
   });
 
   it('Jobs_GetWithKeyword_FiltersBySearchTerm', async () => {
-    const res = await request(app).get('/api/v1/jobs').query({ q: 'Rust' });
+    const agent = await authed(app);
+    const res = await agent.get('/api/v1/jobs').query({ q: 'Rust' });
     expect(res.status).toBe(200);
     const all = [...res.body.top, ...res.body.more];
     expect(all.length).toBeGreaterThan(0);
@@ -2042,14 +2101,16 @@ describe('REST API /api/v1', () => {
   });
 
   it('Jobs_GetWithThreshold_MovesBoundary', async () => {
-    const res = await request(app).get('/api/v1/jobs').query({ threshold: 100 });
+    const agent = await authed(app);
+    const res = await agent.get('/api/v1/jobs').query({ threshold: 100 });
     expect(res.status).toBe(200);
     expect(res.body.threshold).toBe(100);
     expect(res.body.top.every((j: { match: number }) => j.match === 100)).toBe(true);
   });
 
   it('Ats_PostPostingText_ReturnsGapReport', async () => {
-    const res = await request(app)
+    const agent = await authed(app);
+    const res = await agent
       .post('/api/v1/ats')
       .send({ role: 'Senior C++ Engineer', text: 'Build gRPC services with Kotlin.' });
     expect(res.status).toBe(200);
@@ -2061,16 +2122,18 @@ describe('REST API /api/v1', () => {
   });
 
   it('Ats_PostEmpty_Returns400Problem', async () => {
-    const res = await request(app).post('/api/v1/ats').send({});
+    const agent = await authed(app);
+    const res = await agent.post('/api/v1/ats').send({});
     expect(res.status).toBe(400);
     expect(res.headers['content-type']).toMatch(/application\/problem\+json/);
   });
 
   it('SavedSearch_CrudAndRun_Works', async () => {
-    const empty = await request(app).get('/api/v1/searches');
+    const agent = await authed(app);
+    const empty = await agent.get('/api/v1/searches');
     expect(empty.body).toEqual([]);
 
-    const created = await request(app)
+    const created = await agent
       .post('/api/v1/searches')
       .send({ name: 'Rust remote', q: 'Rust', threshold: 70 });
     expect(created.status).toBe(201);
@@ -2080,32 +2143,35 @@ describe('REST API /api/v1', () => {
       query: { q: 'Rust', threshold: 70 },
     });
 
-    const list = await request(app).get('/api/v1/searches');
+    const list = await agent.get('/api/v1/searches');
     expect(list.body).toHaveLength(1);
 
-    const run = await request(app).get(`/api/v1/searches/${id}/run`);
+    const run = await agent.get(`/api/v1/searches/${id}/run`);
     expect(run.status).toBe(200);
     expect(run.body.threshold).toBe(70);
     expect(Array.isArray(run.body.top)).toBe(true);
 
-    const del = await request(app).delete(`/api/v1/searches/${id}`);
+    const del = await agent.delete(`/api/v1/searches/${id}`);
     expect(del.status).toBe(204);
-    expect((await request(app).get('/api/v1/searches')).body).toEqual([]);
+    expect((await agent.get('/api/v1/searches')).body).toEqual([]);
   });
 
   it('SavedSearch_CreateMissingName_Returns400', async () => {
-    const res = await request(app).post('/api/v1/searches').send({ q: 'Rust' });
+    const agent = await authed(app);
+    const res = await agent.post('/api/v1/searches').send({ q: 'Rust' });
     expect(res.status).toBe(400);
   });
 
   it('SavedSearch_RunUnknown_Returns404Problem', async () => {
-    const res = await request(app).get('/api/v1/searches/nope/run');
+    const agent = await authed(app);
+    const res = await agent.get('/api/v1/searches/nope/run');
     expect(res.status).toBe(404);
     expect(res.body).toMatchObject({ status: 404, title: 'NotFoundError' });
   });
 
   it('SavedSearch_DeleteUnknown_Returns404Problem', async () => {
-    const res = await request(app).delete('/api/v1/searches/nope');
+    const agent = await authed(app);
+    const res = await agent.delete('/api/v1/searches/nope');
     expect(res.status).toBe(404);
   });
 

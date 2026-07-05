@@ -1,0 +1,59 @@
+name: Pages — API docs
+
+# Publishes a static, read-only mirror of the OpenAPI reference (ADR-0044) to
+# GitHub Pages: the same self-hosted Swagger UI as /api/v1/docs, minus
+# "Try it out" — this mirror isn't authenticated against a running server.
+# The interactive version for actual API calls stays at /api/v1/docs.
+#
+# One-time manual step (not doable from a workflow): Settings → Pages →
+# Source → "GitHub Actions".
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'server/openapi.yaml'
+      - 'scripts/build-api-docs-pages.sh'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build the static Swagger UI mirror
+        run: bash scripts/build-api-docs-pages.sh dist-pages
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist-pages
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

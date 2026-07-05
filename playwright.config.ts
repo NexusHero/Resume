@@ -13,6 +13,13 @@ export default defineConfig({
   use: {
     baseURL,
     trace: 'on-first-retry',
+    // Block the Workbox service worker (registered by the kit, ADR-0028/0041) in
+    // acceptance runs. Once it activates it proxies `/api/v1/*` through its runtime
+    // cache, which bypasses Playwright's `page.route` mocks — so any flow that
+    // re-fetches after an action (create→reload, open-editor) non-deterministically
+    // hits the real server instead of the mock. These tests drive the UI against
+    // mocked APIs; the service worker is covered by its own unit tests.
+    serviceWorkers: 'block',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {

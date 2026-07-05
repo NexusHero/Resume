@@ -113,7 +113,15 @@ export function createApp(deps: AppDeps): Express {
 
   app.use(securityHeaders);
   app.use(corsMiddleware(deps.config.security.corsOrigins));
-  app.use(express.json({ limit: '80mb' }));
+  // Body size (security audit #3, DoS): a small default for every JSON endpoint,
+  // with the large cap only on the routes that legitimately carry base64 uploads
+  // — the bulk PDF import, attachment upload, and the document PUT (a CV photo is
+  // embedded in it). One parser picks the limit by path, so an unauthenticated
+  // caller can't force an 80 MB buffer+parse on /auth/* and the other endpoints.
+  const smallJson = express.json({ limit: '1mb' });
+  const largeJson = express.json({ limit: '80mb' });
+  const LARGE_BODY = /^\/api\/v1\/talents\/(import|[^/]+\/(attachments|documents))$/;
+  app.use((req, res, next) => (LARGE_BODY.test(req.path) ? largeJson : smallJson)(req, res, next));
 
   const api = express.Router();
   api.get('/health', (_req, res) => res.json({ status: 'ok' }));
@@ -153,20 +161,22 @@ export function createApp(deps: AppDeps): Express {
   api.post('/auth/logout', asyncHandler(auth.logout));
   api.get('/auth/me', asyncHandler(auth.me));
   api.get('/auth/providers', asyncHandler(auth.providersInfo));
-  api.get('/applications', asyncHandler(c.list));
-  api.post('/applications', asyncHandler(c.create));
-  api.post('/applications/build', asyncHandler(c.build));
-  api.patch('/applications/:id', asyncHandler(c.update));
-  api.get('/history', asyncHandler(c.history));
-  api.get('/jobs', asyncHandler(j.search));
-  api.post('/ats', asyncHandler(ats.analyze));
-  api.get('/searches', asyncHandler(s.list));
-  api.post('/searches', asyncHandler(s.create));
-  api.delete('/searches/:id', asyncHandler(s.remove));
-  api.get('/searches/:id/run', asyncHandler(s.run));
-  // Recruiting endpoints require a valid session; the data behind them is
-  // team-scoped (currentScope) — every member works on the shared team pool.
+  // The session guard. Declared here so the personal endpoints below are gated
+  // too: they read/write personal application data and `/ats` calls the LLM, so
+  // an unauthenticated caller must never reach them (that would leak the data
+  // and let anyone spend the owner's AI budget). Recruiting routes reuse it.
   const requireAuth = asyncHandler(auth.requireAuth);
+  api.get('/applications', requireAuth, asyncHandler(c.list));
+  api.post('/applications', requireAuth, asyncHandler(c.create));
+  api.post('/applications/build', requireAuth, asyncHandler(c.build));
+  api.patch('/applications/:id', requireAuth, asyncHandler(c.update));
+  api.get('/history', requireAuth, asyncHandler(c.history));
+  api.get('/jobs', requireAuth, asyncHandler(j.search));
+  api.post('/ats', requireAuth, asyncHandler(ats.analyze));
+  api.get('/searches', requireAuth, asyncHandler(s.list));
+  api.post('/searches', requireAuth, asyncHandler(s.create));
+  api.delete('/searches/:id', requireAuth, asyncHandler(s.remove));
+  api.get('/searches/:id/run', requireAuth, asyncHandler(s.run));
   // The single Pro-gate seam (ADR-0021): every generative/AI route below is
   // marked with requirePlan('pro'); no feature branches on the plan itself.
   const requirePlan = makeRequirePlan(deps.planProvider);

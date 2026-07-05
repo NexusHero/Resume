@@ -8,8 +8,7 @@ import {
 import { defaultWorkspaceName, type Tenant } from '../domain/tenant.js';
 import { ConflictError, UnauthorizedError } from '../domain/errors.js';
 import type { UserRepository } from '../ports/user-repository.js';
-import type { SessionStore } from '../ports/session-store.js';
-import type { PasswordHasher } from '../ports/password-hasher.js';
+import type { AuthEngine } from '../ports/auth-engine.js';
 import type { Clock } from '../ports/clock.js';
 import type { IdGenerator } from '../ports/id-generator.js';
 import type { TenantRepository } from '../ports/tenant-repository.js';
@@ -17,8 +16,8 @@ import type { AppConfig } from '../config.js';
 
 export interface AuthServiceDeps {
   userRepository: UserRepository;
-  sessionStore: SessionStore;
-  passwordHasher: PasswordHasher;
+  /** Credential + session authority (Better-Auth, ADR-0043). */
+  authEngine: AuthEngine;
   clock: Clock;
   idGenerator: IdGenerator;
   /** Optional (ADR-0036): present enables self-serve tenant creation on register. */
@@ -32,11 +31,14 @@ export interface AuthResult {
   token: string;
 }
 
-/** Email/password authentication with opaque server-side sessions. */
+/**
+ * Email/password authentication. Credentials and sessions are owned by the
+ * `AuthEngine` (Better-Auth); the domain `User` (roles, tenant, profile) stays
+ * the source of truth here, linked by email (ADR-0043).
+ */
 export class AuthService {
   private readonly users: UserRepository;
-  private readonly sessions: SessionStore;
-  private readonly hasher: PasswordHasher;
+  private readonly engine: AuthEngine;
   private readonly clock: Clock;
   private readonly ids: IdGenerator;
   private readonly tenants?: TenantRepository;
@@ -44,8 +46,7 @@ export class AuthService {
 
   constructor(deps: AuthServiceDeps) {
     this.users = deps.userRepository;
-    this.sessions = deps.sessionStore;
-    this.hasher = deps.passwordHasher;
+    this.engine = deps.authEngine;
     this.clock = deps.clock;
     this.ids = deps.idGenerator;
     this.tenants = deps.tenantRepository;
@@ -76,16 +77,18 @@ export class AuthService {
       roles = first ? ['admin', 'recruiter'] : ['recruiter'];
     }
 
+    // The engine owns the credential + session; the domain user carries no
+    // password hash of its own (ADR-0043).
+    const { token } = await this.engine.signUp(input.email, input.password);
     const user: User = {
       id: this.ids.next(),
       email: input.email,
-      passwordHash: await this.hasher.hash(input.password),
+      passwordHash: '',
       roles,
       createdAt: this.clock.isoNow(),
       ...(tenantId ? { tenantId } : {}),
     };
     await this.users.add(user);
-    const token = await this.sessions.create(user.id);
     return { user: toUserView(user), token };
   }
 
@@ -101,25 +104,24 @@ export class AuthService {
   }
 
   async login(input: LoginInput): Promise<AuthResult> {
+    const session = await this.engine.signIn(input.email, input.password);
     const user = await this.users.findByEmail(input.email);
-    const ok = user ? await this.hasher.verify(input.password, user.passwordHash) : false;
-    if (!user || !ok) throw new UnauthorizedError('Invalid email or password');
+    if (!session || !user) throw new UnauthorizedError('Invalid email or password');
     if (await this.isTenantSuspended(user.tenantId)) {
       throw new UnauthorizedError('This workspace has been suspended');
     }
-    const token = await this.sessions.create(user.id);
-    return { user: toUserView(user), token };
+    return { user: toUserView(user), token: session.token };
   }
 
   async logout(token: string | undefined): Promise<void> {
-    if (token) await this.sessions.destroy(token);
+    if (token) await this.engine.signOut(token);
   }
 
   async currentUser(token: string | undefined): Promise<UserView | null> {
     if (!token) return null;
-    const userId = await this.sessions.userIdFor(token);
-    if (!userId) return null;
-    const user = await this.users.findById(userId);
+    const resolved = await this.engine.resolve(token);
+    if (!resolved) return null;
+    const user = await this.users.findByEmail(resolved.email);
     if (!user) return null;
     // A suspended workspace kills its members' sessions too, not just new logins.
     if (await this.isTenantSuspended(user.tenantId)) return null;

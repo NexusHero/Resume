@@ -1,7 +1,6 @@
 import type { UserRepository } from '../ports/user-repository.js';
-import type { SessionStore } from '../ports/session-store.js';
+import type { AuthEngine } from '../ports/auth-engine.js';
 import type { PasswordResetTokenStore } from '../ports/password-reset-token-store.js';
-import type { PasswordHasher } from '../ports/password-hasher.js';
 import type { Mailer } from '../ports/mailer.js';
 import type { Logger } from '../ports/logger.js';
 import type { AppConfig } from '../config.js';
@@ -10,9 +9,8 @@ import { passwordResetEmail, passwordResetUrl } from '../domain/password-reset.j
 
 export interface PasswordResetServiceDeps {
   userRepository: UserRepository;
-  sessionStore: SessionStore;
+  authEngine: AuthEngine;
   passwordResetTokenStore: PasswordResetTokenStore;
-  passwordHasher: PasswordHasher;
   mailer: Mailer;
   logger: Logger;
   config: AppConfig;
@@ -22,14 +20,13 @@ export interface PasswordResetServiceDeps {
  * Password-reset flow: request a link by email, then set a new password with the
  * emailed one-time token. Requesting is deliberately non-committal about whether
  * an account exists (no user enumeration); confirming consumes the token, sets
- * the new hash, and invalidates every existing session so a leaked token can't
- * outlive the reset.
+ * the new password in the auth engine (ADR-0043), and invalidates every existing
+ * session so a leaked token can't outlive the reset.
  */
 export class PasswordResetService {
   private readonly users: UserRepository;
-  private readonly sessions: SessionStore;
+  private readonly engine: AuthEngine;
   private readonly tokens: PasswordResetTokenStore;
-  private readonly hasher: PasswordHasher;
   private readonly mailer: Mailer;
   private readonly logger: Logger;
   private readonly baseUrl: string;
@@ -37,9 +34,8 @@ export class PasswordResetService {
 
   constructor(deps: PasswordResetServiceDeps) {
     this.users = deps.userRepository;
-    this.sessions = deps.sessionStore;
+    this.engine = deps.authEngine;
     this.tokens = deps.passwordResetTokenStore;
-    this.hasher = deps.passwordHasher;
     this.mailer = deps.mailer;
     this.logger = deps.logger;
     this.baseUrl = deps.config.mail.appBaseUrl;
@@ -71,10 +67,21 @@ export class PasswordResetService {
   async confirm(token: string, newPassword: string): Promise<void> {
     const userId = await this.tokens.consume(token);
     if (!userId) throw new UnauthorizedError('This reset link is invalid or has expired');
-    const passwordHash = await this.hasher.hash(newPassword);
-    await this.users.updatePassword(userId, passwordHash);
-    // A reset invalidates any other outstanding link and all live sessions.
+    const user = await this.users.findById(userId);
+    if (user) {
+      // Set the new password in the engine. An account that predates Better-Auth
+      // and hasn't logged in since has no engine credential yet — create one with
+      // the new password (signUp); otherwise update the existing one.
+      try {
+        await this.engine.signUp(user.email, newPassword);
+      } catch {
+        await this.engine.setPassword(user.email, newPassword);
+      }
+      // Drop every live session so a leaked reset link can't outlive the reset —
+      // the engine is the sole credential authority (ADR-0043).
+      await this.engine.revokeSessions(user.email);
+    }
+    // A reset also invalidates any other outstanding reset link.
     await this.tokens.destroyForUser(userId);
-    await this.sessions.destroyForUser(userId);
   }
 }

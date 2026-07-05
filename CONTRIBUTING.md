@@ -11,6 +11,15 @@ its checklist mirrors the quality gates below.
 - **We merge only via Pull Request — no direct pushes to `main`.** `main` is protected.
 - One logical change per PR. For larger changes, open an issue first to discuss the approach.
 - Every PR must be green on all CI checks and have its review threads resolved before merge.
+- **Every task gets a GitHub issue, and every PR links it** (`Closes #123` in the PR
+  description — see the [PR template](.github/pull_request_template.md)). This is what keeps the
+  change history traceable after the fact; a PR with no linked issue is missing context a
+  reviewer has no other way to recover.
+- **Every technology choice or architecture decision gets an ADR, in the same PR.** If a change
+  introduces or swaps a library/framework, changes a cross-cutting pattern (auth, data access,
+  module boundaries, build/deploy shape), or reverses a prior ADR, it ships a new or updated file
+  under [`docs/adr/`](docs/adr/README.md) alongside the code — not as a follow-up. Routine
+  dependency bumps and plain bug fixes don't need one.
 
 ## Setup
 

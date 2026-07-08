@@ -67,10 +67,14 @@ export async function migrate(pool: Pool): Promise<void> {
       status text NOT NULL,
       pdf_path text,
       source text NOT NULL,
+      talent_id text,
+      talent_name text,
       created_at text NOT NULL,
       updated_at text,
       commit text
     );
+    ALTER TABLE applications ADD COLUMN IF NOT EXISTS talent_id text;
+    ALTER TABLE applications ADD COLUMN IF NOT EXISTS talent_name text;
     CREATE TABLE IF NOT EXISTS audit_events (
       seq serial PRIMARY KEY,
       ts text NOT NULL,

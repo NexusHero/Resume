@@ -15,8 +15,9 @@ const NAV_SECTIONS = [
     items: [
       { id: 'uebersicht', label: 'Workspace', icon: 'home' },
       { id: 'mandate', label: 'Mandates', icon: 'briefcase' },
-      // Applications is hidden until it has a live data source — an always-empty
-      // board reads as broken, not as coming soon (same call as the Inbox).
+      // Applications is wired to the live applications resource (ADR-0046):
+      // submissions filed from Matching land here, so the board is reachable.
+      { id: 'bewerbungen', label: 'Applications', icon: 'send' },
       { id: 'platzierungen', label: 'Placements', icon: 'award' },
     ],
   },

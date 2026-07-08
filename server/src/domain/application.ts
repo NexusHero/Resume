@@ -27,6 +27,10 @@ export interface Application {
   status: ApplicationStatus;
   pdfPath: string | null;
   source: string;
+  /** The pool talent this application was submitted for, when applied on a
+   *  candidate's behalf from Matching (absent for the recruiter's own dossiers). */
+  talentId?: string;
+  talentName?: string;
   createdAt: string; // ISO 8601
   updatedAt?: string; // ISO 8601
   commit?: string; // short git hash, if versioned
@@ -59,6 +63,9 @@ export const createApplicationSchema = z.object({
   reference: z.string().default(''),
   status: applicationStatusSchema.default('sent'),
   source: z.string().optional(),
+  // Set when a recruiter applies on a pool candidate's behalf (from Matching).
+  talentId: z.string().optional(),
+  talentName: z.string().optional(),
   pdfBase64: base64,
 });
 export type CreateApplicationInput = z.infer<typeof createApplicationSchema>;

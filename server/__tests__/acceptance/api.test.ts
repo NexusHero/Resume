@@ -66,7 +66,6 @@ import { CoverLetterService } from '../../src/services/cover-letter-service.js';
 import { AnthropicLlmProvider } from '../../src/adapters/anthropic-llm-provider.js';
 import { GeminiLlmProvider } from '../../src/adapters/gemini-llm-provider.js';
 import { nodeFetch } from '../../src/adapters/node-fetch.js';
-import { SampleJobSource } from '../../src/adapters/sample-job-source.js';
 import { KeywordSkillExtractor } from '../../src/adapters/keyword-skill-extractor.js';
 import { RoleAuthorizer } from '../../src/adapters/role-authorizer.js';
 import {
@@ -93,6 +92,7 @@ import {
   InMemoryEmailVerificationTokenStore,
   RecordingMailer,
   FakeInboxSource,
+  FakeJobSource,
   InMemoryStageTransitionRepository,
   InMemoryRetentionPolicyStore,
   FakeAuthEngine,
@@ -128,8 +128,7 @@ function makeApp(
   });
   const controller = new ApplicationController({ applicationService: service });
   const jobSearchService = new JobSearchService({
-    jobSource: new SampleJobSource(),
-    fallbackJobSource: new SampleJobSource(),
+    jobSource: new FakeJobSource(),
     skillExtractor: new KeywordSkillExtractor(),
     candidateProfile: config.candidateProfile,
     logger: noopLogger,
@@ -553,6 +552,33 @@ describe('REST API /api/v1', () => {
 
     const list = await agent.post('/api/v1/applications').send({ company: 'Second' });
     expect(list.status).toBe(201);
+  });
+
+  it('Applications_PostOnCandidateBehalf_LinksTalentAndLists', async () => {
+    // Bug fix: applying from Matching records an application that carries the
+    // posting's company AND the candidate it was filed for, so the Applications
+    // board can show it (it was previously always empty).
+    const agent = await authed(app);
+    const res = await agent.post('/api/v1/applications').send({
+      company: 'Aurora Systems',
+      position: 'Senior C++ Engineer',
+      source: 'matching',
+      talentId: 'talent1',
+      talentName: 'Mara Vogel',
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.application).toMatchObject({
+      company: 'Aurora Systems',
+      position: 'Senior C++ Engineer',
+      source: 'matching',
+      talentId: 'talent1',
+      talentName: 'Mara Vogel',
+    });
+
+    const list = await agent.get('/api/v1/applications');
+    expect(list.status).toBe(200);
+    expect(list.body).toHaveLength(1);
+    expect(list.body[0]).toMatchObject({ talentId: 'talent1', talentName: 'Mara Vogel' });
   });
 
   it('Applications_PostMissingCompany_Returns400Problem', async () => {
@@ -1194,6 +1220,35 @@ describe('REST API /api/v1', () => {
       const res = await agent.post('/api/v1/placements').send({ candidateName: 'Mara' });
       expect(res.status).toBe(400);
       expect(res.headers['content-type']).toMatch(/application\/problem\+json/);
+      expect(res.body).toMatchObject({ title: 'Validation failed', status: 400 });
+    });
+
+    it('Placements_PostNonMonetaryFee_Returns400Problem', async () => {
+      // Regression: the fee is money, not free text — "lots of money" must be
+      // rejected instead of silently stored.
+      const res = await agent
+        .post('/api/v1/placements')
+        .send({ candidateName: 'Mara', client: 'Aurora', fee: 'lots of money' });
+      expect(res.status).toBe(400);
+      expect(res.headers['content-type']).toMatch(/application\/problem\+json/);
+      expect(res.body).toMatchObject({ title: 'Validation failed', status: 400 });
+    });
+
+    it('Placements_PostMonetaryFee_Accepts', async () => {
+      const res = await agent
+        .post('/api/v1/placements')
+        .send({ candidateName: 'Mara', client: 'Aurora', fee: '19.000 €' });
+      expect(res.status).toBe(201);
+      expect(res.body.placement.fee).toBe('19.000 €');
+    });
+
+    it('Placements_PatchNonMonetaryFee_Returns400Problem', async () => {
+      const created = await agent
+        .post('/api/v1/placements')
+        .send({ candidateName: 'Mara Vogel', client: 'Aurora' });
+      const id = created.body.placement.id;
+      const res = await agent.patch(`/api/v1/placements/${id}`).send({ fee: 'tbd' });
+      expect(res.status).toBe(400);
       expect(res.body).toMatchObject({ title: 'Validation failed', status: 400 });
     });
 

@@ -1373,12 +1373,16 @@ paths:
           application/json:
             schema:
               type: object
-              required: [company, pdfBase64]
+              required: [company]
               properties:
                 company: { type: string }
                 position: { type: string }
                 reference: { type: string }
                 status: { type: string }
+                source: { type: string }
+                talentId:
+                  { type: string, description: Pool talent this was applied for (from Matching) }
+                talentName: { type: string }
                 pdfBase64: { type: string }
       responses:
         '201':
@@ -2770,7 +2774,10 @@ components:
         candidateRole: { type: string }
         client: { type: string }
         start: { type: string }
-        fee: { type: string }
+        fee:
+          type: string
+          description: A monetary amount (currency symbol + digits + grouping), or empty. Free text is rejected (400).
+          example: '19.000 €'
         status: { type: string, enum: [probation, invoiced, paid], default: probation }
 
     Attachment:

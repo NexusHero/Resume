@@ -3,6 +3,12 @@
    modal is generic and validates required fields before calling onSubmit. */
 const RF = window.MyJobDesignSystem_f3658e;
 
+/* A monetary amount: optional currency symbol, digits with dot/comma/space
+   grouping, optional trailing symbol. Deliberately lenient about grouping
+   (19.000 €, 19,000, €19000) but it must be a number, not free text. Mirrors
+   the server's moneyString check in domain/placement.ts. */
+const MONEY_RE = /^[€$£\s]*\d[\d.,\s]*[€$£]?$/;
+
 const RECORD_FORMS = {
   mandate: {
     title: 'New mandate',
@@ -52,13 +58,13 @@ const RECORD_FORMS = {
       { name: 'candidateRole', label: 'Role', icon: 'briefcase' },
       { name: 'client', label: 'Client', icon: 'building', required: true },
       { name: 'start', label: 'Start', placeholder: 'YYYY-MM-DD' },
-      { name: 'fee', label: 'Fee', placeholder: 'e.g. 19.000 €' },
+      { name: 'fee', label: 'Fee', placeholder: 'e.g. 19.000 €', money: true },
       { name: 'status', label: 'Status', type: 'select', options: ['probation', 'invoiced', 'paid'], default: 'probation' },
     ],
   },
 };
 
-function RecordFormModal({ kind, record, prefill, onClose, onSubmit }) {
+function RecordFormModal({ kind, record, prefill, onClose, onSubmit, onDelete }) {
   const { isMobile } = window.useViewport ? window.useViewport() : { isMobile: false };
   const form = RECORD_FORMS[kind];
   const editing = record != null;
@@ -78,11 +84,21 @@ function RecordFormModal({ kind, record, prefill, onClose, onSubmit }) {
 
   const set = (name, v) => setValues((s) => ({ ...s, [name]: v }));
   const missing = form.fields.filter((f) => f.required && !String(values[f.name]).trim());
+  // A monetary field (e.g. a placement fee) must be a real amount — a currency
+  // symbol, digits and separators — never free text. Empty is allowed here;
+  // `required` is what makes a field mandatory.
+  const badMoney = form.fields.filter(
+    (f) => f.money && String(values[f.name]).trim() && !MONEY_RE.test(String(values[f.name]).trim()),
+  );
 
   const submit = (e) => {
     e.preventDefault();
     if (missing.length) {
       setError(`Please fill in: ${missing.map((f) => f.label).join(', ')}`);
+      return;
+    }
+    if (badMoney.length) {
+      setError(`Enter a valid amount for: ${badMoney.map((f) => f.label).join(', ')}`);
       return;
     }
     setBusy(true);
@@ -91,6 +107,19 @@ function RecordFormModal({ kind, record, prefill, onClose, onSubmit }) {
       .then(() => onClose())
       .catch(() => {
         setError('Could not save. Please try again.');
+        setBusy(false);
+      });
+  };
+
+  const remove = () => {
+    // eslint-disable-next-line no-alert
+    if (!window.confirm(`Delete this ${kind}? This cannot be undone.`)) return;
+    setBusy(true);
+    setError('');
+    Promise.resolve(onDelete())
+      .then(() => onClose())
+      .catch(() => {
+        setError('Could not delete. Please try again.');
         setBusy(false);
       });
   };
@@ -124,9 +153,16 @@ function RecordFormModal({ kind, record, prefill, onClose, onSubmit }) {
           <div role="alert" style={{ padding: '0 22px 4px', fontSize: '12.5px', color: 'var(--danger)' }}>{error}</div>
         )}
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', padding: '14px 22px', borderTop: '1px solid var(--border)', background: 'var(--surface-subtle)' }}>
-          <RF.Button variant="ghost" type="button" disabled={busy} onClick={onClose}>Cancel</RF.Button>
-          <RF.Button variant="primary" type="submit" disabled={busy}>{busy ? 'Saving…' : editing ? form.editSubmitLabel : form.submitLabel}</RF.Button>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', padding: '14px 22px', borderTop: '1px solid var(--border)', background: 'var(--surface-subtle)' }}>
+          <div>
+            {editing && onDelete && (
+              <RF.Button variant="ghost" type="button" disabled={busy} onClick={remove} iconLeft={<RF.Icon name="trash" size={14} />} style={{ color: 'var(--danger)' }}>Delete</RF.Button>
+            )}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <RF.Button variant="ghost" type="button" disabled={busy} onClick={onClose}>Cancel</RF.Button>
+            <RF.Button variant="primary" type="submit" disabled={busy}>{busy ? 'Saving…' : editing ? form.editSubmitLabel : form.submitLabel}</RF.Button>
+          </div>
         </div>
       </form>
     </>

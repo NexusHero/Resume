@@ -24,9 +24,11 @@ function KanbanCard({ app, talent, onOpen }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '7px', minWidth: 0 }}>
           <PB.Avatar name={talent.name} src={talent.src} size="xs" />
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{talent.me ? 'Me' : talent.name.split(' ')[0]}</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{talent.me ? 'Me' : (talent.name || '').split(' ')[0] || 'Candidate'}</span>
         </div>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600, color: app.score >= 80 ? 'var(--success)' : 'var(--text-muted)' }}>{app.score}%</span>
+        {typeof app.score === 'number' && (
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600, color: app.score >= 80 ? 'var(--success)' : 'var(--text-muted)' }}>{app.score}%</span>
+        )}
       </div>
     </div>
   );
@@ -35,6 +37,9 @@ function KanbanCard({ app, talent, onOpen }) {
 function PipelineBoard({ apps, talents, onOpen }) {
   const order = window.STAGES_ORDER;
   const byId = Object.fromEntries(talents.map((t) => [t.id, t]));
+  // An application filed for a candidate who is no longer in the pool (or the
+  // pinned "me") still renders — fall back to the name captured on the record.
+  const talentFor = (a) => byId[a.talentId] || { id: a.talentId, name: a.talentName || 'Candidate', me: false };
   return (
     <div style={{ display: 'grid', gridTemplateColumns: `repeat(${order.length}, minmax(210px, 1fr))`, gap: '14px', alignItems: 'start', height: '100%' }}>
       {order.map((stage) => {
@@ -48,7 +53,7 @@ function PipelineBoard({ apps, talents, onOpen }) {
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, color: 'var(--text-soft)', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-pill)', padding: '1px 8px', marginLeft: 'auto' }}>{list.length}</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {list.map((a) => <KanbanCard key={a.id} app={a} talent={byId[a.talentId]} onOpen={onOpen} />)}
+              {list.map((a) => <KanbanCard key={a.id} app={a} talent={talentFor(a)} onOpen={onOpen} />)}
               {list.length === 0 && (
                 <div style={{ border: '1.5px dashed var(--border-strong)', borderRadius: 'var(--radius-md)', padding: '16px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>empty</div>
               )}

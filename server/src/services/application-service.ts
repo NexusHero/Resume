@@ -76,6 +76,8 @@ export class ApplicationService {
         address,
         reference: input.reference,
         status: input.status,
+        talentId: input.talentId,
+        talentName: input.talentName,
       },
       pdfBytes,
       input.source ?? 'api',
@@ -147,7 +149,10 @@ export class ApplicationService {
   }
 
   private async persist(
-    fields: Pick<Application, 'company' | 'position' | 'address' | 'reference' | 'status'>,
+    fields: Pick<
+      Application,
+      'company' | 'position' | 'address' | 'reference' | 'status' | 'talentId' | 'talentName'
+    >,
     pdfBytes: Buffer | null,
     source: string,
   ): Promise<Application> {
@@ -169,6 +174,8 @@ export class ApplicationService {
       status: fields.status,
       pdfPath,
       source,
+      ...(fields.talentId ? { talentId: fields.talentId } : {}),
+      ...(fields.talentName ? { talentName: fields.talentName } : {}),
       createdAt: this.clock.isoNow(),
     };
 

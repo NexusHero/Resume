@@ -97,9 +97,11 @@ function Workspace({ user, onLogout }) {
   const listMandates = React.useCallback(() => window.RecruitApi.listMandates(), []);
   const listTalents = React.useCallback(() => window.RecruitApi.listTalents(), []);
   const listPlacements = React.useCallback(() => window.RecruitApi.listPlacements(), []);
+  const listApplications = React.useCallback(() => window.RecruitApi.listApplications(), []);
   const mandatesRes = useResource(listMandates);
   const talentsRes = useResource(listTalents);
   const placementsRes = useResource(listPlacements);
+  const applicationsRes = useResource(listApplications);
 
   const mandates = mandatesRes.data;
   const placements = placementsRes.data;
@@ -150,6 +152,15 @@ function Workspace({ user, onLogout }) {
   };
   const addTalent = () => setFormKind('talent');
   const addPlacement = () => setFormKind('placement');
+
+  // Apply on a candidate's behalf from Matching: record the application (which
+  // captures the posting's company + role) and refresh the pipeline so it shows
+  // up on the Applications board.
+  const applyFromMatching = (job, talent) =>
+    window.RecruitApi.applyCandidate(job, talent).then((app) => {
+      applicationsRes.reload();
+      return app;
+    });
 
   // Bulk CV import: read each PDF to base64, import as talents, report the
   // outcome and refresh the pool.
@@ -212,6 +223,14 @@ function Workspace({ user, onLogout }) {
     return window.RecruitApi.updatePlacement(id, values).then(placementsRes.reload);
   };
 
+  // Deleting a record from its edit form. Only placements are deletable from the
+  // UI today; the modal shows the Delete affordance only when onDelete is given.
+  const deleteRecord = ({ kind, id }) => {
+    if (kind === 'placement')
+      return window.RecruitApi.deletePlacement(id).then(placementsRes.reload);
+    return Promise.resolve();
+  };
+
   // The topbar search filters the list views (pool, mandates, placements) —
   // a simple contains-match over the fields a recruiter scans for.
   const q = search.trim().toLowerCase();
@@ -230,9 +249,9 @@ function Workspace({ user, onLogout }) {
       node
     );
 
-  // Applications, clients and inbox messages have no live recruiting API yet, so
-  // the views show honest empty states until one exists (no fabricated data).
-  const apps = [];
+  // Applications come from the live pipeline API; clients and inbox messages
+  // have no live recruiting API yet, so those views show honest empty states.
+  const apps = applicationsRes.data;
   const clients = [];
   const messages = [];
   const me = talents.find((t) => t.me);
@@ -296,12 +315,12 @@ function Workspace({ user, onLogout }) {
     if (nav === 'uebersicht') body = <window.Dashboard me={me} apps={apps} vkpis={vkpis} clients={clients} mandates={mandates} onOpenTalent={goTalent} onOpenPipeline={() => setNav('mandate')} onOpenMandate={() => setNav('mandate')} />;
     else if (nav === 'mandate') body = withState(mandatesRes, <window.MandateView mandates={shownMandates} onEdit={editMandate} onOpenPipeline={goPipeline} />);
     else if (nav === 'pool') body = withState(talentsRes, <window.TalentGrid talents={shownTalents} apps={apps} onOpen={goTalent} onAdd={addTalent} onImport={importCvs} importing={importing} />);
-    else if (nav === 'matching') body = <window.Matching talents={talents} onCreateMandate={mandateFromJob} />;
-    else if (nav === 'bewerbungen') body = (
+    else if (nav === 'matching') body = <window.Matching talents={talents} onCreateMandate={mandateFromJob} onApply={applyFromMatching} />;
+    else if (nav === 'bewerbungen') body = withState(applicationsRes, (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '100%' }}>
         <window.PipelineBoard apps={apps} talents={talents} onOpen={goTalent} />
       </div>
-    );
+    ));
     else if (nav === 'platzierungen') body = withState(placementsRes, <window.PlatzierungenView placements={shownPlacements} kpis={vkpis} onEdit={editPlacement} />);
     else if (nav === 'assistant') body = <window.AssistantView onChanged={() => { mandatesRes.reload(); }} />;
     else if (nav === 'berichte') body = <window.ReportsView clients={reportClients} mandates={mandates} placements={placements} apps={apps} kpis={vkpis} />;
@@ -335,6 +354,7 @@ function Workspace({ user, onLogout }) {
           record={editRecord.values}
           onClose={() => setEditRecord(null)}
           onSubmit={(values) => submitEdit(editRecord, values)}
+          onDelete={editRecord.kind === 'placement' ? () => deleteRecord(editRecord) : undefined}
         />
       )}
     </window.RecruitRail>

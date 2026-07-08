@@ -6,7 +6,7 @@ import { ArbeitnowJobSource } from './arbeitnow-job-source.js';
 import { BundesagenturJobSource } from './bundesagentur-job-source.js';
 import { AdzunaJobSource } from './adzuna-job-source.js';
 import { CompositeJobSource } from './composite-job-source.js';
-import { SampleJobSource } from './sample-job-source.js';
+import { EmptyJobSource } from './empty-job-source.js';
 
 export interface JobSourceFactoryDeps {
   config: AppConfig;
@@ -15,9 +15,10 @@ export interface JobSourceFactoryDeps {
 }
 
 /**
- * Assembles the live job sources enabled in config. With none enabled (the
- * default — no API keys, offline, CI) it falls back to the curated
- * SampleJobSource so the search always works.
+ * Assembles the live job sources enabled in config. The default install enables
+ * the keyless Arbeitnow board, so real postings flow without any setup. With
+ * every board explicitly disabled (JOB_SOURCES="") it returns an EmptyJobSource
+ * — the search shows no postings rather than any fabricated sample data.
  */
 export function createJobSource(deps: JobSourceFactoryDeps): JobSource {
   const { config, logger, httpFetch } = deps;
@@ -45,8 +46,8 @@ export function createJobSource(deps: JobSourceFactoryDeps): JobSource {
   }
 
   if (sources.length === 0) {
-    logger.info({}, 'no live job sources configured — using offline sample');
-    return new SampleJobSource();
+    logger.warn({}, 'no job sources configured (JOB_SOURCES="") — search returns no postings');
+    return new EmptyJobSource();
   }
   logger.info({ sources: sources.map((s) => s.name) }, 'live job sources enabled');
   return new CompositeJobSource(sources, logger);

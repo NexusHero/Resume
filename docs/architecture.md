@@ -125,6 +125,9 @@ See [`docs/umls/03_system_context.puml`](umls/03_system_context.puml).
 - API → **LLM providers** (Claude / Gemini) with the user's own key and persisted
   provider choice (ADR-0011), for AI features — optional.
 - API → **job boards** (Arbeitnow / Bundesagentur / Adzuna) for search — resilient composite.
+  The keyless **Arbeitnow** board is enabled by default; there is **no fabricated sample
+  source**, so when every live board is down the search returns empty and flags
+  `liveSourcesDown` rather than inventing postings (ADR-0045).
 - API → **SMTP mailer** for email verification, password-reset links and sending drafted
   outreach (console in dev); API → **IMAP mailbox** (optional, `MAIL_IMAP_*`) polled for
   replies to close the outcome loop — envelopes only, no message bodies (ADR-0015).
@@ -359,6 +362,9 @@ Full log in [`docs/adr/`](adr). Summary:
 | 0042 | Server migrated to ESM (nodenext); unblocks modern ESM-only deps  | Accepted                        |
 | 0043 | Better-Auth credential/session engine (embedded SQLite)           | Accepted (engine live)          |
 | 0044 | Read-only Swagger UI mirror on GitHub Pages                       | Accepted                        |
+| 0045 | No fabricated job data; live boards only (Arbeitnow default)      | Accepted                        |
+| 0046 | Applications pipeline wired to the board; apply from Matching     | Accepted                        |
+| 0047 | Recruiting UI actions never fail silently; validated inputs       | Accepted                        |
 
 ## 10. Quality Requirements
 

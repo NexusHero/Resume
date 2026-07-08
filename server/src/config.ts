@@ -213,9 +213,12 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const storeDir = path.join(rootDir, 'archive', 'bewerbungen');
 
   // JOB_SOURCES is a comma list, e.g. "arbeitnow,bundesagentur,adzuna".
-  // Unset → no live sources → offline sample (keeps dev/CI deterministic).
+  // Unset → the keyless, real Arbeitnow board is enabled by default, so a plain
+  // install queries live postings out of the box (there is NO fabricated sample
+  // source anymore). Set JOB_SOURCES explicitly to change the mix, or to an
+  // empty string to run with no board (the search then returns no postings).
   const enabled = new Set(
-    (env.JOB_SOURCES ?? '')
+    (env.JOB_SOURCES === undefined ? 'arbeitnow' : env.JOB_SOURCES)
       .split(',')
       .map((s) => s.trim().toLowerCase())
       .filter(Boolean),

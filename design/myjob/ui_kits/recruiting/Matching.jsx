@@ -16,17 +16,18 @@ function mtSkills(cand, job) {
   return job.req.map((name) => ({ name, met: have.includes(name.toLowerCase()) }));
 }
 
-function Matching({ talents, onCreateMandate }) {
+function Matching({ talents, onCreateMandate, onApply }) {
   const [mode, setMode] = React.useState('auto');
   const [candId, setCandId] = React.useState((talents.find((t) => t.me) || talents[0]).id);
   const [country, setCountry] = React.useState('ALL');
   const [source, setSource] = React.useState('All');
   const [query, setQuery] = React.useState('');
+  // Per-job apply state: 'busy' | 'done' | 'error' (absent = idle).
+  const [applyState, setApplyState] = React.useState({});
 
   // Live postings — loaded once; the search box filters client-side so typing
   // stays instant (the boards are already merged server-side).
   const [jobs, setJobs] = React.useState(null); // null = loading
-  const [sample, setSample] = React.useState(false);
   const [liveDown, setLiveDown] = React.useState(false);
   const [error, setError] = React.useState(false);
   const load = React.useCallback(() => {
@@ -35,7 +36,6 @@ function Matching({ talents, onCreateMandate }) {
     window.RecruitApi.searchJobs()
       .then((r) => {
         setJobs(r.jobs);
-        setSample(r.sample);
         setLiveDown(r.liveDown);
       })
       .catch(() => setError(true));
@@ -45,6 +45,16 @@ function Matching({ talents, onCreateMandate }) {
   }, [load]);
 
   const cand = talents.find((t) => t.id === candId) || talents[0];
+  // Apply the selected candidate to a posting. Keyed by candidate+job so the
+  // "Applied" state is specific to who you applied, not just which role.
+  const apply = (job) => {
+    if (!onApply) return;
+    const key = `${cand.id}:${job.id}`;
+    setApplyState((s) => ({ ...s, [key]: 'busy' }));
+    Promise.resolve(onApply(job, cand))
+      .then(() => setApplyState((s) => ({ ...s, [key]: 'done' })))
+      .catch(() => setApplyState((s) => ({ ...s, [key]: 'error' })));
+  };
   if (error) return <window.ErrorState onRetry={load} />;
   if (jobs === null) return <window.LoadingState />;
 
@@ -64,14 +74,10 @@ function Matching({ talents, onCreateMandate }) {
 
   return (
     <div style={{ maxWidth: '780px' }}>
-      {sample && (
+      {liveDown && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', color: 'var(--text-muted)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '8px 12px', marginBottom: '16px' }}>
           <MT.Icon name="info" size={14} style={{ flexShrink: 0 }} />
-          {liveDown ? (
-            <span>Live job sources are configured but unreachable right now — showing sample postings instead. Check the server's network/API keys; the search recovers automatically.</span>
-          ) : (
-            <span>Sample postings — no live job source is configured. Enable Arbeitnow, Adzuna or Bundesagentur via the server config to search real openings.</span>
-          )}
+          <span>Live job sources are unreachable right now, so no postings could be loaded. Check the server's network/API keys; the search recovers automatically.</span>
         </div>
       )}
       {/* mode */}
@@ -127,15 +133,36 @@ function Matching({ talents, onCreateMandate }) {
                 onApply={open}
                 onView={open}
               />
-              {onCreateMandate && (
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
-                  <button
-                    onClick={() => onCreateMandate(job)}
-                    title="Open a client mandate drafted from this posting"
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', appearance: 'none', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '11px', padding: '4px 11px' }}
-                  >
-                    <MT.Icon name="briefcase" size={12} /> Create mandate
-                  </button>
+              {(onApply || onCreateMandate) && (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '6px' }}>
+                  {onApply && (() => {
+                    const aState = applyState[`${cand.id}:${job.id}`];
+                    const label =
+                      aState === 'busy' ? 'Applying…'
+                      : aState === 'done' ? `Applied · ${cand.name.split(' ')[0]}`
+                      : aState === 'error' ? 'Retry apply'
+                      : `Apply ${cand.name.split(' ')[0]}`;
+                    const done = aState === 'done';
+                    return (
+                      <button
+                        onClick={() => apply(job)}
+                        disabled={aState === 'busy' || done}
+                        title={`Apply ${cand.name} to this role — records an application with the company’s details`}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: aState === 'busy' || done ? 'default' : 'pointer', appearance: 'none', background: done ? 'var(--surface-sunk)' : 'var(--accent-soft)', border: `1px solid ${done ? 'var(--border-strong)' : 'var(--accent-border)'}`, borderRadius: 'var(--radius-pill)', color: done ? 'var(--text-soft)' : 'var(--accent-strong)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '4px 11px' }}
+                      >
+                        <MT.Icon name={done ? 'check' : 'plus'} size={12} /> {label}
+                      </button>
+                    );
+                  })()}
+                  {onCreateMandate && (
+                    <button
+                      onClick={() => onCreateMandate(job)}
+                      title="Open a client mandate drafted from this posting"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', appearance: 'none', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '11px', padding: '4px 11px' }}
+                    >
+                      <MT.Icon name="briefcase" size={12} /> Create mandate
+                    </button>
+                  )}
                 </div>
               )}
             </div>

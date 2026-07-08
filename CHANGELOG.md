@@ -10,6 +10,37 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Added
 
+- **The Applications page is a working submission pipeline** (ADR-0046, FR-15/16):
+  the board now reads the live applications resource instead of a hard-coded empty
+  list, and **Matching gained a "+ Apply {candidate}" action** that files an
+  application for the selected candidate, capturing the posting's company and role.
+  `Application` records carry optional talent linkage (`talentId`/`talentName`),
+  persisted by both the file and SQL stores.
+- **Placements can be deleted from the UI** (ADR-0047, FR-17): the edit form has a
+  confirming Delete action wired to the existing `DELETE /placements/:id`.
+
+### Changed
+
+- **Job search shows real board data only** (ADR-0045, FR-52): the fabricated
+  `SampleJobSource` is removed. The keyless **Arbeitnow** board is enabled by
+  default (`JOB_SOURCES` unset), so a fresh install queries live postings; when
+  every source is down the search returns empty and the UI says the live sources
+  are unreachable rather than showing mock postings.
+- **Placement `fee` is validated as a monetary amount** (ADR-0047, FR-17), server-
+  side (`moneyString`) and in the create/edit form — free text like "lots" is
+  rejected instead of stored.
+
+### Fixed
+
+- **The "AI tailor" (KI anpassen) button no longer fails silently** (ADR-0047,
+  FR-44): failures (Pro gate, missing key, network) now show a visible error with
+  a retry instead of an empty `catch`.
+- **Talent document PDFs download reliably** (ADR-0047, FR-24): the bytes are
+  fetched and saved as a file rather than opened with `window.open()`, which was
+  silently blocked under the strict CSP, the installed PWA and the native shell.
+
+### Added (docs)
+
 - **A read-only Swagger UI mirror on GitHub Pages** (ADR-0044): the same
   self-hosted OpenAPI reference as `/api/v1/docs`, published as a static site
   on every push that touches `server/openapi.yaml` — no server required to

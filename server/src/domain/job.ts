@@ -28,11 +28,12 @@ export interface ScoredJob extends Job {
 export interface JobSearchResult {
   query: JobQuery;
   threshold: number;
-  /** Which backing source produced the postings ('Sample' = offline fallback). */
+  /** Which backing source produced the postings (e.g. 'composite', 'none'). */
   source: string;
   /**
-   * True when live sources are configured but every one of them failed on
-   * this search — the results shown are the offline sample, not "no hits".
+   * True when live sources are configured but every one of them failed on this
+   * search — the list is empty because of an outage, not because nothing matched
+   * (there is no fabricated sample fallback).
    */
   liveSourcesDown?: boolean;
   /** match >= threshold, best first. */

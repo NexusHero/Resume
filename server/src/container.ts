@@ -26,7 +26,6 @@ import { PuppeteerPdfRenderer } from './adapters/puppeteer-pdf-renderer.js';
 import { PdfLibMerger } from './adapters/pdf-lib-merger.js';
 import { PdfjsTextExtractor } from './adapters/pdfjs-text-extractor.js';
 import { createJobSource } from './adapters/job-source-factory.js';
-import { SampleJobSource } from './adapters/sample-job-source.js';
 import { nodeFetch } from './adapters/node-fetch.js';
 import { KeywordSkillExtractor } from './adapters/keyword-skill-extractor.js';
 import { createEmbeddingProvider } from './adapters/create-embedding-provider.js';
@@ -162,8 +161,6 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
     jobSource: asFunction(({ config: c, logger }) =>
       createJobSource({ config: c, logger, httpFetch: nodeFetch }),
     ).singleton(),
-    // The offline sample doubles as the honest fallback when live sources fail.
-    fallbackJobSource: asFunction(() => new SampleJobSource()).singleton(),
     skillExtractor: asFunction(() => new KeywordSkillExtractor()).singleton(),
     // Subscription plan source: an instance-wide config default now, a license/
     // billing adapter later behind the same port (ADR-0021).

@@ -76,6 +76,8 @@ export const applications = pgTable('applications', {
   status: text('status').notNull(),
   pdfPath: text('pdf_path'),
   source: text('source').notNull(),
+  talentId: text('talent_id'),
+  talentName: text('talent_name'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at'),
   commit: text('commit'),

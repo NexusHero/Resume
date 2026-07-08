@@ -26,13 +26,16 @@ relevant, the **ADR** that shaped the approach. Use cases reference these IDs.
 
 ### Recruiting core
 
-| ID    | Requirement                                                                                                               | Realised in                                                |
-| ----- | ------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| FR-10 | CRUD for client **mandates** (fee, deadline, and the pasted job ad / Stellenanzeige).                                     | `mandate-service`, `domain/mandate`                        |
-| FR-11 | CRUD for the **talent pool**; each talent may carry structured resume documents and file attachments.                     | `talent-service`, `document-service`, `attachment-service` |
-| FR-12 | A **candidacy** links a talent to a mandate and moves through pipeline stages; reaching `placed` creates a **placement**. | `candidacy-service`, `placement-service`                   |
-| FR-13 | Mandate metrics (submitted / interviews) are derived from the pipeline, not stored twice.                                 | `candidacy-service`, `mandate-service`                     |
-| FR-14 | A revenue **forecast** is computed from open pipeline value weighted by stage probability.                                | `forecast-service`, `domain/forecast`                      |
+| ID    | Requirement                                                                                                                                                                            | Realised in                                                           |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| FR-10 | CRUD for client **mandates** (fee, deadline, and the pasted job ad / Stellenanzeige).                                                                                                  | `mandate-service`, `domain/mandate`                                   |
+| FR-11 | CRUD for the **talent pool**; each talent may carry structured resume documents and file attachments.                                                                                  | `talent-service`, `document-service`, `attachment-service`            |
+| FR-12 | A **candidacy** links a talent to a mandate and moves through pipeline stages; reaching `placed` creates a **placement**.                                                              | `candidacy-service`, `placement-service`                              |
+| FR-13 | Mandate metrics (submitted / interviews) are derived from the pipeline, not stored twice.                                                                                              | `candidacy-service`, `mandate-service`                                |
+| FR-14 | A revenue **forecast** is computed from open pipeline value weighted by stage probability.                                                                                             | `forecast-service`, `domain/forecast`                                 |
+| FR-15 | **Applications** submitted for candidates form a pipeline board by stage, fed by the live applications resource (never a hard-coded empty list).                                       | `application-service`, `PipelineBoard`, `app.jsx` (ADR-0046)          |
+| FR-16 | A recruiter can **apply a candidate to a live posting** from Matching (a "+" action); the submission captures the posting's company and role and links the candidate it was filed for. | `Matching`, `application-service`, `domain/application` (ADR-0046)    |
+| FR-17 | A **placement** can be created, edited and **deleted**; its `fee` is validated as a monetary amount rather than accepted as free text.                                                 | `placement-service`, `domain/placement`, `RecordFormModal` (ADR-0047) |
 
 ### Documents & PDF
 
@@ -42,6 +45,7 @@ relevant, the **ADR** that shaped the approach. Use cases reference these IDs.
 | FR-21 | The suite renders a candidate CV and a merged **Bewerbungsmappe / dossier** to vector-quality PDF.                                                                                                                                                                                | `pdf-renderer`, `pdf-merger`, `document-service`              |
 | FR-22 | A pasted CV (text or PDF) is parsed into the structured resume model.                                                                                                                                                                                                             | `document-ai-service`, `document-parse`, `pdf-text-extractor` |
 | FR-23 | A talent's documents can be **translated** into the other language (EN↔DE) on demand; the variant is stored alongside the primary set. Requires an AI provider — no offline fallback exists for a real application, so without a key the API asks for one instead of fabricating. | `document-ai-service`, `domain/document-translate`            |
+| FR-24 | A talent's documents (and "My documents") can be **downloaded as a PDF file** reliably — the bytes are fetched and saved, working under the strict CSP, installed PWA and native shell; a render failure is surfaced, never silent.                                               | `document-service`, `Editor`, `data.js` (ADR-0047)            |
 
 ### AI assistance (the differentiator)
 
@@ -61,13 +65,15 @@ relevant, the **ADR** that shaped the approach. Use cases reference these IDs.
 | FR-41 | An **AGG compliance check** flags potentially discriminatory phrasing in a job ad.                                                                                                                                                                                                                             | `compliance-controller`, `domain/agg-check`                  |      |
 | FR-42 | Generated candidate-facing text (pitch, outreach, cover letter, CV suggestions) follows the **language of the job ad / candidate material** (German posting → German output), detected deterministically and independent of the app UI language. Both the LLM prompt and the deterministic fallback honour it. | `domain/language`, `mandate.lang`, `document-ai-service`     |      |
 | FR-43 | Every AI-generated draft displays **which backend produced it** (the provider, or "Template · no AI") so recruiters never mistake template output for AI output.                                                                                                                                               | Editor UI (`ProviderBadge`), service `provider` fields       | 0005 |
+| FR-44 | The document editor's **AI tailor** ("KI anpassen") shows a loading state and, on failure (Pro gate, missing key, network), a **visible error with retry** — it never fails silently.                                                                                                                          | `Editor` (`runAI`), `document-ai-service`                    | 0047 |
 
 ### Job search
 
-| ID    | Requirement                                                                                              | Realised in                                  |
-| ----- | -------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| FR-50 | Skill-matched two-tier job search across pluggable job boards; one failing source is skipped, not fatal. | `job-search-service`, `composite-job-source` |
-| FR-51 | Named/saved searches can be stored and re-run.                                                           | `saved-search-service`                       |
+| ID    | Requirement                                                                                                                                                                                                                                | Realised in                                                       |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| FR-50 | Skill-matched two-tier job search across pluggable job boards; one failing source is skipped, not fatal.                                                                                                                                   | `job-search-service`, `composite-job-source`                      |
+| FR-51 | Named/saved searches can be stored and re-run.                                                                                                                                                                                             | `saved-search-service`                                            |
+| FR-52 | Job postings are **real board data only** — the keyless Arbeitnow board is enabled by default and there is no fabricated sample source; when every live source is down the search returns empty with `liveSourcesDown` and the UI says so. | `job-source-factory`, `job-search-service`, `Matching` (ADR-0045) |
 
 ### Compliance (DSGVO/GDPR)
 

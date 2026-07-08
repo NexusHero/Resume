@@ -117,8 +117,13 @@ function Editor({ talent, onClose, onCreateMappe }) {
      and only applied on “Apply” (or discarded on “Discard”). ---- */
   const [gen, setGen] = React.useState(false);
   const [pending, setPending] = React.useState(null);
+  // A failed AI call must never be silent — the recruiter sees why it stopped
+  // (missing key, Pro gate, network) instead of a button that does nothing.
+  const [aiError, setAiError] = React.useState(null);
   const runAI = async () => {
     setGen(true);
+    setAiError(null);
+    setPending(null);
     const action = doc === 'lebenslauf' ? 'summary' : 'letter';
     try {
       // The AI uses the candidate's own saved facts + the mandate/company on the
@@ -127,8 +132,8 @@ function Editor({ talent, onClose, onCreateMappe }) {
       const s = await window.RecruitApi.suggestDocument(talentId, action, target);
       if (s.action === 'summary') setPending({ kind: 'summary', value: s.text, provider: s.provider, usage: s.usage });
       else setPending({ kind: 'letter', value: s.paragraphs, provider: s.provider, usage: s.usage });
-    } catch {
-      setPending(null);
+    } catch (e) {
+      setAiError((e && e.message) || 'Could not tailor this document. Please try again.');
     } finally {
       setGen(false);
     }
@@ -142,7 +147,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
     }
     setPending(null);
   };
-  const cancelAI = () => setPending(null);
+  const cancelAI = () => { setPending(null); setAiError(null); };
 
   /* live CV customization: template, accent colour, font family, size */
   const [cfg, setCfg] = React.useState({ template: 'classic', accent: '#2A6FDB', strong: '#1d4ed8', onDark: '#7aa7f5', font: 'var(--font-display)', size: 1 });
@@ -218,6 +223,23 @@ function Editor({ talent, onClose, onCreateMappe }) {
     setTranslating('');
   };
 
+  /* ---- Export: download the resume + cover letter as a real PDF file. A bare
+     window.open() was unreliable (strict CSP / PWA / native shell), so fetch the
+     bytes and save them — and surface any failure instead of doing nothing. ---- */
+  const [pdfMsg, setPdfMsg] = React.useState(null);
+  const [pdfBusy, setPdfBusy] = React.useState(false);
+  const exportPdf = async () => {
+    setPdfMsg(null);
+    setPdfBusy(true);
+    try {
+      const base = (contact.name || 'documents').trim().replace(/\s+/g, '-') || 'documents';
+      await window.RecruitApi.downloadTalentDocumentsPdf(talentId, `${base}.pdf`);
+    } catch {
+      setPdfMsg('Could not download the PDF. Please try again.');
+    }
+    setPdfBusy(false);
+  };
+
   /* Which bolt-on tool is open — one at a time. */
   const [modal, setModal] = React.useState(null); // 'import' | 'ats' | 'pitch' | 'outreach' | null
 
@@ -243,7 +265,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
             <EdPill icon="search" onClick={() => setModal('ats')}>ATS check</EdPill>
             <EdPill icon="briefcase" onClick={() => setModal('pitch')}>Pitch</EdPill>
             <EdPill icon="send" onClick={() => setModal('outreach')}>Outreach</EdPill>
-            <EdPill icon="download" onClick={() => window.open(window.RecruitApi.talentDocumentsPdfUrl(talentId), '_blank')}>PDF</EdPill>
+            <EdPill icon="download" onClick={exportPdf} disabled={pdfBusy}>{pdfBusy ? 'PDF…' : 'PDF'}</EdPill>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>
                 <ED.Icon name="globe" size={13} /> Translate
@@ -273,6 +295,15 @@ function Editor({ talent, onClose, onCreateMappe }) {
         </div>
       )}
 
+      {pdfMsg && (
+        <div
+          role="alert"
+          style={{ alignSelf: 'flex-start', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--danger)', background: 'var(--danger-soft)', border: '1px solid var(--danger)', borderRadius: 'var(--radius-md)', padding: '6px 12px' }}
+        >
+          {pdfMsg}
+        </div>
+      )}
+
       {modal === 'import' && <EdImportCvModal talentId={talentId} onParsed={applyParsed} onClose={() => setModal(null)} />}
       {modal === 'ats' && <EdAtsModal talentId={talentId} onClose={() => setModal(null)} />}
       {modal === 'pitch' && <EdPitchModal talentId={talentId} onClose={() => setModal(null)} />}
@@ -289,6 +320,16 @@ function Editor({ talent, onClose, onCreateMappe }) {
           </div>
 
           <div style={{ flex: 1, overflowY: 'auto', paddingRight: '8px' }}>
+            {aiError && !gen && (
+              <div role="alert" style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', border: '1px solid var(--danger)', background: 'var(--danger-soft)', borderRadius: 'var(--radius-md)', padding: '10px 13px', marginBottom: '16px', fontSize: '12.5px', color: 'var(--danger)' }}>
+                <ED.Icon name="alertTriangle" size={14} style={{ flexShrink: 0, marginTop: '1px' }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600 }}>AI tailoring failed</div>
+                  <div style={{ marginTop: '2px' }}>{aiError}</div>
+                </div>
+                <button onClick={runAI} style={{ appearance: 'none', cursor: 'pointer', border: '1px solid var(--danger)', background: 'transparent', color: 'var(--danger)', borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '4px 10px' }}>Retry</button>
+              </div>
+            )}
             {(gen || pending) && (
               <div style={{ border: '1px dashed var(--accent-border)', borderRadius: 'var(--radius-md)', overflow: 'hidden', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '8px 12px', background: 'var(--accent-soft)', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 600, color: 'var(--accent-strong)' }}>
@@ -417,7 +458,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
               <button onClick={runAI} style={{ appearance: 'none', cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12.5px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-md)', padding: '7px 12px' }}>
                 <ED.Icon name="zap" size={14} />AI tailor
               </button>
-              <ED.Button size="sm" variant="outline" iconLeft={<ED.Icon name="download" size={14} />} onClick={() => window.open(window.RecruitApi.talentDocumentsPdfUrl(talentId), '_blank')}>PDF</ED.Button>
+              <ED.Button size="sm" variant="outline" iconLeft={<ED.Icon name="download" size={14} />} onClick={exportPdf} disabled={pdfBusy}>{pdfBusy ? 'PDF…' : 'PDF'}</ED.Button>
               <ED.Button size="sm" variant="primary" iconRight={<ED.Icon name="arrowRight" size={14} />} onClick={onCreateMappe}>To dossier</ED.Button>
             </div>
           </div>

@@ -10,6 +10,8 @@ import type { Clock } from '../../src/ports/clock.js';
 import type { IdGenerator } from '../../src/ports/id-generator.js';
 import type { Logger } from '../../src/ports/logger.js';
 import type { SkillExtractor } from '../../src/ports/skill-extractor.js';
+import type { JobSource } from '../../src/ports/job-source.js';
+import type { Job, JobQuery } from '../../src/domain/job.js';
 import type { SavedSearch } from '../../src/domain/saved-search.js';
 import type { SavedSearchRepository } from '../../src/ports/saved-search-repository.js';
 import type { Mandate } from '../../src/domain/mandate.js';
@@ -164,6 +166,68 @@ export const noopLogger: Logger = {
 export const noopSkillExtractor: SkillExtractor = {
   extract: () => [],
 };
+
+/**
+ * A deterministic JobSource for tests. Production ships NO sample/mock source
+ * (job data comes from real boards like Arbeitnow); this fixture stands in so
+ * job-search / autopilot tests stay deterministic and offline. Filters by the
+ * query the same way a real board would, on role/company/skills.
+ */
+export class FakeJobSource implements JobSource {
+  readonly name = 'Fake';
+  constructor(private readonly jobs: Job[] = FAKE_JOBS) {}
+  async search(query: JobQuery): Promise<Job[]> {
+    const kw = query.q?.trim().toLowerCase();
+    const country = query.country?.trim();
+    return this.jobs
+      .filter((j) => {
+        if (country && j.country !== country) return false;
+        if (kw) {
+          const hay = `${j.role} ${j.company} ${j.skills.join(' ')}`.toLowerCase();
+          if (!hay.includes(kw)) return false;
+        }
+        return true;
+      })
+      .map((j) => ({ ...j, skills: [...j.skills] }));
+  }
+}
+
+const FAKE_JOBS: Job[] = [
+  {
+    // A strong fit for the default candidate profile (C++/Rust/Distributed
+    // Systems…): scores above the 80 tier boundary so two-tier tests keep a
+    // populated `top`.
+    id: 'f1',
+    company: 'Aurora Systems',
+    role: 'Senior C++ Engineer',
+    city: 'Berlin',
+    country: 'DE',
+    mode: 'hybrid',
+    skills: ['C++', 'Rust', 'gRPC', 'Distributed Systems', 'Kubernetes', 'Go', 'AWS'],
+    source: 'Fake',
+  },
+  {
+    id: 'f2',
+    company: 'Helio',
+    role: 'Backend Engineer (Rust)',
+    city: 'Remote',
+    country: 'DE',
+    mode: 'remote',
+    skills: ['Rust', 'PostgreSQL'],
+    source: 'Fake',
+  },
+  {
+    // A deliberate stretch role, so the lower "more" tier is never empty.
+    id: 'f3',
+    company: 'Pixelworks',
+    role: 'Frontend Engineer',
+    city: 'Hamburg',
+    country: 'DE',
+    mode: 'hybrid',
+    skills: ['React', 'TypeScript'],
+    source: 'Fake',
+  },
+];
 
 export class InMemorySavedSearchRepository implements SavedSearchRepository {
   searches: SavedSearch[] = [];

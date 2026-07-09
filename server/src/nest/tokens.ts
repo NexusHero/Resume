@@ -74,6 +74,11 @@ export const PERSISTENCE = Symbol('Persistence');
 export const DB = Symbol('Db');
 export const CANDIDATE_PROFILE = Symbol('CandidateProfile');
 export const SKILL_EXTRACTOR_ONTOLOGY = Symbol('SkillExtractorOntology');
-/** Registry arrays assembled in the composition root (ports/personal-data). */
+/** Registry arrays assembled in the composition root (ports/personal-data, talent-data). */
 export const USER_ERASURE_STEPS = Symbol('UserErasureSteps');
 export const USER_EXPORT_SECTIONS = Symbol('UserExportSections');
+export const TALENT_DATA_PURGERS = Symbol('TalentDataPurgers');
+
+// --- More composed services ---
+export const TALENT_SERVICE = Symbol('TalentService');
+export const TALENT_IMPORT_SERVICE = Symbol('TalentImportService');

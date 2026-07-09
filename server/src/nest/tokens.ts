@@ -62,6 +62,9 @@ export const PLACEMENT_SERVICE = Symbol('PlacementService');
 export const CANDIDACY_SERVICE = Symbol('CandidacyService');
 export const ATS_SERVICE = Symbol('AtsService');
 export const SAVED_SEARCH_SERVICE = Symbol('SavedSearchService');
+export const FORECAST_SERVICE = Symbol('ForecastService');
+export const INTERVIEW_OBSERVATION_SERVICE = Symbol('InterviewObservationService');
+export const USAGE_SERVICE = Symbol('UsageService');
 
 // --- Composition values (not ports, but injected) ---
 export const CONFIG = Symbol('AppConfig');

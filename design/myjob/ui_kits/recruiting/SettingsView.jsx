@@ -719,6 +719,48 @@ function EmailVerificationCard({ user }) {
   );
 }
 
+/* Your display name — shown in the greeting and pinned "me" profile instead of a
+   placeholder derived from the email. Persisted on the recruiter's own document
+   set (server-keyed by user id). */
+function ProfileCard({ user }) {
+  const [name, setName] = React.useState('');
+  const [loaded, setLoaded] = React.useState(false);
+  const [state, setState] = React.useState('idle'); // idle | saving | saved | error
+  React.useEffect(() => {
+    let alive = true;
+    if (!user) return undefined;
+    window.RecruitApi.getMyProfileName(user.id)
+      .then((n) => { if (alive) { setName(n); setLoaded(true); } })
+      .catch(() => { if (alive) setLoaded(true); });
+    return () => { alive = false; };
+  }, [user && user.id]);
+  if (!user) return null;
+  const save = () => {
+    setState('saving');
+    window.RecruitApi.setMyProfileName(user.id, name.trim())
+      .then(() => setState('saved'))
+      .catch(() => setState('error'));
+  };
+  const label = { saving: 'Saving…', saved: 'Saved — shows on next load', error: 'Could not save' };
+  return (
+    <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '22px 24px' }}>
+      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>Your name</h2>
+      <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px', marginBottom: '14px' }}>Shown in the greeting and your pinned profile — set it so the app greets you by name, not your email.</div>
+      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <input
+          value={name}
+          onChange={(e) => { setName(e.target.value); setState('idle'); }}
+          placeholder={loaded ? 'e.g. Nora Kessler' : 'Loading…'}
+          aria-label="Your name"
+          style={{ flex: 1, minWidth: '200px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', background: 'var(--surface-card)', fontFamily: 'var(--font-body)', fontSize: '13.5px', color: 'var(--text-heading)', padding: '10px 12px', outline: 'none' }}
+        />
+        <SV.Button size="sm" disabled={!loaded || state === 'saving' || !name.trim()} onClick={save}>Save</SV.Button>
+        {state !== 'idle' && <span role="status" style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: state === 'error' ? 'var(--danger)' : 'var(--text-soft)' }}>{label[state]}</span>}
+      </div>
+    </div>
+  );
+}
+
 function SettingsView({ user }) {
   const [settings, setSettings] = React.useState(null); // { current, providers }
   const [keys, setKeys] = React.useState({});
@@ -762,6 +804,7 @@ function SettingsView({ user }) {
 
   return (
     <div style={{ maxWidth: '780px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+      <ProfileCard user={user} />
       <EmailVerificationCard user={user} />
       <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '22px 24px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>

@@ -16,7 +16,7 @@ function mtSkills(cand, job) {
   return job.req.map((name) => ({ name, met: have.includes(name.toLowerCase()) }));
 }
 
-function Matching({ talents, onCreateMandate, onApply }) {
+function Matching({ talents, mandates = [], onCreateMandate, onApply }) {
   const [mode, setMode] = React.useState('auto');
   const [candId, setCandId] = React.useState((talents.find((t) => t.me) || talents[0]).id);
   const [country, setCountry] = React.useState('ALL');
@@ -24,6 +24,10 @@ function Matching({ talents, onCreateMandate, onApply }) {
   const [query, setQuery] = React.useState('');
   // Per-job apply state: 'busy' | 'done' | 'error' (absent = idle).
   const [applyState, setApplyState] = React.useState({});
+  // Board-independent "apply to a role": company + role typed directly or
+  // prefilled from one of the recruiter's own mandates. This makes applying a
+  // candidate possible even when no live posting is loaded (offline / board down).
+  const [manual, setManual] = React.useState({ company: '', role: '' });
 
   // Live postings — loaded once; the search box filters client-side so typing
   // stays instant (the boards are already merged server-side).
@@ -53,6 +57,16 @@ function Matching({ talents, onCreateMandate, onApply }) {
     setApplyState((s) => ({ ...s, [key]: 'busy' }));
     Promise.resolve(onApply(job, cand))
       .then(() => setApplyState((s) => ({ ...s, [key]: 'done' })))
+      .catch(() => setApplyState((s) => ({ ...s, [key]: 'error' })));
+  };
+  // Apply the selected candidate to a typed/mandate-derived role — no posting needed.
+  const applyManual = () => {
+    if (!onApply) return;
+    const job = { id: 'manual', company: manual.company.trim(), title: manual.role.trim(), url: '' };
+    const key = `${cand.id}:manual`;
+    setApplyState((s) => ({ ...s, [key]: 'busy' }));
+    Promise.resolve(onApply(job, cand))
+      .then(() => setApplyState((s) => ({ ...s, [key]: 'done', 'manual-dirty': false })))
       .catch(() => setApplyState((s) => ({ ...s, [key]: 'error' })));
   };
   if (error) return <window.ErrorState onRetry={load} />;
@@ -99,6 +113,42 @@ function Matching({ talents, onCreateMandate, onApply }) {
           );
         })}
       </div>
+
+      {mode === 'manual' && onApply && (() => {
+        const key = `${cand.id}:manual`;
+        const st = applyState[key];
+        const ready = manual.company.trim() && manual.role.trim();
+        const inp = { flex: 1, minWidth: 0, border: '1px solid var(--border-strong)', outline: 'none', background: 'var(--surface-card)', borderRadius: 'var(--radius-md)', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-heading)', padding: '9px 11px' };
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '18px', padding: '14px', border: '1px solid var(--accent-border)', background: 'var(--accent-soft)', borderRadius: 'var(--radius-lg)' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--accent-strong)' }}>Apply {cand.name.split(' ')[0]} to a role</div>
+            <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '-4px' }}>Type a role or pick one of your mandates — no live posting needed.</div>
+            {mandates.length > 0 && (
+              <select
+                aria-label="Prefill from a mandate"
+                value=""
+                onChange={(e) => { const m = mandates.find((x) => x.id === e.target.value); if (m) setManual({ company: m.client || '', role: m.role || '' }); }}
+                style={{ ...inp, cursor: 'pointer' }}
+              >
+                <option value="">From one of your mandates…</option>
+                {mandates.map((m) => <option key={m.id} value={m.id}>{m.role} · {m.client}</option>)}
+              </select>
+            )}
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <input value={manual.company} onChange={(e) => setManual((s) => ({ ...s, company: e.target.value }))} placeholder="Company" aria-label="Company" style={inp} />
+              <input value={manual.role} onChange={(e) => setManual((s) => ({ ...s, role: e.target.value }))} placeholder="Role" aria-label="Role" style={inp} />
+              <button
+                onClick={applyManual}
+                disabled={!ready || st === 'busy'}
+                style={{ appearance: 'none', cursor: !ready || st === 'busy' ? 'default' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'var(--accent)', border: 'none', borderRadius: 'var(--radius-md)', color: 'var(--accent-contrast)', fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600, padding: '9px 15px', opacity: !ready ? 0.5 : 1 }}
+              >
+                <MT.Icon name={st === 'done' ? 'check' : 'plus'} size={14} />
+                {st === 'busy' ? 'Applying…' : st === 'done' ? 'Applied' : st === 'error' ? 'Retry' : 'Apply'}
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       {mode === 'manual' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '18px' }}>

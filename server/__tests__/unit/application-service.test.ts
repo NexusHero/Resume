@@ -18,6 +18,8 @@ import {
   noopLogger,
 } from '../support/fakes.js';
 
+const OWNER = 'team';
+
 function makeService(versioner: FakeVersioner = new FakeVersioner('abc1234')) {
   const repo = new InMemoryApplicationRepository();
   const audit = new InMemoryAuditLog();
@@ -40,10 +42,11 @@ function makeService(versioner: FakeVersioner = new FakeVersioner('abc1234')) {
 describe('ApplicationService.create', () => {
   it('Create_MinimalInput_PersistsWithDefaultsAndCommit', async () => {
     const { service, repo, audit } = makeService();
-    const app = await service.create(createApplicationSchema.parse({ company: 'Aurora' }));
+    const app = await service.create(OWNER, createApplicationSchema.parse({ company: 'Aurora' }));
 
     expect(app).toMatchObject({
       id: 'id1',
+      ownerId: OWNER,
       date: '2026-06-25',
       company: 'Aurora',
       status: 'sent',
@@ -51,13 +54,25 @@ describe('ApplicationService.create', () => {
       commit: 'abc1234',
       createdAt: '2026-06-25T10:00:00.000Z',
     });
-    expect(await repo.list()).toHaveLength(1);
+    expect(await repo.list(OWNER)).toHaveLength(1);
     expect(audit.events.map((e) => e.action)).toEqual(['create', 'commit']);
+  });
+
+  it('List_ScopedByOwner_HidesOtherTeamsApplications', async () => {
+    const { service } = makeService();
+    await service.create('team-a', createApplicationSchema.parse({ company: 'Aurora' }));
+    await service.create('team-b', createApplicationSchema.parse({ company: 'Helio' }));
+
+    expect((await service.list('team-a')).map((a) => a.company)).toEqual(['Aurora']);
+    expect((await service.list('team-b')).map((a) => a.company)).toEqual(['Helio']);
+    // history is scoped the same way — team-a never sees team-b's audit trail.
+    expect((await service.history('team-a')).every((e) => e.id === 'id1')).toBe(true);
   });
 
   it('Create_WithPdf_ArchivesAndStoresPath', async () => {
     const { service, archive } = makeService();
     const app = await service.create(
+      OWNER,
       createApplicationSchema.parse({
         company: 'Aurora',
         pdfBase64: Buffer.from('hi').toString('base64'),
@@ -70,6 +85,7 @@ describe('ApplicationService.create', () => {
   it('Create_AddressParts_AreComposed', async () => {
     const { service } = makeService();
     const app = await service.create(
+      OWNER,
       createApplicationSchema.parse({
         company: 'Aurora',
         contactName: 'Jane',
@@ -81,7 +97,7 @@ describe('ApplicationService.create', () => {
 
   it('Create_VersionerReturnsNull_OmitsCommit', async () => {
     const { service, audit } = makeService(new FakeVersioner(null));
-    const app = await service.create(createApplicationSchema.parse({ company: 'Aurora' }));
+    const app = await service.create(OWNER, createApplicationSchema.parse({ company: 'Aurora' }));
     expect(app.commit).toBeUndefined();
     expect(audit.events.map((e) => e.action)).toEqual(['create']);
   });
@@ -91,6 +107,7 @@ describe('ApplicationService.build', () => {
   it('Build_NoAttachments_MergesLetterAndCv', async () => {
     const { service, renderer } = makeService();
     const { application, pdfBase64 } = await service.build(
+      OWNER,
       buildApplicationSchema.parse({ company: 'Aurora', position: 'Engineer', language: 'en' }),
     );
     expect(renderer.lastCoverLetter).toMatchObject({ company: 'Aurora', position: 'Engineer' });
@@ -101,6 +118,7 @@ describe('ApplicationService.build', () => {
   it('Build_WithAttachments_AreAppendedToMerge', async () => {
     const { service } = makeService();
     const { pdfBase64 } = await service.build(
+      OWNER,
       buildApplicationSchema.parse({
         company: 'Aurora',
         attachments: [{ name: 'cert', base64: Buffer.from('X').toString('base64') }],
@@ -113,11 +131,15 @@ describe('ApplicationService.build', () => {
 describe('ApplicationService.update', () => {
   it('Update_ChangedField_PersistsAndAuditsAndVersions', async () => {
     const { service, versioner, audit } = makeService();
-    const created = await service.create(createApplicationSchema.parse({ company: 'Aurora' }));
+    const created = await service.create(
+      OWNER,
+      createApplicationSchema.parse({ company: 'Aurora' }),
+    );
     versioner.calls.length = 0;
     audit.events.length = 0;
 
     const updated = await service.update(
+      OWNER,
       created.id,
       updateApplicationSchema.parse({ status: 'interview' }),
     );
@@ -131,11 +153,13 @@ describe('ApplicationService.update', () => {
   it('Update_NoEffectiveChange_IsNoOp', async () => {
     const { service, versioner } = makeService();
     const created = await service.create(
+      OWNER,
       createApplicationSchema.parse({ company: 'Aurora', status: 'sent' }),
     );
     versioner.calls.length = 0;
 
     const result = await service.update(
+      OWNER,
       created.id,
       updateApplicationSchema.parse({ status: 'sent' }),
     );
@@ -146,16 +170,19 @@ describe('ApplicationService.update', () => {
 
   it('Update_VersionerReturnsNull_OmitsCommitAudit', async () => {
     const { service, audit } = makeService(new FakeVersioner(null));
-    const created = await service.create(createApplicationSchema.parse({ company: 'Aurora' }));
+    const created = await service.create(
+      OWNER,
+      createApplicationSchema.parse({ company: 'Aurora' }),
+    );
     audit.events.length = 0;
-    await service.update(created.id, updateApplicationSchema.parse({ status: 'interview' }));
+    await service.update(OWNER, created.id, updateApplicationSchema.parse({ status: 'interview' }));
     expect(audit.events.map((e) => e.action)).toEqual(['update']);
   });
 
   it('Update_UnknownId_ThrowsNotFound', async () => {
     const { service } = makeService();
     await expect(
-      service.update('nope', updateApplicationSchema.parse({ status: 'hired' })),
+      service.update(OWNER, 'nope', updateApplicationSchema.parse({ status: 'hired' })),
     ).rejects.toBeInstanceOf(NotFoundError);
   });
 });
@@ -163,9 +190,9 @@ describe('ApplicationService.update', () => {
 describe('ApplicationService reads', () => {
   it('ListAndHistory_DelegateToPorts', async () => {
     const { service } = makeService();
-    await service.create(createApplicationSchema.parse({ company: 'Aurora' }));
-    expect(await service.list()).toHaveLength(1);
-    expect((await service.history()).length).toBeGreaterThan(0);
+    await service.create(OWNER, createApplicationSchema.parse({ company: 'Aurora' }));
+    expect(await service.list(OWNER)).toHaveLength(1);
+    expect((await service.history(OWNER)).length).toBeGreaterThan(0);
   });
 });
 

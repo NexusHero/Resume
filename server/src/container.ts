@@ -299,6 +299,10 @@ export function buildContainer(config: AppConfig = loadConfig(), db?: Db): Awili
       { key: 'talents', collect: (_userId, scope) => cradle.talentRepository.list(scope) },
       { key: 'placements', collect: (_userId, scope) => cradle.placementRepository.list(scope) },
       {
+        key: 'applications',
+        collect: (_userId, scope) => cradle.applicationRepository.list(scope),
+      },
+      {
         key: 'observations',
         collect: (_userId, scope) => cradle.interviewObservationRepository.list(scope),
       },

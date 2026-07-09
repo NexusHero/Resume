@@ -27,6 +27,7 @@ import type { TenantAdminController } from './tenant-admin-controller.js';
 import type { AccountController } from './account-controller.js';
 import type { PasswordResetController } from './password-reset-controller.js';
 import { asyncHandler } from './async-handler.js';
+import { optionalUserId } from './current-user.js';
 import { makeRequirePlan } from './require-plan.js';
 import { makeRequireCan } from './require-can.js';
 import type { PlanProvider } from '../ports/plan-provider.js';
@@ -145,6 +146,29 @@ export function createApp(deps: AppDeps): Express {
         detail: 'Too many attempts. Please wait a few minutes and try again.',
       }),
   });
+
+  // Per-user throttle on the generative AI routes (the only ones that spend the
+  // owner's LLM budget). Keyed by the acting user so one recruiter can't exhaust
+  // the shared quota. 0 disables it. Non-AI routes are unaffected.
+  const aiPerMinute = deps.config.security.aiRateLimitPerMinute;
+  const aiLimiter: express.RequestHandler =
+    aiPerMinute > 0
+      ? rateLimit({
+          windowMs: 60 * 1000,
+          limit: aiPerMinute,
+          standardHeaders: true,
+          legacyHeaders: false,
+          validate: false,
+          keyGenerator: (req) => optionalUserId(req) ?? req.ip ?? 'anon',
+          handler: (_req, res) =>
+            sendProblem(res, {
+              type: 'about:blank',
+              title: 'Too Many Requests',
+              status: 429,
+              detail: 'AI request limit reached. Please wait a minute and try again.',
+            }),
+        })
+      : (_req, _res, next) => next();
   api.post('/auth/register', authLimiter, asyncHandler(auth.register));
   api.post('/auth/login', authLimiter, asyncHandler(auth.login));
   // Accept a tenant invitation: the token IS the credential, so it's open but
@@ -190,7 +214,7 @@ export function createApp(deps: AppDeps): Express {
   api.delete('/mandates/:id', requireAuth, asyncHandler(m.remove));
   api.get('/talents', requireAuth, asyncHandler(t.list));
   api.post('/talents', requireAuth, asyncHandler(t.create));
-  api.post('/talents/import', requireAuth, requirePro, asyncHandler(t.importPdfs));
+  api.post('/talents/import', requireAuth, aiLimiter, requirePro, asyncHandler(t.importPdfs));
   api.patch('/talents/:id', requireAuth, asyncHandler(t.update));
   api.delete('/talents/:id', requireAuth, asyncHandler(t.remove));
   // Recruiting pipeline: talents in a mandate's stages (team-scoped).
@@ -199,18 +223,21 @@ export function createApp(deps: AppDeps): Express {
   api.post(
     '/mandates/:id/candidates/:talentId/explain',
     requireAuth,
+    aiLimiter,
     requirePro,
     asyncHandler(matchAi.explain),
   );
   api.post(
     '/mandates/:id/candidates/:talentId/interview-kit',
     requireAuth,
+    aiLimiter,
     requirePro,
     asyncHandler(matchAi.interviewKit),
   );
   api.post(
     '/mandates/:id/candidates/:talentId/prep',
     requireAuth,
+    aiLimiter,
     requirePro,
     asyncHandler(matchAi.prep),
   );
@@ -258,20 +285,52 @@ export function createApp(deps: AppDeps): Express {
   api.put('/talents/:id/documents', requireAuth, asyncHandler(docs.save));
   api.get('/talents/:id/documents/pdf', requireAuth, asyncHandler(docs.pdf));
   // Generative document AI (Pro).
-  api.post('/talents/:id/documents/ai', requireAuth, requirePro, asyncHandler(docs.aiSuggest));
-  api.post('/talents/:id/documents/parse', requireAuth, requirePro, asyncHandler(docs.parse));
+  api.post(
+    '/talents/:id/documents/ai',
+    requireAuth,
+    aiLimiter,
+    requirePro,
+    asyncHandler(docs.aiSuggest),
+  );
+  api.post(
+    '/talents/:id/documents/parse',
+    requireAuth,
+    aiLimiter,
+    requirePro,
+    asyncHandler(docs.parse),
+  );
   api.post(
     '/talents/:id/documents/parse-pdf',
     requireAuth,
+    aiLimiter,
     requirePro,
     asyncHandler(docs.parsePdf),
   );
-  api.post('/talents/:id/documents/ats', requireAuth, requirePro, asyncHandler(docs.ats));
-  api.post('/talents/:id/documents/pitch', requireAuth, requirePro, asyncHandler(docs.pitch));
-  api.post('/talents/:id/documents/outreach', requireAuth, requirePro, asyncHandler(docs.outreach));
+  api.post(
+    '/talents/:id/documents/ats',
+    requireAuth,
+    aiLimiter,
+    requirePro,
+    asyncHandler(docs.ats),
+  );
+  api.post(
+    '/talents/:id/documents/pitch',
+    requireAuth,
+    aiLimiter,
+    requirePro,
+    asyncHandler(docs.pitch),
+  );
+  api.post(
+    '/talents/:id/documents/outreach',
+    requireAuth,
+    aiLimiter,
+    requirePro,
+    asyncHandler(docs.outreach),
+  );
   api.post(
     '/talents/:id/documents/translate',
     requireAuth,
+    aiLimiter,
     requirePro,
     asyncHandler(docs.translate),
   );
@@ -327,7 +386,13 @@ export function createApp(deps: AppDeps): Express {
   // AGG (anti-discrimination) language check + neutral rewrite for job ads / outreach.
   api.post('/compliance/agg-check', requireAuth, asyncHandler(compliance.aggCheck));
   // The neutral rewrite is LLM-generated (Pro); the check itself is deterministic (Free).
-  api.post('/compliance/agg-rewrite', requireAuth, requirePro, asyncHandler(compliance.aggRewrite));
+  api.post(
+    '/compliance/agg-rewrite',
+    requireAuth,
+    aiLimiter,
+    requirePro,
+    asyncHandler(compliance.aggRewrite),
+  );
   // Weighted pipeline revenue forecast across the team's live mandates.
   api.get('/forecast', requireAuth, asyncHandler(forecast.get));
   // The assistant: the deterministic suggest/act modes are Free; only switching
@@ -347,6 +412,7 @@ export function createApp(deps: AppDeps): Express {
   api.get(
     '/assistant/suggestions/:id/dossier.pdf',
     requireAuth,
+    aiLimiter,
     requirePro,
     asyncHandler(assistant.applicationDossier),
   );
@@ -369,6 +435,7 @@ export function createApp(deps: AppDeps): Express {
   api.post(
     '/cover-letter',
     asyncHandler(auth.attachUser),
+    aiLimiter,
     requirePro,
     asyncHandler(llm.generateCoverLetter),
   );

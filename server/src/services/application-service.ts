@@ -57,19 +57,25 @@ export class ApplicationService {
     this.logger = deps.logger;
   }
 
-  list(): Promise<Application[]> {
-    return this.repo.list();
+  list(ownerId: string): Promise<Application[]> {
+    return this.repo.list(ownerId);
   }
 
-  history(): Promise<AuditEvent[]> {
-    return this.audit.list();
+  /**
+   * The audit trail scoped to the caller's team: the append-only log spans all
+   * owners, so filter it to events for applications this owner actually holds.
+   */
+  async history(ownerId: string): Promise<AuditEvent[]> {
+    const owned = new Set((await this.repo.list(ownerId)).map((a) => a.id));
+    return (await this.audit.list()).filter((e) => owned.has(e.id));
   }
 
   /** Record an application, optionally archiving a finished PDF. */
-  async create(input: CreateApplicationInput): Promise<Application> {
+  async create(ownerId: string, input: CreateApplicationInput): Promise<Application> {
     const pdfBytes = input.pdfBase64 ? Buffer.from(input.pdfBase64, 'base64') : null;
     const address = composeAddress(input);
     return this.persist(
+      ownerId,
       {
         company: input.company,
         position: input.position,
@@ -86,6 +92,7 @@ export class ApplicationService {
 
   /** Render CV + cover letter, merge with attachments, archive and record. */
   async build(
+    ownerId: string,
     input: BuildApplicationInput,
   ): Promise<{ application: Application; pdfBase64: string }> {
     const letter = await this.renderer.renderCoverLetter({
@@ -105,6 +112,7 @@ export class ApplicationService {
     });
 
     const application = await this.persist(
+      ownerId,
       {
         company: input.company,
         position: input.position,
@@ -119,8 +127,8 @@ export class ApplicationService {
   }
 
   /** Apply a partial update to mutable fields; no-op updates do not version. */
-  async update(id: string, patch: UpdateApplicationInput): Promise<Application> {
-    const current = await this.repo.findById(id);
+  async update(ownerId: string, id: string, patch: UpdateApplicationInput): Promise<Application> {
+    const current = await this.repo.findById(ownerId, id);
     if (!current) throw new NotFoundError(`Application ${id} not found`);
 
     const changed: Record<string, { from: unknown; to: unknown }> = {};
@@ -149,6 +157,7 @@ export class ApplicationService {
   }
 
   private async persist(
+    ownerId: string,
     fields: Pick<
       Application,
       'company' | 'position' | 'address' | 'reference' | 'status' | 'talentId' | 'talentName'
@@ -166,6 +175,7 @@ export class ApplicationService {
 
     const application: Application = {
       id,
+      ownerId,
       date,
       company: fields.company,
       position: fields.position,

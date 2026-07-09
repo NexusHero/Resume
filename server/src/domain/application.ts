@@ -19,6 +19,9 @@ export type ApplicationStatus = z.infer<typeof applicationStatusSchema>;
 /** A persisted job application. */
 export interface Application {
   id: string;
+  /** The owning team/tenant scope (ADR-0010/0033) — applications are shared
+   *  within a team and isolated between teams, like mandates and placements. */
+  ownerId: string;
   date: string; // YYYY-MM-DD
   company: string;
   position: string;

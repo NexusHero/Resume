@@ -14,7 +14,8 @@ export class FsApplicationRepository implements ApplicationRepository {
     this.dir = path.dirname(this.file);
   }
 
-  async list(): Promise<Application[]> {
+  /** Every record on disk (all owners) — the file is a single JSON array. */
+  private async readAll(): Promise<Application[]> {
     try {
       const raw = await fs.readFile(this.file, 'utf8');
       const data = JSON.parse(raw);
@@ -24,20 +25,26 @@ export class FsApplicationRepository implements ApplicationRepository {
     }
   }
 
-  async findById(id: string): Promise<Application | null> {
-    const all = await this.list();
-    return all.find((a) => a.id === id) ?? null;
+  async list(ownerId: string): Promise<Application[]> {
+    return (await this.readAll()).filter((a) => a.ownerId === ownerId);
+  }
+
+  async findById(ownerId: string, id: string): Promise<Application | null> {
+    const all = await this.readAll();
+    return all.find((a) => a.id === id && a.ownerId === ownerId) ?? null;
   }
 
   async add(application: Application): Promise<void> {
-    const all = await this.list();
+    const all = await this.readAll();
     all.push(application);
     await this.write(all);
   }
 
   async update(application: Application): Promise<void> {
-    const all = await this.list();
-    const index = all.findIndex((a) => a.id === application.id);
+    const all = await this.readAll();
+    const index = all.findIndex(
+      (a) => a.id === application.id && a.ownerId === application.ownerId,
+    );
     if (index < 0) {
       all.push(application);
     } else {

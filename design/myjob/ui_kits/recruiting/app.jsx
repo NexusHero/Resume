@@ -268,7 +268,8 @@ function Workspace({ user, onLogout }) {
   );
 
   const unread = messages.filter((m) => m.unread).length;
-  const badges = { bewerbungen: apps.filter((a) => a.status !== 'rejected' && a.status !== 'hired').length, postfach: unread || undefined };
+  // Hide the count badges at zero — a "0" reads as a pending indicator (like the inbox).
+  const badges = { bewerbungen: apps.filter((a) => a.status !== 'rejected' && a.status !== 'hired').length || undefined, postfach: unread || undefined };
 
   const goTalent = (id) => setOpenTalent(id);
   const back = () => setOpenTalent(null);
@@ -315,7 +316,7 @@ function Workspace({ user, onLogout }) {
     if (nav === 'uebersicht') body = <window.Dashboard me={me} apps={apps} vkpis={vkpis} clients={clients} mandates={mandates} onOpenTalent={goTalent} onOpenPipeline={() => setNav('mandate')} onOpenMandate={() => setNav('mandate')} />;
     else if (nav === 'mandate') body = withState(mandatesRes, <window.MandateView mandates={shownMandates} onEdit={editMandate} onOpenPipeline={goPipeline} />);
     else if (nav === 'pool') body = withState(talentsRes, <window.TalentGrid talents={shownTalents} apps={apps} onOpen={goTalent} onAdd={addTalent} onImport={importCvs} importing={importing} />);
-    else if (nav === 'matching') body = <window.Matching talents={talents} onCreateMandate={mandateFromJob} onApply={applyFromMatching} />;
+    else if (nav === 'matching') body = <window.Matching talents={talents} mandates={mandates} onCreateMandate={mandateFromJob} onApply={applyFromMatching} />;
     else if (nav === 'bewerbungen') body = withState(applicationsRes, (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '100%' }}>
         <window.PipelineBoard apps={apps} talents={talents} onOpen={goTalent} />

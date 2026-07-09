@@ -1,11 +1,12 @@
 /* Workspace — Übersicht (dashboard), Talente grid, Stellen, Postfach. */
 const WS = window.MyJobDesignSystem_f3658e;
 
-/* ---------- Übersicht — agency-led, but my own applications stay front of mind ---------- */
+/* ---------- Übersicht — the recruiting desk at a glance ---------- */
 function Dashboard({ me, apps, vkpis, clients, mandates, onOpenTalent, onOpenPipeline, onOpenMandate }) {
   const { isMobile } = window.useViewport ? window.useViewport() : { isMobile: false };
-  const mine = apps.filter((a) => a.talentId === 'me');
-  const nextSteps = mine.filter((a) => a.status === 'interview' || a.status === 'offer');
+  // The desk's applications that need progressing — interview/offer stage across
+  // every candidate (this is an agency view; the recruiter places others).
+  const nextSteps = apps.filter((a) => a.status === 'interview' || a.status === 'offer');
   // Live mandates carry the client name directly; the sample shape carries a
   // clientId resolved against the clients list. Prefer the name, fall back.
   const clientName = (m) => m.client || (clients.find((c) => c.id === m.clientId) || {}).name || '';
@@ -15,7 +16,7 @@ function Dashboard({ me, apps, vkpis, clients, mandates, onOpenTalent, onOpenPip
       {/* greeting — quiet, no dark bar; profile lives bottom-left in the rail */}
       <div>
         <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-heading)' }}>Hello, {me.name.split(' ')[0]}.</div>
-        <div style={{ fontSize: '13px', color: 'var(--text-soft)', marginTop: '3px' }}>{mandates.filter((m) => m.status === 'active').length} active mandates · {nextSteps.length} of your own applications in motion.</div>
+        <div style={{ fontSize: '13px', color: 'var(--text-soft)', marginTop: '3px' }}>{mandates.filter((m) => m.status === 'active').length} active mandates · {nextSteps.length} application{nextSteps.length === 1 ? '' : 's'} in interview or offer.</div>
       </div>
 
       {/* agency kpis */}
@@ -42,20 +43,20 @@ function Dashboard({ me, apps, vkpis, clients, mandates, onOpenTalent, onOpenPip
           ))}
         </WS.Card>
 
-        {/* my own next steps */}
-        <WS.Card title="My next steps" subtitle="Own applications (me)"
+        {/* applications to progress across the desk */}
+        <WS.Card title="Applications to progress" subtitle="Interview & offer stage"
           action={<WS.Button size="sm" variant="ghost" iconRight={<WS.Icon name="arrowRight" size={14} />} onClick={onOpenPipeline}>Pipeline</WS.Button>} pad={false}>
           {nextSteps.map((a) => (
             <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '13px', padding: '13px 18px', borderBottom: '1px solid var(--border)' }}>
               <span style={{ width: '36px', height: '36px', borderRadius: 'var(--radius-md)', background: 'var(--surface-sunk)', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><WS.Icon name="building" size={17} /></span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-heading)' }}>{a.company}</div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--accent-strong)', marginTop: '1px' }}>{a.next}</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--accent-strong)', marginTop: '1px' }}>{a.talentName || a.role || ''}</div>
               </div>
               <WS.StatusBadge status={a.status} size="sm" />
             </div>
           ))}
-          {nextSteps.length === 0 && <div style={{ padding: '30px', textAlign: 'center', fontSize: '13px', color: 'var(--text-soft)' }}>No open steps.</div>}
+          {nextSteps.length === 0 && <div style={{ padding: '30px', textAlign: 'center', fontSize: '13px', color: 'var(--text-soft)' }}>No applications in interview or offer yet.</div>}
         </WS.Card>
       </div>
     </div>

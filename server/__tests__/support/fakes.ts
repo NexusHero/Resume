@@ -58,17 +58,19 @@ import type { InterviewObservation } from '../../src/domain/interview-observatio
 
 export class InMemoryApplicationRepository implements ApplicationRepository {
   apps: Application[] = [];
-  async list(): Promise<Application[]> {
-    return this.apps.map((a) => ({ ...a }));
+  async list(ownerId: string): Promise<Application[]> {
+    return this.apps.filter((a) => a.ownerId === ownerId).map((a) => ({ ...a }));
   }
-  async findById(id: string): Promise<Application | null> {
-    return this.apps.find((a) => a.id === id) ?? null;
+  async findById(ownerId: string, id: string): Promise<Application | null> {
+    return this.apps.find((a) => a.id === id && a.ownerId === ownerId) ?? null;
   }
   async add(application: Application): Promise<void> {
     this.apps.push(application);
   }
   async update(application: Application): Promise<void> {
-    const i = this.apps.findIndex((a) => a.id === application.id);
+    const i = this.apps.findIndex(
+      (a) => a.id === application.id && a.ownerId === application.ownerId,
+    );
     if (i < 0) this.apps.push(application);
     else this.apps[i] = application;
   }

@@ -121,6 +121,12 @@ export interface SecurityConfig {
    * is NOT secret.
    */
   encryptionSecret: string;
+  /**
+   * Per-user cap on generative AI requests per minute (token-spending routes).
+   * 0 disables the limit. Guards against runaway cost / abuse (the AI routes are
+   * the only ones that spend the owner's LLM budget).
+   */
+  aiRateLimitPerMinute: number;
 }
 
 /** Authentication configuration, resolved from the environment. */
@@ -180,6 +186,10 @@ export interface JobSourcesConfig {
   arbeitnow: { enabled: boolean };
   bundesagentur: { enabled: boolean; apiKey: string };
   adzuna: { enabled: boolean; appId: string; appKey: string; country: string };
+  /** Per-attempt timeout for a board request (ms) — a hung board can't block search. */
+  requestTimeoutMs: number;
+  /** Extra attempts after the first on a transient failure. */
+  retries: number;
 }
 
 /**
@@ -307,6 +317,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
         appKey: adzunaKey,
         country: env.ADZUNA_COUNTRY ?? 'de',
       },
+      requestTimeoutMs: Math.max(1000, Number(env.JOB_SOURCE_TIMEOUT_MS) || 8000),
+      retries: Math.max(0, Number(env.JOB_SOURCE_RETRIES) || 1),
     },
     store: env.STORE === 'sql' ? 'sql' : 'fs',
     selfServeTenants: env.SELF_SERVE_TENANTS === 'true',
@@ -344,6 +356,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
         .map((o) => o.trim())
         .filter(Boolean),
       encryptionSecret: env.APP_SECRET ?? DEV_ENCRYPTION_SECRET,
+      aiRateLimitPerMinute: Math.max(0, Number(env.AI_RATE_LIMIT_PER_MINUTE ?? 30)),
     },
     mail: {
       transport: env.MAIL_TRANSPORT === 'smtp' ? 'smtp' : 'console',

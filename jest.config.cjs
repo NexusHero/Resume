@@ -70,6 +70,11 @@ module.exports = {
     // exercised end-to-end by better-auth-engine.test.ts (real SQLite), not
     // unit-coverage-counted — same convention as the sql/smtp/s3 adapters.
     '!server/src/adapters/better-auth/better-auth-engine.ts',
+    // NestJS composition (ADR-0051): the module wiring is the composition root —
+    // pure provider bindings (useFactory/useValue), exercised end-to-end by the
+    // Nest acceptance tests, not unit-covered (same convention as container.ts).
+    '!server/src/nest/**/*.module.ts',
+    '!server/src/main.ts',
   ],
   coverageDirectory: 'coverage',
   coverageThreshold: {

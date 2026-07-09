@@ -48,3 +48,4 @@ Add the row to the table below in number order.
 | [0048](0048-applications-team-scoped-and-board-independent-apply.md) | Applications team-scoped + DSGVO-exported + appliable without a board                      | Accepted |
 | [0049](0049-production-runtime-hardening.md)                         | Production runtime hardening: PDF browser, job resilience, AI rate limit                   | Accepted |
 | [0050](0050-generalized-job-source-registry.md)                      | Generalized job-source registry: all boards on, declarative descriptors, per-source counts | Accepted |
+| [0051](0051-nestjs-composition-and-http.md)                          | NestJS for composition + HTTP (supersedes Awilix ADR-0002); hexagonal core kept            | Accepted |

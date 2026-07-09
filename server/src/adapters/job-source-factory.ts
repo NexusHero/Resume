@@ -7,6 +7,7 @@ import { BundesagenturJobSource } from './bundesagentur-job-source.js';
 import { AdzunaJobSource } from './adzuna-job-source.js';
 import { CompositeJobSource } from './composite-job-source.js';
 import { EmptyJobSource } from './empty-job-source.js';
+import { resilientFetch } from './resilient-fetch.js';
 
 export interface JobSourceFactoryDeps {
   config: AppConfig;
@@ -21,8 +22,15 @@ export interface JobSourceFactoryDeps {
  * — the search shows no postings rather than any fabricated sample data.
  */
 export function createJobSource(deps: JobSourceFactoryDeps): JobSource {
-  const { config, logger, httpFetch } = deps;
+  const { config, logger } = deps;
   const cfg = config.jobSources;
+  // Every board request gets a timeout + bounded retry so a slow/flaky board
+  // can't hang or silently empty the search (see resilient-fetch).
+  const httpFetch = resilientFetch(deps.httpFetch, {
+    timeoutMs: cfg.requestTimeoutMs,
+    retries: cfg.retries,
+    logger,
+  });
   const sources: JobSource[] = [];
 
   if (cfg.arbeitnow.enabled) {

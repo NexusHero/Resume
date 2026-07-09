@@ -10,6 +10,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Security
 
+- **Generative AI routes are rate-limited per user** (ADR-0049, NFR-11): the
+  token-spending routes (`documents/ai|parse|ats|pitch|outreach|translate`,
+  match AI, `compliance/agg-rewrite`, `cover-letter`, CV import) now enforce a
+  per-user limit (`AI_RATE_LIMIT_PER_MINUTE`, default 30; `0` disables), returning
+  `429 problem+json` — one caller can no longer exhaust the owner's LLM budget.
 - **Applications are now team-scoped** (ADR-0048, FR-15): previously every
   authenticated user could read **every team's** applications via
   `GET /api/v1/applications` and `/history`. `Application` gains an `ownerId`,
@@ -44,9 +49,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 - **Placement `fee` is validated as a monetary amount** (ADR-0047, FR-17), server-
   side (`moneyString`) and in the create/edit form — free text like "lots" is
   rejected instead of stored.
+- **Job-board requests are resilient** (ADR-0049, NFR-12): each board request has
+  a timeout (`JOB_SOURCE_TIMEOUT_MS`, 8 s) and a bounded retry (`JOB_SOURCE_RETRIES`)
+  so a hung or flaky board is skipped rather than hanging or emptying the search.
+- **The recruiter dashboard is framed as an agency view**: "your own applications
+  (me)" becomes "Applications to progress" (desk-wide interview/offer stage), and
+  count badges hide at zero.
 
 ### Fixed
 
+- **PDF export works in the production container** (ADR-0049, FR-21): the runtime
+  image now installs Chromium + fonts and points Puppeteer at it
+  (`PUPPETEER_EXECUTABLE_PATH`), so CV/dossier/Mappe rendering no longer fails on
+  a browserless slim image.
 - **The "AI tailor" (KI anpassen) button no longer fails silently** (ADR-0047,
   FR-44): failures (Pro gate, missing key, network) now show a visible error with
   a retry instead of an empty `catch`.

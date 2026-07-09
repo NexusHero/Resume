@@ -45,6 +45,15 @@ import type { Authorizer } from './ports/authorizer.js';
 async function main(): Promise<void> {
   const config = loadConfig();
 
+  // Better-Auth (ADR-0043) signs sessions with our resolved APP_SECRET (passed
+  // explicitly as `secret`), but it also reads BETTER_AUTH_SECRET from the env
+  // for its own default and warns when that is unset/weak. Mirror the resolved
+  // secret into the env so the two agree and the warning is not misleading — the
+  // readiness gate already refuses to boot on the insecure dev default.
+  if (!process.env.BETTER_AUTH_SECRET) {
+    process.env.BETTER_AUTH_SECRET = config.security.encryptionSecret;
+  }
+
   // Fail fast on an unsafe production config before touching the DB (ADR-0029).
   // The logger lives in the container (not built yet), so boot diagnostics go to
   // the console. The readiness check always runs; NODE_ENV only decides whether

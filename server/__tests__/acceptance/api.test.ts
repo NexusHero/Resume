@@ -660,6 +660,25 @@ describe('REST API /api/v1', () => {
     expect(res.body.applications[0]).toMatchObject({ company: 'Aurora', talentName: 'Mara' });
   });
 
+  it('AiRoutes_PerUserRateLimit_Returns429WhenExceeded', async () => {
+    // The generative routes spend the owner's LLM budget, so they are throttled
+    // per user. With a limit of 2/min the third call in the window is refused.
+    const limited = makeApp(loadConfig({ AI_RATE_LIMIT_PER_MINUTE: '2' }));
+    const agent = request.agent(limited);
+    await agent
+      .post('/api/v1/auth/register')
+      .send({ email: 'ai@example.com', password: 'correct horse battery' });
+    const created = await agent.post('/api/v1/talents').send({ name: 'Lena' });
+    const id = created.body.talent.id as string;
+    const call = () => agent.post(`/api/v1/talents/${id}/documents/ai`).send({ action: 'summary' });
+    expect((await call()).status).toBe(200);
+    expect((await call()).status).toBe(200);
+    const third = await call();
+    expect(third.status).toBe(429);
+    expect(third.headers['content-type']).toMatch(/application\/problem\+json/);
+    expect(third.body).toMatchObject({ status: 429, title: 'Too Many Requests' });
+  });
+
   it('Api_UnknownRoute_Returns404Problem', async () => {
     const res = await request(app).get('/api/v1/nope');
     expect(res.status).toBe(404);

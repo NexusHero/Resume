@@ -58,6 +58,8 @@ export const EMAIL_VERIFICATION_SERVICE = Symbol('EmailVerificationService');
 export const JOB_SEARCH_SERVICE = Symbol('JobSearchService');
 export const LLM_SERVICE = Symbol('LlmService');
 export const MANDATE_SERVICE = Symbol('MandateService');
+export const PLACEMENT_SERVICE = Symbol('PlacementService');
+export const CANDIDACY_SERVICE = Symbol('CandidacyService');
 
 // --- Composition values (not ports, but injected) ---
 export const CONFIG = Symbol('AppConfig');

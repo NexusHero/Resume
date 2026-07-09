@@ -83,3 +83,6 @@ export const TALENT_DATA_PURGERS = Symbol('TalentDataPurgers');
 export const TALENT_SERVICE = Symbol('TalentService');
 export const TALENT_IMPORT_SERVICE = Symbol('TalentImportService');
 export const APPLICATION_SERVICE = Symbol('ApplicationService');
+export const MEMBERS_SERVICE = Symbol('MembersService');
+export const INVITE_SERVICE = Symbol('InviteService');
+export const TENANT_SERVICE = Symbol('TenantService');

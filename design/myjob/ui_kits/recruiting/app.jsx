@@ -376,6 +376,22 @@ function App() {
   // Result of a ?verify_token= link click — shown on the login screen.
   const [verifyNotice, setVerifyNotice] = React.useState(null);
 
+  // Dismiss the boot splash (index.html) once the session is resolved. A small
+  // minimum on-screen time keeps the animation from flashing when auth is instant.
+  React.useEffect(() => {
+    if (auth.status === 'loading') return undefined;
+    const el = typeof document !== 'undefined' && document.getElementById('splash');
+    if (!el) return undefined;
+    const elapsed = typeof performance !== 'undefined' && performance.now ? performance.now() : 900;
+    const t = setTimeout(() => {
+      el.classList.add('splash-hide');
+      const remove = () => el.remove();
+      el.addEventListener('transitionend', remove, { once: true });
+      setTimeout(remove, 700); // fallback if transitionend never fires
+    }, Math.max(0, 900 - elapsed));
+    return () => clearTimeout(t);
+  }, [auth.status]);
+
   React.useEffect(() => {
     let alive = true;
     // An emailed verification link opens the app with ?verify_token= — confirm

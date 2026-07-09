@@ -8,6 +8,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+### Added
+
+- **Animated boot splash**: a branded myJob equalizer (animated bars + wordmark +
+  shimmer) paints instantly from `index.html` — before React mounts — and fades
+  out once the session resolves, with a short minimum on-screen time and a
+  `prefers-reduced-motion` fallback. Covers web, the installed PWA, and the
+  native webview's first paint.
+
 ### Security
 
 - **Generative AI routes are rate-limited per user** (ADR-0049, NFR-11): the

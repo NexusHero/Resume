@@ -186,6 +186,16 @@ export interface JobSourcesConfig {
   arbeitnow: { enabled: boolean };
   bundesagentur: { enabled: boolean; apiKey: string };
   adzuna: { enabled: boolean; appId: string; appKey: string; country: string };
+  /**
+   * Legacy allow-list from JOB_SOURCES. `null` when unset — the default — which
+   * means "every source on". An explicit list restricts to those names; an empty
+   * string ("") turns every source off (the honest empty search).
+   */
+  allowList: string[] | null;
+  /** Deny-list from JOB_SOURCES_DISABLED — names forced off while all else stays on. */
+  disabled: string[];
+  /** Optional JSON file of extra JobSourceDescriptors (JOB_SOURCES_FILE). */
+  descriptorsFile: string | null;
   /** Per-attempt timeout for a board request (ms) — a hung board can't block search. */
   requestTimeoutMs: number;
   /** Extra attempts after the first on a transient failure. */
@@ -222,17 +232,23 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
   const storeDir = path.join(rootDir, 'archive', 'bewerbungen');
 
-  // JOB_SOURCES is a comma list, e.g. "arbeitnow,bundesagentur,adzuna".
-  // Unset → the keyless, real Arbeitnow board is enabled by default, so a plain
-  // install queries live postings out of the box (there is NO fabricated sample
-  // source anymore). Set JOB_SOURCES explicitly to change the mix, or to an
-  // empty string to run with no board (the search then returns no postings).
-  const enabled = new Set(
-    (env.JOB_SOURCES === undefined ? 'arbeitnow' : env.JOB_SOURCES)
+  // Every configured job board is ON by default (ADR-0050) — a plain install
+  // fans a search out across all keyless boards at once. JOB_SOURCES stays as a
+  // legacy allow-list override: unset → all on; an explicit comma list restricts
+  // to those names; "" turns every board off (the honest empty search).
+  // JOB_SOURCES_DISABLED is a deny-list for turning a single board off while the
+  // rest stay on.
+  const parseNames = (v: string | undefined): string[] =>
+    (v ?? '')
       .split(',')
       .map((s) => s.trim().toLowerCase())
-      .filter(Boolean),
-  );
+      .filter(Boolean);
+  const allowList = env.JOB_SOURCES === undefined ? null : parseNames(env.JOB_SOURCES);
+  const disabled = parseNames(env.JOB_SOURCES_DISABLED);
+  // A source is on when it is not on the deny-list and, if a legacy allow-list is
+  // set, present on it. Credential-gated boards add their own key check on top.
+  const on = (name: string): boolean =>
+    (allowList === null || allowList.includes(name)) && !disabled.includes(name);
   const adzunaId = env.ADZUNA_APP_ID ?? '';
   const adzunaKey = env.ADZUNA_APP_KEY ?? '';
   const port = Number(env.PORT ?? 4178);
@@ -305,18 +321,22 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     plan: env.PLAN === 'free' ? 'free' : 'pro',
     defaultJobSearch: { threshold: 80 },
     jobSources: {
-      arbeitnow: { enabled: enabled.has('arbeitnow') },
+      arbeitnow: { enabled: on('arbeitnow') },
       bundesagentur: {
-        enabled: enabled.has('bundesagentur'),
+        // Keyless: authenticated with the well-known public Jobsuche API key.
+        enabled: on('bundesagentur'),
         apiKey: env.BA_API_KEY ?? 'jobboerse-jobsuche',
       },
       adzuna: {
         // Adzuna needs credentials; enabling it without them would only 401.
-        enabled: enabled.has('adzuna') && Boolean(adzunaId && adzunaKey),
+        enabled: on('adzuna') && Boolean(adzunaId && adzunaKey),
         appId: adzunaId,
         appKey: adzunaKey,
         country: env.ADZUNA_COUNTRY ?? 'de',
       },
+      allowList,
+      disabled,
+      descriptorsFile: env.JOB_SOURCES_FILE ? path.resolve(env.JOB_SOURCES_FILE) : null,
       requestTimeoutMs: Math.max(1000, Number(env.JOB_SOURCE_TIMEOUT_MS) || 8000),
       retries: Math.max(0, Number(env.JOB_SOURCE_RETRIES) || 1),
     },

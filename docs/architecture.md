@@ -124,10 +124,15 @@ See [`docs/umls/03_system_context.puml`](umls/03_system_context.puml).
   served at `/api/v1/openapi.yaml`, browsable at `/api/v1/docs` (ADR-0012).
 - API → **LLM providers** (Claude / Gemini) with the user's own key and persisted
   provider choice (ADR-0011), for AI features — optional.
-- API → **job boards** (Arbeitnow / Bundesagentur / Adzuna) for search — resilient composite.
-  The keyless **Arbeitnow** board is enabled by default; there is **no fabricated sample
-  source**, so when every live board is down the search returns empty and flags
-  `liveSourcesDown` rather than inventing postings (ADR-0045).
+- API → **job boards** for search — a resilient composite that fans one search out
+  across **every configured board at once** and reports a per-board count breakdown
+  (ADR-0050). Hand-written adapters cover the boards with quirks (Arbeitnow,
+  Bundesagentur, Adzuna); the keyless **Remotive / Jobicy / Remote OK** boards ship
+  as declarative `JobSourceDescriptor`s driven by a generic `RestJobSource`, and more
+  can be added via `JOB_SOURCES_FILE` with no code. All boards are **on by default**
+  (`JOB_SOURCES_DISABLED` opts one out). There is **no fabricated sample source**, so
+  when every live board is down the search returns empty and flags `liveSourcesDown`
+  rather than inventing postings (ADR-0045).
 - API → **SMTP mailer** for email verification, password-reset links and sending drafted
   outreach (console in dev); API → **IMAP mailbox** (optional, `MAIL_IMAP_*`) polled for
   replies to close the outcome loop — envelopes only, no message bodies (ADR-0015).
@@ -367,6 +372,7 @@ Full log in [`docs/adr/`](adr). Summary:
 | 0047 | Recruiting UI actions never fail silently; validated inputs              | Accepted                        |
 | 0048 | Applications team-scoped + DSGVO-exported + board-independent apply      | Accepted                        |
 | 0049 | Production runtime hardening: PDF browser, job resilience, AI rate limit | Accepted                        |
+| 0050 | Generalized job-source registry: all boards on, declarative descriptors  | Accepted                        |
 
 ## 10. Quality Requirements
 

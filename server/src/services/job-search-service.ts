@@ -1,8 +1,18 @@
 import { type CandidateProfile, scoreJob, unionSkills } from '../domain/skill.js';
-import type { Job, JobQuery, JobSearchResult, ScoredJob } from '../domain/job.js';
+import type { Job, JobQuery, JobSearchResult, JobSourceOutcome, ScoredJob } from '../domain/job.js';
 import { AllJobSourcesFailedError, type JobSource } from '../ports/job-source.js';
+import type { CompositeSearchOutcome } from '../adapters/composite-job-source.js';
 import type { SkillExtractor } from '../ports/skill-extractor.js';
 import type { Logger } from '../ports/logger.js';
+
+/** A source that can also report its per-board breakdown (the composite). */
+interface DetailedJobSource extends JobSource {
+  searchDetailed(query: JobQuery): Promise<CompositeSearchOutcome>;
+}
+
+function isDetailed(source: JobSource): source is DetailedJobSource {
+  return typeof (source as Partial<DetailedJobSource>).searchDetailed === 'function';
+}
 
 export interface JobSearchServiceDeps {
   jobSource: JobSource;
@@ -37,14 +47,24 @@ export class JobSearchService {
     // the UI can explain the outage. There is deliberately no fabricated sample
     // fallback — production must never show mock postings.
     let jobs: Job[];
+    let sources: JobSourceOutcome[] = [];
     const source = this.source.name;
     let liveSourcesDown = false;
     try {
-      jobs = await this.source.search(query);
+      if (isDetailed(this.source)) {
+        const outcome = await this.source.searchDetailed(query);
+        jobs = outcome.jobs;
+        sources = outcome.sources;
+      } else {
+        jobs = await this.source.search(query);
+      }
     } catch (err) {
       if (!(err instanceof AllJobSourcesFailedError)) throw err;
       this.logger.warn({ sources: err.sources }, 'all live job sources failed — no postings');
       jobs = [];
+      // Every source failed → report each as contributing 0, so the UI can show
+      // which boards are down rather than a bare "0 results".
+      sources = err.sources.map((name) => ({ name, count: 0, ok: false }));
       liveSourcesDown = true;
     }
     const scored = jobs.map((job) => this.score(job)).sort((a, b) => b.match - a.match);
@@ -53,7 +73,13 @@ export class JobSearchService {
     const more = scored.filter((j) => j.match < query.threshold);
 
     this.logger.info(
-      { q: query.q ?? '', total: scored.length, top: top.length, threshold: query.threshold },
+      {
+        q: query.q ?? '',
+        total: scored.length,
+        top: top.length,
+        threshold: query.threshold,
+        sources: sources.map((s) => `${s.name}:${s.ok ? s.count : 'down'}`),
+      },
       'job search',
     );
 
@@ -62,6 +88,7 @@ export class JobSearchService {
       threshold: query.threshold,
       source,
       ...(liveSourcesDown ? { liveSourcesDown } : {}),
+      sources,
       top,
       more,
       counts: { total: scored.length, top: top.length, more: more.length },

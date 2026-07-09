@@ -140,3 +140,33 @@ describe('JobSearchService live-source outage', () => {
     await expect(service.search({ threshold: 80 })).rejects.toThrow('unexpected');
   });
 });
+
+describe('JobSearchService per-source counts', () => {
+  it('Search_DetailedSource_SurfacesPerSourceOutcomes', async () => {
+    const service = new JobSearchService({
+      jobSource: {
+        name: 'composite',
+        search: async () => [job('a', [])],
+        // A detailed source reports each board's contribution + health.
+        searchDetailed: async () => ({
+          jobs: [job('a', ['C++']), job('b', [])],
+          sources: [
+            { name: 'Arbeitnow', count: 1, ok: true },
+            { name: 'Remotive', count: 1, ok: true },
+            { name: 'Adzuna', count: 0, ok: false },
+          ],
+        }),
+      },
+      skillExtractor: noopSkillExtractor,
+      candidateProfile: profile,
+      logger: noopLogger,
+    });
+    const result = await service.search(jobQuerySchema.parse({}));
+    expect(result.sources).toEqual([
+      { name: 'Arbeitnow', count: 1, ok: true },
+      { name: 'Remotive', count: 1, ok: true },
+      { name: 'Adzuna', count: 0, ok: false },
+    ]);
+    expect(result.counts.total).toBe(2);
+  });
+});

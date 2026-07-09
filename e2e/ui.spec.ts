@@ -259,6 +259,10 @@ test.describe('UI acceptance — the suite renders in English', () => {
       .click();
     // opening the editor loads the stored documents
     await expect.poll(() => loaded).toBe(true);
+    // wait for the loaded document to be applied to the form before editing —
+    // editing before hydration lands would race it (hydration re-applies the
+    // stored contact and would clobber the typed value).
+    await expect(page.locator('[data-doc-hydrated="true"]')).toBeVisible();
     // editing a field autosaves it (debounced) to the server
     const field = page.locator('main').getByRole('textbox').first();
     await field.fill('E2E-MARKER-NAME');

@@ -154,37 +154,56 @@ function Editor({ talent, onClose, onCreateMappe }) {
 
   /* ---- Persistence: load the stored documents on open, then autosave edits. ---- */
   const [saveState, setSaveState] = React.useState('idle'); // idle | saving | saved | error
-  const loadedRef = React.useRef(false);
+  const [hydrated, setHydrated] = React.useState(false);
+  // Serialized snapshot of the last loaded/saved payload. Autosave compares
+  // against it so merely *opening* a document never re-PUTs the unchanged
+  // content it just loaded — only genuine edits save.
+  const baseline = React.useRef(null);
   const saveTimer = React.useRef(null);
 
   React.useEffect(() => {
     let alive = true;
-    loadedRef.current = false;
-    if (!canPersist) { loadedRef.current = true; return; }
+    setHydrated(false);
+    baseline.current = null;
+    if (!canPersist) { setHydrated(true); return undefined; }
     window.RecruitApi.getTalentDocuments(talentId)
       .then((d) => {
-        if (!alive || !d) return;
-        if (d.contact) setContact((s) => ({ ...s, ...d.contact }));
-        if (d.resume) setResume(d.resume);
-        if (d.letter) setLetter(d.letter);
-        if (d.style) setCfg(d.style);
+        if (!alive) return;
+        // Apply the loaded content and flip `hydrated` in the *same* React batch
+        // so the baseline (captured on the hydrated render) reflects the loaded
+        // documents, never a user edit that arrived a tick later.
+        if (d) {
+          if (d.contact) setContact((s) => ({ ...s, ...d.contact }));
+          if (d.resume) setResume(d.resume);
+          if (d.letter) setLetter(d.letter);
+          if (d.style) setCfg(d.style);
+        }
+        setHydrated(true);
       })
-      .catch(() => {})
-      .finally(() => { if (alive) loadedRef.current = true; });
+      .catch(() => { if (alive) setHydrated(true); });
     return () => { alive = false; };
   }, [talentId]);
 
+  // Once the load settles, capture the hydrated content as the save baseline.
   React.useEffect(() => {
-    if (!canPersist || !loadedRef.current) return;
+    if (hydrated && baseline.current === null) {
+      baseline.current = JSON.stringify({ contact, resume, letter, style: cfg });
+    }
+  }, [hydrated]);
+
+  React.useEffect(() => {
+    if (!canPersist || !hydrated || baseline.current === null) return undefined;
+    const serialized = JSON.stringify({ contact, resume, letter, style: cfg });
+    if (serialized === baseline.current) return undefined; // nothing actually changed
     setSaveState('saving');
     clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
       window.RecruitApi.saveTalentDocuments(talentId, { contact, resume, letter, style: cfg })
-        .then(() => setSaveState('saved'))
+        .then(() => { baseline.current = serialized; setSaveState('saved'); })
         .catch(() => setSaveState('error'));
     }, 800);
     return () => clearTimeout(saveTimer.current);
-  }, [contact, resume, letter, cfg, talentId]);
+  }, [contact, resume, letter, cfg, hydrated, talentId]);
 
   const saveLabel = { saving: 'Saving…', saved: 'Saved', error: 'Not saved' };
 
@@ -248,7 +267,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
   );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: isMobile ? 'auto' : '100%', gap: '14px' }}>
+    <div data-doc-hydrated={canPersist ? (hydrated ? 'true' : 'false') : 'na'} style={{ display: 'flex', flexDirection: 'column', height: isMobile ? 'auto' : '100%', gap: '14px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: isMobile ? 'wrap' : 'nowrap', alignSelf: isMobile ? 'stretch' : 'flex-start' }}>
         <button onClick={onClose} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)', padding: 0 }}>
           <ED.Icon name="arrowLeft" size={14} /> Back to profile

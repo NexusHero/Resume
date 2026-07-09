@@ -27,6 +27,51 @@ function clientHttpStatus(err: unknown): number | null {
   return status !== null && e?.expose === true && status >= 400 && status < 500 ? status : null;
 }
 
+/**
+ * Map any thrown error to an RFC-9457 problem. Pure and framework-agnostic so
+ * both the Express error middleware and the NestJS exception filter (ADR-0051)
+ * produce byte-identical responses. A 5xx (unknown error) is logged; return
+ * value never leaks internals. Returns the problem plus whether it was a 5xx so
+ * the caller can decide on logging.
+ */
+export function mapErrorToProblem(err: unknown): Problem {
+  if (err instanceof ZodError) {
+    return {
+      type: 'about:blank#validation-error',
+      title: 'Validation failed',
+      status: 400,
+      detail: 'The request body is invalid.',
+      errors: err.flatten(),
+    };
+  }
+  if (err instanceof DomainError) {
+    return {
+      type: `about:blank#${err.type}`,
+      title: err.name,
+      status: err.status,
+      detail: err.message,
+      errors: err instanceof ValidationError ? err.details : undefined,
+    };
+  }
+  // Body-parser & other http-errors carry a real client status (413 payload
+  // too large, 400 malformed JSON) — surface it instead of a generic 500.
+  const httpStatus = clientHttpStatus(err);
+  if (httpStatus !== null) {
+    return {
+      type: 'about:blank',
+      title: httpStatus === 413 ? 'Payload Too Large' : 'Bad Request',
+      status: httpStatus,
+      detail: err instanceof Error ? err.message : 'The request could not be processed.',
+    };
+  }
+  return {
+    type: 'about:blank',
+    title: 'Internal Server Error',
+    status: 500,
+    detail: 'An unexpected error occurred.',
+  };
+}
+
 /** Express error middleware mapping known errors to problem+json. */
 export function errorHandler(logger: Logger) {
   return (err: unknown, _req: Request, res: Response, next: NextFunction): void => {
@@ -34,45 +79,11 @@ export function errorHandler(logger: Logger) {
       next(err);
       return;
     }
-    if (err instanceof ZodError) {
-      sendProblem(res, {
-        type: 'about:blank#validation-error',
-        title: 'Validation failed',
-        status: 400,
-        detail: 'The request body is invalid.',
-        errors: err.flatten(),
-      });
-      return;
+    const problem = mapErrorToProblem(err);
+    if (problem.status >= 500) {
+      logger.error({ err: err instanceof Error ? err.stack : String(err) }, 'unhandled error');
     }
-    if (err instanceof DomainError) {
-      sendProblem(res, {
-        type: `about:blank#${err.type}`,
-        title: err.name,
-        status: err.status,
-        detail: err.message,
-        errors: err instanceof ValidationError ? err.details : undefined,
-      });
-      return;
-    }
-    // Body-parser & other http-errors carry a real client status (413 payload
-    // too large, 400 malformed JSON) — surface it instead of a generic 500.
-    const httpStatus = clientHttpStatus(err);
-    if (httpStatus !== null) {
-      sendProblem(res, {
-        type: 'about:blank',
-        title: httpStatus === 413 ? 'Payload Too Large' : 'Bad Request',
-        status: httpStatus,
-        detail: err instanceof Error ? err.message : 'The request could not be processed.',
-      });
-      return;
-    }
-    logger.error({ err: err instanceof Error ? err.stack : String(err) }, 'unhandled error');
-    sendProblem(res, {
-      type: 'about:blank',
-      title: 'Internal Server Error',
-      status: 500,
-      detail: 'An unexpected error occurred.',
-    });
+    sendProblem(res, problem);
   };
 }
 

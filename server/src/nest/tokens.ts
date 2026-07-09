@@ -73,6 +73,7 @@ export const PERSISTENCE = Symbol('Persistence');
 /** The Drizzle DB handle, present only when STORE=sql. */
 export const DB = Symbol('Db');
 export const CANDIDATE_PROFILE = Symbol('CandidateProfile');
+export const CANDIDATE = Symbol('CandidateIdentity');
 export const SKILL_EXTRACTOR_ONTOLOGY = Symbol('SkillExtractorOntology');
 /** Registry arrays assembled in the composition root (ports/personal-data, talent-data). */
 export const USER_ERASURE_STEPS = Symbol('UserErasureSteps');
@@ -89,3 +90,12 @@ export const TENANT_SERVICE = Symbol('TenantService');
 export const DOCUMENT_SERVICE = Symbol('DocumentService');
 export const ATTACHMENT_SERVICE = Symbol('AttachmentService');
 export const PASSWORD_RESET_SERVICE = Symbol('PasswordResetService');
+// AI feature services (behind the shared LlmFeatureRunner, ADR-0022)
+export const LLM_FEATURE_RUNNER = Symbol('LlmFeatureRunner');
+export const DOCUMENT_ASSIST_SERVICE = Symbol('DocumentAssistService');
+export const CV_PARSE_SERVICE = Symbol('CvParseService');
+export const ATS_AI_SERVICE = Symbol('AtsAiService');
+export const OUTREACH_AI_SERVICE = Symbol('OutreachAiService');
+export const MATCH_AI_SERVICE = Symbol('MatchAiService');
+export const DOCUMENT_AI_SERVICE = Symbol('DocumentAiService');
+export const COVER_LETTER_SERVICE = Symbol('CoverLetterService');

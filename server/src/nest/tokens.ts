@@ -60,6 +60,8 @@ export const LLM_SERVICE = Symbol('LlmService');
 export const MANDATE_SERVICE = Symbol('MandateService');
 export const PLACEMENT_SERVICE = Symbol('PlacementService');
 export const CANDIDACY_SERVICE = Symbol('CandidacyService');
+export const ATS_SERVICE = Symbol('AtsService');
+export const SAVED_SEARCH_SERVICE = Symbol('SavedSearchService');
 
 // --- Composition values (not ports, but injected) ---
 export const CONFIG = Symbol('AppConfig');

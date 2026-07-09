@@ -45,5 +45,6 @@ import { JobsController } from './jobs.controller.js';
       inject: [JOB_SOURCE, SKILL_EXTRACTOR, CANDIDATE_PROFILE, LOGGER],
     },
   ],
+  exports: [JOB_SEARCH_SERVICE], // SavedSearchService composes it to re-run a saved search
 })
 export class JobsModule {}

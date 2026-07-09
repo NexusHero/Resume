@@ -54,6 +54,7 @@ export const VERSIONER = Symbol('Versioner');
 
 // --- Composed services (built via useFactory, referenced by controllers) ---
 export const AUTH_SERVICE = Symbol('AuthService');
+export const EMAIL_VERIFICATION_SERVICE = Symbol('EmailVerificationService');
 export const JOB_SEARCH_SERVICE = Symbol('JobSearchService');
 export const LLM_SERVICE = Symbol('LlmService');
 

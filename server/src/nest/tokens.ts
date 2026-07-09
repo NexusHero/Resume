@@ -55,6 +55,7 @@ export const VERSIONER = Symbol('Versioner');
 // --- Composed services (built via useFactory, referenced by controllers) ---
 export const AUTH_SERVICE = Symbol('AuthService');
 export const JOB_SEARCH_SERVICE = Symbol('JobSearchService');
+export const LLM_SERVICE = Symbol('LlmService');
 
 // --- Composition values (not ports, but injected) ---
 export const CONFIG = Symbol('AppConfig');

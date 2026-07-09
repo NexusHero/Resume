@@ -4,7 +4,16 @@ import { createLogger } from '../adapters/pino-logger.js';
 import { nodeFetch } from '../adapters/node-fetch.js';
 import { SystemClock } from '../adapters/system-clock.js';
 import { RandomIdGenerator } from '../adapters/random-id-generator.js';
-import { CONFIG, LOGGER, CANDIDATE_PROFILE, HTTP_FETCH, CLOCK, ID_GENERATOR } from './tokens.js';
+import { KeywordSkillExtractor } from '../adapters/keyword-skill-extractor.js';
+import {
+  CONFIG,
+  LOGGER,
+  CANDIDATE_PROFILE,
+  HTTP_FETCH,
+  CLOCK,
+  ID_GENERATOR,
+  SKILL_EXTRACTOR,
+} from './tokens.js';
 
 /**
  * Global composition providers (ADR-0051) — the framework-agnostic singletons
@@ -28,7 +37,8 @@ import { CONFIG, LOGGER, CANDIDATE_PROFILE, HTTP_FETCH, CLOCK, ID_GENERATOR } fr
     { provide: HTTP_FETCH, useValue: nodeFetch },
     { provide: CLOCK, useFactory: () => new SystemClock() },
     { provide: ID_GENERATOR, useFactory: () => new RandomIdGenerator() },
+    { provide: SKILL_EXTRACTOR, useFactory: () => new KeywordSkillExtractor() },
   ],
-  exports: [CONFIG, LOGGER, CANDIDATE_PROFILE, HTTP_FETCH, CLOCK, ID_GENERATOR],
+  exports: [CONFIG, LOGGER, CANDIDATE_PROFILE, HTTP_FETCH, CLOCK, ID_GENERATOR, SKILL_EXTRACTOR],
 })
 export class CoreModule {}

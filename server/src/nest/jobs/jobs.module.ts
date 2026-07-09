@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { JobSearchService } from '../../services/job-search-service.js';
-import { KeywordSkillExtractor } from '../../adapters/keyword-skill-extractor.js';
 import { createJobSource } from '../../adapters/job-source-factory.js';
 import type { JobSource } from '../../ports/job-source.js';
 import type { SkillExtractor } from '../../ports/skill-extractor.js';
@@ -35,7 +34,6 @@ import { JobsController } from './jobs.controller.js';
         createJobSource({ config, logger, httpFetch }),
       inject: [CONFIG, LOGGER, HTTP_FETCH],
     },
-    { provide: SKILL_EXTRACTOR, useFactory: (): SkillExtractor => new KeywordSkillExtractor() },
     {
       provide: JOB_SEARCH_SERVICE,
       useFactory: (

@@ -48,6 +48,7 @@ beforeEach(() => {
       ],
     }),
     getApiKeyStatus: vi.fn().mockResolvedValue({}),
+    getMyProfileName: vi.fn().mockResolvedValue(''),
     authMe: vi.fn().mockResolvedValue({ id: 'me', email: 'me@x.io', roles: ['recruiter'] }),
     getUsage: vi.fn().mockResolvedValue({ requests: 0 }),
   };

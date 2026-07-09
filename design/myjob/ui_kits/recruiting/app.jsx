@@ -109,14 +109,20 @@ function Workspace({ user, onLogout }) {
   // not from fabricated sample data, so it stays pinned first in the pool.
   const me0 = React.useMemo(() => makeMeProfile(user), [user]);
   // Me is not a pool record, so the server can't merge document skills for it —
-  // derive them from my saved documents here so Matching scores me for real.
+  // derive them from my saved documents here so Matching scores me for real. The
+  // saved contact name is also the recruiter's real name (they set it in "My
+  // documents"), so it replaces the email-derived placeholder in the greeting.
   const [meSkills, setMeSkills] = React.useState([]);
+  const [meName, setMeName] = React.useState('');
   React.useEffect(() => {
     let alive = true;
     setMeSkills([]);
+    setMeName('');
     window.RecruitApi.getTalentDocuments(me0.id)
       .then((d) => {
-        if (!alive || !d || !d.resume) return;
+        if (!alive || !d) return;
+        if (d.contact && d.contact.name && d.contact.name.trim()) setMeName(d.contact.name.trim());
+        if (!d.resume) return;
         const skills = [
           ...(d.resume.skillGroups || []).flatMap((g) => g.items || []),
           ...(d.resume.experience || []).flatMap((e) => e.skills || []),
@@ -127,8 +133,8 @@ function Workspace({ user, onLogout }) {
     return () => { alive = false; };
   }, [me0.id]);
   const talents = React.useMemo(
-    () => [{ ...me0, skills: meSkills }, ...talentsRes.data.filter((t) => !t.me)],
-    [me0, meSkills, talentsRes.data],
+    () => [{ ...me0, name: meName || me0.name, skills: meSkills }, ...talentsRes.data.filter((t) => !t.me)],
+    [me0, meName, meSkills, talentsRes.data],
   );
 
   const addMandate = () => setFormKind('mandate');

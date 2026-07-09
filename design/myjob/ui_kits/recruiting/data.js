@@ -727,6 +727,22 @@ const RecruitApi = {
     );
     return data.documents;
   },
+  /* The recruiter's own display name, stored on their "me" document set (they
+     are keyed by user id server-side). Read/merge-write so setting the name
+     never clobbers an existing resume/letter. */
+  async getMyProfileName(userId) {
+    const d = await this.getTalentDocuments(userId).catch(() => null);
+    return (d && d.contact && d.contact.name) || '';
+  },
+  async setMyProfileName(userId, name) {
+    const d = (await this.getTalentDocuments(userId).catch(() => null)) || {};
+    return this.saveTalentDocuments(userId, {
+      contact: { ...(d.contact || {}), name },
+      resume: d.resume,
+      letter: d.letter,
+      style: d.style,
+    });
+  },
   talentDocumentsPdfUrl(talentId) {
     // Same-origin GET — the session cookie authorises it, so it can be opened
     // directly in a new tab / used as a download link.

@@ -68,8 +68,10 @@
 </head>
 <body>
   <div id="root"></div>
-  <!-- Boot splash — painted immediately; app.jsx removes it once the session resolves. -->
-  <div id="splash" role="status" aria-label="Loading myJob">
+  <!-- Boot splash — painted immediately; app.jsx removes it once the session
+       resolves. aria-hidden: it's decorative and transient, and a role here would
+       collide with the app's own role="status" elements in tests. -->
+  <div id="splash" aria-hidden="true">
     <div class="splash-inner">
       <div class="splash-mark" aria-hidden="true">
         <span class="bar b1"></span><span class="bar b2"></span><span class="bar b3"></span>

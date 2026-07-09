@@ -145,7 +145,9 @@ describe('RestJobSource — generic descriptor engine', () => {
     ];
     const kw = await src(d, fakeHttp(rows).http).search(jobQuerySchema.parse({ q: 'rust' }));
     expect(kw.map((j) => j.id)).toEqual(['1']);
-    const city = await src(d, fakeHttp(rows).http).search(jobQuerySchema.parse({ city: 'münchen' }));
+    const city = await src(d, fakeHttp(rows).http).search(
+      jobQuerySchema.parse({ city: 'münchen' }),
+    );
     expect(city.map((j) => j.id)).toEqual(['2']);
   });
 

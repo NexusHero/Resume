@@ -22,7 +22,7 @@ every board at once":
 
 ## Decision
 
-- **All sources on by default.** `JOB_SOURCES` becomes a *legacy allow-list*
+- **All sources on by default.** `JOB_SOURCES` becomes a _legacy allow-list_
   override: unset → every configured board is enabled; an explicit list restricts
   to those names; `""` turns them all off (the honest empty search). A new
   `JOB_SOURCES_DISABLED` deny-list turns a single board off while the rest stay

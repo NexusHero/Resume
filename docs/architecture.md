@@ -372,7 +372,7 @@ Full log in [`docs/adr/`](adr). Summary:
 | 0047 | Recruiting UI actions never fail silently; validated inputs              | Accepted                        |
 | 0048 | Applications team-scoped + DSGVO-exported + board-independent apply      | Accepted                        |
 | 0049 | Production runtime hardening: PDF browser, job resilience, AI rate limit | Accepted                        |
-| 0050 | Generalized job-source registry: all boards on, declarative descriptors | Accepted                        |
+| 0050 | Generalized job-source registry: all boards on, declarative descriptors  | Accepted                        |
 
 ## 10. Quality Requirements
 

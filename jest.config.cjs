@@ -75,6 +75,13 @@ module.exports = {
     // Nest acceptance tests, not unit-covered (same convention as container.ts).
     '!server/src/nest/**/*.module.ts',
     '!server/src/main.ts',
+    // Nest controllers are thin HTTP glue (routing decorators → service call),
+    // exercised end-to-end by the Nest acceptance tests; their heavy
+    // `emitDecoratorMetadata`-emitted branches are structurally uncoverable, so
+    // they are integration-covered rather than unit-coverage-counted — the same
+    // convention as the composition roots and the real-I/O adapters above. The
+    // guards, pipes, filters and param decorators (real logic) stay counted.
+    '!server/src/nest/**/*.controller.ts',
   ],
   coverageDirectory: 'coverage',
   coverageThreshold: {

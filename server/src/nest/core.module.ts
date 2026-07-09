@@ -2,7 +2,9 @@ import { Global, Module } from '@nestjs/common';
 import { loadConfig, type AppConfig } from '../config.js';
 import { createLogger } from '../adapters/pino-logger.js';
 import { nodeFetch } from '../adapters/node-fetch.js';
-import { CONFIG, LOGGER, CANDIDATE_PROFILE, HTTP_FETCH } from './tokens.js';
+import { SystemClock } from '../adapters/system-clock.js';
+import { RandomIdGenerator } from '../adapters/random-id-generator.js';
+import { CONFIG, LOGGER, CANDIDATE_PROFILE, HTTP_FETCH, CLOCK, ID_GENERATOR } from './tokens.js';
 
 /**
  * Global composition providers (ADR-0051) — the framework-agnostic singletons
@@ -24,7 +26,9 @@ import { CONFIG, LOGGER, CANDIDATE_PROFILE, HTTP_FETCH } from './tokens.js';
       inject: [CONFIG],
     },
     { provide: HTTP_FETCH, useValue: nodeFetch },
+    { provide: CLOCK, useFactory: () => new SystemClock() },
+    { provide: ID_GENERATOR, useFactory: () => new RandomIdGenerator() },
   ],
-  exports: [CONFIG, LOGGER, CANDIDATE_PROFILE, HTTP_FETCH],
+  exports: [CONFIG, LOGGER, CANDIDATE_PROFILE, HTTP_FETCH, CLOCK, ID_GENERATOR],
 })
 export class CoreModule {}

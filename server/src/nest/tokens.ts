@@ -13,7 +13,8 @@
 export const API_KEY_STORE = Symbol('ApiKeyStore');
 export const APPLICATION_REPOSITORY = Symbol('ApplicationRepository');
 export const ARTIFACT_LOG_REPOSITORY = Symbol('ArtifactLogRepository');
-export const ASSISTANT_STORE = Symbol('AssistantStore');
+export const ASSISTANT_SETTINGS_STORE = Symbol('AssistantSettingsStore');
+export const ASSISTANT_SUGGESTION_REPOSITORY = Symbol('AssistantSuggestionRepository');
 export const ATTACHMENT_STORE = Symbol('AttachmentStore');
 export const AUDIT_LOG = Symbol('AuditLog');
 export const AUTH_ENGINE = Symbol('AuthEngine');
@@ -57,6 +58,10 @@ export const JOB_SEARCH_SERVICE = Symbol('JobSearchService');
 
 // --- Composition values (not ports, but injected) ---
 export const CONFIG = Symbol('AppConfig');
+/** The assembled persistence bundle (fs or sql); repos are re-exported per token. */
+export const PERSISTENCE = Symbol('Persistence');
+/** The Drizzle DB handle, present only when STORE=sql. */
+export const DB = Symbol('Db');
 export const CANDIDATE_PROFILE = Symbol('CandidateProfile');
 export const SKILL_EXTRACTOR_ONTOLOGY = Symbol('SkillExtractorOntology');
 /** Registry arrays assembled in the composition root (ports/personal-data). */

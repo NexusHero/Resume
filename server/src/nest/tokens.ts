@@ -86,3 +86,6 @@ export const APPLICATION_SERVICE = Symbol('ApplicationService');
 export const MEMBERS_SERVICE = Symbol('MembersService');
 export const INVITE_SERVICE = Symbol('InviteService');
 export const TENANT_SERVICE = Symbol('TenantService');
+export const DOCUMENT_SERVICE = Symbol('DocumentService');
+export const ATTACHMENT_SERVICE = Symbol('AttachmentService');
+export const PASSWORD_RESET_SERVICE = Symbol('PasswordResetService');

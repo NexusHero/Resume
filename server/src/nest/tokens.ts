@@ -62,6 +62,9 @@ export const PLACEMENT_SERVICE = Symbol('PlacementService');
 export const CANDIDACY_SERVICE = Symbol('CandidacyService');
 export const ATS_SERVICE = Symbol('AtsService');
 export const SAVED_SEARCH_SERVICE = Symbol('SavedSearchService');
+export const FORECAST_SERVICE = Symbol('ForecastService');
+export const INTERVIEW_OBSERVATION_SERVICE = Symbol('InterviewObservationService');
+export const USAGE_SERVICE = Symbol('UsageService');
 
 // --- Composition values (not ports, but injected) ---
 export const CONFIG = Symbol('AppConfig');
@@ -71,6 +74,12 @@ export const PERSISTENCE = Symbol('Persistence');
 export const DB = Symbol('Db');
 export const CANDIDATE_PROFILE = Symbol('CandidateProfile');
 export const SKILL_EXTRACTOR_ONTOLOGY = Symbol('SkillExtractorOntology');
-/** Registry arrays assembled in the composition root (ports/personal-data). */
+/** Registry arrays assembled in the composition root (ports/personal-data, talent-data). */
 export const USER_ERASURE_STEPS = Symbol('UserErasureSteps');
 export const USER_EXPORT_SECTIONS = Symbol('UserExportSections');
+export const TALENT_DATA_PURGERS = Symbol('TalentDataPurgers');
+
+// --- More composed services ---
+export const TALENT_SERVICE = Symbol('TalentService');
+export const TALENT_IMPORT_SERVICE = Symbol('TalentImportService');
+export const APPLICATION_SERVICE = Symbol('ApplicationService');

@@ -115,8 +115,10 @@ function makeApp(
   } = {},
 ): Express {
   const planProvider = new EnvPlanProvider(config.plan);
+  // Shared so the account export observes the same applications the endpoints write.
+  const applicationRepository = new InMemoryApplicationRepository();
   const service = new ApplicationService({
-    applicationRepository: new InMemoryApplicationRepository(),
+    applicationRepository,
     auditLog: new InMemoryAuditLog(),
     pdfArchive: new InMemoryPdfArchive(),
     pdfRenderer: new FakePdfRenderer(),
@@ -421,6 +423,7 @@ function makeApp(
         { key: 'mandates', collect: (_userId, scope) => mandateRepository.list(scope) },
         { key: 'talents', collect: (_userId, scope) => talentRepository.list(scope) },
         { key: 'placements', collect: (_userId, scope) => placementRepository.list(scope) },
+        { key: 'applications', collect: (_userId, scope) => applicationRepository.list(scope) },
         {
           key: 'observations',
           collect: (_userId, scope) => interviewObservationRepository.list(scope),
@@ -622,6 +625,39 @@ describe('REST API /api/v1', () => {
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
     expect(res.body.length).toBeGreaterThan(0);
+  });
+
+  it('Applications_ScopedByTeam_NotVisibleToAnotherTenant', async () => {
+    // Regression (data leak): applications must be team-scoped like mandates —
+    // a different tenant must never see them. Self-serve tenants give each
+    // registrant its own tenant so the isolation is observable.
+    const isolated = makeApp(loadConfig({ SELF_SERVE_TENANTS: 'true' }));
+    const a = request.agent(isolated);
+    await a
+      .post('/api/v1/auth/register')
+      .send({ email: 'a@example.com', password: 'correct horse battery' });
+    await a.post('/api/v1/applications').send({ company: 'Aurora', talentName: 'Mara' });
+
+    const b = request.agent(isolated);
+    await b
+      .post('/api/v1/auth/register')
+      .send({ email: 'b@example.com', password: 'another good passphrase' });
+
+    expect((await a.get('/api/v1/applications')).body).toHaveLength(1);
+    expect((await b.get('/api/v1/applications')).body).toEqual([]); // isolated
+    expect((await b.get('/api/v1/history')).body).toEqual([]);
+  });
+
+  it('AccountExport_IncludesApplications', async () => {
+    // DSGVO completeness: the owner-scoped export must carry applications too.
+    const agent = await authed(app);
+    await agent
+      .post('/api/v1/applications')
+      .send({ company: 'Aurora', position: 'Engineer', talentName: 'Mara' });
+    const res = await agent.get('/api/v1/account/export');
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.applications)).toBe(true);
+    expect(res.body.applications[0]).toMatchObject({ company: 'Aurora', talentName: 'Mara' });
   });
 
   it('Api_UnknownRoute_Returns404Problem', async () => {

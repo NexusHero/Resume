@@ -315,7 +315,7 @@ function Workspace({ user, onLogout }) {
     if (nav === 'uebersicht') body = <window.Dashboard me={me} apps={apps} vkpis={vkpis} clients={clients} mandates={mandates} onOpenTalent={goTalent} onOpenPipeline={() => setNav('mandate')} onOpenMandate={() => setNav('mandate')} />;
     else if (nav === 'mandate') body = withState(mandatesRes, <window.MandateView mandates={shownMandates} onEdit={editMandate} onOpenPipeline={goPipeline} />);
     else if (nav === 'pool') body = withState(talentsRes, <window.TalentGrid talents={shownTalents} apps={apps} onOpen={goTalent} onAdd={addTalent} onImport={importCvs} importing={importing} />);
-    else if (nav === 'matching') body = <window.Matching talents={talents} onCreateMandate={mandateFromJob} onApply={applyFromMatching} />;
+    else if (nav === 'matching') body = <window.Matching talents={talents} mandates={mandates} onCreateMandate={mandateFromJob} onApply={applyFromMatching} />;
     else if (nav === 'bewerbungen') body = withState(applicationsRes, (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '100%' }}>
         <window.PipelineBoard apps={apps} talents={talents} onOpen={goTalent} />

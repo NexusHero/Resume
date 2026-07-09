@@ -59,6 +59,7 @@ export async function migrate(pool: Pool): Promise<void> {
     );
     CREATE TABLE IF NOT EXISTS applications (
       id text PRIMARY KEY,
+      owner_id text NOT NULL,
       date text NOT NULL,
       company text NOT NULL,
       position text NOT NULL,
@@ -75,6 +76,10 @@ export async function migrate(pool: Pool): Promise<void> {
     );
     ALTER TABLE applications ADD COLUMN IF NOT EXISTS talent_id text;
     ALTER TABLE applications ADD COLUMN IF NOT EXISTS talent_name text;
+    -- Additive owner scope for pre-existing rows: backfill to the default team,
+    -- then every read filters by owner_id (ADR-0010/0033).
+    ALTER TABLE applications ADD COLUMN IF NOT EXISTS owner_id text NOT NULL DEFAULT 'team';
+    CREATE INDEX IF NOT EXISTS applications_owner_id_idx ON applications (owner_id);
     CREATE TABLE IF NOT EXISTS audit_events (
       seq serial PRIMARY KEY,
       ts text NOT NULL,

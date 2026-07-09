@@ -8,8 +8,23 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+### Security
+
+- **Applications are now team-scoped** (ADR-0048, FR-15): previously every
+  authenticated user could read **every team's** applications via
+  `GET /api/v1/applications` and `/history`. `Application` gains an `ownerId`,
+  every repository read is owner-filtered (fs + Postgres, additive `owner_id`
+  migration backfilled to the default team), and the audit history is scoped to
+  the caller's own applications.
+
 ### Added
 
+- **Apply a candidate without a job board** (ADR-0048, FR-16): Matching's Manual
+  mode gains an "Apply {candidate} to a role" panel — type a company + role, or
+  prefill from one of your mandates, then apply. The core workflow no longer
+  depends on a reachable external job board.
+- **Applications are included in the DSGVO account export** (ADR-0048) so the
+  owner-scoped export is complete.
 - **The Applications page is a working submission pipeline** (ADR-0046, FR-15/16):
   the board now reads the live applications resource instead of a hard-coded empty
   list, and **Matching gained a "+ Apply {candidate}" action** that files an

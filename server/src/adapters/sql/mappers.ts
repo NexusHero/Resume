@@ -63,6 +63,7 @@ const orUndef = <T>(v: T | null): T | undefined => v ?? undefined;
 export function rowToApplication(row: ApplicationRow): Application {
   return {
     id: row.id,
+    ownerId: row.ownerId,
     date: row.date,
     company: row.company,
     position: row.position,
@@ -82,6 +83,7 @@ export function rowToApplication(row: ApplicationRow): Application {
 export function applicationToRow(app: Application): ApplicationInsert {
   return {
     id: app.id,
+    ownerId: app.ownerId,
     date: app.date,
     company: app.company,
     position: app.position,

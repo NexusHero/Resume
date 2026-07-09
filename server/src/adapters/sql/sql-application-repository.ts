@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import type { Application } from '../../domain/application.js';
 import type { ApplicationRepository } from '../../ports/application-repository.js';
 import type { Db } from './db.js';
@@ -13,13 +13,16 @@ export class SqlApplicationRepository implements ApplicationRepository {
     this.db = deps.db;
   }
 
-  async list(): Promise<Application[]> {
-    const rows = await this.db.select().from(applications);
+  async list(ownerId: string): Promise<Application[]> {
+    const rows = await this.db.select().from(applications).where(eq(applications.ownerId, ownerId));
     return rows.map(rowToApplication);
   }
 
-  async findById(id: string): Promise<Application | null> {
-    const rows = await this.db.select().from(applications).where(eq(applications.id, id));
+  async findById(ownerId: string, id: string): Promise<Application | null> {
+    const rows = await this.db
+      .select()
+      .from(applications)
+      .where(and(eq(applications.id, id), eq(applications.ownerId, ownerId)));
     return rows[0] ? rowToApplication(rows[0]) : null;
   }
 
@@ -32,7 +35,9 @@ export class SqlApplicationRepository implements ApplicationRepository {
     const updated = await this.db
       .update(applications)
       .set(row)
-      .where(eq(applications.id, application.id))
+      .where(
+        and(eq(applications.id, application.id), eq(applications.ownerId, application.ownerId)),
+      )
       .returning({ id: applications.id });
     // Match the file repository: an update to an unknown id inserts it.
     if (updated.length === 0) await this.db.insert(applications).values(row);

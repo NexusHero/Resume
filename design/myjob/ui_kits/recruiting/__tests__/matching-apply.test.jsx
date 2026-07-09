@@ -70,3 +70,38 @@ describe('Matching — real jobs only', () => {
     expect(screen.queryByText(/sample postings/i)).not.toBeInTheDocument();
   });
 });
+
+describe('Matching — apply without a job board', () => {
+  const mandates = [{ id: 'm1', client: 'Aurora Systems GmbH', role: 'Senior C++ Engineer' }];
+
+  beforeEach(() => {
+    // No live postings at all — the manual apply path must still work.
+    window.RecruitApi = { searchJobs: vi.fn().mockResolvedValue({ jobs: [], liveDown: true }) };
+  });
+
+  it('ManualRole_TypedCompanyAndRole_AppliesSelectedCandidate', async () => {
+    const onApply = vi.fn().mockResolvedValue({ id: 'app1' });
+    render(<Matching talents={talents} mandates={mandates} onApply={onApply} />);
+
+    await userEvent.click(await screen.findByText('Manual'));
+    await userEvent.type(screen.getByLabelText('Company'), 'Helio GmbH');
+    await userEvent.type(screen.getByLabelText('Role'), 'Backend Engineer');
+    await userEvent.click(screen.getByRole('button', { name: /^Apply$/ }));
+
+    expect(onApply).toHaveBeenCalledTimes(1);
+    expect(onApply.mock.calls[0][0]).toMatchObject({ company: 'Helio GmbH', title: 'Backend Engineer' });
+    expect(onApply.mock.calls[0][1]).toMatchObject({ id: 'me' });
+    await waitFor(() => expect(screen.getByText('Applied')).toBeInTheDocument());
+  });
+
+  it('ManualRole_PrefillFromMandate_FillsCompanyAndRole', async () => {
+    const onApply = vi.fn().mockResolvedValue({});
+    render(<Matching talents={talents} mandates={mandates} onApply={onApply} />);
+
+    await userEvent.click(await screen.findByText('Manual'));
+    await userEvent.selectOptions(screen.getByLabelText('Prefill from a mandate'), 'm1');
+
+    expect(screen.getByLabelText('Company')).toHaveValue('Aurora Systems GmbH');
+    expect(screen.getByLabelText('Role')).toHaveValue('Senior C++ Engineer');
+  });
+});

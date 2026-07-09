@@ -52,4 +52,18 @@ describe('CompositeJobSource', () => {
     const c = new CompositeJobSource([failing('Down'), stub('B', [])], noopLogger);
     expect(await c.search(anyQuery)).toEqual([]);
   });
+
+  it('SearchDetailed_ReportsPerSourceCountsAndHealth', async () => {
+    const c = new CompositeJobSource(
+      [stub('A', [job('A', '1'), job('A', '2')]), failing('Down'), stub('C', [job('C', '3')])],
+      noopLogger,
+    );
+    const outcome = await c.searchDetailed(anyQuery);
+    expect(outcome.jobs.map((j) => `${j.source}:${j.id}`)).toEqual(['A:1', 'A:2', 'C:3']);
+    expect(outcome.sources).toEqual([
+      { name: 'A', count: 2, ok: true },
+      { name: 'Down', count: 0, ok: false },
+      { name: 'C', count: 1, ok: true },
+    ]);
+  });
 });

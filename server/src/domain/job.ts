@@ -24,6 +24,16 @@ export interface ScoredJob extends Job {
   missingSkills: string[];
 }
 
+/** What one job board contributed to a search — surfaced for per-source counts. */
+export interface JobSourceOutcome {
+  /** The board's name (e.g. 'Arbeitnow', 'Remotive'). */
+  name: string;
+  /** Postings this board returned (its own raw contribution, before cross-source dedup). */
+  count: number;
+  /** False when the board errored on this search (down, bad key, rate-limited). */
+  ok: boolean;
+}
+
 /** Two-tier result: strong fits first, then everything else (kept, not dropped). */
 export interface JobSearchResult {
   query: JobQuery;
@@ -36,6 +46,8 @@ export interface JobSearchResult {
    * (there is no fabricated sample fallback).
    */
   liveSourcesDown?: boolean;
+  /** Per-board breakdown (name, count, ok) — drives the accumulated source counts. */
+  sources: JobSourceOutcome[];
   /** match >= threshold, best first. */
   top: ScoredJob[];
   /** below threshold — stretch / new-domain opportunities, best first. */

@@ -33,6 +33,10 @@ function Matching({ talents, mandates = [], onCreateMandate, onApply }) {
   // stays instant (the boards are already merged server-side).
   const [jobs, setJobs] = React.useState(null); // null = loading
   const [liveDown, setLiveDown] = React.useState(false);
+  // Per-board breakdown [{ name, count, ok }] + accumulated total across all
+  // API sources — shown as a source-count strip above the results.
+  const [srcCounts, setSrcCounts] = React.useState([]);
+  const [total, setTotal] = React.useState(0);
   const [error, setError] = React.useState(false);
   const load = React.useCallback(() => {
     setJobs(null);
@@ -41,6 +45,8 @@ function Matching({ talents, mandates = [], onCreateMandate, onApply }) {
       .then((r) => {
         setJobs(r.jobs);
         setLiveDown(r.liveDown);
+        setSrcCounts(Array.isArray(r.sources) ? r.sources : []);
+        setTotal(typeof r.total === 'number' ? r.total : r.jobs.length);
       })
       .catch(() => setError(true));
   }, []);
@@ -92,6 +98,26 @@ function Matching({ talents, mandates = [], onCreateMandate, onApply }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', color: 'var(--text-muted)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '8px 12px', marginBottom: '16px' }}>
           <MT.Icon name="info" size={14} style={{ flexShrink: 0 }} />
           <span>Live job sources are unreachable right now, so no postings could be loaded. Check the server's network/API keys; the search recovers automatically.</span>
+        </div>
+      )}
+      {/* Accumulated jobs across every API source, with a per-board breakdown. A
+          down board is shown struck-through so an outage is visible, not hidden. */}
+      {srcCounts.length > 0 && (
+        <div data-testid="source-counts" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '18px' }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600, color: 'var(--text-heading)' }}>
+            {total} {total === 1 ? 'job' : 'jobs'}
+          </span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>
+            across {srcCounts.filter((s) => s.ok).length}/{srcCounts.length} sources
+          </span>
+          <span style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+            {srcCounts.map((s) => (
+              <span key={s.name} title={s.ok ? `${s.name}: ${s.count} postings` : `${s.name} is unreachable`} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-mono)', fontSize: '11px', padding: '3px 9px', borderRadius: 'var(--radius-pill)', border: '1px solid var(--border)', background: 'var(--surface-card)', color: s.ok ? 'var(--text-muted)' : 'var(--text-soft)', textDecoration: s.ok ? 'none' : 'line-through', opacity: s.ok ? 1 : 0.6 }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: s.ok ? 'var(--positive, #1F8A5B)' : 'var(--danger, #d64545)' }} />
+                {s.name} {s.ok ? s.count : '—'}
+              </span>
+            ))}
+          </span>
         </div>
       )}
       {/* mode */}

@@ -10,6 +10,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Added
 
+- **All job boards on by default, one search across all of them** (ADR-0050,
+  FR-53): a plain install now fans a single search out across every configured
+  board at once instead of a single default. New boards are added
+  **declaratively** — a `JobSourceDescriptor` interpreted by a generic
+  `RestJobSource`, with no bespoke adapter — either built-in (keyless
+  **Remotive**, **Jobicy**, **Remote OK** join Arbeitnow/Bundesagentur/Adzuna) or
+  via a `JOB_SOURCES_FILE` JSON list. `JOB_SOURCES_DISABLED` turns a single board
+  off; `JOB_SOURCES` still works as a legacy allow-list.
+- **Accumulated job counts per source**: Matching shows the total postings across
+  all API sources ("N jobs across M/K sources") with a per-board count breakdown;
+  an unreachable board is shown struck-through rather than silently missing.
 - **Animated boot splash**: a branded myJob equalizer (animated bars + wordmark +
   shimmer) paints instantly from `index.html` — before React mounts — and fades
   out once the session resolves, with a short minimum on-screen time and a

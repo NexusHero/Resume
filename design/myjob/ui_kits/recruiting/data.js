@@ -523,7 +523,14 @@ const RecruitApi = {
     }));
     // liveDown = live sources ARE configured but all failed on this search, so
     // the list is empty because of an outage rather than a lack of matches.
-    return { jobs, liveDown: !!data.liveSourcesDown };
+    // sources = per-board breakdown [{ name, count, ok }] for the accumulated
+    // source counts shown above the results.
+    return {
+      jobs,
+      liveDown: !!data.liveSourcesDown,
+      sources: Array.isArray(data.sources) ? data.sources : [],
+      total: data.counts && typeof data.counts.total === 'number' ? data.counts.total : jobs.length,
+    };
   },
   // --- Recruiting pipeline (candidacies) ---
   async mandateCandidacies(mandateId) {

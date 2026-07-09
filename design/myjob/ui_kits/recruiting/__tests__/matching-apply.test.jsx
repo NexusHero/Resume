@@ -71,6 +71,41 @@ describe('Matching — real jobs only', () => {
   });
 });
 
+describe('Matching — accumulated source counts', () => {
+  it('ShowsTotalAndPerSourceBreakdown_MarksDownSources', async () => {
+    window.RecruitApi = {
+      searchJobs: vi.fn().mockResolvedValue({
+        jobs: [job],
+        liveDown: false,
+        total: 63,
+        sources: [
+          { name: 'Arbeitnow', count: 25, ok: true },
+          { name: 'Remotive', count: 38, ok: true },
+          { name: 'Adzuna', count: 0, ok: false },
+        ],
+      }),
+    };
+    render(<Matching talents={talents} onApply={vi.fn()} />);
+
+    const strip = await screen.findByTestId('source-counts');
+    // accumulated total across all API sources
+    expect(strip).toHaveTextContent('63 jobs');
+    // only the two healthy sources count toward "across N/M"
+    expect(strip).toHaveTextContent('across 2/3 sources');
+    // per-board counts, with the down board shown as unavailable
+    expect(strip).toHaveTextContent('Arbeitnow 25');
+    expect(strip).toHaveTextContent('Remotive 38');
+    expect(strip).toHaveTextContent('Adzuna —');
+  });
+
+  it('NoSourcesInResponse_HidesStrip', async () => {
+    window.RecruitApi = { searchJobs: vi.fn().mockResolvedValue({ jobs: [job], liveDown: false }) };
+    render(<Matching talents={talents} onApply={vi.fn()} />);
+    await screen.findByText('Auto · Skill-Match');
+    expect(screen.queryByTestId('source-counts')).not.toBeInTheDocument();
+  });
+});
+
 describe('Matching — apply without a job board', () => {
   const mandates = [{ id: 'm1', client: 'Aurora Systems GmbH', role: 'Senior C++ Engineer' }];
 

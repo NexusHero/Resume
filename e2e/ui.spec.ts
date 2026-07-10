@@ -36,6 +36,13 @@ test.describe('UI acceptance — the suite renders in English', () => {
     await expect(nav).toContainText('CoRecruiter');
     // Applications is wired to the live applications resource (ADR-0046).
     await expect(nav).toContainText('Applications');
+    // Taxonomy (#201): Matching is part of the WORK funnel, Reports under
+    // Insights, and the AI section is renamed "Assistant" (item stays
+    // CoRecruiter). See design/myjob/decisions/nav-taxonomy.md.
+    await expect(nav).toContainText('Matching');
+    await expect(nav).toContainText('Placements');
+    await expect(nav).toContainText('Reports');
+    await expect(nav).toContainText('Assistant');
     // No German leaked into the navigation.
     await expect(nav).not.toContainText('Übersicht');
   });

@@ -162,7 +162,7 @@ function JobsView({ jobs }) {
           </div>
           <div style={{ display: 'flex', gap: '8px', margin: '14px 0', flexWrap: 'wrap' }}>
             <WS.MetaPill icon="pin">{j.location}</WS.MetaPill>
-            <WS.MetaPill icon="trend" tone="accent">{j.salary}</WS.MetaPill>
+            <WS.MetaPill icon="trend">{j.salary}</WS.MetaPill>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '12px', borderTop: '1px solid var(--border)' }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-mono)', fontSize: '12px', color: j.match >= 85 ? 'var(--success)' : 'var(--text-muted)', fontWeight: 600 }}>

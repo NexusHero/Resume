@@ -58,7 +58,7 @@ export interface LetterContent {
 }
 
 /** Layout templates for the printed documents. */
-export type DocumentTemplate = 'classic' | 'modern' | 'compact';
+export type DocumentTemplate = 'classic' | 'modern' | 'compact' | 'ink';
 
 /** The shared look — layout template, accent colour trio, font and scale. */
 export interface DocumentStyle {
@@ -152,7 +152,7 @@ export const letterSchema = z.object({
 });
 
 const styleSchema = z.object({
-  template: z.enum(['classic', 'modern', 'compact']).default('classic'),
+  template: z.enum(['classic', 'modern', 'compact', 'ink']).default('classic'),
   accent: z.string().default('#2A6FDB'),
   strong: z.string().default('#1d4ed8'),
   onDark: z.string().default('#7aa7f5'),

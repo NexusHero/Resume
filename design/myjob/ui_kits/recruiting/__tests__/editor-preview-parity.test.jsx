@@ -77,4 +77,18 @@ describe('Editor — live preview parity', () => {
     const lastPayload = window.RecruitApi.previewDocumentsHtml.mock.calls.at(-1)[1];
     expect(lastPayload.style.template).toBe('modern');
   });
+
+  it('Preview_SelectingInk_ReRendersWithTheInkTemplate', async () => {
+    render(<Editor talent={talent} onClose={vi.fn()} onCreateMappe={vi.fn()} />);
+    await waitFor(() => expect(window.RecruitApi.previewDocumentsHtml).toHaveBeenCalled());
+    const before = window.RecruitApi.previewDocumentsHtml.mock.calls.length;
+
+    await userEvent.click(screen.getByText('Ink'));
+
+    await waitFor(() =>
+      expect(window.RecruitApi.previewDocumentsHtml.mock.calls.length).toBeGreaterThan(before),
+    );
+    const lastPayload = window.RecruitApi.previewDocumentsHtml.mock.calls.at(-1)[1];
+    expect(lastPayload.style.template).toBe('ink');
+  });
 });

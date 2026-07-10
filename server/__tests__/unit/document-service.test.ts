@@ -250,6 +250,28 @@ describe('DocumentService', () => {
     expect(previewHtml).toContain('Designer with 8 years of experience.');
   });
 
+  it('RenderPreviewHtml_ByteIdenticalForTheInkTemplateToo', async () => {
+    // The parity invariant must hold for every template — the ink two-column
+    // layout is one string from documentsToHtml, so preview === PDF source.
+    const c = ctx();
+    await c.talents.add(talent('t1'));
+    const inkInput = { ...input, style: { ...input.style, template: 'ink' as const } };
+    const saved = await c.service.save(OWNER, 't1', inkInput);
+
+    await c.service.renderPdf(OWNER, 't1');
+    const pdfSourceHtml = c.pdf.lastHtml;
+
+    const previewHtml = c.service.renderPreviewHtml({
+      contact: saved.contact,
+      resume: saved.resume,
+      letter: saved.letter,
+      style: saved.style,
+    });
+
+    expect(previewHtml).toBe(pdfSourceHtml);
+    expect(previewHtml).toContain('class="tpl-ink"');
+  });
+
   it('RenderPreviewHtml_NeverPersists', async () => {
     // The preview renders the posted (possibly unsaved) body and touches no store.
     const c = ctx();

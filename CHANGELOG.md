@@ -45,6 +45,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
   English (`Profile`/`Experience`/`Education`/`Skills`) to match the product; the
   PDF bytes are otherwise unchanged (print still driven by `@page`).
 
+- **A new “Ink” CV template** — a portfolio-grade, two-column résumé: a dark
+  sidebar (rounded photo, name, role pill, icon contact rows and skill chips)
+  beside a light main column with eyebrow-labelled sections, an experience
+  timeline (node dots, date pills, tech-stack chips) and accent bullets, plus a
+  clean matching cover letter. Selectable from the editor's Style bar alongside
+  Classic/Modern/Compact and rendered from the same single source
+  (`documentsToHtml`), so the live preview and the exported PDF stay
+  byte-identical. Its display/body/mono webfonts (Space Grotesk, Inter, JetBrains
+  Mono) are embedded so the typography is exact in both the iframe preview and
+  the PDF with no network request or host-font dependency, and a print-only fixed
+  spine keeps the dark band full-height on every page while the cover letter
+  stays clean.
+
 ### Changed
 
 - **NestJS is now the composition root and HTTP layer** (ADR-0051, supersedes

@@ -26,6 +26,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
   `recruiter+test123@…` now greets you as “Recruiter”, not “Recruiter+”.
 - **Removed a German string leak** in the English UI: the job-posting card's
   action reads “Job description” instead of “Stellenbeschreibung”.
+- **Views refresh on navigation** so a teammate's change on the shared team desk
+  shows up without a full page reload — the pool, mandates and applications
+  refetch in the background (no spinner flash) when you open them.
+- **The ATS check no longer overlooks skills listed only under a role**: the
+  analysis now feeds every skill the CV states — the top-level skill groups and
+  the per-experience tags — so a keyword present under a job entry isn't wrongly
+  reported as missing.
+- **Recruiter-appropriate Talent Pool framing**: the subtitle now reads “The
+  candidates you represent” instead of the job-seeker-flavoured “…me first”.
 
 - **The CV/cover-letter editor is now truly WYSIWYG** (ADR-0052): the live
   preview and the exported PDF are rendered from a single source

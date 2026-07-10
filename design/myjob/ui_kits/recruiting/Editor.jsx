@@ -274,7 +274,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
   const [modal, setModal] = React.useState(null); // 'import' | 'ats' | 'pitch' | 'outreach' | null
 
   const seg = (id, label) => (
-    <button onClick={() => setDoc(id)} style={{ flex: 1, padding: '8px 10px', border: 'none', cursor: 'pointer', borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600, background: doc === id ? 'var(--surface-card)' : 'transparent', color: doc === id ? 'var(--text-heading)' : 'var(--text-soft)', boxShadow: doc === id ? 'var(--shadow-xs)' : 'none' }}>{label}</button>
+    <button onClick={() => setDoc(id)} style={{ flex: 1, padding: isMobile ? '12px 10px' : '8px 10px', minHeight: isMobile ? '44px' : undefined, border: 'none', cursor: 'pointer', borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600, background: doc === id ? 'var(--surface-card)' : 'transparent', color: doc === id ? 'var(--text-heading)' : 'var(--text-soft)', boxShadow: doc === id ? 'var(--shadow-xs)' : 'none' }}>{label}</button>
   );
 
   return (
@@ -485,7 +485,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
               <ED.Icon name="eye" size={14} /> Live preview · {doc === 'lebenslauf' ? 'Resume' : 'Cover letter'}
             </span>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button onClick={runAI} style={{ appearance: 'none', cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12.5px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-md)', padding: '7px 12px' }}>
+              <button onClick={runAI} style={{ appearance: 'none', cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12.5px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-md)', padding: isMobile ? '10px 14px' : '7px 12px', minHeight: isMobile ? '44px' : undefined }}>
                 <ED.Icon name="zap" size={14} />AI tailor
               </button>
               <ED.Button size="sm" variant="outline" iconLeft={<ED.Icon name="download" size={14} />} onClick={exportPdf} disabled={pdfBusy}>{pdfBusy ? 'PDF…' : 'PDF'}</ED.Button>
@@ -496,19 +496,19 @@ function Editor({ talent, onClose, onCreateMappe }) {
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Style</span>
             <div style={{ display: 'flex', gap: '4px', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-sm)', padding: '3px' }}>
               {[['classic', 'Classic'], ['modern', 'Modern'], ['compact', 'Compact'], ['ink', 'Ink']].map(([id, label]) => (
-                <button key={id} onClick={() => setCfg((c) => ({ ...c, template: id }))} style={{ border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: cfg.template === id ? 600 : 500, padding: '4px 9px', borderRadius: '4px', background: cfg.template === id ? 'var(--surface-card)' : 'transparent', color: cfg.template === id ? 'var(--text-heading)' : 'var(--text-muted)' }}>{label}</button>
+                <button key={id} onClick={() => setCfg((c) => ({ ...c, template: id }))} style={{ border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: cfg.template === id ? 600 : 500, padding: isMobile ? '11px 14px' : '4px 9px', minHeight: isMobile ? '44px' : undefined, borderRadius: '4px', background: cfg.template === id ? 'var(--surface-card)' : 'transparent', color: cfg.template === id ? 'var(--text-heading)' : 'var(--text-muted)' }}>{label}</button>
               ))}
             </div>
-            <div style={{ display: 'flex', gap: '6px' }}>
-              {ED_ACCENTS.map((a, i) => <span key={i} onClick={() => setCfg((c) => ({ ...c, accent: a.accent, strong: a.strong, onDark: a.onDark }))} style={{ width: '22px', height: '22px', borderRadius: '6px', cursor: 'pointer', background: a.accent, border: `2px solid ${cfg.accent === a.accent ? 'var(--text-heading)' : 'transparent'}` }} />)}
+            <div style={{ display: 'flex', gap: isMobile ? '10px' : '6px' }}>
+              {ED_ACCENTS.map((a, i) => <span key={i} role="button" aria-label={`Accent ${i + 1}`} onClick={() => setCfg((c) => ({ ...c, accent: a.accent, strong: a.strong, onDark: a.onDark }))} style={{ width: isMobile ? '34px' : '22px', height: isMobile ? '34px' : '22px', borderRadius: '6px', cursor: 'pointer', background: a.accent, border: `2px solid ${cfg.accent === a.accent ? 'var(--text-heading)' : 'transparent'}` }} />)}
             </div>
-            <select value={cfg.font} onChange={(e) => setCfg((c) => ({ ...c, font: e.target.value }))} style={{ padding: '5px 9px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-heading)' }}>
+            <select value={cfg.font} onChange={(e) => setCfg((c) => ({ ...c, font: e.target.value }))} style={{ padding: isMobile ? '10px 10px' : '5px 9px', minHeight: isMobile ? '44px' : undefined, borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', fontFamily: 'var(--font-body)', fontSize: isMobile ? '13px' : '12px', color: 'var(--text-heading)' }}>
               <option value="var(--font-display)">Space Grotesk</option>
               <option value="var(--font-body)">Inter</option>
               <option value="Georgia, serif">Georgia</option>
             </select>
             <div style={{ display: 'inline-flex', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '2px', gap: '2px' }}>
-              {[['S', 0.92], ['M', 1], ['L', 1.08]].map(([l, v]) => <button key={l} onClick={() => setCfg((c) => ({ ...c, size: v }))} style={{ border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: cfg.size === v ? 600 : 500, padding: '4px 9px', borderRadius: '4px', background: cfg.size === v ? 'var(--surface-card)' : 'transparent', color: cfg.size === v ? 'var(--text-heading)' : 'var(--text-muted)' }}>{l}</button>)}
+              {[['S', 0.92], ['M', 1], ['L', 1.08]].map(([l, v]) => <button key={l} onClick={() => setCfg((c) => ({ ...c, size: v }))} style={{ border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: cfg.size === v ? 600 : 500, padding: isMobile ? '11px 15px' : '4px 9px', minHeight: isMobile ? '44px' : undefined, borderRadius: '4px', background: cfg.size === v ? 'var(--surface-card)' : 'transparent', color: cfg.size === v ? 'var(--text-heading)' : 'var(--text-muted)' }}>{l}</button>)}
             </div>
           </div>
           <div ref={previewRef} style={{ flex: 1, overflowY: 'auto', padding: '28px', display: 'flex', justifyContent: 'center' }}>

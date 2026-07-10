@@ -63,6 +63,7 @@ function RailThemeToggle() {
   const t = window.myJobTheme;
   const [hover, setHover] = React.useState(false);
   const dark = mode !== 'light';
+  const { isMobile } = window.useViewport ? window.useViewport() : { isMobile: false };
   const glyph = dark
     ? React.createElement('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true },
         React.createElement('path', { d: 'M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z' }))
@@ -78,8 +79,8 @@ function RailThemeToggle() {
       aria-label={dark ? 'Switch to light appearance' : 'Switch to dark appearance'}
       title={dark ? 'Switch to light' : 'Switch to dark'}
       style={{
-        width: '100%', display: 'flex', alignItems: 'center', gap: '11px', cursor: 'pointer',
-        appearance: 'none', textAlign: 'left', margin: '2px 0', padding: '9px 12px',
+        width: '100%', display: 'flex', alignItems: 'center', gap: '11px', cursor: 'pointer', minHeight: isMobile ? '44px' : undefined,
+        appearance: 'none', textAlign: 'left', margin: '2px 0', padding: isMobile ? '10px 12px' : '9px 12px',
         borderRadius: 'var(--radius-md)', border: '1px solid transparent',
         background: hover ? 'var(--sidebar-glass)' : 'transparent',
         color: 'var(--sidebar-muted)', fontFamily: 'var(--font-body)', fontSize: '13.5px', fontWeight: 500,
@@ -93,14 +94,16 @@ function RailThemeToggle() {
 
 function NavItem({ item, active, onClick, badge }) {
   const [hover, setHover] = React.useState(false);
+  const { isMobile } = window.useViewport ? window.useViewport() : { isMobile: false };
   return (
     <button
       onClick={onClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
-        display: 'flex', alignItems: 'center', gap: '11px', width: '100%',
-        padding: '9px 11px', borderRadius: 'var(--radius-md)', border: 'none', cursor: 'pointer',
+        // ≥44px rows in the drawer make each destination a comfortable tap (#202).
+        display: 'flex', alignItems: 'center', gap: '11px', width: '100%', minHeight: isMobile ? '44px' : undefined,
+        padding: isMobile ? '10px 12px' : '9px 11px', borderRadius: 'var(--radius-md)', border: 'none', cursor: 'pointer',
         fontFamily: 'var(--font-body)', fontSize: '13.5px', fontWeight: active ? 600 : 500,
         color: active ? '#fff' : 'var(--sidebar-muted)',
         background: active ? 'var(--sidebar-glass-strong)' : hover ? 'var(--sidebar-glass)' : 'transparent',
@@ -137,7 +140,7 @@ function MenuButton({ onClick }) {
     <button
       onClick={onClick}
       aria-label="Open navigation"
-      style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '38px', height: '38px', background: 'var(--surface-card)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', cursor: 'pointer', color: 'var(--text-soft)' }}
+      style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '44px', height: '44px', background: 'var(--surface-card)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', cursor: 'pointer', color: 'var(--text-soft)' }}
     >
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
         <line x1="3" y1="6" x2="21" y2="6" />
@@ -157,20 +160,25 @@ function RecruitRail({ active, onNav, me, talentCount, search, onSearch, title, 
   const handleNav = (id) => { setDrawerOpen(false); onNav(id); };
 
   const railBg = 'linear-gradient(165deg, var(--ink-850) 0%, var(--ink-900) 100%)';
+  // Safe-area insets keep the rail clear of the notch / home indicator in the
+  // installed PWA / Capacitor shell (viewport-fit=cover); they resolve to 0 in a
+  // normal browser tab, so this is inert on desktop (#202).
   const asideStyle = isMobile
     ? {
         position: 'fixed', top: 0, bottom: 0, left: 0, zIndex: 50, width: 'min(280px, 82vw)',
         transform: drawerOpen ? 'translateX(0)' : 'translateX(-100%)', transition: 'transform var(--dur-med, 0.24s) ease',
         display: 'flex', flexDirection: 'column', background: railBg,
         borderRight: '1px solid var(--sidebar-border)', boxShadow: drawerOpen ? 'var(--shadow-lg)' : 'none',
+        paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)', paddingLeft: 'env(safe-area-inset-left)',
       }
     : {
         width: 'var(--app-nav-width)', flexShrink: 0, display: 'flex', flexDirection: 'column',
         background: railBg, borderRight: '1px solid var(--sidebar-border)',
+        paddingLeft: 'env(safe-area-inset-left)',
       };
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--app-bg)' }}>
+    <div style={{ display: 'flex', height: '100dvh', overflow: 'hidden', background: 'var(--app-bg)' }}>
       {/* Skip link: the first Tab stop jumps keyboard users straight past the
           rail to the page content (#203). Visually hidden until focused (see the
           .skip-link rule in index.html). */}
@@ -217,6 +225,11 @@ function RecruitRail({ active, onNav, me, talentCount, search, onSearch, title, 
           padding: isMobile ? '0 14px' : '0 28px', background: 'color-mix(in oklch, var(--paper) 88%, transparent)',
           backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', borderBottom: '1px solid var(--border)',
           position: 'sticky', top: 0, zIndex: 5,
+          // On mobile the rail is off-canvas, so the header spans the notch: keep
+          // it clear of the status bar (top) and side cut-outs (#202).
+          paddingTop: isMobile ? 'env(safe-area-inset-top)' : undefined,
+          paddingLeft: isMobile ? 'max(14px, env(safe-area-inset-left))' : undefined,
+          paddingRight: isMobile ? 'max(14px, env(safe-area-inset-right))' : undefined,
         }}>
           {isMobile && <MenuButton onClick={() => setDrawerOpen(true)} />}
           <div style={{ minWidth: 0 }}>
@@ -235,12 +248,23 @@ function RecruitRail({ active, onNav, me, talentCount, search, onSearch, title, 
             {/* Notifications return once there is something to notify about. */}
             {actions}
             {onLogout && (
-              <button onClick={onLogout} title="Log out" style={{ display: 'inline-flex', alignItems: 'center', background: 'var(--surface-card)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', padding: '7px 13px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '12.5px', fontWeight: 600, color: 'var(--text-soft)' }}>Log out</button>
+              <button onClick={onLogout} title="Log out" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: isMobile ? '44px' : undefined, background: 'var(--surface-card)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', padding: isMobile ? '7px 15px' : '7px 13px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '12.5px', fontWeight: 600, color: 'var(--text-soft)' }}>Log out</button>
             )}
           </div>
         </header>
 
-        <main id="main-content" tabIndex={-1} style={{ flex: 1, overflowY: 'auto', padding: 'var(--pad-app)', outline: 'none' }}>
+        <main
+          id="main-content"
+          tabIndex={-1}
+          style={{
+            flex: 1, overflowY: 'auto', padding: 'var(--pad-app)', outline: 'none',
+            // Clear the home indicator / side cut-outs for the installed shell;
+            // the insets are 0 in a browser tab, so desktop is unchanged (#202).
+            paddingBottom: 'max(var(--pad-app), env(safe-area-inset-bottom))',
+            paddingLeft: isMobile ? 'max(var(--pad-app), env(safe-area-inset-left))' : undefined,
+            paddingRight: isMobile ? 'max(var(--pad-app), env(safe-area-inset-right))' : undefined,
+          }}
+        >
           {children}
         </main>
       </div>

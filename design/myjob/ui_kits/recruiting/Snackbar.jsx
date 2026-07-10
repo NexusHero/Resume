@@ -15,13 +15,16 @@ function prefersReducedMotion() {
 function Snackbar() {
   const [pending, { undo }] = window.useUndoDelete();
   const reduced = prefersReducedMotion();
+  const { isMobile } = window.useViewport ? window.useViewport() : { isMobile: false };
   if (!pending) return null;
   return (
     <div
       role="status"
       aria-live="polite"
       style={{
-        position: 'fixed', left: '50%', bottom: '24px', transform: 'translateX(-50%)',
+        // Lift above the home indicator on the installed shell (env() is 0 in a
+        // browser tab, so this is 24px on desktop) (#202).
+        position: 'fixed', left: '50%', bottom: 'max(24px, env(safe-area-inset-bottom))', transform: 'translateX(-50%)',
         zIndex: 60, display: 'flex', alignItems: 'center', gap: '16px',
         maxWidth: 'calc(100vw - 32px)',
         padding: '12px 12px 12px 18px', borderRadius: 'var(--radius-md)',
@@ -43,7 +46,8 @@ function Snackbar() {
           fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 700,
           letterSpacing: '0.02em', color: 'var(--accent-on-dark)',
           background: 'var(--sidebar-glass)', border: '1px solid var(--sidebar-border-strong)',
-          borderRadius: 'var(--radius-sm)', padding: '6px 14px',
+          // A comfortable ≥44px tap target for the time-limited Undo on touch (#202).
+          borderRadius: 'var(--radius-sm)', padding: isMobile ? '11px 18px' : '6px 14px', minHeight: isMobile ? '44px' : undefined,
         }}
       >
         Undo

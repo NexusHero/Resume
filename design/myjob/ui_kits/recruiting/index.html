@@ -21,7 +21,16 @@
 <link rel="stylesheet" href="../../styles.css" />
 <style>
   html, body { height: 100%; margin: 0; }
-  #root { height: 100vh; }
+  /* 100dvh tracks the *dynamic* viewport (the mobile URL bar collapsing in and
+     out), so the shell fills the screen without a dead strip or body scroll;
+     100vh is the fallback for engines without dvh (#202). */
+  #root { height: 100vh; height: 100dvh; }
+  /* Boards scroll horizontally inside their own container on a phone; snap each
+     column to the start so paging feels deliberate, and keep momentum on iOS.
+     The next column peeks past the edge as the "there's more" affordance (#202). */
+  .board-scroll { -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .board-scroll::-webkit-scrollbar { display: none; }
+  .board-col-snap { scroll-snap-align: start; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   @keyframes popIn { from { transform: translate(-50%, -50%) scale(0.96); opacity: 0; } to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
   *::-webkit-scrollbar { width: 10px; height: 10px; }

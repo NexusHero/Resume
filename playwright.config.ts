@@ -21,7 +21,22 @@ export default defineConfig({
     // mocked APIs; the service worker is covered by its own unit tests.
     serviceWorkers: 'block',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+      // The desktop project drives everything except the mobile-only suite.
+      testIgnore: /mobile\.spec\.ts$/,
+    },
+    {
+      // Mobile pass (#202): a real touch viewport (393×851, hasTouch, mobile UA).
+      // Pixel 5 is chromium-backed — the only engine installed in CI — so it runs
+      // alongside the desktop project without a WebKit download.
+      name: 'mobile-chromium',
+      use: { ...devices['Pixel 5'] },
+      testMatch: /mobile\.spec\.ts$/,
+    },
+  ],
   webServer: {
     // Build the recruiting kit's Vite bundle before serving so the e2e drives
     // the production build (no CDN, no runtime Babel).

@@ -8,12 +8,14 @@ const ESH = window.MyJobDesignSystem_f3658e;
    radius-pill outline, optional leading icon. `style` merges last so callers
    can override single properties (e.g. the translate pills' weight/padding). */
 function PillButton({ icon, children, onClick, disabled, title, style }) {
+  const { isMobile } = window.useViewport ? window.useViewport() : { isMobile: false };
   return (
     <button
       onClick={onClick}
       disabled={disabled}
       title={title}
-      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', cursor: disabled ? 'default' : 'pointer', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', padding: '4px 12px', ...style }}
+      // ≥44px tall on touch so each editor tool is a comfortable tap (#202).
+      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', cursor: disabled ? 'default' : 'pointer', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', padding: isMobile ? '10px 14px' : '4px 12px', minHeight: isMobile ? '44px' : undefined, ...style }}
     >
       {icon && <ESH.Icon name={icon} size={13} />} {children}
     </button>

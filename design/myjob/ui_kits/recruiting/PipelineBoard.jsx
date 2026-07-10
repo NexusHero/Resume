@@ -40,6 +40,7 @@ function ApplicationCard({ app, talent, stages, onOpen, onMove, onDelete }) {
 }
 
 function PipelineBoard({ apps, talents, onOpen, onMove, onDelete }) {
+  const { isMobile } = window.useViewport ? window.useViewport() : { isMobile: false };
   const order = window.STAGES_ORDER;
   const stages = order.map((s) => ({ value: s, label: window.STAGE_LABELS[s] }));
   const [dropStage, setDropStage] = React.useState(null);
@@ -55,8 +56,20 @@ function PipelineBoard({ apps, talents, onOpen, onMove, onDelete }) {
     const app = apps.find((a) => a.id === id);
     if (app && app.status !== stage) onMove(id, stage);
   };
+  // Five stages never fit a phone. On mobile the board becomes a horizontal
+  // snap-scroller (each column ~82vw so the next peeks past the edge as a
+  // "there's more" affordance); on desktop the columns share the width (#202).
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${order.length}, minmax(210px, 1fr))`, gap: '14px', alignItems: 'start', height: '100%' }}>
+    <div
+      className={isMobile ? 'board-scroll' : undefined}
+      style={{
+        display: 'grid',
+        gridTemplateColumns: isMobile ? `repeat(${order.length}, 82vw)` : `repeat(${order.length}, minmax(210px, 1fr))`,
+        gap: '14px', alignItems: 'start', height: '100%',
+        overflowX: isMobile ? 'auto' : 'visible',
+        paddingBottom: isMobile ? '4px' : undefined,
+      }}
+    >
       {order.map((stage) => {
         const list = apps.filter((a) => a.status === stage);
         const meta = PB.STAGES[stage];
@@ -67,6 +80,7 @@ function PipelineBoard({ apps, talents, onOpen, onMove, onDelete }) {
             label={window.STAGE_LABELS[stage]}
             count={list.length}
             canDrop={canEdit}
+            snap={isMobile}
             over={dropStage === stage}
             onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDropStage(stage); }}
             onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDropStage(null); }}

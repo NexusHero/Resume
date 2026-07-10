@@ -47,8 +47,14 @@ function MandateCard({ card, onOpenTalent, onMove, onRemove }) {
 /* The Kanban board: one shared column per stage, cards dropped between them.
    Pure presentation — the orchestrator owns the cards and the drag/move handlers. */
 function PipelineColumns({ cards, dropStage, setDropStage, onDrop, onOpenTalent, onMove, onRemove }) {
+  const { isMobile } = window.useViewport ? window.useViewport() : { isMobile: false };
+  // On a phone the board is a horizontal snap-scroller with the next column
+  // peeking past the edge as the "there's more" affordance (#202).
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${MP_STAGES.length}, minmax(200px, 1fr))`, gap: '14px', alignItems: 'start', flex: 1, minHeight: 0, overflowX: 'auto' }}>
+    <div
+      className={isMobile ? 'board-scroll' : undefined}
+      style={{ display: 'grid', gridTemplateColumns: isMobile ? `repeat(${MP_STAGES.length}, 82vw)` : `repeat(${MP_STAGES.length}, minmax(200px, 1fr))`, gap: '14px', alignItems: 'start', flex: 1, minHeight: 0, overflowX: 'auto', paddingBottom: isMobile ? '4px' : undefined }}
+    >
       {MP_STAGES.map((s) => {
         const list = cards.filter((c) => c.stage === s.id);
         return (
@@ -57,6 +63,7 @@ function PipelineColumns({ cards, dropStage, setDropStage, onDrop, onOpenTalent,
             color={s.color}
             label={s.label}
             count={list.length}
+            snap={isMobile}
             over={dropStage === s.id}
             onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDropStage(s.id); }}
             onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDropStage(null); }}

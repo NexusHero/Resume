@@ -10,6 +10,23 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Added
 
+- **Mobile finish: touch-grade phone ergonomics** (ADR-0054, #202). The app
+  laid out on a phone; now it _feels_ built for one. The **kanban boards** (both
+  Applications and the mandate pipeline) become horizontal snap-scrollers on a
+  phone — one column fills ~82% of the width so the next peeks past the edge as a
+  "there's more" affordance, and each column snaps as you swipe; the board is its
+  own scroll container, so no main view scrolls the body sideways at 390px. Every
+  interactive control meets the **44×44px touch minimum** on a phone (the card
+  stage dropdown and remove button, the drawer's navigation rows and theme
+  toggle, the editor's style-bar controls and tool pills, the login tabs, the
+  Undo action) — spacing, not just glyph size. **Safe-area insets**
+  (`env(safe-area-inset-*)`) keep the rail, header, content and the bottom
+  snackbar clear of the notch and home indicator in the installed PWA / Capacitor
+  shell, and the shell now sizes with `100dvh` so the collapsing mobile URL bar
+  leaves no dead strip. Locked in by a new **mobile Playwright project**
+  (`Pixel 5`, alongside the desktop project) driving the core flow — drawer nav
+  walk, open a talent, open the editor, and the Applications board scrolling with
+  a card's stage changed via its dropdown.
 - **Accessibility: keyboard, focus and screen-reader support** (#203). The whole
   app is now operable without a mouse and legible to assistive tech. A visible
   **`:focus-visible` accent ring** marks the focused control everywhere; a

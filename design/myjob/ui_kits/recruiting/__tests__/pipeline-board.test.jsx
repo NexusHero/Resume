@@ -20,6 +20,7 @@ beforeAll(async () => {
     },
   });
   await import('../data.js'); // publishes window.STAGES_ORDER / STAGE_LABELS
+  await import('../KanbanShared.jsx'); // window.KanbanColumn/KanbanCard (#199)
   await import('../PipelineBoard.jsx');
   PipelineBoard = window.PipelineBoard;
 });

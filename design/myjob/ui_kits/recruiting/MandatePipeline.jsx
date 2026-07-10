@@ -16,85 +16,54 @@ const MP_STAGES = [
   { id: 'rejected', label: 'Rejected', color: '#b91c1c' },
 ];
 
+/* One mandate candidacy card. The talent name/role/note is the body; the shared
+   KanbanCard (KanbanShared.jsx, #199) supplies the drag, the Stage select, the
+   remove button and click-to-open — the same anatomy as the Applications board. */
 function MandateCard({ card, onOpenTalent, onMove, onRemove }) {
-  const [hover, setHover] = React.useState(false);
-  const [dragging, setDragging] = React.useState(false);
   const name = card.talent ? card.talent.name : 'Unknown talent';
   const role = card.talent ? card.talent.role : '';
+  const stages = MP_STAGES.map((s) => ({ value: s.id, label: s.label }));
   return (
-    <div
-      draggable
-      onDragStart={(e) => {
-        e.dataTransfer.setData('text/plain', card.id);
-        e.dataTransfer.effectAllowed = 'move';
-        setDragging(true);
-      }}
-      onDragEnd={() => setDragging(false)}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      title="Drag to another stage"
-      style={{
-        background: 'var(--surface-card)', border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-md)', padding: '11px 12px',
-        boxShadow: hover ? 'var(--shadow-md)' : 'var(--shadow-xs)',
-        transition: 'box-shadow var(--dur-fast)',
-        cursor: 'grab', opacity: dragging ? 0.45 : 1,
-      }}
+    <window.KanbanCard
+      dragId={card.id}
+      onOpen={card.talent ? () => onOpenTalent(card.talent.id) : undefined}
+      stages={stages}
+      stageValue={card.stage}
+      onStageChange={(v) => onMove(card, v)}
+      onRemove={() => onRemove(card)}
+      removeLabel="Remove from pipeline"
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: role || card.note ? '8px' : 0 }}>
         <MP.Avatar name={name} size="xs" />
-        <button
-          onClick={() => card.talent && onOpenTalent(card.talent.id)}
-          title="Open profile"
-          style={{ flex: 1, minWidth: 0, textAlign: 'left', background: 'none', border: 'none', padding: 0, cursor: card.talent ? 'pointer' : 'default', fontFamily: 'var(--font-display)', fontSize: '13px', fontWeight: 700, color: 'var(--text-heading)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-        >
-          {name}
-        </button>
-        <button onClick={() => onRemove(card)} title="Remove from pipeline" style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '2px', lineHeight: 0 }}>
-          <MP.Icon name="x" size={13} />
-        </button>
+        <span style={{ flex: 1, minWidth: 0, fontFamily: 'var(--font-display)', fontSize: '13px', fontWeight: 700, color: 'var(--text-heading)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</span>
       </div>
-      {role && <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginBottom: '9px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{role}</div>}
-      {card.note && <div style={{ fontSize: '11.5px', color: 'var(--text-soft)', marginBottom: '9px', lineHeight: 1.4 }}>{card.note}</div>}
-      <select
-        value={card.stage}
-        onChange={(e) => onMove(card, e.target.value)}
-        style={{ width: '100%', padding: '5px 8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-strong)', background: 'var(--surface-sunk)', color: 'var(--text-soft)', fontFamily: 'var(--font-mono)', fontSize: '11px', cursor: 'pointer', outline: 'none' }}
-      >
-        {MP_STAGES.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
-      </select>
-    </div>
+      {role && <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginBottom: card.note ? '9px' : 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{role}</div>}
+      {card.note && <div style={{ fontSize: '11.5px', color: 'var(--text-soft)', lineHeight: 1.4 }}>{card.note}</div>}
+    </window.KanbanCard>
   );
 }
 
-/* The Kanban board: one column per stage, cards dropped between them. Pure
-   presentation — the orchestrator owns the cards and the drag/move handlers. */
+/* The Kanban board: one shared column per stage, cards dropped between them.
+   Pure presentation — the orchestrator owns the cards and the drag/move handlers. */
 function PipelineColumns({ cards, dropStage, setDropStage, onDrop, onOpenTalent, onMove, onRemove }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: `repeat(${MP_STAGES.length}, minmax(200px, 1fr))`, gap: '14px', alignItems: 'start', flex: 1, minHeight: 0, overflowX: 'auto' }}>
       {MP_STAGES.map((s) => {
         const list = cards.filter((c) => c.stage === s.id);
-        const over = dropStage === s.id;
         return (
-          <div
+          <window.KanbanColumn
             key={s.id}
+            color={s.color}
+            label={s.label}
+            count={list.length}
+            over={dropStage === s.id}
             onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDropStage(s.id); }}
             onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDropStage(null); }}
             onDrop={(e) => onDrop(e, s.id)}
-            style={{ display: 'flex', flexDirection: 'column', gap: '11px', minWidth: 0, borderRadius: 'var(--radius-md)', outline: over ? '2px dashed var(--accent)' : 'none', outlineOffset: '3px', background: over ? 'var(--accent-soft)' : 'transparent', transition: 'background var(--dur-fast)' }}
+            isEmpty={list.length === 0}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 2px' }}>
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: s.color }} />
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>{s.label}</span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, color: 'var(--text-soft)', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-pill)', padding: '1px 8px', marginLeft: 'auto' }}>{list.length}</span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minHeight: '52px' }}>
-              {list.map((c) => <MandateCard key={c.id} card={c} onOpenTalent={onOpenTalent} onMove={onMove} onRemove={onRemove} />)}
-              {list.length === 0 && (
-                <div style={{ border: '1.5px dashed var(--border-strong)', borderRadius: 'var(--radius-md)', padding: '14px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>{over ? 'drop here' : 'empty'}</div>
-              )}
-            </div>
-          </div>
+            {list.map((c) => <MandateCard key={c.id} card={c} onOpenTalent={onOpenTalent} onMove={onMove} onRemove={onRemove} />)}
+          </window.KanbanColumn>
         );
       })}
     </div>

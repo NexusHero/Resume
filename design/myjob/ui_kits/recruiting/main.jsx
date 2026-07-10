@@ -13,6 +13,7 @@ import './use-online.jsx'; // window.useOnline — connectivity for the offline 
 import './OfflineBanner.jsx'; // window.OfflineBanner — shown while offline (ADR-0039)
 import './DataStates.jsx';
 import './RecruitRail.jsx';
+import './KanbanShared.jsx'; // window.KanbanColumn/KanbanCard — shared by both boards (#199)
 import './PipelineBoard.jsx';
 import './Workspace.jsx';
 import './AgencyViews.jsx';

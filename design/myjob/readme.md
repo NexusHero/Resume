@@ -106,6 +106,19 @@ chrome frames; light surfaces work.
 - Semantic feedback: `--success` (green), `--warning` (amber), `--danger` (rose), `--info`
   (blue), each with a `-soft` tint.
 
+**Contrast contract (WCAG AA, guarded).** Text tokens must clear **4.5:1** on every light
+surface they land on — including the sunk grey `--surface-sunk` #f1f5f9, not just white; the
+softest text `--text-soft` is tuned to that floor (a hair darker than `--neutral-500`, which
+stays for non-text UI). Chip/badge `-strong` text on its `-soft` fill and the filled-accent
+label are held to 4.5:1 too. Non-text UI is **3:1**, but on the *interactive* state that
+conveys it: resting borders (`--border`, `--border-strong`) are deliberately subtle — the
+calm, light identity depends on it — and the 3:1 affordance is carried by the **focus ring**
+(`--accent`) and icon strokes, not the hairline (WCAG 1.4.11). The pairs are enumerated in
+`tokens/contrast-pairs.mjs`, resolved and scored by `tokens/contrast-audit.mjs`, and gated by
+`contrast.test.js` (runs in `npm run test:web` / `./test.sh`) so a token edit can't silently
+drop below AA. Adding a theme (e.g. dark mode) is one more fixture in `THEMES`, not a second
+audit.
+
 **Type.** Display = Space Grotesk (tight tracking, `--ls-tight`/`--ls-tighter` on big
 sizes); Body = Inter at 15px / 1.6; Mono = JetBrains Mono. Scale runs `--fs-2xs` 11 →
 `--fs-5xl` 38. Headings always display; body always Inter. **Mono has a job, not a costume:**

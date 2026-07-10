@@ -35,6 +35,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
   reported as missing.
 - **Recruiter-appropriate Talent Pool framing**: the subtitle now reads “The
   candidates you represent” instead of the job-seeker-flavoured “…me first”.
+- **WCAG AA contrast, now guarded**: the softest text token (`--text-soft`) was
+  a hair too light on the sunk grey surface (4.34:1 — below the 4.5:1 floor for
+  small text); it's nudged one shade darker (visually unchanged) so every
+  text-on-surface pairing clears AA on white **and** grey. A new token-contract
+  guard (`tokens/contrast-audit.mjs` + `contrast-pairs.mjs`, enforced by
+  `contrast.test.js` in `./test.sh`) resolves each used token pair to a colour
+  and fails the build if any drops below its WCAG floor — so it can't regress,
+  and a second theme (dark mode) plugs in as one fixture. Documented in the
+  design-system readme.
 - **De-overloaded the accent colour on job cards** (semantic colour roles): a
   card now carries at most **one** solid-accent element — the primary CTA (“View
   posting”). The match badge reads as an assessment (success green ≥ 80%, neutral

@@ -138,7 +138,11 @@
   --text-heading: var(--neutral-950);
   --text-body:    var(--neutral-900);
   --text-muted:   var(--neutral-600);
-  --text-soft:    var(--neutral-500);
+  /* Softest readable text. A hair darker than neutral-500 so small mono meta
+     labels clear WCAG AA (4.5:1) even on the sunk grey surface (#f1f5f9), not
+     just on white — guarded by contrast.test.js (#198). neutral-500 itself is
+     unchanged; it still drives non-text UI (status dots, progress bars). */
+  --text-soft:    #616f86;
 
   /* Surfaces */
   --surface-page:   #e2e8f0;   /* deepest app background, behind sheets */

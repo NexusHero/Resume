@@ -15,6 +15,9 @@ npm run --silent lint
 echo "▶ docs:check"
 npm run --silent docs:check
 
+echo "▶ test:web"
+npm run --silent test:web
+
 echo "▶ test"
 npm run --silent test
 

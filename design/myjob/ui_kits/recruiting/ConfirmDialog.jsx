@@ -7,19 +7,17 @@ const CD = window.MyJobDesignSystem_f3658e;
 const React = window.React;
 
 function ConfirmDialog({ title, message, confirmLabel = 'Confirm', cancelLabel = 'Cancel', danger = true, onConfirm, onCancel }) {
-  const confirmRef = React.useRef(null);
-  React.useEffect(() => {
-    if (confirmRef.current) confirmRef.current.focus();
-    const onKey = (e) => { if (e.key === 'Escape') onCancel(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onCancel]);
+  // Focus trap, Esc-to-cancel, focus-return (#203). Initial focus lands on
+  // Cancel (the first control) — the safe default for a destructive prompt.
+  const dialogRef = React.useRef(null);
+  window.useDialog(dialogRef, onCancel);
 
   const accent = danger ? 'var(--danger)' : 'var(--accent)';
   return (
     <>
       <div onClick={onCancel} style={{ position: 'fixed', inset: 0, background: 'rgba(8,11,18,0.45)', backdropFilter: 'blur(2px)', zIndex: 70, animation: 'fadeIn .2s ease' }} />
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label={title}
@@ -36,7 +34,7 @@ function ConfirmDialog({ title, message, confirmLabel = 'Confirm', cancelLabel =
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', padding: '14px 20px', background: 'var(--surface-subtle)', borderTop: '1px solid var(--border)' }}>
           <button type="button" onClick={onCancel} style={{ cursor: 'pointer', appearance: 'none', fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 500, color: 'var(--text-muted)', background: 'var(--surface-card)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', padding: '8px 15px' }}>{cancelLabel}</button>
-          <button ref={confirmRef} type="button" onClick={onConfirm} style={{ cursor: 'pointer', appearance: 'none', fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600, color: 'var(--accent-contrast)', background: accent, border: `1px solid ${accent}`, borderRadius: 'var(--radius-md)', padding: '8px 16px' }}>{confirmLabel}</button>
+          <button type="button" onClick={onConfirm} style={{ cursor: 'pointer', appearance: 'none', fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600, color: 'var(--accent-contrast)', background: accent, border: `1px solid ${accent}`, borderRadius: 'var(--radius-md)', padding: '8px 16px' }}>{confirmLabel}</button>
         </div>
       </div>
     </>

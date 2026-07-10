@@ -9,6 +9,7 @@ import '../../_ds_bundle.js'; // window.MyJobDesignSystem_f3658e (uses window.Re
 import './data.js';
 import './use-viewport.jsx'; // window.useViewport — read by the shell + views
 import './use-theme.jsx'; // window.useTheme — appearance binding for Settings + rail
+import './use-dialog.jsx'; // window.useDialog — modal focus trap / Esc / return focus (#203)
 import './use-online.jsx'; // window.useOnline — connectivity for the offline banner
 import './OfflineBanner.jsx'; // window.OfflineBanner — shown while offline (ADR-0039)
 import './undo-delete.js'; // window.UndoDelete — deferred-delete controller (#200)

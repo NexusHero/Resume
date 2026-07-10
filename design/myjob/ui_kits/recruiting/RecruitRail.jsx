@@ -171,6 +171,10 @@ function RecruitRail({ active, onNav, me, talentCount, search, onSearch, title, 
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--app-bg)' }}>
+      {/* Skip link: the first Tab stop jumps keyboard users straight past the
+          rail to the page content (#203). Visually hidden until focused (see the
+          .skip-link rule in index.html). */}
+      <a href="#main-content" className="skip-link">Skip to content</a>
       {isMobile && drawerOpen && (
         <div onClick={() => setDrawerOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(8,11,18,0.5)', backdropFilter: 'blur(2px)', zIndex: 49 }} />
       )}
@@ -183,7 +187,7 @@ function RecruitRail({ active, onNav, me, talentCount, search, onSearch, title, 
           </div>
         </div>
 
-        <nav style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', flex: 1, overflowY: 'auto' }}>
+        <nav aria-label="Primary" style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', flex: 1, overflowY: 'auto' }}>
           {NAV_SECTIONS.map((s) => <NavSection key={s.label} section={s} active={active} onNav={handleNav} badges={badges} />)}
         </nav>
 
@@ -236,7 +240,7 @@ function RecruitRail({ active, onNav, me, talentCount, search, onSearch, title, 
           </div>
         </header>
 
-        <main style={{ flex: 1, overflowY: 'auto', padding: 'var(--pad-app)' }}>
+        <main id="main-content" tabIndex={-1} style={{ flex: 1, overflowY: 'auto', padding: 'var(--pad-app)', outline: 'none' }}>
           {children}
         </main>
       </div>

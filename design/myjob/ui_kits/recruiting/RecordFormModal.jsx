@@ -81,6 +81,10 @@ function RecordFormModal({ kind, record, prefill, onClose, onSubmit, onDelete })
   });
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState('');
+  // Focus trap, Esc-to-close and focus-return (#203).
+  const dialogRef = React.useRef(null);
+  const closeIfIdle = React.useCallback(() => { if (!busy) onClose(); }, [busy, onClose]);
+  window.useDialog(dialogRef, closeIfIdle);
 
   const set = (name, v) => setValues((s) => ({ ...s, [name]: v }));
   const missing = form.fields.filter((f) => f.required && !String(values[f.name]).trim());
@@ -127,7 +131,7 @@ function RecordFormModal({ kind, record, prefill, onClose, onSubmit, onDelete })
   return (
     <>
       <div onClick={busy ? undefined : onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(8,11,18,0.45)', backdropFilter: 'blur(2px)', zIndex: 50, animation: 'fadeIn .2s ease' }} />
-      <form onSubmit={submit} style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 51, width: 'min(640px, 94vw)', maxHeight: '90vh', display: 'flex', flexDirection: 'column', background: 'var(--surface-card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-lg)', overflow: 'hidden', animation: 'popIn .24s cubic-bezier(0.16,1,0.3,1)' }}>
+      <form ref={dialogRef} role="dialog" aria-modal="true" aria-label={editing ? form.editTitle : form.title} onSubmit={submit} style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 51, width: 'min(640px, 94vw)', maxHeight: '90vh', display: 'flex', flexDirection: 'column', background: 'var(--surface-card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-lg)', overflow: 'hidden', animation: 'popIn .24s cubic-bezier(0.16,1,0.3,1)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '13px', padding: '18px 22px', borderBottom: '1px solid var(--border)' }}>
           <span style={{ width: '38px', height: '38px', borderRadius: 'var(--radius-md)', background: 'var(--accent)', color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><RF.Icon name={form.icon} size={18} /></span>
           <div style={{ flex: 1 }}>

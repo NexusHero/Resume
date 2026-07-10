@@ -11,6 +11,7 @@ let RecordFormModal;
 
 beforeAll(async () => {
   await import('../use-viewport.jsx');
+  await import('../use-dialog.jsx'); // window.useDialog — modal focus trap (#203)
   await import('../DataStates.jsx'); // window.LoadingState, shown while the profile loads
   // The editor reads its collaborators off window at module scope, so import the
   // pieces in the same order main.jsx does before the editor itself.

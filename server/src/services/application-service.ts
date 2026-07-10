@@ -156,6 +156,19 @@ export class ApplicationService {
     return next;
   }
 
+  /** Remove an owned application (e.g. a mis-filed submission). 404s if unknown. */
+  async delete(ownerId: string, id: string): Promise<void> {
+    const current = await this.repo.findById(ownerId, id);
+    if (!current) throw new NotFoundError(`Application ${id} not found`);
+
+    await this.repo.delete(ownerId, id);
+    await this.audit.append({ ts: this.clock.isoNow(), action: 'delete', id, by: 'api' });
+
+    const hash = await this.versioner.commit(`chore(applications): remove ${current.company}`);
+    if (hash)
+      await this.audit.append({ ts: this.clock.isoNow(), action: 'commit', id, commit: hash });
+  }
+
   private async persist(
     ownerId: string,
     fields: Pick<

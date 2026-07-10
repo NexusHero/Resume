@@ -42,7 +42,7 @@ export interface Application {
 /** An append-only audit trail entry. */
 export interface AuditEvent {
   ts: string; // ISO 8601
-  action: 'create' | 'update' | 'commit';
+  action: 'create' | 'update' | 'delete' | 'commit';
   id: string;
   by?: string;
   data?: unknown;

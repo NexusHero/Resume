@@ -48,6 +48,13 @@ describe('ats-ai', () => {
     expect(prompt).toContain('We need a C++ and gRPC expert');
   });
 
+  it('AtsPrompt_IncludesSkillsListedOnlyUnderARole', () => {
+    // "gRPC" is a tag on an experience entry, not in the top-level skill groups —
+    // it must still reach the analyst so it is not reported as a missing keyword.
+    const { prompt } = atsPrompt(documents, 'We need a C++ and gRPC expert');
+    expect(prompt).toContain('gRPC');
+  });
+
   it('FallbackAts_ScoresKeywordOverlap', () => {
     const res = fallbackAts(documents, 'Looking for strong C++ and Rust skills.');
     expect(res.score).toBeGreaterThan(0);

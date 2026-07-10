@@ -127,6 +127,28 @@ describe('REST API /api/v1', () => {
     expect(res.body).toMatchObject({ status: 404, title: 'NotFoundError' });
   });
 
+  it('Applications_Delete_RemovesAndReturns204', async () => {
+    const agent = await authed(app);
+    const created = await agent.post('/api/v1/applications').send({ company: 'Aurora' });
+    const id = created.body.application.id;
+    const del = await agent.delete(`/api/v1/applications/${id}`);
+    expect(del.status).toBe(204);
+    const list = await agent.get('/api/v1/applications');
+    expect(list.body.find((a: { id: string }) => a.id === id)).toBeUndefined();
+  });
+
+  it('Applications_DeleteUnknown_Returns404Problem', async () => {
+    const agent = await authed(app);
+    const res = await agent.delete('/api/v1/applications/nope');
+    expect(res.status).toBe(404);
+    expect(res.body).toMatchObject({ status: 404, title: 'NotFoundError' });
+  });
+
+  it('Applications_DeleteUnauthenticated_Returns401', async () => {
+    const res = await request(app).delete('/api/v1/applications/whatever');
+    expect(res.status).toBe(401);
+  });
+
   it('Build_Post_Returns201WithPdf', async () => {
     const agent = await authed(app);
     const res = await agent

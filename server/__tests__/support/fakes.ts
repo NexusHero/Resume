@@ -74,6 +74,11 @@ export class InMemoryApplicationRepository implements ApplicationRepository {
     if (i < 0) this.apps.push(application);
     else this.apps[i] = application;
   }
+  async delete(ownerId: string, id: string): Promise<boolean> {
+    const before = this.apps.length;
+    this.apps = this.apps.filter((a) => !(a.id === id && a.ownerId === ownerId));
+    return this.apps.length < before;
+  }
 }
 
 export class InMemoryAuditLog implements AuditLog {

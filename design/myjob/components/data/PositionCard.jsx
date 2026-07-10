@@ -184,7 +184,7 @@ export function PositionCard({
               onClick={(e) => { e.stopPropagation(); onView(); }}
               style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', fontFamily: 'var(--font-body)', fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-medium)', color: 'var(--text-muted)', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', padding: '8px 13px', cursor: 'pointer' }}
             >
-              <Icon name="fileText" size={15} />Stellenbeschreibung
+              <Icon name="fileText" size={15} />Job description
             </button>
           )}
           {onApply && (

@@ -26,7 +26,19 @@ export function atsPrompt(
   documents: TalentDocuments,
   jobText: string,
 ): { system: string; prompt: string } {
-  const skills = documents.resume.skillGroups.flatMap((g) => g.items);
+  // Gather every skill the CV states — the top-level skill groups AND the tags
+  // listed under each role — so a skill mentioned only within an experience entry
+  // is not wrongly reported as missing (matching the deterministic fallback).
+  const skills = [
+    ...new Set(
+      [
+        ...documents.resume.skillGroups.flatMap((g) => g.items),
+        ...documents.resume.experience.flatMap((e) => e.skills),
+      ]
+        .map((s) => s.trim())
+        .filter(Boolean),
+    ),
+  ];
   const roles = documents.resume.experience.map((e) => e.role).filter(Boolean);
   return {
     system:

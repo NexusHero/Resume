@@ -4,7 +4,7 @@ const A = window.MyJobDesignSystem_f3658e;
 const TITLES = {
   uebersicht: ['Workspace', 'What needs your attention today'],
   mandate: ['Mandates', 'Search mandates per client with fee and deadline'],
-  pool: ['Talent Pool', 'Who you represent — me first'],
+  pool: ['Talent Pool', 'The candidates you represent'],
   matching: ['Matching', 'Find roles by skill-overlap — apply on a candidate’s behalf'],
   bewerbungen: ['Applications', 'Pipeline of all submissions and your own dossiers'],
   platzierungen: ['Placements', 'Booked placements and fees'],
@@ -26,8 +26,11 @@ function useResource(fetcher) {
   const [error, setError] = React.useState(false);
   const alive = React.useRef(true);
   React.useEffect(() => () => { alive.current = false; }, []);
-  const reload = React.useCallback(() => {
-    setLoading(true);
+  const reload = React.useCallback((opts) => {
+    // Background reload (e.g. on navigation) keeps the current data on screen and
+    // refetches silently, so revisiting a view doesn't flash a spinner; a normal
+    // reload shows the loading state.
+    if (!opts || !opts.background) setLoading(true);
     setError(false);
     return fetcher()
       .then((list) => {
@@ -51,11 +54,15 @@ function useResource(fetcher) {
  * or applications yet, so those are empty; the views render honest empty states.
  */
 function makeMeProfile(user) {
-  // "suhay.sevinc@…" → "Suhay Sevinc"; digits/underscores don't read as a name.
-  const local = String((user && user.email) || '').split('@')[0];
+  // "suhay.sevinc@…" → "Suhay Sevinc". Drop any plus-address subaddress first
+  // ("recruiter+test@…" → "Recruiter") and keep letters only, matching the
+  // server's derivation so the greeting and the pinned profile never disagree.
+  const local = String((user && user.email) || '')
+    .split('@')[0]
+    .split('+')[0];
   const words = local
     .split(/[._-]+/)
-    .map((w) => w.replace(/\d+/g, ''))
+    .map((w) => w.replace(/[^\p{L}]/gu, ''))
     .filter(Boolean)
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1));
   const name = words.join(' ') || 'Me';
@@ -167,6 +174,33 @@ function Workspace({ user, onLogout }) {
       applicationsRes.reload();
       return app;
     });
+
+  // Move an application to another pipeline stage (drag or the card's dropdown),
+  // then refresh so the board reflects the persisted status.
+  const moveApplication = (id, stage) =>
+    window.RecruitApi.updateApplicationStage(id, stage)
+      .then(() => applicationsRes.reload())
+      .catch(() => applicationsRes.reload());
+
+  // Remove a mis-filed application, with a confirm since it is not undoable.
+  const deleteApplication = (id, company) => {
+    if (!window.confirm(`Remove the application${company ? ` at ${company}` : ''}? This cannot be undone.`)) return;
+    window.RecruitApi.deleteApplication(id)
+      .then(() => applicationsRes.reload())
+      .catch(() => applicationsRes.reload());
+  };
+
+  // Navigate, pulling fresh data for the destination so a teammate's changes on
+  // the shared team desk (ADR-0010) show up without a manual reload. Background =
+  // the current data stays on screen while it refetches (no spinner flash).
+  const goNav = (n) => {
+    const res = n === 'pool' ? talentsRes : n === 'mandate' ? mandatesRes : n === 'bewerbungen' ? applicationsRes : null;
+    // Only refresh a view that already loaded cleanly; a failed load keeps its
+    // error state + Retry (don't silently re-fetch over it), and an in-flight
+    // load is left alone (no stacked requests).
+    if (res && !res.error && !res.loading) res.reload({ background: true });
+    setNav(n);
+  };
 
   // Bulk CV import: read each PDF to base64, import as talents, report the
   // outcome and refresh the pool.
@@ -289,7 +323,7 @@ function Workspace({ user, onLogout }) {
   const pipelineMandate = openPipeline && mandates.find((m) => m.id === openPipeline);
   if (pipelineMandate) {
     return (
-      <window.RecruitRail active="mandate" onNav={(n) => { setOpenPipeline(null); mandatesRes.reload(); setNav(n); }} me={me} talentCount={talents.length} search={search} onSearch={setSearch} title={`${pipelineMandate.role} · Pipeline`} subtitle={pipelineMandate.client} badges={badges} onLogout={onLogout}>
+      <window.RecruitRail active="mandate" onNav={(n) => { setOpenPipeline(null); goNav(n); }} me={me} talentCount={talents.length} search={search} onSearch={setSearch} title={`${pipelineMandate.role} · Pipeline`} subtitle={pipelineMandate.client} badges={badges} onLogout={onLogout}>
         <window.MandatePipeline
           mandate={pipelineMandate}
           onBack={() => { setOpenPipeline(null); mandatesRes.reload(); }}
@@ -302,7 +336,7 @@ function Workspace({ user, onLogout }) {
   // editor takes over the whole canvas
   if (editTalent) {
     return (
-      <window.RecruitRail active="pool" onNav={(n) => { setEditing(null); setOpenTalent(null); setNav(n); }} me={me} talentCount={talents.length} search={search} onSearch={setSearch} title={editTalent.me ? 'My documents' : editTalent.name} subtitle="Edit resume & cover letter" badges={badges} onLogout={onLogout}>
+      <window.RecruitRail active="pool" onNav={(n) => { setEditing(null); setOpenTalent(null); goNav(n); }} me={me} talentCount={talents.length} search={search} onSearch={setSearch} title={editTalent.me ? 'My documents' : editTalent.name} subtitle="Edit resume & cover letter" badges={badges} onLogout={onLogout}>
         <window.Editor talent={editTalent} onClose={() => setEditing(null)} onCreateMappe={() => { setMappeFor(editTalent); }} />
         {mappeFor && <window.MappeModal talent={mappeFor} onClose={() => setMappeFor(null)} />}
       </window.RecruitRail>
@@ -319,13 +353,13 @@ function Workspace({ user, onLogout }) {
     // Guard against an unknown nav key — destructuring `undefined` here would
     // white-screen the whole workspace.
     [title, subtitle] = TITLES[nav] || TITLES.uebersicht;
-    if (nav === 'uebersicht') body = <window.Dashboard me={me} apps={apps} vkpis={vkpis} clients={clients} mandates={mandates} onOpenTalent={goTalent} onOpenPipeline={() => setNav('mandate')} onOpenMandate={() => setNav('mandate')} />;
+    if (nav === 'uebersicht') body = <window.Dashboard me={me} apps={apps} vkpis={vkpis} clients={clients} mandates={mandates} talentCount={talents.filter((t) => !t.me).length} onNav={setNav} onOpenTalent={goTalent} onOpenPipeline={() => setNav('mandate')} onOpenMandate={() => setNav('mandate')} />;
     else if (nav === 'mandate') body = withState(mandatesRes, <window.MandateView mandates={shownMandates} onEdit={editMandate} onOpenPipeline={goPipeline} />);
     else if (nav === 'pool') body = withState(talentsRes, <window.TalentGrid talents={shownTalents} apps={apps} onOpen={goTalent} onAdd={addTalent} onImport={importCvs} importing={importing} />);
     else if (nav === 'matching') body = <window.Matching talents={talents} mandates={mandates} onCreateMandate={mandateFromJob} onApply={applyFromMatching} />;
     else if (nav === 'bewerbungen') body = withState(applicationsRes, (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '100%' }}>
-        <window.PipelineBoard apps={apps} talents={talents} onOpen={goTalent} />
+        <window.PipelineBoard apps={apps} talents={talents} onOpen={goTalent} onMove={moveApplication} onDelete={deleteApplication} />
       </div>
     ));
     else if (nav === 'platzierungen') body = withState(placementsRes, <window.PlatzierungenView placements={shownPlacements} kpis={vkpis} onEdit={editPlacement} />);
@@ -344,7 +378,7 @@ function Workspace({ user, onLogout }) {
     : null;
 
   return (
-    <window.RecruitRail active={talent ? 'pool' : nav} onNav={(n) => { setOpenTalent(null); setNav(n); }} me={me} talentCount={talents.length} search={search} onSearch={setSearch} title={title} subtitle={subtitle} badges={badges} actions={actions} onLogout={onLogout}>
+    <window.RecruitRail active={talent ? 'pool' : nav} onNav={(n) => { setOpenTalent(null); goNav(n); }} me={me} talentCount={talents.length} search={search} onSearch={setSearch} title={title} subtitle={subtitle} badges={badges} actions={actions} onLogout={onLogout}>
       {body}
       {mappeFor && <window.MappeModal talent={mappeFor} onClose={() => setMappeFor(null)} />}
       {formKind && (

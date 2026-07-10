@@ -187,6 +187,50 @@ describe('ApplicationService.update', () => {
   });
 });
 
+describe('ApplicationService.delete', () => {
+  it('Delete_OwnedApplication_RemovesAuditsAndVersions', async () => {
+    const { service, repo, versioner, audit } = makeService();
+    const created = await service.create(
+      OWNER,
+      createApplicationSchema.parse({ company: 'Aurora' }),
+    );
+    versioner.calls.length = 0;
+    audit.events.length = 0;
+
+    await service.delete(OWNER, created.id);
+
+    expect(await repo.list(OWNER)).toHaveLength(0);
+    expect(audit.events.map((e) => e.action)).toEqual(['delete', 'commit']);
+    expect(versioner.calls).toHaveLength(1);
+  });
+
+  it('Delete_UnknownId_ThrowsNotFound', async () => {
+    const { service } = makeService();
+    await expect(service.delete(OWNER, 'nope')).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it('Delete_ForeignOwnersApplication_ThrowsAndKeepsIt', async () => {
+    const { service, repo } = makeService();
+    const created = await service.create(
+      OWNER,
+      createApplicationSchema.parse({ company: 'Aurora' }),
+    );
+    await expect(service.delete('other-team', created.id)).rejects.toBeInstanceOf(NotFoundError);
+    expect(await repo.list(OWNER)).toHaveLength(1); // untouched
+  });
+
+  it('Delete_VersionerReturnsNull_OmitsCommitAudit', async () => {
+    const { service, audit } = makeService(new FakeVersioner(null));
+    const created = await service.create(
+      OWNER,
+      createApplicationSchema.parse({ company: 'Aurora' }),
+    );
+    audit.events.length = 0;
+    await service.delete(OWNER, created.id);
+    expect(audit.events.map((e) => e.action)).toEqual(['delete']);
+  });
+});
+
 describe('ApplicationService reads', () => {
   it('ListAndHistory_DelegateToPorts', async () => {
     const { service } = makeService();

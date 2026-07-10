@@ -951,7 +951,7 @@
           style: { display: "inline-flex", alignItems: "center", gap: "7px", fontFamily: "var(--font-body)", fontSize: "var(--fs-sm)", fontWeight: "var(--fw-medium)", color: "var(--text-muted)", background: "transparent", border: "1px solid var(--border-strong)", borderRadius: "var(--radius-md)", padding: "8px 13px", cursor: "pointer" }
         },
         /* @__PURE__ */ react_shim_default.createElement(Icon, { name: "fileText", size: 15 }),
-        "Stellenbeschreibung"
+        "Job description"
       ), onApply && /* @__PURE__ */ react_shim_default.createElement(
         "button",
         {

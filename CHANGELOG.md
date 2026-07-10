@@ -35,6 +35,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
   reported as missing.
 - **Recruiter-appropriate Talent Pool framing**: the subtitle now reads “The
   candidates you represent” instead of the job-seeker-flavoured “…me first”.
+- **De-overloaded the accent colour on job cards** (semantic colour roles): a
+  card now carries at most **one** solid-accent element — the primary CTA (“View
+  posting”). The match badge reads as an assessment (success green ≥ 80%, neutral
+  below), met-skill chips are success-soft “good news”, and the salary/meta pills
+  are neutral — so the one-accent hierarchy that defines the rest of the product
+  holds in Matching too. Also drops two German leaks on the card (“Created
+  manually”, “Apply candidate”) and the stray accent salary pill on the Workspace
+  job card.
 
 - **The CV/cover-letter editor is now truly WYSIWYG** (ADR-0052): the live
   preview and the exported PDF are rendered from a single source

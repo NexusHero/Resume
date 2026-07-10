@@ -70,7 +70,9 @@ function SkillTag({ name, met }) {
         padding: '3px 9px', borderRadius: 'var(--radius-pill)', whiteSpace: 'nowrap',
         border: '1px solid',
         ...(has
-          ? { background: 'var(--accent-soft)', borderColor: 'var(--accent-border)', color: 'var(--accent-strong)' }
+          // a met skill is "good news" — success-soft, not accent (the accent is
+          // reserved for the card's single primary CTA)
+          ? { background: 'var(--success-soft)', borderColor: 'var(--success-border)', color: 'var(--success-strong)' }
           : known
           ? { background: 'transparent', borderColor: 'var(--border-strong)', color: 'var(--text-soft)' }
           : { background: 'var(--surface-sunk)', borderColor: 'var(--border)', color: 'var(--text-muted)' }),
@@ -151,12 +153,12 @@ export function PositionCard({
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '7px' }}>
         {origin === 'manual' && (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-2xs)', fontWeight: 'var(--fw-semibold)', color: 'var(--ink-700)', background: 'var(--surface-sunk)', border: '1px dashed var(--text-soft)', borderRadius: 'var(--radius-pill)', padding: '3px 9px' }}>
-            <Icon name="edit" size={12} />Manuell erstellt
+            <Icon name="edit" size={12} />Created manually
           </span>
         )}
         {source && <MetaPill icon="search">{source}</MetaPill>}
         {pensum && <MetaPill icon="briefcase">{pensum}</MetaPill>}
-        {salary && <MetaPill icon="tag" tone="accent">{salary}</MetaPill>}
+        {salary && <MetaPill icon="tag">{salary}</MetaPill>}
         {posted && <MetaPill icon="clock">{posted}</MetaPill>}
       </div>
 
@@ -192,7 +194,7 @@ export function PositionCard({
               onClick={(e) => { e.stopPropagation(); onApply(); }}
               style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '7px', fontFamily: 'var(--font-body)', fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--accent-contrast)', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 'var(--radius-md)', padding: '8px 15px', cursor: 'pointer' }}
             >
-              {applyLabel || 'Bewerber bewerben'}<Icon name="arrowRight" size={15} />
+              {applyLabel || 'Apply candidate'}<Icon name="arrowRight" size={15} />
             </button>
           )}
         </div>

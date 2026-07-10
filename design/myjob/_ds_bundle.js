@@ -584,6 +584,8 @@
   }) {
     const pct = Math.max(0, Math.min(100, Math.round(value)));
     if (variant === "chip") {
+      const strong = pct >= 80;
+      const tone = strong ? { color: "var(--success-strong)", background: "var(--success-soft)", border: "var(--success-border)", dot: "var(--success)" } : { color: "var(--text-body)", background: "var(--surface-sunk)", border: "var(--border)", dot: "var(--text-soft)" };
       return /* @__PURE__ */ react_shim_default.createElement(
         "span",
         {
@@ -594,9 +596,9 @@
             fontFamily: "var(--font-body)",
             fontSize: "12px",
             fontWeight: "var(--fw-semibold)",
-            color: "var(--match-strong)",
-            background: "var(--match-soft)",
-            border: "1px solid var(--accent-border)",
+            color: tone.color,
+            background: tone.background,
+            border: `1px solid ${tone.border}`,
             borderRadius: "var(--radius-pill)",
             padding: "3px 10px 3px 8px",
             whiteSpace: "nowrap",
@@ -604,7 +606,7 @@
           },
           ...rest
         },
-        /* @__PURE__ */ react_shim_default.createElement("span", { style: { width: "7px", height: "7px", borderRadius: "50%", background: "var(--match)", flexShrink: 0 } }),
+        /* @__PURE__ */ react_shim_default.createElement("span", { style: { width: "7px", height: "7px", borderRadius: "50%", background: tone.dot, flexShrink: 0 } }),
         /* @__PURE__ */ react_shim_default.createElement("span", { style: { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" } }, pct, "%"),
         label && /* @__PURE__ */ react_shim_default.createElement("span", { style: { color: "var(--text-muted)", fontWeight: "var(--fw-medium)" } }, label)
       );
@@ -886,7 +888,7 @@
           borderRadius: "var(--radius-pill)",
           whiteSpace: "nowrap",
           border: "1px solid",
-          ...has ? { background: "var(--accent-soft)", borderColor: "var(--accent-border)", color: "var(--accent-strong)" } : known ? { background: "transparent", borderColor: "var(--border-strong)", color: "var(--text-soft)" } : { background: "var(--surface-sunk)", borderColor: "var(--border)", color: "var(--text-muted)" }
+          ...has ? { background: "var(--success-soft)", borderColor: "var(--success-border)", color: "var(--success-strong)" } : known ? { background: "transparent", borderColor: "var(--border-strong)", color: "var(--text-soft)" } : { background: "var(--surface-sunk)", borderColor: "var(--border)", color: "var(--text-muted)" }
         }
       },
       known && /* @__PURE__ */ react_shim_default.createElement(Icon, { name: has ? "check" : "x", size: 11 }),
@@ -939,7 +941,7 @@
         ...rest
       },
       /* @__PURE__ */ react_shim_default.createElement("div", { style: { display: "flex", alignItems: "flex-start", gap: "13px" } }, /* @__PURE__ */ react_shim_default.createElement(EntityTile, { type: "company", name: company, src: logo, size: "lg" }), /* @__PURE__ */ react_shim_default.createElement("div", { style: { minWidth: 0, flex: 1 } }, /* @__PURE__ */ react_shim_default.createElement("div", { style: { fontFamily: "var(--font-display)", fontSize: "var(--fs-lg)", fontWeight: "var(--fw-semibold)", color: "var(--text-heading)", letterSpacing: "var(--ls-tight)", lineHeight: 1.25 } }, title), /* @__PURE__ */ react_shim_default.createElement("div", { style: { display: "flex", alignItems: "center", gap: "7px", marginTop: "3px", minWidth: 0 } }, /* @__PURE__ */ react_shim_default.createElement("span", { style: { fontSize: "var(--fs-sm)", color: "var(--text-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } }, company, location ? ` \xB7 ${location}` : ""), country && /* @__PURE__ */ react_shim_default.createElement(Flag, { country }))), matched ? /* @__PURE__ */ react_shim_default.createElement(MatchIndicator, { value: match, variant: "chip" }) : status ? /* @__PURE__ */ react_shim_default.createElement(StatusBadge, { status, size: "sm" }) : null),
-      /* @__PURE__ */ react_shim_default.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: "7px" } }, origin === "manual" && /* @__PURE__ */ react_shim_default.createElement("span", { style: { display: "inline-flex", alignItems: "center", gap: "6px", fontFamily: "var(--font-mono)", fontSize: "var(--fs-2xs)", fontWeight: "var(--fw-semibold)", color: "var(--ink-700)", background: "var(--surface-sunk)", border: "1px dashed var(--text-soft)", borderRadius: "var(--radius-pill)", padding: "3px 9px" } }, /* @__PURE__ */ react_shim_default.createElement(Icon, { name: "edit", size: 12 }), "Manuell erstellt"), source && /* @__PURE__ */ react_shim_default.createElement(MetaPill, { icon: "search" }, source), pensum && /* @__PURE__ */ react_shim_default.createElement(MetaPill, { icon: "briefcase" }, pensum), salary && /* @__PURE__ */ react_shim_default.createElement(MetaPill, { icon: "tag", tone: "accent" }, salary), posted && /* @__PURE__ */ react_shim_default.createElement(MetaPill, { icon: "clock" }, posted)),
+      /* @__PURE__ */ react_shim_default.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: "7px" } }, origin === "manual" && /* @__PURE__ */ react_shim_default.createElement("span", { style: { display: "inline-flex", alignItems: "center", gap: "6px", fontFamily: "var(--font-mono)", fontSize: "var(--fs-2xs)", fontWeight: "var(--fw-semibold)", color: "var(--ink-700)", background: "var(--surface-sunk)", border: "1px dashed var(--text-soft)", borderRadius: "var(--radius-pill)", padding: "3px 9px" } }, /* @__PURE__ */ react_shim_default.createElement(Icon, { name: "edit", size: 12 }), "Created manually"), source && /* @__PURE__ */ react_shim_default.createElement(MetaPill, { icon: "search" }, source), pensum && /* @__PURE__ */ react_shim_default.createElement(MetaPill, { icon: "briefcase" }, pensum), salary && /* @__PURE__ */ react_shim_default.createElement(MetaPill, { icon: "tag" }, salary), posted && /* @__PURE__ */ react_shim_default.createElement(MetaPill, { icon: "clock" }, posted)),
       skills.length > 0 && /* @__PURE__ */ react_shim_default.createElement("div", null, matched && /* @__PURE__ */ react_shim_default.createElement("div", { style: { fontFamily: "var(--font-mono)", fontSize: "var(--fs-3xs)", letterSpacing: "var(--ls-wide)", textTransform: "uppercase", color: "var(--text-soft)", marginBottom: "8px" } }, "Skill match"), /* @__PURE__ */ react_shim_default.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: "6px" } }, skills.map((s, i) => /* @__PURE__ */ react_shim_default.createElement(SkillTag, { key: i, name: typeof s === "string" ? s : s.name, met: typeof s === "string" ? void 0 : s.met })))),
       (onView || onApply) && /* @__PURE__ */ react_shim_default.createElement("div", { style: { display: "flex", alignItems: "center", gap: "10px", marginTop: "2px", paddingTop: "14px", borderTop: "1px solid var(--border)" } }, onView && /* @__PURE__ */ react_shim_default.createElement(
         "button",
@@ -961,7 +963,7 @@
           },
           style: { marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: "7px", fontFamily: "var(--font-body)", fontSize: "var(--fs-sm)", fontWeight: "var(--fw-semibold)", color: "var(--accent-contrast)", background: "var(--accent)", border: "1px solid var(--accent)", borderRadius: "var(--radius-md)", padding: "8px 15px", cursor: "pointer" }
         },
-        applyLabel || "Bewerber bewerben",
+        applyLabel || "Apply candidate",
         /* @__PURE__ */ react_shim_default.createElement(Icon, { name: "arrowRight", size: 15 })
       ))
     );

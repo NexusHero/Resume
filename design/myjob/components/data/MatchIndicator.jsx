@@ -30,6 +30,13 @@ export function MatchIndicator({
   const pct = Math.max(0, Math.min(100, Math.round(value)));
 
   if (variant === 'chip') {
+    // The chip is an ASSESSMENT, not an action, so it must not wear the accent
+    // (that role belongs to the card's one primary CTA). A strong fit reads as
+    // "good news" in success green; anything below is neutral meta.
+    const strong = pct >= 80;
+    const tone = strong
+      ? { color: 'var(--success-strong)', background: 'var(--success-soft)', border: 'var(--success-border)', dot: 'var(--success)' }
+      : { color: 'var(--text-body)', background: 'var(--surface-sunk)', border: 'var(--border)', dot: 'var(--text-soft)' };
     return (
       <span
         style={{
@@ -39,9 +46,9 @@ export function MatchIndicator({
           fontFamily: 'var(--font-body)',
           fontSize: '12px',
           fontWeight: 'var(--fw-semibold)',
-          color: 'var(--match-strong)',
-          background: 'var(--match-soft)',
-          border: '1px solid var(--accent-border)',
+          color: tone.color,
+          background: tone.background,
+          border: `1px solid ${tone.border}`,
           borderRadius: 'var(--radius-pill)',
           padding: '3px 10px 3px 8px',
           whiteSpace: 'nowrap',
@@ -49,7 +56,7 @@ export function MatchIndicator({
         }}
         {...rest}
       >
-        <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--match)', flexShrink: 0 }} />
+        <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: tone.dot, flexShrink: 0 }} />
         <span style={{ fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums' }}>{pct}%</span>
         {label && <span style={{ color: 'var(--text-muted)', fontWeight: 'var(--fw-medium)' }}>{label}</span>}
       </span>

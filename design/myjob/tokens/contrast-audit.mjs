@@ -7,18 +7,24 @@
  * #196) is just another override map layered on the base — see auditPairs().
  */
 
-/** Parse `--name: value;` declarations from every `:root { … }` block. */
-export function parseTokens(cssText) {
+/** Parse `--name: value;` declarations from CSS blocks whose selector matches
+ *  `selectorRe` (default: every `:root { … }` block). */
+export function parseTokens(cssText, selectorRe = /:root\s*\{([^}]*)\}/gs) {
   const map = new Map();
-  const rootBlocks = cssText.match(/:root\s*\{([^}]*)\}/gs) || [];
-  for (const block of rootBlocks) {
-    const body = block.replace(/^:root\s*\{/, '').replace(/\}$/, '');
+  const blocks = cssText.match(selectorRe) || [];
+  for (const block of blocks) {
+    const body = block.replace(/^[^{]*\{/, '').replace(/\}$/, '');
     for (const decl of body.split(';')) {
       const m = decl.match(/(--[\w-]+)\s*:\s*(.+)\s*$/s);
       if (m) map.set(m[1].trim(), m[2].trim());
     }
   }
   return map;
+}
+
+/** Parse the `[data-mode="dark"] { … }` override block from modes.css. */
+export function parseModeTokens(cssText) {
+  return parseTokens(cssText, /\[data-mode="dark"\]\s*\{([^}]*)\}/gs);
 }
 
 /** Resolve a token (or raw value) to a concrete colour string, following

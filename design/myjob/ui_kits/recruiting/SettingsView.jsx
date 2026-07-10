@@ -761,6 +761,73 @@ function ProfileCard({ user }) {
   );
 }
 
+/* Small inline appearance glyphs — the shared Icon set has no sun/moon/monitor,
+   and these live only here + the rail toggle, so they don't warrant a DS icon. */
+function AppearanceGlyph({ name, size = 15 }) {
+  const common = {
+    width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor',
+    strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true,
+    style: { display: 'block', flexShrink: 0 },
+  };
+  if (name === 'light')
+    return React.createElement('svg', common,
+      React.createElement('circle', { cx: 12, cy: 12, r: 4 }),
+      React.createElement('path', { d: 'M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4' }));
+  if (name === 'dark')
+    return React.createElement('svg', common,
+      React.createElement('path', { d: 'M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z' }));
+  return React.createElement('svg', common, // system / monitor
+    React.createElement('rect', { x: 3, y: 4, width: 18, height: 13, rx: 2 }),
+    React.createElement('path', { d: 'M8 21h8M12 17v4' }));
+}
+
+/* Appearance — light / dark / system, persisted (#196). The ink nav rail stays
+   dark in both themes (brand anchor), so only the working canvas changes. */
+function AppearanceCard() {
+  const useThemeHook = window.useTheme || (() => ['dark', () => {}]);
+  const [mode] = useThemeHook();
+  const t = window.myJobTheme;
+  const choice = t ? t.storedChoice() : null; // null → following the system
+  const active = choice || 'system';
+  const pick = (key) => {
+    if (!t) return;
+    if (key === 'system') t.useSystem();
+    else t.setMode(key);
+  };
+  const options = [
+    ['light', 'Light'],
+    ['dark', 'Dark'],
+    ['system', 'System'],
+  ];
+  return (
+    <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '22px 24px' }}>
+      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>Appearance</h2>
+      <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>
+        Choose how myJob looks. Defaults to your system setting; the ink navigation rail stays dark either way.
+      </div>
+      <div role="group" aria-label="Appearance" style={{ display: 'inline-flex', gap: '4px', marginTop: '14px', padding: '4px', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
+        {options.map(([key, label]) => {
+          const on = active === key;
+          return (
+            <button
+              key={key}
+              type="button"
+              aria-pressed={on}
+              onClick={() => pick(key)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', cursor: 'pointer', appearance: 'none', fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: on ? 600 : 500, padding: '7px 14px', borderRadius: 'var(--radius-sm)', border: `1px solid ${on ? 'var(--accent-border)' : 'transparent'}`, background: on ? 'var(--accent-soft)' : 'transparent', color: on ? 'var(--accent-strong)' : 'var(--text-muted)' }}
+            >
+              <AppearanceGlyph name={key} /> {label}
+            </button>
+          );
+        })}
+      </div>
+      <div style={{ marginTop: '10px', fontSize: '11.5px', color: 'var(--text-soft)' }}>
+        {choice ? `Using ${mode} — your choice is saved for this browser.` : `Following your system (${mode}).`}
+      </div>
+    </div>
+  );
+}
+
 function SettingsView({ user }) {
   const [settings, setSettings] = React.useState(null); // { current, providers }
   const [keys, setKeys] = React.useState({});
@@ -806,6 +873,7 @@ function SettingsView({ user }) {
     <div style={{ maxWidth: '780px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
       <ProfileCard user={user} />
       <EmailVerificationCard user={user} />
+      <AppearanceCard />
       <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '22px 24px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
           <div style={{ flex: 1 }}>

@@ -14,6 +14,7 @@ function ApplicationCard({ app, talent, stages, onOpen, onMove, onDelete }) {
       dragId={app.id}
       canDrag={canEdit}
       onOpen={() => onOpen(talent.id)}
+      openLabel={`Open ${app.company} application`}
       stages={canEdit ? stages : undefined}
       stageValue={app.status}
       onStageChange={canEdit ? (v) => onMove(app.id, v) : undefined}

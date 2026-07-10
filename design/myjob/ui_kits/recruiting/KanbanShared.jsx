@@ -60,6 +60,7 @@ function KanbanCard({
   dragId,
   canDrag = true,
   onOpen,
+  openLabel,
   stages,
   stageValue,
   onStageChange,
@@ -91,7 +92,17 @@ function KanbanCard({
         cursor: canDrag ? 'grab' : 'default', opacity: dragging ? 0.45 : 1,
       }}
     >
-      <div onClick={onOpen ? () => onOpen() : undefined} style={{ cursor: onOpen ? 'pointer' : 'default' }}>
+      {/* The card body opens the record — keyboard-operable, not just clickable
+          (#203): a button role, in tab order, Enter/Space activates. Drag stays
+          a pointer-only enhancement. */}
+      <div
+        onClick={onOpen ? () => onOpen() : undefined}
+        onKeyDown={onOpen ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(); } } : undefined}
+        role={onOpen ? 'button' : undefined}
+        tabIndex={onOpen ? 0 : undefined}
+        aria-label={onOpen ? openLabel : undefined}
+        style={{ cursor: onOpen ? 'pointer' : 'default', borderRadius: 'var(--radius-sm)' }}
+      >
         {children}
       </div>
       {hasFooter && (

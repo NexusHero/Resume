@@ -28,6 +28,28 @@
   *::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; border: 3px solid var(--surface-app); }
   @media (max-width: 720px) { .auth-brand { display: none !important; } }
 
+  /* ---- Keyboard accessibility (#203) ---- */
+  /* A consistent accent focus ring on every keyboard-focused control. Many
+     controls set `outline:none` inline for the mouse; :focus-visible only fires
+     for keyboard focus, and !important restores the ring over those inline
+     styles — so pointer users see nothing extra, keyboard users always see where
+     they are. */
+  :focus-visible {
+    outline: 2px solid var(--accent) !important;
+    outline-offset: 2px !important;
+    border-radius: var(--radius-sm, 6px);
+  }
+  /* Skip-to-content link: off-screen until focused, then a visible chip. */
+  .skip-link {
+    position: fixed; top: 8px; left: 8px; z-index: 200;
+    transform: translateY(-160%); transition: transform var(--dur-fast, .15s) ease;
+    background: var(--accent); color: var(--accent-contrast, #fff);
+    font-family: var(--font-body); font-size: 13px; font-weight: 600;
+    padding: 10px 16px; border-radius: var(--radius-md, 10px); text-decoration: none;
+    box-shadow: var(--shadow-lg);
+  }
+  .skip-link:focus { transform: translateY(0); }
+
   /* ---- Boot splash: a branded equalizer that paints instantly (before React),
        then app.jsx fades it out once the session resolves. Colours are hard-coded
        so it looks right before the theme CSS variables apply. ---- */

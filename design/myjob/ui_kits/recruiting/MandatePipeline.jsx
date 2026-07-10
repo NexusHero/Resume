@@ -27,6 +27,7 @@ function MandateCard({ card, onOpenTalent, onMove, onRemove }) {
     <window.KanbanCard
       dragId={card.id}
       onOpen={card.talent ? () => onOpenTalent(card.talent.id) : undefined}
+      openLabel={`Open ${name}`}
       stages={stages}
       stageValue={card.stage}
       onStageChange={(v) => onMove(card, v)}

@@ -10,6 +10,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Added
 
+- **Accessibility: keyboard, focus and screen-reader support** (#203). The whole
+  app is now operable without a mouse and legible to assistive tech. A visible
+  **`:focus-visible` accent ring** marks the focused control everywhere; a
+  **Skip to content** link (first tab stop) jumps past the rail; the primary
+  navigation is a labelled `<nav>` and the canvas a single focusable `<main>`.
+  **Every dialog is a real modal** — `role="dialog"`, `aria-modal`, a labelled
+  title, a **focus trap**, **Esc to close**, and focus **returned** to the opener
+  on close (record form, dossier, and the DSGVO confirm). **Pipeline cards are
+  keyboard-operable** — Tab-reachable, Enter/Space to open, with a per-card
+  `aria-label` — and every stage `<select>` and icon-only button carries an
+  accessible name. An **automated axe-core guard** (`__tests__/a11y-axe.test.jsx`)
+  runs in the normal test suite and fails the build on any serious/critical
+  violation across Login, the Applications board, Matching, the confirm dialog
+  and the undo snackbar.
 - **Light mode** (ADR-0053). The app was dark-only; it now offers a **Light /
   Dark / System** appearance choice in Settings and a one-click toggle in the
   rail footer. The default follows your OS (`prefers-color-scheme`); an explicit

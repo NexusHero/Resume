@@ -36,6 +36,7 @@ function Textarea({ label, value, onChange, ...rest }) {
 beforeAll(async () => {
   globalThis.installDesignSystem({ Button, Input, Select, Textarea });
   await import('../use-viewport.jsx');
+  await import('../use-dialog.jsx');
   await import('../RecordFormModal.jsx');
   RecordFormModal = window.RecordFormModal;
 });

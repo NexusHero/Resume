@@ -63,8 +63,9 @@ function ResumeDoc({ contact, resume, template = 'classic' }) {
         </div>
       </aside>
 
-      {/* light main */}
-      <main style={{ flex: 1, padding: mainPad }}>
+      {/* light main column — a `div`, not `<main>`: the page's single main
+          landmark is the shell canvas (#203); this is the document's body. */}
+      <div style={{ flex: 1, padding: mainPad }}>
         <section style={{ marginBottom: sectionGap }}>
           <SectionHead template={template}>Profile</SectionHead>
           <p style={{ fontSize: bodySize, lineHeight: compact ? 1.5 : 1.65, color: 'var(--text-body)', margin: 0 }}>{resume.summary}</p>
@@ -104,7 +105,7 @@ function ResumeDoc({ contact, resume, template = 'classic' }) {
             ))}
           </div>
         </section>
-      </main>
+      </div>
     </div>
   );
 }

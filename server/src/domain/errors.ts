@@ -72,6 +72,16 @@ export class ValidationError extends DomainError {
   }
 }
 
+/** The caller exceeded a request-rate limit (429). */
+export class RateLimitError extends DomainError {
+  readonly status = 429;
+  readonly type = 'rate-limit';
+
+  constructor(message = 'AI request limit reached. Please wait a minute and try again.') {
+    super(message);
+  }
+}
+
 /** The configured AI provider rejected or failed the request (502). */
 export class UpstreamProviderError extends DomainError {
   readonly status = 502;

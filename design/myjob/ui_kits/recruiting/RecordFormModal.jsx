@@ -111,9 +111,9 @@ function RecordFormModal({ kind, record, prefill, onClose, onSubmit, onDelete })
       });
   };
 
+  // Delete is reversible via the undo snackbar (#200), so no blocking confirm —
+  // close the form and let onDelete schedule the deferred delete + Undo toast.
   const remove = () => {
-    // eslint-disable-next-line no-alert
-    if (!window.confirm(`Delete this ${kind}? This cannot be undone.`)) return;
     setBusy(true);
     setError('');
     Promise.resolve(onDelete())

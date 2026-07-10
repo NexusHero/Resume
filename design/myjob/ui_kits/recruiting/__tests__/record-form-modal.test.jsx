@@ -54,10 +54,13 @@ const placement = {
 };
 
 describe('RecordFormModal — delete', () => {
-  it('EditPlacement_WithOnDelete_ShowsDeleteAndConfirms', async () => {
+  it('EditPlacement_DeleteClicked_DefersToOnDeleteAndCloses', async () => {
+    // Delete is now reversible via the undo snackbar (#200): no blocking
+    // window.confirm — the modal just calls onDelete (which schedules the
+    // deferred delete + Undo toast) and closes.
     const onDelete = vi.fn().mockResolvedValue(undefined);
     const onClose = vi.fn();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const confirmSpy = vi.spyOn(window, 'confirm');
     render(
       <RecordFormModal
         kind="placement"
@@ -70,29 +73,15 @@ describe('RecordFormModal — delete', () => {
 
     await userEvent.click(screen.getByText('Delete'));
 
-    expect(window.confirm).toHaveBeenCalled();
+    expect(confirmSpy).not.toHaveBeenCalled(); // no system dialog
     expect(onDelete).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledTimes(1);
+    confirmSpy.mockRestore();
   });
 
   it('CreatePlacement_NoDelete_HidesDeleteButton', () => {
     render(<RecordFormModal kind="placement" onSubmit={vi.fn()} onClose={vi.fn()} />);
     expect(screen.queryByText('Delete')).not.toBeInTheDocument();
-  });
-
-  it('EditPlacement_ConfirmCancelled_DoesNotDelete', async () => {
-    const onDelete = vi.fn().mockResolvedValue(undefined);
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
-    render(
-      <RecordFormModal
-        kind="placement"
-        record={placement}
-        onSubmit={vi.fn()}
-        onDelete={onDelete}
-        onClose={vi.fn()}
-      />,
-    );
-    await userEvent.click(screen.getByText('Delete'));
-    expect(onDelete).not.toHaveBeenCalled();
   });
 });
 

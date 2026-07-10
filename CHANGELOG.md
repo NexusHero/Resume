@@ -88,6 +88,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Changed
 
+- **Clearer navigation taxonomy.** Matching moved from **People** into the
+  **Work** funnel (Workspace → Mandates → Matching → Applications → Placements) —
+  it's an action on the work, not a way to browse people — leaving **People** as
+  just the Talent Pool you represent. The **AI** section is renamed **Assistant**
+  (a place, not a category; the product name _CoRecruiter_ stays on the item).
+  Routing ids are unchanged, so state and deep-links are unaffected — only the
+  labels/grouping. Rationale in `design/myjob/decisions/nav-taxonomy.md`.
 - **Undo over Confirm for destructive actions.** Removing an application, a
   placement or a candidate from a pipeline no longer pops the browser's
   `window.confirm` (which breaks the designed world). The row disappears

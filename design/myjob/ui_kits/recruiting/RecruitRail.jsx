@@ -8,13 +8,24 @@
    Linear/Notion/Stripe-style products. */
 const { Icon, IconButton, Avatar, Badge } = window.MyJobDesignSystem_f3658e;
 
-/* Grouped destinations. `id` is the routing key consumed by app.jsx. */
+/* Grouped destinations. `id` is the routing key consumed by app.jsx — the ids
+   are stable; only the labels/grouping express the taxonomy (see
+   decisions/nav-taxonomy.md, #201).
+
+   WORK is the recruiter's funnel, left to right: the Workspace overview, the
+   Mandates you're filling, Matching candidates to those roles, the Applications
+   that produces, and the Placements you win. Matching lives here (not under
+   PEOPLE) because it's an ACTION on the work — "fill this role" — whose output
+   is an application, not a way to browse people. PEOPLE is the roster you
+   represent (the Talent Pool). INSIGHTS reports on it. ASSISTANT is the AI
+   surface (the product is "CoRecruiter"). */
 const NAV_SECTIONS = [
   {
     label: 'Work',
     items: [
       { id: 'uebersicht', label: 'Workspace', icon: 'home' },
       { id: 'mandate', label: 'Mandates', icon: 'briefcase' },
+      { id: 'matching', label: 'Matching', icon: 'search' },
       // Applications is wired to the live applications resource (ADR-0046):
       // submissions filed from Matching land here, so the board is reachable.
       { id: 'bewerbungen', label: 'Applications', icon: 'send' },
@@ -23,10 +34,7 @@ const NAV_SECTIONS = [
   },
   {
     label: 'People',
-    items: [
-      { id: 'pool', label: 'Talent Pool', icon: 'users' },
-      { id: 'matching', label: 'Matching', icon: 'search' },
-    ],
+    items: [{ id: 'pool', label: 'Talent Pool', icon: 'users' }],
   },
   // Comms/Inbox is hidden until it is wired to a real mail source — an empty
   // placeholder view reads as broken, not as "coming soon".
@@ -36,7 +44,9 @@ const NAV_SECTIONS = [
     items: [{ id: 'berichte', label: 'Reports', icon: 'trend' }],
   },
   {
-    label: 'AI',
+    // The section names the surface (Assistant); the product name (CoRecruiter)
+    // stays on the item. "AI" as a section label was a category, not a place.
+    label: 'Assistant',
     items: [{ id: 'assistant', label: 'CoRecruiter', icon: 'zap' }],
   },
 ];

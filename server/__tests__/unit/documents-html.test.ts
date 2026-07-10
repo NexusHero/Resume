@@ -98,6 +98,41 @@ describe('documentsToHtml', () => {
     expect(html).toContain('margin: 14mm 14mm'); // tighter page margins
   });
 
+  it('InkTemplate_RendersTheTwoColumnSidebarLayout', () => {
+    const html = documentsToHtml({
+      ...documents,
+      style: { ...documents.style, template: 'ink' },
+    });
+    expect(html).toContain('class="tpl-ink"');
+    // signature two-column structure: dark rail + sidebar + main column
+    expect(html).toContain('class="ink-rail"');
+    expect(html).toContain('class="ink-side"');
+    expect(html).toContain('class="ink-main"');
+    // contact + skills live in the sidebar
+    expect(html).toContain('lena@example.com');
+    expect(html).toContain('ink-chips');
+    expect(html).toContain('Figma');
+    // the cover letter gets the matching ink header band (no rail leak)
+    expect(html).toContain('ink-letter-head');
+    // multi-page safety: fixed rail in print, dark background forced to print
+    expect(html).toContain('@media print { .ink-rail { position: fixed; } }');
+    expect(html).toContain('print-color-adjust: exact');
+    // page anchors preserved for the editor's toggle
+    expect(html).toContain('id="doc-resume"');
+    expect(html).toContain('id="doc-letter"');
+  });
+
+  it('InkTemplate_EscapesHtml', () => {
+    const evil = {
+      ...documents,
+      style: { ...documents.style, template: 'ink' as const },
+      resume: { ...documents.resume, summary: '<script>alert(1)</script>' },
+    };
+    const html = documentsToHtml(evil);
+    expect(html).not.toContain('<script>alert(1)</script>');
+    expect(html).toContain('&lt;script&gt;');
+  });
+
   it('OmitsEmptySectionsGracefully', () => {
     const bare: TalentDocuments = {
       ...documents,

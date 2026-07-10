@@ -1,11 +1,18 @@
 /* Editor — the document workbench: form on the left, live document preview on
    the right. Two documents per talent: Lebenslauf (resume) and Anschreiben
-   (cover letter). The bolt-on tools live in their own modules: previews in
-   EditorDocs, the import/ATS/pitch/outreach modals in EditorModals, shared
-   primitives (PillButton, ModalShell, honesty banners) in EditorShared —
-   main.jsx loads all of them before this file. */
+   (cover letter). The preview is an iframe of the exact HTML the server builds
+   the PDF from (RecruitApi.previewDocumentsHtml → documents-html.ts), so what
+   the recruiter sees is what the export produces — one source of truth, no
+   drift (ADR-0052). The bolt-on tools live in their own modules: the
+   import/ATS/pitch/outreach modals in EditorModals, shared primitives
+   (PillButton, ModalShell, honesty banners) in EditorShared — main.jsx loads
+   all of them before this file. */
 const ED = window.MyJobDesignSystem_f3658e;
-const { PillButton: EdPill, ResumeDoc: EdResumeDoc, LetterDoc: EdLetterDoc, ImportCvModal: EdImportCvModal, AtsModal: EdAtsModal, PitchModal: EdPitchModal, OutreachModal: EdOutreachModal } = window;
+const { PillButton: EdPill, ImportCvModal: EdImportCvModal, AtsModal: EdAtsModal, PitchModal: EdPitchModal, OutreachModal: EdOutreachModal } = window;
+
+/* A4 sheet width in CSS pixels (210mm @ 96dpi) — the preview iframe renders at
+   this width so its line breaks match the exported PDF, then scales to fit. */
+const A4_WIDTH_PX = 794;
 
 /* CV style presets for the live customization bar (accent + font + size). */
 const ED_ACCENTS = [
@@ -16,37 +23,6 @@ const ED_ACCENTS = [
 ];
 
 /* A titled block in the form column, with an optional add action. */
-/* Overlays dashed lines where A4 pages roughly break in the exported PDF
-   (720px preview width → ~1018px per page). An approximation — fonts and
-   margins differ slightly in print — but it stops page-2 surprises. */
-function A4PageMarkers({ children }) {
-  const ref = React.useRef(null);
-  const [pages, setPages] = React.useState([]);
-  const PAGE = Math.round((720 * 297) / 210);
-  React.useEffect(() => {
-    const el = ref.current;
-    if (!el || typeof ResizeObserver === 'undefined') return undefined;
-    const ro = new ResizeObserver(() => {
-      const h = el.offsetHeight;
-      const breaks = [];
-      for (let y = PAGE; y < h; y += PAGE) breaks.push(y);
-      setPages((p) => (p.length === breaks.length ? p : breaks));
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-  return (
-    <div ref={ref} style={{ position: 'relative' }}>
-      {children}
-      {pages.map((y, i) => (
-        <div key={y} title="Approximate A4 page break in the exported PDF" style={{ position: 'absolute', left: '-8px', right: '-8px', top: `${y}px`, borderTop: '2px dashed var(--accent)', opacity: 0.55, pointerEvents: 'none' }}>
-          <span style={{ position: 'absolute', right: 0, top: '-9px', fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--accent-strong)', background: 'var(--surface-card)', borderRadius: 'var(--radius-pill)', padding: '2px 8px' }}>Page {i + 2} ↓</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function FormGroup({ title, children, onAdd }) {
   return (
     <div style={{ marginBottom: '22px' }}>
@@ -68,10 +44,12 @@ function Editor({ talent, onClose, onCreateMappe }) {
 
   const [doc, setDoc] = React.useState('lebenslauf');
   const previewRef = React.useRef(null);
+  const frameRef = React.useRef(null);
   const [scale, setScale] = React.useState(1);
+  const [frameHeight, setFrameHeight] = React.useState(A4_WIDTH_PX * 1.414); // one A4 until measured
   React.useEffect(() => {
     const el = previewRef.current; if (!el) return;
-    const fit = () => { const w = el.clientWidth - 56; setScale(Math.min(1, w / 720)); };
+    const fit = () => { const w = el.clientWidth - 56; setScale(Math.min(1, w / A4_WIDTH_PX)); };
     fit();
     const ro = new ResizeObserver(fit); ro.observe(el);
     return () => ro.disconnect();
@@ -117,8 +95,13 @@ function Editor({ talent, onClose, onCreateMappe }) {
      and only applied on “Apply” (or discarded on “Discard”). ---- */
   const [gen, setGen] = React.useState(false);
   const [pending, setPending] = React.useState(null);
+  // A failed AI call must never be silent — the recruiter sees why it stopped
+  // (missing key, Pro gate, network) instead of a button that does nothing.
+  const [aiError, setAiError] = React.useState(null);
   const runAI = async () => {
     setGen(true);
+    setAiError(null);
+    setPending(null);
     const action = doc === 'lebenslauf' ? 'summary' : 'letter';
     try {
       // The AI uses the candidate's own saved facts + the mandate/company on the
@@ -127,8 +110,8 @@ function Editor({ talent, onClose, onCreateMappe }) {
       const s = await window.RecruitApi.suggestDocument(talentId, action, target);
       if (s.action === 'summary') setPending({ kind: 'summary', value: s.text, provider: s.provider, usage: s.usage });
       else setPending({ kind: 'letter', value: s.paragraphs, provider: s.provider, usage: s.usage });
-    } catch {
-      setPending(null);
+    } catch (e) {
+      setAiError((e && e.message) || 'Could not tailor this document. Please try again.');
     } finally {
       setGen(false);
     }
@@ -142,44 +125,96 @@ function Editor({ talent, onClose, onCreateMappe }) {
     }
     setPending(null);
   };
-  const cancelAI = () => setPending(null);
+  const cancelAI = () => { setPending(null); setAiError(null); };
 
   /* live CV customization: template, accent colour, font family, size */
   const [cfg, setCfg] = React.useState({ template: 'classic', accent: '#2A6FDB', strong: '#1d4ed8', onDark: '#7aa7f5', font: 'var(--font-display)', size: 1 });
 
+  /* ---- Live preview: the server renders the current (unsaved) content to the
+     exact HTML the PDF is built from, so preview and export can't drift. A short
+     debounce keeps typing snappy; the last good HTML is kept if a render fails.
+     Feature-detected so the editor still mounts where the endpoint is absent. ---- */
+  const [previewHtml, setPreviewHtml] = React.useState(null);
+  React.useEffect(() => {
+    const api = window.RecruitApi;
+    if (!api || typeof api.previewDocumentsHtml !== 'function') return undefined;
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      api
+        .previewDocumentsHtml(talentId || 'me', { contact, resume, letter, style: cfg })
+        .then((html) => { if (!cancelled && typeof html === 'string') setPreviewHtml(html); })
+        .catch(() => { /* keep the last good preview on a transient failure */ });
+    }, 300);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [contact, resume, letter, cfg, talentId]);
+
+  /* Size the iframe to its content (no inner scrollbar) and scroll the pane to
+     the document the Resume/Cover-letter toggle selects. Runs on each render and
+     when the toggle flips; same-origin srcdoc makes the inner doc readable. */
+  const syncFrame = React.useCallback(() => {
+    const f = frameRef.current;
+    const inner = f && f.contentDocument;
+    if (!inner) return;
+    const h = inner.documentElement ? inner.documentElement.scrollHeight : 0;
+    if (h) setFrameHeight(h);
+    const target = inner.getElementById(doc === 'lebenslauf' ? 'doc-resume' : 'doc-letter');
+    const pane = previewRef.current;
+    if (target && pane) pane.scrollTo({ top: target.offsetTop * scale, behavior: 'smooth' });
+  }, [doc, scale]);
+  React.useEffect(() => { syncFrame(); }, [doc, previewHtml, syncFrame]);
+
   /* ---- Persistence: load the stored documents on open, then autosave edits. ---- */
   const [saveState, setSaveState] = React.useState('idle'); // idle | saving | saved | error
-  const loadedRef = React.useRef(false);
+  const [hydrated, setHydrated] = React.useState(false);
+  // Serialized snapshot of the last loaded/saved payload. Autosave compares
+  // against it so merely *opening* a document never re-PUTs the unchanged
+  // content it just loaded — only genuine edits save.
+  const baseline = React.useRef(null);
   const saveTimer = React.useRef(null);
 
   React.useEffect(() => {
     let alive = true;
-    loadedRef.current = false;
-    if (!canPersist) { loadedRef.current = true; return; }
+    setHydrated(false);
+    baseline.current = null;
+    if (!canPersist) { setHydrated(true); return undefined; }
     window.RecruitApi.getTalentDocuments(talentId)
       .then((d) => {
-        if (!alive || !d) return;
-        if (d.contact) setContact((s) => ({ ...s, ...d.contact }));
-        if (d.resume) setResume(d.resume);
-        if (d.letter) setLetter(d.letter);
-        if (d.style) setCfg(d.style);
+        if (!alive) return;
+        // Apply the loaded content and flip `hydrated` in the *same* React batch
+        // so the baseline (captured on the hydrated render) reflects the loaded
+        // documents, never a user edit that arrived a tick later.
+        if (d) {
+          if (d.contact) setContact((s) => ({ ...s, ...d.contact }));
+          if (d.resume) setResume(d.resume);
+          if (d.letter) setLetter(d.letter);
+          if (d.style) setCfg(d.style);
+        }
+        setHydrated(true);
       })
-      .catch(() => {})
-      .finally(() => { if (alive) loadedRef.current = true; });
+      .catch(() => { if (alive) setHydrated(true); });
     return () => { alive = false; };
   }, [talentId]);
 
+  // Once the load settles, capture the hydrated content as the save baseline.
   React.useEffect(() => {
-    if (!canPersist || !loadedRef.current) return;
+    if (hydrated && baseline.current === null) {
+      baseline.current = JSON.stringify({ contact, resume, letter, style: cfg });
+    }
+  }, [hydrated]);
+
+  React.useEffect(() => {
+    if (!canPersist || !hydrated || baseline.current === null) return undefined;
+    const serialized = JSON.stringify({ contact, resume, letter, style: cfg });
+    if (serialized === baseline.current) return undefined; // nothing actually changed
     setSaveState('saving');
     clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
       window.RecruitApi.saveTalentDocuments(talentId, { contact, resume, letter, style: cfg })
-        .then(() => setSaveState('saved'))
+        .then(() => { baseline.current = serialized; setSaveState('saved'); })
         .catch(() => setSaveState('error'));
     }, 800);
     return () => clearTimeout(saveTimer.current);
-  }, [contact, resume, letter, cfg, talentId]);
+  }, [contact, resume, letter, cfg, hydrated, talentId]);
 
   const saveLabel = { saving: 'Saving…', saved: 'Saved', error: 'Not saved' };
 
@@ -218,6 +253,23 @@ function Editor({ talent, onClose, onCreateMappe }) {
     setTranslating('');
   };
 
+  /* ---- Export: download the resume + cover letter as a real PDF file. A bare
+     window.open() was unreliable (strict CSP / PWA / native shell), so fetch the
+     bytes and save them — and surface any failure instead of doing nothing. ---- */
+  const [pdfMsg, setPdfMsg] = React.useState(null);
+  const [pdfBusy, setPdfBusy] = React.useState(false);
+  const exportPdf = async () => {
+    setPdfMsg(null);
+    setPdfBusy(true);
+    try {
+      const base = (contact.name || 'documents').trim().replace(/\s+/g, '-') || 'documents';
+      await window.RecruitApi.downloadTalentDocumentsPdf(talentId, `${base}.pdf`);
+    } catch {
+      setPdfMsg('Could not download the PDF. Please try again.');
+    }
+    setPdfBusy(false);
+  };
+
   /* Which bolt-on tool is open — one at a time. */
   const [modal, setModal] = React.useState(null); // 'import' | 'ats' | 'pitch' | 'outreach' | null
 
@@ -226,7 +278,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
   );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: isMobile ? 'auto' : '100%', gap: '14px' }}>
+    <div data-doc-hydrated={canPersist ? (hydrated ? 'true' : 'false') : 'na'} style={{ display: 'flex', flexDirection: 'column', height: isMobile ? 'auto' : '100%', gap: '14px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: isMobile ? 'wrap' : 'nowrap', alignSelf: isMobile ? 'stretch' : 'flex-start' }}>
         <button onClick={onClose} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)', padding: 0 }}>
           <ED.Icon name="arrowLeft" size={14} /> Back to profile
@@ -243,7 +295,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
             <EdPill icon="search" onClick={() => setModal('ats')}>ATS check</EdPill>
             <EdPill icon="briefcase" onClick={() => setModal('pitch')}>Pitch</EdPill>
             <EdPill icon="send" onClick={() => setModal('outreach')}>Outreach</EdPill>
-            <EdPill icon="download" onClick={() => window.open(window.RecruitApi.talentDocumentsPdfUrl(talentId), '_blank')}>PDF</EdPill>
+            <EdPill icon="download" onClick={exportPdf} disabled={pdfBusy}>{pdfBusy ? 'PDF…' : 'PDF'}</EdPill>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>
                 <ED.Icon name="globe" size={13} /> Translate
@@ -273,6 +325,15 @@ function Editor({ talent, onClose, onCreateMappe }) {
         </div>
       )}
 
+      {pdfMsg && (
+        <div
+          role="alert"
+          style={{ alignSelf: 'flex-start', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--danger)', background: 'var(--danger-soft)', border: '1px solid var(--danger)', borderRadius: 'var(--radius-md)', padding: '6px 12px' }}
+        >
+          {pdfMsg}
+        </div>
+      )}
+
       {modal === 'import' && <EdImportCvModal talentId={talentId} onParsed={applyParsed} onClose={() => setModal(null)} />}
       {modal === 'ats' && <EdAtsModal talentId={talentId} onClose={() => setModal(null)} />}
       {modal === 'pitch' && <EdPitchModal talentId={talentId} onClose={() => setModal(null)} />}
@@ -289,6 +350,16 @@ function Editor({ talent, onClose, onCreateMappe }) {
           </div>
 
           <div style={{ flex: 1, overflowY: 'auto', paddingRight: '8px' }}>
+            {aiError && !gen && (
+              <div role="alert" style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', border: '1px solid var(--danger)', background: 'var(--danger-soft)', borderRadius: 'var(--radius-md)', padding: '10px 13px', marginBottom: '16px', fontSize: '12.5px', color: 'var(--danger)' }}>
+                <ED.Icon name="alertTriangle" size={14} style={{ flexShrink: 0, marginTop: '1px' }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600 }}>AI tailoring failed</div>
+                  <div style={{ marginTop: '2px' }}>{aiError}</div>
+                </div>
+                <button onClick={runAI} style={{ appearance: 'none', cursor: 'pointer', border: '1px solid var(--danger)', background: 'transparent', color: 'var(--danger)', borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '4px 10px' }}>Retry</button>
+              </div>
+            )}
             {(gen || pending) && (
               <div style={{ border: '1px dashed var(--accent-border)', borderRadius: 'var(--radius-md)', overflow: 'hidden', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '8px 12px', background: 'var(--accent-soft)', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 600, color: 'var(--accent-strong)' }}>
@@ -417,7 +488,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
               <button onClick={runAI} style={{ appearance: 'none', cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12.5px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-md)', padding: '7px 12px' }}>
                 <ED.Icon name="zap" size={14} />AI tailor
               </button>
-              <ED.Button size="sm" variant="outline" iconLeft={<ED.Icon name="download" size={14} />} onClick={() => window.open(window.RecruitApi.talentDocumentsPdfUrl(talentId), '_blank')}>PDF</ED.Button>
+              <ED.Button size="sm" variant="outline" iconLeft={<ED.Icon name="download" size={14} />} onClick={exportPdf} disabled={pdfBusy}>{pdfBusy ? 'PDF…' : 'PDF'}</ED.Button>
               <ED.Button size="sm" variant="primary" iconRight={<ED.Icon name="arrowRight" size={14} />} onClick={onCreateMappe}>To dossier</ED.Button>
             </div>
           </div>
@@ -441,11 +512,20 @@ function Editor({ talent, onClose, onCreateMappe }) {
             </div>
           </div>
           <div ref={previewRef} style={{ flex: 1, overflowY: 'auto', padding: '28px', display: 'flex', justifyContent: 'center' }}>
-            <div style={{ zoom: scale * cfg.size, '--accent': cfg.accent, '--accent-strong': cfg.strong, '--accent-on-dark': cfg.onDark, '--font-display': cfg.font, '--font-body': cfg.font }}>
-              <A4PageMarkers>
-                {doc === 'lebenslauf' ? <EdResumeDoc contact={contact} resume={resume} template={cfg.template} /> : <EdLetterDoc contact={contact} letter={letter} template={cfg.template} />}
-              </A4PageMarkers>
-            </div>
+            {previewHtml ? (
+              <iframe
+                ref={frameRef}
+                title="Document preview"
+                srcDoc={previewHtml}
+                onLoad={syncFrame}
+                scrolling="no"
+                style={{ width: `${A4_WIDTH_PX}px`, height: `${frameHeight}px`, border: 'none', zoom: scale, background: 'transparent', flexShrink: 0 }}
+              />
+            ) : (
+              <div style={{ margin: 'auto', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>
+                Rendering preview…
+              </div>
+            )}
           </div>
         </div>
       </div>

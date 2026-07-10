@@ -1,10 +1,10 @@
 import { SavedSearchService } from '../../src/services/saved-search-service.js';
 import { JobSearchService } from '../../src/services/job-search-service.js';
-import { SampleJobSource } from '../../src/adapters/sample-job-source.js';
 import { createSavedSearchSchema } from '../../src/domain/saved-search.js';
 import { NotFoundError } from '../../src/domain/errors.js';
 import {
   InMemorySavedSearchRepository,
+  FakeJobSource,
   FixedClock,
   SequenceIdGenerator,
   noopLogger,
@@ -14,8 +14,7 @@ import {
 function makeService() {
   const repo = new InMemorySavedSearchRepository();
   const jobSearchService = new JobSearchService({
-    fallbackJobSource: new SampleJobSource(),
-    jobSource: new SampleJobSource(),
+    jobSource: new FakeJobSource(),
     skillExtractor: noopSkillExtractor,
     candidateProfile: { skills: [{ name: 'Rust' }] },
     logger: noopLogger,

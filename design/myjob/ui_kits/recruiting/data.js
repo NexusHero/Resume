@@ -6,6 +6,17 @@
 const STAGES_ORDER = ['new', 'review', 'interview', 'offer', 'hired'];
 const STAGE_LABELS = { new: 'Submitted', review: 'In review', interview: 'Interview', offer: 'Offer', hired: 'Hired', rejected: 'Rejected' };
 
+/* Backend application status → the board's pipeline stage. The domain uses
+   sent/screening/…; the board columns are new/review/interview/offer/hired. */
+const APP_STATUS_TO_STAGE = {
+  sent: 'new',
+  screening: 'review',
+  interview: 'interview',
+  offer: 'offer',
+  hired: 'hired',
+  rejected: 'rejected',
+};
+
 /* ============================================================
    Live backend wiring. Base URL is same-origin when served by the
    app server; override via window.RECRUIT_API.
@@ -13,6 +24,32 @@ const STAGE_LABELS = { new: 'Submitted', review: 'In review', interview: 'Interv
 const RECRUIT_API_BASE = (typeof window !== 'undefined' && window.RECRUIT_API) || '/api/v1';
 
 const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+
+/* Trigger a real "Save as…" download for an in-memory blob. Opening a PDF URL
+   with window.open() is unreliable — a strict CSP, the installed PWA, or the
+   Capacitor shell can silently swallow it, so the file never lands. Fetching the
+   bytes and clicking a download anchor works everywhere the app runs. */
+function _saveBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  // Revoke on the next tick so the click has committed to the download.
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+/* Fetch a same-origin (cookie-authenticated) PDF endpoint and save it as a file.
+   Throws on a non-OK response so the caller can surface a real error instead of
+   a button that appears to do nothing. */
+async function _downloadPdf(url, filename) {
+  const res = await fetch(url, { credentials: 'same-origin' });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  _saveBlob(await res.blob(), filename);
+}
 
 async function _jsonOrThrow(res) {
   if (!res.ok) {
@@ -24,6 +61,23 @@ async function _jsonOrThrow(res) {
     throw new Error(`API ${res.status}`);
   }
   return res.json();
+}
+
+/* Backend Application → the shape PipelineBoard renders. `talentId`/`talentName`
+   are present when the application was filed on a candidate's behalf (Matching);
+   `role` is the applied-for position. */
+function mapApplication(a) {
+  return {
+    id: a.id,
+    company: a.company,
+    role: a.position || '',
+    talentId: a.talentId || null,
+    talentName: a.talentName || '',
+    status: APP_STATUS_TO_STAGE[a.status] || 'new',
+    score: typeof a.score === 'number' ? a.score : null,
+    date: a.date || '',
+    source: a.source || '',
+  };
 }
 
 /* Backend Placement → the shape PlatzierungenView/ReportsView render. */
@@ -416,9 +470,38 @@ const RecruitApi = {
     const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/talents`));
     return Array.isArray(data) ? data.map(mapTalent) : [];
   },
+  /* ---- Applications (the submission pipeline) ---- */
+  async listApplications() {
+    const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/applications`));
+    return Array.isArray(data) ? data.map(mapApplication) : [];
+  },
+  /* Apply on a candidate's behalf from Matching: record an application that
+     carries the posting's company + role, so it lands in the Applications
+     pipeline and the company data is captured on the submission. */
+  async applyCandidate(job, talent) {
+    const body = {
+      company: job.company || '',
+      position: job.title || '',
+      reference: job.url || '',
+      source: 'matching',
+      status: 'sent',
+      talentName: (talent && talent.name) || '',
+    };
+    // The pinned "me" profile has no talent row, so only link a real pool talent.
+    if (talent && talent.id && talent.id !== 'me') body.talentId = talent.id;
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/applications`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      }),
+    );
+    return mapApplication(data.application);
+  },
   /* Live job postings from the two-tier search (both tiers merged — the
      Matching view re-scores per selected candidate, not per the server's
-     default profile). Offline the server serves its sample source. */
+     default profile). Postings are always real board data; when every live
+     source is down the list is empty and `liveDown` is set. */
   async searchJobs(q = '') {
     const url = q
       ? `${RECRUIT_API_BASE}/jobs?q=${encodeURIComponent(q)}`
@@ -438,9 +521,16 @@ const RecruitApi = {
       url: j.url || '',
       req: Array.isArray(j.skills) ? j.skills : [],
     }));
-    // 'Sample' = the server's offline fallback — the UI says so honestly.
-    // liveDown = live sources ARE configured but all failed on this search.
-    return { jobs, sample: data.source === 'Sample', liveDown: !!data.liveSourcesDown };
+    // liveDown = live sources ARE configured but all failed on this search, so
+    // the list is empty because of an outage rather than a lack of matches.
+    // sources = per-board breakdown [{ name, count, ok }] for the accumulated
+    // source counts shown above the results.
+    return {
+      jobs,
+      liveDown: !!data.liveSourcesDown,
+      sources: Array.isArray(data.sources) ? data.sources : [],
+      total: data.counts && typeof data.counts.total === 'number' ? data.counts.total : jobs.length,
+    };
   },
   // --- Recruiting pipeline (candidacies) ---
   async mandateCandidacies(mandateId) {
@@ -644,10 +734,46 @@ const RecruitApi = {
     );
     return data.documents;
   },
+  /* Render the given (unsaved) editor content to the exact HTML the PDF export
+     is built from, so the live preview and the PDF can never drift (ADR-0052).
+     Nothing is persisted; works even for the pinned "me" profile (no server row)
+     since the endpoint renders the posted body, not stored data. */
+  async previewDocumentsHtml(talentId, documents) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/documents/preview`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(documents),
+      }),
+    );
+    return data.html; // a self-contained, print-accurate HTML document
+  },
+  /* The recruiter's own display name, stored on their "me" document set (they
+     are keyed by user id server-side). Read/merge-write so setting the name
+     never clobbers an existing resume/letter. */
+  async getMyProfileName(userId) {
+    const d = await this.getTalentDocuments(userId).catch(() => null);
+    return (d && d.contact && d.contact.name) || '';
+  },
+  async setMyProfileName(userId, name) {
+    const d = (await this.getTalentDocuments(userId).catch(() => null)) || {};
+    return this.saveTalentDocuments(userId, {
+      contact: { ...(d.contact || {}), name },
+      resume: d.resume,
+      letter: d.letter,
+      style: d.style,
+    });
+  },
   talentDocumentsPdfUrl(talentId) {
     // Same-origin GET — the session cookie authorises it, so it can be opened
     // directly in a new tab / used as a download link.
     return `${RECRUIT_API_BASE}/talents/${talentId}/documents/pdf`;
+  },
+  /* Download the talent's resume + cover letter as a PDF file. Reliable across
+     the strict-CSP web app, the installed PWA and the native shell where a bare
+     window.open() can silently fail. Rejects on error so the UI can react. */
+  async downloadTalentDocumentsPdf(talentId, filename) {
+    await _downloadPdf(this.talentDocumentsPdfUrl(talentId), filename || `documents-${talentId}.pdf`);
   },
   talentDossierPdfUrl(talentId, recipient = {}) {
     const q = new URLSearchParams();
@@ -777,6 +903,10 @@ const RecruitApi = {
       }),
     );
     return mapPlacement(data.placement);
+  },
+  async deletePlacement(id) {
+    const res = await fetch(`${RECRUIT_API_BASE}/placements/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(`API ${res.status}`);
   },
 };
 

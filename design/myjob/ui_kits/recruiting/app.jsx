@@ -97,9 +97,11 @@ function Workspace({ user, onLogout }) {
   const listMandates = React.useCallback(() => window.RecruitApi.listMandates(), []);
   const listTalents = React.useCallback(() => window.RecruitApi.listTalents(), []);
   const listPlacements = React.useCallback(() => window.RecruitApi.listPlacements(), []);
+  const listApplications = React.useCallback(() => window.RecruitApi.listApplications(), []);
   const mandatesRes = useResource(listMandates);
   const talentsRes = useResource(listTalents);
   const placementsRes = useResource(listPlacements);
+  const applicationsRes = useResource(listApplications);
 
   const mandates = mandatesRes.data;
   const placements = placementsRes.data;
@@ -107,14 +109,20 @@ function Workspace({ user, onLogout }) {
   // not from fabricated sample data, so it stays pinned first in the pool.
   const me0 = React.useMemo(() => makeMeProfile(user), [user]);
   // Me is not a pool record, so the server can't merge document skills for it —
-  // derive them from my saved documents here so Matching scores me for real.
+  // derive them from my saved documents here so Matching scores me for real. The
+  // saved contact name is also the recruiter's real name (they set it in "My
+  // documents"), so it replaces the email-derived placeholder in the greeting.
   const [meSkills, setMeSkills] = React.useState([]);
+  const [meName, setMeName] = React.useState('');
   React.useEffect(() => {
     let alive = true;
     setMeSkills([]);
+    setMeName('');
     window.RecruitApi.getTalentDocuments(me0.id)
       .then((d) => {
-        if (!alive || !d || !d.resume) return;
+        if (!alive || !d) return;
+        if (d.contact && d.contact.name && d.contact.name.trim()) setMeName(d.contact.name.trim());
+        if (!d.resume) return;
         const skills = [
           ...(d.resume.skillGroups || []).flatMap((g) => g.items || []),
           ...(d.resume.experience || []).flatMap((e) => e.skills || []),
@@ -125,8 +133,8 @@ function Workspace({ user, onLogout }) {
     return () => { alive = false; };
   }, [me0.id]);
   const talents = React.useMemo(
-    () => [{ ...me0, skills: meSkills }, ...talentsRes.data.filter((t) => !t.me)],
-    [me0, meSkills, talentsRes.data],
+    () => [{ ...me0, name: meName || me0.name, skills: meSkills }, ...talentsRes.data.filter((t) => !t.me)],
+    [me0, meName, meSkills, talentsRes.data],
   );
 
   const addMandate = () => setFormKind('mandate');
@@ -150,6 +158,15 @@ function Workspace({ user, onLogout }) {
   };
   const addTalent = () => setFormKind('talent');
   const addPlacement = () => setFormKind('placement');
+
+  // Apply on a candidate's behalf from Matching: record the application (which
+  // captures the posting's company + role) and refresh the pipeline so it shows
+  // up on the Applications board.
+  const applyFromMatching = (job, talent) =>
+    window.RecruitApi.applyCandidate(job, talent).then((app) => {
+      applicationsRes.reload();
+      return app;
+    });
 
   // Bulk CV import: read each PDF to base64, import as talents, report the
   // outcome and refresh the pool.
@@ -212,6 +229,14 @@ function Workspace({ user, onLogout }) {
     return window.RecruitApi.updatePlacement(id, values).then(placementsRes.reload);
   };
 
+  // Deleting a record from its edit form. Only placements are deletable from the
+  // UI today; the modal shows the Delete affordance only when onDelete is given.
+  const deleteRecord = ({ kind, id }) => {
+    if (kind === 'placement')
+      return window.RecruitApi.deletePlacement(id).then(placementsRes.reload);
+    return Promise.resolve();
+  };
+
   // The topbar search filters the list views (pool, mandates, placements) —
   // a simple contains-match over the fields a recruiter scans for.
   const q = search.trim().toLowerCase();
@@ -230,9 +255,9 @@ function Workspace({ user, onLogout }) {
       node
     );
 
-  // Applications, clients and inbox messages have no live recruiting API yet, so
-  // the views show honest empty states until one exists (no fabricated data).
-  const apps = [];
+  // Applications come from the live pipeline API; clients and inbox messages
+  // have no live recruiting API yet, so those views show honest empty states.
+  const apps = applicationsRes.data;
   const clients = [];
   const messages = [];
   const me = talents.find((t) => t.me);
@@ -249,7 +274,8 @@ function Workspace({ user, onLogout }) {
   );
 
   const unread = messages.filter((m) => m.unread).length;
-  const badges = { bewerbungen: apps.filter((a) => a.status !== 'rejected' && a.status !== 'hired').length, postfach: unread || undefined };
+  // Hide the count badges at zero — a "0" reads as a pending indicator (like the inbox).
+  const badges = { bewerbungen: apps.filter((a) => a.status !== 'rejected' && a.status !== 'hired').length || undefined, postfach: unread || undefined };
 
   const goTalent = (id) => setOpenTalent(id);
   const back = () => setOpenTalent(null);
@@ -296,12 +322,12 @@ function Workspace({ user, onLogout }) {
     if (nav === 'uebersicht') body = <window.Dashboard me={me} apps={apps} vkpis={vkpis} clients={clients} mandates={mandates} onOpenTalent={goTalent} onOpenPipeline={() => setNav('mandate')} onOpenMandate={() => setNav('mandate')} />;
     else if (nav === 'mandate') body = withState(mandatesRes, <window.MandateView mandates={shownMandates} onEdit={editMandate} onOpenPipeline={goPipeline} />);
     else if (nav === 'pool') body = withState(talentsRes, <window.TalentGrid talents={shownTalents} apps={apps} onOpen={goTalent} onAdd={addTalent} onImport={importCvs} importing={importing} />);
-    else if (nav === 'matching') body = <window.Matching talents={talents} onCreateMandate={mandateFromJob} />;
-    else if (nav === 'bewerbungen') body = (
+    else if (nav === 'matching') body = <window.Matching talents={talents} mandates={mandates} onCreateMandate={mandateFromJob} onApply={applyFromMatching} />;
+    else if (nav === 'bewerbungen') body = withState(applicationsRes, (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '100%' }}>
         <window.PipelineBoard apps={apps} talents={talents} onOpen={goTalent} />
       </div>
-    );
+    ));
     else if (nav === 'platzierungen') body = withState(placementsRes, <window.PlatzierungenView placements={shownPlacements} kpis={vkpis} onEdit={editPlacement} />);
     else if (nav === 'assistant') body = <window.AssistantView onChanged={() => { mandatesRes.reload(); }} />;
     else if (nav === 'berichte') body = <window.ReportsView clients={reportClients} mandates={mandates} placements={placements} apps={apps} kpis={vkpis} />;
@@ -335,6 +361,7 @@ function Workspace({ user, onLogout }) {
           record={editRecord.values}
           onClose={() => setEditRecord(null)}
           onSubmit={(values) => submitEdit(editRecord, values)}
+          onDelete={editRecord.kind === 'placement' ? () => deleteRecord(editRecord) : undefined}
         />
       )}
     </window.RecruitRail>
@@ -348,6 +375,22 @@ function App() {
   const [providers, setProviders] = React.useState({ google: false, linkedin: false });
   // Result of a ?verify_token= link click — shown on the login screen.
   const [verifyNotice, setVerifyNotice] = React.useState(null);
+
+  // Dismiss the boot splash (index.html) once the session is resolved. A small
+  // minimum on-screen time keeps the animation from flashing when auth is instant.
+  React.useEffect(() => {
+    if (auth.status === 'loading') return undefined;
+    const el = typeof document !== 'undefined' && document.getElementById('splash');
+    if (!el) return undefined;
+    const elapsed = typeof performance !== 'undefined' && performance.now ? performance.now() : 900;
+    const t = setTimeout(() => {
+      el.classList.add('splash-hide');
+      const remove = () => el.remove();
+      el.addEventListener('transitionend', remove, { once: true });
+      setTimeout(remove, 700); // fallback if transitionend never fires
+    }, Math.max(0, 900 - elapsed));
+    return () => clearTimeout(t);
+  }, [auth.status]);
 
   React.useEffect(() => {
     let alive = true;

@@ -68,6 +68,7 @@ export const apiKeys = pgTable(
 /** Recorded job applications (mirrors domain `Application`). */
 export const applications = pgTable('applications', {
   id: text('id').primaryKey(),
+  ownerId: text('owner_id').notNull(),
   date: text('date').notNull(),
   company: text('company').notNull(),
   position: text('position').notNull(),
@@ -76,6 +77,8 @@ export const applications = pgTable('applications', {
   status: text('status').notNull(),
   pdfPath: text('pdf_path'),
   source: text('source').notNull(),
+  talentId: text('talent_id'),
+  talentName: text('talent_name'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at'),
   commit: text('commit'),

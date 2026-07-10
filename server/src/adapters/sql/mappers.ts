@@ -63,6 +63,7 @@ const orUndef = <T>(v: T | null): T | undefined => v ?? undefined;
 export function rowToApplication(row: ApplicationRow): Application {
   return {
     id: row.id,
+    ownerId: row.ownerId,
     date: row.date,
     company: row.company,
     position: row.position,
@@ -71,6 +72,8 @@ export function rowToApplication(row: ApplicationRow): Application {
     status: row.status as Application['status'],
     pdfPath: row.pdfPath,
     source: row.source,
+    talentId: orUndef(row.talentId),
+    talentName: orUndef(row.talentName),
     createdAt: row.createdAt,
     updatedAt: orUndef(row.updatedAt),
     commit: orUndef(row.commit),
@@ -80,6 +83,7 @@ export function rowToApplication(row: ApplicationRow): Application {
 export function applicationToRow(app: Application): ApplicationInsert {
   return {
     id: app.id,
+    ownerId: app.ownerId,
     date: app.date,
     company: app.company,
     position: app.position,
@@ -88,6 +92,8 @@ export function applicationToRow(app: Application): ApplicationInsert {
     status: app.status,
     pdfPath: app.pdfPath,
     source: app.source,
+    talentId: app.talentId ?? null,
+    talentName: app.talentName ?? null,
     createdAt: app.createdAt,
     updatedAt: app.updatedAt ?? null,
     commit: app.commit ?? null,

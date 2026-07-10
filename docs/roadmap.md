@@ -58,10 +58,16 @@ New ports in the hexagonal core. Uses the Claude API.
   - ✅ port + `SampleJobSource` shipped in 3.5.
   - ✅ live adapters: **Arbeitnow** (open), **Bundesagentur** (public key),
     **Adzuna** (app id+key). Resilient `CompositeJobSource` (one failing source is
-    skipped) + `createJobSource` factory; enabled via `JOB_SOURCES` env, offline
-    sample as default. Mappers unit-tested against recorded shapes; verified live.
-  - Outstanding: OAuth boards (StepStone/Indeed/LinkedIn/XING). Note: postings
-    without skill tags score neutral (100) until skill extraction lands in 3.2.
+    skipped) + `createJobSource` factory; verified live.
+  - ✅ **generalized registry (ADR-0050):** every board **on by default**, one
+    search fans out across all of them; a generic `RestJobSource` runs
+    declarative `JobSourceDescriptor`s so a well-behaved board is data, not code
+    (built-in **Remotive / Jobicy / Remote OK**; more via `JOB_SOURCES_FILE`).
+    `JOB_SOURCES_DISABLED` opts one out. The UI shows the accumulated posting
+    count across all API sources with a per-board breakdown.
+  - Outstanding: OAuth boards (StepStone/Indeed/LinkedIn/XING — no open API);
+    a **runtime admin UI** to add descriptor sources (persisted, SSRF-guarded).
+    Note: postings without skill tags rely on skill extraction (3.2).
 - **3.2** `Matcher` port — job↔candidate score feeding the existing `match %` UI. **M**
   - ✅ skill scoring (`domain/skill.ts`) + `JobSearchService` shipped in 3.5.
   - ✅ skill **extraction**: `SkillExtractor` port + rule-based `KeywordSkillExtractor`

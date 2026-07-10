@@ -35,6 +35,7 @@ Closes #
 - [ ] Docs updated where behaviour, a building block, or a runtime flow changed (`docs/architecture.md` + the relevant `docs/umls/*.puml` re-rendered to `.svg`)
 - [ ] `Closes #` above links a real issue — every PR traces back to one (see [CONTRIBUTING.md](../CONTRIBUTING.md#ways-of-working))
 - [ ] If this PR introduces/swaps a technology or changes a cross-cutting architecture pattern, it ships a new or updated [ADR](../docs/adr/README.md) — otherwise N/A
+- [ ] Any unrelated bug/defect found while working this task got its own issue — not silently fixed inline, not silently skipped
 - [ ] I have read and agree to abide by the [Code of Conduct](../CODE_OF_CONDUCT.md)
 
 ## Quality gates (required for merge)

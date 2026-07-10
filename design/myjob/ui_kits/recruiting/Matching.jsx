@@ -16,18 +16,27 @@ function mtSkills(cand, job) {
   return job.req.map((name) => ({ name, met: have.includes(name.toLowerCase()) }));
 }
 
-function Matching({ talents, onCreateMandate }) {
+function Matching({ talents, mandates = [], onCreateMandate, onApply }) {
   const [mode, setMode] = React.useState('auto');
   const [candId, setCandId] = React.useState((talents.find((t) => t.me) || talents[0]).id);
   const [country, setCountry] = React.useState('ALL');
   const [source, setSource] = React.useState('All');
   const [query, setQuery] = React.useState('');
+  // Per-job apply state: 'busy' | 'done' | 'error' (absent = idle).
+  const [applyState, setApplyState] = React.useState({});
+  // Board-independent "apply to a role": company + role typed directly or
+  // prefilled from one of the recruiter's own mandates. This makes applying a
+  // candidate possible even when no live posting is loaded (offline / board down).
+  const [manual, setManual] = React.useState({ company: '', role: '' });
 
   // Live postings — loaded once; the search box filters client-side so typing
   // stays instant (the boards are already merged server-side).
   const [jobs, setJobs] = React.useState(null); // null = loading
-  const [sample, setSample] = React.useState(false);
   const [liveDown, setLiveDown] = React.useState(false);
+  // Per-board breakdown [{ name, count, ok }] + accumulated total across all
+  // API sources — shown as a source-count strip above the results.
+  const [srcCounts, setSrcCounts] = React.useState([]);
+  const [total, setTotal] = React.useState(0);
   const [error, setError] = React.useState(false);
   const load = React.useCallback(() => {
     setJobs(null);
@@ -35,8 +44,9 @@ function Matching({ talents, onCreateMandate }) {
     window.RecruitApi.searchJobs()
       .then((r) => {
         setJobs(r.jobs);
-        setSample(r.sample);
         setLiveDown(r.liveDown);
+        setSrcCounts(Array.isArray(r.sources) ? r.sources : []);
+        setTotal(typeof r.total === 'number' ? r.total : r.jobs.length);
       })
       .catch(() => setError(true));
   }, []);
@@ -45,6 +55,26 @@ function Matching({ talents, onCreateMandate }) {
   }, [load]);
 
   const cand = talents.find((t) => t.id === candId) || talents[0];
+  // Apply the selected candidate to a posting. Keyed by candidate+job so the
+  // "Applied" state is specific to who you applied, not just which role.
+  const apply = (job) => {
+    if (!onApply) return;
+    const key = `${cand.id}:${job.id}`;
+    setApplyState((s) => ({ ...s, [key]: 'busy' }));
+    Promise.resolve(onApply(job, cand))
+      .then(() => setApplyState((s) => ({ ...s, [key]: 'done' })))
+      .catch(() => setApplyState((s) => ({ ...s, [key]: 'error' })));
+  };
+  // Apply the selected candidate to a typed/mandate-derived role — no posting needed.
+  const applyManual = () => {
+    if (!onApply) return;
+    const job = { id: 'manual', company: manual.company.trim(), title: manual.role.trim(), url: '' };
+    const key = `${cand.id}:manual`;
+    setApplyState((s) => ({ ...s, [key]: 'busy' }));
+    Promise.resolve(onApply(job, cand))
+      .then(() => setApplyState((s) => ({ ...s, [key]: 'done', 'manual-dirty': false })))
+      .catch(() => setApplyState((s) => ({ ...s, [key]: 'error' })));
+  };
   if (error) return <window.ErrorState onRetry={load} />;
   if (jobs === null) return <window.LoadingState />;
 
@@ -64,14 +94,30 @@ function Matching({ talents, onCreateMandate }) {
 
   return (
     <div style={{ maxWidth: '780px' }}>
-      {sample && (
+      {liveDown && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', color: 'var(--text-muted)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '8px 12px', marginBottom: '16px' }}>
           <MT.Icon name="info" size={14} style={{ flexShrink: 0 }} />
-          {liveDown ? (
-            <span>Live job sources are configured but unreachable right now — showing sample postings instead. Check the server's network/API keys; the search recovers automatically.</span>
-          ) : (
-            <span>Sample postings — no live job source is configured. Enable Arbeitnow, Adzuna or Bundesagentur via the server config to search real openings.</span>
-          )}
+          <span>Live job sources are unreachable right now, so no postings could be loaded. Check the server's network/API keys; the search recovers automatically.</span>
+        </div>
+      )}
+      {/* Accumulated jobs across every API source, with a per-board breakdown. A
+          down board is shown struck-through so an outage is visible, not hidden. */}
+      {srcCounts.length > 0 && (
+        <div data-testid="source-counts" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '18px' }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600, color: 'var(--text-heading)' }}>
+            {total} {total === 1 ? 'job' : 'jobs'}
+          </span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>
+            across {srcCounts.filter((s) => s.ok).length}/{srcCounts.length} sources
+          </span>
+          <span style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+            {srcCounts.map((s) => (
+              <span key={s.name} title={s.ok ? `${s.name}: ${s.count} postings` : `${s.name} is unreachable`} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-mono)', fontSize: '11px', padding: '3px 9px', borderRadius: 'var(--radius-pill)', border: '1px solid var(--border)', background: 'var(--surface-card)', color: s.ok ? 'var(--text-muted)' : 'var(--text-soft)', textDecoration: s.ok ? 'none' : 'line-through', opacity: s.ok ? 1 : 0.6 }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: s.ok ? 'var(--positive, #1F8A5B)' : 'var(--danger, #d64545)' }} />
+                {s.name} {s.ok ? s.count : '—'}
+              </span>
+            ))}
+          </span>
         </div>
       )}
       {/* mode */}
@@ -93,6 +139,42 @@ function Matching({ talents, onCreateMandate }) {
           );
         })}
       </div>
+
+      {mode === 'manual' && onApply && (() => {
+        const key = `${cand.id}:manual`;
+        const st = applyState[key];
+        const ready = manual.company.trim() && manual.role.trim();
+        const inp = { flex: 1, minWidth: 0, border: '1px solid var(--border-strong)', outline: 'none', background: 'var(--surface-card)', borderRadius: 'var(--radius-md)', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-heading)', padding: '9px 11px' };
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '18px', padding: '14px', border: '1px solid var(--accent-border)', background: 'var(--accent-soft)', borderRadius: 'var(--radius-lg)' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--accent-strong)' }}>Apply {cand.name.split(' ')[0]} to a role</div>
+            <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '-4px' }}>Type a role or pick one of your mandates — no live posting needed.</div>
+            {mandates.length > 0 && (
+              <select
+                aria-label="Prefill from a mandate"
+                value=""
+                onChange={(e) => { const m = mandates.find((x) => x.id === e.target.value); if (m) setManual({ company: m.client || '', role: m.role || '' }); }}
+                style={{ ...inp, cursor: 'pointer' }}
+              >
+                <option value="">From one of your mandates…</option>
+                {mandates.map((m) => <option key={m.id} value={m.id}>{m.role} · {m.client}</option>)}
+              </select>
+            )}
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <input value={manual.company} onChange={(e) => setManual((s) => ({ ...s, company: e.target.value }))} placeholder="Company" aria-label="Company" style={inp} />
+              <input value={manual.role} onChange={(e) => setManual((s) => ({ ...s, role: e.target.value }))} placeholder="Role" aria-label="Role" style={inp} />
+              <button
+                onClick={applyManual}
+                disabled={!ready || st === 'busy'}
+                style={{ appearance: 'none', cursor: !ready || st === 'busy' ? 'default' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'var(--accent)', border: 'none', borderRadius: 'var(--radius-md)', color: 'var(--accent-contrast)', fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600, padding: '9px 15px', opacity: !ready ? 0.5 : 1 }}
+              >
+                <MT.Icon name={st === 'done' ? 'check' : 'plus'} size={14} />
+                {st === 'busy' ? 'Applying…' : st === 'done' ? 'Applied' : st === 'error' ? 'Retry' : 'Apply'}
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       {mode === 'manual' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '18px' }}>
@@ -127,15 +209,36 @@ function Matching({ talents, onCreateMandate }) {
                 onApply={open}
                 onView={open}
               />
-              {onCreateMandate && (
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
-                  <button
-                    onClick={() => onCreateMandate(job)}
-                    title="Open a client mandate drafted from this posting"
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', appearance: 'none', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '11px', padding: '4px 11px' }}
-                  >
-                    <MT.Icon name="briefcase" size={12} /> Create mandate
-                  </button>
+              {(onApply || onCreateMandate) && (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '6px' }}>
+                  {onApply && (() => {
+                    const aState = applyState[`${cand.id}:${job.id}`];
+                    const label =
+                      aState === 'busy' ? 'Applying…'
+                      : aState === 'done' ? `Applied · ${cand.name.split(' ')[0]}`
+                      : aState === 'error' ? 'Retry apply'
+                      : `Apply ${cand.name.split(' ')[0]}`;
+                    const done = aState === 'done';
+                    return (
+                      <button
+                        onClick={() => apply(job)}
+                        disabled={aState === 'busy' || done}
+                        title={`Apply ${cand.name} to this role — records an application with the company’s details`}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: aState === 'busy' || done ? 'default' : 'pointer', appearance: 'none', background: done ? 'var(--surface-sunk)' : 'var(--accent-soft)', border: `1px solid ${done ? 'var(--border-strong)' : 'var(--accent-border)'}`, borderRadius: 'var(--radius-pill)', color: done ? 'var(--text-soft)' : 'var(--accent-strong)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '4px 11px' }}
+                      >
+                        <MT.Icon name={done ? 'check' : 'plus'} size={12} /> {label}
+                      </button>
+                    );
+                  })()}
+                  {onCreateMandate && (
+                    <button
+                      onClick={() => onCreateMandate(job)}
+                      title="Open a client mandate drafted from this posting"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', appearance: 'none', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '11px', padding: '4px 11px' }}
+                    >
+                      <MT.Icon name="briefcase" size={12} /> Create mandate
+                    </button>
+                  )}
                 </div>
               )}
             </div>

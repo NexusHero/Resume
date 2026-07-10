@@ -382,8 +382,9 @@ describe('FsInterviewObservationRepository', () => {
   });
 });
 
-const app = (id: string, company = 'Aurora'): Application => ({
+const app = (id: string, company = 'Aurora', ownerId = 'team'): Application => ({
   id,
+  ownerId,
   date: '2026-06-25',
   company,
   position: '',
@@ -398,28 +399,36 @@ const app = (id: string, company = 'Aurora'): Application => ({
 describe('FsApplicationRepository', () => {
   it('Repository_NoFile_ListsEmpty', async () => {
     const repo = new FsApplicationRepository({ config: tmpConfig() });
-    expect(await repo.list()).toEqual([]);
+    expect(await repo.list('team')).toEqual([]);
   });
 
   it('Repository_AddThenFind_RoundTrips', async () => {
     const repo = new FsApplicationRepository({ config: tmpConfig() });
     await repo.add(app('a1'));
-    expect(await repo.findById('a1')).toMatchObject({ id: 'a1' });
-    expect(await repo.findById('missing')).toBeNull();
+    expect(await repo.findById('team', 'a1')).toMatchObject({ id: 'a1' });
+    expect(await repo.findById('team', 'missing')).toBeNull();
+  });
+
+  it('Repository_ListAndFind_ScopedByOwner', async () => {
+    const repo = new FsApplicationRepository({ config: tmpConfig() });
+    await repo.add(app('a1', 'Aurora', 'team'));
+    await repo.add(app('a2', 'Helio', 'other'));
+    expect((await repo.list('team')).map((a) => a.id)).toEqual(['a1']);
+    expect(await repo.findById('team', 'a2')).toBeNull(); // owned by another team
   });
 
   it('Repository_UpdateExisting_Replaces', async () => {
     const repo = new FsApplicationRepository({ config: tmpConfig() });
     await repo.add(app('a1', 'Old'));
     await repo.update({ ...app('a1', 'New') });
-    expect((await repo.findById('a1'))?.company).toBe('New');
-    expect(await repo.list()).toHaveLength(1);
+    expect((await repo.findById('team', 'a1'))?.company).toBe('New');
+    expect(await repo.list('team')).toHaveLength(1);
   });
 
   it('Repository_UpdateUnknown_Appends', async () => {
     const repo = new FsApplicationRepository({ config: tmpConfig() });
     await repo.update(app('a9'));
-    expect(await repo.list()).toHaveLength(1);
+    expect(await repo.list('team')).toHaveLength(1);
   });
 
   it('Repository_MalformedFile_ListsEmpty', async () => {
@@ -427,7 +436,7 @@ describe('FsApplicationRepository', () => {
     await fs.mkdir(config.storeDir, { recursive: true });
     await fs.writeFile(config.logFile, 'not json');
     const repo = new FsApplicationRepository({ config });
-    expect(await repo.list()).toEqual([]);
+    expect(await repo.list('team')).toEqual([]);
   });
 
   it('Repository_ValidNonArrayJson_ListsEmpty', async () => {

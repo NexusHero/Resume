@@ -70,6 +70,21 @@ module.exports = {
     // exercised end-to-end by better-auth-engine.test.ts (real SQLite), not
     // unit-coverage-counted — same convention as the sql/smtp/s3 adapters.
     '!server/src/adapters/better-auth/better-auth-engine.ts',
+    // NestJS composition (ADR-0051): the module wiring is the composition root —
+    // pure provider bindings (useFactory/useValue), exercised end-to-end by the
+    // Nest acceptance tests, not unit-covered (same convention as container.ts).
+    '!server/src/nest/**/*.module.ts',
+    '!server/src/main.ts',
+    // The Express edge around the Nest router (static kits, docs, body limits) is
+    // process bootstrap like index.ts — exercised by the boot smoke, not unit-covered.
+    '!server/src/nest/http-edge.ts',
+    // Nest controllers are thin HTTP glue (routing decorators → service call),
+    // exercised end-to-end by the Nest acceptance tests; their heavy
+    // `emitDecoratorMetadata`-emitted branches are structurally uncoverable, so
+    // they are integration-covered rather than unit-coverage-counted — the same
+    // convention as the composition roots and the real-I/O adapters above. The
+    // guards, pipes, filters and param decorators (real logic) stay counted.
+    '!server/src/nest/**/*.controller.ts',
   ],
   coverageDirectory: 'coverage',
   coverageThreshold: {

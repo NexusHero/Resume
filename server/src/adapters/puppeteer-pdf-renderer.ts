@@ -10,6 +10,26 @@ import { Semaphore } from './semaphore.js';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 declare const document: any;
 
+/**
+ * Chromium launch options. In the production container Puppeteer's bundled
+ * download is skipped and a system Chromium is installed instead (see the
+ * Dockerfile), so honour `PUPPETEER_EXECUTABLE_PATH` — otherwise a slim Node
+ * image has no browser and every PDF render fails. Pure + exported so the wiring
+ * is unit-tested without launching a browser.
+ */
+export function puppeteerLaunchOptions(env: NodeJS.ProcessEnv = process.env): {
+  headless: true;
+  args: string[];
+  executablePath?: string;
+} {
+  const executablePath = env.PUPPETEER_EXECUTABLE_PATH?.trim();
+  return {
+    headless: true,
+    args: ['--no-sandbox'],
+    ...(executablePath ? { executablePath } : {}),
+  };
+}
+
 /** Renders the self-contained HTML pages to vector PDF via headless Chromium. */
 export class PuppeteerPdfRenderer implements PdfRenderer {
   private readonly rootDir: string;
@@ -27,7 +47,7 @@ export class PuppeteerPdfRenderer implements PdfRenderer {
 
   private browser(): Promise<Browser> {
     if (!this.browserPromise) {
-      this.browserPromise = puppeteer.launch({ headless: true, args: ['--no-sandbox'] });
+      this.browserPromise = puppeteer.launch(puppeteerLaunchOptions());
     }
     return this.browserPromise;
   }

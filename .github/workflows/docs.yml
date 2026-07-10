@@ -18,7 +18,7 @@ jobs:
     name: Render PlantUML diagrams
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Render *.puml to *.svg (top-level + per-use-case)
         uses: docker://plantuml/plantuml:latest
@@ -42,8 +42,8 @@ jobs:
     name: Docs structure (diagrams, links, ADRs)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
         with:
           node-version: '24'
       # Deterministic guard (no PlantUML needed): every .puml has an .svg, no

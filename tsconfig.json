@@ -13,6 +13,11 @@
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
+    // NestJS DI reads constructor param types at runtime via reflect-metadata
+    // (ADR-0051). These two flags emit that metadata and enable the decorators
+    // Nest's @Injectable/@Controller/@Inject rely on.
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,

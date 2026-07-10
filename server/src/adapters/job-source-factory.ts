@@ -1,12 +1,18 @@
+import { readFileSync } from 'node:fs';
 import type { AppConfig } from '../config.js';
 import type { JobSource } from '../ports/job-source.js';
 import type { HttpFetch } from '../ports/http-fetch.js';
 import type { Logger } from '../ports/logger.js';
+import { jobSourceDescriptorsSchema } from '../domain/job-source-descriptor.js';
+import type { JobSourceDescriptor } from '../domain/job-source-descriptor.js';
 import { ArbeitnowJobSource } from './arbeitnow-job-source.js';
 import { BundesagenturJobSource } from './bundesagentur-job-source.js';
 import { AdzunaJobSource } from './adzuna-job-source.js';
+import { RestJobSource } from './rest-job-source.js';
+import { BUILTIN_JOB_SOURCE_DESCRIPTORS } from './builtin-job-sources.js';
 import { CompositeJobSource } from './composite-job-source.js';
-import { SampleJobSource } from './sample-job-source.js';
+import { EmptyJobSource } from './empty-job-source.js';
+import { resilientFetch } from './resilient-fetch.js';
 
 export interface JobSourceFactoryDeps {
   config: AppConfig;
@@ -14,14 +20,47 @@ export interface JobSourceFactoryDeps {
   httpFetch: HttpFetch;
 }
 
+/** Load extra descriptors from JOB_SOURCES_FILE; a bad file is skipped, never fatal. */
+function loadFileDescriptors(file: string | null, logger: Logger): JobSourceDescriptor[] {
+  if (!file) return [];
+  try {
+    const parsed = jobSourceDescriptorsSchema.parse(JSON.parse(readFileSync(file, 'utf8')));
+    logger.info({ file, count: parsed.length }, 'loaded job-source descriptors from file');
+    return parsed;
+  } catch (err) {
+    logger.warn({ file, err: String(err) }, 'could not load JOB_SOURCES_FILE — skipping');
+    return [];
+  }
+}
+
 /**
- * Assembles the live job sources enabled in config. With none enabled (the
- * default — no API keys, offline, CI) it falls back to the curated
- * SampleJobSource so the search always works.
+ * Assembles every enabled job source into one composite (ADR-0050). By default
+ * ALL sources are on and a search fans out across all of them at once: the
+ * keyless hand-written boards (Arbeitnow, Bundesagentur), Adzuna when its
+ * credentials are set, the built-in descriptor boards (Remotive, Jobicy, Remote
+ * OK), and any extra descriptors from JOB_SOURCES_FILE. A source is skipped only
+ * when it is on the JOB_SOURCES_DISABLED deny-list, absent from an explicit
+ * legacy JOB_SOURCES allow-list, or its descriptor sets `enabled: false`. With
+ * every source off it returns an EmptyJobSource — an honest empty search, never
+ * fabricated sample data.
  */
 export function createJobSource(deps: JobSourceFactoryDeps): JobSource {
-  const { config, logger, httpFetch } = deps;
+  const { config, logger } = deps;
   const cfg = config.jobSources;
+  // Every board request gets a timeout + bounded retry so a slow/flaky board
+  // can't hang or silently empty the search (see resilient-fetch).
+  const httpFetch = resilientFetch(deps.httpFetch, {
+    timeoutMs: cfg.requestTimeoutMs,
+    retries: cfg.retries,
+    logger,
+  });
+
+  // Same allow/deny rule the config applied to the hand-written boards, reused
+  // for descriptor boards so one switch governs every source uniformly.
+  const on = (name: string): boolean =>
+    (cfg.allowList === null || cfg.allowList.includes(name.toLowerCase())) &&
+    !cfg.disabled.includes(name.toLowerCase());
+
   const sources: JobSource[] = [];
 
   if (cfg.arbeitnow.enabled) {
@@ -44,9 +83,18 @@ export function createJobSource(deps: JobSourceFactoryDeps): JobSource {
     );
   }
 
+  const descriptors = [
+    ...BUILTIN_JOB_SOURCE_DESCRIPTORS,
+    ...loadFileDescriptors(cfg.descriptorsFile, logger),
+  ];
+  for (const descriptor of descriptors) {
+    if (descriptor.enabled === false || !on(descriptor.name)) continue;
+    sources.push(new RestJobSource({ descriptor, httpFetch, logger }));
+  }
+
   if (sources.length === 0) {
-    logger.info({}, 'no live job sources configured — using offline sample');
-    return new SampleJobSource();
+    logger.warn({}, 'no job sources enabled — search returns no postings');
+    return new EmptyJobSource();
   }
   logger.info({ sources: sources.map((s) => s.name) }, 'live job sources enabled');
   return new CompositeJobSource(sources, logger);

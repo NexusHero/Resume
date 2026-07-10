@@ -51,15 +51,15 @@ job-application toolkit:
 
 ### Architecture at a glance
 
-| Aspect            | Choice                                                                                                                                                      |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Style**         | Hexagonal **ports & adapters** with a pure, I/O-free domain core — a **modular monolith**, not microservices (ADR-0001).                                    |
-| **Composition**   | One **Awilix DI composition root** wires every port to its production adapter; no decorators, no service locator (ADR-0002).                                |
-| **Persistence**   | **File store by default** (zero external dependency, offline, CI-friendly); **Postgres** via `STORE=sql` behind the same repository ports (ADR-0003).       |
-| **AI**            | **Optional throughout**: per-user keys, a deterministic template fallback on every feature, and a grounding self-check over generated text (ADR-0005/0009). |
-| **API**           | TypeScript/Express under `/api/v1`; **zod** at the boundary, **RFC-9457** errors, hand-kept OpenAPI + Swagger UI (ADR-0012).                                |
-| **Frontend**      | Vite/React recruiting kit; installable **PWA**; a **Capacitor** native wrapper over the same build (ADR-0028/0040).                                         |
-| **Multi-tenancy** | Scope-owned data, a **config-only, non-escalatable super-admin**, tenant suspension enforced in the auth path (ADR-0033–0038).                              |
+| Aspect            | Choice                                                                                                                                                            |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Style**         | Hexagonal **ports & adapters** with a pure, I/O-free domain core — a **modular monolith**, not microservices (ADR-0001).                                          |
+| **Composition**   | **NestJS modules** compose every port to its production adapter via injection tokens; the hexagonal services stay decorator-free (ADR-0051, supersedes ADR-0002). |
+| **Persistence**   | **File store by default** (zero external dependency, offline, CI-friendly); **Postgres** via `STORE=sql` behind the same repository ports (ADR-0003).             |
+| **AI**            | **Optional throughout**: per-user keys, a deterministic template fallback on every feature, and a grounding self-check over generated text (ADR-0005/0009).       |
+| **API**           | TypeScript/**NestJS** (Express platform) under `/api/v1`; **zod** at the boundary, **RFC-9457** errors, hand-kept OpenAPI + Swagger UI (ADR-0012, ADR-0051).      |
+| **Frontend**      | Vite/React recruiting kit; installable **PWA**; a **Capacitor** native wrapper over the same build (ADR-0028/0040).                                               |
+| **Multi-tenancy** | Scope-owned data, a **config-only, non-escalatable super-admin**, tenant suspension enforced in the auth path (ADR-0033–0038).                                    |
 
 **Why this shape.** The forces are a very small team, a product that must run
 **fully offline with no external service** (a recruiter can install it and work
@@ -106,8 +106,9 @@ so none of them is a one-way door — see [§11 Risks and Technical Debt](#11-ri
 
 ## 2. Constraints
 
-- Backend: **TypeScript (strict)**, **Awilix** DI (no decorators), **pino** logging,
-  **zod** validation, **RFC-9457** problem+json errors.
+- Backend: **TypeScript (strict)**, **NestJS** composition + HTTP (services stay
+  decorator-free behind injection tokens), **pino** logging, **zod** validation,
+  **RFC-9457** problem+json errors.
 - Recruiting kit is a **Vite**-built React app; no runtime Babel/CDN.
 - English end-to-end (code, commits, API). Conventional Commits, PR-only to a protected
   `main`.
@@ -124,7 +125,15 @@ See [`docs/umls/03_system_context.puml`](umls/03_system_context.puml).
   served at `/api/v1/openapi.yaml`, browsable at `/api/v1/docs` (ADR-0012).
 - API → **LLM providers** (Claude / Gemini) with the user's own key and persisted
   provider choice (ADR-0011), for AI features — optional.
-- API → **job boards** (Arbeitnow / Bundesagentur / Adzuna) for search — resilient composite.
+- API → **job boards** for search — a resilient composite that fans one search out
+  across **every configured board at once** and reports a per-board count breakdown
+  (ADR-0050). Hand-written adapters cover the boards with quirks (Arbeitnow,
+  Bundesagentur, Adzuna); the keyless **Remotive / Jobicy / Remote OK** boards ship
+  as declarative `JobSourceDescriptor`s driven by a generic `RestJobSource`, and more
+  can be added via `JOB_SOURCES_FILE` with no code. All boards are **on by default**
+  (`JOB_SOURCES_DISABLED` opts one out). There is **no fabricated sample source**, so
+  when every live board is down the search returns empty and flags `liveSourcesDown`
+  rather than inventing postings (ADR-0045).
 - API → **SMTP mailer** for email verification, password-reset links and sending drafted
   outreach (console in dev); API → **IMAP mailbox** (optional, `MAIL_IMAP_*`) polled for
   replies to close the outcome loop — envelopes only, no message bodies (ADR-0015).
@@ -152,16 +161,17 @@ The backend lives in `server/src/` and is strictly layered (dependencies point i
 > The diagram shows representative blocks per layer; the table below completes the
 > inventory.
 
-| Layer       | Building blocks (selected)                                                                                                                                                                                                                                                                        | Responsibility                                                                       |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| HTTP        | `create-app`, `*-controller` (mandate, talent, candidacy, placement, match, match-ai, document, compliance, forecast, observation, members, …), `problem`, `security`                                                                                                                             | Express routing, zod validation at the boundary, RFC-9457 errors, auth/CORS/headers. |
-| Application | `*-service` (mandate, talent, candidacy, placement, match, forecast, retention, members, usage, job-search, …); the AI services (`document-assist`, `cv-parse`, `ats-ai`, `outreach-ai`, `match-ai`) over the shared **`LlmFeatureRunner`** (ADR-0022), with `DocumentAiService` as a thin facade | Business rules only; depend on ports, never adapters.                                |
-| Domain      | `mandate`, `talent`, `candidacy`, `placement`, `match`, `skill-semantics`, **`skill-taxonomy`**, **`grounding`**, `candidate-prep`, `company-archetype`, `interview-*`, `agg-check`, `forecast`, `errors`                                                                                         | The model, its invariants, and pure deterministic algorithms. No I/O.                |
-| Ports       | `*-repository`, `auth-engine`, `llm-provider`, `api-key-store`, `usage-meter`, `skill-extractor`, `job-source`, `pdf-*`, `mailer`, `authorizer`, `clock`, …                                                                                                                                       | Interfaces the services depend on.                                                   |
-| Adapters    | `fs-*` / `sql/*` repositories, `better-auth/` engine, `anthropic`/`gemini` LLM providers, `*-job-source`, `puppeteer-pdf-renderer`, `pdf-lib-merger`, `secret-cipher`, `pino`, …                                                                                                                  | Concrete I/O, wired in `container.ts` (Awilix).                                      |
+| Layer       | Building blocks (selected)                                                                                                                                                                                                                                                                           | Responsibility                                                                      |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| HTTP        | `nest/*` feature modules + controllers (mandate, talent, candidacy, placement, match, match-ai, document, compliance, forecast, observation, members, …), guards (`AuthGuard`, `RolesGuard`, `PlanGuard`, rate limits), `ZodValidationPipe`, `ProblemJsonFilter`, `http-edge`, `problem`, `security` | NestJS routing, zod validation at the boundary, RFC-9457 errors, auth/CORS/headers. |
+| Application | `*-service` (mandate, talent, candidacy, placement, match, forecast, retention, members, usage, job-search, …); the AI services (`document-assist`, `cv-parse`, `ats-ai`, `outreach-ai`, `match-ai`) over the shared **`LlmFeatureRunner`** (ADR-0022), with `DocumentAiService` as a thin facade    | Business rules only; depend on ports, never adapters.                               |
+| Domain      | `mandate`, `talent`, `candidacy`, `placement`, `match`, `skill-semantics`, **`skill-taxonomy`**, **`grounding`**, `candidate-prep`, `company-archetype`, `interview-*`, `agg-check`, `forecast`, `errors`                                                                                            | The model, its invariants, and pure deterministic algorithms. No I/O.               |
+| Ports       | `*-repository`, `auth-engine`, `llm-provider`, `api-key-store`, `usage-meter`, `skill-extractor`, `job-source`, `pdf-*`, `mailer`, `authorizer`, `clock`, …                                                                                                                                          | Interfaces the services depend on.                                                  |
+| Adapters    | `fs-*` / `sql/*` repositories, `better-auth/` engine, `anthropic`/`gemini` LLM providers, `*-job-source`, `puppeteer-pdf-renderer`, `pdf-lib-merger`, `secret-cipher`, `pino`, …                                                                                                                     | Concrete I/O, wired in the Nest modules (ADR-0051).                                 |
 
-The composition root (`container.ts`) is the single place that knows which adapter
-implements each port — see ADR-0002 for the registration discipline this demands.
+The composition root (`nest/app.module.ts` + the global core/persistence/infra
+modules) is the single place that knows which adapter implements each port — see
+ADR-0051 for the token/module discipline this demands.
 
 ## 6. Runtime View
 
@@ -303,8 +313,8 @@ a picture earns its place.
   (ADR-0044), so the contract is browsable without running the server.
 - **Self-hosted assets:** fonts and the Swagger UI ship from this origin — no CDN, no
   third-party request leaves the browser (DSGVO); strict CSP on the built kit and docs.
-- **DI discipline:** new ports must be registered in `container.ts`; unit tests won't catch
-  a missing registration — the e2e boot will (ADR-0002).
+- **DI discipline:** a new port needs a token in `nest/tokens.ts` and a provider in its
+  module; Nest fails fast at boot on a missing provider (ADR-0051).
 - **Validation & errors:** zod at the boundary; RFC-9457 problem+json.
 - **Privacy:** DSGVO export/erasure/retention/anonymisation as first-class flows.
 - **Logging:** structured pino, injected.
@@ -313,52 +323,58 @@ a picture earns its place.
 
 Full log in [`docs/adr/`](adr). Summary:
 
-| ADR  | Decision                                                          | Status                          |
-| ---- | ----------------------------------------------------------------- | ------------------------------- |
-| 0001 | Hexagonal TypeScript backend (ports & adapters, SOLID)            | Accepted                        |
-| 0002 | Awilix DI with a single composition root                          | Accepted                        |
-| 0003 | File store default, Postgres via `STORE=sql`                      | Accepted                        |
-| 0004 | Authenticated, team-scoped, RBAC API                              | Accepted (supersedes open API)  |
-| 0005 | Deterministic fallback + per-user keys + metering for all AI      | Accepted                        |
-| 0006 | First-party observation flywheel; no scraping of review sites     | Accepted                        |
-| 0007 | Offline semantic skill matching (ontology + trigram fuzzy)        | Accepted                        |
-| 0008 | Skill canonicalization taxonomy                                   | Accepted                        |
-| 0009 | Grounding self-check over generated text                          | Accepted                        |
-| 0010 | Team scope as the ownership boundary for recruiting data          | Accepted                        |
-| 0011 | Per-user, persisted LLM provider choice                           | Accepted                        |
-| 0012 | Hand-maintained OpenAPI contract + self-hosted Swagger UI         | Accepted                        |
-| 0013 | In-process assistant agent with staged-suggestion autonomy        | Accepted (extended by 0019)     |
-| 0014 | First-party outcome loop (artefact → result tracking)             | Accepted                        |
-| 0015 | First-party email integration (send outreach, detect replies)     | Accepted                        |
-| 0016 | Learned stage-transition probabilities for the forecast           | Accepted                        |
-| 0017 | Local hashed embeddings + hybrid matching                         | Accepted                        |
-| 0018 | Compliance automation (audit trail, retention, AGG engine)        | Accepted                        |
-| 0019 | Autopilot: the auto-apply gear of the one agent (CoRecruiter)     | Accepted                        |
-| 0020 | Pluggable neural embeddings (Ollama, OpenAI) behind the port      | Accepted                        |
-| 0021 | Pro/Free plan gating at one HTTP seam (license deferred)          | Accepted                        |
-| 0022 | Split DocumentAiService into a runner + five services             | Accepted                        |
-| 0023 | Frontend unit/component test base with Vitest (jsdom)             | Accepted                        |
-| 0024 | Split the MandatePipeline god-component (board + 5 modals)        | Accepted                        |
-| 0025 | Responsive app shell (matchMedia hook + mobile drawer)            | Accepted (E1 slice 1)           |
-| 0026 | Responsive dense views (dashboard grids + scrollable tables)      | Accepted (E1 slice 2)           |
-| 0027 | Responsive CV profile, editor, and form modals                    | Accepted (E1 slice 3)           |
-| 0028 | Installable PWA (manifest + hand-rolled service worker)           | Accepted (E2)                   |
-| 0029 | Fail-fast production readiness gate (Postgres, APP_SECRET)        | Accepted (D-series slice 1)     |
-| 0030 | Scheduler leader election via Postgres advisory locks             | Accepted (D-series slice 2)     |
-| 0031 | PDF archive to S3-compatible object storage                       | Accepted (D-series slice 3)     |
-| 0032 | Bounded PDF render pool (concurrency semaphore)                   | Accepted (D-series slice 4)     |
-| 0033 | Multi-tenant scope foundation (tenantId, default 'team')          | Accepted (D-series slice 6·1)   |
-| 0034 | Tenant-scoped member management (roster + role admin)             | Accepted (D-series slice 6·2)   |
-| 0035 | Tenant onboarding by invitation (admin invite → accept)           | Accepted (D-series slice 6·3)   |
-| 0036 | Tenant registry + self-serve creation (SELF_SERVE_TENANTS)        | Accepted (D-series slice 6·4·1) |
-| 0037 | Super-admin capability + cross-tenant registry read               | Accepted (D-series slice 6·4·2) |
-| 0038 | Cross-tenant management + tenant suspension (enforced)            | Accepted (D-series slice 6·4·3) |
-| 0039 | Richer offline experience (offline banner + SWR service worker)   | Accepted                        |
-| 0040 | Capacitor native app wrapper (web-side wiring; native is manual)  | Accepted                        |
-| 0041 | Workbox service worker (vite-plugin-pwa; supersedes 0028/0039 SW) | Accepted                        |
-| 0042 | Server migrated to ESM (nodenext); unblocks modern ESM-only deps  | Accepted                        |
-| 0043 | Better-Auth credential/session engine (embedded SQLite)           | Accepted (engine live)          |
-| 0044 | Read-only Swagger UI mirror on GitHub Pages                       | Accepted                        |
+| ADR  | Decision                                                                 | Status                          |
+| ---- | ------------------------------------------------------------------------ | ------------------------------- |
+| 0001 | Hexagonal TypeScript backend (ports & adapters, SOLID)                   | Accepted                        |
+| 0002 | Awilix DI with a single composition root                                 | Superseded by 0051              |
+| 0003 | File store default, Postgres via `STORE=sql`                             | Accepted                        |
+| 0004 | Authenticated, team-scoped, RBAC API                                     | Accepted (supersedes open API)  |
+| 0005 | Deterministic fallback + per-user keys + metering for all AI             | Accepted                        |
+| 0006 | First-party observation flywheel; no scraping of review sites            | Accepted                        |
+| 0007 | Offline semantic skill matching (ontology + trigram fuzzy)               | Accepted                        |
+| 0008 | Skill canonicalization taxonomy                                          | Accepted                        |
+| 0009 | Grounding self-check over generated text                                 | Accepted                        |
+| 0010 | Team scope as the ownership boundary for recruiting data                 | Accepted                        |
+| 0011 | Per-user, persisted LLM provider choice                                  | Accepted                        |
+| 0012 | Hand-maintained OpenAPI contract + self-hosted Swagger UI                | Accepted                        |
+| 0013 | In-process assistant agent with staged-suggestion autonomy               | Accepted (extended by 0019)     |
+| 0014 | First-party outcome loop (artefact → result tracking)                    | Accepted                        |
+| 0015 | First-party email integration (send outreach, detect replies)            | Accepted                        |
+| 0016 | Learned stage-transition probabilities for the forecast                  | Accepted                        |
+| 0017 | Local hashed embeddings + hybrid matching                                | Accepted                        |
+| 0018 | Compliance automation (audit trail, retention, AGG engine)               | Accepted                        |
+| 0019 | Autopilot: the auto-apply gear of the one agent (CoRecruiter)            | Accepted                        |
+| 0020 | Pluggable neural embeddings (Ollama, OpenAI) behind the port             | Accepted                        |
+| 0021 | Pro/Free plan gating at one HTTP seam (license deferred)                 | Accepted                        |
+| 0022 | Split DocumentAiService into a runner + five services                    | Accepted                        |
+| 0023 | Frontend unit/component test base with Vitest (jsdom)                    | Accepted                        |
+| 0024 | Split the MandatePipeline god-component (board + 5 modals)               | Accepted                        |
+| 0025 | Responsive app shell (matchMedia hook + mobile drawer)                   | Accepted (E1 slice 1)           |
+| 0026 | Responsive dense views (dashboard grids + scrollable tables)             | Accepted (E1 slice 2)           |
+| 0027 | Responsive CV profile, editor, and form modals                           | Accepted (E1 slice 3)           |
+| 0028 | Installable PWA (manifest + hand-rolled service worker)                  | Accepted (E2)                   |
+| 0029 | Fail-fast production readiness gate (Postgres, APP_SECRET)               | Accepted (D-series slice 1)     |
+| 0030 | Scheduler leader election via Postgres advisory locks                    | Accepted (D-series slice 2)     |
+| 0031 | PDF archive to S3-compatible object storage                              | Accepted (D-series slice 3)     |
+| 0032 | Bounded PDF render pool (concurrency semaphore)                          | Accepted (D-series slice 4)     |
+| 0033 | Multi-tenant scope foundation (tenantId, default 'team')                 | Accepted (D-series slice 6·1)   |
+| 0034 | Tenant-scoped member management (roster + role admin)                    | Accepted (D-series slice 6·2)   |
+| 0035 | Tenant onboarding by invitation (admin invite → accept)                  | Accepted (D-series slice 6·3)   |
+| 0036 | Tenant registry + self-serve creation (SELF_SERVE_TENANTS)               | Accepted (D-series slice 6·4·1) |
+| 0037 | Super-admin capability + cross-tenant registry read                      | Accepted (D-series slice 6·4·2) |
+| 0038 | Cross-tenant management + tenant suspension (enforced)                   | Accepted (D-series slice 6·4·3) |
+| 0039 | Richer offline experience (offline banner + SWR service worker)          | Accepted                        |
+| 0040 | Capacitor native app wrapper (web-side wiring; native is manual)         | Accepted                        |
+| 0041 | Workbox service worker (vite-plugin-pwa; supersedes 0028/0039 SW)        | Accepted                        |
+| 0042 | Server migrated to ESM (nodenext); unblocks modern ESM-only deps         | Accepted                        |
+| 0043 | Better-Auth credential/session engine (embedded SQLite)                  | Accepted (engine live)          |
+| 0044 | Read-only Swagger UI mirror on GitHub Pages                              | Accepted                        |
+| 0045 | No fabricated job data; live boards only (Arbeitnow default)             | Accepted                        |
+| 0046 | Applications pipeline wired to the board; apply from Matching            | Accepted                        |
+| 0047 | Recruiting UI actions never fail silently; validated inputs              | Accepted                        |
+| 0048 | Applications team-scoped + DSGVO-exported + board-independent apply      | Accepted                        |
+| 0049 | Production runtime hardening: PDF browser, job resilience, AI rate limit | Accepted                        |
+| 0050 | Generalized job-source registry: all boards on, declarative descriptors  | Accepted                        |
 
 ## 10. Quality Requirements
 

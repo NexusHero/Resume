@@ -107,8 +107,9 @@ suite('SQL repositories (real Postgres)', () => {
     updatedAt: '2026-06-25T10:00:00.000Z',
   });
 
-  const app = (id: string, company = 'Aurora'): Application => ({
+  const app = (id: string, company = 'Aurora', ownerId = 'owner1'): Application => ({
     id,
+    ownerId,
     date: '2026-06-25',
     company,
     position: 'Engineer',
@@ -123,19 +124,27 @@ suite('SQL repositories (real Postgres)', () => {
   it('Applications_AddFindUpdate_RoundTrips', async () => {
     const repo = new SqlApplicationRepository({ db });
     await repo.add(app('a1'));
-    expect(await repo.findById('a1')).toMatchObject({ id: 'a1', company: 'Aurora' });
-    expect(await repo.findById('missing')).toBeNull();
+    expect(await repo.findById('owner1', 'a1')).toMatchObject({ id: 'a1', company: 'Aurora' });
+    expect(await repo.findById('owner1', 'missing')).toBeNull();
 
     await repo.update({ ...app('a1', 'New'), status: 'interview', commit: 'abc1234' });
-    const updated = await repo.findById('a1');
+    const updated = await repo.findById('owner1', 'a1');
     expect(updated).toMatchObject({ company: 'New', status: 'interview', commit: 'abc1234' });
-    expect(await repo.list()).toHaveLength(1);
+    expect(await repo.list('owner1')).toHaveLength(1);
+  });
+
+  it('Applications_ScopedByOwner_Isolated', async () => {
+    const repo = new SqlApplicationRepository({ db });
+    await repo.add(app('a1', 'Aurora', 'owner1'));
+    await repo.add(app('a2', 'Helio', 'owner2'));
+    expect((await repo.list('owner1')).map((a) => a.id)).toEqual(['a1']);
+    expect(await repo.findById('owner1', 'a2')).toBeNull();
   });
 
   it('Applications_UpdateUnknown_Inserts', async () => {
     const repo = new SqlApplicationRepository({ db });
     await repo.update(app('a9'));
-    expect(await repo.list()).toHaveLength(1);
+    expect(await repo.list('owner1')).toHaveLength(1);
   });
 
   it('AuditLog_AppendThenList_PreservesOrderAndJsonb', async () => {

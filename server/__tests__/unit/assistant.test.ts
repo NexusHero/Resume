@@ -19,7 +19,6 @@ import { AttachmentService } from '../../src/services/attachment-service.js';
 import { buildDocumentAiService } from '../support/build-document-ai.js';
 import { ApplicationBuilder } from '../../src/services/application-builder.js';
 import { LlmService } from '../../src/services/llm-service.js';
-import { SampleJobSource } from '../../src/adapters/sample-job-source.js';
 import { KeywordSkillExtractor } from '../../src/adapters/keyword-skill-extractor.js';
 import { ConflictError, NotFoundError } from '../../src/domain/errors.js';
 import type { Candidacy } from '../../src/domain/candidacy.js';
@@ -47,6 +46,7 @@ import {
   FakePdfRenderer,
   FakePdfMerger,
   FakePdfTextExtractor,
+  FakeJobSource,
 } from '../support/fakes.js';
 
 const OWNER = 'team';
@@ -141,8 +141,7 @@ function ctx() {
     idGenerator: new SequenceIdGenerator('mandate'),
   });
   const jobSearchService = new JobSearchService({
-    jobSource: new SampleJobSource(),
-    fallbackJobSource: new SampleJobSource(),
+    jobSource: new FakeJobSource(),
     skillExtractor: new KeywordSkillExtractor(),
     candidateProfile: { skills: [] },
     logger: noopLogger,

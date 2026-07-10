@@ -72,6 +72,19 @@ export class ValidationError extends DomainError {
   }
 }
 
+/** The caller exceeded a request-rate limit (429). */
+export class RateLimitError extends DomainError {
+  readonly status = 429;
+  readonly type = 'rate-limit';
+
+  constructor(message = 'AI request limit reached. Please wait a minute and try again.') {
+    super(message);
+    // The problem+json title is the error's name; keep the exact title the
+    // retired express-rate-limit handler sent so the API contract is unchanged.
+    this.name = 'Too Many Requests';
+  }
+}
+
 /** The configured AI provider rejected or failed the request (502). */
 export class UpstreamProviderError extends DomainError {
   readonly status = 502;

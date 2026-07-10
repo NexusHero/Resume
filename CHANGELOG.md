@@ -8,7 +8,112 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+### Fixed
+
+- **The CV/cover-letter editor is now truly WYSIWYG** (ADR-0052): the live
+  preview and the exported PDF are rendered from a single source
+  (`documentsToHtml`). The preview is an `<iframe>` of the exact HTML the PDF is
+  built from (new `POST /api/v1/talents/:id/documents/preview`), so they can no
+  longer drift — same columns, margins and line breaks — and the Style controls
+  (template/accent/font/size) now drive the export too. Section headings are
+  English (`Profile`/`Experience`/`Education`/`Skills`) to match the product; the
+  PDF bytes are otherwise unchanged (print still driven by `@page`).
+
+### Changed
+
+- **NestJS is now the composition root and HTTP layer** (ADR-0051, supersedes
+  ADR-0002): all 27 controllers/101 routes moved to Nest feature modules with
+  guards (`AuthGuard`, `RolesGuard` RBAC, `PlanGuard` Pro gate, per-user AI and
+  per-IP auth rate limits), the shared `ZodValidationPipe` and the RFC-9457
+  `ProblemJsonFilter`. Awilix, `container.ts` and the hand-built
+  `http/create-app.ts` are retired; the hexagonal core (domain, ports, adapters,
+  zod, Drizzle) is unchanged and services stay decorator-free behind injection
+  tokens. The API contract is byte-compatible (verified by the 199-test contract
+  suite now running against the Nest app, plus per-vertical Nest suites); dev
+  `npm run serve` boots via SWC (decorator metadata), production stays `tsc` +
+  `node dist`.
+
 ### Added
+
+- **All job boards on by default, one search across all of them** (ADR-0050,
+  FR-53): a plain install now fans a single search out across every configured
+  board at once instead of a single default. New boards are added
+  **declaratively** — a `JobSourceDescriptor` interpreted by a generic
+  `RestJobSource`, with no bespoke adapter — either built-in (keyless
+  **Remotive**, **Jobicy**, **Remote OK** join Arbeitnow/Bundesagentur/Adzuna) or
+  via a `JOB_SOURCES_FILE` JSON list. `JOB_SOURCES_DISABLED` turns a single board
+  off; `JOB_SOURCES` still works as a legacy allow-list.
+- **Accumulated job counts per source**: Matching shows the total postings across
+  all API sources ("N jobs across M/K sources") with a per-board count breakdown;
+  an unreachable board is shown struck-through rather than silently missing.
+- **Animated boot splash**: a branded myJob equalizer (animated bars + wordmark +
+  shimmer) paints instantly from `index.html` — before React mounts — and fades
+  out once the session resolves, with a short minimum on-screen time and a
+  `prefers-reduced-motion` fallback. Covers web, the installed PWA, and the
+  native webview's first paint.
+
+### Security
+
+- **Generative AI routes are rate-limited per user** (ADR-0049, NFR-11): the
+  token-spending routes (`documents/ai|parse|ats|pitch|outreach|translate`,
+  match AI, `compliance/agg-rewrite`, `cover-letter`, CV import) now enforce a
+  per-user limit (`AI_RATE_LIMIT_PER_MINUTE`, default 30; `0` disables), returning
+  `429 problem+json` — one caller can no longer exhaust the owner's LLM budget.
+- **Applications are now team-scoped** (ADR-0048, FR-15): previously every
+  authenticated user could read **every team's** applications via
+  `GET /api/v1/applications` and `/history`. `Application` gains an `ownerId`,
+  every repository read is owner-filtered (fs + Postgres, additive `owner_id`
+  migration backfilled to the default team), and the audit history is scoped to
+  the caller's own applications.
+
+### Added
+
+- **Apply a candidate without a job board** (ADR-0048, FR-16): Matching's Manual
+  mode gains an "Apply {candidate} to a role" panel — type a company + role, or
+  prefill from one of your mandates, then apply. The core workflow no longer
+  depends on a reachable external job board.
+- **Applications are included in the DSGVO account export** (ADR-0048) so the
+  owner-scoped export is complete.
+- **The Applications page is a working submission pipeline** (ADR-0046, FR-15/16):
+  the board now reads the live applications resource instead of a hard-coded empty
+  list, and **Matching gained a "+ Apply {candidate}" action** that files an
+  application for the selected candidate, capturing the posting's company and role.
+  `Application` records carry optional talent linkage (`talentId`/`talentName`),
+  persisted by both the file and SQL stores.
+- **Placements can be deleted from the UI** (ADR-0047, FR-17): the edit form has a
+  confirming Delete action wired to the existing `DELETE /placements/:id`.
+
+### Changed
+
+- **Job search shows real board data only** (ADR-0045, FR-52): the fabricated
+  `SampleJobSource` is removed. The keyless **Arbeitnow** board is enabled by
+  default (`JOB_SOURCES` unset), so a fresh install queries live postings; when
+  every source is down the search returns empty and the UI says the live sources
+  are unreachable rather than showing mock postings.
+- **Placement `fee` is validated as a monetary amount** (ADR-0047, FR-17), server-
+  side (`moneyString`) and in the create/edit form — free text like "lots" is
+  rejected instead of stored.
+- **Job-board requests are resilient** (ADR-0049, NFR-12): each board request has
+  a timeout (`JOB_SOURCE_TIMEOUT_MS`, 8 s) and a bounded retry (`JOB_SOURCE_RETRIES`)
+  so a hung or flaky board is skipped rather than hanging or emptying the search.
+- **The recruiter dashboard is framed as an agency view**: "your own applications
+  (me)" becomes "Applications to progress" (desk-wide interview/offer stage), and
+  count badges hide at zero.
+
+### Fixed
+
+- **PDF export works in the production container** (ADR-0049, FR-21): the runtime
+  image now installs Chromium + fonts and points Puppeteer at it
+  (`PUPPETEER_EXECUTABLE_PATH`), so CV/dossier/Mappe rendering no longer fails on
+  a browserless slim image.
+- **The "AI tailor" (KI anpassen) button no longer fails silently** (ADR-0047,
+  FR-44): failures (Pro gate, missing key, network) now show a visible error with
+  a retry instead of an empty `catch`.
+- **Talent document PDFs download reliably** (ADR-0047, FR-24): the bytes are
+  fetched and saved as a file rather than opened with `window.open()`, which was
+  silently blocked under the strict CSP, the installed PWA and the native shell.
+
+### Added (docs)
 
 - **A read-only Swagger UI mirror on GitHub Pages** (ADR-0044): the same
   self-hosted OpenAPI reference as `/api/v1/docs`, published as a static site

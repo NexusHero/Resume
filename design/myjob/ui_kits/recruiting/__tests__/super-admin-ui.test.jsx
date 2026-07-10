@@ -21,6 +21,7 @@ afterEach(() => {
 const baseApi = (isSuperAdmin) => ({
   getLlmSettings: vi.fn().mockResolvedValue({ current: '', providers: [] }),
   getApiKeyStatus: vi.fn().mockResolvedValue({}),
+    getMyProfileName: vi.fn().mockResolvedValue(''),
   getUsage: vi.fn().mockResolvedValue({ requests: 0 }),
   listMembers: vi.fn().mockResolvedValue([]),
   listInvites: vi.fn().mockResolvedValue([]),

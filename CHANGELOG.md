@@ -88,6 +88,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Changed
 
+- **One kanban interaction model for both boards.** The Applications board and
+  the Mandate pipeline looked alike but behaved differently — one moved cards by
+  a stage dropdown + trash, the other by drag + an `x` in a different spot. They
+  now share a single column + card implementation (`KanbanShared.jsx`), so drag
+  feedback, the Stage `<select>`, the remove button (same trash icon and
+  placement) and click-to-open are **identical** on both; only the card's body
+  (company + match score vs. talent + note) differs. A user who works both no
+  longer learns two dialects. The duplicated drag/drop and column code is gone.
 - **NestJS is now the composition root and HTTP layer** (ADR-0051, supersedes
   ADR-0002): all 27 controllers/101 routes moved to Nest feature modules with
   guards (`AuthGuard`, `RolesGuard` RBAC, `PlanGuard` Pro gate, per-user AI and

@@ -10,6 +10,7 @@ let MandateCard;
 let PipelineColumns;
 
 beforeAll(async () => {
+  await import('../KanbanShared.jsx'); // window.KanbanColumn/KanbanCard (#199)
   await import('../MandatePipeline.jsx'); // side effect: Object.assign(window, { … })
   MandateCard = window.MandateCard;
   PipelineColumns = window.PipelineColumns;

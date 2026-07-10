@@ -98,9 +98,16 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
     const card = (cards || []).find((c) => c.id === id);
     if (card && card.stage !== stage) moveCard(card, stage);
   };
-  const removeCard = async (card) => {
+  // Remove from the pipeline — Undo over silent-delete (#200). Optimistically
+  // drop the card, send the DELETE only when the snackbar times out; "Undo"
+  // restores it.
+  const removeCard = (card) => {
     setCards((cs) => cs.filter((c) => c.id !== card.id));
-    try { await window.RecruitApi.removeCandidacy(card.id); } catch { load(); }
+    window.UndoDelete.schedule({
+      label: `${card.talent ? card.talent.name : 'Candidate'} removed from pipeline`,
+      commit: () => window.RecruitApi.removeCandidacy(card.id).catch(() => load()),
+      restore: () => setCards((cs) => (cs.some((c) => c.id === card.id) ? cs : [...cs, card])),
+    });
   };
 
   return (

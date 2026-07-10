@@ -11,6 +11,9 @@ import './use-viewport.jsx'; // window.useViewport — read by the shell + views
 import './use-theme.jsx'; // window.useTheme — appearance binding for Settings + rail
 import './use-online.jsx'; // window.useOnline — connectivity for the offline banner
 import './OfflineBanner.jsx'; // window.OfflineBanner — shown while offline (ADR-0039)
+import './undo-delete.js'; // window.UndoDelete — deferred-delete controller (#200)
+import './use-undo-delete.jsx'; // window.useUndoDelete — React binding for the snackbar
+import './Snackbar.jsx'; // window.Snackbar — the undo toast
 import './DataStates.jsx';
 import './RecruitRail.jsx';
 import './KanbanShared.jsx'; // window.KanbanColumn/KanbanCard — shared by both boards (#199)
@@ -27,6 +30,7 @@ import './EditorDocs.jsx';
 import './EditorModals.jsx';
 import './Editor.jsx';
 import './DossierModal.jsx';
+import './ConfirmDialog.jsx'; // window.ConfirmDialog — designed confirm for irreversible actions (#200)
 import './RecordFormModal.jsx';
 import './Matching.jsx';
 import './AssistantView.jsx';

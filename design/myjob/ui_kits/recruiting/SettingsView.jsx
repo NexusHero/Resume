@@ -446,6 +446,7 @@ function ComplianceCard() {
   const [busy, setBusy] = React.useState('');
   const [policy, setPolicy] = React.useState(null);
   const [sweeping, setSweeping] = React.useState(false);
+  const [confirm, setConfirm] = React.useState(null); // designed confirm for irreversible anonymise (#200)
 
   const reload = React.useCallback(() => {
     return window.RecruitApi.retentionReport()
@@ -472,10 +473,9 @@ function ComplianceCard() {
     return () => { alive = false; };
   }, []);
 
-  const anonymize = async (item) => {
-    if (busy) return;
-    // eslint-disable-next-line no-alert
-    if (!window.confirm(`Anonymize ${item.name}? This clears personal data and removes attachments. This cannot be undone.`)) return;
+  // Anonymisation is irreversible (DSGVO), so it keeps a deliberate confirm —
+  // but a designed one (ConfirmDialog), not the browser's window.confirm (#200).
+  const runAnonymize = async (item) => {
     setBusy(item.talentId);
     try {
       await window.RecruitApi.anonymizeTalent(item.talentId);
@@ -485,6 +485,15 @@ function ComplianceCard() {
       window.alert(`Could not anonymize ${item.name}. Please try again.`);
     }
     setBusy('');
+  };
+  const anonymize = (item) => {
+    if (busy) return;
+    setConfirm({
+      title: `Anonymize ${item.name}?`,
+      message: 'This clears personal data and removes attachments. This cannot be undone.',
+      confirmLabel: 'Anonymize',
+      onConfirm: () => { setConfirm(null); runAnonymize(item); },
+    });
   };
 
   const savePolicy = async (patch) => {
@@ -501,10 +510,7 @@ function ComplianceCard() {
     }
   };
 
-  const sweepOverdue = async () => {
-    if (sweeping) return;
-    // eslint-disable-next-line no-alert
-    if (!window.confirm('Anonymize every candidate past the deletion deadline? This cannot be undone.')) return;
+  const runSweepOverdue = async () => {
     setSweeping(true);
     try {
       await window.RecruitApi.anonymizeOverdue();
@@ -515,6 +521,15 @@ function ComplianceCard() {
     }
     setSweeping(false);
   };
+  const sweepOverdue = () => {
+    if (sweeping) return;
+    setConfirm({
+      title: 'Anonymize every overdue candidate?',
+      message: 'Every candidate past the deletion deadline will be anonymized. This cannot be undone.',
+      confirmLabel: 'Anonymize all',
+      onConfirm: () => { setConfirm(null); runSweepOverdue(); },
+    });
+  };
 
   if (isAdmin === false) return null; // compliance is admin-only
 
@@ -522,6 +537,15 @@ function ComplianceCard() {
 
   return (
     <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '22px 24px' }}>
+      {confirm && (
+        <window.ConfirmDialog
+          title={confirm.title}
+          message={confirm.message}
+          confirmLabel={confirm.confirmLabel}
+          onConfirm={confirm.onConfirm}
+          onCancel={() => setConfirm(null)}
+        />
+      )}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
         <div style={{ flex: 1 }}>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>Data retention (DSGVO)</h2>

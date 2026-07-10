@@ -88,6 +88,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Changed
 
+- **Undo over Confirm for destructive actions.** Removing an application, a
+  placement or a candidate from a pipeline no longer pops the browser's
+  `window.confirm` (which breaks the designed world). The row disappears
+  immediately and a bottom snackbar offers **Undo** for ~6s; the real `DELETE`
+  is sent only after it times out (or is flushed on navigation/unload), so the
+  ids and audit history are preserved. Candidate-remove previously had **no**
+  guard at all — now it's undoable too. Truly irreversible actions (DSGVO
+  anonymisation) keep a deliberate confirm, but a designed in-app dialog rather
+  than the system prompt. No `window.confirm` remains in the recruiting kit.
 - **One kanban interaction model for both boards.** The Applications board and
   the Mandate pipeline looked alike but behaved differently — one moved cards by
   a stage dropdown + trash, the other by drag + an `x` in a different spot. They

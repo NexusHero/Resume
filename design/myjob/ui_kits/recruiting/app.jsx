@@ -111,7 +111,12 @@ function Workspace({ user, onLogout }) {
   const applicationsRes = useResource(listApplications);
 
   const mandates = mandatesRes.data;
-  const placements = placementsRes.data;
+  // Rows with an undo-pending delete are hidden optimistically (#200); the real
+  // DELETE fires when the snackbar times out, and "Undo" un-hides them.
+  const [hiddenIds, setHiddenIds] = React.useState(() => new Set());
+  const hideRow = (id) => setHiddenIds((s) => new Set(s).add(id));
+  const unhideRow = (id) => setHiddenIds((s) => { const n = new Set(s); n.delete(id); return n; });
+  const placements = placementsRes.data.filter((p) => !hiddenIds.has(p.id));
   // "me" (the recruiter's own pinned profile) comes from the signed-in session,
   // not from fabricated sample data, so it stays pinned first in the pool.
   const me0 = React.useMemo(() => makeMeProfile(user), [user]);
@@ -182,18 +187,28 @@ function Workspace({ user, onLogout }) {
       .then(() => applicationsRes.reload())
       .catch(() => applicationsRes.reload());
 
-  // Remove a mis-filed application, with a confirm since it is not undoable.
+  // Remove a mis-filed application — Undo over Confirm (#200). Hide it now, send
+  // the DELETE only when the snackbar times out; "Undo" un-hides it instead.
   const deleteApplication = (id, company) => {
-    if (!window.confirm(`Remove the application${company ? ` at ${company}` : ''}? This cannot be undone.`)) return;
-    window.RecruitApi.deleteApplication(id)
-      .then(() => applicationsRes.reload())
-      .catch(() => applicationsRes.reload());
+    hideRow(id);
+    window.UndoDelete.schedule({
+      label: `Application${company ? ` at ${company}` : ''} removed`,
+      commit: () =>
+        window.RecruitApi.deleteApplication(id)
+          .then(() => applicationsRes.reload())
+          .catch(() => applicationsRes.reload())
+          .finally(() => unhideRow(id)),
+      restore: () => unhideRow(id),
+    });
   };
 
   // Navigate, pulling fresh data for the destination so a teammate's changes on
   // the shared team desk (ADR-0010) show up without a manual reload. Background =
   // the current data stays on screen while it refetches (no spinner flash).
   const goNav = (n) => {
+    // Commit any pending undo-delete before leaving the view — a queued deletion
+    // must not linger silently across a navigation (#200).
+    if (window.UndoDelete) window.UndoDelete.flush();
     const res = n === 'pool' ? talentsRes : n === 'mandate' ? mandatesRes : n === 'bewerbungen' ? applicationsRes : null;
     // Only refresh a view that already loaded cleanly; a failed load keeps its
     // error state + Retry (don't silently re-fetch over it), and an in-flight
@@ -265,9 +280,21 @@ function Workspace({ user, onLogout }) {
 
   // Deleting a record from its edit form. Only placements are deletable from the
   // UI today; the modal shows the Delete affordance only when onDelete is given.
+  // Undo over Confirm (#200): hide the placement and close the form now, send the
+  // DELETE when the snackbar times out, un-hide on Undo.
   const deleteRecord = ({ kind, id }) => {
-    if (kind === 'placement')
-      return window.RecruitApi.deletePlacement(id).then(placementsRes.reload);
+    if (kind === 'placement') {
+      hideRow(id);
+      window.UndoDelete.schedule({
+        label: 'Placement removed',
+        commit: () =>
+          window.RecruitApi.deletePlacement(id)
+            .then(placementsRes.reload)
+            .catch(placementsRes.reload)
+            .finally(() => unhideRow(id)),
+        restore: () => unhideRow(id),
+      });
+    }
     return Promise.resolve();
   };
 
@@ -291,7 +318,7 @@ function Workspace({ user, onLogout }) {
 
   // Applications come from the live pipeline API; clients and inbox messages
   // have no live recruiting API yet, so those views show honest empty states.
-  const apps = applicationsRes.data;
+  const apps = applicationsRes.data.filter((a) => !hiddenIds.has(a.id));
   const clients = [];
   const messages = [];
   const me = talents.find((t) => t.me);
@@ -477,6 +504,7 @@ function App() {
     <React.Fragment>
       <window.OfflineBanner />
       <Workspace user={auth.user} onLogout={onLogout} />
+      <window.Snackbar />
     </React.Fragment>
   );
 }

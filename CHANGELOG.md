@@ -10,6 +10,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Added
 
+- **Light mode** (ADR-0053). The app was dark-only; it now offers a **Light /
+  Dark / System** appearance choice in Settings and a one-click toggle in the
+  rail footer. The default follows your OS (`prefers-color-scheme`); an explicit
+  choice persists across reloads. It's a pure token layer — `data-mode` on
+  `<html>` selects the light (`:root`) or dark (`[data-mode="dark"]`) token set,
+  so every view inherits both themes with no component changes. The **ink
+  navigation rail and auth brand panel stay dark in both themes** (the brand
+  anchor, like Slack/Linear); only the working canvas changes. The document
+  editor's preview and exported PDF stay white in both (no theme bleed). WCAG AA
+  contrast is enforced in **both** themes by the #198 guard (which flagged the
+  dark soft-text token, now lightened).
 - **The Applications board is now interactive.** A card can be moved through the
   pipeline (SUBMITTED → IN REVIEW → INTERVIEW → OFFER → HIRED) by drag-and-drop or
   its per-card stage dropdown — both persist via `PATCH /api/v1/applications/:id`

@@ -10,16 +10,29 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { parseTokens, auditPairs, contrastRatio } from '../../../tokens/contrast-audit.mjs';
-import { PAIRS, THEMES } from '../../../tokens/contrast-pairs.mjs';
+import {
+  parseTokens,
+  parseModeTokens,
+  auditPairs,
+  contrastRatio,
+} from '../../../tokens/contrast-audit.mjs';
+import { PAIRS, DARK_PAIRS } from '../../../tokens/contrast-pairs.mjs';
 
 const tokensDir = join(dirname(fileURLToPath(import.meta.url)), '../../../tokens');
 const baseTokens = parseTokens(readFileSync(join(tokensDir, 'colors.css'), 'utf8'));
+const darkOverrides = parseModeTokens(readFileSync(join(tokensDir, 'modes.css'), 'utf8'));
 
-describe('Design tokens — WCAG AA contrast contract (#198)', () => {
+// One fixture per appearance (#196): light is the base `:root`; dark layers the
+// modes.css overrides on top. Adding a theme is one more entry here.
+const THEMES = [
+  { name: 'light', overrides: new Map(), pairs: PAIRS },
+  { name: 'dark', overrides: darkOverrides, pairs: DARK_PAIRS },
+];
+
+describe('Design tokens — WCAG AA contrast contract (#198, both themes #196)', () => {
   for (const theme of THEMES) {
-    it(`TokenPairs_${theme.name.replace(/\W+/g, '')}_AllMeetTheirWcagFloor`, () => {
-      const { results, failures } = auditPairs(PAIRS, baseTokens, theme.overrides);
+    it(`TokenPairs_${theme.name}_AllMeetTheirWcagFloor`, () => {
+      const { results, failures } = auditPairs(theme.pairs, baseTokens, theme.overrides);
       // every manifest pair resolved to a real colour (no typos / dangling vars)
       for (const r of results) {
         expect(r.fg, `${r.note}: foreground did not resolve`).toMatch(/^#/);

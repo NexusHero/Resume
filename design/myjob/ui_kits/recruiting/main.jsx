@@ -3,10 +3,12 @@
    bundles React and compiles the JSX at build time (no CDN, no runtime Babel).
    The modules are imported for their side effects in the original load order —
    each still attaches to window.* — so the kit code is otherwise unchanged. */
+import './theme.js'; // sets data-mode on <html> before paint (light/dark, #196)
 import './setup-globals.js'; // sets window.React/ReactDOM first
 import '../../_ds_bundle.js'; // window.MyJobDesignSystem_f3658e (uses window.React)
 import './data.js';
 import './use-viewport.jsx'; // window.useViewport — read by the shell + views
+import './use-theme.jsx'; // window.useTheme — appearance binding for Settings + rail
 import './use-online.jsx'; // window.useOnline — connectivity for the offline banner
 import './OfflineBanner.jsx'; // window.OfflineBanner — shown while offline (ADR-0039)
 import './DataStates.jsx';

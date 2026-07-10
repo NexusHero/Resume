@@ -44,6 +44,43 @@ const NAV_SECTIONS = [
 /* Pinned utilities, rendered at the bottom of the rail. */
 const NAV_FOOTER = [{ id: 'einstellungen', label: 'Settings', icon: 'sliders' }];
 
+/* Quick light/dark switch in the rail footer — the same choice Settings offers,
+   one click away (#196). Sits on the ink rail, so it's styled on glass. Inline
+   sun/moon glyphs (the shared Icon set has none). */
+function RailThemeToggle() {
+  const useThemeHook = window.useTheme || (() => ['dark', () => {}]);
+  const [mode] = useThemeHook();
+  const t = window.myJobTheme;
+  const [hover, setHover] = React.useState(false);
+  const dark = mode !== 'light';
+  const glyph = dark
+    ? React.createElement('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true },
+        React.createElement('path', { d: 'M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z' }))
+    : React.createElement('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true },
+        React.createElement('circle', { cx: 12, cy: 12, r: 4 }),
+        React.createElement('path', { d: 'M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4' }));
+  return (
+    <button
+      type="button"
+      onClick={() => t && t.toggleMode()}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      aria-label={dark ? 'Switch to light appearance' : 'Switch to dark appearance'}
+      title={dark ? 'Switch to light' : 'Switch to dark'}
+      style={{
+        width: '100%', display: 'flex', alignItems: 'center', gap: '11px', cursor: 'pointer',
+        appearance: 'none', textAlign: 'left', margin: '2px 0', padding: '9px 12px',
+        borderRadius: 'var(--radius-md)', border: '1px solid transparent',
+        background: hover ? 'var(--sidebar-glass)' : 'transparent',
+        color: 'var(--sidebar-muted)', fontFamily: 'var(--font-body)', fontSize: '13.5px', fontWeight: 500,
+      }}
+    >
+      <span style={{ display: 'inline-flex', width: '20px', justifyContent: 'center', color: '#fff' }}>{glyph}</span>
+      {dark ? 'Light mode' : 'Dark mode'}
+    </button>
+  );
+}
+
 function NavItem({ item, active, onClick, badge }) {
   const [hover, setHover] = React.useState(false);
   return (
@@ -143,6 +180,7 @@ function RecruitRail({ active, onNav, me, talentCount, search, onSearch, title, 
         {/* Pinned utilities (Settings) sit just above the identity footer. */}
         <div style={{ padding: '6px 12px 4px', borderTop: '1px solid var(--sidebar-border)' }}>
           {NAV_FOOTER.map((n) => <NavItem key={n.id} item={n} active={active === n.id} onClick={() => handleNav(n.id)} badge={badges[n.id]} />)}
+          <RailThemeToggle />
         </div>
 
         {/* who I represent — the Vermittler scale, stated quietly */}

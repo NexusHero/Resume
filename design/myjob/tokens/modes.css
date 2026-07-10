@@ -29,7 +29,10 @@
   --text-heading: #f4f7fb;
   --text-body:    #e3e9f2;
   --text-muted:   #9fb0c5;
-  --text-soft:    #6b7e96;
+  /* Softest readable text — lightened so small meta labels clear WCAG AA
+     (4.5:1) on the lightest dark surface (--surface-sunk #1b2438), not just the
+     canvas. Guarded by contrast.test.js's dark fixture (#196/#198). */
+  --text-soft:    #8193aa;
 
   /* ---- Borders become translucent light ---- */
   --border:        rgba(255, 255, 255, 0.09);

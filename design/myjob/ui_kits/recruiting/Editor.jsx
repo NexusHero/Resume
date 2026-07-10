@@ -1,11 +1,18 @@
 /* Editor — the document workbench: form on the left, live document preview on
    the right. Two documents per talent: Lebenslauf (resume) and Anschreiben
-   (cover letter). The bolt-on tools live in their own modules: previews in
-   EditorDocs, the import/ATS/pitch/outreach modals in EditorModals, shared
-   primitives (PillButton, ModalShell, honesty banners) in EditorShared —
-   main.jsx loads all of them before this file. */
+   (cover letter). The preview is an iframe of the exact HTML the server builds
+   the PDF from (RecruitApi.previewDocumentsHtml → documents-html.ts), so what
+   the recruiter sees is what the export produces — one source of truth, no
+   drift (ADR-0052). The bolt-on tools live in their own modules: the
+   import/ATS/pitch/outreach modals in EditorModals, shared primitives
+   (PillButton, ModalShell, honesty banners) in EditorShared — main.jsx loads
+   all of them before this file. */
 const ED = window.MyJobDesignSystem_f3658e;
-const { PillButton: EdPill, ResumeDoc: EdResumeDoc, LetterDoc: EdLetterDoc, ImportCvModal: EdImportCvModal, AtsModal: EdAtsModal, PitchModal: EdPitchModal, OutreachModal: EdOutreachModal } = window;
+const { PillButton: EdPill, ImportCvModal: EdImportCvModal, AtsModal: EdAtsModal, PitchModal: EdPitchModal, OutreachModal: EdOutreachModal } = window;
+
+/* A4 sheet width in CSS pixels (210mm @ 96dpi) — the preview iframe renders at
+   this width so its line breaks match the exported PDF, then scales to fit. */
+const A4_WIDTH_PX = 794;
 
 /* CV style presets for the live customization bar (accent + font + size). */
 const ED_ACCENTS = [
@@ -16,37 +23,6 @@ const ED_ACCENTS = [
 ];
 
 /* A titled block in the form column, with an optional add action. */
-/* Overlays dashed lines where A4 pages roughly break in the exported PDF
-   (720px preview width → ~1018px per page). An approximation — fonts and
-   margins differ slightly in print — but it stops page-2 surprises. */
-function A4PageMarkers({ children }) {
-  const ref = React.useRef(null);
-  const [pages, setPages] = React.useState([]);
-  const PAGE = Math.round((720 * 297) / 210);
-  React.useEffect(() => {
-    const el = ref.current;
-    if (!el || typeof ResizeObserver === 'undefined') return undefined;
-    const ro = new ResizeObserver(() => {
-      const h = el.offsetHeight;
-      const breaks = [];
-      for (let y = PAGE; y < h; y += PAGE) breaks.push(y);
-      setPages((p) => (p.length === breaks.length ? p : breaks));
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-  return (
-    <div ref={ref} style={{ position: 'relative' }}>
-      {children}
-      {pages.map((y, i) => (
-        <div key={y} title="Approximate A4 page break in the exported PDF" style={{ position: 'absolute', left: '-8px', right: '-8px', top: `${y}px`, borderTop: '2px dashed var(--accent)', opacity: 0.55, pointerEvents: 'none' }}>
-          <span style={{ position: 'absolute', right: 0, top: '-9px', fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--accent-strong)', background: 'var(--surface-card)', borderRadius: 'var(--radius-pill)', padding: '2px 8px' }}>Page {i + 2} ↓</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function FormGroup({ title, children, onAdd }) {
   return (
     <div style={{ marginBottom: '22px' }}>
@@ -68,10 +44,12 @@ function Editor({ talent, onClose, onCreateMappe }) {
 
   const [doc, setDoc] = React.useState('lebenslauf');
   const previewRef = React.useRef(null);
+  const frameRef = React.useRef(null);
   const [scale, setScale] = React.useState(1);
+  const [frameHeight, setFrameHeight] = React.useState(A4_WIDTH_PX * 1.414); // one A4 until measured
   React.useEffect(() => {
     const el = previewRef.current; if (!el) return;
-    const fit = () => { const w = el.clientWidth - 56; setScale(Math.min(1, w / 720)); };
+    const fit = () => { const w = el.clientWidth - 56; setScale(Math.min(1, w / A4_WIDTH_PX)); };
     fit();
     const ro = new ResizeObserver(fit); ro.observe(el);
     return () => ro.disconnect();
@@ -151,6 +129,39 @@ function Editor({ talent, onClose, onCreateMappe }) {
 
   /* live CV customization: template, accent colour, font family, size */
   const [cfg, setCfg] = React.useState({ template: 'classic', accent: '#2A6FDB', strong: '#1d4ed8', onDark: '#7aa7f5', font: 'var(--font-display)', size: 1 });
+
+  /* ---- Live preview: the server renders the current (unsaved) content to the
+     exact HTML the PDF is built from, so preview and export can't drift. A short
+     debounce keeps typing snappy; the last good HTML is kept if a render fails.
+     Feature-detected so the editor still mounts where the endpoint is absent. ---- */
+  const [previewHtml, setPreviewHtml] = React.useState(null);
+  React.useEffect(() => {
+    const api = window.RecruitApi;
+    if (!api || typeof api.previewDocumentsHtml !== 'function') return undefined;
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      api
+        .previewDocumentsHtml(talentId || 'me', { contact, resume, letter, style: cfg })
+        .then((html) => { if (!cancelled && typeof html === 'string') setPreviewHtml(html); })
+        .catch(() => { /* keep the last good preview on a transient failure */ });
+    }, 300);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [contact, resume, letter, cfg, talentId]);
+
+  /* Size the iframe to its content (no inner scrollbar) and scroll the pane to
+     the document the Resume/Cover-letter toggle selects. Runs on each render and
+     when the toggle flips; same-origin srcdoc makes the inner doc readable. */
+  const syncFrame = React.useCallback(() => {
+    const f = frameRef.current;
+    const inner = f && f.contentDocument;
+    if (!inner) return;
+    const h = inner.documentElement ? inner.documentElement.scrollHeight : 0;
+    if (h) setFrameHeight(h);
+    const target = inner.getElementById(doc === 'lebenslauf' ? 'doc-resume' : 'doc-letter');
+    const pane = previewRef.current;
+    if (target && pane) pane.scrollTo({ top: target.offsetTop * scale, behavior: 'smooth' });
+  }, [doc, scale]);
+  React.useEffect(() => { syncFrame(); }, [doc, previewHtml, syncFrame]);
 
   /* ---- Persistence: load the stored documents on open, then autosave edits. ---- */
   const [saveState, setSaveState] = React.useState('idle'); // idle | saving | saved | error
@@ -501,11 +512,20 @@ function Editor({ talent, onClose, onCreateMappe }) {
             </div>
           </div>
           <div ref={previewRef} style={{ flex: 1, overflowY: 'auto', padding: '28px', display: 'flex', justifyContent: 'center' }}>
-            <div style={{ zoom: scale * cfg.size, '--accent': cfg.accent, '--accent-strong': cfg.strong, '--accent-on-dark': cfg.onDark, '--font-display': cfg.font, '--font-body': cfg.font }}>
-              <A4PageMarkers>
-                {doc === 'lebenslauf' ? <EdResumeDoc contact={contact} resume={resume} template={cfg.template} /> : <EdLetterDoc contact={contact} letter={letter} template={cfg.template} />}
-              </A4PageMarkers>
-            </div>
+            {previewHtml ? (
+              <iframe
+                ref={frameRef}
+                title="Document preview"
+                srcDoc={previewHtml}
+                onLoad={syncFrame}
+                scrolling="no"
+                style={{ width: `${A4_WIDTH_PX}px`, height: `${frameHeight}px`, border: 'none', zoom: scale, background: 'transparent', flexShrink: 0 }}
+              />
+            ) : (
+              <div style={{ margin: 'auto', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>
+                Rendering preview…
+              </div>
+            )}
           </div>
         </div>
       </div>

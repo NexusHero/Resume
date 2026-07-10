@@ -734,6 +734,20 @@ const RecruitApi = {
     );
     return data.documents;
   },
+  /* Render the given (unsaved) editor content to the exact HTML the PDF export
+     is built from, so the live preview and the PDF can never drift (ADR-0052).
+     Nothing is persisted; works even for the pinned "me" profile (no server row)
+     since the endpoint renders the posted body, not stored data. */
+  async previewDocumentsHtml(talentId, documents) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/documents/preview`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(documents),
+      }),
+    );
+    return data.html; // a self-contained, print-accurate HTML document
+  },
   /* The recruiter's own display name, stored on their "me" document set (they
      are keyed by user id server-side). Read/merge-write so setting the name
      never clobbers an existing resume/letter. */

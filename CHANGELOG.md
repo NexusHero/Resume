@@ -8,6 +8,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+### Fixed
+
+- **The CV/cover-letter editor is now truly WYSIWYG** (ADR-0052): the live
+  preview and the exported PDF are rendered from a single source
+  (`documentsToHtml`). The preview is an `<iframe>` of the exact HTML the PDF is
+  built from (new `POST /api/v1/talents/:id/documents/preview`), so they can no
+  longer drift — same columns, margins and line breaks — and the Style controls
+  (template/accent/font/size) now drive the export too. Section headings are
+  English (`Profile`/`Experience`/`Education`/`Skills`) to match the product; the
+  PDF bytes are otherwise unchanged (print still driven by `@page`).
+
 ### Changed
 
 - **NestJS is now the composition root and HTTP layer** (ADR-0051, supersedes

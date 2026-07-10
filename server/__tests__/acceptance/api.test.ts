@@ -484,6 +484,30 @@ describe('REST API /api/v1', () => {
       expect(res.status).toBe(401);
     });
 
+    it('DocumentsPreview_Post_ReturnsTheSameHtmlThePdfIsBuiltFrom', async () => {
+      // The live-preview endpoint (ADR-0052): renders the posted content to the
+      // exact HTML behind the PDF, so the editor is WYSIWYG. Nothing is saved.
+      const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+      const id = created.body.talent.id as string;
+      const res = await agent
+        .post(`/api/v1/talents/${id}/documents/preview`)
+        .send({ contact: { name: 'Lena Brandt' }, resume: { summary: 'Great designer.' } });
+      expect(res.status).toBe(200);
+      expect(typeof res.body.html).toBe('string');
+      expect(res.body.html).toContain('<!DOCTYPE html>');
+      expect(res.body.html).toContain('Lena Brandt');
+      expect(res.body.html).toContain('Great designer.');
+      expect(res.body.html).toContain('<h2>Profile</h2>'); // English headings
+      // A pure render — the talent's stored documents must be untouched.
+      const stored = await agent.get(`/api/v1/talents/${id}/documents`);
+      expect(stored.body.documents.resume.summary).toBe('');
+    });
+
+    it('DocumentsPreview_Unauthenticated_Returns401', async () => {
+      const res = await request(app).post('/api/v1/talents/x/documents/preview').send({});
+      expect(res.status).toBe(401);
+    });
+
     it('DocumentsPdf_UnknownTalent_Returns404', async () => {
       const res = await agent.get('/api/v1/talents/missing/documents/pdf');
       expect(res.status).toBe(404);

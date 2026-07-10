@@ -28,5 +28,6 @@ import {
       inject: [MANDATE_REPOSITORY, CANDIDACY_REPOSITORY, CLOCK, ID_GENERATOR],
     },
   ],
+  exports: [MANDATE_SERVICE],
 })
 export class MandatesModule {}

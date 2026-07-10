@@ -15,13 +15,21 @@ import { PLAN_PROVIDER } from './tokens.js';
 
 const PLAN_KEY = 'plan:required';
 
+interface PlanRequirement {
+  plan: Plan;
+  /** Gates only some requests to a shared route (e.g. switching to autopilot). */
+  when?: (req: Request) => boolean;
+}
+
 /**
  * The single plan-enforcement seam (ADR-0021), as a Nest guard. `@RequiresPlan('pro')`
  * on a route replaces the Express `requirePlan('pro')` middleware: the set of Pro
  * routes stays declarative at the HTTP edge and no feature ever branches on the
- * plan. Routes without the decorator pass through untouched.
+ * plan. Routes without the decorator pass through untouched; the optional `when`
+ * predicate ports `requirePlan('pro', when)` for conditionally-gated routes.
  */
-export const RequiresPlan = (plan: Plan) => SetMetadata(PLAN_KEY, plan);
+export const RequiresPlan = (plan: Plan, when?: (req: Request) => boolean) =>
+  SetMetadata(PLAN_KEY, { plan, when } satisfies PlanRequirement);
 
 @Injectable()
 export class PlanGuard implements CanActivate {
@@ -31,14 +39,15 @@ export class PlanGuard implements CanActivate {
   ) {}
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
-    const required = this.reflector.getAllAndOverride<Plan | undefined>(PLAN_KEY, [
+    const required = this.reflector.getAllAndOverride<PlanRequirement | undefined>(PLAN_KEY, [
       ctx.getHandler(),
       ctx.getClass(),
     ]);
     if (!required) return true;
     const req = ctx.switchToHttp().getRequest<Request>();
+    if (required.when && !required.when(req)) return true;
     const held = await this.planProvider.planFor(currentScope(req));
-    if (!planSatisfies(held, required)) throw new PlanRequiredError(required);
+    if (!planSatisfies(held, required.plan)) throw new PlanRequiredError(required.plan);
     return true;
   }
 }

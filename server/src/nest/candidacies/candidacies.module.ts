@@ -124,5 +124,6 @@ export class CandidaciesController {
       ],
     },
   ],
+  exports: [CANDIDACY_SERVICE],
 })
 export class CandidaciesModule {}

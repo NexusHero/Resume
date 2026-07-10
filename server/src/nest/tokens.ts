@@ -91,6 +91,12 @@ export const DOCUMENT_SERVICE = Symbol('DocumentService');
 export const ATTACHMENT_SERVICE = Symbol('AttachmentService');
 export const PASSWORD_RESET_SERVICE = Symbol('PasswordResetService');
 export const MAIL_SERVICE = Symbol('MailService');
+export const MATCH_SERVICE = Symbol('MatchService');
+export const RETENTION_SERVICE = Symbol('RetentionService');
+export const ACCOUNT_SERVICE = Symbol('AccountService');
+export const APPLICATION_BUILDER = Symbol('ApplicationBuilder');
+export const AUTOPILOT_SERVICE = Symbol('AutopilotService');
+export const ASSISTANT_SERVICE = Symbol('AssistantService');
 // AI feature services (behind the shared LlmFeatureRunner, ADR-0022)
 export const LLM_FEATURE_RUNNER = Symbol('LlmFeatureRunner');
 export const DOCUMENT_ASSIST_SERVICE = Symbol('DocumentAssistService');

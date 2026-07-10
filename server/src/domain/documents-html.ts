@@ -89,8 +89,19 @@ export function documentsToHtml(
            h2 { margin: 10px 0 5px; }`
         : '';
 
+  // Screen-only rules so the editor's live preview is an accurate A4 sheet
+  // (same content width → same line breaks as the export). Print ignores these,
+  // so the PDF is driven solely by the `@page` rules above and stays unchanged;
+  // the padding here mirrors that page margin so preview and PDF line up.
+  const pagePadding = template === 'compact' ? '14mm 14mm' : '20mm 18mm';
+  const screenCss = `@media screen {
+    html { background: #e9ebee; }
+    body { padding: 16px 0; }
+    .page { width: 210mm; min-height: 297mm; padding: ${pagePadding}; margin: 0 auto 16px; background: #fff; box-shadow: 0 2px 12px rgba(15, 22, 38, 0.16); }
+  }`;
+
   return `<!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <style>
@@ -121,10 +132,11 @@ export function documentsToHtml(
   .cl p { margin: 0 0 10px; }
   .cl-gruss { margin-top: 18px; }
   ${templateCss}
+  ${screenCss}
 </style>
 </head>
 <body class="tpl-${template}">
-  <section class="page resume">
+  <section id="doc-resume" class="page resume">
     ${
       contact.photo && /^data:image\/[a-z+.-]+;base64,[A-Za-z0-9+/=]+$/.test(contact.photo)
         ? `<img class="photo" src="${contact.photo}" alt="" />`
@@ -136,12 +148,12 @@ export function documentsToHtml(
       .filter(Boolean)
       .map((c) => esc(c))
       .join('&nbsp;·&nbsp;')}</div>
-    ${resume.summary ? `<div class="summary">${esc(resume.summary)}</div>` : ''}
-    ${experience ? `<h2>Werdegang</h2>${experience}` : ''}
-    ${education ? `<h2>Ausbildung</h2>${education}` : ''}
-    ${skillGroups ? `<h2>Kompetenzen</h2>${skillGroups}` : ''}
+    ${resume.summary ? `<h2>Profile</h2><div class="summary">${esc(resume.summary)}</div>` : ''}
+    ${experience ? `<h2>Experience</h2>${experience}` : ''}
+    ${education ? `<h2>Education</h2>${education}` : ''}
+    ${skillGroups ? `<h2>Skills</h2>${skillGroups}` : ''}
   </section>
-  <section class="page cl">
+  <section id="doc-letter" class="page cl">
     ${letterAddress ? `<div class="cl-recipient">${letterAddress}</div>` : ''}
     ${options.letterDate ? `<div class="cl-date">${esc(options.letterDate)}</div>` : ''}
     ${letter.betreff ? `<div class="cl-subject">${esc(letter.betreff)}</div>` : ''}

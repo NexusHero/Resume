@@ -180,6 +180,26 @@ export class DocumentService {
   }
 
   /**
+   * Render arbitrary (possibly unsaved) editor content to the exact same HTML
+   * the PDF is built from — the single source of truth behind the editor's live
+   * preview (ADR-0052). Because {@link renderPdf} runs this identical
+   * `documentsToHtml` output through Puppeteer, what the recruiter sees in the
+   * preview is what the export produces; the preview never persists anything.
+   */
+  renderPreviewHtml(input: SaveDocumentsInput): string {
+    const documents: TalentDocuments = {
+      ownerId: '',
+      talentId: '',
+      contact: input.contact,
+      resume: input.resume,
+      letter: input.letter,
+      style: input.style,
+      updatedAt: this.clock.isoNow(),
+    };
+    return documentsToHtml(documents, { letterDate: this.letterDate(documents) });
+  }
+
+  /**
    * Assemble a Bewerbungsmappe (dossier): the saved documents rendered as one
    * PDF, with the cover letter addressed to a concrete recipient (the mandate /
    * company chosen in the editor). Empty recipient fields keep the saved value.

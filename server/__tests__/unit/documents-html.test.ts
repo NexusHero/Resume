@@ -106,7 +106,31 @@ describe('documentsToHtml', () => {
     };
     const html = documentsToHtml(bare);
     expect(html).toContain('Lena Brandt'); // contact still renders
-    expect(html).not.toContain('Werdegang'); // no experience heading
-    expect(html).not.toContain('Ausbildung'); // no education heading
+    expect(html).not.toContain('Experience'); // no experience heading
+    expect(html).not.toContain('Education'); // no education heading
+  });
+
+  it('UsesEnglishSectionHeadingsMatchingTheEditor', () => {
+    const html = documentsToHtml(documents);
+    // The whole product is English; the export headings must match the editor.
+    expect(html).toContain('lang="en"');
+    expect(html).toContain('<h2>Profile</h2>');
+    expect(html).toContain('<h2>Experience</h2>');
+    expect(html).toContain('<h2>Education</h2>');
+    expect(html).toContain('<h2>Skills</h2>');
+    expect(html).not.toContain('Werdegang');
+    expect(html).not.toContain('Ausbildung');
+  });
+
+  it('CarriesPageAnchorsAndScreenSheetSoThePreviewMatchesTheExport', () => {
+    const html = documentsToHtml(documents);
+    // The editor scrolls to these anchors; the @media screen sheet gives the
+    // live preview the same A4 width/margins as the printed page.
+    expect(html).toContain('id="doc-resume"');
+    expect(html).toContain('id="doc-letter"');
+    expect(html).toContain('@media screen');
+    expect(html).toContain('width: 210mm');
+    // Print margins are still driven by @page, so the PDF is unchanged.
+    expect(html).toContain('@page { size: A4; margin: 20mm 18mm; }');
   });
 });

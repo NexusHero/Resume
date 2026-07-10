@@ -212,6 +212,36 @@ describe('DocumentService', () => {
     await expect(c.service.renderPdf(OWNER, 'missing')).rejects.toBeInstanceOf(NotFoundError);
   });
 
+  it('RenderPreviewHtml_IsByteIdenticalToTheHtmlThePdfIsBuiltFrom', async () => {
+    // The WYSIWYG guarantee (ADR-0052): the editor's live preview and the PDF
+    // export must never drift. Both run the same content through the same
+    // documentsToHtml, so the preview HTML equals the exact HTML Puppeteer turns
+    // into the PDF (FakePdfRenderer.renderHtml records it verbatim).
+    const c = ctx();
+    await c.talents.add(talent('t1'));
+    const saved = await c.service.save(OWNER, 't1', input);
+
+    await c.service.renderPdf(OWNER, 't1');
+    const pdfSourceHtml = c.pdf.lastHtml;
+
+    const previewHtml = c.service.renderPreviewHtml({
+      contact: saved.contact,
+      resume: saved.resume,
+      letter: saved.letter,
+      style: saved.style,
+    });
+
+    expect(previewHtml).toBe(pdfSourceHtml);
+    expect(previewHtml).toContain('Designer with 8 years of experience.');
+  });
+
+  it('RenderPreviewHtml_NeverPersists', async () => {
+    // The preview renders the posted (possibly unsaved) body and touches no store.
+    const c = ctx();
+    c.service.renderPreviewHtml(input);
+    expect(c.documents.documents).toHaveLength(0);
+  });
+
   it('RenderDossierPdf_AddressesLetterToRecipient', async () => {
     const c = ctx();
     await c.talents.add(talent('t1'));

@@ -2,9 +2,11 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
   Inject,
   Module,
   Param,
+  Post,
   Put,
   Query,
   Res,
@@ -60,6 +62,21 @@ export class DocumentsController {
     input: ReturnType<typeof saveDocumentsSchema.parse>,
   ) {
     return { documents: await this.service.save(scope, id, input) };
+  }
+
+  /**
+   * Render the posted (possibly unsaved) editor content to the same HTML the PDF
+   * export is built from, so the editor's live preview and the PDF can never
+   * drift (ADR-0052). Nothing is persisted; the `:id` is unused — the body is
+   * the whole document. A plain 200 (not 201): no resource is created.
+   */
+  @Post('documents/preview')
+  @HttpCode(200)
+  preview(
+    @Body(new ZodValidationPipe(saveDocumentsSchema))
+    input: ReturnType<typeof saveDocumentsSchema.parse>,
+  ) {
+    return { html: this.service.renderPreviewHtml(input) };
   }
 
   @Get('documents/pdf')

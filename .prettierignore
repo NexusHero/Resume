@@ -16,3 +16,7 @@ index.html
 
 # Build / PDF scripts (plain JS)
 tools
+
+# Generated (base64-embedded webfonts for the ink CV template) — see
+# tools/gen-document-fonts.mjs. Machine-written, not hand-formatted.
+server/src/domain/document-fonts.ts

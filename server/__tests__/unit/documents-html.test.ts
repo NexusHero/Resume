@@ -104,18 +104,33 @@ describe('documentsToHtml', () => {
       style: { ...documents.style, template: 'ink' },
     });
     expect(html).toContain('class="tpl-ink"');
-    // signature two-column structure: dark rail + sidebar + main column
-    expect(html).toContain('class="ink-rail"');
-    expect(html).toContain('class="ink-side"');
+    // signature two-column structure: dark sidebar + light main column
+    expect(html).toContain('class="ink-layout"');
+    expect(html).toContain('class="ink-sidebar"');
     expect(html).toContain('class="ink-main"');
-    // contact + skills live in the sidebar
+    // contact rows (with icon chips) + skill chips live in the sidebar
     expect(html).toContain('lena@example.com');
-    expect(html).toContain('ink-chips');
+    expect(html).toContain('ink-contact');
+    expect(html).toContain('ink-chip');
     expect(html).toContain('Figma');
-    // the cover letter gets the matching ink header band (no rail leak)
+    // eyebrow-labelled sections in the main column
+    expect(html).toContain('ink-kicker');
+    expect(html).toContain('<h2>Profile</h2>');
+    expect(html).toContain('Professional Experience');
+    // experience timeline: node dots, date pill, tech-stack chips
+    expect(html).toContain('ink-timeline');
+    expect(html).toContain('ink-node');
+    expect(html).toContain('ink-pill');
+    expect(html).toContain('Tech Stack');
+    // the cover letter is a clean sheet (accent-ruled name header, no dark band)
+    expect(html).toContain('class="ink-letter"');
     expect(html).toContain('ink-letter-head');
-    // multi-page safety: fixed rail in print, dark background forced to print
-    expect(html).toContain('@media print { .ink-rail { position: fixed; } }');
+    // typography is embedded so the preview and PDF match with no host fonts
+    expect(html).toContain('@font-face');
+    expect(html).toContain('Space Grotesk');
+    // multi-page safety: a fixed spine repeats the dark band on every page
+    expect(html).toContain('.ink-print-band');
+    expect(html).toContain('position: fixed');
     expect(html).toContain('print-color-adjust: exact');
     // page anchors preserved for the editor's toggle
     expect(html).toContain('id="doc-resume"');
@@ -131,6 +146,50 @@ describe('documentsToHtml', () => {
     const html = documentsToHtml(evil);
     expect(html).not.toContain('<script>alert(1)</script>');
     expect(html).toContain('&lt;script&gt;');
+  });
+
+  it('InkTemplate_RendersThePhotoAndOmitsEmptyFieldsAndSections', () => {
+    const photo = 'data:image/png;base64,iVBORw0KGgo=';
+    const bare = {
+      ...documents,
+      contact: {
+        name: 'Nî Sévïnç', // Latin-1 accents must survive the embedded latin subset
+        role: '',
+        email: '',
+        phone: '',
+        location: '',
+        linkedin: '',
+        photo,
+      },
+      resume: {
+        summary: '',
+        experience: [
+          { role: 'Engineer', company: '', period: '', location: '', bullets: [], skills: [] },
+        ],
+        education: [{ degree: 'B.Sc.', school: '', period: '', note: '' }],
+        skillGroups: [],
+      },
+      // empty accent/strong/onDark exercise the colour fallbacks; a non-finite
+      // size exercises the scale default.
+      style: { accent: '', strong: '', onDark: '', font: '', size: Number.NaN, template: 'ink' },
+    };
+    const html = documentsToHtml(bare);
+    // photo renders inside the avatar
+    expect(html).toContain(`src="${photo}"`);
+    expect(html).toContain('ink-avatar');
+    expect(html).toContain('Nî Sévïnç');
+    // no contact rows and no skills section when those fields are empty
+    // (match markup, not the always-present CSS class definitions)
+    expect(html).not.toContain('class="ink-contact"');
+    expect(html).not.toContain('>Skills</h2>');
+    // no Profile section (empty summary); the bare experience still renders,
+    // but without a date pill or a tech-stack strip
+    expect(html).not.toContain('<h2>Profile</h2>');
+    expect(html).toContain('Engineer');
+    expect(html).not.toContain('class="ink-pill');
+    expect(html).not.toContain('Tech Stack');
+    // colour fallback is applied (default blueprint accent)
+    expect(html).toContain('#2563eb');
   });
 
   it('OmitsEmptySectionsGracefully', () => {

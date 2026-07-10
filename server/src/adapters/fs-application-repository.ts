@@ -53,6 +53,14 @@ export class FsApplicationRepository implements ApplicationRepository {
     await this.write(all);
   }
 
+  async delete(ownerId: string, id: string): Promise<boolean> {
+    const all = await this.readAll();
+    const remaining = all.filter((a) => !(a.id === id && a.ownerId === ownerId));
+    if (remaining.length === all.length) return false;
+    await this.write(remaining);
+    return true;
+  }
+
   private async write(applications: Application[]): Promise<void> {
     await fs.mkdir(this.dir, { recursive: true });
     await fs.writeFile(this.file, JSON.stringify(applications, null, 2) + '\n');

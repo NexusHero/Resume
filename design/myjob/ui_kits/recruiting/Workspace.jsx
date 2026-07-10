@@ -2,11 +2,41 @@
 const WS = window.MyJobDesignSystem_f3658e;
 
 /* ---------- Übersicht — the recruiting desk at a glance ---------- */
-function Dashboard({ me, apps, vkpis, clients, mandates, onOpenTalent, onOpenPipeline, onOpenMandate }) {
+function OnboardingCard({ onNav }) {
+  const steps = [
+    { icon: 'users', nav: 'pool', title: 'Add a talent', desc: 'Build your pool — add a candidate or import CVs.' },
+    { icon: 'briefcase', nav: 'mandate', title: 'Create a mandate', desc: 'Open a client role to fill and track its pipeline.' },
+    { icon: 'search', nav: 'matching', title: 'Find roles', desc: 'Match a candidate to live job postings and apply.' },
+  ];
+  return (
+    <WS.Card>
+      <div style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 700, color: 'var(--text-heading)' }}>Get your desk started</div>
+      <div style={{ fontSize: '13px', color: 'var(--text-soft)', marginTop: '3px', marginBottom: '16px' }}>Three quick ways to begin — pick one.</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+        {steps.map((s) => (
+          <button
+            key={s.nav}
+            onClick={() => onNav(s.nav)}
+            style={{ textAlign: 'left', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '8px', padding: '15px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--surface-sunk)' }}
+          >
+            <span style={{ width: '34px', height: '34px', borderRadius: 'var(--radius-md)', background: 'var(--accent-soft)', color: 'var(--accent-strong)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><WS.Icon name={s.icon} size={16} /></span>
+            <span style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-heading)' }}>{s.title}</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-soft)', lineHeight: 1.5 }}>{s.desc}</span>
+          </button>
+        ))}
+      </div>
+    </WS.Card>
+  );
+}
+
+function Dashboard({ me, apps, vkpis, clients, mandates, talentCount, onNav, onOpenTalent, onOpenPipeline, onOpenMandate }) {
   const { isMobile } = window.useViewport ? window.useViewport() : { isMobile: false };
   // The desk's applications that need progressing — interview/offer stage across
   // every candidate (this is an agency view; the recruiter places others).
   const nextSteps = apps.filter((a) => a.status === 'interview' || a.status === 'offer');
+  // First run: nothing on the desk yet — guide the recruiter to a first action
+  // instead of showing four zeroes and empty panels.
+  const firstRun = mandates.length === 0 && apps.length === 0 && (talentCount || 0) === 0;
   // Live mandates carry the client name directly; the sample shape carries a
   // clientId resolved against the clients list. Prefer the name, fall back.
   const clientName = (m) => m.client || (clients.find((c) => c.id === m.clientId) || {}).name || '';
@@ -18,6 +48,8 @@ function Dashboard({ me, apps, vkpis, clients, mandates, onOpenTalent, onOpenPip
         <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-heading)' }}>Hello, {me.name.split(' ')[0]}.</div>
         <div style={{ fontSize: '13px', color: 'var(--text-soft)', marginTop: '3px' }}>{mandates.filter((m) => m.status === 'active').length} active mandates · {nextSteps.length} application{nextSteps.length === 1 ? '' : 's'} in interview or offer.</div>
       </div>
+
+      {firstRun && onNav && <OnboardingCard onNav={onNav} />}
 
       {/* agency kpis */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '14px' }}>

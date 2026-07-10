@@ -74,11 +74,14 @@ export class DocumentService {
     if (talent) return talent;
     const user = await this.users.findById(talentId);
     if (!user) throw new NotFoundError(`Talent ${talentId} not found`);
-    // "suhay.sevinc@…" → "Suhay Sevinc" — same derivation the workspace uses.
+    // "suhay.sevinc@…" → "Suhay Sevinc". Drop any plus-address subaddress first
+    // ("recruiter+test@…" → "Recruiter", not "Recruiter+"), and keep only letters
+    // per word so digits/symbols never leak into the greeting.
     const name = user.email
       .split('@')[0]!
+      .split('+')[0]!
       .split(/[._-]+/)
-      .map((w) => w.replace(/\d+/g, ''))
+      .map((w) => w.replace(/[^\p{L}]/gu, ''))
       .filter(Boolean)
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
       .join(' ');

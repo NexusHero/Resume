@@ -1,8 +1,8 @@
 /* The Übersicht dashboard is an agency view: it summarises the desk's pipeline,
    not the recruiter's own job hunt. Regression guard against the jobseeker
    framing ("your own applications (me)") that leaked in from the personal app. */
-import { describe, it, expect, beforeAll } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, beforeAll, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 
 let Dashboard;
 
@@ -39,5 +39,22 @@ describe('Dashboard — agency framing', () => {
     );
     // 1 app is in interview, none in offer → "1 application in interview or offer".
     expect(screen.getByText(/1 application in interview or offer/)).toBeInTheDocument();
+  });
+
+  it('EmptyDesk_ShowsOnboardingWithFirstActions', () => {
+    const onNav = vi.fn();
+    render(
+      <Dashboard me={me} apps={[]} vkpis={vkpis} clients={[]} mandates={[]} talentCount={0} onNav={onNav} onOpenTalent={() => {}} onOpenPipeline={() => {}} onOpenMandate={() => {}} />,
+    );
+    expect(screen.getByText('Get your desk started')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Create a mandate'));
+    expect(onNav).toHaveBeenCalledWith('mandate');
+  });
+
+  it('DeskWithData_HidesOnboarding', () => {
+    render(
+      <Dashboard me={me} apps={apps} vkpis={vkpis} clients={[]} mandates={mandates} talentCount={2} onNav={() => {}} onOpenTalent={() => {}} onOpenPipeline={() => {}} onOpenMandate={() => {}} />,
+    );
+    expect(screen.queryByText('Get your desk started')).toBeNull();
   });
 });

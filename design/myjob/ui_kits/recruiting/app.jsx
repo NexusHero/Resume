@@ -168,6 +168,21 @@ function Workspace({ user, onLogout }) {
       return app;
     });
 
+  // Move an application to another pipeline stage (drag or the card's dropdown),
+  // then refresh so the board reflects the persisted status.
+  const moveApplication = (id, stage) =>
+    window.RecruitApi.updateApplicationStage(id, stage)
+      .then(() => applicationsRes.reload())
+      .catch(() => applicationsRes.reload());
+
+  // Remove a mis-filed application, with a confirm since it is not undoable.
+  const deleteApplication = (id, company) => {
+    if (!window.confirm(`Remove the application${company ? ` at ${company}` : ''}? This cannot be undone.`)) return;
+    window.RecruitApi.deleteApplication(id)
+      .then(() => applicationsRes.reload())
+      .catch(() => applicationsRes.reload());
+  };
+
   // Bulk CV import: read each PDF to base64, import as talents, report the
   // outcome and refresh the pool.
   const [importing, setImporting] = React.useState(false);
@@ -319,13 +334,13 @@ function Workspace({ user, onLogout }) {
     // Guard against an unknown nav key — destructuring `undefined` here would
     // white-screen the whole workspace.
     [title, subtitle] = TITLES[nav] || TITLES.uebersicht;
-    if (nav === 'uebersicht') body = <window.Dashboard me={me} apps={apps} vkpis={vkpis} clients={clients} mandates={mandates} onOpenTalent={goTalent} onOpenPipeline={() => setNav('mandate')} onOpenMandate={() => setNav('mandate')} />;
+    if (nav === 'uebersicht') body = <window.Dashboard me={me} apps={apps} vkpis={vkpis} clients={clients} mandates={mandates} talentCount={talents.filter((t) => !t.me).length} onNav={setNav} onOpenTalent={goTalent} onOpenPipeline={() => setNav('mandate')} onOpenMandate={() => setNav('mandate')} />;
     else if (nav === 'mandate') body = withState(mandatesRes, <window.MandateView mandates={shownMandates} onEdit={editMandate} onOpenPipeline={goPipeline} />);
     else if (nav === 'pool') body = withState(talentsRes, <window.TalentGrid talents={shownTalents} apps={apps} onOpen={goTalent} onAdd={addTalent} onImport={importCvs} importing={importing} />);
     else if (nav === 'matching') body = <window.Matching talents={talents} mandates={mandates} onCreateMandate={mandateFromJob} onApply={applyFromMatching} />;
     else if (nav === 'bewerbungen') body = withState(applicationsRes, (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '100%' }}>
-        <window.PipelineBoard apps={apps} talents={talents} onOpen={goTalent} />
+        <window.PipelineBoard apps={apps} talents={talents} onOpen={goTalent} onMove={moveApplication} onDelete={deleteApplication} />
       </div>
     ));
     else if (nav === 'platzierungen') body = withState(placementsRes, <window.PlatzierungenView placements={shownPlacements} kpis={vkpis} onEdit={editPlacement} />);

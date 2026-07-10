@@ -10,4 +10,6 @@ export interface ApplicationRepository {
   findById(ownerId: string, id: string): Promise<Application | null>;
   add(application: Application): Promise<void>;
   update(application: Application): Promise<void>;
+  /** Remove an owned application. Returns false when no such record exists. */
+  delete(ownerId: string, id: string): Promise<boolean>;
 }

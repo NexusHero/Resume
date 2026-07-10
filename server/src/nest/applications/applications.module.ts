@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Inject,
@@ -89,6 +90,12 @@ export class ApplicationsController {
     input: ReturnType<typeof updateApplicationSchema.parse>,
   ) {
     return { application: await this.service.update(scope, id, input) };
+  }
+
+  @Delete('applications/:id')
+  @HttpCode(204)
+  async remove(@CurrentScope() scope: string, @Param('id') id: string) {
+    await this.service.delete(scope, id);
   }
 }
 

@@ -17,6 +17,17 @@ const APP_STATUS_TO_STAGE = {
   rejected: 'rejected',
 };
 
+/* The reverse: a board stage the recruiter dropped a card into → the backend
+   status to persist. Keeps the PATCH payload valid (domain statuses only). */
+const STAGE_TO_APP_STATUS = {
+  new: 'sent',
+  review: 'screening',
+  interview: 'interview',
+  offer: 'offer',
+  hired: 'hired',
+  rejected: 'rejected',
+};
+
 /* ============================================================
    Live backend wiring. Base URL is same-origin when served by the
    app server; override via window.RECRUIT_API.
@@ -497,6 +508,24 @@ const RecruitApi = {
       }),
     );
     return mapApplication(data.application);
+  },
+  /* Move an application to another pipeline stage — the board's drag/dropdown.
+     Maps the board stage back to a domain status and PATCHes it. */
+  async updateApplicationStage(id, stage) {
+    const status = STAGE_TO_APP_STATUS[stage] || 'sent';
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/applications/${id}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ status }),
+      }),
+    );
+    return mapApplication(data.application);
+  },
+  /* Remove a mis-filed application. 204 No Content on success. */
+  async deleteApplication(id) {
+    const res = await fetch(`${RECRUIT_API_BASE}/applications/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(`Could not delete application (${res.status})`);
   },
   /* Live job postings from the two-tier search (both tiers merged — the
      Matching view re-scores per selected candidate, not per the server's

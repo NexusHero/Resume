@@ -129,6 +129,21 @@ describe('DocumentService', () => {
     });
   });
 
+  it('Get_SelfWithPlusAddressedEmail_DerivesACleanName', async () => {
+    // A plus-address / digits in the local part must not leak into the greeting:
+    // "recruiter+test123@…" → "Recruiter", not "Recruiter+" or "Recruiter123".
+    const c = ctx();
+    await c.users.add({
+      id: 'user1',
+      email: 'recruiter+test123@nexushero.test',
+      passwordHash: 'x',
+      roles: ['recruiter'],
+      createdAt: '2026-06-25T10:00:00.000Z',
+    });
+    const docs = await c.service.get(OWNER, 'user1');
+    expect(docs.contact.name).toBe('Recruiter');
+  });
+
   it('Save_SelfWithoutTalentRecord_Persists', async () => {
     const c = ctx();
     await c.users.add({

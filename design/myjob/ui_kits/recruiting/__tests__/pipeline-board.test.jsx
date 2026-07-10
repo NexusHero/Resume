@@ -2,8 +2,8 @@
    may reference a candidate who isn't in the pool (or the pinned "me"). The board
    must still render them, falling back to the name captured on the record — the
    Applications page was previously always empty. */
-import { describe, it, expect, beforeAll } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, beforeAll, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 
 let PipelineBoard;
 
@@ -38,5 +38,28 @@ describe('PipelineBoard', () => {
   it('EmptyApps_RendersEmptyColumns', () => {
     render(<PipelineBoard apps={[]} talents={[]} onOpen={() => {}} />);
     expect(screen.getAllByText('empty').length).toBeGreaterThan(0);
+  });
+
+  it('ReadOnly_NoHandlers_HidesStageControlAndDelete', () => {
+    const apps = [{ id: 'a1', company: 'Aurora', role: 'Eng', talentId: 't1', talentName: 'Mara', status: 'new', score: null }];
+    render(<PipelineBoard apps={apps} talents={[]} onOpen={() => {}} />);
+    expect(screen.queryByLabelText('Stage')).toBeNull();
+    expect(screen.queryByLabelText('Remove application')).toBeNull();
+  });
+
+  it('StageDropdown_Change_MovesTheApplication', () => {
+    const onMove = vi.fn();
+    const apps = [{ id: 'a1', company: 'Aurora', role: 'Eng', talentId: 't1', talentName: 'Mara', status: 'new', score: null }];
+    render(<PipelineBoard apps={apps} talents={[]} onOpen={() => {}} onMove={onMove} onDelete={() => {}} />);
+    fireEvent.change(screen.getByLabelText('Stage'), { target: { value: 'interview' } });
+    expect(onMove).toHaveBeenCalledWith('a1', 'interview');
+  });
+
+  it('RemoveButton_Click_DeletesTheApplication', () => {
+    const onDelete = vi.fn();
+    const apps = [{ id: 'a1', company: 'Aurora', role: 'Eng', talentId: 't1', talentName: 'Mara', status: 'new', score: null }];
+    render(<PipelineBoard apps={apps} talents={[]} onOpen={() => {}} onMove={() => {}} onDelete={onDelete} />);
+    fireEvent.click(screen.getByLabelText('Remove application'));
+    expect(onDelete).toHaveBeenCalledWith('a1', 'Aurora');
   });
 });

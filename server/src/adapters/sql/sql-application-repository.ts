@@ -42,4 +42,12 @@ export class SqlApplicationRepository implements ApplicationRepository {
     // Match the file repository: an update to an unknown id inserts it.
     if (updated.length === 0) await this.db.insert(applications).values(row);
   }
+
+  async delete(ownerId: string, id: string): Promise<boolean> {
+    const deleted = await this.db
+      .delete(applications)
+      .where(and(eq(applications.id, id), eq(applications.ownerId, ownerId)))
+      .returning({ id: applications.id });
+    return deleted.length > 0;
+  }
 }

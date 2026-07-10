@@ -8,7 +8,24 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+### Added
+
+- **The Applications board is now interactive.** A card can be moved through the
+  pipeline (SUBMITTED → IN REVIEW → INTERVIEW → OFFER → HIRED) by drag-and-drop or
+  its per-card stage dropdown — both persist via `PATCH /api/v1/applications/:id`
+  — and a mis-filed application can be removed (new
+  `DELETE /api/v1/applications/:id`, 204). Previously the board was display-only
+  and applications could not be deleted at all.
+- **A first-run onboarding card** on the Workspace: an empty desk now offers
+  three clear first actions (add a talent, create a mandate, find roles) instead
+  of four zeroes and empty panels.
+
 ### Fixed
+
+- **Derived display names no longer leak the email's plus-address or digits**:
+  `recruiter+test123@…` now greets you as “Recruiter”, not “Recruiter+”.
+- **Removed a German string leak** in the English UI: the job-posting card's
+  action reads “Job description” instead of “Stellenbeschreibung”.
 
 - **The CV/cover-letter editor is now truly WYSIWYG** (ADR-0052): the live
   preview and the exported PDF are rendered from a single source

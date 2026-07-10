@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Inject, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Inject, Post, Req, Res, UseGuards } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { registerSchema, loginSchema, DEFAULT_TENANT } from '../../domain/user.js';
 import { confirmVerificationSchema } from '../../domain/email-verification.js';
@@ -7,6 +7,7 @@ import type { AuthService } from '../../services/auth-service.js';
 import type { EmailVerificationService } from '../../services/email-verification-service.js';
 import type { PlanProvider } from '../../ports/plan-provider.js';
 import type { AppConfig } from '../../config.js';
+import { AuthRateLimitGuard } from '../auth-rate-limit.guard.js';
 import { AUTH_SERVICE, EMAIL_VERIFICATION_SERVICE, PLAN_PROVIDER, CONFIG } from '../tokens.js';
 
 /** Reads a single cookie value from the raw Cookie header (no cookie-parser dep). */
@@ -25,8 +26,7 @@ function readCookie(req: Request, name: string): string | undefined {
  * Auth endpoints under /api/v1/auth (ADR-0051 port of the Express AuthController):
  * register, login, logout, me, providers and email verification. Session cookies
  * are set/cleared on the passthrough Express response so behaviour is identical.
- * (Rate limiting for these routes is reinstated with the Throttler in a later
- * increment.)
+ * The credential routes carry the AuthRateLimitGuard (the Express authLimiter).
  */
 @Controller('api/v1/auth')
 export class AuthController {
@@ -67,6 +67,7 @@ export class AuthController {
   }
 
   @Post('register')
+  @UseGuards(AuthRateLimitGuard)
   @HttpCode(201)
   async register(@Body() body: unknown, @Res({ passthrough: true }) res: Response) {
     const input = registerSchema.parse(body);
@@ -78,6 +79,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @UseGuards(AuthRateLimitGuard)
   @HttpCode(200)
   async login(@Body() body: unknown, @Res({ passthrough: true }) res: Response) {
     const input = loginSchema.parse(body);
@@ -102,6 +104,7 @@ export class AuthController {
   }
 
   @Post('verify-email/confirm')
+  @UseGuards(AuthRateLimitGuard)
   @HttpCode(204)
   async confirmVerification(@Body() body: unknown): Promise<void> {
     const { token } = confirmVerificationSchema.parse(body);

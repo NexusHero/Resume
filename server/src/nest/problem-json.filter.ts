@@ -37,6 +37,16 @@ export class ProblemJsonFilter implements ExceptionFilter {
       typeof body === 'string'
         ? body
         : ((body as { message?: unknown }).message?.toString() ?? err.message);
+    // The framework 404 for a route no controller claims ("Cannot GET /…") keeps
+    // the exact shape the Express `notFound` handler sent for unknown endpoints.
+    if (status === 404 && typeof detail === 'string' && detail.startsWith('Cannot ')) {
+      return {
+        type: 'about:blank#not-found',
+        title: 'Not Found',
+        status: 404,
+        detail: 'Unknown endpoint.',
+      };
+    }
     return {
       type: 'about:blank',
       title: err.name.replace(/Exception$/, '') || 'Error',

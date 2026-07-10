@@ -75,6 +75,9 @@ module.exports = {
     // Nest acceptance tests, not unit-covered (same convention as container.ts).
     '!server/src/nest/**/*.module.ts',
     '!server/src/main.ts',
+    // The Express edge around the Nest router (static kits, docs, body limits) is
+    // process bootstrap like index.ts — exercised by the boot smoke, not unit-covered.
+    '!server/src/nest/http-edge.ts',
     // Nest controllers are thin HTTP glue (routing decorators → service call),
     // exercised end-to-end by the Nest acceptance tests; their heavy
     // `emitDecoratorMetadata`-emitted branches are structurally uncoverable, so

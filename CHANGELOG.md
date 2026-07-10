@@ -8,6 +8,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+### Changed
+
+- **NestJS is now the composition root and HTTP layer** (ADR-0051, supersedes
+  ADR-0002): all 27 controllers/101 routes moved to Nest feature modules with
+  guards (`AuthGuard`, `RolesGuard` RBAC, `PlanGuard` Pro gate, per-user AI and
+  per-IP auth rate limits), the shared `ZodValidationPipe` and the RFC-9457
+  `ProblemJsonFilter`. Awilix, `container.ts` and the hand-built
+  `http/create-app.ts` are retired; the hexagonal core (domain, ports, adapters,
+  zod, Drizzle) is unchanged and services stay decorator-free behind injection
+  tokens. The API contract is byte-compatible (verified by the 199-test contract
+  suite now running against the Nest app, plus per-vertical Nest suites); dev
+  `npm run serve` boots via SWC (decorator metadata), production stays `tsc` +
+  `node dist`.
+
 ### Added
 
 - **All job boards on by default, one search across all of them** (ADR-0050,

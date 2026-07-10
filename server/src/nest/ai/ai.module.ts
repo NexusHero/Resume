@@ -20,6 +20,7 @@ import type { IdGenerator } from '../../ports/id-generator.js';
 import type { Logger } from '../../ports/logger.js';
 import type { CandidateIdentity } from '../../domain/cover-letter.js';
 import { DocumentsModule } from '../documents/documents.module.js';
+import { DocumentsAiController } from './documents-ai.controller.js';
 import {
   LLM_FEATURE_RUNNER,
   DOCUMENT_ASSIST_SERVICE,
@@ -53,6 +54,7 @@ import {
 @Global()
 @Module({
   imports: [DocumentsModule],
+  controllers: [DocumentsAiController],
   providers: [
     {
       provide: LLM_FEATURE_RUNNER,

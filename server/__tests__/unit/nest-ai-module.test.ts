@@ -20,6 +20,7 @@ import {
   PDF_RENDERER,
   PDF_MERGER,
   AUTH_SERVICE,
+  PLAN_PROVIDER,
 } from '../../src/nest/tokens.js';
 
 /**
@@ -45,6 +46,7 @@ describe('AiModule wiring', () => {
       PDF_RENDERER,
       PDF_MERGER,
       AUTH_SERVICE, // DocumentsModule's AuthGuard needs it (global AuthModule in prod)
+      PLAN_PROVIDER, // DocumentsAiController's PlanGuard needs it (InfraModule in prod)
     ];
     const stubs: Provider[] = leafTokens.map((t) => ({ provide: t, useValue: stub() }));
     @Global()

@@ -24,6 +24,7 @@ import { AuthGuard } from '../auth.guard.js';
 import { Can, RolesGuard } from '../authorization.js';
 import { CurrentScope, CurrentUserId } from '../params.js';
 import { ZodValidationPipe } from '../zod-validation.pipe.js';
+import { AuthRateLimitGuard } from '../auth-rate-limit.guard.js';
 import {
   INVITE_SERVICE,
   INVITE_REPOSITORY,
@@ -77,6 +78,7 @@ export class InvitesController {
   }
 
   @Post('auth/accept-invite')
+  @UseGuards(AuthRateLimitGuard)
   @HttpCode(201)
   async accept(
     @Body(new ZodValidationPipe(acceptInviteSchema))

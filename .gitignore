@@ -31,6 +31,8 @@ test-results/
 # Keep the application archive
 !archive/bewerbungen/
 !archive/bewerbungen/*.pdf
+# ...but never the dev filesystem store's JSON files (DATA_DIR defaults here)
+archive/bewerbungen/*.json
 
 # Vite build output (recruiting kit)
 design/myjob/ui_kits/recruiting/dist/

@@ -19,6 +19,17 @@ import {
   DOCUMENT_REPOSITORY,
   ATTACHMENT_STORE,
   CANDIDACY_REPOSITORY,
+  API_KEY_STORE,
+  USER_REPOSITORY,
+  AUTH_ENGINE,
+  PASSWORD_RESET_TOKEN_STORE,
+  EMAIL_VERIFICATION_TOKEN_STORE,
+  USAGE_METER,
+  MANDATE_REPOSITORY,
+  PLACEMENT_REPOSITORY,
+  APPLICATION_REPOSITORY,
+  INTERVIEW_OBSERVATION_REPOSITORY,
+  ARTIFACT_LOG_REPOSITORY,
 } from '../../src/nest/tokens.js';
 import {
   InMemoryTalentRepository,
@@ -46,6 +57,21 @@ describe('NestJS talents vertical', () => {
       { provide: DOCUMENT_REPOSITORY, useValue: new InMemoryDocumentRepository() },
       { provide: ATTACHMENT_STORE, useValue: new InMemoryAttachmentStore() },
       { provide: CANDIDACY_REPOSITORY, useValue: new InMemoryCandidacyRepository() },
+      // RegistriesModule's user-level erase/export registries pull these leaf
+      // ports too; the talents routes never touch them, so bare stubs suffice.
+      ...[
+        API_KEY_STORE,
+        USER_REPOSITORY,
+        AUTH_ENGINE,
+        PASSWORD_RESET_TOKEN_STORE,
+        EMAIL_VERIFICATION_TOKEN_STORE,
+        USAGE_METER,
+        MANDATE_REPOSITORY,
+        PLACEMENT_REPOSITORY,
+        APPLICATION_REPOSITORY,
+        INTERVIEW_OBSERVATION_REPOSITORY,
+        ARTIFACT_LOG_REPOSITORY,
+      ].map((t) => ({ provide: t, useValue: {} })),
     ];
     @Global()
     @Module({ providers: fakes, exports: fakes.map((p) => (p as { provide: symbol }).provide) })

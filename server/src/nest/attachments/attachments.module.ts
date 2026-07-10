@@ -90,5 +90,6 @@ export class AttachmentsController {
       inject: [ATTACHMENT_STORE, TALENT_REPOSITORY, USER_REPOSITORY, CLOCK, ID_GENERATOR],
     },
   ],
+  exports: [ATTACHMENT_SERVICE],
 })
 export class AttachmentsModule {}

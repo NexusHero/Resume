@@ -1,508 +1,27 @@
 import request from 'supertest';
-import type { Express } from 'express';
+import type { Server } from 'http';
 import { loadConfig } from '../../src/config.js';
-import { createApp } from '../../src/http/create-app.js';
-import { ApplicationController } from '../../src/http/application-controller.js';
-import { JobController } from '../../src/http/job-controller.js';
-import { AtsController } from '../../src/http/ats-controller.js';
-import { SavedSearchController } from '../../src/http/saved-search-controller.js';
-import { ApplicationService } from '../../src/services/application-service.js';
-import { JobSearchService } from '../../src/services/job-search-service.js';
-import { AtsService } from '../../src/services/ats-service.js';
-import { SavedSearchService } from '../../src/services/saved-search-service.js';
-import { LlmController } from '../../src/http/llm-controller.js';
-import { MandateController } from '../../src/http/mandate-controller.js';
-import { TalentController } from '../../src/http/talent-controller.js';
-import { TalentImportService } from '../../src/services/talent-import-service.js';
-import { EnvPlanProvider } from '../../src/adapters/env-plan-provider.js';
-import { PlacementController } from '../../src/http/placement-controller.js';
-import { CandidacyController } from '../../src/http/candidacy-controller.js';
-import { RetentionController } from '../../src/http/retention-controller.js';
-import { MatchController } from '../../src/http/match-controller.js';
-import { MatchAiController } from '../../src/http/match-ai-controller.js';
-import { UsageController } from '../../src/http/usage-controller.js';
-import { ComplianceController } from '../../src/http/compliance-controller.js';
-import { ForecastController } from '../../src/http/forecast-controller.js';
-import { ObservationController } from '../../src/http/observation-controller.js';
-import { DocumentController } from '../../src/http/document-controller.js';
-import { AttachmentController } from '../../src/http/attachment-controller.js';
-import { AuthController } from '../../src/http/auth-controller.js';
-import { MembersController } from '../../src/http/members-controller.js';
-import { InviteController } from '../../src/http/invite-controller.js';
-import { TenantAdminController } from '../../src/http/tenant-admin-controller.js';
-import { AccountController } from '../../src/http/account-controller.js';
-import { PasswordResetController } from '../../src/http/password-reset-controller.js';
-import { LlmService } from '../../src/services/llm-service.js';
-import { MandateService } from '../../src/services/mandate-service.js';
-import { TalentService } from '../../src/services/talent-service.js';
-import { PlacementService } from '../../src/services/placement-service.js';
-import { CandidacyService } from '../../src/services/candidacy-service.js';
-import { RetentionService } from '../../src/services/retention-service.js';
-import { MatchService } from '../../src/services/match-service.js';
-import { HashedEmbeddingProvider } from '../../src/adapters/hashed-embedding-provider.js';
-import { AssistantService } from '../../src/services/assistant-service.js';
-import { AutopilotService } from '../../src/services/autopilot-service.js';
-import { AssistantController } from '../../src/http/assistant-controller.js';
-import { ApplicationBuilder } from '../../src/services/application-builder.js';
-import { ArtifactController } from '../../src/http/artifact-controller.js';
-import { MailController } from '../../src/http/mail-controller.js';
-import { MailService } from '../../src/services/mail-service.js';
-import { UsageService } from '../../src/services/usage-service.js';
-import { ForecastService } from '../../src/services/forecast-service.js';
-import { InterviewObservationService } from '../../src/services/interview-observation-service.js';
-import { DocumentService } from '../../src/services/document-service.js';
-import { buildDocumentAiService } from '../support/build-document-ai.js';
-import { buildTalentDataPurgers } from '../support/talent-purgers.js';
-import { AttachmentService } from '../../src/services/attachment-service.js';
-import { AuthService } from '../../src/services/auth-service.js';
-import { EmailVerificationService } from '../../src/services/email-verification-service.js';
-import { MembersService } from '../../src/services/members-service.js';
-import { InviteService } from '../../src/services/invite-service.js';
-import { TenantService } from '../../src/services/tenant-service.js';
-import { AccountService } from '../../src/services/account-service.js';
-import { toUserView } from '../../src/domain/user.js';
-import { PasswordResetService } from '../../src/services/password-reset-service.js';
-import { CoverLetterService } from '../../src/services/cover-letter-service.js';
-import { AnthropicLlmProvider } from '../../src/adapters/anthropic-llm-provider.js';
-import { GeminiLlmProvider } from '../../src/adapters/gemini-llm-provider.js';
-import { nodeFetch } from '../../src/adapters/node-fetch.js';
-import { KeywordSkillExtractor } from '../../src/adapters/keyword-skill-extractor.js';
-import { RoleAuthorizer } from '../../src/adapters/role-authorizer.js';
+import { makeNestApp, closeNestApps } from '../support/nest-app.js';
 import {
-  InMemoryApplicationRepository,
-  InMemoryArtifactLogRepository,
-  InMemoryAssistantSettingsStore,
-  InMemoryAssistantSuggestionRepository,
-  InMemoryAuditLog,
-  InMemoryPdfArchive,
-  InMemorySavedSearchRepository,
-  InMemoryMandateRepository,
-  InMemoryTalentRepository,
-  InMemoryPlacementRepository,
-  InMemoryCandidacyRepository,
-  InMemoryDocumentRepository,
-  InMemoryAttachmentStore,
-  InMemoryUserRepository,
-  InMemoryInviteRepository,
-  InMemoryTenantRepository,
-  InMemoryApiKeyStore,
-  InMemoryUsageMeter,
-  InMemoryInterviewObservationRepository,
   InMemoryPasswordResetTokenStore,
   InMemoryEmailVerificationTokenStore,
   RecordingMailer,
   FakeInboxSource,
-  FakeJobSource,
-  InMemoryStageTransitionRepository,
-  InMemoryRetentionPolicyStore,
-  FakeAuthEngine,
-  FakePdfRenderer,
-  FakePdfMerger,
-  FakePdfTextExtractor,
-  FakeVersioner,
-  FixedClock,
-  SequenceIdGenerator,
-  noopLogger,
 } from '../support/fakes.js';
 
-function makeApp(
-  config = loadConfig({}),
-  opts: {
-    mailer?: RecordingMailer;
-    passwordResetTokenStore?: InMemoryPasswordResetTokenStore;
-    emailVerificationTokenStore?: InMemoryEmailVerificationTokenStore;
-    inboxSource?: FakeInboxSource;
-  } = {},
-): Express {
-  const planProvider = new EnvPlanProvider(config.plan);
-  // Shared so the account export observes the same applications the endpoints write.
-  const applicationRepository = new InMemoryApplicationRepository();
-  const service = new ApplicationService({
-    applicationRepository,
-    auditLog: new InMemoryAuditLog(),
-    pdfArchive: new InMemoryPdfArchive(),
-    pdfRenderer: new FakePdfRenderer(),
-    pdfMerger: new FakePdfMerger(),
-    versioner: new FakeVersioner(null),
-    clock: new FixedClock(),
-    idGenerator: new SequenceIdGenerator(),
-    logger: noopLogger,
-  });
-  const controller = new ApplicationController({ applicationService: service });
-  const jobSearchService = new JobSearchService({
-    jobSource: new FakeJobSource(),
-    skillExtractor: new KeywordSkillExtractor(),
-    candidateProfile: config.candidateProfile,
-    logger: noopLogger,
-  });
-  const jobController = new JobController({ jobSearchService, config });
-  const atsController = new AtsController({
-    atsService: new AtsService({
-      skillExtractor: new KeywordSkillExtractor(),
-      candidateProfile: config.candidateProfile,
-    }),
-  });
-  const savedSearchController = new SavedSearchController({
-    savedSearchService: new SavedSearchService({
-      savedSearchRepository: new InMemorySavedSearchRepository(),
-      jobSearchService,
-      clock: new FixedClock(),
-      idGenerator: new SequenceIdGenerator('search'),
-    }),
-  });
-  const llmService = new LlmService({
-    providers: [
-      new AnthropicLlmProvider({ httpFetch: nodeFetch, config: config.llm.anthropic }),
-      new GeminiLlmProvider({ httpFetch: nodeFetch, config: config.llm.gemini }),
-    ],
-    defaultProvider: config.llm.provider,
-    logger: noopLogger,
-  });
-  // Shared so per-user LLM keys set via /settings are seen by the AI helpers and
-  // erased with the account.
-  const apiKeyStore = new InMemoryApiKeyStore();
-  // Shared between AuthService (self-serve creation + suspension enforcement) and
-  // the super-admin console, so a tenant suspended via /admin is seen at login.
-  const tenantRepository = new InMemoryTenantRepository();
-  const usageMeter = new InMemoryUsageMeter();
-  // Shared so the per-user provider choice, auth and members management all
-  // observe the same accounts.
-  const userRepository = new InMemoryUserRepository();
-  const llmController = new LlmController({
-    llmService,
-    coverLetterService: new CoverLetterService({
-      llmService,
-      candidate: config.candidate,
-      usageMeter,
-      clock: new FixedClock(),
-      logger: noopLogger,
-    }),
-    apiKeyStore,
-    userRepository,
-  });
-  // Shared repositories so the account (DSGVO) endpoints observe the same data
-  // the recruiting endpoints write, and erasure affects the same auth state.
-  const mandateRepository = new InMemoryMandateRepository();
-  const talentRepository = new InMemoryTalentRepository();
-  const placementRepository = new InMemoryPlacementRepository();
-  const candidacyRepository = new InMemoryCandidacyRepository();
-  const documentRepository = new InMemoryDocumentRepository();
-  const attachmentStore = new InMemoryAttachmentStore();
-  const authEngine = new FakeAuthEngine();
-  const passwordResetTokenStore =
-    opts.passwordResetTokenStore ?? new InMemoryPasswordResetTokenStore();
-  const mailer = opts.mailer ?? new RecordingMailer();
-  const mandateService = new MandateService({
-    mandateRepository,
-    candidacyRepository,
-    clock: new FixedClock(),
-    idGenerator: new SequenceIdGenerator('mandate'),
-  });
-  const mandateController = new MandateController({ mandateService });
-  const talentDataPurgers = buildTalentDataPurgers({
-    documentRepository,
-    attachmentStore,
-    candidacyRepository,
-    clock: new FixedClock(),
-  });
-  const talentService = new TalentService({
-    talentRepository,
-    documentRepository,
-    talentDataPurgers,
-    clock: new FixedClock(),
-    idGenerator: new SequenceIdGenerator('talent'),
-  });
-  // Shared so candidacies auto-booked when a card reaches 'placed' land in the
-  // same placements the placement endpoints serve.
-  const placementService = new PlacementService({
-    placementRepository,
-    clock: new FixedClock(),
-    idGenerator: new SequenceIdGenerator('placement'),
-  });
-  const stageTransitionRepository = new InMemoryStageTransitionRepository();
-  const candidacyService = new CandidacyService({
-    candidacyRepository,
-    mandateRepository,
-    talentRepository,
-    placementService,
-    stageTransitionRepository,
-    clock: new FixedClock(),
-    idGenerator: new SequenceIdGenerator('cand'),
-    logger: noopLogger,
-  });
-  const candidacyController = new CandidacyController({ candidacyService });
-  const retentionController = new RetentionController({
-    retentionService: new RetentionService({
-      talentRepository,
-      candidacyRepository,
-      talentDataPurgers,
-      retentionPolicyStore: new InMemoryRetentionPolicyStore(),
-      clock: new FixedClock(),
-      logger: noopLogger,
-    }),
-  });
-  const matchService = new MatchService({
-    mandateRepository,
-    talentRepository,
-    documentRepository,
-    candidacyRepository,
-    embeddingProvider: new HashedEmbeddingProvider(),
-  });
-  const matchController = new MatchController({ matchService });
-  const attachmentService = new AttachmentService({
-    attachmentStore,
-    talentRepository,
-    userRepository,
-    clock: new FixedClock(),
-    idGenerator: new SequenceIdGenerator('att'),
-  });
-  const attachmentController = new AttachmentController({ attachmentService });
-  const documentService = new DocumentService({
-    documentRepository,
-    talentRepository,
-    userRepository,
-    attachmentStore,
-    pdfRenderer: new FakePdfRenderer(),
-    pdfMerger: new FakePdfMerger(),
-    clock: new FixedClock(),
-  });
-  const interviewObservationRepository = new InMemoryInterviewObservationRepository();
-  const artifactLogRepository = new InMemoryArtifactLogRepository();
-  const documentAiService = buildDocumentAiService({
-    documentService,
-    llmService,
-    apiKeyStore,
-    userRepository,
-    pdfTextExtractor: new FakePdfTextExtractor('Extracted CV text from PDF.'),
-    usageMeter,
-    interviewObservationRepository,
-    artifactLogRepository,
-    idGenerator: new SequenceIdGenerator('art'),
-    clock: new FixedClock(),
-    logger: noopLogger,
-  });
-  const talentController = new TalentController({
-    talentService,
-    talentImportService: new TalentImportService({
-      talentService,
-      documentService,
-      documentAiService,
-      logger: noopLogger,
-    }),
-  });
-  const applicationBuilder = new ApplicationBuilder({
-    documentAiService,
-    documentService,
-    attachmentService,
-  });
-  const assistantSuggestionRepository = new InMemoryAssistantSuggestionRepository();
-  const assistantIds = new SequenceIdGenerator('sugg');
-  const autopilotService = new AutopilotService({
-    assistantSuggestionRepository,
-    mandateRepository,
-    matchService,
-    candidacyService,
-    mandateService,
-    jobSearchService,
-    applicationBuilder,
-    clock: new FixedClock(),
-    idGenerator: assistantIds,
-    logger: noopLogger,
-  });
-  const assistantController = new AssistantController({
-    assistantService: new AssistantService({
-      assistantSettingsStore: new InMemoryAssistantSettingsStore(),
-      assistantSuggestionRepository,
-      mandateRepository,
-      talentRepository,
-      documentRepository,
-      candidacyRepository,
-      matchService,
-      candidacyService,
-      autopilotService,
-      clock: new FixedClock(),
-      idGenerator: assistantIds,
-      logger: noopLogger,
-    }),
-  });
-  const artifactController = new ArtifactController({
-    artifactLogRepository,
-    clock: new FixedClock(),
-  });
-  const mailController = new MailController({
-    mailService: new MailService({
-      config,
-      mailer,
-      inboxSource: opts.inboxSource ?? new FakeInboxSource(),
-      talentRepository,
-      artifactLogRepository,
-      logger: noopLogger,
-    }),
-  });
-  const documentController = new DocumentController({ documentService, documentAiService });
-  const matchAiController = new MatchAiController({ mandateRepository, documentAiService });
-  const usageController = new UsageController({
-    usageService: new UsageService({ usageMeter }),
-  });
-  const complianceController = new ComplianceController();
-  const forecastController = new ForecastController({
-    forecastService: new ForecastService({
-      mandateRepository,
-      candidacyRepository,
-      stageTransitionRepository,
-    }),
-  });
-  const observationController = new ObservationController({
-    interviewObservationService: new InterviewObservationService({
-      interviewObservationRepository,
-      mandateRepository,
-      clock: new FixedClock(),
-      idGenerator: new SequenceIdGenerator('obs'),
-    }),
-  });
-  const placementController = new PlacementController({ placementService });
-  const emailVerificationTokenStore =
-    opts.emailVerificationTokenStore ?? new InMemoryEmailVerificationTokenStore();
-  const authController = new AuthController({
-    authService: new AuthService({
-      userRepository,
-      authEngine,
-      clock: new FixedClock(),
-      idGenerator: new SequenceIdGenerator('user'),
-      tenantRepository,
-      config,
-    }),
-    emailVerificationService: new EmailVerificationService({
-      userRepository,
-      emailVerificationTokenStore,
-      mailer,
-      logger: noopLogger,
-      clock: new FixedClock(),
-      config,
-    }),
-    planProvider,
-    config,
-  });
-  const accountController = new AccountController({
-    accountService: new AccountService({
-      userRepository,
-      userErasureSteps: [
-        {
-          label: 'api-keys',
-          erase: async (userId) => {
-            for (const provider of await apiKeyStore.providersFor(userId)) {
-              await apiKeyStore.remove(userId, provider);
-            }
-          },
-        },
-        {
-          label: 'auth-credentials',
-          erase: async (userId) => {
-            const found = await userRepository.findById(userId);
-            if (found) await authEngine.erase(found.email);
-          },
-        },
-        {
-          label: 'password-reset-tokens',
-          erase: (userId) => passwordResetTokenStore.destroyForUser(userId),
-        },
-        {
-          label: 'email-verification-tokens',
-          erase: (userId) => emailVerificationTokenStore.destroyForUser(userId),
-        },
-        { label: 'usage', erase: (userId) => usageMeter.removeForUser(userId) },
-      ],
-      userExportSections: [
-        {
-          key: 'account',
-          collect: async (userId) => {
-            const found = await userRepository.findById(userId);
-            return found ? toUserView(found) : null;
-          },
-        },
-        { key: 'mandates', collect: (_userId, scope) => mandateRepository.list(scope) },
-        { key: 'talents', collect: (_userId, scope) => talentRepository.list(scope) },
-        { key: 'placements', collect: (_userId, scope) => placementRepository.list(scope) },
-        { key: 'applications', collect: (_userId, scope) => applicationRepository.list(scope) },
-        {
-          key: 'observations',
-          collect: (_userId, scope) => interviewObservationRepository.list(scope),
-        },
-        { key: 'artifactLogs', collect: (_userId, scope) => artifactLogRepository.list(scope) },
-      ],
-    }),
-    clock: new FixedClock(),
-    config,
-  });
-  const passwordResetController = new PasswordResetController({
-    passwordResetService: new PasswordResetService({
-      userRepository,
-      authEngine,
-      passwordResetTokenStore,
-      mailer,
-      logger: noopLogger,
-      config,
-    }),
-  });
-  const membersController = new MembersController({
-    membersService: new MembersService({ userRepository }),
-  });
-  const inviteController = new InviteController({
-    inviteService: new InviteService({
-      inviteRepository: new InMemoryInviteRepository(),
-      userRepository,
-      authEngine,
-      idGenerator: new SequenceIdGenerator('invite'),
-      clock: new FixedClock(),
-      mailer,
-      logger: noopLogger,
-      config,
-    }),
-    config,
-  });
-  const tenantAdminController = new TenantAdminController({
-    tenantService: new TenantService({ tenantRepository, userRepository }),
-    membersService: new MembersService({ userRepository }),
-  });
-  return createApp({
-    applicationController: controller,
-    jobController,
-    atsController,
-    savedSearchController,
-    llmController,
-    mandateController,
-    talentController,
-    placementController,
-    candidacyController,
-    retentionController,
-    matchController,
-    matchAiController,
-    usageController,
-    complianceController,
-    forecastController,
-    observationController,
-    assistantController,
-    artifactController,
-    mailController,
-    documentController,
-    attachmentController,
-    authController,
-    membersController,
-    inviteController,
-    tenantAdminController,
-    accountController,
-    passwordResetController,
-    planProvider,
-    authorizer: new RoleAuthorizer(),
-    config,
-    logger: noopLogger,
-  });
-}
+// The NestJS test harness (ADR-0051): the same fake leaf ports the retired
+// Express `createApp(deps)` factory wired, assembled by the real feature
+// modules. Same signature, so the 199 contract tests below are unchanged.
+const makeApp = makeNestApp;
+
+afterEach(async () => {
+  await closeNestApps();
+});
 
 /** A supertest agent with a registered, logged-in session. The personal
  *  endpoints (applications/history/searches/ats/jobs) require auth, so their
  *  tests drive a logged-in agent — the same pattern as the recruiting block. */
-async function authed(app: Express) {
+async function authed(app: Server) {
   const agent = request.agent(app);
   await agent
     .post('/api/v1/auth/register')
@@ -511,9 +30,9 @@ async function authed(app: Express) {
 }
 
 describe('REST API /api/v1', () => {
-  let app: Express;
-  beforeEach(() => {
-    app = makeApp();
+  let app: Server;
+  beforeEach(async () => {
+    app = await makeApp();
   });
 
   it('PersonalEndpoints_Unauthenticated_Return401', async () => {
@@ -548,7 +67,7 @@ describe('REST API /api/v1', () => {
       .send({ company: 'Aurora', position: 'Engineer' });
     expect(res.status).toBe(201);
     expect(res.body.application).toMatchObject({
-      id: 'id1',
+      id: expect.any(String) as unknown as string,
       company: 'Aurora',
       position: 'Engineer',
     });
@@ -631,7 +150,7 @@ describe('REST API /api/v1', () => {
     // Regression (data leak): applications must be team-scoped like mandates —
     // a different tenant must never see them. Self-serve tenants give each
     // registrant its own tenant so the isolation is observable.
-    const isolated = makeApp(loadConfig({ SELF_SERVE_TENANTS: 'true' }));
+    const isolated = await makeApp(loadConfig({ SELF_SERVE_TENANTS: 'true' }));
     const a = request.agent(isolated);
     await a
       .post('/api/v1/auth/register')
@@ -663,7 +182,7 @@ describe('REST API /api/v1', () => {
   it('AiRoutes_PerUserRateLimit_Returns429WhenExceeded', async () => {
     // The generative routes spend the owner's LLM budget, so they are throttled
     // per user. With a limit of 2/min the third call in the window is refused.
-    const limited = makeApp(loadConfig({ AI_RATE_LIMIT_PER_MINUTE: '2' }));
+    const limited = await makeApp(loadConfig({ AI_RATE_LIMIT_PER_MINUTE: '2' }));
     const agent = request.agent(limited);
     await agent
       .post('/api/v1/auth/register')
@@ -714,7 +233,7 @@ describe('REST API /api/v1', () => {
         .send({ client: 'Aurora', role: 'C++ Engineer', location: 'Berlin' });
       expect(res.status).toBe(201);
       expect(res.body.mandate).toMatchObject({
-        id: 'mandate1',
+        id: expect.any(String) as unknown as string,
         client: 'Aurora',
         role: 'C++ Engineer',
         priority: 'medium',
@@ -861,7 +380,7 @@ describe('REST API /api/v1', () => {
         .send({ name: 'Lena Brandt', role: 'Product Designer', skills: ['Figma'] });
       expect(res.status).toBe(201);
       expect(res.body.talent).toMatchObject({
-        id: 'talent1',
+        id: expect.any(String) as unknown as string,
         name: 'Lena Brandt',
         role: 'Product Designer',
         skills: ['Figma'],
@@ -1264,7 +783,7 @@ describe('REST API /api/v1', () => {
         .send({ candidateName: 'Mara Vogel', client: 'Aurora', fee: '19.000 €' });
       expect(res.status).toBe(201);
       expect(res.body.placement).toMatchObject({
-        id: 'placement1',
+        id: expect.any(String) as unknown as string,
         candidateName: 'Mara Vogel',
         client: 'Aurora',
         status: 'probation',
@@ -1940,7 +1459,7 @@ describe('REST API /api/v1', () => {
       .post('/api/v1/auth/register')
       .send({ email: 'a@example.com', password: 'supersecret' });
     expect(reg.status).toBe(201);
-    expect(reg.body.user).toMatchObject({ id: 'user1', email: 'a@example.com' });
+    expect(reg.body.user).toMatchObject({ id: expect.any(String), email: 'a@example.com' });
     expect(reg.headers['set-cookie']).toBeDefined();
     const me = await agent.get('/api/v1/auth/me');
     expect(me.body.user).toMatchObject({ email: 'a@example.com' });
@@ -2028,7 +1547,7 @@ describe('REST API /api/v1', () => {
   it('PasswordReset_FullFlow_EmailsLinkThenSetsNewPassword', async () => {
     const mailer = new RecordingMailer();
     const tokens = new InMemoryPasswordResetTokenStore();
-    const resetApp = makeApp(loadConfig({}), { mailer, passwordResetTokenStore: tokens });
+    const resetApp = await makeApp(loadConfig({}), { mailer, passwordResetTokenStore: tokens });
     await request(resetApp)
       .post('/api/v1/auth/register')
       .send({ email: 'reset@example.com', password: 'old-password' });
@@ -2059,7 +1578,7 @@ describe('REST API /api/v1', () => {
 
   it('PasswordReset_UnknownEmail_Returns202_NoEmail', async () => {
     const mailer = new RecordingMailer();
-    const resetApp = makeApp(loadConfig({}), { mailer });
+    const resetApp = await makeApp(loadConfig({}), { mailer });
     const res = await request(resetApp)
       .post('/api/v1/auth/password-reset/request')
       .send({ email: 'ghost@example.com' });
@@ -2070,7 +1589,10 @@ describe('REST API /api/v1', () => {
   it('VerifyEmail_RequestThenConfirm_MarksAccountVerified', async () => {
     const mailer = new RecordingMailer();
     const tokens = new InMemoryEmailVerificationTokenStore();
-    const verifyApp = makeApp(loadConfig({}), { mailer, emailVerificationTokenStore: tokens });
+    const verifyApp = await makeApp(loadConfig({}), {
+      mailer,
+      emailVerificationTokenStore: tokens,
+    });
     const agent = request.agent(verifyApp);
     await agent
       .post('/api/v1/auth/register')
@@ -2127,7 +1649,7 @@ describe('REST API /api/v1', () => {
 
   it('Auth_SecureConfig_SetsSecureSessionCookie', async () => {
     const base = loadConfig({});
-    const secureApp = makeApp({ ...base, auth: { ...base.auth, cookieSecure: true } });
+    const secureApp = await makeApp({ ...base, auth: { ...base.auth, cookieSecure: true } });
     const res = await request(secureApp)
       .post('/api/v1/auth/register')
       .send({ email: 'secure@example.com', password: 'supersecret' });
@@ -2505,7 +2027,7 @@ describe('REST API /api/v1', () => {
 
   it('Mail_SendOutreach_DeliversAndValidates', async () => {
     const mailer = new RecordingMailer();
-    const mailApp = makeApp(loadConfig({}), { mailer });
+    const mailApp = await makeApp(loadConfig({}), { mailer });
     const agent = request.agent(mailApp);
     await agent
       .post('/api/v1/auth/register')
@@ -2554,7 +2076,7 @@ describe('REST API /api/v1', () => {
       mail: { ...base.mail, imap: { ...base.mail.imap, host: 'imap.example.com' } },
     };
     const inboxSource = new FakeInboxSource();
-    const syncApp = makeApp(config, { inboxSource });
+    const syncApp = await makeApp(config, { inboxSource });
     const agent = request.agent(syncApp);
     await agent
       .post('/api/v1/auth/register')
@@ -2717,16 +2239,16 @@ describe('REST API /api/v1', () => {
 });
 
 describe('Plan gating (ADR-0021)', () => {
-  const freeApp = () => makeApp(loadConfig({ PLAN: 'free' }));
+  const freeApp = () => makeNestApp(loadConfig({ PLAN: 'free' }));
 
   it('FreePlan_MeReportsFreePlan', async () => {
-    const app = freeApp();
+    const app = await freeApp();
     const res = await request(app).get('/api/v1/auth/me');
     expect(res.body).toEqual({ user: null, plan: 'free', isSuperAdmin: false });
   });
 
   it('FreePlan_ProRoute_Returns402ProblemJson', async () => {
-    const app = freeApp();
+    const app = await freeApp();
     const agent = request.agent(app);
     await agent
       .post('/api/v1/auth/register')
@@ -2742,7 +2264,7 @@ describe('Plan gating (ADR-0021)', () => {
   });
 
   it('FreePlan_FreeRoute_StillWorks', async () => {
-    const app = freeApp();
+    const app = await freeApp();
     const agent = request.agent(app);
     await agent
       .post('/api/v1/auth/register')
@@ -2753,7 +2275,7 @@ describe('Plan gating (ADR-0021)', () => {
   });
 
   it('FreePlan_SwitchingAssistantToAutopilot_Returns402_ButSuggestIsFree', async () => {
-    const app = freeApp();
+    const app = await freeApp();
     const agent = request.agent(app);
     await agent
       .post('/api/v1/auth/register')
@@ -2765,7 +2287,7 @@ describe('Plan gating (ADR-0021)', () => {
   });
 
   it('ProPlan_ProRoute_IsAllowed', async () => {
-    const app = makeApp(loadConfig({ PLAN: 'pro' }));
+    const app = await makeApp(loadConfig({ PLAN: 'pro' }));
     const agent = request.agent(app);
     await agent
       .post('/api/v1/auth/register')
@@ -2782,7 +2304,7 @@ describe('Plan gating (ADR-0021)', () => {
 
 describe('Super-admin console (ADR-0037)', () => {
   it('SuperAdmin_ListsTenants_WithTheDefaultTeam', async () => {
-    const app = makeApp(loadConfig({ SUPER_ADMIN_EMAIL: 'root@example.com' }));
+    const app = await makeApp(loadConfig({ SUPER_ADMIN_EMAIL: 'root@example.com' }));
     const agent = request.agent(app);
     await agent
       .post('/api/v1/auth/register')
@@ -2799,7 +2321,7 @@ describe('Super-admin console (ADR-0037)', () => {
   });
 
   it('NonSuperAdmin_CannotListTenants_Returns403', async () => {
-    const app = makeApp(); // no SUPER_ADMIN_EMAIL configured
+    const app = await makeApp(); // no SUPER_ADMIN_EMAIL configured
     const agent = request.agent(app);
     await agent
       .post('/api/v1/auth/register')
@@ -2809,7 +2331,7 @@ describe('Super-admin console (ADR-0037)', () => {
   });
 
   it('Unauthenticated_CannotListTenants_Returns401', async () => {
-    const app = makeApp(loadConfig({ SUPER_ADMIN_EMAIL: 'root@example.com' }));
+    const app = await makeApp(loadConfig({ SUPER_ADMIN_EMAIL: 'root@example.com' }));
     expect((await request(app).get('/api/v1/admin/tenants')).status).toBe(401);
   });
 });
@@ -2817,10 +2339,10 @@ describe('Super-admin console (ADR-0037)', () => {
 describe('Super-admin cross-tenant management (ADR-0038)', () => {
   // Self-serve so a second, isolated tenant with its own admin exists to manage.
   const adminApp = () =>
-    makeApp(loadConfig({ SUPER_ADMIN_EMAIL: 'root@example.com', SELF_SERVE_TENANTS: 'true' }));
+    makeNestApp(loadConfig({ SUPER_ADMIN_EMAIL: 'root@example.com', SELF_SERVE_TENANTS: 'true' }));
 
   async function setup() {
-    const app = adminApp();
+    const app = await adminApp();
     const root = request.agent(app);
     await root
       .post('/api/v1/auth/register')

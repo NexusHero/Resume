@@ -36,7 +36,6 @@
     "@nestjs/common": "^11.1.28",
     "@nestjs/core": "^11.1.28",
     "@nestjs/platform-express": "^11.1.28",
-    "awilix": "^13.0.5",
     "better-auth": "^1.6.23",
     "better-sqlite3": "^12.11.1",
     "drizzle-orm": "^0.45.2",

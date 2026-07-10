@@ -51,15 +51,15 @@ job-application toolkit:
 
 ### Architecture at a glance
 
-| Aspect            | Choice                                                                                                                                                      |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Style**         | Hexagonal **ports & adapters** with a pure, I/O-free domain core — a **modular monolith**, not microservices (ADR-0001).                                    |
-| **Composition**   | One **Awilix DI composition root** wires every port to its production adapter; no decorators, no service locator (ADR-0002).                                |
-| **Persistence**   | **File store by default** (zero external dependency, offline, CI-friendly); **Postgres** via `STORE=sql` behind the same repository ports (ADR-0003).       |
-| **AI**            | **Optional throughout**: per-user keys, a deterministic template fallback on every feature, and a grounding self-check over generated text (ADR-0005/0009). |
-| **API**           | TypeScript/Express under `/api/v1`; **zod** at the boundary, **RFC-9457** errors, hand-kept OpenAPI + Swagger UI (ADR-0012).                                |
-| **Frontend**      | Vite/React recruiting kit; installable **PWA**; a **Capacitor** native wrapper over the same build (ADR-0028/0040).                                         |
-| **Multi-tenancy** | Scope-owned data, a **config-only, non-escalatable super-admin**, tenant suspension enforced in the auth path (ADR-0033–0038).                              |
+| Aspect            | Choice                                                                                                                                                            |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Style**         | Hexagonal **ports & adapters** with a pure, I/O-free domain core — a **modular monolith**, not microservices (ADR-0001).                                          |
+| **Composition**   | **NestJS modules** compose every port to its production adapter via injection tokens; the hexagonal services stay decorator-free (ADR-0051, supersedes ADR-0002). |
+| **Persistence**   | **File store by default** (zero external dependency, offline, CI-friendly); **Postgres** via `STORE=sql` behind the same repository ports (ADR-0003).             |
+| **AI**            | **Optional throughout**: per-user keys, a deterministic template fallback on every feature, and a grounding self-check over generated text (ADR-0005/0009).       |
+| **API**           | TypeScript/**NestJS** (Express platform) under `/api/v1`; **zod** at the boundary, **RFC-9457** errors, hand-kept OpenAPI + Swagger UI (ADR-0012, ADR-0051).      |
+| **Frontend**      | Vite/React recruiting kit; installable **PWA**; a **Capacitor** native wrapper over the same build (ADR-0028/0040).                                               |
+| **Multi-tenancy** | Scope-owned data, a **config-only, non-escalatable super-admin**, tenant suspension enforced in the auth path (ADR-0033–0038).                                    |
 
 **Why this shape.** The forces are a very small team, a product that must run
 **fully offline with no external service** (a recruiter can install it and work
@@ -106,8 +106,9 @@ so none of them is a one-way door — see [§11 Risks and Technical Debt](#11-ri
 
 ## 2. Constraints
 
-- Backend: **TypeScript (strict)**, **Awilix** DI (no decorators), **pino** logging,
-  **zod** validation, **RFC-9457** problem+json errors.
+- Backend: **TypeScript (strict)**, **NestJS** composition + HTTP (services stay
+  decorator-free behind injection tokens), **pino** logging, **zod** validation,
+  **RFC-9457** problem+json errors.
 - Recruiting kit is a **Vite**-built React app; no runtime Babel/CDN.
 - English end-to-end (code, commits, API). Conventional Commits, PR-only to a protected
   `main`.
@@ -160,16 +161,17 @@ The backend lives in `server/src/` and is strictly layered (dependencies point i
 > The diagram shows representative blocks per layer; the table below completes the
 > inventory.
 
-| Layer       | Building blocks (selected)                                                                                                                                                                                                                                                                        | Responsibility                                                                       |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| HTTP        | `create-app`, `*-controller` (mandate, talent, candidacy, placement, match, match-ai, document, compliance, forecast, observation, members, …), `problem`, `security`                                                                                                                             | Express routing, zod validation at the boundary, RFC-9457 errors, auth/CORS/headers. |
-| Application | `*-service` (mandate, talent, candidacy, placement, match, forecast, retention, members, usage, job-search, …); the AI services (`document-assist`, `cv-parse`, `ats-ai`, `outreach-ai`, `match-ai`) over the shared **`LlmFeatureRunner`** (ADR-0022), with `DocumentAiService` as a thin facade | Business rules only; depend on ports, never adapters.                                |
-| Domain      | `mandate`, `talent`, `candidacy`, `placement`, `match`, `skill-semantics`, **`skill-taxonomy`**, **`grounding`**, `candidate-prep`, `company-archetype`, `interview-*`, `agg-check`, `forecast`, `errors`                                                                                         | The model, its invariants, and pure deterministic algorithms. No I/O.                |
-| Ports       | `*-repository`, `auth-engine`, `llm-provider`, `api-key-store`, `usage-meter`, `skill-extractor`, `job-source`, `pdf-*`, `mailer`, `authorizer`, `clock`, …                                                                                                                                       | Interfaces the services depend on.                                                   |
-| Adapters    | `fs-*` / `sql/*` repositories, `better-auth/` engine, `anthropic`/`gemini` LLM providers, `*-job-source`, `puppeteer-pdf-renderer`, `pdf-lib-merger`, `secret-cipher`, `pino`, …                                                                                                                  | Concrete I/O, wired in `container.ts` (Awilix).                                      |
+| Layer       | Building blocks (selected)                                                                                                                                                                                                                                                                           | Responsibility                                                                      |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| HTTP        | `nest/*` feature modules + controllers (mandate, talent, candidacy, placement, match, match-ai, document, compliance, forecast, observation, members, …), guards (`AuthGuard`, `RolesGuard`, `PlanGuard`, rate limits), `ZodValidationPipe`, `ProblemJsonFilter`, `http-edge`, `problem`, `security` | NestJS routing, zod validation at the boundary, RFC-9457 errors, auth/CORS/headers. |
+| Application | `*-service` (mandate, talent, candidacy, placement, match, forecast, retention, members, usage, job-search, …); the AI services (`document-assist`, `cv-parse`, `ats-ai`, `outreach-ai`, `match-ai`) over the shared **`LlmFeatureRunner`** (ADR-0022), with `DocumentAiService` as a thin facade    | Business rules only; depend on ports, never adapters.                               |
+| Domain      | `mandate`, `talent`, `candidacy`, `placement`, `match`, `skill-semantics`, **`skill-taxonomy`**, **`grounding`**, `candidate-prep`, `company-archetype`, `interview-*`, `agg-check`, `forecast`, `errors`                                                                                            | The model, its invariants, and pure deterministic algorithms. No I/O.               |
+| Ports       | `*-repository`, `auth-engine`, `llm-provider`, `api-key-store`, `usage-meter`, `skill-extractor`, `job-source`, `pdf-*`, `mailer`, `authorizer`, `clock`, …                                                                                                                                          | Interfaces the services depend on.                                                  |
+| Adapters    | `fs-*` / `sql/*` repositories, `better-auth/` engine, `anthropic`/`gemini` LLM providers, `*-job-source`, `puppeteer-pdf-renderer`, `pdf-lib-merger`, `secret-cipher`, `pino`, …                                                                                                                     | Concrete I/O, wired in the Nest modules (ADR-0051).                                 |
 
-The composition root (`container.ts`) is the single place that knows which adapter
-implements each port — see ADR-0002 for the registration discipline this demands.
+The composition root (`nest/app.module.ts` + the global core/persistence/infra
+modules) is the single place that knows which adapter implements each port — see
+ADR-0051 for the token/module discipline this demands.
 
 ## 6. Runtime View
 
@@ -311,8 +313,8 @@ a picture earns its place.
   (ADR-0044), so the contract is browsable without running the server.
 - **Self-hosted assets:** fonts and the Swagger UI ship from this origin — no CDN, no
   third-party request leaves the browser (DSGVO); strict CSP on the built kit and docs.
-- **DI discipline:** new ports must be registered in `container.ts`; unit tests won't catch
-  a missing registration — the e2e boot will (ADR-0002).
+- **DI discipline:** a new port needs a token in `nest/tokens.ts` and a provider in its
+  module; Nest fails fast at boot on a missing provider (ADR-0051).
 - **Validation & errors:** zod at the boundary; RFC-9457 problem+json.
 - **Privacy:** DSGVO export/erasure/retention/anonymisation as first-class flows.
 - **Logging:** structured pino, injected.
@@ -324,7 +326,7 @@ Full log in [`docs/adr/`](adr). Summary:
 | ADR  | Decision                                                                 | Status                          |
 | ---- | ------------------------------------------------------------------------ | ------------------------------- |
 | 0001 | Hexagonal TypeScript backend (ports & adapters, SOLID)                   | Accepted                        |
-| 0002 | Awilix DI with a single composition root                                 | Accepted                        |
+| 0002 | Awilix DI with a single composition root                                 | Superseded by 0051              |
 | 0003 | File store default, Postgres via `STORE=sql`                             | Accepted                        |
 | 0004 | Authenticated, team-scoped, RBAC API                                     | Accepted (supersedes open API)  |
 | 0005 | Deterministic fallback + per-user keys + metering for all AI             | Accepted                        |

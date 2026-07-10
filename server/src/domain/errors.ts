@@ -79,6 +79,9 @@ export class RateLimitError extends DomainError {
 
   constructor(message = 'AI request limit reached. Please wait a minute and try again.') {
     super(message);
+    // The problem+json title is the error's name; keep the exact title the
+    // retired express-rate-limit handler sent so the API contract is unchanged.
+    this.name = 'Too Many Requests';
   }
 }
 

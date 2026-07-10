@@ -20,6 +20,7 @@ function KanbanColumn({
   onDragLeave,
   onDrop,
   isEmpty = false,
+  snap = false,
   children,
 }) {
   return (
@@ -27,6 +28,9 @@ function KanbanColumn({
       onDragOver={canDrop ? onDragOver : undefined}
       onDragLeave={canDrop ? onDragLeave : undefined}
       onDrop={canDrop ? onDrop : undefined}
+      // On a phone the board is a horizontal snap-scroller; each column snaps to
+      // the viewport start (.board-col-snap, index.html) (#202).
+      className={snap ? 'board-col-snap' : undefined}
       style={{
         display: 'flex', flexDirection: 'column', gap: '11px', minWidth: 0,
         borderRadius: 'var(--radius-md)', outline: over ? '2px dashed var(--accent)' : 'none',
@@ -70,6 +74,7 @@ function KanbanCard({
 }) {
   const [hover, setHover] = React.useState(false);
   const [dragging, setDragging] = React.useState(false);
+  const { isMobile } = window.useViewport ? window.useViewport() : { isMobile: false };
   const hasStage = stages && typeof onStageChange === 'function';
   const hasFooter = hasStage || typeof onRemove === 'function';
   return (
@@ -112,7 +117,9 @@ function KanbanCard({
               aria-label="Stage"
               value={stageValue}
               onChange={(e) => onStageChange(e.target.value)}
-              style={{ flex: 1, minWidth: 0, padding: '5px 8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-strong)', background: 'var(--surface-sunk)', color: 'var(--text-soft)', fontFamily: 'var(--font-mono)', fontSize: '11px', cursor: 'pointer', outline: 'none' }}
+              // ≥44px tall on touch so the stage change is a comfortable tap and
+              // the drag-fallback (#202) is reliable; compact on the desktop board.
+              style={{ flex: 1, minWidth: 0, padding: isMobile ? '10px 10px' : '5px 8px', minHeight: isMobile ? '44px' : undefined, borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-strong)', background: 'var(--surface-sunk)', color: 'var(--text-soft)', fontFamily: 'var(--font-mono)', fontSize: isMobile ? '13px' : '11px', cursor: 'pointer', outline: 'none' }}
             >
               {stages.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
@@ -122,7 +129,8 @@ function KanbanCard({
               onClick={onRemove}
               title={removeLabel}
               aria-label={removeLabel}
-              style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px', lineHeight: 0 }}
+              // 44×44 tap target on touch (spacing, not just the 14px glyph) (#202).
+              style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: isMobile ? '0' : '4px', width: isMobile ? '44px' : undefined, height: isMobile ? '44px' : undefined, lineHeight: 0 }}
             >
               <KS.Icon name="trash" size={14} />
             </button>

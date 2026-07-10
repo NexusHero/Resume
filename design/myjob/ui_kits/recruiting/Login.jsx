@@ -161,7 +161,7 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
           : 'Log in';
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--app-bg)' }}>
+    <div style={{ display: 'flex', minHeight: '100dvh', background: 'var(--app-bg)' }}>
       {/* brand panel */}
       <aside
         className="auth-brand"
@@ -210,7 +210,9 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
       </aside>
 
       {/* form card */}
-      <main style={{ flex: 1, display: 'grid', placeItems: 'center', padding: '32px' }}>
+      {/* Safe-area padding keeps the form clear of the notch / home indicator in
+          the installed shell; env() insets are 0 in a browser tab (#202). */}
+      <main style={{ flex: 1, display: 'grid', placeItems: 'center', padding: 'max(32px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(32px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left))' }}>
         <form onSubmit={submit} aria-label={title} style={{ width: '100%', maxWidth: '380px' }}>
           {!isForgot && !passwordOnly && (
             <div style={{ display: 'flex', gap: '4px', padding: '4px', borderRadius: 'var(--radius-pill)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', marginBottom: '24px' }}>
@@ -220,7 +222,7 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
                   type="button"
                   onClick={() => goMode(m)}
                   style={{
-                    flex: 1, padding: '8px', borderRadius: 'var(--radius-pill)', border: 'none', cursor: 'pointer',
+                    flex: 1, minHeight: '44px', padding: '8px', borderRadius: 'var(--radius-pill)', border: 'none', cursor: 'pointer',
                     fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600,
                     background: mode === m ? 'var(--accent)' : 'transparent',
                     color: mode === m ? 'var(--accent-contrast)' : 'var(--text-soft)',

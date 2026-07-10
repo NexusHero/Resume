@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, Inject, Module, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, Inject, Module, Post, UseGuards } from '@nestjs/common';
 import { requestResetSchema, confirmResetSchema } from '../../domain/password-reset.js';
 import { PasswordResetService } from '../../services/password-reset-service.js';
 import type { UserRepository } from '../../ports/user-repository.js';
@@ -8,6 +8,7 @@ import type { Mailer } from '../../ports/mailer.js';
 import type { Logger } from '../../ports/logger.js';
 import type { AppConfig } from '../../config.js';
 import { ZodValidationPipe } from '../zod-validation.pipe.js';
+import { AuthRateLimitGuard } from '../auth-rate-limit.guard.js';
 import {
   PASSWORD_RESET_SERVICE,
   USER_REPOSITORY,
@@ -27,6 +28,7 @@ export class PasswordResetController {
   constructor(@Inject(PASSWORD_RESET_SERVICE) private readonly service: PasswordResetService) {}
 
   @Post('request')
+  @UseGuards(AuthRateLimitGuard)
   @HttpCode(202)
   async request(
     @Body(new ZodValidationPipe(requestResetSchema))
@@ -37,6 +39,7 @@ export class PasswordResetController {
   }
 
   @Post('confirm')
+  @UseGuards(AuthRateLimitGuard)
   @HttpCode(204)
   async confirm(
     @Body(new ZodValidationPipe(confirmResetSchema))

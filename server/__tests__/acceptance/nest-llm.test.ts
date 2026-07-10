@@ -18,6 +18,7 @@ import {
   COVER_LETTER_SERVICE,
   API_KEY_STORE,
   USER_REPOSITORY,
+  PLAN_PROVIDER,
 } from '../../src/nest/tokens.js';
 import { InMemoryApiKeyStore, InMemoryUserRepository, noopLogger } from '../support/fakes.js';
 
@@ -44,6 +45,8 @@ describe('NestJS llm vertical (provider settings + keys)', () => {
       { provide: COVER_LETTER_SERVICE, useValue: {} },
       { provide: API_KEY_STORE, useValue: new InMemoryApiKeyStore() },
       { provide: USER_REPOSITORY, useValue: new InMemoryUserRepository() },
+      // The cover-letter route's PlanGuard resolves the caller's plan.
+      { provide: PLAN_PROVIDER, useValue: { planFor: async () => 'pro' } },
     ];
     @Global()
     @Module({ providers: fakes, exports: fakes.map((p) => (p as { provide: symbol }).provide) })

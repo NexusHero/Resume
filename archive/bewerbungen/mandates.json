@@ -1,0 +1,20 @@
+[
+  {
+    "id": "mregl13vck5",
+    "ownerId": "team",
+    "client": "Aurora",
+    "role": "Engineer",
+    "location": "Berlin",
+    "fee": "",
+    "feeValue": "",
+    "deadline": "",
+    "priority": "medium",
+    "status": "active",
+    "submitted": 0,
+    "interviews": 0,
+    "jobText": "",
+    "lang": "en",
+    "createdAt": "2026-07-10T04:51:54.715Z",
+    "updatedAt": "2026-07-10T04:51:54.715Z"
+  }
+]

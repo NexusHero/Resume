@@ -1,4 +1,4 @@
-import { Global, Module, type Provider } from '@nestjs/common';
+import { Global, Module, type DynamicModule, type Provider } from '@nestjs/common';
 import { createPersistence, type Persistence } from '../adapters/persistence-factory.js';
 import type { Db } from '../adapters/sql/db.js';
 import type { AppConfig } from '../config.js';
@@ -86,4 +86,13 @@ const repoProviders: Provider[] = REPO_BINDINGS.map(([token, key]) => ({
   ],
   exports: [PERSISTENCE, ...REPO_BINDINGS.map(([token]) => token)],
 })
-export class PersistenceModule {}
+export class PersistenceModule {
+  /** The SQL path: the booted index.ts passes the migrated Drizzle handle in. */
+  static forRoot(db: Db | null): DynamicModule {
+    return {
+      module: PersistenceModule,
+      // Registered after the static metadata, so this DB wins over the null default.
+      providers: [{ provide: DB, useValue: db }],
+    };
+  }
+}

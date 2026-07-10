@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Inject, Module, Param, Patch, UseGuards } from '@nestjs/common';
 import { setTenantStatusSchema } from '../../domain/tenant.js';
+import { setRolesSchema } from '../../domain/user.js';
 import { TenantService } from '../../services/tenant-service.js';
 import type { MembersService } from '../../services/members-service.js';
 import type { TenantRepository } from '../../ports/tenant-repository.js';
@@ -39,6 +40,15 @@ export class TenantAdminController {
   @Get(':id/members')
   listMembers(@Param('id') id: string) {
     return this.members.list(id);
+  }
+
+  @Patch(':id/members/:userId/roles')
+  async setMemberRoles(
+    @Param('id') id: string,
+    @Param('userId') userId: string,
+    @Body(new ZodValidationPipe(setRolesSchema)) body: ReturnType<typeof setRolesSchema.parse>,
+  ) {
+    return { member: await this.members.setRoles(userId, body.roles, id) };
   }
 }
 

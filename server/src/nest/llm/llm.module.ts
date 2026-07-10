@@ -20,6 +20,8 @@ import type { UserRepository } from '../../ports/user-repository.js';
 import type { LlmService } from '../../services/llm-service.js';
 import type { CoverLetterService } from '../../services/cover-letter-service.js';
 import { AuthGuard, OptionalAuthGuard } from '../auth.guard.js';
+import { AiRateLimitGuard } from '../ai-rate-limit.guard.js';
+import { PlanGuard, RequiresPlan } from '../plan.guard.js';
 import { CurrentUserId, OptionalUserId } from '../params.js';
 import { ZodValidationPipe } from '../zod-validation.pipe.js';
 import { LLM_SERVICE, COVER_LETTER_SERVICE, API_KEY_STORE, USER_REPOSITORY } from '../tokens.js';
@@ -104,7 +106,9 @@ export class LlmController {
   }
 
   @Post('cover-letter')
-  @UseGuards(OptionalAuthGuard)
+  @HttpCode(200)
+  @UseGuards(OptionalAuthGuard, AiRateLimitGuard, PlanGuard)
+  @RequiresPlan('pro')
   async generateCoverLetter(
     @OptionalUserId() userId: string | undefined,
     @Body(new ZodValidationPipe(coverLetterRequestSchema))

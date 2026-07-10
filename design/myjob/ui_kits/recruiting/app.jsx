@@ -194,9 +194,11 @@ function Workspace({ user, onLogout }) {
   // the shared team desk (ADR-0010) show up without a manual reload. Background =
   // the current data stays on screen while it refetches (no spinner flash).
   const goNav = (n) => {
-    if (n === 'pool') talentsRes.reload({ background: true });
-    else if (n === 'mandate') mandatesRes.reload({ background: true });
-    else if (n === 'bewerbungen') applicationsRes.reload({ background: true });
+    const res = n === 'pool' ? talentsRes : n === 'mandate' ? mandatesRes : n === 'bewerbungen' ? applicationsRes : null;
+    // Only refresh a view that already loaded cleanly; a failed load keeps its
+    // error state + Retry (don't silently re-fetch over it), and an in-flight
+    // load is left alone (no stacked requests).
+    if (res && !res.error && !res.loading) res.reload({ background: true });
     setNav(n);
   };
 

@@ -39,7 +39,7 @@ jobs:
       - name: Build the web bundle Capacitor wraps
         run: npm run build:web
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           # Capacitor 8's Android Gradle Plugin compiles capacitor-android

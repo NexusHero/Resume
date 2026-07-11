@@ -16,7 +16,6 @@ import './undo-delete.js'; // window.UndoDelete — deferred-delete controller (
 import './use-undo-delete.jsx'; // window.useUndoDelete — React binding for the snackbar
 import './Snackbar.jsx'; // window.Snackbar — the undo toast
 import './DataStates.jsx';
-import './RecruitRail.jsx';
 import './KanbanShared.jsx'; // window.KanbanColumn/KanbanCard — shared by both boards (#199)
 import './PipelineBoard.jsx';
 import './Workspace.jsx';

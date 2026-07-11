@@ -505,6 +505,13 @@ function Workspace({ user, onLogout }) {
     search: !talent && (nav === 'pool' || nav === 'mandate' || nav === 'berichte'),
     children: (
       <>
+        {/* On a phone the app bar only holds the primary action, so the folded-in
+            destination (Matching under Mandate, Platzierungen under Performance)
+            gets an in-view entry instead — keeping it reachable without crowding
+            the narrow bar. */}
+        {isMobile && secondaryAction && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>{secondaryAction}</div>
+        )}
         {body}
         {mappeFor && <window.MappeModal talent={mappeFor} onClose={() => setMappeFor(null)} />}
         {formKind && (

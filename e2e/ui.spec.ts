@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('UI acceptance — the suite renders in English', () => {
+test.describe('UI acceptance — the suite renders in German', () => {
   test('Root_Opens_RecruitingWorkspace', async ({ page }) => {
     // The app opens directly on the recruiting Workspace — the old launcher is
     // gone, so hitting the root redirects straight into the kit.
@@ -16,10 +16,10 @@ test.describe('UI acceptance — the suite renders in English', () => {
     await page.goto('/');
     await expect(page).toHaveURL(/\/design\/myjob\/ui_kits\/recruiting\/dist\/index\.html$/);
     // Not signed in → the branded Workspace login screen.
-    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Willkommen zurück' })).toBeVisible();
   });
 
-  test('Recruiting_Loads_NavigationIsEnglish', async ({ page }) => {
+  test('Recruiting_Loads_NavigationIsGerman', async ({ page }) => {
     await page.route('**/api/v1/auth/me', (route) =>
       route.fulfill({
         contentType: 'application/json',
@@ -29,22 +29,26 @@ test.describe('UI acceptance — the suite renders in English', () => {
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     const nav = page.locator('nav');
     await expect(nav.locator('button').first()).toBeVisible();
-    // The unified recruiting nav renders these destinations in English.
+    // The 2026 restructure collapses the primary nav to six German
+    // destinations in the floating AppShell rail.
     await expect(nav).toContainText('Workspace');
-    await expect(nav).toContainText('Talent Pool');
-    await expect(nav).toContainText('Mandates');
-    await expect(nav).toContainText('CoRecruiter');
-    // Applications is wired to the live applications resource (ADR-0046).
-    await expect(nav).toContainText('Applications');
-    // Taxonomy (#201): Matching is part of the WORK funnel, Reports under
-    // Insights, and the AI section is renamed "Assistant" (item stays
-    // CoRecruiter). See design/myjob/decisions/nav-taxonomy.md.
-    await expect(nav).toContainText('Matching');
-    await expect(nav).toContainText('Placements');
-    await expect(nav).toContainText('Reports');
-    await expect(nav).toContainText('Assistant');
-    // No German leaked into the navigation.
-    await expect(nav).not.toContainText('Übersicht');
+    await expect(nav).toContainText('Mandate');
+    await expect(nav).toContainText('Talent-Pool');
+    await expect(nav).toContainText('Pipeline');
+    await expect(nav).toContainText('Performance');
+    await expect(nav).toContainText('Postfach');
+    // Matching folds under Mandate, Placements under Performance, and the
+    // CoRecruiter assistant + Settings are no longer primary nav items — so
+    // none of them appear in the rail nav.
+    await expect(nav).not.toContainText('CoRecruiter');
+    await expect(nav).not.toContainText('Matching');
+    await expect(nav).not.toContainText('Platzierungen');
+    await expect(nav).not.toContainText('Einstellungen');
+    // No English (or old-IA) labels leaked into the navigation.
+    await expect(nav).not.toContainText('Talent Pool');
+    await expect(nav).not.toContainText('Mandates');
+    await expect(nav).not.toContainText('Applications');
+    await expect(nav).not.toContainText('Reports');
   });
 
   test('Recruiting_OpenTalentPool_ShowsTalents', async ({ page }) => {
@@ -62,7 +66,7 @@ test.describe('UI acceptance — the suite renders in English', () => {
       }),
     );
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
-    await page.getByRole('button', { name: /Talent Pool/ }).click();
+    await page.getByRole('button', { name: /Talent-Pool/ }).click();
     await expect(page.locator('main')).toContainText('Add talent');
     await expect(page.locator('main')).toContainText('Nora'); // session-derived "me"
   });
@@ -103,7 +107,7 @@ test.describe('UI acceptance — the suite renders in English', () => {
       }),
     );
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
-    await page.getByRole('button', { name: /Mandates/ }).click();
+    await page.getByRole('button', { name: /Mandate/ }).click();
     const main = page.locator('main');
     // first load failed → error state, no fabricated sample client
     await expect(main).toContainText("We couldn't load this data.");
@@ -181,7 +185,7 @@ test.describe('UI acceptance — the suite renders in English', () => {
       }),
     );
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
-    await page.getByRole('button', { name: /Talent Pool/ }).click();
+    await page.getByRole('button', { name: /Talent-Pool/ }).click();
     await expect(page.locator('main')).toContainText('Tobias Wirth'); // from the API
     await expect(page.locator('main')).toContainText('Nora'); // session-derived "me"
   });
@@ -258,10 +262,10 @@ test.describe('UI acceptance — the suite renders in English', () => {
     });
 
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
-    await page.getByRole('button', { name: /Talent Pool/ }).click();
+    await page.getByRole('button', { name: /Talent-Pool/ }).click();
     await page.getByText('Tobias Wirth').first().click();
     await page
-      .getByRole('button', { name: /Create resume|Edit resume/ })
+      .getByRole('button', { name: /Lebenslauf anlegen|Lebenslauf bearbeiten/ })
       .first()
       .click();
     // opening the editor loads the stored documents
@@ -362,10 +366,10 @@ test.describe('UI acceptance — the suite renders in English', () => {
     });
 
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
-    await page.getByRole('button', { name: /Talent Pool/ }).click();
+    await page.getByRole('button', { name: /Talent-Pool/ }).click();
     await page.getByText('Tobias Wirth').first().click();
     await page
-      .getByRole('button', { name: /Create resume|Edit resume/ })
+      .getByRole('button', { name: /Lebenslauf anlegen|Lebenslauf bearbeiten/ })
       .first()
       .click();
     await page.getByRole('button', { name: /To dossier/ }).click();
@@ -413,7 +417,7 @@ test.describe('UI acceptance — the suite renders in English', () => {
       }),
     );
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
-    await page.getByRole('button', { name: /Mandates/ }).click();
+    await page.getByRole('button', { name: /Mandate/ }).click();
     await expect(page.locator('main')).toContainText('Helio GmbH'); // client group header
     await expect(page.locator('main')).toContainText('Principal Platform Engineer'); // mandate row
     // the offline sample is replaced by the API data
@@ -459,7 +463,7 @@ test.describe('UI acceptance — the suite renders in English', () => {
       }),
     );
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
-    await page.getByRole('button', { name: /Mandates/ }).click();
+    await page.getByRole('button', { name: /Mandate/ }).click();
     await expect(page.locator('main')).toContainText('No mandates yet.');
 
     await page.getByRole('button', { name: 'New mandate' }).click();
@@ -510,7 +514,7 @@ test.describe('UI acceptance — the suite renders in English', () => {
       }),
     );
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
-    await page.getByRole('button', { name: /Mandates/ }).click();
+    await page.getByRole('button', { name: /Mandate/ }).click();
     const main = page.locator('main');
     await expect(main).toContainText('active');
 
@@ -606,12 +610,12 @@ test.describe('UI acceptance — the suite renders in English', () => {
       }),
     );
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
-    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Willkommen zurück' })).toBeVisible();
     await page.getByPlaceholder('you@example.com').fill('me@example.de');
     await page.getByPlaceholder('••••••••').fill('supersecret');
     await page.locator('button[type="submit"]').click();
     // signed in → the workspace navigation is shown
-    await expect(page.getByRole('button', { name: /Talent Pool/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Talent-Pool/ })).toBeVisible();
   });
 
   test('Recruiting_PasswordReset_SetsNewPasswordFromTokenLink', async ({ page }) => {
@@ -637,7 +641,7 @@ test.describe('UI acceptance — the suite renders in English', () => {
     await passwords.nth(1).fill('brand-new-password');
     await page.locator('button[type="submit"]').click();
     // back to login with a success notice; the token was forwarded to the API
-    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Willkommen zurück' })).toBeVisible();
     await expect(page.getByRole('status')).toContainText('password has been reset');
     expect(confirmBody).toEqual({ token: 'tok-from-email', password: 'brand-new-password' });
   });
@@ -666,7 +670,7 @@ test.describe('UI acceptance — the suite renders in English', () => {
       });
     });
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
-    await page.getByRole('button', { name: /Settings/ }).click();
+    await page.getByRole('button', { name: /Einstellungen/ }).click();
     await expect(page.locator('main')).toContainText('Claude (Anthropic)');
     await expect(page.locator('main')).toContainText('Gemini (Google)');
     // switch the active model to Gemini → the backend is asked to switch.
@@ -702,7 +706,7 @@ test.describe('UI acceptance — the suite renders in English', () => {
       }),
     );
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
-    await page.getByRole('button', { name: /Settings/ }).click();
+    await page.getByRole('button', { name: /Einstellungen/ }).click();
     await expect(page.locator('main')).toContainText('Data & privacy');
     // clicking Export triggers a JSON file download
     const [download] = await Promise.all([
@@ -740,7 +744,7 @@ test.describe('UI acceptance — the suite renders in English', () => {
       return route.continue();
     });
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
-    await page.getByRole('button', { name: /Settings/ }).click();
+    await page.getByRole('button', { name: /Einstellungen/ }).click();
     // two-step confirm before the destructive call
     await page.getByRole('button', { name: 'Delete account' }).click();
     await page.getByRole('button', { name: 'Confirm delete' }).click();

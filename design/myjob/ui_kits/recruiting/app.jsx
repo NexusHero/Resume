@@ -482,10 +482,15 @@ function Workspace({ user, onLogout }) {
       : (!talent && nav === 'berichte')
       ? <A.Button variant="ghost" size="sm" iconLeft={<A.Icon name="award" size={15} />} onClick={() => setNav('platzierungen')}>Platzierungen</A.Button>
       : null;
-  const actions = talent ? null : (
+  // The phone app bar is narrow: show only the per-view primary action there;
+  // the secondary (Matching / Platzierungen) and CoRecruiter stay desktop-only
+  // so the bar never overflows into a horizontal body scroll.
+  const actions = talent ? null : isMobile ? (
+    primaryAction
+  ) : (
     <>
       {secondaryAction}
-      {nav !== 'assistant' && !isMobile && (
+      {nav !== 'assistant' && (
         <A.Button variant="ghost" size="sm" iconLeft={<A.Icon name="zap" size={15} />} onClick={() => setNav('assistant')}>CoRecruiter</A.Button>
       )}
       {primaryAction}

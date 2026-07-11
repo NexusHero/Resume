@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 
 /* Mobile acceptance (#202) — runs under the `mobile-chromium` project (Pixel 5:
    393×851, hasTouch, mobile UA). Drives the core flow on a phone viewport and
-   guards the two hard invariants: the navigation drawer works by touch, and no
+   guards the two hard invariants: the bottom tab bar navigates by touch, and no
    main view scrolls the body sideways (boards scroll inside their own
    container). The desktop project ignores this file (playwright.config.ts). */
 
@@ -121,10 +121,10 @@ async function mockSession(page: Page): Promise<string[]> {
   return patched;
 }
 
-/** On a phone the rail is an off-canvas drawer: open it, then tap a destination. */
+/** On a phone the rail folds into the AppShell bottom TAB BAR (the first five
+ *  destinations, always visible) — tap the tab directly, no drawer. */
 async function navigate(page: Page, name: RegExp) {
-  await page.getByRole('button', { name: 'Open navigation' }).click();
-  await page.getByRole('button', { name }).click();
+  await page.locator('nav').last().getByRole('button', { name }).click();
 }
 
 /** The body must never scroll sideways — boards scroll inside their own box. */
@@ -140,29 +140,39 @@ test.describe('Mobile acceptance (#202)', () => {
   test('Mobile_NavWalk_NoHorizontalBodyScroll', async ({ page }) => {
     await mockSession(page);
     await page.goto(KIT);
-    // Signed in → the Workspace shell with the hamburger (mobile) menu.
-    await expect(page.getByRole('button', { name: 'Open navigation' })).toBeVisible();
+    // Signed in → the Workspace shell with the bottom tab bar (first five
+    // destinations). No off-canvas drawer in the Vivid AppShell tabs posture.
+    await expect(
+      page
+        .locator('nav')
+        .last()
+        .getByRole('button', { name: /Pipeline/ }),
+    ).toBeVisible();
     await expectNoHorizontalBodyScroll(page);
 
-    await navigate(page, /Applications/);
+    await navigate(page, /Mandate/);
     await expect(page.locator('main')).toBeVisible();
     await expectNoHorizontalBodyScroll(page);
 
-    await navigate(page, /Matching/);
+    await navigate(page, /Talent-Pool/);
     await expect(page.locator('main')).toBeVisible();
     await expectNoHorizontalBodyScroll(page);
 
-    await navigate(page, /Placements/);
+    await navigate(page, /Pipeline/);
+    await expect(page.locator('main')).toBeVisible();
+    await expectNoHorizontalBodyScroll(page);
+
+    await navigate(page, /Performance/);
     await expectNoHorizontalBodyScroll(page);
   });
 
   test('Mobile_OpenTalent_OpensEditor', async ({ page }) => {
     await mockSession(page);
     await page.goto(KIT);
-    await navigate(page, /Talent Pool/);
+    await navigate(page, /Talent-Pool/);
     await page.getByText('Tobias Wirth').first().click();
     await page
-      .getByRole('button', { name: /Create resume|Edit resume/ })
+      .getByRole('button', { name: /Lebenslauf (bearbeiten|anlegen)/ })
       .first()
       .click();
     // The editor mounted and hydrated the stored document.
@@ -173,7 +183,7 @@ test.describe('Mobile acceptance (#202)', () => {
   test('Mobile_ApplicationsBoard_ScrollsAndStageChanges', async ({ page }) => {
     const patched = await mockSession(page);
     await page.goto(KIT);
-    await navigate(page, /Applications/);
+    await navigate(page, /Pipeline/);
 
     // The board is a horizontal snap-scroller wider than the viewport, but it is
     // its OWN scroll container — the body stays put (the .board-scroll element).

@@ -149,7 +149,7 @@ test.describe('UI acceptance — the suite renders in German', () => {
     // Placements ("Platzierungen") folds under Performance — reach it via the
     // Performance view's topbar action.
     await page.getByRole('button', { name: /Performance/ }).click();
-    await page.getByRole('button', { name: 'Platzierungen' }).click();
+    await page.getByRole('button', { name: 'Platzierungen', exact: true }).click();
     await expect(page.locator('main')).toContainText('Tobias Wirth');
     await expect(page.locator('main')).toContainText('Helio GmbH');
     // the offline sample is replaced by the API data
@@ -523,12 +523,12 @@ test.describe('UI acceptance — the suite renders in German', () => {
 
     // open the edit form pre-filled, change the status, save
     await main.getByText('Principal Platform Engineer').click();
-    await expect(page.getByText('Edit mandate')).toBeVisible();
-    await expect(page.getByLabel('Client', { exact: true })).toHaveValue('Helio GmbH');
+    await expect(page.getByText('Mandat bearbeiten')).toBeVisible();
+    await expect(page.getByLabel('Klient', { exact: true })).toHaveValue('Helio GmbH');
     await page.getByLabel('Status', { exact: true }).selectOption('paused');
-    await page.getByRole('button', { name: 'Save changes' }).click();
+    await page.getByRole('button', { name: 'Änderungen speichern' }).click();
 
-    await expect(page.getByRole('button', { name: 'Save changes' })).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Änderungen speichern' })).toBeHidden();
     await expect(main).toContainText('paused');
   });
 
@@ -587,7 +587,7 @@ test.describe('UI acceptance — the suite renders in German', () => {
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     const main = page.locator('main');
     // greeting counts the live active mandates (exactly one)
-    await expect(main).toContainText('1 active mandates');
+    await expect(main).toContainText('1 aktive Mandate');
     // the active-mandates card shows the live mandate's client and role
     await expect(main).toContainText('Helio GmbH');
     await expect(main).toContainText('Principal Platform Engineer');
@@ -638,14 +638,14 @@ test.describe('UI acceptance — the suite renders in German', () => {
       route.fulfill({ status: 204, body: '' });
     });
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html?reset_token=tok-from-email');
-    await expect(page.getByRole('heading', { name: 'Choose a new password' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Neues Passwort wählen' })).toBeVisible();
     const passwords = page.getByPlaceholder('••••••••');
     await passwords.nth(0).fill('brand-new-password');
     await passwords.nth(1).fill('brand-new-password');
     await page.locator('button[type="submit"]').click();
     // back to login with a success notice; the token was forwarded to the API
     await expect(page.getByRole('heading', { name: 'Willkommen zurück' })).toBeVisible();
-    await expect(page.getByRole('status')).toContainText('password has been reset');
+    await expect(page.getByRole('status')).toContainText('zurückgesetzt');
     expect(confirmBody).toEqual({ token: 'tok-from-email', password: 'brand-new-password' });
   });
 
@@ -710,11 +710,11 @@ test.describe('UI acceptance — the suite renders in German', () => {
     );
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     await page.getByRole('button', { name: /Einstellungen/ }).click();
-    await expect(page.locator('main')).toContainText('Data & privacy');
+    await expect(page.locator('main')).toContainText('Daten & Datenschutz');
     // clicking Export triggers a JSON file download
     const [download] = await Promise.all([
       page.waitForEvent('download'),
-      page.getByRole('button', { name: 'Export' }).click(),
+      page.getByRole('button', { name: 'Exportieren' }).click(),
     ]);
     expect(download.suggestedFilename()).toBe('myjob-export.json');
   });
@@ -749,11 +749,11 @@ test.describe('UI acceptance — the suite renders in German', () => {
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     await page.getByRole('button', { name: /Einstellungen/ }).click();
     // two-step confirm before the destructive call
-    await page.getByRole('button', { name: 'Delete account' }).click();
-    await page.getByRole('button', { name: 'Confirm delete' }).click();
+    await page.getByRole('button', { name: 'Konto löschen' }).click();
+    await page.getByRole('button', { name: 'Löschen bestätigen' }).click();
     // erasure ends the session → the app reloads to the login screen (the
     // reload re-fetches the bundle, so allow extra time for it to re-mount)
-    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible({
+    await expect(page.getByRole('heading', { name: 'Willkommen zurück' })).toBeVisible({
       timeout: 15000,
     });
   });

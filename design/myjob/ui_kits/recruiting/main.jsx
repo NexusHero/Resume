@@ -5,7 +5,7 @@
    each still attaches to window.* — so the kit code is otherwise unchanged. */
 import './theme.js'; // sets data-mode on <html> before paint (light/dark, #196)
 import './setup-globals.js'; // sets window.React/ReactDOM first
-import '../../_ds_bundle.js'; // window.MyJobDesignSystem_f3658e (uses window.React)
+import '../../_ds_bundle.js'; // window.MyJobDesignSystem_5611b7 (uses window.React)
 import './data.js';
 import './use-viewport.jsx'; // window.useViewport — read by the shell + views
 import './use-theme.jsx'; // window.useTheme — appearance binding for Settings + rail

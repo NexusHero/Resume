@@ -4,7 +4,7 @@
    mirrors the server's PDF variants (documents-html.ts): `modern` = accent
    headline + accent-bar section heads, `compact` = tighter spacing/type,
    `classic` = the default look. */
-const EDC = window.MyJobDesignSystem_f3658e;
+const EDC = window.MyJobDesignSystem_5611b7;
 
 /* ---------------- live preview: Lebenslauf ---------------- */
 function SectionHead({ children, template }) {

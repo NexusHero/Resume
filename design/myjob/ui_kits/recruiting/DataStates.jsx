@@ -2,7 +2,7 @@
    The recruiting views show these instead of silently falling back to sample
    data, so a recruiter never sees fabricated records when the API is slow or
    unreachable. */
-const DST = window.MyJobDesignSystem_f3658e;
+const DST = window.MyJobDesignSystem_5611b7;
 
 function LoadingState({ label = 'Loading…' }) {
   return (

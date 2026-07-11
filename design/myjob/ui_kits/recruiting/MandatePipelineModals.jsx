@@ -4,7 +4,7 @@
    local UI state) and talks to the parent through a small callback surface
    (onClose, onAdded, onOpenTalent). Loaded before MandatePipeline.jsx by
    main.jsx and published on window, following the kit's module convention. */
-const MPM = window.MyJobDesignSystem_f3658e;
+const MPM = window.MyJobDesignSystem_5611b7;
 
 const MP_FORMATS = [
   { id: 'coding', label: 'Coding challenge' },

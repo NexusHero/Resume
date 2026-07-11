@@ -1,5 +1,5 @@
 /* app.jsx — orchestrates the unified myJob workspace. Define-only; render is in index.html. */
-const A = window.MyJobDesignSystem_f3658e;
+const A = window.MyJobDesignSystem_5611b7;
 
 const TITLES = {
   uebersicht: ['Workspace', 'What needs your attention today'],

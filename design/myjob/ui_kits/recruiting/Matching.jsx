@@ -3,7 +3,7 @@
    from the real /api/v1/jobs two-tier search (offline: the server's sample
    source); scoring is per selected candidate, client-side. Reuses the
    design-system PositionCard. */
-const MT = window.MyJobDesignSystem_f3658e;
+const MT = window.MyJobDesignSystem_5611b7;
 
 function mtScore(cand, job) {
   const have = (cand.skills || []).map((s) => s.toLowerCase());

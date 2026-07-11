@@ -4,7 +4,7 @@
    them enabled. Also hosts the password-reset flow: a "Forgot password?" request
    form, and a set-new-password form when the page is opened with a ?reset_token.
    Mirrors the Elliott Wave Analyzer auth UX, rebranded to myJob. */
-const L = window.MyJobDesignSystem_f3658e;
+const L = window.MyJobDesignSystem_5611b7;
 
 const POINTS = [
   'Mandates, talent pool and placements in one workspace',

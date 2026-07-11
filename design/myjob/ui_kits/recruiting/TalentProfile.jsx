@@ -1,6 +1,6 @@
 /* TalentProfile — the core screen. A talent (Ich first) with three tabs:
    Resume (editable CV) · Attachments (linkable docs) · Applications. */
-const TP = window.MyJobDesignSystem_f3658e;
+const TP = window.MyJobDesignSystem_5611b7;
 
 /* A titled block in the dark CV sidebar. */
 function CvSideSection({ title, children }) {

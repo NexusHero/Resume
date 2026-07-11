@@ -1,7 +1,7 @@
 /* RecordFormModal — a real create form (replaces the window.prompt() flows) for
    mandates, talents and placements. Field configs live in RECORD_FORMS; the
    modal is generic and validates required fields before calling onSubmit. */
-const RF = window.MyJobDesignSystem_f3658e;
+const RF = window.MyJobDesignSystem_5611b7;
 
 /* A monetary amount: optional currency symbol, digits with dot/comma/space
    grouping, optional trailing symbol. Deliberately lenient about grouping

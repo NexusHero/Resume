@@ -1,5 +1,5 @@
 /* VermittlerViews — the agency backbone: Mandate, Platzierungen, Berichte. */
-const VV = window.MyJobDesignSystem_f3658e;
+const VV = window.MyJobDesignSystem_5611b7;
 
 const PRIORITY = {
   high:   { label: 'High', bg: 'var(--status-rejected-soft)', bd: 'var(--status-rejected-border)', fg: 'var(--status-rejected-strong)', dot: 'var(--status-rejected)' },

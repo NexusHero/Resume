@@ -1,7 +1,7 @@
 /* SettingsView — AI models & API keys. The active model is wired to the live
    /settings/llm endpoint; per-provider API keys are stored encrypted on the
    server (PUT/DELETE /settings/keys/:provider) — never in the browser. English-only. */
-const SV = window.MyJobDesignSystem_f3658e;
+const SV = window.MyJobDesignSystem_5611b7;
 
 function ProviderRow({ p, active, onActivate, saved, onSave, onRemove }) {
   const [draft, setDraft] = React.useState('');

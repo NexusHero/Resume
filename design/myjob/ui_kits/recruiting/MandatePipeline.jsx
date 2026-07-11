@@ -5,7 +5,7 @@
    The orchestrator owns only the board (cards + drag state); the five feature
    modals it launches live in MandatePipelineModals.jsx (ADR-0024) and each owns
    its own state — this file just mounts them and reloads the board on add. */
-const MP = window.MyJobDesignSystem_f3658e;
+const MP = window.MyJobDesignSystem_5611b7;
 
 const MP_STAGES = [
   { id: 'sourced', label: 'Sourced', color: '#64748b' },

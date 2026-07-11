@@ -4,7 +4,7 @@
    rationale and Accept/Dismiss — the same staged-change contract as the
    editor's AI banner. In mode "act" the internal, reversible actions are
    applied directly and show up as auto-applied. */
-const AV = window.MyJobDesignSystem_f3658e;
+const AV = window.MyJobDesignSystem_5611b7;
 
 const AV_KIND_LABELS = {
   'shortlist-add': 'Shortlist',

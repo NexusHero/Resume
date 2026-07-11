@@ -6,7 +6,7 @@
    + NAV_FOOTER (pinned utilities). Adding a destination is a data edit here,
    not a JSX change anywhere else — the modern, scalable nav pattern used by
    Linear/Notion/Stripe-style products. */
-const { Icon, IconButton, Avatar, Badge } = window.MyJobDesignSystem_f3658e;
+const { Icon, IconButton, Avatar, Badge } = window.MyJobDesignSystem_5611b7;
 
 /* Grouped destinations. `id` is the routing key consumed by app.jsx — the ids
    are stable; only the labels/grouping express the taxonomy (see

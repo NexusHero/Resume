@@ -2,7 +2,7 @@
    bolt-on tools (import/ATS/pitch/outreach modals, translate control): the mono
    pill button, the modal backdrop+panel pair, and the AI honesty banners
    (grounding warning + provider badge). */
-const ESH = window.MyJobDesignSystem_f3658e;
+const ESH = window.MyJobDesignSystem_5611b7;
 
 /* The editor's pill button recipe: mono 11px text inside a border-strong
    radius-pill outline, optional leading icon. `style` merges last so callers

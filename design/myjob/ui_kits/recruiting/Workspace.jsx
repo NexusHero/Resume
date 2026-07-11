@@ -1,5 +1,5 @@
 /* Workspace — Übersicht (dashboard), Talente grid, Stellen, Postfach. */
-const WS = window.MyJobDesignSystem_f3658e;
+const WS = window.MyJobDesignSystem_5611b7;
 
 /* ---------- Übersicht — the recruiting desk at a glance ---------- */
 function OnboardingCard({ onNav }) {

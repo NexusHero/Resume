@@ -7,7 +7,7 @@
    import/ATS/pitch/outreach modals in EditorModals, shared primitives
    (PillButton, ModalShell, honesty banners) in EditorShared — main.jsx loads
    all of them before this file. */
-const ED = window.MyJobDesignSystem_f3658e;
+const ED = window.MyJobDesignSystem_5611b7;
 const { PillButton: EdPill, ImportCvModal: EdImportCvModal, AtsModal: EdAtsModal, PitchModal: EdPitchModal, OutreachModal: EdOutreachModal } = window;
 
 /* A4 sheet width in CSS pixels (210mm @ 96dpi) — the preview iframe renders at

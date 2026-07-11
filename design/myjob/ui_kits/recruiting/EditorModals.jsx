@@ -7,7 +7,7 @@
    - OutreachModal: first-contact message (candidate/client, email/LinkedIn).
    All are only reachable when the talent persists (canPersist in the editor),
    so they can assume a real server-backed talentId. */
-const EDM = window.MyJobDesignSystem_f3658e;
+const EDM = window.MyJobDesignSystem_5611b7;
 const { ModalShell: EdmModalShell, PillButton: EdmPillButton, GroundingWarning: EdmGroundingWarning, ProviderBadge: EdmProviderBadge } = window;
 
 /* Shared input style for the modal textareas / text inputs. */

@@ -1,6 +1,6 @@
 /* MappeModal — assemble a Bewerbungsmappe: recipient + Lebenslauf + Anhänge + Anschreiben.
    This is the flow the old "3 Kacheln" should have been. */
-const MM = window.MyJobDesignSystem_f3658e;
+const MM = window.MyJobDesignSystem_5611b7;
 
 function MappeModal({ talent, onClose }) {
   const { isMobile } = window.useViewport ? window.useViewport() : { isMobile: false };

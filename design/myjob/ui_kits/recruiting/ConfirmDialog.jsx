@@ -3,7 +3,7 @@
    (DSGVO anonymisation) still warrants a deliberate confirm — just not the
    browser's window.confirm, which breaks the designed world. role="dialog",
    focus lands on the confirm button, Escape / backdrop cancel. */
-const CD = window.MyJobDesignSystem_f3658e;
+const CD = window.MyJobDesignSystem_5611b7;
 const React = window.React;
 
 function ConfirmDialog({ title, message, confirmLabel = 'Confirm', cancelLabel = 'Cancel', danger = true, onConfirm, onCancel }) {

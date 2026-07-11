@@ -852,7 +852,7 @@ function AppearanceCard() {
   );
 }
 
-function SettingsView({ user }) {
+function SettingsView({ user, onLogout }) {
   const [settings, setSettings] = React.useState(null); // { current, providers }
   const [keys, setKeys] = React.useState({});
   const [busy, setBusy] = React.useState(false);
@@ -898,6 +898,15 @@ function SettingsView({ user }) {
       <ProfileCard user={user} />
       <EmailVerificationCard user={user} />
       <AppearanceCard />
+      {onLogout && (
+        <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '18px 24px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{ flex: 1 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 700, color: 'var(--text-heading)', margin: 0 }}>Sitzung</h2>
+            <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Von diesem Gerät abmelden.</div>
+          </div>
+          <SV.Button variant="outline" size="sm" iconLeft={<SV.Icon name="logout" size={15} />} onClick={onLogout}>Abmelden</SV.Button>
+        </div>
+      )}
       <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '22px 24px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
           <div style={{ flex: 1 }}>

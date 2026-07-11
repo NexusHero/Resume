@@ -67,7 +67,7 @@ test.describe('UI acceptance — the suite renders in German', () => {
     );
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     await page.getByRole('button', { name: /Talent-Pool/ }).click();
-    await expect(page.locator('main')).toContainText('Add talent');
+    await expect(page.locator('main')).toContainText('Talent hinzufügen');
     await expect(page.locator('main')).toContainText('Nora'); // session-derived "me"
   });
 
@@ -110,10 +110,10 @@ test.describe('UI acceptance — the suite renders in German', () => {
     await page.getByRole('button', { name: /Mandate/ }).click();
     const main = page.locator('main');
     // first load failed → error state, no fabricated sample client
-    await expect(main).toContainText("We couldn't load this data.");
+    await expect(main).toContainText('Etwas ist schiefgelaufen — erneut versuchen.');
     await expect(main).not.toContainText('Aurora Systems GmbH');
     // retry succeeds → the real mandate renders
-    await page.getByRole('button', { name: 'Retry' }).click();
+    await page.getByRole('button', { name: 'Erneut versuchen' }).click();
     await expect(main).toContainText('Helio GmbH');
   });
 
@@ -146,7 +146,10 @@ test.describe('UI acceptance — the suite renders in German', () => {
       }),
     );
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
-    await page.getByRole('button', { name: /Placements/ }).click();
+    // Placements ("Platzierungen") folds under Performance — reach it via the
+    // Performance view's topbar action.
+    await page.getByRole('button', { name: /Performance/ }).click();
+    await page.getByRole('button', { name: 'Platzierungen' }).click();
     await expect(page.locator('main')).toContainText('Tobias Wirth');
     await expect(page.locator('main')).toContainText('Helio GmbH');
     // the offline sample is replaced by the API data
@@ -277,7 +280,7 @@ test.describe('UI acceptance — the suite renders in German', () => {
     // editing a field autosaves it (debounced) to the server
     const field = page.locator('main').getByRole('textbox').first();
     await field.fill('E2E-MARKER-NAME');
-    await expect(page.locator('main').getByRole('status')).toContainText('Saved', {
+    await expect(page.locator('main').getByRole('status')).toContainText('Gespeichert', {
       timeout: 10000,
     });
     expect(puts.some((b) => b.includes('E2E-MARKER-NAME'))).toBe(true);
@@ -372,7 +375,7 @@ test.describe('UI acceptance — the suite renders in German', () => {
       .getByRole('button', { name: /Lebenslauf anlegen|Lebenslauf bearbeiten/ })
       .first()
       .click();
-    await page.getByRole('button', { name: /To dossier/ }).click();
+    await page.getByRole('button', { name: /Zur Mappe/ }).click();
     // upload a PDF via the hidden file input in the Mappe modal (the editor
     // also carries the resume-photo file input, so scope by accept type)
     await page.locator('input[type="file"][accept="application/pdf"]').setInputFiles({
@@ -464,16 +467,16 @@ test.describe('UI acceptance — the suite renders in German', () => {
     );
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     await page.getByRole('button', { name: /Mandate/ }).click();
-    await expect(page.locator('main')).toContainText('No mandates yet.');
+    await expect(page.locator('main')).toContainText('Noch keine Mandate.');
 
-    await page.getByRole('button', { name: 'New mandate' }).click();
-    await page.getByLabel('Client', { exact: true }).fill('Helio GmbH');
-    await page.getByLabel('Role', { exact: true }).fill('Principal Platform Engineer');
-    await page.getByLabel('Location', { exact: true }).fill('Hamburg · Remote');
-    await page.getByRole('button', { name: 'Create mandate' }).click();
+    await page.getByRole('button', { name: 'Neues Mandat' }).click();
+    await page.getByLabel('Klient', { exact: true }).fill('Helio GmbH');
+    await page.getByLabel('Rolle', { exact: true }).fill('Principal Platform Engineer');
+    await page.getByLabel('Standort', { exact: true }).fill('Hamburg · Remote');
+    await page.getByRole('button', { name: 'Mandat anlegen' }).click();
 
     // the form closed and the new mandate is listed
-    await expect(page.getByRole('button', { name: 'Create mandate' })).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Mandat anlegen' })).toBeHidden();
     await expect(page.locator('main')).toContainText('Helio GmbH');
     await expect(page.locator('main')).toContainText('Principal Platform Engineer');
   });

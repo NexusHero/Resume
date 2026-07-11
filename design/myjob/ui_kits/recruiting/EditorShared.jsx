@@ -46,15 +46,15 @@ function ModalShell({ title, subtitle, onClose, width, scroll = true, subtitleGa
  */
 function GroundingWarning({ grounding }) {
   if (!grounding || grounding.grounded || !grounding.unsupported?.length) return null;
-  const label = (u) => (u.kind === 'number' ? `Number “${u.text}”` : `Skill “${u.text}”`);
+  const label = (u) => (u.kind === 'number' ? `Zahl „${u.text}“` : `Skill „${u.text}“`);
   const n = grounding.unsupported.length;
   return (
     <div style={{ marginTop: '14px', border: '1px solid var(--warning-border, #e6b800)', background: 'var(--warning-soft, rgba(230,184,0,0.10))', borderRadius: 'var(--radius-md)', padding: '11px 13px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '7px', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 600, color: 'var(--warning-strong, #8a6d00)', marginBottom: '6px' }}>
-        <ESH.Icon name="alert" size={12} />{n} {n === 1 ? 'unsupported claim' : 'unsupported claims'}
+        <ESH.Icon name="alert" size={12} />{n} {n === 1 ? 'nicht belegte Angabe' : 'nicht belegte Angaben'}
       </div>
       <div style={{ fontSize: '12.5px', lineHeight: 1.5, color: 'var(--text-body)' }}>
-        These claims are not backed by the CV / mandate — please verify before sending:{' '}
+        Diese Angaben sind nicht durch Lebenslauf/Mandat gedeckt — bitte vor dem Senden prüfen:{' '}
         {grounding.unsupported.map((u) => label(u)).join(', ')}.
       </div>
     </div>
@@ -80,12 +80,12 @@ function formatCallCost(v) {
  */
 function ProviderBadge({ provider, usage }) {
   if (!provider) return null;
-  const label = provider === 'template' ? 'Template · no AI' : `AI · ${provider}`;
+  const label = provider === 'template' ? 'Vorlage · keine KI' : `KI · ${provider}`;
   const spend = usage
     ? ` · ${formatCallTokens(usage.inputTokens + usage.outputTokens)} tok · ${formatCallCost(usage.costUsd)}`
     : '';
   return (
-    <span title={usage ? `${usage.inputTokens} in / ${usage.outputTokens} out · estimated from list prices` : undefined} style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-soft)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '3px 9px', whiteSpace: 'nowrap' }}>
+    <span title={usage ? `${usage.inputTokens} Eingabe / ${usage.outputTokens} Ausgabe · geschätzt aus Listenpreisen` : undefined} style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-soft)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '3px 9px', whiteSpace: 'nowrap' }}>
       {label}{spend}
     </span>
   );

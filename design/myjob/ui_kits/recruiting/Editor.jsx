@@ -346,7 +346,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
         {/* LEFT — form */}
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0 }}>
           <div style={{ display: 'flex', gap: '4px', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-md)', padding: '4px', marginBottom: '16px' }}>
-            {seg('lebenslauf', 'Resume')}{seg('anschreiben', 'Cover letter')}
+            {seg('lebenslauf', 'Lebenslauf')}{seg('anschreiben', 'Anschreiben')}
           </div>
 
           <div style={{ flex: 1, overflowY: 'auto', paddingRight: '8px' }}>
@@ -387,8 +387,8 @@ function Editor({ talent, onClose, onCreateMappe }) {
                 </div>
                 {!gen && (
                   <div style={{ display: 'flex', gap: '8px', padding: '10px 13px', borderTop: '1px solid var(--border)', background: 'var(--surface-subtle)' }}>
-                    <button onClick={acceptAI} style={{ appearance: 'none', cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-sm)', padding: '6px 12px' }}><ED.Icon name="check" size={13} />Apply</button>
-                    <button onClick={cancelAI} style={{ appearance: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-sm)', padding: '6px 12px' }}><ED.Icon name="x" size={13} />Discard</button>
+                    <button onClick={acceptAI} style={{ appearance: 'none', cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-sm)', padding: '6px 12px' }}><ED.Icon name="check" size={13} />Übernehmen</button>
+                    <button onClick={cancelAI} style={{ appearance: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-sm)', padding: '6px 12px' }}><ED.Icon name="x" size={13} />Verwerfen</button>
                   </div>
                 )}
               </div>
@@ -454,21 +454,21 @@ function Editor({ talent, onClose, onCreateMappe }) {
               </>
             ) : (
               <>
-                <FormGroup title="Recipient">
+                <FormGroup title="Empfänger">
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                     <ED.Input label="Unternehmen" value={letter.firma} onChange={(e) => setLetter((s) => ({ ...s, firma: e.target.value }))} wrapStyle={{ gridColumn: '1 / -1' }} />
-                    <ED.Input label="Contact person" value={letter.ansprechpartner} onChange={(e) => setLetter((s) => ({ ...s, ansprechpartner: e.target.value }))} wrapStyle={{ gridColumn: '1 / -1' }} />
-                    <ED.Input label="Street" value={letter.strasse} onChange={(e) => setLetter((s) => ({ ...s, strasse: e.target.value }))} />
-                    <ED.Input label="ZIP & city" value={letter.plzOrt} onChange={(e) => setLetter((s) => ({ ...s, plzOrt: e.target.value }))} />
+                    <ED.Input label="Ansprechpartner:in" value={letter.ansprechpartner} onChange={(e) => setLetter((s) => ({ ...s, ansprechpartner: e.target.value }))} wrapStyle={{ gridColumn: '1 / -1' }} />
+                    <ED.Input label="Straße" value={letter.strasse} onChange={(e) => setLetter((s) => ({ ...s, strasse: e.target.value }))} />
+                    <ED.Input label="PLZ & Ort" value={letter.plzOrt} onChange={(e) => setLetter((s) => ({ ...s, plzOrt: e.target.value }))} />
                   </div>
                 </FormGroup>
-                <FormGroup title="Content">
+                <FormGroup title="Inhalt">
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <ED.Input label="Subject" value={letter.betreff} onChange={(e) => setLetter((s) => ({ ...s, betreff: e.target.value }))} />
-                    <ED.Input label="Salutation" value={letter.anrede} onChange={(e) => setLetter((s) => ({ ...s, anrede: e.target.value }))} />
+                    <ED.Input label="Betreff" value={letter.betreff} onChange={(e) => setLetter((s) => ({ ...s, betreff: e.target.value }))} />
+                    <ED.Input label="Anrede" value={letter.anrede} onChange={(e) => setLetter((s) => ({ ...s, anrede: e.target.value }))} />
                   </div>
                 </FormGroup>
-                <FormGroup title="Paragraphs" onAdd={addPara}>
+                <FormGroup title="Absätze" onAdd={addPara}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
                     {letter.absaetze.map((p, i) => <ED.Textarea key={i} rows={3} value={p} onChange={(e) => setPara(i, e.target.value)} />)}
                   </div>
@@ -482,25 +482,25 @@ function Editor({ talent, onClose, onCreateMappe }) {
         <div style={{ background: 'var(--surface-page)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>
-              <ED.Icon name="eye" size={14} /> Live preview · {doc === 'lebenslauf' ? 'Resume' : 'Cover letter'}
+              <ED.Icon name="eye" size={14} /> Live-Vorschau · {doc === 'lebenslauf' ? 'Lebenslauf' : 'Anschreiben'}
             </span>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button onClick={runAI} style={{ appearance: 'none', cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12.5px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-md)', padding: isMobile ? '10px 14px' : '7px 12px', minHeight: isMobile ? '44px' : undefined }}>
-                <ED.Icon name="zap" size={14} />AI tailor
+                <ED.Icon name="zap" size={14} />KI anpassen
               </button>
               <ED.Button size="sm" variant="outline" iconLeft={<ED.Icon name="download" size={14} />} onClick={exportPdf} disabled={pdfBusy}>{pdfBusy ? 'PDF…' : 'PDF'}</ED.Button>
-              <ED.Button size="sm" variant="primary" iconRight={<ED.Icon name="arrowRight" size={14} />} onClick={onCreateMappe}>To dossier</ED.Button>
+              <ED.Button size="sm" variant="primary" iconRight={<ED.Icon name="arrowRight" size={14} />} onClick={onCreateMappe}>Zur Mappe</ED.Button>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '8px 16px', borderBottom: '1px solid var(--border)', flexShrink: 0, flexWrap: 'wrap' }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Style</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Stil</span>
             <div style={{ display: 'flex', gap: '4px', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-sm)', padding: '3px' }}>
               {[['classic', 'Classic'], ['modern', 'Modern'], ['compact', 'Compact'], ['ink', 'Ink']].map(([id, label]) => (
                 <button key={id} onClick={() => setCfg((c) => ({ ...c, template: id }))} style={{ border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: cfg.template === id ? 600 : 500, padding: isMobile ? '11px 14px' : '4px 9px', minHeight: isMobile ? '44px' : undefined, borderRadius: '4px', background: cfg.template === id ? 'var(--surface-card)' : 'transparent', color: cfg.template === id ? 'var(--text-heading)' : 'var(--text-muted)' }}>{label}</button>
               ))}
             </div>
             <div style={{ display: 'flex', gap: isMobile ? '10px' : '6px' }}>
-              {ED_ACCENTS.map((a, i) => <span key={i} role="button" aria-label={`Accent ${i + 1}`} onClick={() => setCfg((c) => ({ ...c, accent: a.accent, strong: a.strong, onDark: a.onDark }))} style={{ width: isMobile ? '34px' : '22px', height: isMobile ? '34px' : '22px', borderRadius: '6px', cursor: 'pointer', background: a.accent, border: `2px solid ${cfg.accent === a.accent ? 'var(--text-heading)' : 'transparent'}` }} />)}
+              {ED_ACCENTS.map((a, i) => <span key={i} role="button" aria-label={`Akzent ${i + 1}`} onClick={() => setCfg((c) => ({ ...c, accent: a.accent, strong: a.strong, onDark: a.onDark }))} style={{ width: isMobile ? '34px' : '22px', height: isMobile ? '34px' : '22px', borderRadius: '6px', cursor: 'pointer', background: a.accent, border: `2px solid ${cfg.accent === a.accent ? 'var(--text-heading)' : 'transparent'}` }} />)}
             </div>
             <select value={cfg.font} onChange={(e) => setCfg((c) => ({ ...c, font: e.target.value }))} style={{ padding: isMobile ? '10px 10px' : '5px 9px', minHeight: isMobile ? '44px' : undefined, borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', fontFamily: 'var(--font-body)', fontSize: isMobile ? '13px' : '12px', color: 'var(--text-heading)' }}>
               <option value="var(--font-display)">Space Grotesk</option>
@@ -515,7 +515,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
             {previewHtml ? (
               <iframe
                 ref={frameRef}
-                title="Document preview"
+                title="Dokumentvorschau"
                 srcDoc={previewHtml}
                 onLoad={syncFrame}
                 scrolling="no"
@@ -523,7 +523,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
               />
             ) : (
               <div style={{ margin: 'auto', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>
-                Rendering preview…
+                Vorschau wird erstellt…
               </div>
             )}
           </div>

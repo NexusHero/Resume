@@ -80,7 +80,7 @@ describe('FindMatchesModal', () => {
     ]);
     render(<FindMatchesModal mandate={mandate} onClose={vi.fn()} onOpenTalent={vi.fn()} onAdded={vi.fn()} />);
 
-    await userEvent.click(screen.getByRole('button', { name: /Rank pool/ }));
+    await userEvent.click(screen.getByRole('button', { name: /Pool ranken/ }));
 
     expect(window.RecruitApi.matchMandate).toHaveBeenCalledWith('m1', { jobText: '', limit: 12 });
     expect(await screen.findByText('Ada')).toBeInTheDocument();
@@ -92,7 +92,7 @@ describe('FindMatchesModal', () => {
     ]);
     const onAdded = vi.fn();
     render(<FindMatchesModal mandate={mandate} onClose={vi.fn()} onOpenTalent={vi.fn()} onAdded={onAdded} />);
-    await userEvent.click(screen.getByRole('button', { name: /Rank pool/ }));
+    await userEvent.click(screen.getByRole('button', { name: /Pool ranken/ }));
     await screen.findByText('Ada');
 
     await userEvent.click(screen.getByRole('button', { name: 'Add' }));
@@ -108,7 +108,7 @@ describe('FindMatchesModal', () => {
     ]);
     window.RecruitApi.explainMatch.mockResolvedValue({ summary: 'Strong React overlap', reasons: ['5y React'] });
     render(<FindMatchesModal mandate={mandate} onClose={vi.fn()} onOpenTalent={vi.fn()} onAdded={vi.fn()} />);
-    await userEvent.click(screen.getByRole('button', { name: /Rank pool/ }));
+    await userEvent.click(screen.getByRole('button', { name: /Pool ranken/ }));
     await screen.findByText('Ada');
 
     await userEvent.click(screen.getByRole('button', { name: /Why/ }));
@@ -133,14 +133,14 @@ describe('CompanyKnowledgeModal', () => {
     const capture = screen.getByRole('button', { name: /Capture/ });
     expect(capture).toBeDisabled();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Coding challenge' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Coding-Challenge' }));
     expect(capture).toBeEnabled();
   });
 
   it('Knowledge_Capture_RecordsTheObservationForm', async () => {
     render(<CompanyKnowledgeModal mandate={mandate} onClose={vi.fn()} />);
     await screen.findByText(/No observations yet/);
-    await userEvent.click(screen.getByRole('button', { name: 'System design' }));
+    await userEvent.click(screen.getByRole('button', { name: 'System-Design' }));
 
     await userEvent.click(screen.getByRole('button', { name: /Capture/ }));
 
@@ -164,19 +164,19 @@ describe('InterviewKitModal', () => {
 
   it('Interview_WithData_RendersQuestionsAndFocus', () => {
     render(<InterviewKitModal interview={kit} mandateRole="Staff Engineer" onClose={vi.fn()} />);
-    expect(screen.getByText('Interview kit')).toBeInTheDocument();
+    expect(screen.getByText('Interview-Kit')).toBeInTheDocument();
     expect(screen.getByText('Design a rate limiter')).toBeInTheDocument();
     expect(screen.getByText(/System design depth/)).toBeInTheDocument();
   });
 
   it('Interview_Loading_ShowsBuildingState', () => {
     render(<InterviewKitModal interview={{ name: 'Ada', loading: true, data: null }} mandateRole="Eng" onClose={vi.fn()} />);
-    expect(screen.getByText('Building the guide…')).toBeInTheDocument();
+    expect(screen.getByText('Erstelle den Leitfaden…')).toBeInTheDocument();
   });
 
   it('Interview_NoData_ShowsErrorState', () => {
     render(<InterviewKitModal interview={{ name: 'Ada', loading: false, data: null }} mandateRole="Eng" onClose={vi.fn()} />);
-    expect(screen.getByText('Could not load the interview kit.')).toBeInTheDocument();
+    expect(screen.getByText('Konnte das Interview-Kit nicht laden.')).toBeInTheDocument();
   });
 });
 

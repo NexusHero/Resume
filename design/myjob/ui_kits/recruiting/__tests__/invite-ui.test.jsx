@@ -31,18 +31,18 @@ describe('LoginScreen — accept invite', () => {
     window.RecruitApi = {
       acceptInvite: vi.fn().mockResolvedValue({ id: 'u1', email: 'new@acme.io' }),
     };
-    const { container, getByRole, getByText } = render(
+    const { container, getByRole } = render(
       <LoginScreen providers={{}} onAuthed={onAuthed} />,
     );
     // Accept-invite headline, and no email field (the token carries the address).
-    expect(getByText('Accept your invitation')).toBeInTheDocument();
+    expect(getByRole('heading', { name: 'Einladung annehmen' })).toBeInTheDocument();
     expect(container.querySelector('input[type="email"]')).toBeNull();
 
     const pw = container.querySelectorAll('input[type="password"]');
     expect(pw).toHaveLength(2); // password + confirm
     fireEvent.change(pw[0], { target: { value: 'a fine long passphrase' } });
     fireEvent.change(pw[1], { target: { value: 'a fine long passphrase' } });
-    fireEvent.click(getByRole('button', { name: 'Accept invitation' }));
+    fireEvent.click(getByRole('button', { name: 'Einladung annehmen' }));
 
     await waitFor(() =>
       expect(window.RecruitApi.acceptInvite).toHaveBeenCalledWith('tok123', 'a fine long passphrase'),
@@ -52,7 +52,7 @@ describe('LoginScreen — accept invite', () => {
 
   it('NoInviteToken_ShowsNormalLogin', () => {
     const { getByText, container } = render(<LoginScreen providers={{}} onAuthed={vi.fn()} />);
-    expect(getByText('Welcome back')).toBeInTheDocument();
+    expect(getByText('Willkommen zurück')).toBeInTheDocument();
     expect(container.querySelector('input[type="email"]')).not.toBeNull();
   });
 });
@@ -82,17 +82,17 @@ describe('SettingsView — Invite a colleague card', () => {
         .mockResolvedValue({ invite: { email: 'x@acme.io', roles: ['recruiter'] }, acceptUrl: 'http://app/accept?invite_token=zzz' }),
     };
     const { findByText, getByLabelText, getByRole } = render(<SettingsView user={{ id: 'me' }} />);
-    await findByText('Invite a colleague');
+    await findByText('Kolleg:in einladen');
 
-    fireEvent.change(getByLabelText('Invite email'), { target: { value: 'x@acme.io' } });
-    fireEvent.click(getByRole('button', { name: 'Send invite' }));
+    fireEvent.change(getByLabelText('E-Mail für Einladung'), { target: { value: 'x@acme.io' } });
+    fireEvent.click(getByRole('button', { name: 'Einladung senden' }));
 
     await waitFor(() =>
       expect(window.RecruitApi.createInvite).toHaveBeenCalledWith('x@acme.io', ['recruiter']),
     );
     // The returned accept link is surfaced for offline sharing.
     await waitFor(() =>
-      expect(getByLabelText('Invite link')).toHaveValue('http://app/accept?invite_token=zzz'),
+      expect(getByLabelText('Einladungslink')).toHaveValue('http://app/accept?invite_token=zzz'),
     );
   });
 
@@ -102,8 +102,8 @@ describe('SettingsView — Invite a colleague card', () => {
       authMe: vi.fn().mockResolvedValue({ id: 'me', email: 'r@acme.io', roles: ['recruiter'] }),
     };
     const { findByText, queryByText } = render(<SettingsView user={{ id: 'me' }} />);
-    await findByText('AI models & API keys'); // settings rendered
+    await findByText('KI-Modelle & API-Schlüssel'); // settings rendered
     await waitFor(() => expect(window.RecruitApi.authMe).toHaveBeenCalled());
-    expect(queryByText('Invite a colleague')).toBeNull();
+    expect(queryByText('Kolleg:in einladen')).toBeNull();
   });
 });

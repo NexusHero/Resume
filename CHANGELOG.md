@@ -8,6 +8,25 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+### Changed
+
+- **The 2026 „Vivid" redesign + „alles ist Kandidat oder Stelle" restructure**
+  (ADR-0055). The recruiting app moves from the dark-first „Blueprint" look to a
+  **light-first** identity and a consolidated information architecture, adopting
+  the myJob design-system handoff 1:1. Visually: a cool light canvas with a
+  **floating white nav rail** (`AppShell`, dark „Klassik" conserved as the dark
+  mode), the **Royal `#3654E0`** accent + theme-independent **Live orange
+  `#FF5320`**, the **Now-Split logo** and „myJob" wordmark, **Clash Display**
+  headings, the **People palette** for avatars, bigger fully-rounded shapes, and
+  the radial **MatchIndicator** (candidate fit) kept distinct from the linear
+  **ProgressBar** (mandate fill). Structurally: the CV builder, Anschreiben,
+  Bewerbungen and Dossier now live **inside** a candidate profile or a Stelle;
+  the top-level destinations collapse to six — **Workspace · Mandate ·
+  Talent-Pool · Pipeline · Performance · Postfach** — with Settings and the
+  account as rail-foot utilities and the assistant as a topbar action. The UI is
+  **German-first** and gender-inclusive (Kandidat:innen). The backend, auth,
+  DSGVO, job sources and the CV document rendering are unchanged.
+
 ### Added
 
 - **Mobile finish: touch-grade phone ergonomics** (ADR-0054, #202). The app

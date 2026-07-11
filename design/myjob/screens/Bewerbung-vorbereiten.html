@@ -1,9 +1,11 @@
+<!-- @dsCard group="myJob App" viewport="1280x800" name="Anschreiben & Dossier" subtitle="Prepare a Bewerbung — cover letter + assemble the Bewerbungsmappe" -->
 <!DOCTYPE html>
-<html lang="de" data-theme="blueprint">
+<html lang="de">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>myJob Recruit — Bewerbung vorbereiten</title>
+<link rel="icon" href="../assets/logo/favicon.svg" />
 <link rel="stylesheet" href="../styles.css" />
 <style>
   html, body { margin: 0; height: 100%; background: var(--surface-app); }
@@ -28,6 +30,13 @@
   .magic.ghost::after { display: none; }
   .magic[disabled] { opacity: .5; cursor: default; }
   .magic[disabled]:hover { transform: none; }
+
+  /* steering — prompt the KI */
+  .steer { appearance: none; cursor: pointer; font-family: var(--font-body); font-size: var(--fs-xs); font-weight: var(--fw-medium); color: var(--accent-strong); background: transparent; border: 1px solid var(--accent-border); border-radius: var(--radius-pill); padding: 5px 12px; transition: all var(--dur-fast); }
+  .steer:hover { background: var(--accent-soft); }
+  .steer-in { flex: 1; min-width: 0; font-family: var(--font-body); font-size: var(--fs-sm); color: var(--text-heading); background: var(--surface-card); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 10px 13px; outline: none; }
+  .steer-in:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .steer-note { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-xs); color: var(--accent-strong); background: var(--accent-soft); border-radius: var(--radius-pill); padding: 4px 11px; }
 
   /* empty / invitation state */
   .invite { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; padding: 30px 18px; }
@@ -76,11 +85,11 @@
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 <script src="../_ds_bundle.js"></script>
 <script type="text/babel">
-const DS = window.MyJobDesignSystem_f3658e;
+const DS = window.MyJobDesignSystem_5611b7 || window.DesignSystem_5611b7;
 const { AppShell, Avatar, Icon, Button, Textarea, StatusBadge } = DS;
 
 const RECRUIT_NAV = [
-  { id: 'overview', label: 'Overview', icon: 'home' },
+  { id: 'workspace', label: 'Workspace', icon: 'home' },
   { id: 'pool', label: 'Talent-Pool', icon: 'users' },
   { id: 'stellen', label: 'Stellen', icon: 'briefcase' },
   { id: 'matching', label: 'Matching', icon: 'search' },
@@ -90,7 +99,7 @@ const RECRUIT_NAV = [
 
 /* The application being prepared: Suhay × the Helvetia position. */
 const CTX = {
-  cand: { name: 'Suhay Sevinc', role: 'Full-Stack Developer' },
+  cand: { name: 'Suhay Sevinc', role: 'Full-Stack Developer', photo: '../assets/img/suhay-photo-sm.jpg' },
   job: { title: 'Senior Frontend Engineer', company: 'Helvetia Digital AG', location: 'Zürich', country: 'CH' },
   match: 88,
   required: ['React', 'TypeScript', 'GraphQL', 'CSS Architecture'],
@@ -144,6 +153,8 @@ function Sparkle({ size = 16 }) {
 function LetterCard({ status, setStatus }) {
   const [text, setText] = React.useState('');
   const [variant, setVariant] = React.useState(0);
+  const [prompt, setPrompt] = React.useState('');
+  const [note, setNote] = React.useState(null);
 
   const generate = (v) => {
     setStatus('gen');
@@ -153,7 +164,14 @@ function LetterCard({ status, setStatus }) {
       setStatus('draft');
     }, 1200);
   };
-  const regenerate = () => { const next = (variant + 1) % LETTERS.length; setVariant(next); generate(next); };
+  const regenerate = () => { const next = (variant + 1) % LETTERS.length; setVariant(next); setNote(null); generate(next); };
+  /* steer: free-text or chip instruction → regenerate honoring it (demo: variant swap + note) */
+  const steer = (instr) => {
+    const v = (instr || '').trim();
+    if (!v) return;
+    setNote(v); setPrompt('');
+    const next = (variant + 1) % LETTERS.length; setVariant(next); generate(next);
+  };
 
   return (
     <div className="pcard">
@@ -184,7 +202,27 @@ function LetterCard({ status, setStatus }) {
         )}
         {(status === 'draft' || status === 'done') && (
           <React.Fragment>
+            {note && status === 'draft' && <span className="steer-note"><Sparkle size={11} />Anweisung angewendet: „{note}“</span>}
             <Textarea rows={13} value={text} readOnly={status === 'done'} onChange={(e) => setText(e.target.value)} style={status === 'done' ? { background: 'var(--surface-subtle)', color: 'var(--text-body)' } : {}} />
+            {status === 'draft' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  {['Formeller', 'Lockerer', 'Kürzer', 'Mehr Schweiz-Bezug'].map((t) => (
+                    <button key={t} className="steer" onClick={() => steer(t)}>{t}</button>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    className="steer-in"
+                    placeholder='Eigene Anweisung … z. B. „Betone die GraphQL-Erfahrung“'
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') steer(prompt); }}
+                  />
+                  <button className="magic ghost" onClick={() => steer(prompt)} disabled={!prompt.trim()}><Sparkle size={13} />Anpassen</button>
+                </div>
+              </div>
+            )}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               {status === 'draft' ? (
                 <React.Fragment>
@@ -299,7 +337,7 @@ function PrepScreen() {
 
   const ContextBar = (
     <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', padding: '16px 18px', background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', marginBottom: '20px' }}>
-      <Avatar name={CTX.cand.name} size="md" ring />
+      <Avatar name={CTX.cand.name} src={CTX.cand.photo} size="md" ring />
       <div style={{ minWidth: 0 }}>
         <div style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--fs-md)', fontWeight: 'var(--fw-semibold)', color: 'var(--text-heading)' }}>{CTX.cand.name}</div>
         <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-soft)' }}>{CTX.cand.role}</div>
@@ -320,7 +358,7 @@ function PrepScreen() {
       <AppShell
         product="recruit" posture="rail"
         nav={RECRUIT_NAV} active="matching" onNav={() => {}}
-        account={{ name: 'Suhay Sevinc', meta: 'Me · +3 Talente' }}
+        account={{ name: 'Suhay Sevinc', meta: 'Me · +3 Talente', src: '../assets/img/suhay-photo-sm.jpg' }}
         title="Bewerbung vorbereiten"
         subtitle="Magic-Entwürfe · du bestätigst"
       >

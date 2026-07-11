@@ -46,10 +46,10 @@ describe('Editor — AI tailor', () => {
     );
     render(<Editor talent={talent} onClose={vi.fn()} onCreateMappe={vi.fn()} />);
 
-    await userEvent.click(screen.getByText('AI tailor'));
+    await userEvent.click(screen.getByText('KI anpassen'));
 
     const alert = await screen.findByRole('alert');
-    expect(alert).toHaveTextContent('AI tailoring failed');
+    expect(alert).toHaveTextContent('KI-Anpassung fehlgeschlagen');
     expect(alert).toHaveTextContent('This is a Pro feature. Upgrade to unlock it.');
     expect(window.RecruitApi.suggestDocument).toHaveBeenCalledWith('t1', 'summary', {});
   });
@@ -62,7 +62,7 @@ describe('Editor — AI tailor', () => {
     });
     render(<Editor talent={talent} onClose={vi.fn()} onCreateMappe={vi.fn()} />);
 
-    await userEvent.click(screen.getByText('AI tailor'));
+    await userEvent.click(screen.getByText('KI anpassen'));
 
     await waitFor(() => expect(screen.getByText('A crisp tailored summary.')).toBeInTheDocument());
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();

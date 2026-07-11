@@ -30,19 +30,39 @@ It also carries the **document side** of the same DNA: a self-contained interact
 **résumé / CV** (the artifact the whole suite was originally built around — for *Suhay
 Sevinc*).
 
-The signature is an **engineering-instrument** aesthetic: a dark "ink" app shell against
-light "paper" working surfaces, **Space Grotesk** display + **Inter** body + **JetBrains
-Mono** for every date, tag, count and kicker (the "mono signature"). Three swappable
-accents — **Blueprint** (steel blue, default), **Signal** (amber), **Graphite** (slate) —
-plus a fixed pipeline status palette (six stages collapsed to three hues — neutral / green / red).
+The signature (since the **2026 „Vivid“ redesign**) is **lebhaft & modern**: a light,
+cool working canvas with a **floating white nav rail**, big soft shapes (radii up to 28px),
+the **Royal** Königsblau accent `#3654E0` (the logo tile) for trust and structure, and the
+theme-independent **Live orange** `#FF5320` (the logo playhead) for everything happening
+*jetzt*. Type is **Clash Display** (display) + **Inter** (body) + **JetBrains Mono** for
+every date, tag, count and kicker. Recruiting is people, so people are colorful: the
+**People palette** (8 vivid categorical colors) drives avatar tiles deterministically.
+The pipeline status palette stays fixed (six stages collapsed to three hues — neutral /
+green / red). The **classic ink-dark look with the orange accent lives on as the Dark
+Mode** (`data-mode="dark"` + `data-theme="ember"`) — conserved, not redesigned. The
+brand mark is the **Now-Split** logo, shared 1:1 with the sister product myDevTime
+(identical mark for both products — owner decision, July 2026): a royal tile split into a
+solid „actual“ block and a dashed „ghost“ block by the live-orange playhead. The splash
+sting (`screens/Splash.html`) animates it.
 
 ## Sources
 
-This system was derived from the **Bewerbungs-Suite** codebase (`Resume/`, attached
-read-only via the local-folder mount), specifically its `myjob/` recruiting design system
-and the root CV design system. Both were plain HTML/CSS/React over a shared token layer.
-No external Figma. If you have the original repo, the relevant trees were:
-`Resume/myjob/{tokens,ui_kits,_ds_bundle.js}` and `Resume/{tokens,components,ui_kits/cv}`.
+This system was ported from the **NexusHero/Resume** repository
+(<https://github.com/NexusHero/Resume>) — the "Bewerbungs-Suite" codebase — specifically its
+`design/myjob/` recruiting design system (tokens, components, foundations, screens) and the
+shared self-hosted webfonts under `design/fonts/`. Both were plain HTML/CSS/React over a
+shared token layer. No external Figma. Explore that repository (especially `docs/`, `docs/adr/`
+and `design/myjob/`) to build myJob designs with deeper fidelity. The pre-restructure Vite SPA
+under `design/myjob/ui_kits/recruiting/` was **not** ported here (it needs a bundler + npm and
+cannot render standalone) — the renderable `screens/` recreations replace it.
+
+The **2026 „Vivid“ redesign** additionally ports from **NexusHero/myDevTime**
+(<https://github.com/NexusHero/myDevTime>), the sister product's repo: the **Now-Split logo
+family** (`docs/design-system/assets/logo/` → `assets/logo/`, wordmark re-set to „myJob“),
+**Clash Display** webfonts (`docs/design-system/fonts/`), the Royal/Live color duo, the
+spring motion language and the splash-sting choreography
+(`docs/design-system/guidelines/brand-splash.html`). Explore that repo — especially
+`docs/design-system/readme.md` and `docs/design/ux-vision.md` — for the family DNA.
 
 ---
 
@@ -81,16 +101,27 @@ German formatting: `78.000 €`, `92%`, `+12%`.
 
 ## Visual foundations
 
-**Two structural worlds.** Every screen is a conversation between **ink** (the dark
-sidebar / nav / app shell — `--ink-850 → --ink-900`, a 165° gradient) and **paper** (the
-light working canvas `--surface-app` #f1f5f9 with white `--surface-card` sheets). Dark
-chrome frames; light surfaces work.
+**Two structural worlds — rebalanced in 2026.** LIGHT (default): everything floats on a
+cool light canvas (`--surface-app` #f2f4fa) — the nav rail is a **floating white rounded
+card** (`--rail-*` tokens, radius `--radius-2xl`, soft shadow), the topbar is transparent,
+content sits in white `--surface-card` sheets. DARK („Klassik“): the conserved ink world —
+`--rail-*` flips to the 165° ink gradient, surfaces invert, one accent glow on the canvas.
+AppShell reads only `--rail-*`; never hardcode ink in chrome.
 
-**Color.** Restrained slate-neutral base; color is reserved for *accent* and *status*.
-- Accents swap by setting `data-theme="blueprint|signal|graphite"` on any wrapper — the
-  default `:root` is Blueprint. Components read `--accent`, `--accent-strong`,
-  `--accent-soft`, `--accent-border`, `--accent-on-dark` (the lighter tint used on ink),
-  and `--accent-contrast` (text on a filled accent) — never raw palette values.
+**Color.** Cool slate-neutral base; saturated color has exactly four jobs.
+- **Accent** swaps by setting `data-theme="royal|ember|blueprint|signal|graphite"` on any
+  wrapper — the default `:root` is **Royal** (#3654E0). Components read `--accent`,
+  `--accent-strong`, `--accent-soft`, `--accent-border`, `--accent-on-dark` and
+  `--accent-contrast` — never raw palette values. Blueprint/Signal/Graphite are legacy.
+- **Live / Jetzt** (`--live` #FF5320 + `-strong/-soft/-border/-on-dark`) is
+  theme-independent: heute anstehende Interviews, laufende Gespräche, the notification dot,
+  the logo playhead, the splash. Never decoration, never status, never chrome.
+- **People palette** (`--people-1…8` + `-soft`): 8 vivid categorical colors for avatar
+  tiles, skill tags, calendar chips. `Avatar` assigns deterministically (name hash). The
+  only other saturated color on screen.
+- **AI signature** (`--ai-grad`, blue→violet→orange): only on KI output (Matching-KI,
+  Anschreiben-Entwürfe) — the „KI schlägt vor, du entscheidest“ marker. Deterministic UI
+  never wears it.
 - **Pipeline status** is a separate, fixed scale that does **not** change with the accent.
   IVE REDUCTION: the six stages now collapse to **three hues** — the *label* and board
   position carry the stage, not a sixth colour. **Neu · Sichtung · Interview** = one neutral
@@ -119,9 +150,11 @@ calm, light identity depends on it — and the 3:1 affordance is carried by the 
 drop below AA. Adding a theme (e.g. dark mode) is one more fixture in `THEMES`, not a second
 audit.
 
-**Type.** Display = Space Grotesk (tight tracking, `--ls-tight`/`--ls-tighter` on big
-sizes); Body = Inter at 15px / 1.6; Mono = JetBrains Mono. Scale runs `--fs-2xs` 11 →
-`--fs-5xl` 38. Headings always display; body always Inter. **Mono has a job, not a costume:**
+**Type.** Display = **Clash Display** (500/600/700, tight tracking on big sizes; Space
+Grotesk remains via `--font-display-legacy` for the Blueprint-era look and stays untouched
+in the CV document sheet, which uses its own `--cv-font` variables); Body = Inter at 15px /
+1.6; Mono = JetBrains Mono. Scale runs `--fs-2xs` 11 → `--fs-7xl` 64. Headings always
+display; body always Inter. **Mono has a job, not a costume:**
 it is reserved for numbers, dates, IDs, currency, `%`, tech-tags and code — plus the small
 brand kicker. It is *not* the default for labels, badges, nav subtitles or timestamps-as-
 decoration (the old „mono signature“ over-reached and read like a code editor). The thing
@@ -131,15 +164,15 @@ the brand truly owns is the **match signal** (`MatchIndicator`), not the typefac
 `--app-nav-width` 244, `--app-topbar-h` 60, `--pad-app`, `--row-h` 60. Document geometry:
 `--sidebar-width` 360, `--page-max` 1180.
 
-**Backgrounds.** Flat surfaces, no decorative imagery or texture. The *only* gradients are
-(1) the ink sidebar/shell (subtle 165° ink-850→ink-900) and (2) the avatar initials
-fallback. No mesh gradients, no patterns, no blur except the topbar/glass chrome.
+**Backgrounds.** Flat surfaces. The permitted gradients: (1) the Royal hero band on the
+Workspace (130° royal + one live-orange radial glow), (2) the dark-mode canvas glow, (3)
+the splash's radial night gradient, (4) the AI signature. No mesh gradients, no patterns.
+The logo's oversized ghost/actual blocks may appear once as hero texture at low opacity.
 
-**Borders & radii.** Hairline `1px var(--border)` (#e5e7eb) on light; `--border-strong`
-for inputs/controls. On ink, borders are translucent white (`--sidebar-border`). Radii:
-inputs/controls `--radius-md` 10; cards/sheets `--radius-lg` 12; **all buttons, badges,
-pills and status chips are fully rounded** `--radius-pill`. Pill buttons + mono labels are
-the core button signature.
+**Borders & radii — große Formen.** Hairline `1px var(--border)` on light; `--border-strong`
+for inputs/controls. Radii stepped up in 2026: controls `--radius-md` 12; cards `--radius-xl`
+22; hero surfaces / rail / detail panel `--radius-2xl` 28; **all buttons, badges, pills,
+status chips and nav items are fully rounded** `--radius-pill`.
 
 **Cards.** White surface, `1px var(--border)`, `--radius-lg`, `--shadow-sm`. Optional
 header (display title + soft subtitle) divided by a hairline. The floating document/résumé
@@ -153,22 +186,27 @@ glass chips use `--sidebar-glass` + `backdrop-filter: blur(8px)`.
 `color-mix(paper 88%, transparent)` + `blur(10px)`; sidebar "glass" chips and the avatar
 ring. Working surfaces stay opaque.
 
-**Motion.** Quiet and functional. One easing — `--ease-out` cubic-bezier(0.16,1,0.3,1) —
-and two durations — `--dur-fast` 0.15s, `--dur-med` 0.25s. Used for hover background/border
-fades, switch/progress slides, and modal fade+pop-in (`scale(0.96)→1`). No bounces, no
-infinite/decorative loops, no parallax.
+**Motion — lebhaft, aber physisch.** Two curves: `--ease-out` (calm chrome — hovers,
+fades) and `--ease-spring` cubic-bezier(0.34,1.56,0.64,1) (gentle overshoot — entrance
+rises, KPI-tile lifts, tile-grid settles, the splash sting). Durations `--dur-fast` 0.14s /
+`--dur-med` 0.22s / `--dur-slow` 0.32s. Staggered entrance (`rise` + 60–70ms steps) on
+landing content, gated behind `prefers-reduced-motion`. The only infinite loops: the live
+dot pulse and the demo splash.
 
-**Hover states.** Buttons lift 1px (`translateY(-1px)`) + gain `--shadow-md`. List rows
-and nav items fade to a subtle background (`--surface-subtle` / `--sidebar-glass`). Links
-shift color/opacity. Nothing scales up.
+**Hover states.** Buttons lift 1px (`translateY(-1px)`) + gain `--shadow-md`; KPI tiles
+and talent tiles lift 2–3px with the spring. Vivid CTAs and active nav items carry a colored
+glow (`--shadow-accent` / `--shadow-live`). List rows fade to `--surface-subtle`. Nothing
+scales up.
 
 **Press / active & selection.** Selection is shown by an **accent-soft fill + a 3px accent
 left-bar** (candidate rows) or an accent underline (tabs). Inputs on focus draw an accent
 border + a `0 0 0 3px var(--accent-soft)` glow ring. Text selection is accent-on-white.
 
-**Imagery.** People only — candidate/user portraits, shown in `Avatar` (circle in chrome,
-rounded-square for document portraits) with an initials-on-ink fallback so a missing photo
-still reads as a person. No stock illustration, no 3D, no icons-as-illustration.
+**Imagery — people, prominently.** Candidate/user portraits are the imagery. `Avatar`
+(circle in chrome, rounded-square for document portraits) with a **People-palette initials
+fallback** (deterministic name→color) so a missing photo still reads as a person. The
+Talent-Pool leads with **Foto-Kacheln** (photo tiles); rows use `md` avatars, profiles `88px`.
+No stock illustration, no 3D, no icons-as-illustration.
 
 ---
 
@@ -184,10 +222,12 @@ actions/state and social. The full list is exported as `ICON_NAMES`.
 - **No emoji. No icon font / CDN.** No multicolor or filled icon sets. If you need a glyph
   that isn't in `PATHS`, add it on the same 24px / 1.8-stroke grid rather than importing
   another set.
-- The **logo** is a 3-bar ascending bar-chart mark in a rounded-square (`assets/logo/` —
-  `myjob-mark.svg` on ink, `myjob-mark-light.svg` on light), paired with the **myJob**
-  wordmark (Space Grotesk 700, the "my" in `--accent-on-dark`) over a mono "Application
-  Suite" kicker.
+- The **logo** is the **Now-Split mark** (`assets/logo/` — `icon.svg` royal tile,
+  `icon-light.svg`, `icon-mono.svg` currentColor, `mark-glyph.svg` untiled, `favicon.svg`,
+  `splash.svg`, plus `wordmark.svg`/`lockup-horizontal.svg` re-set to „myJob“): a solid
+  „actual“ block and a dashed „ghost“ block split by the live-orange playhead, shared 1:1
+  with myDevTime. Wordmark: **my** in ink/white + **Job** in `--live`, Clash Display 700,
+  over a mono „Vermittler-Workspace“ kicker. The old 3-bar mark is retired.
 
 ---
 
@@ -200,7 +240,7 @@ actions/state and social. The full list is exported as `ICON_NAMES`.
 - `foundations/` — specimen cards (Colors, Type, Spacing, Brand) shown on the Design
   System tab.
 
-**Components** (`components/`, namespace `window.MyJobDesignSystem_f3658e`)
+**Components** (`components/`, namespace `window.MyJobDesignSystem_5611b7`)
 - `app/` — `AppShell` (the one shared shell; `posture="rail"` desktop / `"tabs"` mobile).
 - `core/` — `Icon` (+ `ICON_NAMES`), `Button`, `IconButton`, `Avatar`, `EntityTile` (the
   one media primitive — circular for people, rounded-square for companies), and the **one
@@ -215,15 +255,27 @@ actions/state and social. The full list is exported as `ICON_NAMES`.
 - Each component: `<Name>.jsx` + `<Name>.d.ts` + `<Name>.prompt.md`; one `*.card.html`
   thumbnail per directory.
 
-**UI kits** (`ui_kits/`) — open through the served bundle, not `file://`
-- `recruiting/` — **myJob Workspace** (ATS). Dark nav rail + topbar, overview KPIs,
-  pipeline board, talent profile, résumé/cover-letter editor, Bewerbungsmappe modal.
-- `cv/` — **Interactive Résumé**. Fully self-contained single file (CSS, React, components
-  and photo embedded); EN/DE toggle, accent themes, PDF export. Defaults to the Signal
-  accent.
+**Screens** (`screens/`) — full-surface recreations of myJob Recruit, each a
+self-contained HTML file (CDN React + Babel + the compiled bundle) that renders on the
+Design System tab and seeds new designs as a Starting Point. Open through the served
+bundle, not `file://`.
+- `Workspace.html` — the Recruit landing: Royal hero with Jetzt-Chip, bunte KPI-Tiles,
+  „Braucht Aufmerksamkeit“, active applications, quick-access detail panel.
+- `Talent-Pool.html` — Foto-Kachel-Grid (People-Palette), Klick öffnet das volle Profil;
+  „Me“ as talent #1.
+- `Splash.html` — the animated Now-Split logo sting (loops for demo; runs once in-app).
+- `Matching.html` / `Matching-Ive.html` — find/create a Stelle and apply a candidate on
+  their behalf (two-tier skill overlap); the `-Ive` file is the visual-reduction pass.
+- `CV-Builder.html` — résumé editor inside a candidate profile.
+- `Bewerbung-vorbereiten.html` — cover letter + assemble the Bewerbungsmappe.
+- `Settings.html` — Darstellung (Hell „Vivid“ / Dunkel „Klassik“, echtes Umschalten), KI,
+  Agentic-Modus.
 
-**Assets** (`assets/`) — `logo/` (mark on ink + light), `img/` (candidate + résumé
-portraits).
+**Decisions** (`decisions/`) — the restructure/gap rationale docs (reference only, not
+cards).
+
+**Assets** (`assets/`) — `logo/` (the Now-Split family, wordmark re-set to „myJob“),
+`img/` (candidate + résumé portraits).
 
 **Other** — `SKILL.md` (Agent-Skills wrapper), this `readme.md`.
 

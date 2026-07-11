@@ -3,10 +3,10 @@
    (DSGVO anonymisation) still warrants a deliberate confirm — just not the
    browser's window.confirm, which breaks the designed world. role="dialog",
    focus lands on the confirm button, Escape / backdrop cancel. */
-const CD = window.MyJobDesignSystem_f3658e;
+const CD = window.MyJobDesignSystem_5611b7;
 const React = window.React;
 
-function ConfirmDialog({ title, message, confirmLabel = 'Confirm', cancelLabel = 'Cancel', danger = true, onConfirm, onCancel }) {
+function ConfirmDialog({ title, message, confirmLabel = 'Bestätigen', cancelLabel = 'Abbrechen', danger = true, onConfirm, onCancel }) {
   // Focus trap, Esc-to-cancel, focus-return (#203). Initial focus lands on
   // Cancel (the first control) — the safe default for a destructive prompt.
   const dialogRef = React.useRef(null);

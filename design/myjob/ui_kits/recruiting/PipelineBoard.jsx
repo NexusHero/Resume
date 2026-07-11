@@ -3,7 +3,7 @@
    via the applications PATCH), and a card can be removed. Built on the shared
    Kanban primitives (KanbanShared.jsx, #199) so it is interaction-identical to
    the mandate pipeline; the orchestrator (app.jsx) owns the move/delete. */
-const PB = window.MyJobDesignSystem_f3658e;
+const PB = window.MyJobDesignSystem_5611b7;
 
 /* The application-specific card body: company, role, candidate + match score.
    The drag/stage-select/remove/click-to-open anatomy is the shared KanbanCard. */

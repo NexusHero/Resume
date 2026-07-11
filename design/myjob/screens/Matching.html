@@ -1,9 +1,12 @@
+<!-- @dsCard group="myJob App" viewport="1280x800" name="Stellen + Matching" subtitle="Find/create a Stelle and apply a candidate on their behalf — two-tier skill overlap" -->
+<!-- @startingPoint section="myJob App" subtitle="Matching — position search + candidate skill-overlap scoring" viewport="1280x800" -->
 <!DOCTYPE html>
-<html lang="de" data-theme="blueprint">
+<html lang="de">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>myJob Recruit — Matching</title>
+<link rel="icon" href="../assets/logo/favicon.svg" />
 <link rel="stylesheet" href="../styles.css" />
 <style>
   html, body { margin: 0; height: 100%; background: var(--surface-app); }
@@ -37,6 +40,14 @@
   .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); background: var(--ink-900); color: #fff; font-family: var(--font-body); font-size: var(--fs-sm); padding: 12px 20px; border-radius: var(--radius-pill); box-shadow: var(--shadow-md); display: flex; align-items: center; gap: 8px; z-index: 60; animation: toastin var(--dur-med) var(--ease-out); }
   .toast b { color: var(--accent-on-dark); }
   @keyframes toastin { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+  /* card entrance stagger */
+  @media (prefers-reduced-motion: no-preference) {
+    .mstack > * { opacity: 0; transform: translateY(12px); animation: mrise .45s var(--ease-spring) forwards; }
+    .mstack > *:nth-child(1) { animation-delay: .03s; } .mstack > *:nth-child(2) { animation-delay: .09s; }
+    .mstack > *:nth-child(3) { animation-delay: .15s; } .mstack > *:nth-child(4) { animation-delay: .21s; }
+    .mstack > *:nth-child(n+5) { animation-delay: .27s; }
+    @keyframes mrise { to { opacity: 1; transform: translateY(0); } }
+  }
 </style>
 </head>
 <body>
@@ -46,7 +57,7 @@
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 <script src="../_ds_bundle.js"></script>
 <script type="text/babel">
-const DS = window.MyJobDesignSystem_f3658e;
+const DS = window.MyJobDesignSystem_5611b7 || window.DesignSystem_5611b7;
 const { AppShell, Avatar, Icon, MetaPill, StatusBadge, Input, Select, Button } = DS;
 
 /* These two are inlined so the screen renders independent of bundle-compile timing.
@@ -285,6 +296,7 @@ function PositionCard({
   salary,
   posted,
   skills = [],
+  reason,
   match,
   status,
   applyLabel,
@@ -365,6 +377,14 @@ function PositionCard({
         </div>
       )}
 
+      {/* KI-Begründung — why this hit ranks where it does */}
+      {reason && (
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '9px', padding: '11px 13px', borderRadius: 'var(--radius-md)', background: 'var(--accent-soft)', border: '1px solid var(--accent-border)' }}>
+          <span style={{ color: 'var(--accent-strong)', marginTop: '2px' }}><Sparkle size={13} /></span>
+          <span style={{ fontSize: 'var(--fs-xs)', lineHeight: 1.5, color: 'var(--text-body)' }}><b style={{ color: 'var(--accent-strong)', fontWeight: 'var(--fw-semibold)' }}>Warum: </b>{reason}</span>
+        </div>
+      )}
+
       {/* actions */}
       {(onView || onApply) && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '2px', paddingTop: '14px', borderTop: '1px solid var(--border)' }}>
@@ -392,7 +412,7 @@ function PositionCard({
 
 
 const RECRUIT_NAV = [
-  { id: 'overview', label: 'Overview', icon: 'home' },
+  { id: 'workspace', label: 'Workspace', icon: 'home' },
   { id: 'pool', label: 'Talent-Pool', icon: 'users' },
   { id: 'stellen', label: 'Stellen', icon: 'briefcase' },
   { id: 'matching', label: 'Matching', icon: 'search' },
@@ -405,13 +425,14 @@ const RECRUIT_NAV = [
 const SUHAY = {
   id: 'c1',
   name: 'Suhay Sevinc',
+  photo: '../assets/img/suhay-photo-sm.jpg',
   role: 'Full-Stack Developer',
   skills: ['React', 'TypeScript', 'Node.js', 'CSS Architecture', 'GraphQL'],
 };
 const CANDIDATES = [
   SUHAY,
   { id: 'c2', name: 'Lena Bauer', role: 'Senior Frontend Engineer', skills: ['React', 'TypeScript', 'CSS Architecture', 'Vue', 'Testing'] },
-  { id: 'c3', name: 'Milan Ebert', role: 'Frontend Engineer', skills: ['React', 'Redux', 'TypeScript', 'Testing'] },
+  { id: 'c3', name: 'Milan Ebert', role: 'Frontend Engineer', photo: '../assets/img/candidate-portrait-sm.jpg', skills: ['React', 'Redux', 'TypeScript', 'Testing'] },
   { id: 'c4', name: 'Nora Vogt', role: 'Full-Stack Developer', skills: ['Node.js', 'React', 'Kubernetes', 'GraphQL'] },
 ];
 
@@ -436,6 +457,26 @@ function matchScore(cand, job) {
 }
 function skillsFor(cand, job) {
   return job.req.map((name) => ({ name, met: cand.skills.includes(name) }));
+}
+
+function Sparkle({ size = 14 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true" style={{ display: 'block', flexShrink: 0 }}>
+      <path d="M12 2l1.6 5.1a5 5 0 0 0 3.3 3.3L22 12l-5.1 1.6a5 5 0 0 0-3.3 3.3L12 22l-1.6-5.1a5 5 0 0 0-3.3-3.3L2 12l5.1-1.6a5 5 0 0 0 3.3-3.3L12 2z"></path>
+    </svg>
+  );
+}
+
+/* deterministic Match-Begründung in Prosa — derived ONLY from the skill overlap */
+function reasonFor(cand, job) {
+  const met = job.req.filter((r) => cand.skills.includes(r));
+  const missing = job.req.filter((r) => !cand.skills.includes(r));
+  const first = cand.name.split(' ')[0];
+  const total = job.req.length;
+  if (missing.length === 0) return `${first} erfüllt alle ${total} Pflicht-Skills — ${met.join(', ')} sind Kern des Profils. Direkt vorschlagbar.`;
+  if (met.length / total >= 0.75) return `${met.length} von ${total} Pflicht-Skills erfüllt (${met.join(', ')}). Lücke: ${missing.join(', ')} — im Anschreiben adressieren.`;
+  if (met.length / total >= 0.5) return `Solide Basis mit ${met.join(', ')} — es fehlen ${missing.join(', ')}. Nur bei dünnem Markt vorschlagen.`;
+  return `Schwache Passung: ${met.length} von ${total} Anforderungen${met.length ? ` (${met.join(', ')})` : ''}. Eher nicht vorschlagen.`;
 }
 
 function ModeToggle({ mode, setMode, autoCount, manualCount }) {
@@ -514,7 +555,7 @@ function BasisPanel({ cand, jobs, applied }) {
     <div style={{ padding: '22px 20px' }}>
       <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-3xs)', letterSpacing: 'var(--ls-wide)', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '14px' }}>Matching-Basis · Kandidat</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '13px' }}>
-        <Avatar name={cand.name} size="lg" ring />
+        <Avatar name={cand.name} src={cand.photo} size="lg" ring />
         <div>
           <div style={{ fontFamily: 'var(--font-display)', fontWeight: 'var(--fw-bold)', fontSize: 'var(--fs-lg)', color: 'var(--text-heading)' }}>{cand.name}</div>
           <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-muted)' }}>{cand.role}</div>
@@ -581,7 +622,7 @@ function CandidatePicker({ job, applied, onApply }) {
           return (
             <div key={c.id} style={{ display: 'flex', flexDirection: 'column', gap: '9px', padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '11px' }}>
-                <Avatar name={c.name} size="sm" />
+                <Avatar name={c.name} src={c.photo} size="sm" />
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{ fontFamily: 'var(--font-display)', fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-sm)', color: 'var(--text-heading)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</div>
                   <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-soft)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.role}</div>
@@ -737,6 +778,7 @@ function MatchingScreen() {
         source={job.source} origin={job.origin} pensum={job.pensum} salary={job.salary} posted={job.posted}
         match={matchScore(selCand, job).pct}
         skills={skillsFor(selCand, job)}
+        reason={reasonFor(selCand, job)}
         status={done ? 'new' : undefined}
         applyLabel={done ? `✓ ${first} beworben` : `${first} bewerben`}
         onApply={done ? undefined : () => apply(selCand.id, job.id)}
@@ -775,7 +817,7 @@ function MatchingScreen() {
           <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-muted)', margin: '0 0 16px' }}>
             Stellen nach <b style={{ color: 'var(--text-heading)' }}>{selCand.name}s Skill-Profil</b> — bester Treffer zuerst. Ein Klick bewirbt {selCand.name.split(' ')[0]}.
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div className="mstack" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             {autoJobs.map((j) => renderAutoCard(j))}
           </div>
         </div>
@@ -798,7 +840,7 @@ function MatchingScreen() {
           <div style={{ marginBottom: '14px' }}>
             <button className="createbtn" onClick={() => setCreating(true)}><Icon name="plus" size={16} />Stelle manuell erstellen</button>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div className="mstack" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             {manualJobs.map((j) => renderManualCard(j))}
             {manualJobs.length === 0 && (
               <div className="emptybox">
@@ -824,7 +866,7 @@ function MatchingScreen() {
       <AppShell
         product="recruit" posture="rail"
         nav={RECRUIT_NAV} active="matching" onNav={() => {}}
-        account={{ name: 'Suhay Sevinc', meta: 'Me · +3 Talente' }}
+        account={{ name: 'Suhay Sevinc', meta: 'Me · +3 Talente', src: '../assets/img/suhay-photo-sm.jpg' }}
         title="Matching"
         subtitle={mode === 'auto'
           ? `Vom Kandidaten aus · ${selCand.name}`

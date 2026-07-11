@@ -1,9 +1,11 @@
+<!-- @dsCard group="myJob App" viewport="1280x800" name="CV-Builder" subtitle="Résumé editor inside a candidate profile — live document sheet" -->
 <!DOCTYPE html>
-<html lang="de" data-theme="blueprint">
+<html lang="de">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>myJob Recruit — CV-Builder</title>
+<link rel="icon" href="../assets/logo/favicon.svg" />
 <link rel="stylesheet" href="../styles.css" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -25,7 +27,8 @@
   .cv-side { background: var(--cv-side-bg, #1e293b); color: var(--cv-side-text, #e8edf5); padding: calc(1.6em) calc(1.3em); }
   .cv-main { padding: calc(1.7em) calc(1.6em); background: #fff; }
 
-  .cv-photo { width: 5.4em; height: 5.4em; border-radius: 999px; background: rgba(255,255,255,.12); display: grid; place-items: center; font-weight: 700; font-size: 1.6em; color: #fff; margin-bottom: 1em; border: 2px solid rgba(255,255,255,.25); }
+  .cv-photo { width: 5.4em; height: 5.4em; border-radius: .55em; background: rgba(255,255,255,.12); display: grid; place-items: center; font-weight: 700; font-size: 1.6em; color: #fff; margin-bottom: 1em; border: 2px solid rgba(255,255,255,.25); overflow: hidden; }
+  .cv-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .cv-side h1 { font-size: 1.5em; margin: 0; line-height: 1.1; color: #fff; }
   .cv-side .role { font-size: .82em; opacity: .8; margin-top: .25em; }
   .cv-sec-lab { font-size: .62em; letter-spacing: .14em; text-transform: uppercase; opacity: .6; margin: 1.6em 0 .6em; font-weight: 600; }
@@ -83,13 +86,13 @@
 <script src="../_ds_bundle.js"></script>
 <script src="../data/talent-pool.js"></script>
 <script type="text/babel">
-const DS = window.MyJobDesignSystem_f3658e;
+const DS = window.MyJobDesignSystem_5611b7 || window.DesignSystem_5611b7;
 const { AppShell, Icon, Button } = DS;
 const T = window.MyJobTalents;
 const ME = T.me;
 
 const RECRUIT_NAV = [
-  { id: 'overview', label: 'Overview', icon: 'home' },
+  { id: 'workspace', label: 'Workspace', icon: 'home' },
   { id: 'pool', label: 'Talent-Pool', icon: 'users' },
   { id: 'stellen', label: 'Stellen', icon: 'briefcase' },
   { id: 'matching', label: 'Matching', icon: 'search' },
@@ -153,7 +156,7 @@ function CvDocument({ cfg }) {
   return (
     <div className={'cv-page' + (cfg.density === 'compact' ? ' compact' : '')} style={style}>
       <aside className="cv-side">
-        <div className="cv-photo">{initials}</div>
+        <div className="cv-photo">{c.photo ? <img src={c.photo} alt={c.name} /> : initials}</div>
         <h1>{c.name}</h1>
         <div className="role">{c.role}</div>
 
@@ -210,6 +213,15 @@ function CvDocument({ cfg }) {
             <span className="per">{e.period}</span>
             <div className="jt">{e.title}</div>
             <div className="co">{e.school} · Note {e.grade}</div>
+          </div>
+        ))}
+
+        <div className="cv-m-lab">Zertifizierungen &amp; Weiterbildung</div>
+        {(c.certs || []).map((ct, i) => (
+          <div className="cv-job" key={i}>
+            <span className="per">{ct.year}</span>
+            <div className="jt">{ct.title}</div>
+            {ct.progress && <div className="co">{ct.progress}</div>}
           </div>
         ))}
       </main>
@@ -289,7 +301,7 @@ function Builder() {
     <AppShell
       product="recruit" posture="rail"
       nav={RECRUIT_NAV} active="pool" onNav={() => {}}
-      account={{ name: 'Suhay Sevinc', meta: 'Me · +3 Talente' }}
+      account={{ name: 'Suhay Sevinc', meta: 'Me · +3 Talente', src: '../assets/img/suhay-photo-sm.jpg' }}
       title="CV-Builder"
       subtitle={`${ME.name} · Lebenslauf`}
       actions={<Button size="sm" iconLeft={<Icon name="download" size={14} />}>Als PDF</Button>}

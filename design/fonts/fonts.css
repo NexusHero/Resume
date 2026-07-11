@@ -1,8 +1,32 @@
 /* Self-hosted webfonts (variable, latin + latin-ext subsets) — replaces the
    runtime Google-Fonts import: no third-party request leaves the user's
-   browser (DSGVO), and the app keeps its typography offline. Same families
-   the design system always used: Inter, Space Grotesk and JetBrains Mono
-   (all SIL OFL licensed). */
+   browser (DSGVO), and the app keeps its typography offline.
+   Clash Display (ITF Free Font License — free for commercial use) is the
+   brand display face since the 2026 redesign; Inter, Space Grotesk and
+   JetBrains Mono (SIL OFL) serve body/mono + legacy fidelity. */
+
+/* Clash Display — brand display face (titles, hero numbers, wordmark) */
+@font-face {
+  font-family: 'Clash Display';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('./ClashDisplay-Medium.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Clash Display';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('./ClashDisplay-Semibold.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Clash Display';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./ClashDisplay-Bold.woff2') format('woff2');
+}
 
 /* Space Grotesk — latin-ext */
 @font-face {

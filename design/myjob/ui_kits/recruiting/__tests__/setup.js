@@ -5,7 +5,7 @@
      1. window.React / window.ReactDOM — the kit references the global `React`
         (classic JSX: `React.createElement`, `React.useState`).
      2. jest-dom matchers (toBeInTheDocument, …) on Vitest's expect.
-     3. A stub for the design-system bundle (window.MyJobDesignSystem_f3658e),
+     3. A stub for the design-system bundle (window.MyJobDesignSystem_5611b7),
         so a component test does not have to load the whole _ds_bundle.js.
 
    A kit module publishes its symbols with `Object.assign(window, { … })` and
@@ -31,7 +31,7 @@ if (typeof globalThis.ResizeObserver === 'undefined') {
 }
 
 /* Design-system stub. Every kit file starts with
-   `const XX = window.MyJobDesignSystem_f3658e;` and then renders `XX.Something`.
+   `const XX = window.MyJobDesignSystem_5611b7;` and then renders `XX.Something`.
    Rather than list every primitive, the stub is a Proxy: any accessed member is
    a passthrough component that renders a host element, forwards its event
    handlers and children, and tags itself with `data-ds="<Name>"` so tests can
@@ -80,7 +80,7 @@ function makeDesignSystemProxy(overrides = {}) {
     stub cannot fake (e.g. `const cx = DS.cx` used to build a className). */
 globalThis.installDesignSystem = function installDesignSystem(overrides = {}) {
   const ds = makeDesignSystemProxy(overrides);
-  window.MyJobDesignSystem_f3658e = ds;
+  window.MyJobDesignSystem_5611b7 = ds;
   return ds;
 };
 

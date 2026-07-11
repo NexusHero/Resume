@@ -1,10 +1,11 @@
 /* ============================================================
    COLORS — base palette + semantic aliases
-   myJob design system. Two structural worlds:
-     • INK   — the dark app shell / sidebar / structural dark
-     • PAPER — the light working surfaces (lists, cards, sheets)
-   Three accents (Blueprint / Signal / Graphite) swap via themes.css.
-   The product default accent is BLUEPRINT (trust, calm, institutional).
+   myJob design system · 2026 „Vivid“ redesign. Two structural worlds:
+     • PAPER — the light working surfaces (default, lebhaft & modern)
+     • INK   — the conserved dark mode (the classic shell, orange accent)
+   Accents swap via themes.css. The product default accent is ROYAL
+   (Königsblau #3654E0 — the logo tile), paired with the theme-independent
+   LIVE orange #FF5320 (the logo playhead) for everything happening JETZT.
    ============================================================ */
 :root {
   /* ---- Ink scale (the dark app shell / sidebar / structural dark) ---- */
@@ -30,7 +31,49 @@
   --neutral-900: #0f172a;
   --neutral-950: #0a0a0a;
 
-  /* ---- Accent: BLUEPRINT (product default) — steel blue ---- */
+  /* ---- Accent: ROYAL — Königsblau, THE DEFAULT since the 2026 redesign.
+     The logo tile color. Trust + structure; big vivid shapes wear this. ---- */
+  --royal-500: #3654e0;
+  --royal-600: #2941b8;
+  --royal-700: #1f3391;
+  --royal-on-dark: #90a0ff;
+  --royal-soft: #ebedfb;
+  --royal-border: #c7d2ff;
+
+  /* ---- LIVE / NOW — the one theme-independent hot color (the logo
+     playhead). Everything happening RIGHT NOW — heute anstehende
+     Interviews, laufende Gespräche, „neu seit gestern“, the notification
+     dot, the splash sting — is ALWAYS this vivid orange, in every theme.
+     Royal blue carries trust; live orange carries „jetzt“. ---- */
+  --live: #ff5320;
+  --live-strong: #e33e0f;
+  --live-on-dark: #ff7a52;
+  --live-soft: #ffede6;
+  --live-border: #ffc9b5;
+  --live-contrast: #ffffff;
+
+  /* ---- PEOPLE palette — recruiting is people. 8 vivid categorical
+     colors for avatar tiles, skill tags and calendar chips; deterministic
+     name→color. The ONLY other saturated colors on screen — never used
+     for chrome, never for status. White text passes on every base. ---- */
+  --people-1: #0d9488;   --people-1-soft: #e6f5f3;
+  --people-2: #7c3aed;   --people-2-soft: #f1eafd;
+  --people-3: #db2777;   --people-3-soft: #fbe9f2;
+  --people-4: #2563eb;   --people-4-soft: #e9f0fd;
+  --people-5: #ea580c;   --people-5-soft: #fdeee4;
+  --people-6: #65a30d;   --people-6-soft: #eff5e2;
+  --people-7: #0891b2;   --people-7-soft: #e4f4f8;
+  --people-8: #9333ea;   --people-8-soft: #f4eafd;
+
+  /* ---- AI SIGNATURE — theme-independent. Everything the Matching-KI /
+     Assistent produces wears the blue→orange gradient (Plan trifft Jetzt):
+     ✦ chips, hairline borders on KI-Callouts. Deterministic UI never
+     wears it — it is the „KI schlägt vor, du entscheidest“ marker. ---- */
+  --ai-grad: linear-gradient(120deg, #3654e0 0%, #7a44d8 55%, #ff5320 100%); /* @kind color */
+  --ai-soft: rgba(84, 74, 224, 0.07);
+  --ai-ink: #4a3fd6;
+
+  /* ---- Accent: BLUEPRINT (legacy default bis 2026) — steel blue ---- */
   --blueprint-500: #2563eb;
   --blueprint-600: #1d4ed8;
   --blueprint-on-dark: #60a5fa;
@@ -145,8 +188,8 @@
   --text-soft:    #616f86;
 
   /* Surfaces */
-  --surface-page:   #e2e8f0;   /* deepest app background, behind sheets */
-  --surface-app:    #f1f5f9;   /* the working canvas of the app */
+  --surface-page:   #e4e7f2;   /* deepest app background, behind sheets — cool blue-tinted */
+  --surface-app:    #f2f4fa;   /* the working canvas of the app */
   --surface-card:   var(--paper);
   --surface-subtle: var(--paper-subtle);
   --surface-sunk:   var(--paper-sunk);
@@ -159,7 +202,7 @@
   --border:        var(--neutral-200);
   --border-strong: var(--neutral-300);
 
-  /* Sidebar / dark app shell */
+  /* Sidebar / dark app shell (legacy names — dark-mode rail + old screens) */
   --sidebar-bg-top:    var(--ink-850);
   --sidebar-bg-bottom: var(--ink-900);
   --sidebar-text:       #f1f5f9;
@@ -170,11 +213,23 @@
   --sidebar-glass:      rgba(255, 255, 255, 0.06);
   --sidebar-glass-strong: rgba(255, 255, 255, 0.12);
 
-  /* Accent — defaults to BLUEPRINT; themes.css remaps to signal/graphite */
-  --accent:          var(--blueprint-500);
-  --accent-strong:   var(--blueprint-600);
-  --accent-on-dark:  var(--blueprint-on-dark);
+  /* ---- NAV RAIL — the app shell chrome. LIGHT mode = modern floating
+     white rail (the dark ink shell was retired as the default in the 2026
+     redesign); DARK mode flips these to the conserved ink look in
+     modes.css. AppShell reads ONLY --rail-*. ---- */
+  --rail-bg:            #ffffff;
+  --rail-border:        var(--neutral-200);
+  --rail-text:          var(--neutral-900);
+  --rail-muted:         var(--neutral-600);
+  --rail-soft:          #74809a;
+  --rail-glass:         var(--neutral-100);
+  --rail-glass-strong:  var(--neutral-200);
+
+  /* Accent — defaults to ROYAL (Königsblau); themes.css remaps */
+  --accent:          var(--royal-500);
+  --accent-strong:   var(--royal-600);
+  --accent-on-dark:  var(--royal-on-dark);
   --accent-contrast: #ffffff;     /* text/icon on a filled accent */
-  --accent-soft:     var(--blueprint-soft);
-  --accent-border:   var(--blueprint-border);
+  --accent-soft:     var(--royal-soft);
+  --accent-border:   var(--royal-border);
 }

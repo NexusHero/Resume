@@ -22,8 +22,8 @@ function Select({ label, options = [], value, onChange, ...rest }) {
   return (
     <select aria-label={rest['aria-label'] || label} value={value} onChange={onChange}>
       {options.map((o) => (
-        <option key={o} value={o}>
-          {o}
+        <option key={o.value || o} value={o.value || o}>
+          {o.label || o}
         </option>
       ))}
     </select>
@@ -72,7 +72,7 @@ describe('RecordFormModal — delete', () => {
       />,
     );
 
-    await userEvent.click(screen.getByText('Delete'));
+    await userEvent.click(screen.getByText('Löschen'));
 
     expect(confirmSpy).not.toHaveBeenCalled(); // no system dialog
     expect(onDelete).toHaveBeenCalledTimes(1);
@@ -82,7 +82,7 @@ describe('RecordFormModal — delete', () => {
 
   it('CreatePlacement_NoDelete_HidesDeleteButton', () => {
     render(<RecordFormModal kind="placement" onSubmit={vi.fn()} onClose={vi.fn()} />);
-    expect(screen.queryByText('Delete')).not.toBeInTheDocument();
+    expect(screen.queryByText('Löschen')).not.toBeInTheDocument();
   });
 });
 
@@ -98,10 +98,10 @@ describe('RecordFormModal — fee validation', () => {
       />,
     );
 
-    await userEvent.click(screen.getByText('Save changes'));
+    await userEvent.click(screen.getByText('Änderungen speichern'));
 
     expect(onSubmit).not.toHaveBeenCalled();
-    expect(screen.getByRole('alert')).toHaveTextContent('Enter a valid amount for: Fee');
+    expect(screen.getByRole('alert')).toHaveTextContent('Bitte einen gültigen Betrag eingeben für: Honorar');
   });
 
   it('Placement_ValidFee_Submits', async () => {
@@ -110,7 +110,7 @@ describe('RecordFormModal — fee validation', () => {
       <RecordFormModal kind="placement" record={placement} onSubmit={onSubmit} onClose={vi.fn()} />,
     );
 
-    await userEvent.click(screen.getByText('Save changes'));
+    await userEvent.click(screen.getByText('Änderungen speichern'));
 
     expect(onSubmit).toHaveBeenCalledTimes(1);
     expect(onSubmit.mock.calls[0][0].fee).toBe('19.000 €');

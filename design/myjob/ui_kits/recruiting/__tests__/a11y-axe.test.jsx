@@ -23,7 +23,7 @@ function report(violations) {
 }
 
 beforeAll(async () => {
-  await import('../../../_ds_bundle.js'); // real window.MyJobDesignSystem_f3658e
+  await import('../../../_ds_bundle.js'); // real window.MyJobDesignSystem_5611b7
   await import('../data.js');
   await import('../use-viewport.jsx');
   await import('../use-dialog.jsx');

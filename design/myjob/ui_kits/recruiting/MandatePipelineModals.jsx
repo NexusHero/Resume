@@ -4,17 +4,17 @@
    local UI state) and talks to the parent through a small callback surface
    (onClose, onAdded, onOpenTalent). Loaded before MandatePipeline.jsx by
    main.jsx and published on window, following the kit's module convention. */
-const MPM = window.MyJobDesignSystem_f3658e;
+const MPM = window.MyJobDesignSystem_5611b7;
 
 const MP_FORMATS = [
-  { id: 'coding', label: 'Coding challenge' },
-  { id: 'system_design', label: 'System design' },
-  { id: 'case', label: 'Case interview' },
-  { id: 'fachgespraech', label: 'Technical interview' },
-  { id: 'assessment_center', label: 'Assessment center' },
-  { id: 'behavioral', label: 'Behavioral questions' },
-  { id: 'take_home', label: 'Take-home assignment' },
-  { id: 'presentation', label: 'Technical presentation' },
+  { id: 'coding', label: 'Coding-Challenge' },
+  { id: 'system_design', label: 'System-Design' },
+  { id: 'case', label: 'Case-Interview' },
+  { id: 'fachgespraech', label: 'Fachgespräch' },
+  { id: 'assessment_center', label: 'Assessment-Center' },
+  { id: 'behavioral', label: 'Verhaltensfragen' },
+  { id: 'take_home', label: 'Take-Home-Aufgabe' },
+  { id: 'presentation', label: 'Fachpräsentation' },
 ];
 
 /* Shared modal chrome: the dimmed backdrop + centered card. Every modal here
@@ -64,7 +64,7 @@ function AddCandidateModal({ mandate, excludeTalentIds, onClose, onAdded }) {
       } catch {
         if (live) setPool([]);
         // eslint-disable-next-line no-alert
-        window.alert('Could not load the talent pool. Please try again.');
+        window.alert('Konnte den Talent-Pool nicht laden. Bitte erneut versuchen.');
       }
     })();
     return () => { live = false; };
@@ -83,10 +83,10 @@ function AddCandidateModal({ mandate, excludeTalentIds, onClose, onAdded }) {
 
   return (
     <ModalOverlay onClose={onClose} zIndex={60} width="min(520px, 92vw)" backdrop="rgba(8,11,18,0.45)">
-      <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)', marginBottom: '4px' }}>Add a candidate</div>
-      <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginBottom: '14px' }}>Pick a talent from the pool to add to this mandate's pipeline.</div>
+      <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)', marginBottom: '4px' }}>Kandidat:in hinzufügen</div>
+      <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginBottom: '14px' }}>Wähle ein Talent aus dem Pool für die Pipeline dieses Mandats.</div>
       {addable.length === 0 && (
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-soft)', padding: '8px 0' }}>Everyone in the pool is already in this pipeline.</div>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-soft)', padding: '8px 0' }}>Alle im Pool sind bereits in dieser Pipeline.</div>
       )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {addable.map((t) => (
@@ -98,7 +98,7 @@ function AddCandidateModal({ mandate, excludeTalentIds, onClose, onAdded }) {
         ))}
       </div>
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
-        <MPM.Button variant="ghost" onClick={onClose}>Close</MPM.Button>
+        <MPM.Button variant="ghost" onClick={onClose}>Schließen</MPM.Button>
       </div>
     </ModalOverlay>
   );
@@ -109,7 +109,7 @@ function InterviewKitModal({ interview, mandateRole, onClose }) {
   return (
     <ModalOverlay onClose={onClose} zIndex={70} width="min(640px, 94vw)" maxHeight="86vh" flexColumn>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '4px' }}>
-        <span style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)' }}>Interview kit</span>
+        <span style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)' }}>Interview-Kit</span>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-soft)' }}>{interview.name} · {mandateRole}</span>
         {interview.data && (
           <span style={{ marginLeft: 'auto' }}><window.ProviderBadge provider={interview.data.provider} usage={interview.data.usage} /></span>
@@ -117,14 +117,14 @@ function InterviewKitModal({ interview, mandateRole, onClose }) {
       </div>
 
       {interview.loading ? (
-        <div style={{ padding: '28px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Building the guide…</div>
+        <div style={{ padding: '28px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Erstelle den Leitfaden…</div>
       ) : !interview.data ? (
-        <div style={{ padding: '22px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Could not load the interview kit.</div>
+        <div style={{ padding: '22px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Konnte das Interview-Kit nicht laden.</div>
       ) : (
         <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '10px' }}>
           {interview.data.focus && (
             <div style={{ fontSize: '12.5px', color: 'var(--text-heading)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '10px 12px' }}>
-              <strong>Focus:</strong> {interview.data.focus}
+              <strong>Fokus:</strong> {interview.data.focus}
             </div>
           )}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -152,7 +152,7 @@ function InterviewKitModal({ interview, mandateRole, onClose }) {
       )}
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
-        <MPM.Button variant="ghost" onClick={onClose}>Close</MPM.Button>
+        <MPM.Button variant="ghost" onClick={onClose}>Schließen</MPM.Button>
       </div>
     </ModalOverlay>
   );
@@ -193,7 +193,7 @@ function CandidatePrepModal({ prep, mandateRole, onClose }) {
             <PrepSection title="Obligations (from the ad)" items={prep.data.obligations} tone="var(--danger)" />
           )}
           {prep.data.processHints.length > 0 && (
-            <PrepSection title="Process notes" items={prep.data.processHints} />
+            <PrepSection title="Prozess-Notizen" items={prep.data.processHints} />
           )}
 
           {prep.data.requirementChecks.length > 0 && (
@@ -244,12 +244,12 @@ function CandidatePrepModal({ prep, mandateRole, onClose }) {
             </div>
           </div>
 
-          <PrepSection title="Questions you should ask" items={prep.data.candidateQuestions} />
+          <PrepSection title="Fragen, die du stellen solltest" items={prep.data.candidateQuestions} />
         </div>
       )}
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
-        <MPM.Button variant="ghost" onClick={onClose}>Close</MPM.Button>
+        <MPM.Button variant="ghost" onClick={onClose}>Schließen</MPM.Button>
       </div>
     </ModalOverlay>
   );
@@ -277,7 +277,7 @@ function FindMatchesModal({ mandate, onClose, onOpenTalent, onAdded }) {
       setAgg(await window.RecruitApi.aggCheck(matchQuery));
       setAggRewrite(null);
     } catch {
-      setAgg({ findings: [], riskLevel: 'none', hasGenderMarker: false, summary: 'Check failed.' });
+      setAgg({ findings: [], riskLevel: 'none', hasGenderMarker: false, summary: 'Prüfung fehlgeschlagen.' });
     } finally {
       setAggLoading(false);
     }
@@ -321,7 +321,7 @@ function FindMatchesModal({ mandate, onClose, onOpenTalent, onAdded }) {
     } catch {
       setExplains((e) => ({
         ...e,
-        [talentId]: { loading: false, open: true, data: { summary: 'Could not load an explanation.', reasons: [] } },
+        [talentId]: { loading: false, open: true, data: { summary: 'Konnte keine Erklärung laden.', reasons: [] } },
       }));
     }
   };
@@ -358,17 +358,17 @@ function FindMatchesModal({ mandate, onClose, onOpenTalent, onAdded }) {
         <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginBottom: '14px' }}>Rank the talent pool for <strong>{mandate.role}</strong>. Leave the ad empty to match on the mandate itself, or paste a job ad to sharpen the ranking.</div>
         <MPM.Textarea
           rows={4}
-          placeholder={`Optional: paste the job ad for “${mandate.role}” to rank against its requirements…`}
+          placeholder={`Optional: Stellenanzeige für „${mandate.role}“ einfügen, um gegen ihre Anforderungen zu ranken…`}
           value={matchQuery}
           onChange={(e) => setMatchQuery(e.target.value)}
-          aria-label="Job ad text"
+          aria-label="Stellenanzeigen-Text"
         />
         <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '12px' }}>
           <MPM.Button variant="outline" size="sm" iconLeft={<MPM.Icon name="alert" size={15} />} disabled={aggLoading} onClick={runAgg}>
             {aggLoading ? 'Checking…' : 'AGG check'}
           </MPM.Button>
           <MPM.Button variant="primary" size="sm" iconLeft={<MPM.Icon name="zap" size={15} />} disabled={matchLoading} onClick={runMatch}>
-            {matchLoading ? 'Ranking…' : matches === null ? 'Rank pool' : 'Re-rank'}
+            {matchLoading ? 'Ranke…' : matches === null ? 'Pool ranken' : 'Neu ranken'}
           </MPM.Button>
         </div>
 
@@ -395,7 +395,7 @@ function FindMatchesModal({ mandate, onClose, onOpenTalent, onAdded }) {
               {agg.findings.length > 0 && (
                 <div style={{ marginTop: '10px' }}>
                   <MPM.Button variant="outline" size="sm" iconLeft={<MPM.Icon name="zap" size={14} />} disabled={aggRewriteLoading} onClick={runAggRewrite}>
-                    {aggRewriteLoading ? 'Rewriting…' : 'Suggest neutral draft'}
+                    {aggRewriteLoading ? 'Formuliere um…' : 'Neutralen Entwurf vorschlagen'}
                   </MPM.Button>
                 </div>
               )}
@@ -408,7 +408,7 @@ function FindMatchesModal({ mandate, onClose, onOpenTalent, onAdded }) {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '8px' }}>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--accent-strong)' }}>Neutral draft</span>
               {aggRewrite.changed && (
-                <MPM.Button variant="primary" size="sm" onClick={applyAggRewrite}>Use this text</MPM.Button>
+                <MPM.Button variant="primary" size="sm" onClick={applyAggRewrite}>Diesen Text verwenden</MPM.Button>
               )}
             </div>
             {aggRewrite.changed ? (
@@ -498,7 +498,7 @@ function FindMatchesModal({ mandate, onClose, onOpenTalent, onAdded }) {
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
-          <MPM.Button variant="ghost" onClick={onClose}>Close</MPM.Button>
+          <MPM.Button variant="ghost" onClick={onClose}>Schließen</MPM.Button>
         </div>
       </ModalOverlay>
 
@@ -606,7 +606,7 @@ function CompanyKnowledgeModal({ mandate, onClose }) {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
-        <MPM.Button variant="ghost" onClick={onClose}>Close</MPM.Button>
+        <MPM.Button variant="ghost" onClick={onClose}>Schließen</MPM.Button>
       </div>
     </ModalOverlay>
   );

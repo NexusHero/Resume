@@ -1,7 +1,7 @@
 The base surface container — white sheet, hairline border, soft shadow.
 
 ```jsx
-<Card title="Aktive Mandate" subtitle="6 offen" action={<Button size="sm" variant="outline">Alle</Button>}>
+<Card title="Aktive Mandate" subtitle in="6 offen" action={<Button size="sm" variant="outline">Alle</Button>}>
   …
 </Card>
 

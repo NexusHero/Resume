@@ -1,6 +1,6 @@
 /* MappeModal — assemble a Bewerbungsmappe: recipient + Lebenslauf + Anhänge + Anschreiben.
    This is the flow the old "3 Kacheln" should have been. */
-const MM = window.MyJobDesignSystem_f3658e;
+const MM = window.MyJobDesignSystem_5611b7;
 
 function MappeModal({ talent, onClose }) {
   const { isMobile } = window.useViewport ? window.useViewport() : { isMobile: false };
@@ -42,7 +42,7 @@ function MappeModal({ talent, onClose }) {
       setPicked((s) => new Set(s).add(att.id));
     } catch {
       // eslint-disable-next-line no-alert
-      window.alert(`Could not upload "${file.name}". Please try again.`);
+      window.alert(`„${file.name}“ konnte nicht hochgeladen werden. Bitte erneut versuchen.`);
     }
     setBusy(false);
   };
@@ -61,38 +61,38 @@ function MappeModal({ talent, onClose }) {
   return (
     <>
       <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(8,11,18,0.45)', backdropFilter: 'blur(2px)', zIndex: 50, animation: 'fadeIn .2s ease' }} />
-      <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Assemble application dossier" style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 51, width: 'min(880px, 94vw)', maxHeight: '90vh', display: 'flex', flexDirection: 'column', background: 'var(--surface-card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-lg)', overflow: 'hidden', animation: 'popIn .24s cubic-bezier(0.16,1,0.3,1)' }}>
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Bewerbungsmappe zusammenstellen" style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 51, width: 'min(880px, 94vw)', maxHeight: '90vh', display: 'flex', flexDirection: 'column', background: 'var(--surface-card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-lg)', overflow: 'hidden', animation: 'popIn .24s cubic-bezier(0.16,1,0.3,1)' }}>
         {/* header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '13px', padding: '18px 22px', borderBottom: '1px solid var(--border)' }}>
           <span style={{ width: '38px', height: '38px', borderRadius: 'var(--radius-md)', background: 'var(--accent)', color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><MM.Icon name="send" size={18} /></span>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)' }}>Create application dossier</div>
-            <div style={{ fontSize: '12.5px', color: 'var(--text-soft)' }}>for {talent.name}</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)' }}>Bewerbungsmappe erstellen</div>
+            <div style={{ fontSize: '12.5px', color: 'var(--text-soft)' }}>für {talent.name}</div>
           </div>
-          <MM.IconButton icon="x" label="Close" variant="ghost" onClick={onClose} />
+          <MM.IconButton icon="x" label="Schließen" variant="ghost" onClick={onClose} />
         </div>
 
         {/* body */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '20px 22px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '20px', alignItems: 'start' }}>
           {/* left: recipient */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '13px' }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Recipient</div>
-            <MM.Input label="Company" icon="building" value={rcpt.company} onChange={(e) => setR('company', e.target.value)} placeholder="Aurora Systems GmbH" />
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Empfänger</div>
+            <MM.Input label="Firma" icon="building" value={rcpt.company} onChange={(e) => setR('company', e.target.value)} placeholder="Aurora Systems GmbH" />
             <MM.Input label="Position" icon="briefcase" value={rcpt.subject} onChange={(e) => setR('subject', e.target.value)} placeholder="Senior C++ Engineer" />
-            <MM.Input label="Contact person" icon="user" value={rcpt.contact} onChange={(e) => setR('contact', e.target.value)} placeholder="HR department" />
-            <MM.Input label="ZIP & city" icon="pin" value={rcpt.plzOrt} onChange={(e) => setR('plzOrt', e.target.value)} placeholder="10115 Berlin" />
+            <MM.Input label="Ansprechpartner" icon="user" value={rcpt.contact} onChange={(e) => setR('contact', e.target.value)} placeholder="Personalabteilung" />
+            <MM.Input label="PLZ & Ort" icon="pin" value={rcpt.plzOrt} onChange={(e) => setR('plzOrt', e.target.value)} placeholder="10115 Berlin" />
           </div>
 
           {/* right: contents */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '13px' }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Dossier contents</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Inhalt der Mappe</div>
 
             {/* CV — always included */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '11px', padding: '11px 13px', border: '1px solid var(--accent-border)', borderRadius: 'var(--radius-md)', background: 'var(--accent-soft)' }}>
               <MM.Icon name="fileText" size={17} style={{ color: 'var(--accent-strong)' }} />
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-heading)' }}>Resume</div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--accent-strong)' }}>always included</div>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-heading)' }}>Lebenslauf</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--accent-strong)' }}>immer dabei</div>
               </div>
               <MM.Icon name="check" size={16} strokeWidth={2.6} style={{ color: 'var(--accent-strong)' }} />
             </div>
@@ -101,24 +101,24 @@ function MappeModal({ talent, onClose }) {
             <label style={{ display: 'flex', alignItems: 'center', gap: '11px', padding: '11px 13px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', cursor: 'pointer' }}>
               <MM.Icon name="edit" size={17} style={{ color: 'var(--text-muted)' }} />
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-heading)' }}>Cover letter</div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-soft)' }}>tailored to the role</div>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-heading)' }}>Anschreiben</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-soft)' }}>auf die Stelle zugeschnitten</div>
               </div>
               <MM.Switch checked={letter} onChange={setLetter} />
             </label>
 
             {/* attachments to link */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '2px' }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Attachments</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Anhänge</span>
               {canPersist && (
                 <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: busy ? 'wait' : 'pointer', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--accent-strong)' }}>
-                  <MM.Icon name="plus" size={13} /> {busy ? 'Uploading…' : 'Upload PDF'}
+                  <MM.Icon name="plus" size={13} /> {busy ? 'Wird hochgeladen…' : 'PDF hochladen'}
                   <input type="file" accept="application/pdf" onChange={onUpload} disabled={busy} style={{ display: 'none' }} />
                 </label>
               )}
             </div>
             {attachments.length === 0 && (
-              <div style={{ fontSize: '12px', color: 'var(--text-soft)' }}>No attachments yet.</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-soft)' }}>Noch keine Anhänge.</div>
             )}
             {attachments.map((a) => {
               const on = picked.has(a.id);
@@ -138,10 +138,10 @@ function MappeModal({ talent, onClose }) {
 
         {/* footer */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 22px', borderTop: '1px solid var(--border)', background: 'var(--surface-subtle)' }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)' }}>{count} documents · 1 PDF</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)' }}>{count} Dokumente · 1 PDF</span>
           <div style={{ display: 'flex', gap: '10px' }}>
-            <MM.Button variant="ghost" onClick={onClose}>Cancel</MM.Button>
-            <MM.Button variant="primary" iconRight={<MM.Icon name="arrowRight" size={15} />} onClick={createDossier}>Create dossier</MM.Button>
+            <MM.Button variant="ghost" onClick={onClose}>Abbrechen</MM.Button>
+            <MM.Button variant="primary" iconRight={<MM.Icon name="arrowRight" size={15} />} onClick={createDossier}>Mappe erstellen</MM.Button>
           </div>
         </div>
       </div>

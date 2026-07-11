@@ -22,7 +22,7 @@ describe('LoadingState', () => {
   it('Loading_NoLabel_RendersDefaultStatus', () => {
     render(<LoadingState />);
     const status = screen.getByRole('status');
-    expect(status).toHaveTextContent('Loading…');
+    expect(status).toHaveTextContent('Lädt…');
   });
 
   it('Loading_CustomLabel_RendersIt', () => {
@@ -34,19 +34,19 @@ describe('LoadingState', () => {
 describe('ErrorState', () => {
   it('Error_NoMessage_RendersDefaultAlert', () => {
     render(<ErrorState />);
-    expect(screen.getByRole('alert')).toHaveTextContent("We couldn't load this data.");
+    expect(screen.getByRole('alert')).toHaveTextContent('Etwas ist schiefgelaufen — erneut versuchen.');
   });
 
   it('Error_WithoutOnRetry_RendersNoRetryControl', () => {
     render(<ErrorState message="Nope." />);
-    expect(screen.queryByText('Retry')).not.toBeInTheDocument();
+    expect(screen.queryByText('Erneut versuchen')).not.toBeInTheDocument();
   });
 
   it('Error_RetryClicked_InvokesOnRetry', async () => {
     const onRetry = vi.fn();
     render(<ErrorState onRetry={onRetry} />);
 
-    await userEvent.click(screen.getByText('Retry'));
+    await userEvent.click(screen.getByText('Erneut versuchen'));
 
     expect(onRetry).toHaveBeenCalledTimes(1);
   });

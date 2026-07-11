@@ -1,27 +1,27 @@
-<!-- @dsCard group="Brand" viewport="700x160" name="Logo & wordmark" subtitle="The bar-chart mark on ink + light, with the myJob wordmark" -->
+<!-- @dsCard group="Brand" viewport="700x160" name="Logo & wordmark" subtitle="The Now-Split mark (1:1 aus der Produktfamilie) auf dunkel + hell, mit der myJob-Wordmark" -->
 <!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8" /><link rel="stylesheet" href="../styles.css" />
 <style>
   body { margin: 0; padding: 24px; background: var(--surface-card); display: flex; gap: 22px; align-items: stretch; }
   .panel { flex: 1; border-radius: var(--radius-lg); border: 1px solid var(--border); display: flex; align-items: center; gap: 14px; padding: 22px 24px; }
-  .dark { background: linear-gradient(165deg, var(--ink-850), var(--ink-900)); border: none; }
+  .dark { background: radial-gradient(120% 140% at 50% 0%, #16255c 0%, #0d1330 60%, #0a0c11 100%); border: none; }
   .word { font-family: var(--font-display); font-weight: 700; font-size: 26px; letter-spacing: -0.02em; line-height: 1; }
   .sub { font-family: var(--font-mono); font-size: 9px; letter-spacing: var(--ls-wider); text-transform: uppercase; margin-top: 5px; }
 </style></head>
 <body>
   <div class="panel dark">
-    <img src="../assets/logo/myjob-mark.svg" width="48" height="48" alt="myJob" />
+    <img src="../assets/logo/icon.svg" width="48" height="48" alt="myJob" />
     <div>
-      <div class="word" style="color:#fff"><span style="color:var(--blueprint-on-dark)">my</span>Job</div>
-      <div class="sub" style="color:var(--sidebar-soft)">Application Suite</div>
+      <div class="word" style="color:#fff">my<span style="color:var(--live)">Job</span></div>
+      <div class="sub" style="color:rgba(241,245,249,0.55)">Vermittler-Workspace</div>
     </div>
   </div>
   <div class="panel">
-    <img src="../assets/logo/myjob-mark-light.svg" width="48" height="48" alt="myJob" />
+    <img src="../assets/logo/icon.svg" width="48" height="48" alt="myJob" />
     <div>
-      <div class="word" style="color:var(--text-heading)"><span style="color:var(--accent)">my</span>Job</div>
-      <div class="sub" style="color:var(--text-soft)">Application Suite</div>
+      <div class="word" style="color:var(--text-heading)">my<span style="color:var(--live)">Job</span></div>
+      <div class="sub" style="color:var(--text-soft)">Vermittler-Workspace</div>
     </div>
   </div>
 </body></html>

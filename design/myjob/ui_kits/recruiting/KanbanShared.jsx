@@ -5,7 +5,7 @@
    stage `<select>`, the remove button (icon + placement) and click-to-open are
    IDENTICAL on both. Domain differences (talent avatar + score vs. note) stay
    as the card's `children`. */
-const KS = window.MyJobDesignSystem_f3658e;
+const KS = window.MyJobDesignSystem_5611b7;
 
 /* A stage column: a header (colour dot + label + count), a drag-over highlight,
    a drop target, and the shared empty / "drop here" placeholder. The board owns
@@ -47,7 +47,7 @@ function KanbanColumn({
         {children}
         {isEmpty && (
           <div style={{ border: '1.5px dashed var(--border-strong)', borderRadius: 'var(--radius-md)', padding: '16px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>
-            {over ? 'drop here' : 'empty'}
+            {over ? 'hierhin ziehen' : 'leer'}
           </div>
         )}
       </div>

@@ -46,7 +46,12 @@ export function resolveMode() {
 /** Paint a mode by setting `data-mode` on the document root. */
 export function applyMode(mode) {
   if (typeof document !== 'undefined') {
-    document.documentElement.setAttribute('data-mode', mode === 'light' ? 'light' : 'dark');
+    const dark = mode !== 'light';
+    // Light = „Vivid" (Royal accent); dark = the conserved „Klassik" world with
+    // the live-orange accent (data-theme="ember"). modes.css flips the surfaces
+    // and the rail via data-mode; themes.css swaps the accent via data-theme.
+    document.documentElement.setAttribute('data-mode', dark ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', dark ? 'ember' : 'royal');
   }
 }
 

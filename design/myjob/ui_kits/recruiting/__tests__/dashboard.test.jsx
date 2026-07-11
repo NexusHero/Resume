@@ -26,7 +26,7 @@ describe('Dashboard — agency framing', () => {
       <Dashboard me={me} apps={apps} vkpis={vkpis} clients={[]} mandates={mandates} onOpenTalent={() => {}} onOpenPipeline={() => {}} onOpenMandate={() => {}} />,
     );
     // The design-system stub renders a Card's title as a host `title` attribute.
-    expect(screen.getByTitle('Applications to progress')).toBeInTheDocument();
+    expect(screen.getByTitle('Bewerbungen im Fortschritt')).toBeInTheDocument();
     expect(screen.getByText('Mara Vogel')).toBeInTheDocument(); // interview-stage candidate, not "me"
     // The jobseeker framing must be gone.
     expect(screen.queryByTitle(/Own applications/i)).not.toBeInTheDocument();
@@ -38,7 +38,7 @@ describe('Dashboard — agency framing', () => {
       <Dashboard me={me} apps={apps} vkpis={vkpis} clients={[]} mandates={mandates} onOpenTalent={() => {}} onOpenPipeline={() => {}} onOpenMandate={() => {}} />,
     );
     // 1 app is in interview, none in offer → "1 application in interview or offer".
-    expect(screen.getByText(/1 application in interview or offer/)).toBeInTheDocument();
+    expect(screen.getByText(/1 Bewerbung in Interview oder Angebot/)).toBeInTheDocument();
   });
 
   it('EmptyDesk_ShowsOnboardingWithFirstActions', () => {
@@ -46,8 +46,8 @@ describe('Dashboard — agency framing', () => {
     render(
       <Dashboard me={me} apps={[]} vkpis={vkpis} clients={[]} mandates={[]} talentCount={0} onNav={onNav} onOpenTalent={() => {}} onOpenPipeline={() => {}} onOpenMandate={() => {}} />,
     );
-    expect(screen.getByText('Get your desk started')).toBeInTheDocument();
-    fireEvent.click(screen.getByText('Create a mandate'));
+    expect(screen.getByText('Leg mit deinem Desk los')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Mandat anlegen'));
     expect(onNav).toHaveBeenCalledWith('mandate');
   });
 
@@ -55,6 +55,6 @@ describe('Dashboard — agency framing', () => {
     render(
       <Dashboard me={me} apps={apps} vkpis={vkpis} clients={[]} mandates={mandates} talentCount={2} onNav={() => {}} onOpenTalent={() => {}} onOpenPipeline={() => {}} onOpenMandate={() => {}} />,
     );
-    expect(screen.queryByText('Get your desk started')).toBeNull();
+    expect(screen.queryByText('Leg mit deinem Desk los')).toBeNull();
   });
 });

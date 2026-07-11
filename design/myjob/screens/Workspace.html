@@ -1,48 +1,106 @@
+<!-- @dsCard group="myJob App" viewport="1280x800" name="Workspace" subtitle="Recruit landing — Royal-Hero, bunte KPI-Tiles, „Braucht Aufmerksamkeit", aktive Bewerbungen" -->
+<!-- @startingPoint section="myJob App" subtitle="Recruit landing — Floating Rail, Royal-Hero mit Jetzt-Chip, bunte KPI-Tiles, Listen + Detail-Panel" viewport="1280x800" -->
 <!DOCTYPE html>
-<html lang="de" data-theme="blueprint">
+<html lang="de">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>myJob Recruit — Workspace</title>
+<link rel="icon" href="../assets/logo/favicon.svg" />
 <link rel="stylesheet" href="../styles.css" />
 <style>
   html, body { margin: 0; height: 100%; background: var(--surface-app); }
   #root { height: 100vh; }
-  .ws { max-width: 860px; }
-  .greet { font-family: var(--font-display); font-size: var(--fs-2xl); font-weight: var(--fw-bold); letter-spacing: var(--ls-tighter); color: var(--text-heading); margin: 0; }
-  .greet-sub { font-size: var(--fs-sm); color: var(--text-soft); margin: 3px 0 0; }
+  a { color: var(--accent-strong); } a:hover { color: var(--accent); }
+  .ws { max-width: 880px; }
 
-  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 22px 0; }
+  /* entrance: rise + settle, staggered */
+  @media (prefers-reduced-motion: no-preference) {
+    .rise { opacity: 0; transform: translateY(14px); animation: rise .5s var(--ease-spring) forwards; }
+    .rise.d1 { animation-delay: .05s; } .rise.d2 { animation-delay: .12s; } .rise.d3 { animation-delay: .19s; } .rise.d4 { animation-delay: .26s; }
+    @keyframes rise { to { opacity: 1; transform: translateY(0); } }
+  }
+
+  /* ---- Royal hero — the day briefing ---- */
+  .hero {
+    position: relative; overflow: hidden;
+    border-radius: var(--radius-2xl);
+    background:
+      radial-gradient(90% 120% at 100% 0%, rgba(255, 83, 32, 0.28) 0%, transparent 45%),
+      linear-gradient(130deg, #3d5cf5 0%, #2941b8 65%, #1f3391 100%);
+    color: #fff; padding: 22px 28px 26px;
+    display: flex; flex-direction: column; align-items: flex-start;
+    box-shadow: var(--shadow-accent);
+  }
+  .hero .greet { font-family: var(--font-display); font-size: 30px; font-weight: 600; letter-spacing: var(--ls-tighter); margin: 0; line-height: 1.1; color: #fff; }
+  .hero .greet-sub { font-size: var(--fs-sm); color: rgba(255,255,255,0.75); margin: 6px 0 0; }
+  .hero .now {
+    align-self: flex-end; margin: 0 0 10px;
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(10, 12, 17, 0.35); border: 1px solid rgba(255,255,255,0.18);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    border-radius: var(--radius-pill); padding: 8px 14px;
+    font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 600; color: #fff;
+  }
+  .hero .now .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--live); }
+  @media (prefers-reduced-motion: no-preference) {
+    .hero .now .dot { animation: livepulse 2.2s ease infinite; }
+    @keyframes livepulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,83,32,.55); } 50% { box-shadow: 0 0 0 6px rgba(255,83,32,0); } }
+  }
+  .hero .ghostblocks { position: absolute; right: -34px; bottom: -46px; opacity: .22; pointer-events: none; }
+
+  /* ---- KPI tiles — bunt, große Formen ---- */
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 18px 0; }
   @media (max-width: 720px) { .kpis { grid-template-columns: 1fr; } }
-  .kpi { background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: 16px 18px; }
-  .kpi .n { font-family: var(--font-mono); font-size: var(--fs-3xl); font-weight: var(--fw-bold); color: var(--text-heading); font-variant-numeric: tabular-nums; line-height: 1; }
-  .kpi .l { font-size: var(--fs-xs); color: var(--text-soft); margin-top: 6px; }
+  .kpi { display: flex; align-items: center; gap: 14px; background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--radius-xl); box-shadow: var(--shadow-sm); padding: 16px 18px; transition: transform var(--dur-med) var(--ease-spring), box-shadow var(--dur-fast) var(--ease-out); }
+  .kpi:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+  .kpi .disc { width: 46px; height: 46px; border-radius: var(--radius-lg); display: grid; place-items: center; flex: none; }
+  .kpi.k1 { background: var(--accent-soft); border-color: var(--accent-border); }
+  .kpi.k1 .disc { background: var(--accent); color: var(--accent-contrast); }
+  .kpi.k2 { background: var(--people-2-soft); border-color: color-mix(in oklch, var(--people-2) 32%, transparent); }
+  .kpi.k2 .disc { background: var(--people-2); color: #fff; }
+  .kpi.k3 { background: var(--live-soft); border-color: var(--live-border); }
+  .kpi.k3 .disc { background: var(--live); color: var(--live-contrast); }
+  .kpi .n { font-family: var(--font-mono); font-size: 30px; font-weight: var(--fw-bold); color: var(--text-heading); font-variant-numeric: tabular-nums; line-height: 1; }
+  .kpi .l { font-size: var(--fs-xs); color: var(--text-soft); margin-top: 5px; }
 
-  .block { background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); margin-bottom: 18px; overflow: hidden; }
-  .block-h { display: flex; align-items: center; gap: 10px; padding: 15px 18px; border-bottom: 1px solid var(--border); }
-  .block-h h2 { font-family: var(--font-display); font-size: var(--fs-md); font-weight: var(--fw-semibold); color: var(--text-heading); margin: 0; }
+  /* ---- List blocks ---- */
+  .block { background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--radius-xl); box-shadow: var(--shadow-sm); margin-bottom: 18px; overflow: hidden; }
+  .block-h { display: flex; align-items: center; gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+  .block-h h2 { font-family: var(--font-display); font-size: var(--fs-lg); font-weight: var(--fw-semibold); color: var(--text-heading); margin: 0; }
   .block-h .cnt { margin-left: auto; font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-soft); }
+  .block-h.hot { background: var(--live-soft); border-bottom-color: var(--live-border); }
+  .block-h.hot .cnt { color: var(--live-strong); }
 
-  .row { display: flex; align-items: center; gap: 13px; padding: 13px 18px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background var(--dur-fast); }
+  .row { display: flex; align-items: center; gap: 13px; padding: 13px 20px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background var(--dur-fast); }
   .row:last-child { border-bottom: none; }
   .row:hover { background: var(--surface-subtle); }
   .row .who { min-width: 0; flex: 1; }
   .row .pos { font-family: var(--font-display); font-weight: var(--fw-semibold); font-size: var(--fs-sm); color: var(--text-heading); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .row .meta { font-size: var(--fs-xs); color: var(--text-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .row .cand { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-xs); color: var(--text-muted); }
   .row .when { font-family: var(--font-mono); font-size: var(--fs-2xs); color: var(--text-soft); white-space: nowrap; }
-  .urg { font-family: var(--font-mono); font-size: var(--fs-2xs); font-weight: var(--fw-semibold); color: var(--status-offer-strong); white-space: nowrap; }
+
+  /* urgency chips — „jetzt" wears the live orange */
+  .urg { font-family: var(--font-mono); font-size: var(--fs-2xs); font-weight: var(--fw-semibold); white-space: nowrap; border-radius: var(--radius-pill); padding: 4px 10px; }
+  .urg.hot  { color: var(--live-strong); background: var(--live-soft); border: 1px solid var(--live-border); }
+  .urg.warm { color: var(--status-offer-strong); background: var(--status-offer-soft); border: 1px solid var(--status-offer-border); }
+  .urg.cold { color: var(--text-soft); background: var(--surface-sunk); border: 1px solid var(--border); }
 
   /* detail panel */
-  .panel { padding: 20px; }
+  .panel { padding: 22px 20px; }
   .panel .cap { font-family: var(--font-mono); font-size: var(--fs-3xs); letter-spacing: var(--ls-wide); text-transform: uppercase; color: var(--text-soft); margin-bottom: 12px; }
   .me { display: flex; align-items: center; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
-  .me .nm { font-family: var(--font-display); font-weight: var(--fw-bold); font-size: var(--fs-md); color: var(--text-heading); }
+  .me .nm { font-family: var(--font-display); font-weight: var(--fw-semibold); font-size: var(--fs-md); color: var(--text-heading); }
   .me .rl { font-size: var(--fs-xs); color: var(--text-soft); }
   .qa { display: flex; flex-direction: column; gap: 8px; }
-  .qa a { display: flex; align-items: center; gap: 11px; padding: 11px 13px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--surface-card); text-decoration: none; color: var(--text-heading); font-size: var(--fs-sm); font-weight: var(--fw-medium); transition: all var(--dur-fast); }
-  .qa a:hover { border-color: var(--accent-border); background: var(--accent-soft); color: var(--accent-strong); }
-  .qa a .ic { width: 30px; height: 30px; border-radius: var(--radius-md); display: grid; place-items: center; background: var(--ink-850); color: var(--accent-on-dark); flex: none; }
+  .qa a { display: flex; align-items: center; gap: 11px; padding: 11px 13px; border-radius: var(--radius-lg); border: 1px solid var(--border); background: var(--surface-card); text-decoration: none; color: var(--text-heading); font-size: var(--fs-sm); font-weight: var(--fw-medium); transition: all var(--dur-fast); }
+  .qa a:hover { border-color: var(--accent-border); background: var(--accent-soft); color: var(--accent-strong); transform: translateX(2px); }
+  .qa a .ic { width: 32px; height: 32px; border-radius: var(--radius-md); display: grid; place-items: center; flex: none; }
+  .qa a:nth-child(1) .ic { background: var(--accent-soft); color: var(--accent-strong); }
+  .qa a:nth-child(2) .ic { background: var(--people-1-soft); color: var(--people-1); }
+  .qa a:nth-child(3) .ic { background: var(--people-2-soft); color: var(--people-2); }
+  .qa a:nth-child(4) .ic { background: var(--live-soft); color: var(--live-strong); }
+  .qa a:nth-child(5) .ic { background: var(--surface-sunk); color: var(--text-muted); }
   .qa a .ar { margin-left: auto; color: var(--text-soft); }
 </style>
 </head>
@@ -54,7 +112,7 @@
 <script src="../_ds_bundle.js"></script>
 <script src="../data/talent-pool.js"></script>
 <script type="text/babel">
-const DS = window.MyJobDesignSystem_f3658e;
+const DS = window.MyJobDesignSystem_5611b7 || window.DesignSystem_5611b7;
 const { AppShell, Avatar, Icon, Button, StatusBadge, MatchIndicator } = DS;
 const T = window.MyJobTalents;
 
@@ -70,10 +128,12 @@ const NAV = [
   { id: 'inbox', label: 'Inbox', icon: 'inbox', badge: 3 },
 ];
 
+const PHOTOS = { 'Suhay Sevinc': '../assets/img/suhay-photo-sm.jpg', 'Milan Ebert': '../assets/img/candidate-portrait-sm.jpg' };
+
 const ATTENTION = [
-  { cand: 'Lena Bauer', pos: 'Design Lead', co: 'Helio Mobility', status: 'offer', urg: 'Angebot läuft in 2 Tagen ab' },
-  { cand: 'Suhay Sevinc', pos: 'Senior Frontend Engineer', co: 'Helvetia Digital AG', status: 'interview', urg: 'Interview morgen · 14:00' },
-  { cand: 'Milan Ebert', pos: 'Backend Engineer', co: 'Nordlicht AG', status: 'review', urg: 'seit 5 Tagen ohne Rückmeldung' },
+  { cand: 'Lena Bauer', pos: 'Design Lead', co: 'Helio Mobility', status: 'offer', urg: 'Angebot läuft in 2 Tagen ab', heat: 'warm' },
+  { cand: 'Suhay Sevinc', pos: 'Senior Frontend Engineer', co: 'Helvetia Digital AG', status: 'interview', urg: 'Interview morgen · 14:00', heat: 'hot' },
+  { cand: 'Milan Ebert', pos: 'Backend Engineer', co: 'Nordlicht AG', status: 'review', urg: 'seit 5 Tagen ohne Rückmeldung', heat: 'cold' },
 ];
 const ACTIVE = [
   { cand: 'Suhay Sevinc', pos: 'Senior Frontend Engineer', co: 'Helvetia Digital AG · Zürich', match: 88, status: 'interview', when: 'vor 2 Tagen' },
@@ -82,12 +142,40 @@ const ACTIVE = [
   { cand: 'Milan Ebert', pos: 'Backend Engineer', co: 'Swisscom Labs · Bern', match: 81, status: 'new', when: 'gestern' },
 ];
 
+/* count-up for KPI numbers — settles with an ease-out cubic */
+function CountUp({ to, dur = 900 }) {
+  const [v, setV] = React.useState(() => (window.matchMedia('(prefers-reduced-motion: reduce)').matches ? to : 0));
+  React.useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setV(to); return; }
+    let raf; const t0 = performance.now();
+    const tick = (t) => {
+      const p = Math.min(1, (t - t0) / dur);
+      setV(Math.round(to * (1 - Math.pow(1 - p, 3))));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [to]);
+  return <span>{v}</span>;
+}
+
+/* the ghost/actual blocks from the logo, oversized as hero texture */
+function GhostBlocks() {
+  return (
+    <svg className="ghostblocks" width="230" height="170" viewBox="0 0 230 170" aria-hidden="true">
+      <rect x="0" y="30" width="86" height="104" rx="24" fill="#ffffff"></rect>
+      <rect x="134" y="30" width="86" height="104" rx="24" fill="none" stroke="#ffffff" strokeWidth="9" strokeDasharray="21 18" strokeLinecap="round"></rect>
+      <rect x="105" y="8" width="13" height="148" rx="6.5" fill="#FF5320"></rect>
+    </svg>
+  );
+}
+
 function Workspace() {
   const me = T.me;
   const detail = (
     <div className="panel">
       <div className="me">
-        <Avatar name={me.name} size="lg" ring />
+        <Avatar name={me.name} src={me.photo} size="lg" ring />
         <div style={{ minWidth: 0 }}>
           <div className="nm">{me.name}</div>
           <div className="rl">{me.role}</div>
@@ -108,41 +196,46 @@ function Workspace() {
     <AppShell
       product="recruit" posture="rail"
       nav={NAV} active="workspace" onNav={() => {}}
-      account={{ name: 'Suhay Sevinc', meta: 'Me · +3 Talente' }}
+      account={{ name: 'Suhay Sevinc', meta: 'Me · +3 Talente', src: me.photo }}
       title="Workspace" subtitle="Sonntag, 28. Juni"
       search searchPlaceholder="Kandidaten, Stellen, Bewerbungen …"
+      actions={<Button size="sm" iconLeft={<Icon name="plus" size={15} />} style={{ borderRadius: 'var(--radius-pill)', boxShadow: 'var(--shadow-accent)' }} onClick={() => { window.location.href = 'Matching.html'; }}>Neue Bewerbung</Button>}
       detail={detail}
     >
       <div className="ws">
-        <h1 className="greet">Guten Abend, Suhay</h1>
-        <p className="greet-sub">4 aktive Bewerbungen · 1 Angebot offen · 1 Interview morgen</p>
-
-        <div className="kpis">
-          <div className="kpi"><div className="n">4</div><div className="l">Aktive Bewerbungen</div></div>
-          <div className="kpi"><div className="n">2</div><div className="l">Interviews diese Woche</div></div>
-          <div className="kpi"><div className="n">1</div><div className="l">Offenes Angebot</div></div>
+        <div className="hero rise" data-screen-label="Workspace">
+          <div className="now"><span className="dot"></span>Interview morgen · 14:00</div>
+          <h1 className="greet">Guten Abend, Suhay</h1>
+          <p className="greet-sub">4 aktive Bewerbungen · 1 Angebot offen · 1 Interview morgen</p>
+          <GhostBlocks />
         </div>
 
-        <div className="block">
-          <div className="block-h"><Icon name="alert" size={16} style={{ color: 'var(--status-offer-strong)' }} /><h2>Braucht Aufmerksamkeit</h2><span className="cnt">{ATTENTION.length}</span></div>
+        <div className="kpis">
+          <div className="kpi k1 rise d1"><span className="disc"><Icon name="columns" size={20} /></span><div><div className="n"><CountUp to={4} /></div><div className="l">Aktive Bewerbungen</div></div></div>
+          <div className="kpi k2 rise d2"><span className="disc"><Icon name="calendar" size={20} /></span><div><div className="n"><CountUp to={2} /></div><div className="l">Interviews diese Woche</div></div></div>
+          <div className="kpi k3 rise d3"><span className="disc"><Icon name="tag" size={20} /></span><div><div className="n"><CountUp to={1} /></div><div className="l">Offenes Angebot</div></div></div>
+        </div>
+
+        <div className="block rise d3">
+          <div className="block-h hot"><Icon name="alert" size={16} style={{ color: 'var(--live-strong)' }} /><h2>Braucht Aufmerksamkeit</h2><span className="cnt">{ATTENTION.length}</span></div>
           {ATTENTION.map((a, i) => (
             <div className="row" key={i}>
-              <Avatar name={a.cand} size="sm" />
+              <Avatar name={a.cand} src={PHOTOS[a.cand]} size="md" />
               <div className="who">
                 <div className="pos">{a.pos}</div>
                 <div className="meta">{a.co} · <span style={{ color: 'var(--text-muted)' }}>{a.cand}</span></div>
               </div>
-              <span className="urg">{a.urg}</span>
+              <span className={'urg ' + a.heat}>{a.urg}</span>
               <StatusBadge status={a.status} size="sm" />
             </div>
           ))}
         </div>
 
-        <div className="block">
+        <div className="block rise d4">
           <div className="block-h"><Icon name="columns" size={16} style={{ color: 'var(--text-muted)' }} /><h2>Aktive Bewerbungen</h2><a href="Matching.html" style={{ marginLeft: 'auto', fontSize: 'var(--fs-xs)', color: 'var(--accent-strong)', textDecoration: 'none', fontWeight: 'var(--fw-medium)' }}>+ Neue Bewerbung</a></div>
           {ACTIVE.map((a, i) => (
             <div className="row" key={i}>
-              <Avatar name={a.cand} size="sm" />
+              <Avatar name={a.cand} src={PHOTOS[a.cand]} size="md" />
               <div className="who">
                 <div className="pos">{a.pos}</div>
                 <div className="meta">{a.co} · <span style={{ color: 'var(--text-muted)' }}>{a.cand}</span></div>

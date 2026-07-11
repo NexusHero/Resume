@@ -7,6 +7,7 @@
   const suhay = {
     id: 'me',
     name: 'Suhay Sevinc',
+    photo: '../assets/img/suhay-photo-sm.jpg',
     role: 'M.Sc. Software Engineer',
     headline: 'C++ / C#-.NET · Echtzeit- & verteilte Systeme',
     location: 'Blumberg, DE',
@@ -88,6 +89,7 @@
     },
     {
       id: 't3', name: 'Milan Ebert', role: 'Backend Engineer', headline: 'Go · Kubernetes · verteilte Systeme',
+      photo: '../assets/img/candidate-portrait-sm.jpg',
       location: 'Berlin, DE', available: 'sofort', salaryTarget: '€ 80–92k', seniority: 'Mid', years: 4,
       skills: ['Go', 'Kubernetes', 'PostgreSQL', 'gRPC', 'Docker', 'REST'],
       about: 'Backend-Engineer mit Schwerpunkt Cloud-native Infrastruktur.',

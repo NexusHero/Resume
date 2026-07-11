@@ -48,7 +48,7 @@ describe('Editor — live preview parity', () => {
     render(<Editor talent={talent} onClose={vi.fn()} onCreateMappe={vi.fn()} />);
 
     // The preview is an iframe fed by the server render (not a hand-built DOM).
-    const frame = await screen.findByTitle('Document preview');
+    const frame = await screen.findByTitle('Dokumentvorschau');
     expect(frame.tagName).toBe('IFRAME');
     await waitFor(() => expect(frame.getAttribute('srcdoc')).toContain('PREVIEW_FROM_SERVER'));
 

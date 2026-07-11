@@ -7,9 +7,9 @@
 const L = window.MyJobDesignSystem_5611b7;
 
 const POINTS = [
-  'Mandates, talent pool and placements in one workspace',
-  'Apply candidates on their behalf, track every stage',
-  'Fees and funnel at a glance',
+  'Mandate, Talent-Pool und Platzierungen in einem Workspace',
+  'Kandidat:innen stellvertretend bewerben, jede Stufe verfolgen',
+  'Honorare und Funnel auf einen Blick',
 ];
 
 function readQueryToken(name) {
@@ -162,50 +162,52 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
 
   return (
     <div style={{ display: 'flex', minHeight: '100dvh', background: 'var(--app-bg)' }}>
-      {/* brand panel */}
+      {/* brand panel — Royal hero band with the Now-Split mark and a single
+          live-orange glow (Vivid 2026). */}
       <aside
         className="auth-brand"
         style={{
-          width: '44%', flexShrink: 0, display: 'flex', flexDirection: 'column',
-          gap: '28px', padding: '52px 48px', color: '#fff',
-          background: 'linear-gradient(165deg, var(--ink-850) 0%, var(--ink-900) 100%)',
-          borderRight: '1px solid var(--sidebar-border)',
+          position: 'relative', width: '44%', flexShrink: 0, display: 'flex', flexDirection: 'column',
+          gap: '28px', padding: '52px 48px', color: '#fff', overflow: 'hidden',
+          background: 'linear-gradient(158deg, var(--royal-500) 0%, var(--royal-700) 100%)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '11px' }}>
-          <img src="/design/myjob/assets/logo/myjob-mark.svg" width="34" height="34" alt="" />
+        {/* the one permitted live-orange glow on the royal band */}
+        <span aria-hidden style={{ position: 'absolute', width: '460px', height: '460px', right: '-160px', bottom: '-180px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,83,32,0.55) 0%, rgba(255,83,32,0) 70%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '13px' }}>
+          <L.Logomark size={40} />
           <div>
-            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '20px', letterSpacing: '-0.02em' }}>
-              <span style={{ color: 'var(--accent-on-dark)' }}>my</span>Job
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '22px', letterSpacing: '-0.02em', lineHeight: 1 }}>
+              <span style={{ color: '#fff' }}>my</span><span style={{ color: 'var(--live)' }}>Job</span>
             </div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--sidebar-soft)', marginTop: '2px' }}>
-              Recruiting suite
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.62)', marginTop: '3px' }}>
+              Vermittler-Workspace
             </div>
           </div>
         </div>
 
-        <div style={{ marginTop: 'auto' }}>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '34px', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.1, margin: 0 }}>
-            Run your desk on myJob.
+        <div style={{ position: 'relative', marginTop: 'auto' }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '36px', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.08, margin: 0 }}>
+            Dein Recruiting-Desk — an einem Ort.
           </h1>
-          <p style={{ fontSize: '15px', color: 'var(--sidebar-muted)', marginTop: '14px', maxWidth: '36ch' }}>
-            Mandates, talents and placements in one calm workspace — from first sighting to booked fee.
+          <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.82)', marginTop: '14px', maxWidth: '38ch', lineHeight: 1.6 }}>
+            Mandate, Talente und Platzierungen in einem ruhigen Workspace — von der ersten Sichtung bis zum gebuchten Honorar.
           </p>
         </div>
 
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <ul style={{ position: 'relative', listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {POINTS.map((p) => (
-            <li key={p} style={{ display: 'flex', alignItems: 'center', gap: '11px', fontSize: '14px', color: 'var(--sidebar-muted)' }}>
-              <span style={{ display: 'grid', placeItems: 'center', width: '20px', height: '20px', borderRadius: '50%', background: 'var(--accent-soft)', flexShrink: 0 }}>
-                <L.Icon name="check" size={12} style={{ color: 'var(--accent-on-dark)' }} />
+            <li key={p} style={{ display: 'flex', alignItems: 'center', gap: '11px', fontSize: '14px', color: 'rgba(255,255,255,0.86)' }}>
+              <span style={{ display: 'grid', placeItems: 'center', width: '22px', height: '22px', borderRadius: '50%', background: 'rgba(255,255,255,0.16)', flexShrink: 0 }}>
+                <L.Icon name="check" size={12} style={{ color: '#fff' }} />
               </span>
               {p}
             </li>
           ))}
         </ul>
 
-        <p style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--sidebar-soft)', marginTop: 'auto' }}>
-          We connect partners — talent to mandate.
+        <p style={{ position: 'relative', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.55)', marginTop: 'auto' }}>
+          We connect partners — Talent zu Mandat.
         </p>
       </aside>
 

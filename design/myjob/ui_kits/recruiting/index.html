@@ -4,7 +4,7 @@
 <!-- data-mode (light/dark) is set by theme.js before paint — it follows the
      saved choice, else the OS preference (#196). The dark boot splash covers the
      brief pre-hydration window, so there's no flash under the strict CSP. -->
-<html lang="en" data-theme="signal">
+<html lang="en" data-theme="royal">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -73,17 +73,17 @@
     content: ''; position: absolute; width: 46vmax; height: 46vmax; border-radius: 50%;
     filter: blur(80px); opacity: .35; pointer-events: none; will-change: transform;
   }
-  #splash::before { background: #2a6fdb; top: -12vmax; left: -6vmax; animation: splashAura 9s ease-in-out infinite alternate; }
-  #splash::after  { background: #f97316; bottom: -14vmax; right: -8vmax; opacity: .22; animation: splashAura 11s ease-in-out infinite alternate-reverse; }
+  #splash::before { background: #3654e0; top: -12vmax; left: -6vmax; animation: splashAura 9s ease-in-out infinite alternate; }
+  #splash::after  { background: #ff5320; bottom: -14vmax; right: -8vmax; opacity: .22; animation: splashAura 11s ease-in-out infinite alternate-reverse; }
   @keyframes splashAura { from { transform: translate3d(0,0,0) scale(1); } to { transform: translate3d(4vmax,3vmax,0) scale(1.15); } }
   .splash-inner { position: relative; display: flex; flex-direction: column; align-items: center; gap: 22px; animation: splashRise .6s cubic-bezier(.16,1,.3,1) both; }
   @keyframes splashRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
   .splash-mark { display: flex; align-items: flex-end; gap: 9px; height: 76px; }
   .splash-mark .bar { width: 15px; border-radius: 6px; transform-origin: bottom; will-change: transform;
     animation: splashEq 1.05s ease-in-out infinite; }
-  .splash-mark .b1 { height: 52px; background: #3b82f6; box-shadow: 0 0 22px rgba(59,130,246,.55); animation-delay: 0s; }
-  .splash-mark .b2 { height: 76px; background: #f97316; box-shadow: 0 0 26px rgba(249,115,22,.55); animation-delay: .18s; }
-  .splash-mark .b3 { height: 40px; background: #60a5fa; box-shadow: 0 0 22px rgba(96,165,250,.5); animation-delay: .36s; }
+  .splash-mark .b1 { height: 52px; background: #3654e0; box-shadow: 0 0 22px rgba(54,84,224,.55); animation-delay: 0s; }
+  .splash-mark .b2 { height: 76px; background: #ff5320; box-shadow: 0 0 26px rgba(255,83,32,.55); animation-delay: .18s; }
+  .splash-mark .b3 { height: 40px; background: #90a0ff; box-shadow: 0 0 22px rgba(144,160,255,.5); animation-delay: .36s; }
   @keyframes splashEq { 0%,100% { transform: scaleY(.42); } 50% { transform: scaleY(1); } }
   .splash-word { font-family: 'Space Grotesk', var(--font-display, ui-sans-serif), system-ui, sans-serif;
     font-weight: 700; font-size: 40px; letter-spacing: -.02em; color: #f8fafc; line-height: 1; }

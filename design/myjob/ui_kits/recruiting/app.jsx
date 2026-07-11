@@ -2,17 +2,41 @@
 const A = window.MyJobDesignSystem_5611b7;
 
 const TITLES = {
-  uebersicht: ['Workspace', 'What needs your attention today'],
-  mandate: ['Mandates', 'Search mandates per client with fee and deadline'],
-  pool: ['Talent Pool', 'The candidates you represent'],
-  matching: ['Matching', 'Find roles by skill-overlap — apply on a candidate’s behalf'],
-  bewerbungen: ['Applications', 'Pipeline of all submissions and your own dossiers'],
-  platzierungen: ['Placements', 'Booked placements and fees'],
-  berichte: ['Reports', 'Fees, funnel and utilization'],
-  assistant: ['CoRecruiter', 'Your AI recruiter — prepares the desk and, on Autopilot, builds applications; you approve'],
-  postfach: ['Inbox', 'Messages from clients and companies'],
-  einstellungen: ['Settings', 'API key, AI framework & agentic mode'],
+  uebersicht: ['Workspace', 'Was heute deine Aufmerksamkeit braucht'],
+  mandate: ['Mandate', 'Deine Suchmandate — Stellen, Fristen, Honorar'],
+  pool: ['Talent-Pool', 'Die Kandidat:innen, die du vertrittst'],
+  matching: ['Stellensuche & Matching', 'Passende Rollen finden — stellvertretend bewerben'],
+  bewerbungen: ['Pipeline', 'Alle Bewerbungen über die Stufen hinweg'],
+  platzierungen: ['Platzierungen', 'Gebuchte Platzierungen und Honorare'],
+  berichte: ['Performance', 'Honorare, Funnel und Auslastung'],
+  assistant: ['CoRecruiter', 'Dein KI-Assistent — bereitet den Desk vor, du entscheidest'],
+  postfach: ['Postfach', 'Nachrichten von Klienten und Unternehmen'],
+  einstellungen: ['Einstellungen', 'Darstellung, KI-Schlüssel & Agentic-Modus'],
 };
+
+/* The collapsed primary navigation for the 2026 restructure — six destinations
+   in the floating rail; Matching folds under Mandate/Stellen, Placements under
+   Performance, the assistant is a topbar action, and Settings is a foot utility
+   (AppShell renders it below the nav). Everything else — CV, Anschreiben,
+   Bewerbungen, Dossier — lives inside a candidate or a Stelle, not as a page. */
+const NAV = [
+  { id: 'uebersicht', label: 'Workspace', icon: 'home' },
+  { id: 'mandate', label: 'Mandate', icon: 'briefcase' },
+  { id: 'pool', label: 'Talent-Pool', icon: 'users' },
+  { id: 'bewerbungen', label: 'Pipeline', icon: 'columns' },
+  { id: 'berichte', label: 'Performance', icon: 'trend' },
+  { id: 'postfach', label: 'Postfach', icon: 'inbox' },
+];
+
+/* Which primary destination lights up for a given app state — sub-views
+   (Matching, Placements, a profile/editor) highlight their parent. */
+function activeNavId(nav, hasTalent) {
+  if (hasTalent) return 'pool';
+  if (nav === 'matching') return 'mandate';
+  if (nav === 'platzierungen') return 'berichte';
+  if (nav === 'einstellungen') return '__settings';
+  return nav;
+}
 
 /**
  * Loads a list resource from the API and tracks loading/error state. It does
@@ -87,6 +111,7 @@ function makeMeProfile(user) {
 }
 
 function Workspace({ user, onLogout }) {
+  const { isMobile } = window.useViewport ? window.useViewport() : { isMobile: false };
   const [nav, setNav] = React.useState('uebersicht');
   const [search, setSearch] = React.useState('');
   const [openTalent, setOpenTalent] = React.useState(null);
@@ -338,6 +363,42 @@ function Workspace({ user, onLogout }) {
   // Hide the count badges at zero — a "0" reads as a pending indicator (like the inbox).
   const badges = { bewerbungen: apps.filter((a) => a.status !== 'rejected' && a.status !== 'hired').length || undefined, postfach: unread || undefined };
 
+  // The one shared shell (AppShell): a floating white rail on desktop, a bottom
+  // tab bar on a phone. Settings + account live at the rail foot; the assistant
+  // is a topbar action, not a destination.
+  const account = { name: (me && me.name) || 'Me', src: me && me.src, meta: `Me · +${Math.max(0, talents.length - 1)} Talente` };
+  const navItems = NAV.map((n) => ({ ...n, badge: badges[n.id] }));
+  const shellNav = (n) => {
+    if (window.UndoDelete) window.UndoDelete.flush();
+    setOpenTalent(null);
+    setOpenPipeline(null);
+    setEditing(null);
+    // Settings + the account chip both land on the settings surface (which
+    // carries appearance, AI keys and logout).
+    if (n === '__settings' || n === '__account') { setNav('einstellungen'); return; }
+    goNav(n);
+  };
+  const renderShell = ({ active, title: t, subtitle: s, actions: a, search: showSearch = false, children }) => (
+    <A.AppShell
+      posture={isMobile ? 'tabs' : 'rail'}
+      product="recruit"
+      nav={navItems}
+      active={active}
+      onNav={shellNav}
+      account={account}
+      settingsLabel="Einstellungen"
+      title={t}
+      subtitle={s}
+      search={showSearch}
+      searchPlaceholder="Talente, Firmen, Rollen …"
+      searchValue={search}
+      onSearch={setSearch}
+      actions={a}
+    >
+      {children}
+    </A.AppShell>
+  );
+
   const goTalent = (id) => setOpenTalent(id);
   const back = () => setOpenTalent(null);
   const goPipeline = (m) => setOpenPipeline(m.id);
@@ -349,32 +410,40 @@ function Workspace({ user, onLogout }) {
   // a mandate's pipeline board takes over the whole canvas
   const pipelineMandate = openPipeline && mandates.find((m) => m.id === openPipeline);
   if (pipelineMandate) {
-    return (
-      <window.RecruitRail active="mandate" onNav={(n) => { setOpenPipeline(null); goNav(n); }} me={me} talentCount={talents.length} search={search} onSearch={setSearch} title={`${pipelineMandate.role} · Pipeline`} subtitle={pipelineMandate.client} badges={badges} onLogout={onLogout}>
+    return renderShell({
+      active: 'mandate',
+      title: `${pipelineMandate.role} · Pipeline`,
+      subtitle: pipelineMandate.client,
+      children: (
         <window.MandatePipeline
           mandate={pipelineMandate}
           onBack={() => { setOpenPipeline(null); mandatesRes.reload(); }}
           onOpenTalent={(id) => { setOpenPipeline(null); goTalent(id); }}
         />
-      </window.RecruitRail>
-    );
+      ),
+    });
   }
 
-  // editor takes over the whole canvas
+  // editor takes over the whole canvas — it lives inside a candidate profile
   if (editTalent) {
-    return (
-      <window.RecruitRail active="pool" onNav={(n) => { setEditing(null); setOpenTalent(null); goNav(n); }} me={me} talentCount={talents.length} search={search} onSearch={setSearch} title={editTalent.me ? 'My documents' : editTalent.name} subtitle="Edit resume & cover letter" badges={badges} onLogout={onLogout}>
-        <window.Editor talent={editTalent} onClose={() => setEditing(null)} onCreateMappe={() => { setMappeFor(editTalent); }} />
-        {mappeFor && <window.MappeModal talent={mappeFor} onClose={() => setMappeFor(null)} />}
-      </window.RecruitRail>
-    );
+    return renderShell({
+      active: 'pool',
+      title: editTalent.me ? 'Meine Dokumente' : editTalent.name,
+      subtitle: 'Lebenslauf & Anschreiben bearbeiten',
+      children: (
+        <>
+          <window.Editor talent={editTalent} onClose={() => setEditing(null)} onCreateMappe={() => { setMappeFor(editTalent); }} />
+          {mappeFor && <window.MappeModal talent={mappeFor} onClose={() => setMappeFor(null)} />}
+        </>
+      ),
+    });
   }
 
   // a talent profile takes over the whole canvas regardless of nav
   let title, subtitle, body;
   if (talent) {
-    title = talent.me ? 'My profile' : talent.name;
-    subtitle = 'Resume, attachments and applications';
+    title = talent.me ? 'Mein Profil' : talent.name;
+    subtitle = 'Lebenslauf, Anhänge und Bewerbungen';
     body = <window.TalentProfile talent={talent} apps={talentApps(talent.id)} onBack={back} onEdit={() => setEditing(talent.id)} onCreateMappe={() => setMappeFor(talent)} />;
   } else {
     // Guard against an unknown nav key — destructuring `undefined` here would
@@ -393,40 +462,66 @@ function Workspace({ user, onLogout }) {
     else if (nav === 'assistant') body = <window.AssistantView onChanged={() => { mandatesRes.reload(); }} />;
     else if (nav === 'berichte') body = <window.ReportsView clients={reportClients} mandates={mandates} placements={placements} apps={apps} kpis={vkpis} />;
     else if (nav === 'postfach') body = <window.Inbox messages={messages} apps={apps} talents={talents} onOpenTalent={goTalent} />;
-    else if (nav === 'einstellungen') body = <window.SettingsView user={user} />;
+    else if (nav === 'einstellungen') body = <window.SettingsView user={user} onLogout={onLogout} />;
   }
 
-  const actions = (!talent && (nav === 'bewerbungen' || nav === 'uebersicht'))
-    ? <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="plus" size={15} />} onClick={() => setMappeFor(me)}>Add application</A.Button>
-    : (!talent && nav === 'mandate')
-    ? <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="plus" size={15} />} onClick={addMandate}>New mandate</A.Button>
-    : (!talent && nav === 'platzierungen')
-    ? <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="plus" size={15} />} onClick={addPlacement}>Add placement</A.Button>
-    : null;
-
-  return (
-    <window.RecruitRail active={talent ? 'pool' : nav} onNav={(n) => { setOpenTalent(null); goNav(n); }} me={me} talentCount={talents.length} search={search} onSearch={setSearch} title={title} subtitle={subtitle} badges={badges} actions={actions} onLogout={onLogout}>
-      {body}
-      {mappeFor && <window.MappeModal talent={mappeFor} onClose={() => setMappeFor(null)} />}
-      {formKind && (
-        <window.RecordFormModal
-          kind={formKind}
-          prefill={formPrefill}
-          onClose={() => { setFormKind(null); setFormPrefill(null); }}
-          onSubmit={(values) => submitForm(formKind, values)}
-        />
+  // Topbar actions: a per-view primary (create), an optional secondary that
+  // reaches a folded-in destination (Matching under Mandate, Platzierungen under
+  // Performance), and the CoRecruiter assistant — a topbar action, not a page.
+  const primaryAction =
+    (!talent && (nav === 'bewerbungen' || nav === 'uebersicht'))
+      ? <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="plus" size={15} />} onClick={() => setMappeFor(me)}>Bewerbung erfassen</A.Button>
+      : (!talent && nav === 'mandate')
+      ? <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="plus" size={15} />} onClick={addMandate}>Neues Mandat</A.Button>
+      : (!talent && nav === 'platzierungen')
+      ? <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="plus" size={15} />} onClick={addPlacement}>Platzierung</A.Button>
+      : null;
+  const secondaryAction =
+    (!talent && nav === 'mandate')
+      ? <A.Button variant="ghost" size="sm" iconLeft={<A.Icon name="search" size={15} />} onClick={() => setNav('matching')}>Matching</A.Button>
+      : (!talent && nav === 'berichte')
+      ? <A.Button variant="ghost" size="sm" iconLeft={<A.Icon name="award" size={15} />} onClick={() => setNav('platzierungen')}>Platzierungen</A.Button>
+      : null;
+  const actions = talent ? null : (
+    <>
+      {secondaryAction}
+      {nav !== 'assistant' && !isMobile && (
+        <A.Button variant="ghost" size="sm" iconLeft={<A.Icon name="zap" size={15} />} onClick={() => setNav('assistant')}>CoRecruiter</A.Button>
       )}
-      {editRecord && (
-        <window.RecordFormModal
-          kind={editRecord.kind}
-          record={editRecord.values}
-          onClose={() => setEditRecord(null)}
-          onSubmit={(values) => submitEdit(editRecord, values)}
-          onDelete={editRecord.kind === 'placement' ? () => deleteRecord(editRecord) : undefined}
-        />
-      )}
-    </window.RecruitRail>
+      {primaryAction}
+    </>
   );
+
+  return renderShell({
+    active: activeNavId(nav, !!talent),
+    title,
+    subtitle,
+    actions,
+    search: !talent && (nav === 'pool' || nav === 'mandate' || nav === 'berichte'),
+    children: (
+      <>
+        {body}
+        {mappeFor && <window.MappeModal talent={mappeFor} onClose={() => setMappeFor(null)} />}
+        {formKind && (
+          <window.RecordFormModal
+            kind={formKind}
+            prefill={formPrefill}
+            onClose={() => { setFormKind(null); setFormPrefill(null); }}
+            onSubmit={(values) => submitForm(formKind, values)}
+          />
+        )}
+        {editRecord && (
+          <window.RecordFormModal
+            kind={editRecord.kind}
+            record={editRecord.values}
+            onClose={() => setEditRecord(null)}
+            onSubmit={(values) => submitEdit(editRecord, values)}
+            onDelete={editRecord.kind === 'placement' ? () => deleteRecord(editRecord) : undefined}
+          />
+        )}
+      </>
+    ),
+  });
 }
 
 /* Auth gate: probe the session, then render either the login screen or the

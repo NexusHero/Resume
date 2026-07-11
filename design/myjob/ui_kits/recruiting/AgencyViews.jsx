@@ -2,9 +2,9 @@
 const VV = window.MyJobDesignSystem_5611b7;
 
 const PRIORITY = {
-  high:   { label: 'High', bg: 'var(--status-rejected-soft)', bd: 'var(--status-rejected-border)', fg: 'var(--status-rejected-strong)', dot: 'var(--status-rejected)' },
-  medium: { label: 'Medium', bg: 'var(--status-review-soft)', bd: 'var(--status-review-border)', fg: 'var(--status-review-strong)', dot: 'var(--status-review)' },
-  low:    { label: 'Low', bg: 'var(--surface-sunk)', bd: 'var(--border)', fg: 'var(--text-soft)', dot: 'var(--neutral-400)' },
+  high:   { label: 'Hoch', bg: 'var(--status-rejected-soft)', bd: 'var(--status-rejected-border)', fg: 'var(--status-rejected-strong)', dot: 'var(--status-rejected)' },
+  medium: { label: 'Mittel', bg: 'var(--status-review-soft)', bd: 'var(--status-review-border)', fg: 'var(--status-review-strong)', dot: 'var(--status-review)' },
+  low:    { label: 'Niedrig', bg: 'var(--surface-sunk)', bd: 'var(--border)', fg: 'var(--text-soft)', dot: 'var(--neutral-400)' },
 };
 function PrioPill({ p }) {
   return (
@@ -36,18 +36,18 @@ function MandateView({ mandates, onEdit, onOpenPipeline }) {
         return (
           <VV.Card key={client} pad={false}>
             <header style={{ display: 'flex', alignItems: 'center', gap: '13px', padding: '15px 18px', borderBottom: '1px solid var(--border)' }}>
-              <span style={{ width: '40px', height: '40px', borderRadius: 'var(--radius-md)', background: 'var(--ink-900)', color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><VV.Icon name="building" size={19} /></span>
+              <span style={{ width: '40px', height: '40px', borderRadius: 'var(--radius-md)', background: 'var(--accent-soft)', color: 'var(--accent-strong)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><VV.Icon name="building" size={19} /></span>
               <div style={{ flex: 1 }}>
                 <div style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 700, color: 'var(--text-heading)', letterSpacing: '-0.01em' }}>{client}</div>
               </div>
-              <VV.Badge variant="subtle" size="sm">{ms.length} mandates</VV.Badge>
+              <VV.Badge variant="subtle" size="sm">{ms.length} Mandate</VV.Badge>
             </header>
             {/* Fixed-width columns don't fit a phone; scroll the table sideways
                 on mobile rather than misaligning the cells (ADR-0026). */}
             <div style={{ overflowX: isMobile ? 'auto' : 'visible' }}>
             <div style={{ minWidth: isMobile ? '620px' : 'auto' }}>
             {ms.map((m) => (
-              <div key={m.id} onClick={onEdit ? () => onEdit(m) : undefined} role={onEdit ? 'button' : undefined} title={onEdit ? 'Edit mandate' : undefined} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.5fr) 96px 104px 116px 116px', alignItems: 'center', gap: '14px', padding: '13px 18px', borderBottom: '1px solid var(--border)', cursor: onEdit ? 'pointer' : 'default' }}>
+              <div key={m.id} onClick={onEdit ? () => onEdit(m) : undefined} role={onEdit ? 'button' : undefined} title={onEdit ? 'Mandat bearbeiten' : undefined} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.5fr) 96px 104px 116px 116px', alignItems: 'center', gap: '14px', padding: '13px 18px', borderBottom: '1px solid var(--border)', cursor: onEdit ? 'pointer' : 'default' }}>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-heading)' }}>{m.role}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', marginTop: '2px' }}><VV.Icon name="pin" size={11} />{m.location}</div>
@@ -65,7 +65,7 @@ function MandateView({ mandates, onEdit, onOpenPipeline }) {
                   {onOpenPipeline && (
                     <button
                       onClick={(e) => { e.stopPropagation(); onOpenPipeline(m); }}
-                      title="Open pipeline"
+                      title="Pipeline öffnen"
                       style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-soft)', padding: '3px 9px' }}
                     >
                       <VV.Icon name="briefcase" size={12} /> Pipeline
@@ -83,7 +83,7 @@ function MandateView({ mandates, onEdit, onOpenPipeline }) {
       {order.length === 0 && (
         <VV.Card>
           <div style={{ padding: '40px', textAlign: 'center', fontSize: '13px', color: 'var(--text-soft)' }}>
-            No mandates yet.
+            Noch keine Mandate.
           </div>
         </VV.Card>
       )}
@@ -99,15 +99,15 @@ function PlatzierungenView({ placements, kpis, onEdit }) {
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '14px' }}>
         {kpis.map((k, i) => <VV.StatCard key={i} {...k} />)}
       </div>
-      <VV.Card pad={false} title="Placements" subtitle="Successful placements and fees">
+      <VV.Card pad={false} title="Platzierungen" subtitle="Erfolgreiche Platzierungen und Honorare">
         {/* Fixed columns scroll sideways on a phone rather than misaligning (ADR-0026). */}
         <div style={{ overflowX: isMobile ? 'auto' : 'visible' }}>
         <div style={{ minWidth: isMobile ? '600px' : 'auto' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.4fr) minmax(0,1.2fr) 110px 110px 110px', gap: '14px', padding: '11px 18px', fontFamily: 'var(--font-mono)', fontSize: '9.5px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-soft)', borderBottom: '1px solid var(--border)', background: 'var(--surface-subtle)' }}>
-          <span>Talent</span><span>Client · Role</span><span>Start</span><span>Fee</span><span style={{ textAlign: 'right' }}>Status</span>
+          <span>Talent</span><span>Klient · Rolle</span><span>Start</span><span>Honorar</span><span style={{ textAlign: 'right' }}>Status</span>
         </div>
         {placements.map((p) => (
-          <div key={p.id} onClick={onEdit ? () => onEdit(p) : undefined} role={onEdit ? 'button' : undefined} title={onEdit ? 'Edit placement' : undefined} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.4fr) minmax(0,1.2fr) 110px 110px 110px', gap: '14px', alignItems: 'center', padding: '13px 18px', borderBottom: '1px solid var(--border)', cursor: onEdit ? 'pointer' : 'default' }}>
+          <div key={p.id} onClick={onEdit ? () => onEdit(p) : undefined} role={onEdit ? 'button' : undefined} title={onEdit ? 'Platzierung bearbeiten' : undefined} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.4fr) minmax(0,1.2fr) 110px 110px 110px', gap: '14px', alignItems: 'center', padding: '13px 18px', borderBottom: '1px solid var(--border)', cursor: onEdit ? 'pointer' : 'default' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '11px', minWidth: 0 }}>
               <VV.Avatar name={p.candName} size="sm" />
               <span style={{ fontFamily: 'var(--font-display)', fontSize: '13.5px', fontWeight: 700, color: 'var(--text-heading)' }}>{p.candName}</span>
@@ -123,7 +123,7 @@ function PlatzierungenView({ placements, kpis, onEdit }) {
         ))}
         {placements.length === 0 && (
           <div style={{ padding: '40px', textAlign: 'center', fontSize: '13px', color: 'var(--text-soft)' }}>
-            No placements yet.
+            Noch keine Platzierungen.
           </div>
         )}
         </div>
@@ -136,12 +136,12 @@ function PlatzierungenView({ placements, kpis, onEdit }) {
 /* ---------- Berichte: provision per client + mandate health + funnel ---------- */
 /* Candidacy-stage labels for the forecast (distinct from application stages). */
 const FORECAST_STAGE_LABELS = {
-  sourced: 'Sourced',
-  screening: 'Screening',
+  sourced: 'Angesprochen',
+  screening: 'Sichtung',
   interview: 'Interview',
-  offer: 'Offer',
-  placed: 'Placed',
-  rejected: 'Rejected',
+  offer: 'Angebot',
+  placed: 'Platziert',
+  rejected: 'Absage',
 };
 
 /* ForecastCard — weighted expected revenue across the live pipeline. Each
@@ -160,15 +160,15 @@ function OutcomeCard() {
     return () => { alive = false; };
   }, []);
   if (!stats || !stats.byKind || stats.byKind.length === 0) return null;
-  const KIND_LABELS = { outreach: 'Outreach', pitch: 'Pitch' };
-  const rate = (b) => (b.replyRate === null ? '— pending' : `${b.replyRate}%`);
+  const KIND_LABELS = { outreach: 'Ansprache', pitch: 'Pitch' };
+  const rate = (b) => (b.replyRate === null ? '— ausstehend' : `${b.replyRate}%`);
   return (
-    <VV.Card title="Outcome loop" subtitle="What your AI artifacts actually achieved — resolved replies only, no guesses">
+    <VV.Card title="Ergebnisschleife" subtitle="Was Ihre KI-Artefakte tatsächlich erreicht haben — nur aufgelöste Antworten, keine Schätzungen">
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {stats.byKind.map((b) => (
           <div key={b.kind} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto auto', gap: '14px', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid var(--border)' }}>
             <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-heading)' }}>{KIND_LABELS[b.kind] || b.kind}</span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11.5px', color: 'var(--text-muted)' }}>{b.sent} sent · {b.pending} pending</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11.5px', color: 'var(--text-muted)' }}>{b.sent} gesendet · {b.pending} ausstehend</span>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11.5px', color: b.replyRate === null ? 'var(--text-soft)' : 'var(--accent-strong)', minWidth: '72px', textAlign: 'right' }}>{rate(b)}</span>
           </div>
         ))}
@@ -197,23 +197,23 @@ function ForecastCard() {
   }, []);
 
   return (
-    <VV.Card title="Pipeline forecast" subtitle="Weighted expected revenue across live mandates">
+    <VV.Card title="Pipeline-Prognose" subtitle="Gewichteter erwarteter Umsatz über aktive Mandate">
       {error ? (
-        <div style={{ padding: '18px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Could not load the forecast.</div>
+        <div style={{ padding: '18px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Prognose konnte nicht geladen werden.</div>
       ) : data === null ? (
-        <div style={{ padding: '22px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Loading…</div>
+        <div style={{ padding: '22px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Wird geladen…</div>
       ) : data.mandates.length === 0 ? (
-        <div style={{ padding: '18px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>No candidates in any pipeline yet — the forecast fills as you add candidacies.</div>
+        <div style={{ padding: '18px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Noch keine Kandidat:innen in einer Pipeline — die Prognose füllt sich, sobald Sie Kandidaturen hinzufügen.</div>
       ) : (
         <>
           <div style={{ display: 'flex', gap: '24px', marginBottom: '16px' }}>
             <div>
               <div style={{ fontFamily: 'var(--font-display)', fontSize: '26px', fontWeight: 700, color: 'var(--accent-strong)', letterSpacing: '-0.02em' }}>{fmt(data.totalWeighted)} €</div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--text-soft)', marginTop: '2px' }}>Weighted (expected)</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--text-soft)', marginTop: '2px' }}>Gewichtet (erwartet)</div>
             </div>
             <div>
               <div style={{ fontFamily: 'var(--font-display)', fontSize: '26px', fontWeight: 700, color: 'var(--text-heading)', letterSpacing: '-0.02em' }}>{fmt(data.totalFaceValue)} €</div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--text-soft)', marginTop: '2px' }}>Face value (if all fill)</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--text-soft)', marginTop: '2px' }}>Nennwert (wenn alle besetzt werden)</div>
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '11px' }}>
@@ -238,23 +238,23 @@ function ForecastCard() {
           {Array.isArray(data.probabilities) && data.probabilities.length > 0 && (
             <div style={{ marginTop: '16px', borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '8px' }}>
-                Stage probabilities · {data.probabilities.some((p) => p.source === 'observed') ? 'learned from your desk' : 'industry defaults — learning as your pipeline resolves'}
+                Stufenwahrscheinlichkeiten · {data.probabilities.some((p) => p.source === 'observed') ? 'aus Ihrem Desk gelernt' : 'Branchenstandard — lernt, sobald sich Ihre Pipeline auflöst'}
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                 {data.probabilities.map((p) => (
-                  <span key={p.stage} title={p.source === 'observed' ? `${p.wins} of ${p.sample} resolved candidacies through ${p.stage} were placed` : `Default — only ${p.sample} resolved so far`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 9px', borderRadius: 'var(--radius-pill)', background: 'var(--surface-sunk)', fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-muted)' }}>
+                  <span key={p.stage} title={p.source === 'observed' ? `${p.wins} von ${p.sample} aufgelösten Kandidaturen über ${p.stage} wurden platziert` : `Standard — bisher nur ${p.sample} aufgelöst`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 9px', borderRadius: 'var(--radius-pill)', background: 'var(--surface-sunk)', fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-muted)' }}>
                     {FORECAST_STAGE_LABELS[p.stage] || p.stage} {Math.round(p.probability * 100)}%
-                    <span style={{ fontSize: '9px', letterSpacing: '0.06em', textTransform: 'uppercase', color: p.source === 'observed' ? 'var(--accent-strong)' : 'var(--text-soft)' }}>{p.source === 'observed' ? `yours · ${p.sample}×` : 'default'}</span>
+                    <span style={{ fontSize: '9px', letterSpacing: '0.06em', textTransform: 'uppercase', color: p.source === 'observed' ? 'var(--accent-strong)' : 'var(--text-soft)' }}>{p.source === 'observed' ? `Ihre · ${p.sample}×` : 'Standard'}</span>
                   </span>
                 ))}
               </div>
               {Array.isArray(data.insights) && data.insights.length > 0 && (
                 <div style={{ marginTop: '12px' }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '6px' }}>Interview conversion by client</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '6px' }}>Interview-Konversion nach Klient</div>
                   {data.insights.map((i) => (
                     <div key={i.client} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', gap: '12px', alignItems: 'center', padding: '5px 0' }}>
                       <span style={{ fontSize: '12px', color: 'var(--text-heading)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{i.client}</span>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-muted)' }}>{i.placements} of {i.interviews} interviews placed · {i.rate}%</span>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-muted)' }}>{i.placements} von {i.interviews} Interviews platziert · {i.rate}%</span>
                     </div>
                   ))}
                 </div>
@@ -299,7 +299,7 @@ function ReportsView({ clients, mandates, placements, apps, kpis }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
         <VV.Button variant="outline" size="sm" iconLeft={<VV.Icon name="download" size={14} />} disabled={placements.length === 0} onClick={exportCsv}>
-          Export placements (CSV)
+          Platzierungen exportieren (CSV)
         </VV.Button>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '14px' }}>
@@ -308,7 +308,7 @@ function ReportsView({ clients, mandates, placements, apps, kpis }) {
       <ForecastCard />
       <OutcomeCard />
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
-        <VV.Card title="Fees per client" subtitle="Booked placements Q2">
+        <VV.Card title="Honorar nach Klient" subtitle="Gebuchte Platzierungen Q2">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '13px' }}>
             {perClient.map((x) => (
               <div key={x.name}>

@@ -97,7 +97,7 @@ function Matching({ talents, mandates = [], onCreateMandate, onApply }) {
       {liveDown && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', color: 'var(--text-muted)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '8px 12px', marginBottom: '16px' }}>
           <MT.Icon name="info" size={14} style={{ flexShrink: 0 }} />
-          <span>Live job sources are unreachable right now, so no postings could be loaded. Check the server's network/API keys; the search recovers automatically.</span>
+          <span>Live-Stellenquellen sind gerade nicht erreichbar, daher konnten keine Stellen geladen werden. Prüfe die Netzwerk-/API-Schlüssel des Servers; die Suche erholt sich automatisch.</span>
         </div>
       )}
       {/* Accumulated jobs across every API source, with a per-board breakdown. A
@@ -105,14 +105,14 @@ function Matching({ talents, mandates = [], onCreateMandate, onApply }) {
       {srcCounts.length > 0 && (
         <div data-testid="source-counts" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '18px' }}>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600, color: 'var(--text-heading)' }}>
-            {total} {total === 1 ? 'job' : 'jobs'}
+            {total} {total === 1 ? 'Stelle' : 'Stellen'}
           </span>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>
-            across {srcCounts.filter((s) => s.ok).length}/{srcCounts.length} sources
+            aus {srcCounts.filter((s) => s.ok).length}/{srcCounts.length} Quellen
           </span>
           <span style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
             {srcCounts.map((s) => (
-              <span key={s.name} title={s.ok ? `${s.name}: ${s.count} postings` : `${s.name} is unreachable`} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-mono)', fontSize: '11px', padding: '3px 9px', borderRadius: 'var(--radius-pill)', border: '1px solid var(--border)', background: 'var(--surface-card)', color: s.ok ? 'var(--text-muted)' : 'var(--text-soft)', textDecoration: s.ok ? 'none' : 'line-through', opacity: s.ok ? 1 : 0.6 }}>
+              <span key={s.name} title={s.ok ? `${s.name}: ${s.count} Stellen` : `${s.name} ist nicht erreichbar`} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-mono)', fontSize: '11px', padding: '3px 9px', borderRadius: 'var(--radius-pill)', border: '1px solid var(--border)', background: 'var(--surface-card)', color: s.ok ? 'var(--text-muted)' : 'var(--text-soft)', textDecoration: s.ok ? 'none' : 'line-through', opacity: s.ok ? 1 : 0.6 }}>
                 <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: s.ok ? 'var(--positive, #1F8A5B)' : 'var(--danger, #d64545)' }} />
                 {s.name} {s.ok ? s.count : '—'}
               </span>
@@ -122,19 +122,19 @@ function Matching({ talents, mandates = [], onCreateMandate, onApply }) {
       )}
       {/* mode */}
       <div style={{ display: 'inline-flex', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '3px', gap: '3px', marginBottom: '20px' }}>
-        {[['auto', 'Auto · Skill-Match'], ['manual', 'Manual']].map(([id, lbl]) => (
+        {[['auto', 'Auto · Skill-Match'], ['manual', 'Manuell']].map(([id, lbl]) => (
           <button key={id} onClick={() => setMode(id)} style={{ appearance: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: mode === id ? 600 : 500, padding: '8px 16px', borderRadius: 'var(--radius-sm)', background: mode === id ? 'var(--surface-card)' : 'transparent', color: mode === id ? 'var(--text-heading)' : 'var(--text-soft)', boxShadow: mode === id ? 'var(--shadow-sm)' : 'none' }}>{lbl}</button>
         ))}
       </div>
 
       {/* candidate switcher */}
-      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '9px' }}>Candidate</div>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '9px' }}>Kandidat:in</div>
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '18px' }}>
         {talents.map((t) => {
           const on = t.id === candId;
           return (
             <button key={t.id} onClick={() => setCandId(t.id)} style={{ appearance: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '4px 13px 4px 4px', borderRadius: 'var(--radius-pill)', border: `1px solid ${on ? 'var(--accent-border)' : 'var(--border-strong)'}`, background: on ? 'var(--accent-soft)' : 'var(--surface-card)', color: on ? 'var(--accent-strong)' : 'var(--text-muted)', fontSize: '13px', fontWeight: on ? 600 : 500 }}>
-              <MT.Avatar name={t.name} src={t.src} size="xs" />{t.name}{t.me ? ' · Me' : ''}
+              <MT.Avatar name={t.name} src={t.src} size="xs" />{t.name}{t.me ? ' · Ich' : ''}
             </button>
           );
         })}
@@ -147,29 +147,29 @@ function Matching({ talents, mandates = [], onCreateMandate, onApply }) {
         const inp = { flex: 1, minWidth: 0, border: '1px solid var(--border-strong)', outline: 'none', background: 'var(--surface-card)', borderRadius: 'var(--radius-md)', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-heading)', padding: '9px 11px' };
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '18px', padding: '14px', border: '1px solid var(--accent-border)', background: 'var(--accent-soft)', borderRadius: 'var(--radius-lg)' }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--accent-strong)' }}>Apply {cand.name.split(' ')[0]} to a role</div>
-            <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '-4px' }}>Type a role or pick one of your mandates — no live posting needed.</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--accent-strong)' }}>{cand.name.split(' ')[0]} stellvertretend bewerben</div>
+            <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '-4px' }}>Stelle eingeben oder eines deiner Mandate wählen — keine Live-Stelle nötig.</div>
             {mandates.length > 0 && (
               <select
-                aria-label="Prefill from a mandate"
+                aria-label="Aus einem Mandat vorbefüllen"
                 value=""
                 onChange={(e) => { const m = mandates.find((x) => x.id === e.target.value); if (m) setManual({ company: m.client || '', role: m.role || '' }); }}
                 style={{ ...inp, cursor: 'pointer' }}
               >
-                <option value="">From one of your mandates…</option>
+                <option value="">Aus einem deiner Mandate…</option>
                 {mandates.map((m) => <option key={m.id} value={m.id}>{m.role} · {m.client}</option>)}
               </select>
             )}
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              <input value={manual.company} onChange={(e) => setManual((s) => ({ ...s, company: e.target.value }))} placeholder="Company" aria-label="Company" style={inp} />
-              <input value={manual.role} onChange={(e) => setManual((s) => ({ ...s, role: e.target.value }))} placeholder="Role" aria-label="Role" style={inp} />
+              <input value={manual.company} onChange={(e) => setManual((s) => ({ ...s, company: e.target.value }))} placeholder="Unternehmen" aria-label="Unternehmen" style={inp} />
+              <input value={manual.role} onChange={(e) => setManual((s) => ({ ...s, role: e.target.value }))} placeholder="Stelle" aria-label="Stelle" style={inp} />
               <button
                 onClick={applyManual}
                 disabled={!ready || st === 'busy'}
                 style={{ appearance: 'none', cursor: !ready || st === 'busy' ? 'default' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'var(--accent)', border: 'none', borderRadius: 'var(--radius-md)', color: 'var(--accent-contrast)', fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600, padding: '9px 15px', opacity: !ready ? 0.5 : 1 }}
               >
                 <MT.Icon name={st === 'done' ? 'check' : 'plus'} size={14} />
-                {st === 'busy' ? 'Applying…' : st === 'done' ? 'Applied' : st === 'error' ? 'Retry' : 'Apply'}
+                {st === 'busy' ? 'Bewerbung läuft…' : st === 'done' ? 'Beworben' : st === 'error' ? 'Erneut versuchen' : 'Bewerben'}
               </button>
             </div>
           </div>
@@ -180,10 +180,10 @@ function Matching({ talents, mandates = [], onCreateMandate, onApply }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '18px' }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface-card)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', padding: '0 12px' }}>
             <MT.Icon name="search" size={15} style={{ color: 'var(--text-soft)' }} />
-            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search a role: title, company, location …" style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-heading)', padding: '10px 0' }} />
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Stelle suchen: Titel, Unternehmen, Ort …" style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-heading)', padding: '10px 0' }} />
           </label>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            {[['ALL', 'All countries'], ['CH', '🇨🇭 Switzerland'], ['DE', '🇩🇪 Germany']].map(([k, l]) => chip(country === k, l, () => setCountry(k)))}
+            {[['ALL', 'Alle Länder'], ['CH', '🇨🇭 Schweiz'], ['DE', '🇩🇪 Deutschland']].map(([k, l]) => chip(country === k, l, () => setCountry(k)))}
           </div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {sources.map((s) => chip(source === s, s, () => setSource(s)))}
@@ -192,7 +192,7 @@ function Matching({ talents, mandates = [], onCreateMandate, onApply }) {
       )}
 
       {mode === 'auto' && (
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 16px' }}>Roles matched to <b style={{ color: 'var(--text-heading)' }}>{cand.name}’s skill profile</b> — best fit first.</p>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 16px' }}>Stellen passend zum <b style={{ color: 'var(--text-heading)' }}>Skill-Profil von {cand.name}</b> — beste Übereinstimmung zuerst.</p>
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -205,7 +205,7 @@ function Matching({ talents, mandates = [], onCreateMandate, onApply }) {
                 source={job.source} pensum={job.pensum} salary={job.salary} posted={job.posted}
                 match={mtScore(cand, job).pct}
                 skills={mtSkills(cand, job)}
-                applyLabel={job.url ? 'View posting' : undefined}
+                applyLabel={job.url ? 'Stelle ansehen' : undefined}
                 onApply={open}
                 onView={open}
               />
@@ -214,16 +214,16 @@ function Matching({ talents, mandates = [], onCreateMandate, onApply }) {
                   {onApply && (() => {
                     const aState = applyState[`${cand.id}:${job.id}`];
                     const label =
-                      aState === 'busy' ? 'Applying…'
-                      : aState === 'done' ? `Applied · ${cand.name.split(' ')[0]}`
-                      : aState === 'error' ? 'Retry apply'
-                      : `Apply ${cand.name.split(' ')[0]}`;
+                      aState === 'busy' ? 'Bewerbung läuft…'
+                      : aState === 'done' ? `Beworben · ${cand.name.split(' ')[0]}`
+                      : aState === 'error' ? 'Erneut bewerben'
+                      : `${cand.name.split(' ')[0]} bewerben`;
                     const done = aState === 'done';
                     return (
                       <button
                         onClick={() => apply(job)}
                         disabled={aState === 'busy' || done}
-                        title={`Apply ${cand.name} to this role — records an application with the company’s details`}
+                        title={`${cand.name} stellvertretend auf diese Stelle bewerben — legt eine Bewerbung mit den Angaben des Unternehmens an`}
                         style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: aState === 'busy' || done ? 'default' : 'pointer', appearance: 'none', background: done ? 'var(--surface-sunk)' : 'var(--accent-soft)', border: `1px solid ${done ? 'var(--border-strong)' : 'var(--accent-border)'}`, borderRadius: 'var(--radius-pill)', color: done ? 'var(--text-soft)' : 'var(--accent-strong)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '4px 11px' }}
                       >
                         <MT.Icon name={done ? 'check' : 'plus'} size={12} /> {label}
@@ -233,10 +233,10 @@ function Matching({ talents, mandates = [], onCreateMandate, onApply }) {
                   {onCreateMandate && (
                     <button
                       onClick={() => onCreateMandate(job)}
-                      title="Open a client mandate drafted from this posting"
+                      title="Ein Klienten-Mandat aus dieser Stelle entwerfen"
                       style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', appearance: 'none', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '11px', padding: '4px 11px' }}
                     >
-                      <MT.Icon name="briefcase" size={12} /> Create mandate
+                      <MT.Icon name="briefcase" size={12} /> Mandat anlegen
                     </button>
                   )}
                 </div>
@@ -245,7 +245,7 @@ function Matching({ talents, mandates = [], onCreateMandate, onApply }) {
           );
         })}
         {(mode === 'auto' ? jobs.length === 0 : manualJobs.length === 0) && (
-          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-soft)', border: '1px dashed var(--border-strong)', borderRadius: 'var(--radius-lg)' }}>No roles found.</div>
+          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-soft)', border: '1px dashed var(--border-strong)', borderRadius: 'var(--radius-lg)' }}>Keine Treffer.</div>
         )}
       </div>
     </div>

@@ -122,7 +122,7 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '14px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <button onClick={onBack} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)', padding: 0 }}>
-          <MP.Icon name="arrowLeft" size={14} /> Back to mandates
+          <MP.Icon name="arrowLeft" size={14} /> Zurück zu Mandaten
         </button>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
           <MP.Button variant="outline" size="sm" iconLeft={<MP.Icon name="users" size={15} />} onClick={() => setKnowledgeOpen(true)}>Company knowledge</MP.Button>

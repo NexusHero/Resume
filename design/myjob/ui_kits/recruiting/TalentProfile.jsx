@@ -36,7 +36,7 @@ function CvMainHeading({ icon, title, onEdit }) {
       <span style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
       {onEdit && (
         <span style={{ opacity: hover ? 1 : 0, transition: 'opacity var(--dur-fast)' }}>
-          <TP.IconButton icon="edit" label="Edit" variant="ghost" size="sm" onClick={onEdit} />
+          <TP.IconButton icon="edit" label="Bearbeiten" variant="ghost" size="sm" onClick={onEdit} />
         </span>
       )}
     </div>
@@ -51,9 +51,9 @@ function ResumeTab({ talent, onEdit, onCreateMappe }) {
     return (
       <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-soft)' }}>
         <TP.Icon name="fileText" size={28} style={{ color: 'var(--border-strong)', margin: '0 auto 12px' }} />
-        <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-muted)' }}>No resume on file yet</div>
-        <div style={{ fontSize: '13px', marginTop: '4px', marginBottom: '16px' }}>Create a resume for {talent.name.split(' ')[0]}.</div>
-        <TP.Button variant="primary" size="sm" iconLeft={<TP.Icon name="plus" size={15} />} onClick={onEdit}>Create resume</TP.Button>
+        <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-muted)' }}>Noch kein Lebenslauf hinterlegt</div>
+        <div style={{ fontSize: '13px', marginTop: '4px', marginBottom: '16px' }}>Lebenslauf für {talent.name.split(' ')[0]} anlegen.</div>
+        <TP.Button variant="primary" size="sm" iconLeft={<TP.Icon name="plus" size={15} />} onClick={onEdit}>Lebenslauf anlegen</TP.Button>
       </div>
     );
   }
@@ -74,7 +74,7 @@ function ResumeTab({ talent, onEdit, onCreateMappe }) {
               </div>
             </div>
 
-            <CvSideSection title="Contact">
+            <CvSideSection title="Kontakt">
               <CvContact icon="pin" value={talent.location} />
               <CvContact icon="mail" value={talent.email} />
               <CvContact icon={null} value={talent.phone} />
@@ -97,7 +97,7 @@ function ResumeTab({ talent, onEdit, onCreateMappe }) {
               </div>
             </CvSideSection>
 
-            <CvSideSection title="Education">
+            <CvSideSection title="Ausbildung">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '13px' }}>
                 {r.education.map((e, i) => (
                   <div key={i}>
@@ -113,12 +113,12 @@ function ResumeTab({ talent, onEdit, onCreateMappe }) {
           {/* paper main — summary & experience */}
           <div style={{ background: 'var(--surface-card)', padding: '32px 34px' }}>
             <section style={{ marginBottom: '26px' }}>
-              <CvMainHeading icon="user" title="Profile" onEdit={onEdit} />
+              <CvMainHeading icon="user" title="Profil" onEdit={onEdit} />
               <p style={{ fontSize: '14.5px', lineHeight: 1.65, color: 'var(--text-body)', margin: 0 }}>{r.summary}</p>
             </section>
 
             <section>
-              <CvMainHeading icon="briefcase" title="Experience" onEdit={onEdit} />
+              <CvMainHeading icon="briefcase" title="Berufserfahrung" onEdit={onEdit} />
               <div style={{ position: 'relative', paddingLeft: '22px' }}>
                 <span style={{ position: 'absolute', left: '5px', top: '6px', bottom: '6px', width: '1.5px', background: 'var(--border-strong)' }} />
                 {r.experience.map((e, i) => (
@@ -146,16 +146,16 @@ function ResumeTab({ talent, onEdit, onCreateMappe }) {
       {/* side rail: actions + linked attachments */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', position: 'sticky', top: 0 }}>
         <TP.Card>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '10px' }}>Resume</div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '10px' }}>Lebenslauf</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <TP.Button variant="primary" block iconLeft={<TP.Icon name="send" size={15} />} onClick={onCreateMappe}>Create application dossier</TP.Button>
-            <TP.Button variant="outline" block iconLeft={<TP.Icon name="edit" size={15} />} onClick={onEdit}>Edit resume</TP.Button>
-            <TP.Button variant="ghost" block iconLeft={<TP.Icon name="download" size={15} />}>Export as PDF</TP.Button>
+            <TP.Button variant="primary" block iconLeft={<TP.Icon name="send" size={15} />} onClick={onCreateMappe}>Bewerbungsmappe erstellen</TP.Button>
+            <TP.Button variant="outline" block iconLeft={<TP.Icon name="edit" size={15} />} onClick={onEdit}>Lebenslauf bearbeiten</TP.Button>
+            <TP.Button variant="ghost" block iconLeft={<TP.Icon name="download" size={15} />}>Als PDF exportieren</TP.Button>
           </div>
         </TP.Card>
         <TP.Card>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Linked attachments</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Verknüpfte Anhänge</span>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>{talent.attachments.length}</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
@@ -189,10 +189,10 @@ function AttachmentsTab({ talent, apps, onUploaded }) {
         dataBase64,
       })
         .then(() => onUploaded && onUploaded())
-        .catch((e) => setError((e && e.message) || 'Upload failed.'))
+        .catch((e) => setError((e && e.message) || 'Upload fehlgeschlagen.'))
         .finally(() => setUploading(false));
     };
-    reader.onerror = () => { setUploading(false); setError('Could not read that file.'); };
+    reader.onerror = () => { setUploading(false); setError('Datei konnte nicht gelesen werden.'); };
     reader.readAsDataURL(file);
   };
   const usage = (atId) => apps.filter((a) => (a.attachments || []).includes(atId));
@@ -200,12 +200,12 @@ function AttachmentsTab({ talent, apps, onUploaded }) {
     <TP.Card pad={false}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--border)' }}>
         <div>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: '15px', fontWeight: 700, color: 'var(--text-heading)' }}>Documents & attachments</div>
-          <div style={{ fontSize: '12px', color: 'var(--text-soft)', marginTop: '1px' }}>Upload once, link to any application</div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: '15px', fontWeight: 700, color: 'var(--text-heading)' }}>Dokumente & Anhänge</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-soft)', marginTop: '1px' }}>Einmal hochladen, mit jeder Bewerbung verknüpfen</div>
         </div>
         <label style={{ cursor: 'pointer' }}>
           <TP.Button variant="ink" size="sm" iconLeft={<TP.Icon name="upload" size={14} />} disabled={uploading} style={{ pointerEvents: 'none' }}>
-            {uploading ? 'Uploading…' : 'Upload'}
+            {uploading ? 'Wird hochgeladen…' : 'Hochladen'}
           </TP.Button>
           <input type="file" style={{ display: 'none' }} onChange={(e) => upload(e.target.files[0])} />
         </label>
@@ -214,7 +214,7 @@ function AttachmentsTab({ talent, apps, onUploaded }) {
         <div style={{ padding: '10px 18px', fontSize: '12.5px', color: 'var(--danger)', borderBottom: '1px solid var(--border)' }}>{error}</div>
       )}
       {talent.attachments.length === 0 && (
-        <div style={{ padding: '40px', textAlign: 'center', fontSize: '13px', color: 'var(--text-soft)' }}>No attachments yet.</div>
+        <div style={{ padding: '40px', textAlign: 'center', fontSize: '13px', color: 'var(--text-soft)' }}>Noch keine Anhänge.</div>
       )}
       {talent.attachments.map((a) => {
         const used = usage(a.id);
@@ -227,10 +227,10 @@ function AttachmentsTab({ talent, apps, onUploaded }) {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
               {used.length === 0
-                ? <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>not linked</span>
+                ? <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>nicht verknüpft</span>
                 : used.map((u) => <TP.Badge key={u.id} variant="subtle" size="sm" icon={<TP.Icon name="paperclip" size={10} />}>{u.company.split(' ')[0]}</TP.Badge>)}
             </div>
-            <TP.IconButton icon="more" label="More" variant="ghost" size="sm" />
+            <TP.IconButton icon="more" label="Mehr" variant="ghost" size="sm" />
           </div>
         );
       })}
@@ -241,18 +241,18 @@ function AttachmentsTab({ talent, apps, onUploaded }) {
 /* ---- Bewerbungen tab ---- */
 function TalentApplications({ apps, onCreateMappe }) {
   return (
-    <TP.Card pad={false} title="Applications" subtitle="All dossiers for this talent"
-      action={<TP.Button size="sm" variant="primary" iconLeft={<TP.Icon name="plus" size={14} />} onClick={onCreateMappe}>New dossier</TP.Button>}>
-      {apps.length === 0 && <div style={{ padding: '40px', textAlign: 'center', fontSize: '13px', color: 'var(--text-soft)' }}>No applications yet.</div>}
+    <TP.Card pad={false} title="Bewerbungen" subtitle="Alle Mappen für dieses Talent"
+      action={<TP.Button size="sm" variant="primary" iconLeft={<TP.Icon name="plus" size={14} />} onClick={onCreateMappe}>Neue Mappe</TP.Button>}>
+      {apps.length === 0 && <div style={{ padding: '40px', textAlign: 'center', fontSize: '13px', color: 'var(--text-soft)' }}>Noch keine Bewerbungen.</div>}
       {apps.map((a) => (
         <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 18px', borderBottom: '1px solid var(--border)' }}>
-          <span style={{ width: '38px', height: '38px', flexShrink: 0, borderRadius: 'var(--radius-md)', background: 'var(--surface-sunk)', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><TP.Icon name="building" size={18} /></span>
+          <TP.EntityTile type="company" name={a.company} size="md" />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: '14.5px', fontWeight: 700, color: 'var(--text-heading)' }}>{a.company}</div>
             <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '1px' }}>{a.role} · {a.location}</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            {a.anschreiben && <TP.Badge variant="subtle" size="sm" icon={<TP.Icon name="fileText" size={10} />}>Cover letter</TP.Badge>}
+            {a.anschreiben && <TP.Badge variant="subtle" size="sm" icon={<TP.Icon name="fileText" size={10} />}>Anschreiben</TP.Badge>}
             <TP.Badge variant="subtle" size="sm" icon={<TP.Icon name="paperclip" size={10} />}>{(a.attachments || []).length}</TP.Badge>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '5px', width: '150px' }}>
@@ -317,14 +317,14 @@ function TalentProfile({ talent, apps, onBack, onEdit, onCreateMappe }) {
   const view = { ...talent, resume, attachments };
 
   const tabs = [
-    { id: 'lebenslauf', label: 'Resume' },
-    { id: 'anhaenge', label: 'Attachments', count: view.attachments.length },
-    { id: 'bewerbungen', label: 'Applications', count: apps.length },
+    { id: 'lebenslauf', label: 'Lebenslauf' },
+    { id: 'anhaenge', label: 'Anhänge', count: view.attachments.length },
+    { id: 'bewerbungen', label: 'Bewerbungen', count: apps.length },
   ];
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
       <button onClick={onBack} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', alignSelf: 'flex-start', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)', padding: 0 }}>
-        <TP.Icon name="arrowLeft" size={14} /> Talents
+        <TP.Icon name="arrowLeft" size={14} /> Zurück
       </button>
 
       {/* identity header */}
@@ -333,7 +333,7 @@ function TalentProfile({ talent, apps, onBack, onEdit, onCreateMappe }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '26px', fontWeight: 700, letterSpacing: '-0.025em', margin: 0 }}>{talent.name}</h2>
-            {talent.me && <TP.Badge variant="light" size="sm">Me</TP.Badge>}
+            {talent.me && <TP.Badge variant="light" size="sm">Ich</TP.Badge>}
           </div>
           <div style={{ fontSize: '14px', color: 'var(--sidebar-muted)', marginTop: '3px' }}>{[talent.role, talent.headline].filter(Boolean).join(' · ')}</div>
           <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
@@ -344,7 +344,7 @@ function TalentProfile({ talent, apps, onBack, onEdit, onCreateMappe }) {
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: '30px', fontWeight: 700, color: 'var(--accent-on-dark)', lineHeight: 1 }}>{talent.score != null ? `${talent.score}%` : '—'}</div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--sidebar-soft)', marginTop: '4px' }}>Profile strength</div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--sidebar-soft)', marginTop: '4px' }}>Profilstärke</div>
         </div>
       </div>
 

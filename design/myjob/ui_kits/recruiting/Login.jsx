@@ -83,7 +83,7 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
     try {
       if (isForgot) {
         await window.RecruitApi.requestPasswordReset(email);
-        setNotice("If that email is registered, we've sent a reset link. Check your inbox.");
+        setNotice('Falls diese E-Mail registriert ist, haben wir dir einen Reset-Link geschickt. Sieh in deinem Postfach nach.');
       } else if (isReset) {
         await window.RecruitApi.confirmPasswordReset(initialToken, password);
         // Drop the token from the URL so a refresh doesn't reopen the reset form.
@@ -95,7 +95,7 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
         setPassword('');
         setConfirm('');
         setMode('login');
-        setNotice('Your password has been reset. Please log in.');
+        setNotice('Dein Passwort wurde zurückgesetzt. Bitte melde dich an.');
       } else if (isInvite) {
         const user = await window.RecruitApi.acceptInvite(inviteToken, password);
         // Drop the token from the URL so a refresh doesn't reopen the accept form.
@@ -112,7 +112,7 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
         onAuthed(user);
       }
     } catch (err) {
-      setError((err && err.message) || 'Something went wrong');
+      setError((err && err.message) || 'Etwas ist schiefgelaufen');
     } finally {
       setLoading(false);
     }
@@ -133,32 +133,32 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
   };
 
   const title = isForgot
-    ? 'Reset your password'
+    ? 'Passwort zurücksetzen'
     : isInvite
-      ? 'Accept your invitation'
+      ? 'Einladung annehmen'
       : isReset
-        ? 'Choose a new password'
+        ? 'Neues Passwort wählen'
         : isRegister
-          ? 'Create your account'
-          : 'Welcome back';
+          ? 'Erstelle dein Konto'
+          : 'Willkommen zurück';
   const subtitle = isForgot
-    ? 'Enter your email and we’ll send you a reset link.'
+    ? 'Gib deine E-Mail ein und wir schicken dir einen Reset-Link.'
     : isInvite
-      ? 'Set a password to join your team’s workspace.'
+      ? 'Setze ein Passwort, um dem Workspace deines Teams beizutreten.'
       : isReset
-        ? 'Pick a new password for your account.'
+        ? 'Wähle ein neues Passwort für dein Konto.'
         : isRegister
-          ? 'Start running your recruiting desk.'
-          : 'Pick up where you left off.';
+          ? 'Starte deinen Recruiting-Desk.'
+          : 'Mach dort weiter, wo du aufgehört hast.';
   const submitLabel = isForgot
-    ? 'Send reset link'
+    ? 'Reset-Link senden'
     : isInvite
-      ? 'Accept invitation'
+      ? 'Einladung annehmen'
       : isReset
-        ? 'Set new password'
+        ? 'Neues Passwort setzen'
         : isRegister
-          ? 'Create account'
-          : 'Log in';
+          ? 'Konto erstellen'
+          : 'Anmelden';
 
   return (
     <div style={{ display: 'flex', minHeight: '100dvh', background: 'var(--app-bg)' }}>
@@ -218,7 +218,7 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
         <form onSubmit={submit} aria-label={title} style={{ width: '100%', maxWidth: '380px' }}>
           {!isForgot && !passwordOnly && (
             <div style={{ display: 'flex', gap: '4px', padding: '4px', borderRadius: 'var(--radius-pill)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', marginBottom: '24px' }}>
-              {[['login', 'Log in'], ['register', 'Create account']].map(([m, label]) => (
+              {[['login', 'Anmelden'], ['register', 'Konto erstellen']].map(([m, label]) => (
                 <button
                   key={m}
                   type="button"
@@ -252,14 +252,14 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
           {!isForgot && !passwordOnly && (providers.google || providers.linkedin) && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', marginBottom: '18px' }}>
               {providers.google && (
-                <SocialButton href="/api/v1/auth/google/login" mark="G">Continue with Google</SocialButton>
+                <SocialButton href="/api/v1/auth/google/login" mark="G">Weiter mit Google</SocialButton>
               )}
               {providers.linkedin && (
-                <SocialButton href="/api/v1/auth/linkedin/login" mark="in">Continue with LinkedIn</SocialButton>
+                <SocialButton href="/api/v1/auth/linkedin/login" mark="in">Weiter mit LinkedIn</SocialButton>
               )}
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '6px 0' }}>
                 <span style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-soft)' }}>or</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-soft)' }}>oder</span>
                 <span style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
               </div>
             </div>
@@ -267,14 +267,14 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
 
           {!passwordOnly && (
             <label style={labelStyle}>
-              <span style={labelText}>Email</span>
+              <span style={labelText}>E-Mail</span>
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" placeholder="you@example.com" style={fieldStyle} />
             </label>
           )}
 
           {!isForgot && (
             <label style={labelStyle}>
-              <span style={labelText}>{passwordOnly ? 'New password' : 'Password'}</span>
+              <span style={labelText}>{passwordOnly ? 'Neues Passwort' : 'Passwort'}</span>
               <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete={needsConfirm ? 'new-password' : 'current-password'} placeholder="••••••••" style={fieldStyle} />
             </label>
           )}
@@ -282,7 +282,7 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
           {needsConfirm && (
             <label style={labelStyle}>
               <span style={labelText}>
-                Confirm password {mismatch && <span style={{ color: 'var(--danger)' }}>— doesn’t match</span>}
+                Passwort bestätigen {mismatch && <span style={{ color: 'var(--danger)' }}>— stimmt nicht überein</span>}
               </span>
               <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required autoComplete="new-password" placeholder="••••••••" style={fieldStyle} />
             </label>
@@ -291,7 +291,7 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
           {!isForgot && !passwordOnly && !isRegister && (
             <p style={{ textAlign: 'right', margin: '-6px 0 16px' }}>
               <button type="button" onClick={() => goMode('forgot')} style={linkButton}>
-                Forgot password?
+                Passwort vergessen?
               </button>
             </p>
           )}
@@ -311,22 +311,22 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
               background: 'var(--accent)', color: 'var(--accent-contrast)', opacity: canSubmit ? 1 : 0.55,
             }}
           >
-            {loading ? 'Please wait…' : submitLabel}
+            {loading ? 'Bitte warten…' : submitLabel}
           </button>
 
           {(isForgot || passwordOnly) && (
             <p style={{ fontSize: '13px', color: 'var(--text-soft)', textAlign: 'center', marginTop: '18px' }}>
               <button type="button" onClick={() => goMode('login')} style={linkButton}>
-                ← Back to log in
+                ← Zurück zur Anmeldung
               </button>
             </p>
           )}
 
           {!isForgot && !passwordOnly && (
             <p style={{ fontSize: '13px', color: 'var(--text-soft)', textAlign: 'center', marginTop: '18px' }}>
-              {isRegister ? 'Already have an account? ' : 'New to myJob? '}
+              {isRegister ? 'Schon ein Konto? ' : 'Neu bei myJob? '}
               <button type="button" onClick={() => goMode(isRegister ? 'login' : 'register')} style={linkButton}>
-                {isRegister ? 'Log in' : 'Create one'}
+                {isRegister ? 'Anmelden' : 'Konto erstellen'}
               </button>
             </p>
           )}

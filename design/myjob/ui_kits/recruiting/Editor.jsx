@@ -28,7 +28,7 @@ function FormGroup({ title, children, onAdd }) {
     <div style={{ marginBottom: '22px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '11px' }}>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>{title}</span>
-        {onAdd && <ED.IconButton icon="plus" label="Add" variant="ghost" size="sm" onClick={onAdd} />}
+        {onAdd && <ED.IconButton icon="plus" label="Hinzufügen" variant="ghost" size="sm" onClick={onAdd} />}
       </div>
       {children}
     </div>
@@ -56,7 +56,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
   }, []);
   const [contact, setContact] = React.useState({ name: talent.name, role: talent.role, email: talent.email, phone: talent.phone, location: talent.location, linkedin: talent.linkedin || '', src: talent.src });
   const [resume, setResume] = React.useState(() => JSON.parse(JSON.stringify(talent.resume || { summary: '', experience: [], education: [], skillGroups: [] })));
-  const [letter, setLetter] = React.useState(() => JSON.parse(JSON.stringify(talent.letter || { firma: '', ansprechpartner: '', strasse: '', plzOrt: '', betreff: '', anrede: 'Dear Sir or Madam,', absaetze: [''], gruss: 'Kind regards' })));
+  const [letter, setLetter] = React.useState(() => JSON.parse(JSON.stringify(talent.letter || { firma: '', ansprechpartner: '', strasse: '', plzOrt: '', betreff: '', anrede: 'Sehr geehrte Damen und Herren,', absaetze: [''], gruss: 'Mit freundlichen Grüßen' })));
 
   const setC = (k, v) => setContact((s) => ({ ...s, [k]: v }));
 
@@ -66,7 +66,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
   const uploadPhoto = (file) => {
     setPhotoMsg(null);
     if (!file) return;
-    if (!file.type.startsWith('image/')) { setPhotoMsg('Please pick an image file.'); return; }
+    if (!file.type.startsWith('image/')) { setPhotoMsg('Bitte wähle eine Bilddatei aus.'); return; }
     const img = new Image();
     const url = URL.createObjectURL(file);
     img.onload = () => {
@@ -78,15 +78,15 @@ function Editor({ talent, onClose, onCreateMappe }) {
       canvas.height = Math.round(img.height * scale);
       canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
       const dataUri = canvas.toDataURL('image/jpeg', 0.85);
-      if (dataUri.length > 300000) { setPhotoMsg('Photo is too large even after resizing.'); return; }
+      if (dataUri.length > 300000) { setPhotoMsg('Das Foto ist auch nach dem Verkleinern zu groß. Bitte wähle ein kleineres Bild.'); return; }
       setC('photo', dataUri);
     };
-    img.onerror = () => { URL.revokeObjectURL(url); setPhotoMsg('Could not read that image.'); };
+    img.onerror = () => { URL.revokeObjectURL(url); setPhotoMsg('Das Bild konnte nicht gelesen werden. Bitte versuche eine andere Datei.'); };
     img.src = url;
   };
   const setExp = (i, k, v) => setResume((s) => { const e = [...s.experience]; e[i] = { ...e[i], [k]: v }; return { ...s, experience: e }; });
   const setEdu = (i, k, v) => setResume((s) => { const e = [...s.education]; e[i] = { ...e[i], [k]: v }; return { ...s, education: e }; });
-  const addExp = () => setResume((s) => ({ ...s, experience: [{ role: 'New position', company: '', period: '', location: '', bullets: [''], skills: [] }, ...s.experience] }));
+  const addExp = () => setResume((s) => ({ ...s, experience: [{ role: 'Neue Position', company: '', period: '', location: '', bullets: [''], skills: [] }, ...s.experience] }));
   const delExp = (i) => setResume((s) => ({ ...s, experience: s.experience.filter((_, j) => j !== i) }));
   const setPara = (i, v) => setLetter((s) => { const a = [...s.absaetze]; a[i] = v; return { ...s, absaetze: a }; });
   const addPara = () => setLetter((s) => ({ ...s, absaetze: [...s.absaetze, ''] }));
@@ -111,7 +111,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
       if (s.action === 'summary') setPending({ kind: 'summary', value: s.text, provider: s.provider, usage: s.usage });
       else setPending({ kind: 'letter', value: s.paragraphs, provider: s.provider, usage: s.usage });
     } catch (e) {
-      setAiError((e && e.message) || 'Could not tailor this document. Please try again.');
+      setAiError((e && e.message) || 'Dieses Dokument konnte nicht angepasst werden. Bitte versuche es erneut.');
     } finally {
       setGen(false);
     }
@@ -216,7 +216,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
     return () => clearTimeout(saveTimer.current);
   }, [contact, resume, letter, cfg, hydrated, talentId]);
 
-  const saveLabel = { saving: 'Saving…', saved: 'Saved', error: 'Not saved' };
+  const saveLabel = { saving: 'Speichere…', saved: 'Gespeichert', error: 'Nicht gespeichert' };
 
   /* The import modal hands the parsed CV back here to fill the form. */
   /* The parsed CV is staged like an AI suggestion — shown in the preview
@@ -239,16 +239,16 @@ function Editor({ talent, onClose, onCreateMappe }) {
     setTranslateMsg(null);
     try {
       const res = await window.RecruitApi.translateDocuments(talentId, lang);
-      const name = lang === 'de' ? 'German' : 'English';
+      const name = lang === 'de' ? 'Deutsche' : 'Englische';
       const spend = res.usage
         ? ` (${res.usage.inputTokens + res.usage.outputTokens} tok · $${res.usage.costUsd < 0.01 ? res.usage.costUsd.toFixed(4) : res.usage.costUsd.toFixed(2)})`
         : '';
       setTranslateMsg({
         ok: true,
-        text: res.created ? `${name} version created.${spend}` : `${name} version already exists.`,
+        text: res.created ? `${name} Fassung erstellt.${spend}` : `${name} Fassung existiert bereits.`,
       });
     } catch (e) {
-      setTranslateMsg({ ok: false, text: (e && e.message) || 'Translation failed.' });
+      setTranslateMsg({ ok: false, text: (e && e.message) || 'Übersetzung fehlgeschlagen. Bitte versuche es erneut.' });
     }
     setTranslating('');
   };
@@ -265,7 +265,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
       const base = (contact.name || 'documents').trim().replace(/\s+/g, '-') || 'documents';
       await window.RecruitApi.downloadTalentDocumentsPdf(talentId, `${base}.pdf`);
     } catch {
-      setPdfMsg('Could not download the PDF. Please try again.');
+      setPdfMsg('Der PDF-Download ist fehlgeschlagen. Bitte versuche es erneut.');
     }
     setPdfBusy(false);
   };
@@ -281,7 +281,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
     <div data-doc-hydrated={canPersist ? (hydrated ? 'true' : 'false') : 'na'} style={{ display: 'flex', flexDirection: 'column', height: isMobile ? 'auto' : '100%', gap: '14px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: isMobile ? 'wrap' : 'nowrap', alignSelf: isMobile ? 'stretch' : 'flex-start' }}>
         <button onClick={onClose} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)', padding: 0 }}>
-          <ED.Icon name="arrowLeft" size={14} /> Back to profile
+          <ED.Icon name="arrowLeft" size={14} /> Zurück zum Profil
         </button>
         {canPersist && saveState !== 'idle' && (
           <span role="status" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: saveState === 'error' ? 'var(--danger)' : 'var(--text-soft)' }}>
@@ -291,21 +291,21 @@ function Editor({ talent, onClose, onCreateMappe }) {
         )}
         {canPersist && (
           <>
-            <EdPill icon="upload" onClick={() => setModal('import')}>Import CV</EdPill>
-            <EdPill icon="search" onClick={() => setModal('ats')}>ATS check</EdPill>
+            <EdPill icon="upload" onClick={() => setModal('import')}>CV importieren</EdPill>
+            <EdPill icon="search" onClick={() => setModal('ats')}>ATS-Check</EdPill>
             <EdPill icon="briefcase" onClick={() => setModal('pitch')}>Pitch</EdPill>
-            <EdPill icon="send" onClick={() => setModal('outreach')}>Outreach</EdPill>
+            <EdPill icon="send" onClick={() => setModal('outreach')}>Ansprache</EdPill>
             <EdPill icon="download" onClick={exportPdf} disabled={pdfBusy}>{pdfBusy ? 'PDF…' : 'PDF'}</EdPill>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>
-                <ED.Icon name="globe" size={13} /> Translate
+                <ED.Icon name="globe" size={13} /> Übersetzen
               </span>
               {[['en', 'EN'], ['de', 'DE']].map(([lang, label]) => (
                 <EdPill
                   key={lang}
                   onClick={() => runTranslate(lang)}
                   disabled={!!translating}
-                  title={`Translate the documents to ${lang === 'de' ? 'German' : 'English'}`}
+                  title={`Dokumente auf ${lang === 'de' ? 'Deutsch' : 'Englisch'} übersetzen`}
                   style={{ fontWeight: 600, padding: '4px 10px', opacity: translating && translating !== lang ? 0.5 : 1 }}
                 >
                   {translating === lang ? '…' : label}
@@ -354,30 +354,30 @@ function Editor({ talent, onClose, onCreateMappe }) {
               <div role="alert" style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', border: '1px solid var(--danger)', background: 'var(--danger-soft)', borderRadius: 'var(--radius-md)', padding: '10px 13px', marginBottom: '16px', fontSize: '12.5px', color: 'var(--danger)' }}>
                 <ED.Icon name="alertTriangle" size={14} style={{ flexShrink: 0, marginTop: '1px' }} />
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600 }}>AI tailoring failed</div>
+                  <div style={{ fontWeight: 600 }}>KI-Anpassung fehlgeschlagen</div>
                   <div style={{ marginTop: '2px' }}>{aiError}</div>
                 </div>
-                <button onClick={runAI} style={{ appearance: 'none', cursor: 'pointer', border: '1px solid var(--danger)', background: 'transparent', color: 'var(--danger)', borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '4px 10px' }}>Retry</button>
+                <button onClick={runAI} style={{ appearance: 'none', cursor: 'pointer', border: '1px solid var(--danger)', background: 'transparent', color: 'var(--danger)', borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '4px 10px' }}>Erneut versuchen</button>
               </div>
             )}
             {(gen || pending) && (
               <div style={{ border: '1px dashed var(--accent-border)', borderRadius: 'var(--radius-md)', overflow: 'hidden', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '8px 12px', background: 'var(--accent-soft)', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 600, color: 'var(--accent-strong)' }}>
-                  <ED.Icon name="zap" size={12} />Suggestion · not applied yet
+                  <ED.Icon name="zap" size={12} />Vorschlag · noch nicht übernommen
                   {pending && pending.provider && (
                     <span style={{ marginLeft: 'auto' }}><window.ProviderBadge provider={pending.provider} usage={pending.usage} /></span>
                   )}
                 </div>
                 <div style={{ padding: '12px 13px' }}>
                   {gen ? (
-                    <div style={{ fontSize: '12.5px', color: 'var(--accent-strong)', fontStyle: 'italic' }}>myJob is tailoring …</div>
+                    <div style={{ fontSize: '12.5px', color: 'var(--accent-strong)', fontStyle: 'italic' }}>myJob passt an …</div>
                   ) : pending.kind === 'import' ? (
                     <div style={{ fontSize: '12.5px', lineHeight: 1.7, color: 'var(--text-soft)' }}>
-                      <div style={{ fontWeight: 600, color: 'var(--text-heading)', marginBottom: '4px' }}>Parsed from the CV:</div>
-                      {Object.keys(pending.contact).length > 0 && <div>Contact: {Object.entries(pending.contact).map(([k, v]) => `${k} “${v}”`).join(', ')}</div>}
-                      {pending.resume && <div>{(pending.resume.experience || []).length} experience · {(pending.resume.education || []).length} education · {(pending.resume.skillGroups || []).flatMap((g) => g.items || []).length} skills</div>}
+                      <div style={{ fontWeight: 600, color: 'var(--text-heading)', marginBottom: '4px' }}>Aus dem CV gelesen:</div>
+                      {Object.keys(pending.contact).length > 0 && <div>Kontakt: {Object.entries(pending.contact).map(([k, v]) => `${k} „${v}“`).join(', ')}</div>}
+                      {pending.resume && <div>{(pending.resume.experience || []).length} Berufserfahrung · {(pending.resume.education || []).length} Ausbildung · {(pending.resume.skillGroups || []).flatMap((g) => g.items || []).length} Skills</div>}
                       {pending.resume && pending.resume.summary && <div style={{ fontStyle: 'italic', marginTop: '4px' }}>“{pending.resume.summary.slice(0, 220)}{pending.resume.summary.length > 220 ? '…' : ''}”</div>}
-                      {Object.keys(pending.contact).length === 0 && !pending.resume && <div>Nothing could be extracted from that text.</div>}
+                      {Object.keys(pending.contact).length === 0 && !pending.resume && <div>Aus diesem Text konnte nichts extrahiert werden.</div>}
                     </div>
                   ) : pending.kind === 'summary' ? (
                     <div style={{ fontSize: '12.5px', lineHeight: 1.6, color: 'var(--text-soft)', fontStyle: 'italic' }}>{pending.value}</div>
@@ -394,22 +394,22 @@ function Editor({ talent, onClose, onCreateMappe }) {
               </div>
             )}
             {/* shared contact */}
-            <FormGroup title="Contact / header">
+            <FormGroup title="Kontakt / Kopfzeile">
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <ED.Input label="Name" value={contact.name} onChange={(e) => setC('name', e.target.value)} wrapStyle={{ gridColumn: '1 / -1' }} />
-                <ED.Input label="Role" value={contact.role} onChange={(e) => setC('role', e.target.value)} wrapStyle={{ gridColumn: '1 / -1' }} />
-                <ED.Input label="Email" value={contact.email} onChange={(e) => setC('email', e.target.value)} />
-                <ED.Input label="Phone" value={contact.phone} onChange={(e) => setC('phone', e.target.value)} />
-                <ED.Input label="Location" value={contact.location} onChange={(e) => setC('location', e.target.value)} />
+                <ED.Input label="Position" value={contact.role} onChange={(e) => setC('role', e.target.value)} wrapStyle={{ gridColumn: '1 / -1' }} />
+                <ED.Input label="E-Mail" value={contact.email} onChange={(e) => setC('email', e.target.value)} />
+                <ED.Input label="Telefon" value={contact.phone} onChange={(e) => setC('phone', e.target.value)} />
+                <ED.Input label="Standort" value={contact.location} onChange={(e) => setC('location', e.target.value)} />
                 <ED.Input label="LinkedIn" value={contact.linkedin} onChange={(e) => setC('linkedin', e.target.value)} />
                 <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <ED.Avatar name={contact.name} src={contact.photo || contact.src} size={40} radius="var(--radius-md)" />
                   <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', padding: '5px 12px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>
-                    <ED.Icon name="upload" size={12} /> {contact.photo ? 'Replace photo' : 'Upload photo'}
+                    <ED.Icon name="upload" size={12} /> {contact.photo ? 'Foto ersetzen' : 'Foto hochladen'}
                     <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => uploadPhoto(e.target.files[0])} />
                   </label>
                   {contact.photo && (
-                    <button onClick={() => setC('photo', undefined)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', textDecoration: 'underline', padding: 0 }}>Remove</button>
+                    <button onClick={() => setC('photo', undefined)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', textDecoration: 'underline', padding: 0 }}>Entfernen</button>
                   )}
                   {photoMsg && <span style={{ fontSize: '11.5px', color: 'var(--danger)' }}>{photoMsg}</span>}
                 </div>
@@ -418,35 +418,35 @@ function Editor({ talent, onClose, onCreateMappe }) {
 
             {doc === 'lebenslauf' ? (
               <>
-                <FormGroup title="Profile">
+                <FormGroup title="Kurzprofil">
                   <ED.Textarea rows={4} value={resume.summary} onChange={(e) => setResume((s) => ({ ...s, summary: e.target.value }))} />
                 </FormGroup>
 
-                <FormGroup title="Experience" onAdd={addExp}>
+                <FormGroup title="Berufserfahrung" onAdd={addExp}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {resume.experience.map((e, i) => (
                       <div key={i} style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '12px', background: 'var(--surface-subtle)', display: 'flex', flexDirection: 'column', gap: '9px' }}>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '-4px' }}>
-                          <ED.IconButton icon="trash" label="Remove" variant="ghost" size="sm" onClick={() => delExp(i)} />
+                          <ED.IconButton icon="trash" label="Entfernen" variant="ghost" size="sm" onClick={() => delExp(i)} />
                         </div>
                         <ED.Input label="Position" value={e.role} onChange={(ev) => setExp(i, 'role', ev.target.value)} />
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '9px' }}>
-                          <ED.Input label="Company" value={e.company} onChange={(ev) => setExp(i, 'company', ev.target.value)} />
-                          <ED.Input label="Period" value={e.period} onChange={(ev) => setExp(i, 'period', ev.target.value)} />
+                          <ED.Input label="Unternehmen" value={e.company} onChange={(ev) => setExp(i, 'company', ev.target.value)} />
+                          <ED.Input label="Zeitraum" value={e.period} onChange={(ev) => setExp(i, 'period', ev.target.value)} />
                         </div>
-                        <ED.Textarea label="Responsibilities (one per line)" rows={3} value={e.bullets.join('\n')} onChange={(ev) => setExp(i, 'bullets', ev.target.value.split('\n'))} />
+                        <ED.Textarea label="Aufgaben (eine pro Zeile)" rows={3} value={e.bullets.join('\n')} onChange={(ev) => setExp(i, 'bullets', ev.target.value.split('\n'))} />
                       </div>
                     ))}
                   </div>
                 </FormGroup>
 
-                <FormGroup title="Education">
+                <FormGroup title="Ausbildung">
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {resume.education.map((e, i) => (
                       <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '9px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '12px', background: 'var(--surface-subtle)' }}>
-                        <ED.Input label="Degree" value={e.degree} onChange={(ev) => setEdu(i, 'degree', ev.target.value)} wrapStyle={{ gridColumn: '1 / -1' }} />
+                        <ED.Input label="Abschluss" value={e.degree} onChange={(ev) => setEdu(i, 'degree', ev.target.value)} wrapStyle={{ gridColumn: '1 / -1' }} />
                         <ED.Input label="Institution" value={e.school} onChange={(ev) => setEdu(i, 'school', ev.target.value)} />
-                        <ED.Input label="Period" value={e.period} onChange={(ev) => setEdu(i, 'period', ev.target.value)} />
+                        <ED.Input label="Zeitraum" value={e.period} onChange={(ev) => setEdu(i, 'period', ev.target.value)} />
                       </div>
                     ))}
                   </div>
@@ -456,7 +456,7 @@ function Editor({ talent, onClose, onCreateMappe }) {
               <>
                 <FormGroup title="Recipient">
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                    <ED.Input label="Company" value={letter.firma} onChange={(e) => setLetter((s) => ({ ...s, firma: e.target.value }))} wrapStyle={{ gridColumn: '1 / -1' }} />
+                    <ED.Input label="Unternehmen" value={letter.firma} onChange={(e) => setLetter((s) => ({ ...s, firma: e.target.value }))} wrapStyle={{ gridColumn: '1 / -1' }} />
                     <ED.Input label="Contact person" value={letter.ansprechpartner} onChange={(e) => setLetter((s) => ({ ...s, ansprechpartner: e.target.value }))} wrapStyle={{ gridColumn: '1 / -1' }} />
                     <ED.Input label="Street" value={letter.strasse} onChange={(e) => setLetter((s) => ({ ...s, strasse: e.target.value }))} />
                     <ED.Input label="ZIP & city" value={letter.plzOrt} onChange={(e) => setLetter((s) => ({ ...s, plzOrt: e.target.value }))} />

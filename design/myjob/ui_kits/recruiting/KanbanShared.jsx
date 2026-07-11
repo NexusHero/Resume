@@ -47,7 +47,7 @@ function KanbanColumn({
         {children}
         {isEmpty && (
           <div style={{ border: '1.5px dashed var(--border-strong)', borderRadius: 'var(--radius-md)', padding: '16px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>
-            {over ? 'drop here' : 'empty'}
+            {over ? 'hierhin ziehen' : 'leer'}
           </div>
         )}
       </div>

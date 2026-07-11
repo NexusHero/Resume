@@ -4,7 +4,7 @@
    states instead (see app.jsx useResource). */
 
 const STAGES_ORDER = ['new', 'review', 'interview', 'offer', 'hired'];
-const STAGE_LABELS = { new: 'Submitted', review: 'In review', interview: 'Interview', offer: 'Offer', hired: 'Hired', rejected: 'Rejected' };
+const STAGE_LABELS = { new: 'Neu', review: 'Sichtung', interview: 'Interview', offer: 'Angebot', hired: 'Eingestellt', rejected: 'Absage' };
 
 /* Backend application status → the board's pipeline stage. The domain uses
    sent/screening/…; the board columns are new/review/interview/offer/hired. */
@@ -964,10 +964,10 @@ function computeVermittlerKpis(mandates, talents, placements) {
   const active = ms.filter((m) => m.status === 'active').length;
   const fees = ps.reduce((a, p) => a + parseFeeAmount(p.fee), 0);
   return [
-    { label: 'Active mandates', value: String(active), icon: 'briefcase' },
-    { label: 'Talents in pool', value: String(ts.length), icon: 'users' },
-    { label: 'Placements', value: String(ps.length), icon: 'award' },
-    { label: 'Fees', value: formatFeeSum(fees), icon: 'trend' },
+    { label: 'Aktive Mandate', value: String(active), icon: 'briefcase' },
+    { label: 'Talente im Pool', value: String(ts.length), icon: 'users' },
+    { label: 'Platzierungen', value: String(ps.length), icon: 'award' },
+    { label: 'Honorar', value: formatFeeSum(fees), icon: 'trend' },
   ];
 }
 

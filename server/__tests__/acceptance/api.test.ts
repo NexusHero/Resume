@@ -519,7 +519,7 @@ describe('REST API /api/v1', () => {
       expect(res.body.html).toContain('<!DOCTYPE html>');
       expect(res.body.html).toContain('Lena Brandt');
       expect(res.body.html).toContain('Great designer.');
-      expect(res.body.html).toContain('<h2>Profile</h2>'); // English headings
+      expect(res.body.html).toContain('<h2>Profil</h2>'); // German headings
       // A pure render — the talent's stored documents must be untouched.
       const stored = await agent.get(`/api/v1/talents/${id}/documents`);
       expect(stored.body.documents.resume.summary).toBe('');

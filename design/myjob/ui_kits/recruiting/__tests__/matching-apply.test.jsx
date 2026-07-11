@@ -40,20 +40,20 @@ describe('Matching — apply on a candidate’s behalf', () => {
     const onApply = vi.fn().mockResolvedValue({ id: 'app1' });
     render(<Matching talents={talents} onApply={onApply} />);
 
-    await waitFor(() => expect(screen.getByText('Apply Nora')).toBeInTheDocument());
-    await userEvent.click(screen.getByText('Apply Nora'));
+    await waitFor(() => expect(screen.getByText('Nora bewerben')).toBeInTheDocument());
+    await userEvent.click(screen.getByText('Nora bewerben'));
 
     expect(onApply).toHaveBeenCalledTimes(1);
     expect(onApply.mock.calls[0][0]).toMatchObject({ id: 'j1', company: 'Aurora Systems' });
     expect(onApply.mock.calls[0][1]).toMatchObject({ id: 'me', name: 'Nora Kessler' });
-    await waitFor(() => expect(screen.getByText('Applied · Nora')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Beworben · Nora')).toBeInTheDocument());
   });
 
   it('NoOnApply_ShowsNoApplyButton', async () => {
     render(<Matching talents={talents} />);
     // Wait for the postings to load (the mode toggle is present once loaded).
     await screen.findByText('Auto · Skill-Match');
-    expect(screen.queryByText(/^Apply /)).not.toBeInTheDocument();
+    expect(screen.queryByText(/ bewerben$/)).not.toBeInTheDocument();
   });
 });
 
@@ -64,7 +64,7 @@ describe('Matching — real jobs only', () => {
     };
     render(<Matching talents={talents} onApply={vi.fn()} />);
     await waitFor(() =>
-      expect(screen.getByText(/Live job sources are unreachable/)).toBeInTheDocument(),
+      expect(screen.getByText(/Live-Stellenquellen sind gerade nicht erreichbar/)).toBeInTheDocument(),
     );
     // The old "sample postings" wording must be gone.
     expect(screen.queryByText(/sample postings/i)).not.toBeInTheDocument();
@@ -89,9 +89,9 @@ describe('Matching — accumulated source counts', () => {
 
     const strip = await screen.findByTestId('source-counts');
     // accumulated total across all API sources
-    expect(strip).toHaveTextContent('63 jobs');
-    // only the two healthy sources count toward "across N/M"
-    expect(strip).toHaveTextContent('across 2/3 sources');
+    expect(strip).toHaveTextContent('63 Stellen');
+    // only the two healthy sources count toward "aus N/M"
+    expect(strip).toHaveTextContent('aus 2/3 Quellen');
     // per-board counts, with the down board shown as unavailable
     expect(strip).toHaveTextContent('Arbeitnow 25');
     expect(strip).toHaveTextContent('Remotive 38');
@@ -118,25 +118,25 @@ describe('Matching — apply without a job board', () => {
     const onApply = vi.fn().mockResolvedValue({ id: 'app1' });
     render(<Matching talents={talents} mandates={mandates} onApply={onApply} />);
 
-    await userEvent.click(await screen.findByText('Manual'));
-    await userEvent.type(screen.getByLabelText('Company'), 'Helio GmbH');
-    await userEvent.type(screen.getByLabelText('Role'), 'Backend Engineer');
-    await userEvent.click(screen.getByRole('button', { name: /^Apply$/ }));
+    await userEvent.click(await screen.findByText('Manuell'));
+    await userEvent.type(screen.getByLabelText('Unternehmen'), 'Helio GmbH');
+    await userEvent.type(screen.getByLabelText('Stelle'), 'Backend Engineer');
+    await userEvent.click(screen.getByRole('button', { name: /^Bewerben$/ }));
 
     expect(onApply).toHaveBeenCalledTimes(1);
     expect(onApply.mock.calls[0][0]).toMatchObject({ company: 'Helio GmbH', title: 'Backend Engineer' });
     expect(onApply.mock.calls[0][1]).toMatchObject({ id: 'me' });
-    await waitFor(() => expect(screen.getByText('Applied')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Beworben')).toBeInTheDocument());
   });
 
   it('ManualRole_PrefillFromMandate_FillsCompanyAndRole', async () => {
     const onApply = vi.fn().mockResolvedValue({});
     render(<Matching talents={talents} mandates={mandates} onApply={onApply} />);
 
-    await userEvent.click(await screen.findByText('Manual'));
-    await userEvent.selectOptions(screen.getByLabelText('Prefill from a mandate'), 'm1');
+    await userEvent.click(await screen.findByText('Manuell'));
+    await userEvent.selectOptions(screen.getByLabelText('Aus einem Mandat vorbefüllen'), 'm1');
 
-    expect(screen.getByLabelText('Company')).toHaveValue('Aurora Systems GmbH');
-    expect(screen.getByLabelText('Role')).toHaveValue('Senior C++ Engineer');
+    expect(screen.getByLabelText('Unternehmen')).toHaveValue('Aurora Systems GmbH');
+    expect(screen.getByLabelText('Stelle')).toHaveValue('Senior C++ Engineer');
   });
 });

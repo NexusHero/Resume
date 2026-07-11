@@ -1,9 +1,11 @@
+<!-- @dsCard group="myJob App" viewport="1280x800" name="Einstellungen" subtitle="Settings — Darstellung (Vivid/Klassik), KI, Agentic-Modus" -->
 <!DOCTYPE html>
-<html lang="de" data-theme="blueprint">
+<html lang="de">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>myJob Recruit — Einstellungen</title>
+<link rel="icon" href="../assets/logo/favicon.svg" />
 <link rel="stylesheet" href="../styles.css" />
 <style>
   html, body { margin: 0; height: 100%; background: var(--surface-app); }
@@ -49,11 +51,11 @@
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 <script src="../_ds_bundle.js"></script>
 <script type="text/babel">
-const DS = window.MyJobDesignSystem_f3658e;
+const DS = window.MyJobDesignSystem_5611b7 || window.DesignSystem_5611b7;
 const { AppShell, Icon, Button } = DS;
 
 const RECRUIT_NAV = [
-  { id: 'overview', label: 'Overview', icon: 'home' },
+  { id: 'workspace', label: 'Workspace', icon: 'home' },
   { id: 'pool', label: 'Talent-Pool', icon: 'users' },
   { id: 'stellen', label: 'Stellen', icon: 'briefcase' },
   { id: 'matching', label: 'Matching', icon: 'search' },
@@ -62,6 +64,46 @@ const RECRUIT_NAV = [
 ];
 
 const KEY_LS = 'myjob.geminiKey';
+const MODE_LS = 'myjob.mode';
+
+/* ---- Darstellung: Hell (Vivid, Standard) / Dunkel (Klassik — Ink + Orange) ---- */
+function applyMode(m) {
+  const el = document.documentElement;
+  if (m === 'dark') { el.setAttribute('data-mode', 'dark'); el.setAttribute('data-theme', 'ember'); }
+  else { el.removeAttribute('data-mode'); el.removeAttribute('data-theme'); }
+}
+function AppearanceSection() {
+  const [mode, setMode] = React.useState(() => { try { return localStorage.getItem(MODE_LS) || 'light'; } catch (e) { return 'light'; } });
+  React.useEffect(() => { applyMode(mode); try { localStorage.setItem(MODE_LS, mode); } catch (e) {} }, [mode]);
+  const Sw = ({ id, label, sub, bg, chip }) => (
+    <button onClick={() => setMode(id)} style={{
+      flex: 1, cursor: 'pointer', textAlign: 'left', padding: '14px 16px',
+      borderRadius: 'var(--radius-lg)', background: 'var(--surface-card)',
+      border: mode === id ? '2px solid var(--accent)' : '1px solid var(--border-strong)',
+      boxShadow: mode === id ? '0 0 0 3px var(--accent-soft)' : 'none',
+      transition: 'box-shadow var(--dur-fast) var(--ease-out), border-color var(--dur-fast)',
+    }}>
+      <span style={{ display: 'block', height: '44px', borderRadius: 'var(--radius-md)', background: bg, marginBottom: '10px', position: 'relative', overflow: 'hidden' }}>
+        <span style={{ position: 'absolute', left: '9px', top: '9px', width: '38%', height: '9px', borderRadius: '5px', background: chip }}></span>
+        <span style={{ position: 'absolute', left: '9px', top: '25px', width: '58%', height: '9px', borderRadius: '5px', background: 'rgba(128,140,170,0.35)' }}></span>
+      </span>
+      <span style={{ display: 'block', fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--text-heading)' }}>{label}</span>
+      <span style={{ display: 'block', fontSize: 'var(--fs-xs)', color: 'var(--text-soft)', marginTop: '2px' }}>{sub}</span>
+    </button>
+  );
+  return (
+    <div className="sec">
+      <div className="sec-h">
+        <span className="ic"><Icon name="sliders" size={18} /></span>
+        <div><h2>Darstellung</h2><div className="sub">Vivid ist der Standard — der klassische Ink-Look lebt als Dark Mode weiter</div></div>
+      </div>
+      <div style={{ display: 'flex', gap: '12px' }}>
+        <Sw id="light" label="Hell · Vivid" sub="Königsblau + Live-Orange (Standard)" bg="linear-gradient(130deg, #eef0fb, #f6f7fd)" chip="#3654e0" />
+        <Sw id="dark" label="Dunkel · Klassik" sub="Der bewährte Ink-Look mit Orange" bg="linear-gradient(130deg, #0f1626, #0b1220)" chip="#ff5320" />
+      </div>
+    </div>
+  );
+}
 
 function GeminiSection() {
   const [key, setKey] = React.useState(() => { try { return localStorage.getItem(KEY_LS) || ''; } catch (e) { return ''; } });
@@ -157,11 +199,12 @@ function Settings() {
     <AppShell
       product="recruit" posture="rail"
       nav={RECRUIT_NAV} active="__settings" onNav={() => {}}
-      account={{ name: 'Suhay Sevinc', meta: 'Me · +3 Talente' }}
+      account={{ name: 'Suhay Sevinc', meta: 'Me · +3 Talente', src: '../assets/img/suhay-photo-sm.jpg' }}
       title="Einstellungen"
-      subtitle="KI, Framework & Agentic-Modus"
+      subtitle="Darstellung, KI, Framework & Agentic-Modus"
     >
       <div className="wrap">
+        <AppearanceSection />
         <GeminiSection />
         <FrameworkSection />
         <AgenticSection />

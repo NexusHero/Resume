@@ -1,8 +1,30 @@
 /* ============================================================
    THEME VARIANTS — accent swaps for side-by-side comparison.
-   Apply on any wrapper:  <div data-theme="signal"> … </div>
-   The default (no attribute) is BLUEPRINT, set in colors.css.
+   Apply on any wrapper:  <div data-theme="ember"> … </div>
+   The default (no attribute) is ROYAL (Königsblau — the logo tile),
+   set in colors.css. EMBER is the live-orange promoted to a full
+   accent — pair it with data-mode="dark" for the conserved classic
+   ink+orange dark look. BLUEPRINT/SIGNAL/GRAPHITE are legacy accents
+   from before the 2026 redesign, kept for compatibility.
    ============================================================ */
+
+[data-theme="royal"] {
+  --accent:         var(--royal-500);
+  --accent-strong:  var(--royal-600);
+  --accent-on-dark: var(--royal-on-dark);
+  --accent-soft:    var(--royal-soft);
+  --accent-border:  var(--royal-border);
+  --accent-contrast: #ffffff;
+}
+
+[data-theme="ember"] {
+  --accent:         var(--live);
+  --accent-strong:  var(--live-strong);
+  --accent-on-dark: var(--live-on-dark);
+  --accent-soft:    var(--live-soft);
+  --accent-border:  var(--live-border);
+  --accent-contrast: #ffffff;
+}
 
 [data-theme="blueprint"] {
   --accent:         var(--blueprint-500);

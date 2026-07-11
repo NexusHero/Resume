@@ -3,10 +3,20 @@ import React from 'react';
 /**
  * Candidate / user avatar. Circle by default (app chrome); pass a square
  * radius for document portraits. Renders an initials fallback behind the image
- * so a broken/empty src still reads as a person.
+ * so a broken/empty src still reads as a person. Since the 2026 redesign the
+ * fallback tile rides the PEOPLE palette — deterministic name→color, so every
+ * candidate keeps their color across screens (recruiting is people; the pool
+ * is colorful by design).
  */
 function initialsFrom(name = '') {
   return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0] || '').join('').toUpperCase();
+}
+
+/* FNV-1a-ish deterministic name → people-palette slot (1..8) */
+function peopleSlot(name = '') {
+  let h = 2166136261;
+  for (let i = 0; i < name.length; i++) { h ^= name.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return (Math.abs(h) % 8) + 1;
 }
 
 const SIZES = { xs: 24, sm: 32, md: 40, lg: 56, xl: 72 };
@@ -44,7 +54,7 @@ export function Avatar({ src, name = '', initials, size = 'md', radius = '50%', 
           fontWeight: 'var(--fw-semibold)',
           letterSpacing: 'var(--ls-tight)',
           color: '#ffffff',
-          background: 'linear-gradient(155deg, var(--ink-700) 0%, var(--ink-900) 100%)',
+          background: `var(--people-${peopleSlot(name)}, var(--ink-700))`,
           zIndex: 0,
         }}
       >

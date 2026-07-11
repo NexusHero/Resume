@@ -1,13 +1,15 @@
 /* ============================================================
-   TYPOGRAPHY TOKENS
-   Display : Space Grotesk  — names, headings, section labels
+   TYPOGRAPHY TOKENS · 2026 „Vivid“ redesign
+   Display : Clash Display  — titles, hero numbers, wordmark (the brand face)
    Body    : Inter          — paragraphs, bullets, lists
    Mono    : JetBrains Mono — dates, tech tags, kicker labels (the "engineering signature")
-   Fonts are imported from Google Fonts at the top of styles.css.
+   All self-hosted from fonts/fonts.css (DSGVO — no Google request).
+   Space Grotesk stays available for the legacy Blueprint look + the CV sheet.
    ============================================================ */
 :root {
   /* ---- Families ---- */
-  --font-display: 'Space Grotesk', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'Clash Display', 'Space Grotesk', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display-legacy: 'Space Grotesk', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-body:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono:    'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
 
@@ -23,6 +25,8 @@
   --fs-3xl: 26px;
   --fs-4xl: 32px;
   --fs-5xl: 38px;     /* name on resume */
+  --fs-6xl: 48px;     /* hero numbers / big display */
+  --fs-7xl: 64px;     /* splash / marketing hero */
 
   /* ---- Weights ---- */
   --fw-regular: 400;   /* @kind other */

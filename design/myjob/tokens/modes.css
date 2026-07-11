@@ -75,6 +75,15 @@
   --danger-soft:  color-mix(in srgb, var(--danger) 22%, transparent);
   --info-soft:    color-mix(in srgb, var(--info) 22%, transparent);
 
+  /* ---- Nav rail: the conserved classic ink shell ---- */
+  --rail-bg: linear-gradient(165deg, var(--ink-850) 0%, var(--ink-900) 100%); /* @kind color */
+  --rail-border:       rgba(255, 255, 255, 0.10);
+  --rail-text:         #f1f5f9;
+  --rail-muted:        rgba(241, 245, 249, 0.72);
+  --rail-soft:         rgba(241, 245, 249, 0.55);
+  --rail-glass:        rgba(255, 255, 255, 0.06);
+  --rail-glass-strong: rgba(255, 255, 255, 0.12);
+
   /* ---- Shadows deepen on dark ---- */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 8px 24px -16px rgba(0, 0, 0, 0.6);

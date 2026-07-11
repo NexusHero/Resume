@@ -104,10 +104,10 @@ export function documentsToHtml(
       .filter(Boolean)
       .map((c) => esc(c))
       .join('&nbsp;·&nbsp;')}</div>
-    ${resume.summary ? `<h2>Profile</h2><div class="summary">${esc(resume.summary)}</div>` : ''}
-    ${experience ? `<h2>Experience</h2>${experience}` : ''}
-    ${education ? `<h2>Education</h2>${education}` : ''}
-    ${skillGroups ? `<h2>Skills</h2>${skillGroups}` : ''}
+    ${resume.summary ? `<h2>Profil</h2><div class="summary">${esc(resume.summary)}</div>` : ''}
+    ${experience ? `<h2>Berufserfahrung</h2>${experience}` : ''}
+    ${education ? `<h2>Ausbildung</h2>${education}` : ''}
+    ${skillGroups ? `<h2>Kenntnisse</h2>${skillGroups}` : ''}
   </section>`;
 
   const letterInner = `
@@ -145,7 +145,7 @@ export function documentsToHtml(
   }`;
 
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
 <meta charset="UTF-8" />
 <style>
@@ -256,8 +256,8 @@ function inkDocument(documents: TalentDocuments, options: DocumentsHtmlOptions):
         <h1 class="ink-name">${esc(contact.name)}</h1>
         ${contact.role ? `<span class="ink-role">${esc(contact.role)}</span>` : ''}
       </div>
-      ${contactRows ? `<section class="ink-side-sec"><h2 class="ink-side-title">${inkIcon('user', 14)}Contact</h2><ul class="ink-contact-list">${contactRows}</ul></section>` : ''}
-      ${sideSkills ? `<section class="ink-side-sec"><h2 class="ink-side-title">${inkIcon('zap', 14)}Skills</h2>${sideSkills}</section>` : ''}
+      ${contactRows ? `<section class="ink-side-sec"><h2 class="ink-side-title">${inkIcon('user', 14)}Kontakt</h2><ul class="ink-contact-list">${contactRows}</ul></section>` : ''}
+      ${sideSkills ? `<section class="ink-side-sec"><h2 class="ink-side-title">${inkIcon('zap', 14)}Kenntnisse</h2>${sideSkills}</section>` : ''}
     </aside>`;
 
   // ---- Main column: eyebrow-labelled sections ----
@@ -296,9 +296,9 @@ function inkDocument(documents: TalentDocuments, options: DocumentsHtmlOptions):
     .join('');
 
   const mainCol = `<main class="ink-main">
-      ${resume.summary ? `<section class="ink-main-sec">${sectionHead('About Me', 'user', 'Profile')}<p class="ink-summary">${esc(resume.summary)}</p></section>` : ''}
-      ${jobs ? `<section class="ink-main-sec">${sectionHead('Experience', 'briefcase', 'Professional Experience')}<div class="ink-timeline"><span class="ink-rail" aria-hidden="true"></span>${jobs}</div></section>` : ''}
-      ${edu ? `<section class="ink-main-sec">${sectionHead('Academic', 'cap', 'Education')}<div class="ink-edu-list">${edu}</div></section>` : ''}
+      ${resume.summary ? `<section class="ink-main-sec">${sectionHead('Über mich', 'user', 'Profil')}<p class="ink-summary">${esc(resume.summary)}</p></section>` : ''}
+      ${jobs ? `<section class="ink-main-sec">${sectionHead('Werdegang', 'briefcase', 'Berufserfahrung')}<div class="ink-timeline"><span class="ink-rail" aria-hidden="true"></span>${jobs}</div></section>` : ''}
+      ${edu ? `<section class="ink-main-sec">${sectionHead('Bildung', 'cap', 'Ausbildung')}<div class="ink-edu-list">${edu}</div></section>` : ''}
     </main>`;
 
   // ---- Cover letter: clean sheet, accent-ruled name header (no dark band) ----
@@ -487,7 +487,7 @@ function inkDocument(documents: TalentDocuments, options: DocumentsHtmlOptions):
   }`;
 
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
 <meta charset="UTF-8" />
 <style>${css}</style>

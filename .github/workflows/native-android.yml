@@ -47,7 +47,7 @@ jobs:
           # source release: 21" on JDK 17) — verified against a real build.
           java-version: '21'
 
-      - uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v4
 
       - name: Generate the Android platform project
         run: npm run cap:add:android

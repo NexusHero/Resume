@@ -47,7 +47,7 @@ jobs:
           # source release: 21" on JDK 17) — verified against a real build.
           java-version: '21'
 
-      - uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v4
 
       - name: Generate the Android platform project
         run: npm run cap:add:android
@@ -60,7 +60,7 @@ jobs:
         run: ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: myjob-android-debug
           path: android/app/build/outputs/apk/debug/*.apk

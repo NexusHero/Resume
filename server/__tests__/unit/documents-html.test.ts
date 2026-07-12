@@ -115,8 +115,8 @@ describe('documentsToHtml', () => {
     expect(html).toContain('Figma');
     // eyebrow-labelled sections in the main column
     expect(html).toContain('ink-kicker');
-    expect(html).toContain('<h2>Profile</h2>');
-    expect(html).toContain('Professional Experience');
+    expect(html).toContain('<h2>Profil</h2>');
+    expect(html).toContain('Berufserfahrung');
     // experience timeline: node dots, date pill, tech-stack chips
     expect(html).toContain('ink-timeline');
     expect(html).toContain('ink-node');
@@ -181,10 +181,10 @@ describe('documentsToHtml', () => {
     // no contact rows and no skills section when those fields are empty
     // (match markup, not the always-present CSS class definitions)
     expect(html).not.toContain('class="ink-contact"');
-    expect(html).not.toContain('>Skills</h2>');
+    expect(html).not.toContain('>Kenntnisse</h2>');
     // no Profile section (empty summary); the bare experience still renders,
     // but without a date pill or a tech-stack strip
-    expect(html).not.toContain('<h2>Profile</h2>');
+    expect(html).not.toContain('<h2>Profil</h2>');
     expect(html).toContain('Engineer');
     expect(html).not.toContain('class="ink-pill');
     expect(html).not.toContain('Tech Stack');
@@ -200,20 +200,21 @@ describe('documentsToHtml', () => {
     };
     const html = documentsToHtml(bare);
     expect(html).toContain('Lena Brandt'); // contact still renders
-    expect(html).not.toContain('Experience'); // no experience heading
-    expect(html).not.toContain('Education'); // no education heading
+    expect(html).not.toContain('Berufserfahrung'); // no experience heading
+    expect(html).not.toContain('Ausbildung'); // no education heading
   });
 
-  it('UsesEnglishSectionHeadingsMatchingTheEditor', () => {
+  it('UsesGermanSectionHeadingsMatchingTheEditor', () => {
     const html = documentsToHtml(documents);
-    // The whole product is English; the export headings must match the editor.
-    expect(html).toContain('lang="en"');
-    expect(html).toContain('<h2>Profile</h2>');
-    expect(html).toContain('<h2>Experience</h2>');
-    expect(html).toContain('<h2>Education</h2>');
-    expect(html).toContain('<h2>Skills</h2>');
-    expect(html).not.toContain('Werdegang');
-    expect(html).not.toContain('Ausbildung');
+    // German-first product (Vivid redesign): the export headings are German and
+    // must match the editor's German document chrome.
+    expect(html).toContain('lang="de"');
+    expect(html).toContain('<h2>Profil</h2>');
+    expect(html).toContain('<h2>Berufserfahrung</h2>');
+    expect(html).toContain('<h2>Ausbildung</h2>');
+    expect(html).toContain('<h2>Kenntnisse</h2>');
+    expect(html).not.toContain('<h2>Profile</h2>');
+    expect(html).not.toContain('<h2>Experience</h2>');
   });
 
   it('CarriesPageAnchorsAndScreenSheetSoThePreviewMatchesTheExport', () => {

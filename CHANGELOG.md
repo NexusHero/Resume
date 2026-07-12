@@ -10,6 +10,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Changed
 
+- **Vivid follow-ups.** The **CV / Anschreiben document** now renders its section
+  headings in **German** (Profil · Berufserfahrung · Ausbildung · Kenntnisse; the
+  Ink template's eyebrows too) with `lang="de"`, so the exported PDF matches the
+  German editor. **Matching** and **Platzierungen** become proper **sub-tabs** of
+  their parent view (Mandate ▸ Stellensuche, Performance ▸ Platzierungen) —
+  reachable identically on desktop and phone, replacing the desktop-only topbar
+  button. The legacy `RecruitRail` was already removed in the redesign.
+
 - **The 2026 „Vivid" redesign + „alles ist Kandidat oder Stelle" restructure**
   (ADR-0055). The recruiting app moves from the dark-first „Blueprint" look to a
   **light-first** identity and a consolidated information architecture, adopting

@@ -40,7 +40,7 @@ jobs:
         run: npm run package
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: resume-suite-${{ matrix.os }}
           path: dist/*

@@ -476,20 +476,22 @@ function Workspace({ user, onLogout }) {
       : (!talent && nav === 'platzierungen')
       ? <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="plus" size={15} />} onClick={addPlacement}>Platzierung</A.Button>
       : null;
-  const secondaryAction =
-    (!talent && nav === 'mandate')
-      ? <A.Button variant="ghost" size="sm" iconLeft={<A.Icon name="search" size={15} />} onClick={() => setNav('matching')}>Matching</A.Button>
-      : (!talent && nav === 'berichte')
-      ? <A.Button variant="ghost" size="sm" iconLeft={<A.Icon name="award" size={15} />} onClick={() => setNav('platzierungen')}>Platzierungen</A.Button>
+  // The folded-in destinations are proper sub-tabs of their parent view —
+  // Matching under Mandate (Stellensuche), Platzierungen under Performance — so
+  // they read as one place and stay reachable identically on desktop and phone
+  // (no narrow-app-bar overflow, no floating button).
+  const subTabs =
+    !talent && (nav === 'mandate' || nav === 'matching')
+      ? <A.Tabs tabs={[{ id: 'mandate', label: 'Mandate' }, { id: 'matching', label: 'Stellensuche' }]} value={nav === 'matching' ? 'matching' : 'mandate'} onChange={(id) => setNav(id)} style={{ marginBottom: '18px' }} />
+      : !talent && (nav === 'berichte' || nav === 'platzierungen')
+      ? <A.Tabs tabs={[{ id: 'berichte', label: 'Performance' }, { id: 'platzierungen', label: 'Platzierungen' }]} value={nav === 'platzierungen' ? 'platzierungen' : 'berichte'} onChange={(id) => setNav(id)} style={{ marginBottom: '18px' }} />
       : null;
   // The phone app bar is narrow: show only the per-view primary action there;
-  // the secondary (Matching / Platzierungen) and CoRecruiter stay desktop-only
-  // so the bar never overflows into a horizontal body scroll.
+  // CoRecruiter stays a desktop topbar action so the bar never overflows.
   const actions = talent ? null : isMobile ? (
     primaryAction
   ) : (
     <>
-      {secondaryAction}
       {nav !== 'assistant' && (
         <A.Button variant="ghost" size="sm" iconLeft={<A.Icon name="zap" size={15} />} onClick={() => setNav('assistant')}>CoRecruiter</A.Button>
       )}
@@ -505,13 +507,7 @@ function Workspace({ user, onLogout }) {
     search: !talent && (nav === 'pool' || nav === 'mandate' || nav === 'berichte'),
     children: (
       <>
-        {/* On a phone the app bar only holds the primary action, so the folded-in
-            destination (Matching under Mandate, Platzierungen under Performance)
-            gets an in-view entry instead — keeping it reachable without crowding
-            the narrow bar. */}
-        {isMobile && secondaryAction && (
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>{secondaryAction}</div>
-        )}
+        {subTabs}
         {body}
         {mappeFor && <window.MappeModal talent={mappeFor} onClose={() => setMappeFor(null)} />}
         {formKind && (

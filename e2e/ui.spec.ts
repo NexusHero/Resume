@@ -147,9 +147,9 @@ test.describe('UI acceptance — the suite renders in German', () => {
     );
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     // Placements ("Platzierungen") folds under Performance — reach it via the
-    // Performance view's topbar action.
+    // Performance view's sub-tab (Performance | Platzierungen).
     await page.getByRole('button', { name: /Performance/ }).click();
-    await page.getByRole('button', { name: 'Platzierungen', exact: true }).click();
+    await page.getByRole('tab', { name: 'Platzierungen' }).click();
     await expect(page.locator('main')).toContainText('Tobias Wirth');
     await expect(page.locator('main')).toContainText('Helio GmbH');
     // the offline sample is replaced by the API data

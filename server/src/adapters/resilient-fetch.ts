@@ -20,6 +20,16 @@ export interface ResilientFetchOptions {
  * A source that still fails after its retries throws — the composite then skips
  * it (or, if all fail, the search reports `liveSourcesDown`).
  */
+/**
+ * Drop the query string before logging a URL — some sources (e.g. Adzuna) put
+ * their API credentials there, and the logger has no redaction configured, so
+ * logging the raw URL would leak secrets into the log stream on every failure.
+ */
+function loggableUrl(url: string): string {
+  const i = url.indexOf('?');
+  return i === -1 ? url : url.slice(0, i);
+}
+
 export function resilientFetch(inner: HttpFetch, opts: ResilientFetchOptions): HttpFetch {
   const sleep = opts.sleep ?? ((ms: number) => new Promise((r) => setTimeout(r, ms)));
   const backoff = opts.backoffMs ?? ((attempt: number) => 200 * 2 ** attempt);
@@ -33,7 +43,7 @@ export function resilientFetch(inner: HttpFetch, opts: ResilientFetchOptions): H
       } catch (err) {
         lastErr = err;
         opts.logger?.warn(
-          { url, attempt, retries: opts.retries, err: String(err) },
+          { url: loggableUrl(url), attempt, retries: opts.retries, err: String(err) },
           'job source fetch failed',
         );
         if (attempt < opts.retries) await sleep(backoff(attempt));

@@ -72,6 +72,7 @@ function tmpConfig(): AppConfig {
       provider: 'claude',
       anthropic: { apiKey: '', model: 'claude-opus-4-8' },
       gemini: { apiKey: '', model: 'gemini-2.5-flash' },
+      timeoutMs: 30_000,
     },
     defaultJobSearch: { threshold: 80 },
     jobSources: {

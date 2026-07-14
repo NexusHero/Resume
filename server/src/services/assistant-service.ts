@@ -311,15 +311,10 @@ export class AssistantService {
     talentId: string,
     autoApplied: boolean,
   ): Promise<void> {
-    try {
-      await this.candidacyService.add(scope, mandateId, {
-        talentId,
-        stage: 'sourced',
-        note: autoApplied ? 'Added by the assistant' : 'Added via assistant suggestion',
-      });
-    } catch (err) {
-      // Someone added the talent meanwhile — accepting is then a no-op, not an error.
-      if (!(err instanceof ConflictError)) throw err;
-    }
+    await this.candidacyService.addIfAbsent(scope, mandateId, {
+      talentId,
+      stage: 'sourced',
+      note: autoApplied ? 'Added by the assistant' : 'Added via assistant suggestion',
+    });
   }
 }

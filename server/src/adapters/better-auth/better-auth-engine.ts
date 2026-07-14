@@ -33,6 +33,13 @@ export interface BetterAuthEngineOptions {
   secret: string;
   /** Only needed to satisfy Better-Auth; all calls here are server-side. */
   baseURL?: string;
+  /**
+   * Server-side session lifetime in seconds (config.auth.sessionTtlMs). Without
+   * this Better-Auth applies its own default (7 days) regardless of
+   * SESSION_TTL_DAYS, so the actual session lifetime silently disagreed with the
+   * configured/cookie value.
+   */
+  sessionTtlSeconds?: number;
 }
 
 /** The subset of Better-Auth's api result we rely on (its full types are generic). */
@@ -70,6 +77,9 @@ export class BetterAuthEngine implements AuthEngine {
       baseURL: opts.baseURL ?? 'http://localhost',
       emailAndPassword: { enabled: true },
       plugins: [bearer()],
+      ...(opts.sessionTtlSeconds
+        ? { session: { expiresIn: opts.sessionTtlSeconds, updateAge: opts.sessionTtlSeconds } }
+        : {}),
     });
     return new BetterAuthEngine(auth as unknown as ReturnType<typeof betterAuth>);
   }

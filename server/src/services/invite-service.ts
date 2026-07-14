@@ -113,7 +113,11 @@ export class InviteService {
    * Single-use; expired or unknown tokens are rejected.
    */
   async accept(input: AcceptInviteInput): Promise<AcceptResult> {
-    const invite = await this.invites.consume(input.token);
+    // Validate first, without consuming — the token must survive a failed
+    // signUp/account-creation attempt so the invitee can retry (previously
+    // `consume` deleted it upfront, permanently burning a single-use
+    // invitation on any transient failure below).
+    const invite = await this.invites.findByToken(input.token);
     if (!invite) throw new UnauthorizedError('This invitation is invalid or has already been used');
     if (Date.parse(invite.createdAt) + this.ttlMs <= Date.parse(this.clock.isoNow())) {
       throw new UnauthorizedError('This invitation has expired');
@@ -133,6 +137,8 @@ export class InviteService {
       tenantId: invite.tenantId,
     };
     await this.users.add(user);
+    // Only now, having succeeded, retire the single-use token.
+    await this.invites.consume(input.token);
     return { user: toUserView(user), token };
   }
 }

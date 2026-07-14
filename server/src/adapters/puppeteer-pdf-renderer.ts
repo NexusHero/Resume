@@ -148,6 +148,16 @@ export class PuppeteerPdfRenderer implements PdfRenderer {
 
   async renderHtml(html: string): Promise<Buffer> {
     return this.withPage(async (page) => {
+      // Defense in depth against CSS/HTML injection in saved documents (a
+      // crafted style value could otherwise reach `url(...)`/`@import` and have
+      // this server-side browser fetch an internal/metadata endpoint): the
+      // rendered document is fully self-contained, so nothing it legitimately
+      // needs is a network request — block everything but the inline content.
+      await page.setRequestInterception(true);
+      page.on('request', (req) => {
+        if (req.url().startsWith('data:')) req.continue();
+        else req.abort();
+      });
       await page.setContent(html, { waitUntil: 'load', timeout: 60000 });
       await page.evaluate(async () => {
         try {

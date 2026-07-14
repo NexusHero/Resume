@@ -80,6 +80,16 @@ describe('documentsToHtml', () => {
     expect(html).toContain('class="tpl-classic"');
   });
 
+  it('ClassicTemplate_EmptyStyleFields_RenderWithoutThrowing', () => {
+    // Exercises the classic/modern/compact cssValue() path (distinct from the
+    // ink template's `|| fallback` variant) with empty accent/strong/font.
+    const html = documentsToHtml({
+      ...documents,
+      style: { accent: '', strong: '', onDark: '', font: '', size: 1 },
+    });
+    expect(html).toContain('class="tpl-classic"');
+  });
+
   it('ModernTemplate_TintsHeadingsWithAccent', () => {
     const html = documentsToHtml({
       ...documents,
@@ -202,6 +212,30 @@ describe('documentsToHtml', () => {
     expect(html).toContain('Lena Brandt'); // contact still renders
     expect(html).not.toContain('Berufserfahrung'); // no experience heading
     expect(html).not.toContain('Ausbildung'); // no education heading
+  });
+
+  it('CssEscapesStyleFieldsToPreventRuleBreakoutAndSsrf', () => {
+    // accent/strong/onDark/font are free user strings interpolated raw into a
+    // <style> block; esc() only HTML-escapes, so a crafted value could break
+    // out of the custom property and inject a CSS rule (e.g. `@import
+    // url(...)`, fetched server-side by the headless-Chromium renderer — SSRF).
+    const evilStyle = {
+      accent: 'red} *{background:url(http://169.254.169.254/latest/meta-data/)',
+      strong: '1d4ed8;} body{color:red} /* \'"<> */',
+      onDark: '60a5fa',
+      font: 'Inter; } @import url(http://evil.example/x); h1{',
+      size: 1,
+    };
+    for (const template of ['classic', 'modern', 'compact', 'ink'] as const) {
+      const html = documentsToHtml({
+        ...documents,
+        style: { ...documents.style, ...evilStyle, template },
+      });
+      expect(html).not.toContain('url(http://169.254.169.254');
+      expect(html).not.toContain('url(http://evil.example');
+      expect(html).not.toContain('@import');
+      expect(html).not.toContain('*{background');
+    }
   });
 
   it('UsesGermanSectionHeadingsMatchingTheEditor', () => {

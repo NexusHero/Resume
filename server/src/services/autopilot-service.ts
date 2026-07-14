@@ -14,7 +14,6 @@ import {
 } from '../domain/application-target.js';
 import { jobQuerySchema } from '../domain/job.js';
 import { createMandateSchema } from '../domain/mandate.js';
-import { ConflictError } from '../domain/errors.js';
 import type { AssistantSuggestionRepository } from '../ports/assistant-store.js';
 import type { MandateRepository } from '../ports/mandate-repository.js';
 import type { Clock } from '../ports/clock.js';
@@ -212,15 +211,10 @@ export class AutopilotService {
   }
 
   private async addToPipeline(scope: string, mandateId: string, talentId: string): Promise<void> {
-    try {
-      await this.candidacyService.add(scope, mandateId, {
-        talentId,
-        stage: 'sourced',
-        note: 'Added via assistant suggestion',
-      });
-    } catch (err) {
-      // Someone added the talent meanwhile — accepting is then a no-op, not an error.
-      if (!(err instanceof ConflictError)) throw err;
-    }
+    await this.candidacyService.addIfAbsent(scope, mandateId, {
+      talentId,
+      stage: 'sourced',
+      note: 'Added via assistant suggestion',
+    });
   }
 }

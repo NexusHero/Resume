@@ -139,7 +139,27 @@ describe('InviteService.accept', () => {
     await expect(
       c.service.accept({ token: 'old', password: 'hunter2secret' }),
     ).rejects.toBeInstanceOf(UnauthorizedError);
-    expect(c.invites.invites).toHaveLength(0); // consumed even though expired
+    // Left in place, not consumed: an expired token can never succeed (the
+    // expiry check always rejects it first), so there is nothing to clean up
+    // by deleting it here — and *not* eagerly deleting is what lets a token
+    // survive a genuine mid-accept failure to be retried (see the next test).
+    expect(c.invites.invites).toHaveLength(1);
+  });
+
+  it('Accept_EngineSignUpFails_TokenSurvivesForRetry', async () => {
+    const c = ctx();
+    await c.service.create('acme', admin.id, { email: 'new@acme.io', roles: ['recruiter'] });
+    const token = c.invites.invites[0]!.token;
+    c.engine.signUp = async () => {
+      throw new Error('credential store unavailable');
+    };
+    await expect(c.service.accept({ token, password: 'hunter2secret' })).rejects.toThrow(
+      'credential store unavailable',
+    );
+    // The single-use token must not be burned by a failure that happens after
+    // it was read — otherwise the invitee can never accept, even on retry.
+    expect(c.invites.invites).toHaveLength(1);
+    expect(await c.users.findByEmail('new@acme.io')).toBeNull();
   });
 
   it('Accept_EmailRegisteredMeanwhile_Throws', async () => {

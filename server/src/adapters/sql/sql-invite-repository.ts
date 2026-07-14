@@ -27,6 +27,12 @@ export class SqlInviteRepository implements InviteRepository {
     });
   }
 
+  async findByToken(token: string): Promise<TenantInvite | null> {
+    const rows = await this.db.select().from(tenantInvites).where(eq(tenantInvites.token, token));
+    const row = rows[0];
+    return row ? this.rowToInvite(row) : null;
+  }
+
   async consume(token: string): Promise<TenantInvite | null> {
     const rows = await this.db
       .delete(tenantInvites)

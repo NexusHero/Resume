@@ -15,6 +15,9 @@ import './OfflineBanner.jsx'; // window.OfflineBanner — shown while offline (A
 import './undo-delete.js'; // window.UndoDelete — deferred-delete controller (#200)
 import './use-undo-delete.jsx'; // window.useUndoDelete — React binding for the snackbar
 import './Snackbar.jsx'; // window.Snackbar — the undo toast
+import './toast.js'; // window.showToast — status-toast controller (no window.alert)
+import './use-toast.jsx'; // window.useToast — React binding for the status toast
+import './Toast.jsx'; // window.Toast — the status toast (bulk import, anonymize errors)
 import './DataStates.jsx';
 import './KanbanShared.jsx'; // window.KanbanColumn/KanbanCard — shared by both boards (#199)
 import './PipelineBoard.jsx';

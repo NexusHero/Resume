@@ -16,6 +16,7 @@ import { EnvPlanProvider } from '../adapters/env-plan-provider.js';
 import { createEmbeddingProvider } from '../adapters/create-embedding-provider.js';
 import { AnthropicLlmProvider } from '../adapters/anthropic-llm-provider.js';
 import { GeminiLlmProvider } from '../adapters/gemini-llm-provider.js';
+import { resilientFetch } from '../adapters/resilient-fetch.js';
 import { LlmService } from '../services/llm-service.js';
 import {
   CONFIG,
@@ -51,6 +52,7 @@ import {
         BetterAuthEngine.create({
           dbPath: config.auth.betterAuthDbPath,
           secret: config.security.encryptionSecret,
+          sessionTtlSeconds: Math.round(config.auth.sessionTtlMs / 1000),
         }),
       inject: [CONFIG],
     },
@@ -99,15 +101,25 @@ import {
     },
     {
       provide: LLM_SERVICE,
-      useFactory: (config: AppConfig, logger: Logger, httpFetch: HttpFetch) =>
-        new LlmService({
+      useFactory: (config: AppConfig, logger: Logger, httpFetch: HttpFetch) => {
+        // A hung LLM call (unlike job sources / embeddings, which already go
+        // through a timeout) would otherwise block the request indefinitely;
+        // no retry here since these calls are not idempotent-cheap (they spend
+        // tokens) and the caller already sees a clear upstream error on abort.
+        const bounded = resilientFetch(httpFetch, {
+          timeoutMs: config.llm.timeoutMs,
+          retries: 0,
+          logger,
+        });
+        return new LlmService({
           providers: [
-            new AnthropicLlmProvider({ httpFetch, config: config.llm.anthropic }),
-            new GeminiLlmProvider({ httpFetch, config: config.llm.gemini }),
+            new AnthropicLlmProvider({ httpFetch: bounded, config: config.llm.anthropic }),
+            new GeminiLlmProvider({ httpFetch: bounded, config: config.llm.gemini }),
           ],
           defaultProvider: config.llm.provider,
           logger,
-        }),
+        });
+      },
       inject: [CONFIG, LOGGER, HTTP_FETCH],
     },
   ],

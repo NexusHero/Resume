@@ -38,6 +38,11 @@ export class FsInviteRepository implements InviteRepository {
     await this.write(all);
   }
 
+  async findByToken(token: string): Promise<TenantInvite | null> {
+    const all = await this.readAll();
+    return all.find((i) => i.token === token) ?? null;
+  }
+
   async consume(token: string): Promise<TenantInvite | null> {
     const all = await this.readAll();
     const record = all.find((i) => i.token === token);

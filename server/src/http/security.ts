@@ -41,6 +41,22 @@ export function securityHeaders(_req: Request, res: Response, next: NextFunction
   next();
 }
 
+/**
+ * Strict-Transport-Security, applied only once the deployment is actually
+ * HTTPS (mirrors the `cookieSecure` condition — see config.ts): sending HSTS
+ * over plain-http dev/CI would be a lie the browser then enforces. Once a
+ * production deployment sets it, browsers stop even trying plain HTTP for the
+ * `max-age` window, closing the SSL-stripping downgrade path.
+ */
+export function hstsHeader(cookieSecure: boolean): RequestHandler {
+  return (_req: Request, res: Response, next: NextFunction): void => {
+    if (cookieSecure) {
+      res.setHeader('Strict-Transport-Security', 'max-age=63072000; includeSubDomains');
+    }
+    next();
+  };
+}
+
 /** URL prefix the Vite-built recruiting kit is served from. */
 export const RECRUITING_KIT_PREFIX = '/design/myjob/ui_kits/recruiting/dist';
 

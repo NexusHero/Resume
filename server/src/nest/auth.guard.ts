@@ -52,7 +52,10 @@ export class AuthGuard implements CanActivate {
     req.userId = user.id;
     req.roles = user.roles;
     req.tenantId = user.tenantId ?? DEFAULT_TENANT;
-    req.isSuperAdmin = this.superAdminEmails.includes(user.email);
+    // config.superAdminEmails is normalized to lower-case (config.ts); match the
+    // same way here so an admin whose stored email carries any upper-case letter
+    // isn't silently denied the capability.
+    req.isSuperAdmin = this.superAdminEmails.includes(user.email.toLowerCase());
     return true;
   }
 }

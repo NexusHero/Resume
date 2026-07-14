@@ -80,4 +80,16 @@ describe('BetterAuthEngine', () => {
     const session = await second.signIn('persist@myjob.de', 'passwort-persist');
     expect(session?.user.email).toBe('persist@myjob.de');
   });
+
+  it('Engine_WithSessionTtlSeconds_StillSignsUpAndResolves', async () => {
+    // Threading config.auth.sessionTtlMs (SESSION_TTL_DAYS) into Better-Auth's
+    // own session.expiresIn must not break the ordinary flow.
+    const engine = await BetterAuthEngine.create({
+      dbPath: ':memory:',
+      secret,
+      sessionTtlSeconds: 3600,
+    });
+    const { token } = await engine.signUp('ttl@myjob.de', 'passwort-ttl-123');
+    expect((await engine.resolve(token))?.email).toBe('ttl@myjob.de');
+  });
 });

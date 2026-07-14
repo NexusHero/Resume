@@ -10,6 +10,20 @@ function esc(value: unknown): string {
 }
 
 /**
+ * Sanitize a user-controlled colour/font value for safe interpolation into a
+ * raw CSS declaration inside the embedded `<style>` block. Unlike `esc()` (HTML
+ * escaping), this is a CSS context: `{ } ; ( ) ' " newline` etc. can break out
+ * of the custom property and inject arbitrary rules (e.g. `@import url(...)`),
+ * which a headless-Chromium render would then fetch server-side. Keeps only
+ * characters real colour/font values use (hex, `rgb()`/`rgba()`, `var(--x)`,
+ * font names with spaces/hyphens); the `(` `)` here are safe because every
+ * other CSS metacharacter is already stripped.
+ */
+function cssValue(value: unknown): string {
+  return String(value ?? '').replace(/[^a-zA-Z0-9 #.,()%_-]/g, '');
+}
+
+/**
  * Build a self-contained, print-ready HTML document (resume page + cover-letter
  * page) from a talent's saved documents. Pure and deterministic so it can be
  * asserted in tests; the Puppeteer → PDF step is a separate concern. The shared
@@ -30,9 +44,9 @@ export function documentsToHtml(
   options: DocumentsHtmlOptions = {},
 ): string {
   const { contact, resume, letter, style } = documents;
-  const accent = esc(style.accent);
-  const strong = esc(style.strong);
-  const font = esc(style.font).replace(/var\(--font-display\)|var\(--font-body\)/, 'Inter');
+  const accent = cssValue(style.accent);
+  const strong = cssValue(style.strong);
+  const font = cssValue(style.font).replace(/var\(--font-display\)|var\(--font-body\)/, 'Inter');
   const scale = Number.isFinite(style.size) ? style.size : 1;
   const px = (n: number) => `${(n * scale).toFixed(2)}px`;
   // Backward-compatible: rows saved before templates existed default to classic.
@@ -218,9 +232,9 @@ function inkIcon(name: string, size = 16): string {
  */
 function inkDocument(documents: TalentDocuments, options: DocumentsHtmlOptions): string {
   const { contact, resume, letter, style } = documents;
-  const accent = esc(style.accent) || '#2563eb';
-  const accentStrong = esc(style.strong) || '#1d4ed8';
-  const accentOnDark = esc(style.onDark) || '#60a5fa';
+  const accent = cssValue(style.accent) || '#2563eb';
+  const accentStrong = cssValue(style.strong) || '#1d4ed8';
+  const accentOnDark = cssValue(style.onDark) || '#60a5fa';
   const scale = Number.isFinite(style.size) ? style.size : 1;
   const s = (n: number) => `${(n * scale).toFixed(1)}px`;
   const photoOk =

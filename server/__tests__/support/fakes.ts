@@ -468,6 +468,10 @@ export class InMemoryInviteRepository implements InviteRepository {
   async create(invite: TenantInvite): Promise<void> {
     this.invites.push({ ...invite });
   }
+  async findByToken(token: string): Promise<TenantInvite | null> {
+    const record = this.invites.find((i) => i.token === token);
+    return record ? { ...record } : null;
+  }
   async consume(token: string): Promise<TenantInvite | null> {
     const record = this.invites.find((i) => i.token === token);
     if (!record) return null;

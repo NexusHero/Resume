@@ -87,7 +87,23 @@ function Editor({ talent, onClose, onCreateMappe }) {
   const setExp = (i, k, v) => setResume((s) => { const e = [...s.experience]; e[i] = { ...e[i], [k]: v }; return { ...s, experience: e }; });
   const setEdu = (i, k, v) => setResume((s) => { const e = [...s.education]; e[i] = { ...e[i], [k]: v }; return { ...s, education: e }; });
   const addExp = () => setResume((s) => ({ ...s, experience: [{ role: 'Neue Position', company: '', period: '', location: '', bullets: [''], skills: [] }, ...s.experience] }));
-  const delExp = (i) => setResume((s) => ({ ...s, experience: s.experience.filter((_, j) => j !== i) }));
+  // Undo over silent-delete (#200), matching every other destructive action in
+  // the app: removing a whole entry is easy to trigger by mis-click, so give
+  // the recruiter a few seconds to bring it back instead of losing it outright.
+  const delExp = (i) => {
+    const removed = resume.experience[i];
+    setResume((s) => ({ ...s, experience: s.experience.filter((_, j) => j !== i) }));
+    window.UndoDelete.schedule({
+      label: `${removed.role || removed.company || 'Berufserfahrung'} entfernt`,
+      commit: () => {},
+      restore: () =>
+        setResume((s) => {
+          const arr = s.experience.slice();
+          arr.splice(Math.min(i, arr.length), 0, removed);
+          return { ...s, experience: arr };
+        }),
+    });
+  };
   const setPara = (i, v) => setLetter((s) => { const a = [...s.absaetze]; a[i] = v; return { ...s, absaetze: a }; });
   const addPara = () => setLetter((s) => ({ ...s, absaetze: [...s.absaetze, ''] }));
 
@@ -171,6 +187,10 @@ function Editor({ talent, onClose, onCreateMappe }) {
   // content it just loaded — only genuine edits save.
   const baseline = React.useRef(null);
   const saveTimer = React.useRef(null);
+  // The debounced save still in flight (scheduled but not yet sent) — flushed
+  // immediately if the editor unmounts before the 800ms debounce fires, so
+  // navigating away right after typing never silently drops the last edits.
+  const pendingSave = React.useRef(null);
 
   React.useEffect(() => {
     let alive = true;
@@ -208,13 +228,26 @@ function Editor({ talent, onClose, onCreateMappe }) {
     if (serialized === baseline.current) return undefined; // nothing actually changed
     setSaveState('saving');
     clearTimeout(saveTimer.current);
+    const payload = { contact, resume, letter, style: cfg };
+    pendingSave.current = { talentId, payload, serialized };
     saveTimer.current = setTimeout(() => {
-      window.RecruitApi.saveTalentDocuments(talentId, { contact, resume, letter, style: cfg })
+      window.RecruitApi.saveTalentDocuments(talentId, payload)
         .then(() => { baseline.current = serialized; setSaveState('saved'); })
-        .catch(() => setSaveState('error'));
+        .catch(() => setSaveState('error'))
+        .finally(() => { pendingSave.current = null; });
     }, 800);
     return () => clearTimeout(saveTimer.current);
   }, [contact, resume, letter, cfg, hydrated, talentId]);
+
+  // Flush a still-debounced save on unmount (e.g. the recruiter navigates away
+  // within the 800ms window) — otherwise the last edits are silently lost,
+  // since the pending setTimeout above is cleared, not fired, on unmount.
+  React.useEffect(() => () => {
+    const pending = pendingSave.current;
+    if (!pending) return;
+    pendingSave.current = null;
+    window.RecruitApi.saveTalentDocuments(pending.talentId, pending.payload).catch(() => {});
+  }, []);
 
   const saveLabel = { saving: 'Speichere…', saved: 'Gespeichert', error: 'Nicht gespeichert' };
 

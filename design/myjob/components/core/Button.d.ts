@@ -4,7 +4,6 @@ import React from 'react';
  * The primary action control — mono label, pill shape (the brand's
  * "engineering signature"). Five intent variants and three grid-aligned sizes.
  *
- * @startingPoint section="Core" subtitle="Pill action button — primary / ink / outline / ghost / danger" viewport="700x180"
  */
 export interface ButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'type'> {
   /** Intent / emphasis. @default 'primary' @kind variant */
@@ -18,6 +17,8 @@ export interface ButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonE
   /** Stretch to full container width. @default false */
   block?: boolean;
   disabled?: boolean;
+  /** Demo / not-yet-wired action: dashed border, dimmed, help cursor, click suppressed, honest tooltip. Use instead of styling a dead action like a live one. @default false */
+  demo?: boolean;
   type?: 'button' | 'submit' | 'reset';
   style?: React.CSSProperties;
   children?: React.ReactNode;

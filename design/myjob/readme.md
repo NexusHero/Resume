@@ -101,6 +101,22 @@ German formatting: `78.000 €`, `92%`, `+12%`.
 
 ## Visual foundations
 
+**Ehrliche Aktionen (Demo-Regel).** Ein Button, der real nichts tut (Demo, coming soon,
+nicht verdrahtet), darf nie wie eine echte Aktion aussehen. `Button demo` rendert ihn
+gedämpft mit gestrichelter Border, `cursor:help` und Tooltip „Demo — noch nicht
+verdrahtet“; der Klick wird unterdrückt.
+
+**Nav-Regel für Sub-Flows.** Screens, die einen Unter-Schritt eines Bereichs zeigen
+(z. B. „Bewerbung vorbereiten“ unter Matching), behalten den ELTERN-Eintrag als aktiven
+Nav-Zustand — es gibt keine eigenen Nav-Einträge für Sub-Flows.
+
+**Mono-Grenzfall MetaPill.** Seniority-Pills („Senior“, „Mid“) zählen als Tech-Tags und
+dürfen Mono tragen — das ist die dokumentierte Ausnahme zur „Mono nie für Wort-Labels“-Regel.
+
+**CV-Dokument-Palette.** Das weiße CV-Blatt (CV-Builder) führt bewusst eine eigene
+Mini-Palette; `--cv-accent`-Default #2A6FDB ist der Legacy-Dokumentakzent, kein App-Token. Regel stammt aus dem Nutzertest (Erwartung
+gebrochen, wenn Demo-Buttons wie primäre Aktionen aussehen).
+
 **Two structural worlds — rebalanced in 2026.** LIGHT (default): everything floats on a
 cool light canvas (`--surface-app` #f2f4fa) — the nav rail is a **floating white rounded
 card** (`--rail-*` tokens, radius `--radius-2xl`, soft shadow), the topbar is transparent,
@@ -262,7 +278,7 @@ bundle, not `file://`.
 - `Workspace.html` — the Recruit landing: Royal hero with Jetzt-Chip, bunte KPI-Tiles,
   „Braucht Aufmerksamkeit“, active applications, quick-access detail panel.
 - `Talent-Pool.html` — Foto-Kachel-Grid (People-Palette), Klick öffnet das volle Profil;
-  „Me“ as talent #1.
+  „Ich“ as talent #1.
 - `Splash.html` — the animated Now-Split logo sting (loops for demo; runs once in-app).
 - `Matching.html` / `Matching-Ive.html` — find/create a Stelle and apply a candidate on
   their behalf (two-tier skill overlap); the `-Ive` file is the visual-reduction pass.
@@ -270,6 +286,12 @@ bundle, not `file://`.
 - `Bewerbung-vorbereiten.html` — cover letter + assemble the Bewerbungsmappe.
 - `Settings.html` — Darstellung (Hell „Vivid“ / Dunkel „Klassik“, echtes Umschalten), KI,
   Agentic-Modus.
+
+**Templates** (`templates/`) — starting points the picker offers consuming projects:
+`pitch-deck/` (10-slide customer pitch, Royal look, EN, deck-stage), `workspace/`,
+`talent-pool/`, `matching/`, `splash/` (the four app screens re-rooted one level deeper).
+Components also export `Logomark` (Now-Split mark), `Sparkle` (AI signature) and
+`CountryFlag` (DE/AT/CH) — screens import these instead of local copies.
 
 **Decisions** (`decisions/`) — the restructure/gap rationale docs (reference only, not
 cards).

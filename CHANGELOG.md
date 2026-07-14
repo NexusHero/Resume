@@ -10,6 +10,21 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Changed
 
+- **Design-system handoff refresh (v2).** Re-adopts the updated myJob
+  design-system handoff **1:1** into `design/myjob/` (namespace unchanged,
+  `MyJobDesignSystem_5611b7`). New DS components: **`Sparkle`** (the AI/accent
+  affordance) and the now-public **`CountryFlag`** (promoted out of
+  `PositionCard`). `Button` gains a **`demo`** flag — a dashed, non-interactive
+  state with a „Demo — noch nicht verdrahtet" tooltip for not-yet-wired
+  affordances — plus an explicit `onClick`. The base tokens add a global
+  **`:focus-visible`** outline, and the nav rail's badge/label sizes move off a
+  hard-coded `10px` onto the **`--fs-3xs`** token. Ships the DS **`templates/`**
+  (matching, pitch-deck, splash, talent-pool, workspace) and the refreshed
+  screens, `decisions/` and `readme.md` as in-repo design documentation. Drops
+  the unused `candidate-portrait-sm` avatar asset. The recruiting SPA consumes
+  the DS through `_ds_bundle.js`, so the refresh re-skins it with no SPA code
+  change; `vite build` regenerates the served `dist/`.
+
 - **Vivid follow-ups.** The **CV / Anschreiben document** now renders its section
   headings in **German** (Profil · Berufserfahrung · Ausbildung · Kenntnisse; the
   Ink template's eyebrows too) with `lang="de"`, so the exported PDF matches the

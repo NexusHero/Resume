@@ -29,9 +29,9 @@
   .fw { padding: 14px 16px; border: 1px dashed var(--border-strong); border-radius: var(--radius-md); background: var(--surface-subtle); }
   .fw .t { display: flex; align-items: center; gap: 8px; font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--text-heading); margin-bottom: 8px; }
   .fw p { font-size: var(--fs-xs); color: var(--text-muted); margin: 0 0 8px; line-height: 1.55; }
-  .fw code { font-family: var(--font-mono); font-size: 11px; color: var(--accent-strong); background: var(--surface-card); border: 1px solid var(--border); border-radius: 5px; padding: 1px 6px; }
+  .fw code { font-family: var(--font-mono); font-size: var(--fs-2xs); color: var(--accent-strong); background: var(--surface-card); border: 1px solid var(--border); border-radius: 5px; padding: 1px 6px; }
   .prov-chips { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 4px; }
-  .pchip { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 3px 10px; }
+  .pchip { font-family: var(--font-mono); font-size: var(--fs-2xs); color: var(--text-muted); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 3px 10px; }
   .pchip.on { color: var(--accent-strong); border-color: var(--accent-border); background: var(--accent-soft); font-weight: 600; }
 
   .agentrow { display: flex; align-items: flex-start; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--border); }
@@ -40,7 +40,7 @@
   .agentrow .at { font-weight: var(--fw-semibold); font-size: var(--fs-sm); color: var(--text-heading); }
   .agentrow .ad { font-size: var(--fs-xs); color: var(--text-soft); margin-top: 2px; }
   .auto-seg { display: inline-flex; background: var(--surface-sunk); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 2px; gap: 2px; flex: none; }
-  .auto-seg button { appearance: none; border: none; cursor: pointer; font-family: var(--font-body); font-size: 11px; font-weight: var(--fw-medium); padding: 5px 9px; border-radius: var(--radius-sm); color: var(--text-muted); background: transparent; white-space: nowrap; }
+  .auto-seg button { appearance: none; border: none; cursor: pointer; font-family: var(--font-body); font-size: var(--fs-2xs); font-weight: var(--fw-medium); padding: 5px 9px; border-radius: var(--radius-sm); color: var(--text-muted); background: transparent; white-space: nowrap; }
   .auto-seg button.on { background: var(--surface-card); color: var(--text-heading); font-weight: var(--fw-semibold); box-shadow: var(--shadow-sm); }
 </style>
 </head>
@@ -98,8 +98,8 @@ function AppearanceSection() {
         <div><h2>Darstellung</h2><div className="sub">Vivid ist der Standard — der klassische Ink-Look lebt als Dark Mode weiter</div></div>
       </div>
       <div style={{ display: 'flex', gap: '12px' }}>
-        <Sw id="light" label="Hell · Vivid" sub="Königsblau + Live-Orange (Standard)" bg="linear-gradient(130deg, #eef0fb, #f6f7fd)" chip="#3654e0" />
-        <Sw id="dark" label="Dunkel · Klassik" sub="Der bewährte Ink-Look mit Orange" bg="linear-gradient(130deg, #0f1626, #0b1220)" chip="#ff5320" />
+        <Sw id="light" label="Hell · Vivid" sub="Königsblau + Live-Orange (Standard)" bg="linear-gradient(130deg, var(--surface-app), var(--paper-subtle))" chip="var(--royal-500)" />
+        <Sw id="dark" label="Dunkel · Klassik" sub="Der bewährte Ink-Look mit Orange" bg="linear-gradient(130deg, var(--ink-850), var(--ink-900))" chip="var(--live)" />
       </div>
     </div>
   );
@@ -199,7 +199,7 @@ function Settings() {
     <AppShell
       product="recruit" posture="rail"
       nav={RECRUIT_NAV} active="__settings" onNav={() => {}}
-      account={{ name: 'Suhay Sevinc', meta: 'Me · +3 Talente', src: '../assets/img/suhay-photo-sm.jpg' }}
+      account={{ name: 'Suhay Sevinc', meta: 'Ich · +3 Talente', src: '../assets/img/suhay-photo-sm.jpg' }}
       title="Einstellungen"
       subtitle="Darstellung, KI, Framework & Agentic-Modus"
     >

@@ -45,7 +45,7 @@ const FLAGS = {
 };
 const COUNTRY_LABEL = { DE: 'Deutschland', AT: 'Österreich', CH: 'Schweiz' };
 
-function Flag({ country }) {
+export function CountryFlag({ country }) {
   const f = FLAGS[country];
   if (!f) return null;
   return (
@@ -137,7 +137,7 @@ export function PositionCard({
             <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {company}{location ? ` · ${location}` : ''}
             </span>
-            {country && <Flag country={country} />}
+            {country && <CountryFlag country={country} />}
           </div>
         </div>
         {matched ? (

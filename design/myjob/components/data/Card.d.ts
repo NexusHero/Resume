@@ -4,7 +4,6 @@ import React from 'react';
  * The base surface container — a white sheet with a hairline border and soft
  * shadow. Optional header (`title` + `subtitle` + `action`).
  *
- * @startingPoint section="Data" subtitle="White surface container with optional header" viewport="700x260"
  */
 export interface CardProps extends React.HTMLAttributes<HTMLElement> {
   /** Header title (display font). Omit for a header-less card. */

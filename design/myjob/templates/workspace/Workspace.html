@@ -1,12 +1,12 @@
-<!-- @dsCard group="myJob App" viewport="1280x800" name="Workspace" subtitle="Recruit landing — Royal-Hero, bunte KPI-Tiles, „Braucht Aufmerksamkeit", aktive Bewerbungen" -->
+<!-- @template name="App: Workspace" description="myJob Recruit landing — Royal hero, KPI tiles, attention list, quick access" -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>myJob Recruit — Workspace</title>
-<link rel="icon" href="../assets/logo/favicon.svg" />
-<link rel="stylesheet" href="../styles.css" />
+<link rel="icon" href="../../assets/logo/favicon.svg" />
+<link rel="stylesheet" href="../../styles.css" />
 <style>
   html, body { margin: 0; height: 100%; background: var(--surface-app); }
   #root { height: 100vh; }
@@ -108,8 +108,8 @@
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
-<script src="../_ds_bundle.js"></script>
-<script src="../data/talent-pool.js"></script>
+<script src="../../_ds_bundle.js"></script>
+<script src="../../data/talent-pool.js"></script>
 <script type="text/babel">
 const DS = window.MyJobDesignSystem_5611b7 || window.DesignSystem_5611b7;
 const { AppShell, Avatar, Icon, Button, StatusBadge, MatchIndicator } = DS;
@@ -127,7 +127,7 @@ const NAV = [
   { id: 'inbox', label: 'Inbox', icon: 'inbox', badge: 3 },
 ];
 
-const PHOTOS = { 'Suhay Sevinc': '../assets/img/suhay-photo-sm.jpg' };
+const PHOTOS = { 'Suhay Sevinc': '../../assets/img/suhay-photo-sm.jpg' };
 
 const ATTENTION = [
   { cand: 'Lena Bauer', pos: 'Design Lead', co: 'Helio Mobility', status: 'offer', urg: 'Angebot läuft in 2 Tagen ab', heat: 'warm' },
@@ -182,11 +182,11 @@ function Workspace() {
       </div>
       <div className="cap">Schnellzugriff</div>
       <div className="qa">
-        <a href="Matching.html"><span className="ic"><Icon name="search" size={16} /></span>Neue Bewerbung<span className="ar"><Icon name="chevronRight" size={15} /></span></a>
-        <a href="Talent-Pool.html"><span className="ic"><Icon name="users" size={16} /></span>Talent-Pool<span className="ar"><Icon name="chevronRight" size={15} /></span></a>
-        <a href="CV-Builder.html"><span className="ic"><Icon name="fileText" size={16} /></span>CV-Builder<span className="ar"><Icon name="chevronRight" size={15} /></span></a>
-        <a href="Bewerbung-vorbereiten.html"><span className="ic"><Icon name="mail" size={16} /></span>Anschreiben & Dossier<span className="ar"><Icon name="chevronRight" size={15} /></span></a>
-        <a href="Settings.html"><span className="ic"><Icon name="sliders" size={16} /></span>Einstellungen<span className="ar"><Icon name="chevronRight" size={15} /></span></a>
+        <a href="../../screens/Matching.html"><span className="ic"><Icon name="search" size={16} /></span>Neue Bewerbung<span className="ar"><Icon name="chevronRight" size={15} /></span></a>
+        <a href="../../screens/Talent-Pool.html"><span className="ic"><Icon name="users" size={16} /></span>Talent-Pool<span className="ar"><Icon name="chevronRight" size={15} /></span></a>
+        <a href="../../screens/CV-Builder.html"><span className="ic"><Icon name="fileText" size={16} /></span>CV-Builder<span className="ar"><Icon name="chevronRight" size={15} /></span></a>
+        <a href="../../screens/Bewerbung-vorbereiten.html"><span className="ic"><Icon name="mail" size={16} /></span>Anschreiben & Dossier<span className="ar"><Icon name="chevronRight" size={15} /></span></a>
+        <a href="../../screens/Settings.html"><span className="ic"><Icon name="sliders" size={16} /></span>Einstellungen<span className="ar"><Icon name="chevronRight" size={15} /></span></a>
       </div>
     </div>
   );
@@ -198,7 +198,7 @@ function Workspace() {
       account={{ name: 'Suhay Sevinc', meta: 'Ich · +3 Talente', src: me.photo }}
       title="Workspace" subtitle="Sonntag, 28. Juni"
       search searchPlaceholder="Kandidaten, Stellen, Bewerbungen …"
-      actions={<Button size="sm" iconLeft={<Icon name="plus" size={15} />} style={{ borderRadius: 'var(--radius-pill)', boxShadow: 'var(--shadow-accent)' }} onClick={() => { window.location.href = 'Matching.html'; }}>Neue Bewerbung</Button>}
+      actions={<Button size="sm" iconLeft={<Icon name="plus" size={15} />} style={{ borderRadius: 'var(--radius-pill)', boxShadow: 'var(--shadow-accent)' }} onClick={() => { window.location.href = '../../screens/Matching.html'; }}>Neue Bewerbung</Button>}
       detail={detail}
     >
       <div className="ws">
@@ -231,7 +231,7 @@ function Workspace() {
         </div>
 
         <div className="block rise d4">
-          <div className="block-h"><Icon name="columns" size={16} style={{ color: 'var(--text-muted)' }} /><h2>Aktive Bewerbungen</h2><a href="Matching.html" style={{ marginLeft: 'auto', fontSize: 'var(--fs-xs)', color: 'var(--accent-strong)', textDecoration: 'none', fontWeight: 'var(--fw-medium)' }}>+ Neue Bewerbung</a></div>
+          <div className="block-h"><Icon name="columns" size={16} style={{ color: 'var(--text-muted)' }} /><h2>Aktive Bewerbungen</h2><a href="../../screens/Matching.html" style={{ marginLeft: 'auto', fontSize: 'var(--fs-xs)', color: 'var(--accent-strong)', textDecoration: 'none', fontWeight: 'var(--fw-medium)' }}>+ Neue Bewerbung</a></div>
           {ACTIVE.map((a, i) => (
             <div className="row" key={i}>
               <Avatar name={a.cand} src={PHOTOS[a.cand]} size="md" />

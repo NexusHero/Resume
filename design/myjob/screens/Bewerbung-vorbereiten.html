@@ -32,7 +32,7 @@
   .magic[disabled]:hover { transform: none; }
 
   /* steering — prompt the KI */
-  .steer { appearance: none; cursor: pointer; font-family: var(--font-body); font-size: var(--fs-xs); font-weight: var(--fw-medium); color: var(--accent-strong); background: transparent; border: 1px solid var(--accent-border); border-radius: var(--radius-pill); padding: 5px 12px; transition: all var(--dur-fast); }
+  .steer { appearance: none; cursor: pointer; font-family: var(--font-body); font-size: var(--fs-xs); font-weight: var(--fw-medium); color: var(--accent-strong); background: transparent; border: 1px solid var(--accent-border); border-radius: var(--radius-pill); padding: 8px 14px; transition: all var(--dur-fast); }
   .steer:hover { background: var(--accent-soft); }
   .steer-in { flex: 1; min-width: 0; font-family: var(--font-body); font-size: var(--fs-sm); color: var(--text-heading); background: var(--surface-card); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 10px 13px; outline: none; }
   .steer-in:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
@@ -65,7 +65,7 @@
   .cvline .tag { margin-left: auto; font-family: var(--font-mono); font-size: var(--fs-3xs); font-weight: var(--fw-semibold); color: var(--accent-strong); white-space: nowrap; flex: none; }
 
   /* sticky decision footer */
-  .decide { position: sticky; bottom: 0; margin-top: 20px; background: color-mix(in oklch, var(--paper) 90%, transparent); backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); padding: 14px 18px; display: flex; align-items: center; gap: 16px; }
+  .decide { position: sticky; bottom: 0; margin-top: 20px; background: color-mix(in oklch, var(--paper) 96%, transparent); backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); padding: 14px 18px; display: flex; align-items: center; gap: 16px; }
   .decide .checks { display: flex; gap: 16px; flex-wrap: wrap; }
   .decide .ck { display: inline-flex; align-items: center; gap: 7px; font-size: var(--fs-sm); color: var(--text-muted); }
   .decide .ck .box { width: 18px; height: 18px; border-radius: 5px; display: grid; place-items: center; border: 1px solid var(--border-strong); color: transparent; flex: none; }
@@ -74,8 +74,9 @@
   .send { margin-left: auto; appearance: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-body); font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--accent-contrast); background: var(--accent); border: none; border-radius: var(--radius-md); padding: 11px 18px; transition: opacity var(--dur-fast); }
   .send[disabled] { opacity: .4; cursor: default; }
 
-  .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); background: var(--ink-900); color: #fff; font-family: var(--font-body); font-size: var(--fs-sm); padding: 12px 20px; border-radius: var(--radius-pill); box-shadow: var(--shadow-md); display: flex; align-items: center; gap: 8px; z-index: 60; }
+  .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); background: var(--ink-800); color: #fff; border: 1px solid rgba(255,255,255,0.14); font-family: var(--font-body); font-size: var(--fs-sm); padding: 12px 20px; border-radius: var(--radius-pill); box-shadow: var(--shadow-md); display: flex; align-items: center; gap: 8px; z-index: 60; }
   .toast b { color: var(--accent-on-dark); }
+@media (prefers-reduced-motion: reduce) { .magic::after, .skel, .toast { animation: none; } }
 </style>
 </head>
 <body>
@@ -140,14 +141,7 @@ Freundliche Grüße
 Suhay Sevinc`,
 ];
 
-function Sparkle({ size = 16 }) {
-  return (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true" style={{ display: 'block', flexShrink: 0 }}>
-      <path d="M12 2l1.6 5.1a5 5 0 0 0 3.3 3.3L22 12l-5.1 1.6a5 5 0 0 0-3.3 3.3L12 22l-1.6-5.1a5 5 0 0 0-3.3-3.3L2 12l5.1-1.6a5 5 0 0 0 3.3-3.3L12 2z" />
-      <path d="M19 3l.6 1.9a2 2 0 0 0 1.3 1.3L22.8 7l-1.9.6a2 2 0 0 0-1.3 1.3L19 11l-.6-1.9a2 2 0 0 0-1.3-1.3L15.2 7l1.9-.6a2 2 0 0 0 1.3-1.3L19 3z" opacity="0.7" />
-    </svg>
-  );
-}
+const Sparkle = (p) => { const C = window.MyJobDesignSystem_5611b7.Sparkle; return C ? <C {...p} /> : <span style={{ width: (p.size||16)+"px", display: "inline-block" }} />; };
 
 /* ---- Card A · Anschreiben ---- */
 function LetterCard({ status, setStatus }) {
@@ -155,6 +149,7 @@ function LetterCard({ status, setStatus }) {
   const [variant, setVariant] = React.useState(0);
   const [prompt, setPrompt] = React.useState('');
   const [note, setNote] = React.useState(null);
+  const [steering, setSteering] = React.useState(false);
 
   const generate = (v) => {
     setStatus('gen');
@@ -165,12 +160,26 @@ function LetterCard({ status, setStatus }) {
     }, 1200);
   };
   const regenerate = () => { const next = (variant + 1) % LETTERS.length; setVariant(next); setNote(null); generate(next); };
-  /* steer: free-text or chip instruction → regenerate honoring it (demo: variant swap + note) */
-  const steer = (instr) => {
+  /* steer: free-text or chip instruction → real KI rewrite via window.claude; falls back to variant swap without it */
+  const steer = async (instr) => {
     const v = (instr || '').trim();
-    if (!v) return;
-    setNote(v); setPrompt('');
-    const next = (variant + 1) % LETTERS.length; setVariant(next); generate(next);
+    if (!v || steering) return;
+    setPrompt('');
+    if (window.claude && window.claude.complete) {
+      setSteering(true);
+      try {
+        const out = await window.claude.complete(
+          `Du überarbeitest ein deutsches Bewerbungsanschreiben.\n\nKontext: ${CTX.cand.name} (${CTX.cand.role}) bewirbt sich als ${CTX.job.title} bei ${CTX.job.company} in ${CTX.job.location}. Gefordert: ${CTX.required.join(', ')}. Profil-Skills: ${CAND_SKILLS.join(', ')}.\n\nAktueller Entwurf:\n---\n${text}\n---\n\nAnweisung: „${v}“\n\nÜberarbeite den Entwurf gemäß der Anweisung. Behält Anrede und Grußformel bei, bleibe faktentreu (keine erfundenen Stationen). Antworte NUR mit dem vollständigen überarbeiteten Anschreiben, ohne Kommentar.`
+        );
+        if (out && out.trim()) { setText(out.trim()); setNote(v); }
+      } catch (e) {
+        const next = (variant + 1) % LETTERS.length; setVariant(next); setText(LETTERS[next]); setNote(v);
+      }
+      setSteering(false);
+    } else {
+      setNote(v);
+      const next = (variant + 1) % LETTERS.length; setVariant(next); generate(next);
+    }
   };
 
   return (
@@ -202,13 +211,14 @@ function LetterCard({ status, setStatus }) {
         )}
         {(status === 'draft' || status === 'done') && (
           <React.Fragment>
-            {note && status === 'draft' && <span className="steer-note"><Sparkle size={11} />Anweisung angewendet: „{note}“</span>}
-            <Textarea rows={13} value={text} readOnly={status === 'done'} onChange={(e) => setText(e.target.value)} style={status === 'done' ? { background: 'var(--surface-subtle)', color: 'var(--text-body)' } : {}} />
+            {note && status === 'draft' && !steering && <span className="steer-note"><Sparkle size={11} />Anweisung angewendet: „{note}“</span>}
+            {steering && <span className="steer-note"><Sparkle size={11} />myJob passt den Entwurf an …</span>}
+            <Textarea rows={13} value={text} readOnly={status === 'done' || steering} onChange={(e) => setText(e.target.value)} style={status === 'done' ? { background: 'var(--surface-subtle)', color: 'var(--text-body)' } : steering ? { opacity: 0.55 } : {}} />
             {status === 'draft' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                   {['Formeller', 'Lockerer', 'Kürzer', 'Mehr Schweiz-Bezug'].map((t) => (
-                    <button key={t} className="steer" onClick={() => steer(t)}>{t}</button>
+                    <button key={t} className="steer" disabled={steering} style={steering ? { opacity: 0.5, cursor: 'wait' } : {}} onClick={() => steer(t)}>{t}</button>
                   ))}
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
@@ -217,9 +227,10 @@ function LetterCard({ status, setStatus }) {
                     placeholder='Eigene Anweisung … z. B. „Betone die GraphQL-Erfahrung“'
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
+                    disabled={steering}
                     onKeyDown={(e) => { if (e.key === 'Enter') steer(prompt); }}
                   />
-                  <button className="magic ghost" onClick={() => steer(prompt)} disabled={!prompt.trim()}><Sparkle size={13} />Anpassen</button>
+                  <button className="magic ghost" onClick={() => steer(prompt)} disabled={steering || !prompt.trim()}><Sparkle size={13} />{steering ? 'Passe an …' : 'Anpassen'}</button>
                 </div>
               </div>
             )}
@@ -358,7 +369,7 @@ function PrepScreen() {
       <AppShell
         product="recruit" posture="rail"
         nav={RECRUIT_NAV} active="matching" onNav={() => {}}
-        account={{ name: 'Suhay Sevinc', meta: 'Me · +3 Talente', src: '../assets/img/suhay-photo-sm.jpg' }}
+        account={{ name: 'Suhay Sevinc', meta: 'Ich · +3 Talente', src: '../assets/img/suhay-photo-sm.jpg' }}
         title="Bewerbung vorbereiten"
         subtitle="Magic-Entwürfe · du bestätigst"
       >

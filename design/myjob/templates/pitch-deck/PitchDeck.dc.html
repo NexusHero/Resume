@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Pitch Deck" description="10-slide customer pitch for the myJob recruiting suite — Royal look, Clash Display, 1920×1080" -->
+<helmet>
+  <script src="./ds-base.js"></script>
+  <style>
+    body { margin: 0; background: #0b1220; }
+    ::selection { background: #c7d2ff; }
+
+    /* ─── Deck entrance motion — runs only on the active slide, never in print/PDF ─── */
+    @media (prefers-reduced-motion: no-preference) {
+      [data-deck-active] [data-anim="rise"]  { animation: dkRise .65s cubic-bezier(.22,1,.36,1) both; }
+      [data-deck-active] [data-anim="head"]  { animation: dkHead .8s cubic-bezier(.22,1,.36,1) .08s both; }
+      [data-deck-active] [data-anim="right"] { animation: dkRight .75s cubic-bezier(.22,1,.36,1) .2s both; }
+      [data-deck-active] [data-anim="tilt"]  { animation: dkTilt .85s cubic-bezier(.34,1.3,.64,1) .15s both; }
+      [data-deck-active] [data-anim="pop"]   { animation: dkPop .6s cubic-bezier(.34,1.56,.64,1) both; }
+      [data-deck-active] [data-anim-stagger] > * { animation: dkRise .6s cubic-bezier(.22,1,.36,1) both; }
+      [data-deck-active] [data-anim-stagger="pop"] > * { animation-name: dkPop; animation-duration: .55s; animation-timing-function: cubic-bezier(.34,1.56,.64,1); }
+      [data-deck-active] [data-anim-stagger] > *:nth-child(1) { animation-delay: .18s; }
+      [data-deck-active] [data-anim-stagger] > *:nth-child(2) { animation-delay: .26s; }
+      [data-deck-active] [data-anim-stagger] > *:nth-child(3) { animation-delay: .34s; }
+      [data-deck-active] [data-anim-stagger] > *:nth-child(4) { animation-delay: .42s; }
+      [data-deck-active] [data-anim-stagger] > *:nth-child(5) { animation-delay: .50s; }
+      [data-deck-active] [data-anim-stagger] > *:nth-child(6) { animation-delay: .58s; }
+      [data-deck-active] [data-anim-stagger] > *:nth-child(7) { animation-delay: .66s; }
+      [data-deck-active] [data-anim-stagger] > *:nth-child(8) { animation-delay: .74s; }
+      [data-deck-active] [data-anim-stagger] > *:nth-child(9) { animation-delay: .82s; }
+      [data-deck-active] .dk3 { animation-delay: .3s; }
+      [data-deck-active] .dk4 { animation-delay: .48s; }
+    }
+    @keyframes dkRise  { from { opacity: 0; transform: translateY(26px); } }
+    @keyframes dkHead  { from { opacity: 0; transform: translateY(34px); filter: blur(12px); } }
+    @keyframes dkRight { from { opacity: 0; transform: translateX(64px) rotate(1.5deg); } }
+    @keyframes dkTilt  { from { opacity: 0; transform: rotate(-7deg) translateY(54px); } }
+    @keyframes dkPop   { from { opacity: 0; transform: scale(.55); } }
+  </style>
+</helmet>
+
+<div data-theme="{{ theme }}">
+<x-import component-from-global-scope="deck-stage" from="./deck-stage.js" width="1920" height="1080" hint-size="100%,100%">
+
+  <!-- ═══ 01 · COVER ═══ -->
+  <section data-label="Cover" data-screen-label="01 Cover" style="position:relative; overflow:hidden; box-sizing:border-box; background:linear-gradient(135deg, var(--accent) 0%, color-mix(in oklch, var(--accent) 68%, #0b1220) 100%); color:#ffffff; display:flex; flex-direction:column; padding:100px 120px;">
+    <div style="position:absolute; right:-140px; top:-120px; width:520px; height:520px; border-radius:96px; background:rgba(255,255,255,.07);"></div>
+    <div style="position:absolute; right:260px; bottom:-180px; width:420px; height:420px; border-radius:80px; background:rgba(255,255,255,.05);"></div>
+    <div data-anim="pop" class="dk4" style="position:absolute; right:210px; top:340px; width:72px; height:72px; border-radius:20px; background:var(--live);"></div>
+    <div data-anim="rise" style="display:flex; align-items:center; gap:20px;">
+      <img src="./logo-icon-light.svg" alt="myJob" style="width:60px; height:60px; display:block;" />
+      <span style="font-family:var(--font-display,'Clash Display',sans-serif); font-size:42px; font-weight:600; letter-spacing:-0.01em;">myJob</span>
+    </div>
+    <div style="flex:1;"></div>
+    <div data-anim="rise" style="font-family:var(--font-mono,'JetBrains Mono',monospace); font-size:24px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:rgba(255,255,255,.72); margin-bottom:28px;">Recruiting Suite · Customer Pitch</div>
+    <h1 data-anim="head" style="margin:0; color:#ffffff; font-family:var(--font-display,'Clash Display',sans-serif); font-size:128px; font-weight:600; line-height:1.02; letter-spacing:-0.02em; max-width:1400px; text-wrap:balance;">Recruiting is a people business<span style="color:var(--live-on-dark);">.</span></h1>
+    <p data-anim="rise" class="dk3" style="margin:36px 0 0; font-family:var(--font-body,'Inter',sans-serif); font-size:34px; line-height:1.45; color:rgba(255,255,255,.85); max-width:1180px; text-wrap:pretty;">myJob is the workspace for agencies and independent Vermittler — talent, mandates, matching and application documents in one place.</p>
+    <div style="flex:1;"></div>
+    <div style="font-family:var(--font-mono,'JetBrains Mono',monospace); font-size:24px; color:rgba(255,255,255,.78);">2026</div>
+  </section>
+
+  <!-- ═══ 02 · PROBLEM ═══ -->
+  <section data-label="Problem" data-screen-label="02 Problem" style="position:relative; overflow:hidden; box-sizing:border-box; background:var(--surface-app,#f2f4fa); display:flex; flex-direction:column; padding:100px 120px; color:var(--text-body);">
+    <div data-anim="rise" style="font-family:var(--font-mono,'JetBrains Mono',monospace); font-size:24px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--accent-strong); margin-bottom:24px;">The Problem</div>
+    <h2 data-anim="head" style="margin:0 0 22px; font-family:var(--font-display,'Clash Display',sans-serif); font-size:88px; font-weight:600; line-height:1.04; letter-spacing:-0.02em; color:var(--text-heading);">Your day disappears into admin.</h2>
+    <p data-anim="rise" class="dk3" style="margin:0; font-family:var(--font-body,'Inter',sans-serif); font-size:30px; line-height:1.5; color:var(--text-muted); max-width:1150px; text-wrap:pretty;">Placing people should be about people. Instead, most of the week goes into finding files and rebuilding documents.</p>
+    <div style="flex:1;"></div>
+    <div data-anim-stagger="rise" style="display:flex; gap:36px;">
+      <div style="flex:1; box-sizing:border-box; padding:48px 44px; border-radius:32px; background:var(--live-soft); border:1px solid var(--live-border);">
+        <div style="font-family:var(--font-display,'Clash Display',sans-serif); font-size:52px; font-weight:600; color:var(--live-strong); margin-bottom:20px;">01</div>
+        <div style="font-family:var(--font-display,'Clash Display',sans-serif); font-size:40px; font-weight:600; letter-spacing:-0.01em; color:var(--text-heading); margin-bottom:16px;">Scattered candidates</div>
+        <p style="margin:0; font-family:var(--font-body,'Inter',sans-serif); font-size:27px; line-height:1.5; color:var(--text-body); text-wrap:pretty;">Profiles live in spreadsheets, inboxes and old PDFs. Nobody sees the whole pool.</p>
+      </div>
+      <div style="flex:1; box-sizing:border-box; padding:48px 44px; border-radius:32px; background:var(--people-2-soft,#f1eafd); border:1px solid #ddd0f7;">
+        <div style="font-family:var(--font-display,'Clash Display',sans-serif); font-size:52px; font-weight:600; color:var(--people-2,#7c3aed); margin-bottom:20px;">02</div>
+        <div style="font-family:var(--font-display,'Clash Display',sans-serif); font-size:40px; font-weight:600; letter-spacing:-0.01em; color:var(--text-heading); margin-bottom:16px;">Hand-built applications</div>
+        <p style="margin:0; font-family:var(--font-body,'Inter',sans-serif); font-size:27px; line-height:1.5; color:var(--text-body); text-wrap:pretty;">Every Bewerbung means rebuilding the CV, the cover letter and the dossier from scratch.</p>
+      </div>
+      <div style="flex:1; box-sizing:border-box; padding:48px 44px; border-radius:32px; background:var(--people-1-soft,#e6f5f3); border:1px solid #c4e8e3;">
+        <div style="font-family:var(--font-display,'Clash Display',sans-serif); font-size:52px; font-weight:600; color:var(--people-1,#0d9488); margin-bottom:20px;">03</div>
+        <div style="font-family:var(--font-display,'Clash Display',sans-serif); font-size:40px; font-weight:600; letter-spacing:-0.01em; color:var(--text-heading); margin-bottom:16px;">Matching from memory</div>
+        <p style="margin:0; font-family:var(--font-body,'Inter',sans-serif); font-size:27px; line-height:1.5; color:var(--text-body); text-wrap:pretty;">Who fits this mandate? The answer depends on whoever happens to remember.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 03 · SOLUTION ═══ -->
+  <section data-label="Solution" data-screen-label="03 Solution" style="position:relative; overflow:hidden; box-sizing:border-box; background:var(--surface-card,#ffffff); display:flex; align-items:center; gap:100px; padding:100px 120px; color:var(--text-body);">
+    <div style="flex:1; min-width:0;">
+      <div data-anim="rise" style="font-family:var(--font-mono,'JetBrains Mono',monospace); font-size:24px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--accent-strong); margin-bottom:24px;">The Solution</div>
+      <h2 data-anim="head" style="margin:0 0 30px; font-family:var(--font-display,'Clash Display',sans-serif); font-size:92px; font-weight:600; line-height:1.03; letter-spacing:-0.02em; color:var(--text-heading);">One workspace. Every placement.</h2>
+      <p data-anim="rise" class="dk3" style="margin:0; font-family:var(--font-body,'Inter',sans-serif); font-size:30px; line-height:1.55; color:var(--text-muted); text-wrap:pretty;">myJob keeps your talent, your mandates and every running application in a single, live view — so the next step is always one click away, never one search away.</p>
+    </div>
+    <div data-anim-stagger="rise" style="flex:1; min-width:0; box-sizing:border-box; border-radius:40px; background:linear-gradient(160deg, var(--accent) 0%, color-mix(in oklch, var(--accent) 70%, #0b1220) 100%); padding:56px; display:flex; flex-direction:column; gap:24px; color:#ffffff;">
+      <div style="display:flex; align-items:center; gap:24px; background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.16); border-radius:24px; padding:32px 36px;">
+        <span style="width:26px; height:26px; border-radius:9px; background:var(--live); flex:none;"></span>
+        <div>
+          <div style="font-family:var(--font-display,'Clash Display',sans-serif); font-size:36px; font-weight:600;">Talent-Pool</div>
+          <div style="font-family:var(--font-body,'Inter',sans-serif); font-size:25px; color:rgba(255,255,255,.78); margin-top:6px;">Every profile, searchable and current — including yours.</div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:24px; background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.16); border-radius:24px; padding:32px 36px;">
+        <span style="width:26px; height:26px; border-radius:9px; background:#7c3aed; flex:none;"></span>
+        <div>
+          <div style="font-family:var(--font-display,'Clash Display',sans-serif); font-size:36px; font-weight:600;">Mandates &amp; Matching</div>
+          <div style="font-family:var(--font-body,'Inter',sans-serif); font-size:25px; color:rgba(255,255,255,.78); margin-top:6px;">Reverse matching finds the fit — and explains it.</div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:24px; background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.16); border-radius:24px; padding:32px 36px;">
+        <span style="width:26px; height:26px; border-radius:9px; background:#0d9488; flex:none;"></span>
+        <div>
+          <div style="font-family:var(--font-display,'Clash Display',sans-serif); font-size:36px; font-weight:600;">Applications &amp; Documents</div>
+          <div style="font-family:var(--font-body,'Inter',sans-serif); font-size:25px; color:rgba(255,255,255,.78); margin-top:6px;">CV, cover letter, Bewerbungsmappe — drafted and assembled.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 04 · TALENT-POOL ═══ -->
+  <section data-label="Talent-Pool" data-screen-label="04 Talent-Pool" style="position:relative; overflow:hidden; box-sizing:border-box; background:var(--surface-app,#f2f4fa); display:flex; align-items:center; gap:110px; padding:100px 120px; color:var(--text-body);">
+    <div data-anim-stagger="pop" style="flex:0 0 640px; display:grid; grid-template-columns:repeat(3, 1fr); gap:24px;">
+      <div style="position:relative; aspect-ratio:1; border-radius:26px; background:var(--accent); color:#ffffff; display:grid; place-items:center; font-family:var(--font-display,'Clash Display',sans-serif); font-size:56px; font-weight:600; outline:5px solid var(--live); outline-offset:5px;">SS<span style="position:absolute; left:50%; bottom:-23px; transform:translateX(-50%); background:var(--live); color:#ffffff; font-family:var(--font-mono,'JetBrains Mono',monospace); font-size:19px; font-weight:600; letter-spacing:.1em; padding:5px 16px; border-radius:999px; white-space:nowrap;">TALENT #1</span></div>
+      <div style="aspect-ratio:1; border-radius:26px; background:#0d9488; color:#ffffff; display:grid; place-items:center; font-family:var(--font-display,'Clash Display',sans-serif); font-size:56px; font-weight:600;">LB</div>
+      <div style="aspect-ratio:1; border-radius:26px; background:#7c3aed; color:#ffffff; display:grid; place-items:center; font-family:var(--font-display,'Clash Display',sans-serif); font-size:56px; font-weight:600;">ME</div>
+      <div style="aspect-ratio:1; border-radius:26px; background:#db2777; color:#ffffff; display:grid; place-items:center; font-family:var(--font-display,'Clash Display',sans-serif); font-size:56px; font-weight:600;">AK</div>
+      <div style="aspect-ratio:1; border-radius:26px; background:#2563eb; color:#ffffff; display:grid; place-items:center; font-family:var(--font-display,'Clash Display',sans-serif); font-size:56px; font-weight:600;">JW</div>
+      <div style="aspect-ratio:1; border-radius:26px; background:#ea580c; color:#ffffff; display:grid; place-items:center; font-family:var(--font-display,'Clash Display',sans-serif); font-size:56px; font-weight:600;">TN</div>
+      <div style="aspect-ratio:1; border-radius:26px; background:#0891b2; color:#ffffff; display:grid; place-items:center; font-family:var(--font-display,'Clash Display',sans-serif); font-size:56px; font-weight:600;">RH</div>
+      <div style="aspect-ratio:1; border-radius:26px; background:#65a30d; color:#ffffff; display:grid; place-items:center; font-family:var(--font-display,'Clash Display',sans-serif); font-size:56px; font-weight:600;">FP</div>
+      <div style="aspect-ratio:1; border-radius:26px; background:#9333ea; color:#ffffff; display:grid; place-items:center; font-family:var(--font-display,'Clash Display',sans-serif); font-size:56px; font-weight:600;">CD</div>
+    </div>
+    <div style="flex:1; min-width:0;">
+      <div data-anim="rise" style="font-family:var(--font-mono,'JetBrains Mono',monospace); font-size:24px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--accent-strong); margin-bottom:24px;">Talent-Pool</div>
+      <h2 data-anim="head" style="margin:0 0 30px; font-family:var(--font-display,'Clash Display',sans-serif); font-size:84px; font-weight:600; line-height:1.04; letter-spacing:-0.02em; color:var(--text-heading);">You are talent&nbsp;#1.</h2>
+      <p data-anim="rise" class="dk3" style="margin:0 0 36px; font-family:var(--font-body,'Inter',sans-serif); font-size:30px; line-height:1.55; color:var(--text-muted); text-wrap:pretty;">Independent Vermittler place themselves too. Your own profile lives in the same pool, with the same tools — from CV to finished dossier. Everything you do for your talent, you can do for yourself.</p>
+      <div data-anim-stagger="rise" style="display:flex; flex-wrap:wrap; gap:14px;">
+        <span style="font-family:var(--font-body,'Inter',sans-serif); font-size:25px; font-weight:500; color:var(--accent-strong); background:var(--accent-soft); border:1px solid var(--accent-border); border-radius:999px; padding:12px 26px;">Skill search</span>
+        <span style="font-family:var(--font-body,'Inter',sans-serif); font-size:25px; font-weight:500; color:var(--accent-strong); background:var(--accent-soft); border:1px solid var(--accent-border); border-radius:999px; padding:12px 26px;">Match scores</span>
+        <span style="font-family:var(--font-body,'Inter',sans-serif); font-size:25px; font-weight:500; color:var(--accent-strong); background:var(--accent-soft); border:1px solid var(--accent-border); border-radius:999px; padding:12px 26px;">Availability &amp; status</span>
+        <span style="font-family:var(--font-body,'Inter',sans-serif); font-size:25px; font-weight:500; color:var(--accent-strong); background:var(--accent-soft); border:1px solid var(--accent-border); border-radius:999px; padding:12px 26px;">Work permits</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 05 · MATCHING ═══ -->
+  <section data-label="Matching" data-screen-label="05 Matching" style="position:relative; overflow:hidden; box-sizing:border-box; background:var(--surface-card,#ffffff); display:flex; align-items:center; gap:100px; padding:100px 120px; color:var(--text-body);">
+    <div style="flex:1; min-width:0;">
+      <div data-anim="rise" style="font-family:var(--font-mono,'JetBrains Mono',monospace); font-size:24px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--accent-strong); margin-bottom:24px;">Matching</div>
+      <h2 data-anim="head" style="margin:0 0 30px; font-family:var(--font-display,'Clash Display',sans-serif); font-size:84px; font-weight:600; line-height:1.04; letter-spacing:-0.02em; color:var(--text-heading);">Start from the person, not the job ad.</h2>
+      <p data-anim="rise" class="dk3" style="margin:0; font-family:var(--font-body,'Inter',sans-serif); font-size:30px; line-height:1.55; color:var(--text-muted); text-wrap:pretty;">Pick a candidate and myJob scans the open mandates for them — reverse matching, the way agencies actually work. Every score comes with a reason you can read, check and act on.</p>
+    </div>
+    <div data-anim="right" style="flex:0 0 780px; box-sizing:border-box; border-radius:32px; background:var(--surface-card,#ffffff); border:1px solid var(--border,#e2e8f0); box-shadow:0 24px 64px rgba(11,18,32,.12); padding:44px;">
+      <div style="display:flex; align-items:center; gap:22px; margin-bottom:30px;">
+        <span style="width:76px; height:76px; border-radius:20px; background:#2563eb; color:#ffffff; display:grid; place-items:center; font-family:var(--font-display,'Clash Display',sans-serif); font-size:32px; font-weight:600; flex:none;">ME</span>
+        <div style="min-width:0;">
+          <div style="font-family:var(--font-display,'Clash Display',sans-serif); font-size:32px; font-weight:600; color:var(--text-heading);">Milan Ebert</div>
+          <div style="font-family:var(--font-body,'Inter',sans-serif); font-size:24px; color:var(--text-muted);">Frontend Engineer · available now</div>
+        </div>
+        <div style="margin-left:auto; text-align:right;">
+          <div style="font-family:var(--font-display,'Clash Display',sans-serif); font-size:58px; font-weight:600; color:var(--accent-strong); line-height:1;">87%</div>
+          <div style="font-family:var(--font-mono,'JetBrains Mono',monospace); font-size:20px; letter-spacing:.14em; text-transform:uppercase; color:var(--text-soft);">Match</div>
+        </div>
+      </div>
+      <div style="font-family:var(--font-body,'Inter',sans-serif); font-size:25px; color:var(--text-body); background:var(--surface-subtle,#f8fafc); border:1px solid var(--border,#e2e8f0); border-radius:18px; padding:20px 26px; margin-bottom:22px;">Senior Frontend Engineer · Helio Mobility, Zürich</div>
+      <div style="display:flex; align-items:flex-start; gap:14px; background:var(--accent-soft); border:1px solid var(--accent-border); border-radius:18px; padding:22px 26px; margin-bottom:30px;">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="var(--accent-strong)" aria-hidden="true" style="flex:none; margin-top:3px;"><path d="M12 2l1.6 5.1a5 5 0 0 0 3.3 3.3L22 12l-5.1 1.6a5 5 0 0 0-3.3 3.3L12 22l-1.6-5.1a5 5 0 0 0-3.3-3.3L2 12l5.1-1.6a5 5 0 0 0 3.3-3.3L12 2z"></path></svg>
+        <p style="margin:0; font-family:var(--font-body,'Inter',sans-serif); font-size:25px; line-height:1.5; color:var(--text-body);"><b style="color:var(--accent-strong);">Why:</b> 3 of 4 must-have skills — React, TypeScript, Testing. Gap: GraphQL — address it in the cover letter.</p>
+      </div>
+      <div data-anim-stagger="rise" style="display:flex; gap:16px;">
+        <span style="font-family:var(--font-body,'Inter',sans-serif); font-size:25px; font-weight:600; color:var(--accent-contrast,#ffffff); background:var(--accent); border-radius:999px; padding:16px 34px;">Propose candidate</span>
+        <span style="font-family:var(--font-body,'Inter',sans-serif); font-size:25px; font-weight:600; color:var(--accent-strong); border:1.5px solid var(--accent-border); border-radius:999px; padding:16px 34px;">Draft cover letter</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 06 · AI COPILOT ═══ -->
+  <section data-label="AI Copilot" data-screen-label="06 AI Copilot" style="position:relative; overflow:hidden; box-sizing:border-box; background:#0b1220; color:#ffffff; display:flex; flex-direction:column; padding:100px 120px;">
+    <div style="position:absolute; left:-160px; bottom:-200px; width:560px; height:560px; border-radius:110px; background:rgba(144,160,255,.06);"></div>
+    <div data-anim="rise" style="display:flex; align-items:center; gap:16px; margin-bottom:24px;">
+      <svg viewBox="0 0 24 24" width="26" height="26" fill="var(--accent-on-dark,#90a0ff)" aria-hidden="true"><path d="M12 2l1.6 5.1a5 5 0 0 0 3.3 3.3L22 12l-5.1 1.6a5 5 0 0 0-3.3 3.3L12 22l-1.6-5.1a5 5 0 0 0-3.3-3.3L2 12l5.1-1.6a5 5 0 0 0 3.3-3.3L12 2z"></path></svg>
+      <span style="font-family:var(--font-mono,'JetBrains Mono',monospace); font-size:24px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--accent-on-dark,#90a0ff);">AI Copilot</span>
+    </div>
+    <h2 data-anim="head" style="margin:0 0 22px; color:#ffffff; font-family:var(--font-display,'Clash Display',sans-serif); font-size:92px; font-weight:600; line-height:1.03; letter-spacing:-0.02em;">AI that shows its work.</h2>
+    <p data-anim="rise" class="dk3" style="margin:0; font-family:var(--font-body,'Inter',sans-serif); font-size:30px; line-height:1.5; color:rgba(255,255,255,.72); max-width:1200px; text-wrap:pretty;">No black boxes. Every suggestion is explained, every draft is yours to steer — and nothing goes out before you say so.</p>
+    <div style="flex:1;"></div>
+    <div data-anim-stagger="rise" style="display:flex; gap:36px;">
+      <div style="flex:1; box-sizing:border-box; padding:44px; border-radius:28px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);">
+        <div style="font-family:var(--font-display,'Clash Display',sans-serif); font-size:38px; font-weight:600; margin-bottom:16px; color:var(--accent-on-dark,#90a0ff);">Reasoned matches</div>
+        <p style="margin:0; font-family:var(--font-body,'Inter',sans-serif); font-size:26px; line-height:1.5; color:rgba(255,255,255,.78); text-wrap:pretty;">Every match score comes with a written why — which skills carry it, and where the gap is.</p>
+      </div>
+      <div style="flex:1; box-sizing:border-box; padding:44px; border-radius:28px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);">
+        <div style="font-family:var(--font-display,'Clash Display',sans-serif); font-size:38px; font-weight:600; margin-bottom:16px; color:var(--live-on-dark,#ff7a52);">Steerable drafts</div>
+        <p style="margin:0; font-family:var(--font-body,'Inter',sans-serif); font-size:26px; line-height:1.5; color:rgba(255,255,255,.78); text-wrap:pretty;">“More formal. Shorter. Emphasize GraphQL.” — the cover letter follows your instruction, then you edit it like any text.</p>
+      </div>
+      <div style="flex:1; box-sizing:border-box; padding:44px; border-radius:28px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);">
+        <div style="font-family:var(--font-display,'Clash Display',sans-serif); font-size:38px; font-weight:600; margin-bottom:16px; color:#90d8cf;">Dossier assembly</div>
+        <p style="margin:0; font-family:var(--font-body,'Inter',sans-serif); font-size:26px; line-height:1.5; color:rgba(255,255,255,.78); text-wrap:pretty;">CV, letter and certificates assembled into one clean Bewerbungsmappe — ready to send.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 07 · DOCUMENTS ═══ -->
+  <section data-label="Documents" data-screen-label="07 Documents" style="position:relative; overflow:hidden; box-sizing:border-box; background:var(--accent-soft,#ebedfb); display:flex; align-items:center; gap:110px; padding:100px 120px; color:var(--text-body);">
+    <div data-anim="tilt" style="flex:0 0 620px; box-sizing:border-box; background:#ffffff; border-radius:16px; box-shadow:0 30px 80px rgba(11,18,32,.16); padding:56px 60px; transform:rotate(-1.5deg);">
+      <div style="display:flex; gap:28px; align-items:center; margin-bottom:40px;">
+        <span style="width:110px; height:110px; border-radius:18px; background:var(--accent); color:#ffffff; display:grid; place-items:center; font-family:var(--font-display,'Clash Display',sans-serif); font-size:44px; font-weight:600; flex:none;">SS</span>
+        <div>
+          <div style="font-family:var(--font-display,'Clash Display',sans-serif); font-size:38px; font-weight:600; color:var(--text-heading);">Suhay Sevinc</div>
+          <div style="font-family:var(--font-body,'Inter',sans-serif); font-size:25px; color:var(--text-muted); margin-top:4px;">Full-Stack Developer</div>
+        </div>
+      </div>
+      <div style="height:16px; border-radius:8px; background:var(--accent-soft); width:38%; margin-bottom:22px;"></div>
+      <div style="height:12px; border-radius:6px; background:#e2e8f0; width:100%; margin-bottom:14px;"></div>
+      <div style="height:12px; border-radius:6px; background:#e2e8f0; width:92%; margin-bottom:14px;"></div>
+      <div style="height:12px; border-radius:6px; background:#e2e8f0; width:96%; margin-bottom:34px;"></div>
+      <div style="height:16px; border-radius:8px; background:var(--accent-soft); width:46%; margin-bottom:22px;"></div>
+      <div style="height:12px; border-radius:6px; background:#e2e8f0; width:100%; margin-bottom:14px;"></div>
+      <div style="height:12px; border-radius:6px; background:#e2e8f0; width:88%; margin-bottom:14px;"></div>
+      <div style="height:12px; border-radius:6px; background:#e2e8f0; width:94%;"></div>
+    </div>
+    <div style="flex:1; min-width:0;">
+      <div data-anim="rise" style="font-family:var(--font-mono,'JetBrains Mono',monospace); font-size:24px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--accent-strong); margin-bottom:24px;">Documents</div>
+      <h2 data-anim="head" style="margin:0 0 30px; font-family:var(--font-display,'Clash Display',sans-serif); font-size:84px; font-weight:600; line-height:1.04; letter-spacing:-0.02em; color:var(--text-heading);">From profile to polished Mappe in minutes.</h2>
+      <div data-anim-stagger="rise" style="display:flex; flex-direction:column; gap:22px; font-family:var(--font-body,'Inter',sans-serif); font-size:29px; line-height:1.5; color:var(--text-body);">
+        <div style="display:flex; gap:18px; align-items:flex-start;"><span style="width:14px; height:14px; border-radius:5px; background:var(--accent); flex:none; margin-top:14px;"></span><span><b>CV-Builder</b> — a live document sheet inside the profile; edit once, reuse everywhere.</span></div>
+        <div style="display:flex; gap:18px; align-items:flex-start;"><span style="width:14px; height:14px; border-radius:5px; background:var(--live); flex:none; margin-top:14px;"></span><span><b>Cover letters</b> — drafted by the copilot, steered by you, per mandate.</span></div>
+        <div style="display:flex; gap:18px; align-items:flex-start;"><span style="width:14px; height:14px; border-radius:5px; background:#0d9488; flex:none; margin-top:14px;"></span><span><b>Bewerbungsmappe</b> — one click assembles CV, letter and certificates into a single dossier.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 08 · HOW IT WORKS ═══ -->
+  <section data-label="How it works" data-screen-label="08 How it works" style="position:relative; overflow:hidden; box-sizing:border-box; background:var(--surface-app,#f2f4fa); display:flex; flex-direction:column; padding:100px 120px; color:var(--text-body);">
+    <div data-anim="rise" style="font-family:var(--font-mono,'JetBrains Mono',monospace); font-size:24px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--accent-strong); margin-bottom:24px;">How it works</div>
+    <h2 data-anim="head" style="margin:0; font-family:var(--font-display,'Clash Display',sans-serif); font-size:88px; font-weight:600; line-height:1.04; letter-spacing:-0.02em; color:var(--text-heading);">Three steps to your next placement.</h2>
+    <div style="flex:1;"></div>
+    <div data-anim-stagger="rise" style="display:flex; align-items:stretch; gap:0;">
+      <div style="flex:1; box-sizing:border-box; padding:52px 48px; border-radius:32px; background:var(--surface-card,#ffffff); border:1px solid var(--border,#e2e8f0);">
+        <div style="width:84px; height:84px; border-radius:24px; background:var(--accent); color:#ffffff; display:grid; place-items:center; font-family:var(--font-display,'Clash Display',sans-serif); font-size:42px; font-weight:600; margin-bottom:28px;">1</div>
+        <div style="font-family:var(--font-display,'Clash Display',sans-serif); font-size:40px; font-weight:600; color:var(--text-heading); margin-bottom:14px;">Bring your talent in</div>
+        <p style="margin:0; font-family:var(--font-body,'Inter',sans-serif); font-size:27px; line-height:1.5; color:var(--text-muted); text-wrap:pretty;">Import profiles — the pool structures itself around skills, status and availability.</p>
+      </div>
+      <div style="align-self:center; font-family:var(--font-display,'Clash Display',sans-serif); font-size:56px; color:var(--accent); padding:0 26px;">→</div>
+      <div style="flex:1; box-sizing:border-box; padding:52px 48px; border-radius:32px; background:var(--surface-card,#ffffff); border:1px solid var(--border,#e2e8f0);">
+        <div style="width:84px; height:84px; border-radius:24px; background:var(--live); color:#ffffff; display:grid; place-items:center; font-family:var(--font-display,'Clash Display',sans-serif); font-size:42px; font-weight:600; margin-bottom:28px;">2</div>
+        <div style="font-family:var(--font-display,'Clash Display',sans-serif); font-size:40px; font-weight:600; color:var(--text-heading); margin-bottom:14px;">Match to mandates</div>
+        <p style="margin:0; font-family:var(--font-body,'Inter',sans-serif); font-size:27px; line-height:1.5; color:var(--text-muted); text-wrap:pretty;">Reverse matching finds the fit for each person — and tells you why it fits.</p>
+      </div>
+      <div style="align-self:center; font-family:var(--font-display,'Clash Display',sans-serif); font-size:56px; color:var(--accent); padding:0 26px;">→</div>
+      <div style="flex:1; box-sizing:border-box; padding:52px 48px; border-radius:32px; background:var(--surface-card,#ffffff); border:1px solid var(--border,#e2e8f0);">
+        <div style="width:84px; height:84px; border-radius:24px; background:#0d9488; color:#ffffff; display:grid; place-items:center; font-family:var(--font-display,'Clash Display',sans-serif); font-size:42px; font-weight:600; margin-bottom:28px;">3</div>
+        <div style="font-family:var(--font-display,'Clash Display',sans-serif); font-size:40px; font-weight:600; color:var(--text-heading); margin-bottom:14px;">Apply with one dossier</div>
+        <p style="margin:0; font-family:var(--font-body,'Inter',sans-serif); font-size:27px; line-height:1.5; color:var(--text-muted); text-wrap:pretty;">Draft the letter, steer the tone, assemble the Mappe — and send it out.</p>
+      </div>
+    </div>
+    <div style="flex:1;"></div>
+  </section>
+
+  <!-- ═══ 09 · WHY MYJOB ═══ -->
+  <section data-label="Why myJob" data-screen-label="09 Why myJob" style="position:relative; overflow:hidden; box-sizing:border-box; background:var(--surface-card,#ffffff); display:flex; flex-direction:column; padding:100px 120px; color:var(--text-body);">
+    <div data-anim="rise" style="font-family:var(--font-mono,'JetBrains Mono',monospace); font-size:24px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--accent-strong); margin-bottom:24px;">Why myJob</div>
+    <h2 data-anim="head" style="margin:0; font-family:var(--font-display,'Clash Display',sans-serif); font-size:88px; font-weight:600; line-height:1.04; letter-spacing:-0.02em; color:var(--text-heading);">Built the way agencies actually work.</h2>
+    <div style="flex:1;"></div>
+    <div data-anim-stagger="rise" style="display:grid; grid-template-columns:1fr 1fr; gap:32px;">
+      <div style="box-sizing:border-box; padding:44px 48px; border-radius:32px; background:var(--accent-soft); border:1px solid var(--accent-border);">
+        <div style="font-family:var(--font-display,'Clash Display',sans-serif); font-size:40px; font-weight:600; color:var(--text-heading); margin-bottom:14px;">Candidate-first matching</div>
+        <p style="margin:0; font-family:var(--font-body,'Inter',sans-serif); font-size:27px; line-height:1.5; color:var(--text-body); text-wrap:pretty;">You represent people, not job ads. myJob starts every search from the person you want to place.</p>
+      </div>
+      <div style="box-sizing:border-box; padding:44px 48px; border-radius:32px; background:var(--live-soft); border:1px solid var(--live-border);">
+        <div style="font-family:var(--font-display,'Clash Display',sans-serif); font-size:40px; font-weight:600; color:var(--text-heading); margin-bottom:14px;">AI with reasons, not scores</div>
+        <p style="margin:0; font-family:var(--font-body,'Inter',sans-serif); font-size:27px; line-height:1.5; color:var(--text-body); text-wrap:pretty;">Every suggestion is explained in plain language. You stay the decision-maker — always.</p>
+      </div>
+      <div style="box-sizing:border-box; padding:44px 48px; border-radius:32px; background:var(--people-1-soft,#e6f5f3); border:1px solid #c4e8e3;">
+        <div style="font-family:var(--font-display,'Clash Display',sans-serif); font-size:40px; font-weight:600; color:var(--text-heading); margin-bottom:14px;">Documents built in</div>
+        <p style="margin:0; font-family:var(--font-body,'Inter',sans-serif); font-size:27px; line-height:1.5; color:var(--text-body); text-wrap:pretty;">No export to Word, no template folders. CV, letter and Mappe live where the candidate lives.</p>
+      </div>
+      <div style="box-sizing:border-box; padding:44px 48px; border-radius:32px; background:var(--people-2-soft,#f1eafd); border:1px solid #ddd0f7;">
+        <div style="font-family:var(--font-display,'Clash Display',sans-serif); font-size:40px; font-weight:600; color:var(--text-heading); margin-bottom:14px;">Made for DACH recruiting</div>
+        <p style="margin:0; font-family:var(--font-body,'Inter',sans-serif); font-size:27px; line-height:1.5; color:var(--text-body); text-wrap:pretty;">German-first workflows — Bewerbungsmappe, Arbeitsbewilligung, gender-inclusive copy — and self-hosted fonts, DSGVO-clean.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 10 · CTA ═══ -->
+  <section data-label="CTA" data-screen-label="10 CTA" style="position:relative; overflow:hidden; box-sizing:border-box; background:linear-gradient(135deg, var(--accent) 0%, color-mix(in oklch, var(--accent) 68%, #0b1220) 100%); color:#ffffff; display:flex; flex-direction:column; align-items:flex-start; justify-content:center; padding:100px 120px;">
+    <div style="position:absolute; right:-120px; bottom:-160px; width:560px; height:560px; border-radius:110px; background:rgba(255,255,255,.07);"></div>
+    <div data-anim="pop" class="dk4" style="position:absolute; right:340px; top:180px; width:64px; height:64px; border-radius:18px; background:var(--live);"></div>
+    <div data-anim="rise" style="font-family:var(--font-mono,'JetBrains Mono',monospace); font-size:24px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:rgba(255,255,255,.72); margin-bottom:28px;">Next step</div>
+    <h2 data-anim="head" style="margin:0 0 34px; color:#ffffff; font-family:var(--font-display,'Clash Display',sans-serif); font-size:120px; font-weight:600; line-height:1.02; letter-spacing:-0.02em; max-width:1400px;">Bring your next placement<span style="color:var(--live-on-dark);">.</span></h2>
+    <p data-anim="rise" class="dk3" style="margin:0 0 56px; font-family:var(--font-body,'Inter',sans-serif); font-size:32px; line-height:1.5; color:rgba(255,255,255,.85); max-width:1100px; text-wrap:pretty;">Start a two-week pilot with your own mandates — we set up your talent pool together, and you place from day one.</p>
+    <div data-anim-stagger="rise" style="display:flex; align-items:center; gap:28px;">
+      <span style="font-family:var(--font-body,'Inter',sans-serif); font-size:28px; font-weight:600; color:var(--accent-strong); background:#ffffff; border-radius:999px; padding:20px 44px;">Book a demo</span>
+      <span style="font-family:var(--font-mono,'JetBrains Mono',monospace); font-size:26px; color:rgba(255,255,255,.8);">hello@myjob.example</span>
+    </div>
+    <div style="position:absolute; left:120px; bottom:80px; display:flex; align-items:center; gap:16px;">
+      <img src="./logo-icon-light.svg" alt="" style="width:44px; height:44px; display:block;" />
+      <span style="font-family:var(--font-display,'Clash Display',sans-serif); font-size:32px; font-weight:600;">myJob</span>
+    </div>
+  </section>
+
+</x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;royal&quot;, &quot;options&quot;: [&quot;royal&quot;, &quot;ember&quot;, &quot;signal&quot;], &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Look&quot;, &quot;description&quot;: &quot;Accent theme for the whole deck — royal (default blue), ember (live orange), signal (legacy green)&quot;}}"></script>
+</body>
+</html>

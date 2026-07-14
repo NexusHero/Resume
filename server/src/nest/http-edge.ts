@@ -5,6 +5,7 @@ import {
   securityHeaders,
   corsMiddleware,
   recruitingCsp,
+  hstsHeader,
   RECRUITING_KIT_PREFIX,
 } from '../http/security.js';
 import { registerApiDocs } from '../http/api-docs.js';
@@ -19,7 +20,14 @@ import { registerApiDocs } from '../http/api-docs.js';
  * the Nest-routed API; the app must be created with `bodyParser: false`.
  */
 export function configureHttpEdge(app: NestExpressApplication, config: AppConfig): void {
+  // Express defaults `trust proxy` to false, so behind the documented
+  // HTTPS-terminating reverse proxy `req.ip` would always be the proxy's own
+  // socket address — collapsing every client into one bucket for the
+  // brute-force and AI-spend rate limiters (both keyed on `req.ip`). Configure
+  // via TRUST_PROXY_HOPS to match the real deployment topology.
+  app.set('trust proxy', config.security.trustProxyHops);
   app.use(securityHeaders);
+  app.use(hstsHeader(config.auth.cookieSecure));
   app.use(corsMiddleware(config.security.corsOrigins));
 
   const smallJson = express.json({ limit: '1mb' });

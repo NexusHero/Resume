@@ -145,6 +145,20 @@ export class CandidacyService {
     };
   }
 
+  /**
+   * Add a talent to a mandate's pipeline, tolerating a concurrent duplicate as
+   * a no-op. The autopilot and the assistant both propose/auto-add a talent
+   * that a recruiter (or the other automation) may have already added by the
+   * time the suggestion is accepted — that race is benign, not an error.
+   */
+  async addIfAbsent(ownerId: string, mandateId: string, input: AddCandidacyInput): Promise<void> {
+    try {
+      await this.add(ownerId, mandateId, input);
+    } catch (err) {
+      if (!(err instanceof ConflictError)) throw err;
+    }
+  }
+
   /** Move to a stage / reorder / annotate a candidacy. */
   async update(ownerId: string, id: string, patch: UpdateCandidacyInput): Promise<Candidacy> {
     const existing = await this.repo.findById(ownerId, id);

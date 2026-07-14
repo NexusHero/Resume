@@ -217,7 +217,7 @@ function Workspace({ user, onLogout }) {
   const deleteApplication = (id, company) => {
     hideRow(id);
     window.UndoDelete.schedule({
-      label: `Application${company ? ` at ${company}` : ''} removed`,
+      label: `Bewerbung${company ? ` bei ${company}` : ''} entfernt`,
       commit: () =>
         window.RecruitApi.deleteApplication(id)
           .then(() => applicationsRes.reload())
@@ -263,11 +263,12 @@ function Workspace({ user, onLogout }) {
       await talentsRes.reload();
       const ok = results.filter((r) => r.ok).length;
       const failed = results.length - ok;
-      // eslint-disable-next-line no-alert
-      window.alert(`Imported ${ok} CV${ok === 1 ? '' : 's'}${failed ? `, ${failed} failed` : ''}.`);
+      window.showToast(
+        `${ok} Lebenslauf${ok === 1 ? '' : 'läufe'} importiert${failed ? `, ${failed} fehlgeschlagen` : ''}.`,
+        failed ? 'error' : 'info',
+      );
     } catch {
-      // eslint-disable-next-line no-alert
-      window.alert('CV import failed. Please try again.');
+      window.showToast('CV-Import fehlgeschlagen. Bitte erneut versuchen.', 'error');
     }
     setImporting(false);
   };
@@ -311,7 +312,7 @@ function Workspace({ user, onLogout }) {
     if (kind === 'placement') {
       hideRow(id);
       window.UndoDelete.schedule({
-        label: 'Placement removed',
+        label: 'Platzierung entfernt',
         commit: () =>
           window.RecruitApi.deletePlacement(id)
             .then(placementsRes.reload)
@@ -608,6 +609,7 @@ function App() {
       <window.OfflineBanner />
       <Workspace user={auth.user} onLogout={onLogout} />
       <window.Snackbar />
+      <window.Toast />
     </React.Fragment>
   );
 }

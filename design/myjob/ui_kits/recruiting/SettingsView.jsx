@@ -481,8 +481,7 @@ function ComplianceCard() {
       await window.RecruitApi.anonymizeTalent(item.talentId);
       setItems((xs) => xs.filter((x) => x.talentId !== item.talentId));
     } catch {
-      // eslint-disable-next-line no-alert
-      window.alert(`${item.name} konnte nicht anonymisiert werden. Bitte versuche es erneut.`);
+      window.showToast(`${item.name} konnte nicht anonymisiert werden. Bitte versuche es erneut.`, 'error');
     }
     setBusy('');
   };
@@ -505,8 +504,7 @@ function ComplianceCard() {
       reload();
     } catch {
       setPolicy(prev); // roll the optimistic change back
-      // eslint-disable-next-line no-alert
-      window.alert('Die Aufbewahrungsrichtlinie konnte nicht gespeichert werden. Bitte versuche es erneut.');
+      window.showToast('Die Aufbewahrungsrichtlinie konnte nicht gespeichert werden. Bitte versuche es erneut.', 'error');
     }
   };
 
@@ -516,8 +514,7 @@ function ComplianceCard() {
       await window.RecruitApi.anonymizeOverdue();
       await reload();
     } catch {
-      // eslint-disable-next-line no-alert
-      window.alert('Die überfälligen Kandidaten konnten nicht anonymisiert werden. Bitte versuche es erneut.');
+      window.showToast('Die überfälligen Kandidaten konnten nicht anonymisiert werden. Bitte versuche es erneut.', 'error');
     }
     setSweeping(false);
   };

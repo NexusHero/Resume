@@ -12,14 +12,28 @@ import { RateLimitError } from '../domain/errors.js';
 const WINDOW_MS = 15 * 60 * 1000;
 const LIMIT = 10;
 
+// Bound how long a stale per-client window lingers: without this, a window
+// map keyed on many distinct clients (or `req.ip` when trust-proxy is
+// misconfigured) only ever grows for the life of the process.
+const SWEEP_EVERY = 200;
+
 @Injectable()
 export class AuthRateLimitGuard implements CanActivate {
   private readonly windows = new Map<string, { count: number; resetAt: number }>();
+  private hits = 0;
+
+  private sweepExpired(now: number): void {
+    if (++this.hits % SWEEP_EVERY !== 0) return;
+    for (const [key, window] of this.windows) {
+      if (window.resetAt <= now) this.windows.delete(key);
+    }
+  }
 
   canActivate(ctx: ExecutionContext): boolean {
     const req = ctx.switchToHttp().getRequest<Request>();
     const key = req.ip ?? 'anon';
     const now = Date.now();
+    this.sweepExpired(now);
     const window = this.windows.get(key);
     if (!window || window.resetAt <= now) {
       this.windows.set(key, { count: 1, resetAt: now + WINDOW_MS });

@@ -8,6 +8,46 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+### Fixed
+
+- **Multi-lens audit follow-through — 17 quality/security fixes.** Following a
+  five-lens (architect/DevOps/tester/user/security) audit, verified and fixed:
+  CSS/SSRF injection through saved CV style fields (`documents-html.ts`, plus
+  request-interception in the PDF renderer as defense in depth); the AI-spend
+  rate limiter silently disabling on a malformed `AI_RATE_LIMIT_PER_MINUTE` (now coerces to
+  a safe default); both rate-limit guards now honour `TRUST_PROXY_HOPS` (so
+  `req.ip` is the real client behind a reverse proxy) and evict expired
+  windows instead of growing unbounded; the super-admin email check is now
+  case-insensitive, matching the config's normalization; Adzuna's API
+  credentials no longer leak into failed-fetch logs; LLM provider calls now
+  have a bounded timeout (`LLM_TIMEOUT_MS`); Better-Auth's session lifetime now
+  honours `SESSION_TTL_DAYS` instead of silently keeping its own default; a
+  single-use tenant-invite token is no longer burned before the account is
+  successfully created (it now survives a failed sign-up for retry); the
+  autopilot/assistant's duplicate `addToPipeline` logic is unified behind
+  `CandidacyService.addIfAbsent`; the email→display-name derivation is
+  deduplicated into `domain/display-name.ts`; a production deployment now
+  sends `Strict-Transport-Security`; the recruiting SPA's remaining English
+  strings (undo/offline/pipeline-actionbar copy) are translated to German; two
+  `window.alert` call sites (bulk CV import, retention-policy errors) move to
+  a new designed status toast (`Toast.jsx`/`toast.js`), joining the existing
+  Snackbar/ConfirmDialog pattern; the CV editor now flushes a still-debounced
+  autosave on unmount instead of dropping the last edit, and deleting a
+  work-experience entry goes through the same Undo-over-Confirm snackbar as
+  every other destructive action.
+  Two audit leads were investigated and found to be **intentional, tested
+  behaviour, not bugs** — left unchanged: the public `/cover-letter` endpoint
+  spending the operator's configured LLM credentials when anonymous (tested by
+  `CoverLetter_Post_FallsBackToTemplate`; the real mitigation is the
+  rate-limiter fix above), and re-placing a candidate after they cycle out of
+  `placed` booking a second, distinct placement (tested by
+  `Update_PlacedAgainAfterMovingOut_BooksOnceMore`).
+  Two larger, architectural leads are tracked as separate Jira tickets rather
+  than folded into this batch: moving the Better-Auth session/credential store
+  off per-instance SQLite onto the shared Postgres pool (blocks true
+  horizontal scaling), and caching per-talent profile embeddings in
+  `MatchService.rankPool` (recomputed on every ranking call today).
+
 ### Changed
 
 - **Design-system handoff refresh (v2).** Re-adopts the updated myJob

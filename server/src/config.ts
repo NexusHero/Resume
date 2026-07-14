@@ -127,6 +127,15 @@ export interface SecurityConfig {
    * the only ones that spend the owner's LLM budget).
    */
   aiRateLimitPerMinute: number;
+  /**
+   * Reverse-proxy hops to trust for the real client IP (Express `trust proxy`).
+   * The rate-limit guards key their window on `req.ip`; without this, behind
+   * the documented HTTPS-terminating reverse proxy every request resolves to
+   * the proxy's own socket address, collapsing all clients into one shared
+   * bucket. 0 (default off-proxy/dev) trusts nothing — `req.ip` is the direct
+   * socket peer.
+   */
+  trustProxyHops: number;
 }
 
 /** Authentication configuration, resolved from the environment. */
@@ -150,6 +159,8 @@ export interface LlmConfig {
   provider: LlmProviderId;
   anthropic: { apiKey: string; model: string };
   gemini: { apiKey: string; model: string };
+  /** Per-call timeout for a provider request (ms) — a hung upstream can't block a render/request indefinitely. */
+  timeoutMs: number;
 }
 
 /** Where archived application PDFs live (ADR-0031). */
@@ -297,6 +308,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
         apiKey: env.GEMINI_API_KEY ?? '',
         model: env.GEMINI_MODEL ?? 'gemini-2.5-flash',
       },
+      timeoutMs: Math.max(1000, Number(env.LLM_TIMEOUT_MS) || 30_000),
     },
     embedding: {
       provider:
@@ -376,7 +388,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
         .map((o) => o.trim())
         .filter(Boolean),
       encryptionSecret: env.APP_SECRET ?? DEV_ENCRYPTION_SECRET,
-      aiRateLimitPerMinute: Math.max(0, Number(env.AI_RATE_LIMIT_PER_MINUTE ?? 30)),
+      aiRateLimitPerMinute: (() => {
+        const n = Number(env.AI_RATE_LIMIT_PER_MINUTE);
+        return Number.isFinite(n) ? Math.max(0, n) : 30;
+      })(),
+      trustProxyHops: Math.max(0, Number(env.TRUST_PROXY_HOPS) || 0),
     },
     mail: {
       transport: env.MAIL_TRANSPORT === 'smtp' ? 'smtp' : 'console',

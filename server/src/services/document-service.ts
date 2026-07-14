@@ -9,6 +9,7 @@ import {
 import { detectLanguage } from '../domain/language.js';
 import type { OutputLang } from '../domain/language.js';
 import { documentsToHtml } from '../domain/documents-html.js';
+import { deriveDisplayNameFromEmail } from '../domain/display-name.js';
 import { NotFoundError } from '../domain/errors.js';
 import type { DocumentRepository } from '../ports/document-repository.js';
 import type { TalentRepository } from '../ports/talent-repository.js';
@@ -74,17 +75,7 @@ export class DocumentService {
     if (talent) return talent;
     const user = await this.users.findById(talentId);
     if (!user) throw new NotFoundError(`Talent ${talentId} not found`);
-    // "suhay.sevinc@…" → "Suhay Sevinc". Drop any plus-address subaddress first
-    // ("recruiter+test@…" → "Recruiter", not "Recruiter+"), and keep only letters
-    // per word so digits/symbols never leak into the greeting.
-    const name = user.email
-      .split('@')[0]!
-      .split('+')[0]!
-      .split(/[._-]+/)
-      .map((w) => w.replace(/[^\p{L}]/gu, ''))
-      .filter(Boolean)
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(' ');
+    const name = deriveDisplayNameFromEmail(user.email);
     return {
       name,
       role: 'Recruiter',

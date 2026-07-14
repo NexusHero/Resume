@@ -59,9 +59,13 @@ const RECRUIT_NAV = [
   { id: 'pool', label: 'Talent-Pool', icon: 'users' },
   { id: 'stellen', label: 'Stellen', icon: 'briefcase' },
   { id: 'matching', label: 'Matching', icon: 'search' },
-  { id: 'pipeline', label: 'Pipeline', icon: 'columns', badge: 2 },
-  { id: 'inbox', label: 'Inbox', icon: 'inbox', badge: 3 },
+  { id: 'pipeline', label: 'Pipeline', icon: 'columns', badge: 2, demo: true },
+  { id: 'inbox', label: 'Inbox', icon: 'inbox', badge: 3, demo: true },
 ];
+
+/* nav routing — Sub-Flows behalten den Eltern-Eintrag (readme ▸ Nav-Regel) */
+const NAV_ROUTES = { workspace: 'Workspace.html', pool: 'Talent-Pool.html', stellen: 'Matching.html', matching: 'Matching.html', __settings: 'Settings.html' };
+const goNav = (id) => { const t = NAV_ROUTES[id]; if (t) window.location.href = t; };
 
 const KEY_LS = 'myjob.geminiKey';
 const MODE_LS = 'myjob.mode';
@@ -198,7 +202,7 @@ function Settings() {
   return (
     <AppShell
       product="recruit" posture="rail"
-      nav={RECRUIT_NAV} active="__settings" onNav={() => {}}
+      nav={RECRUIT_NAV} active="__settings" onNav={goNav}
       account={{ name: 'Suhay Sevinc', meta: 'Ich · +3 Talente', src: '../assets/img/suhay-photo-sm.jpg' }}
       title="Einstellungen"
       subtitle="Darstellung, KI, Framework & Agentic-Modus"

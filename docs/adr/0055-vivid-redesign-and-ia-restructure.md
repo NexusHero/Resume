@@ -112,3 +112,15 @@ shared `styles.css`/tokens, the refresh propagates without SPA code changes;
 `vite build` regenerates the served `dist/`. The single deliberate repo-local
 delta from the raw handoff remains the shared-font import path in `styles.css`
 (`../fonts/fonts.css`), because the webfonts live in `design/fonts/`.
+
+## Update — 2026-07 handoff refresh (v3)
+
+A third design-system handoff was adopted **1:1**, again non-breaking
+(namespace unchanged). The only functional delta: **`AppShell`'s nav rail**
+gains the same `demo` affordance `Button` got in v2 — a not-yet-wired nav item
+renders at reduced opacity with a `help` cursor and the „Demo — noch nicht
+verdrahtet" tooltip, and its click is swallowed instead of navigating. The
+design system's own demo fixture (`data/talent-pool.js` — used by the
+handoff's preview screens/templates, not by the shipped recruiting app)
+resolves its sample photo path more robustly. Regenerated bundle/manifest and
+screens/templates land as before.

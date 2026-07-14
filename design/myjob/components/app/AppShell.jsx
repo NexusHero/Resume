@@ -52,20 +52,23 @@ function Wordmark({ product }) {
 
 function RailNavItem({ item, active, onClick }) {
   const [hover, setHover] = React.useState(false);
+  const demo = !!item.demo;
   return (
     <button
-      onClick={onClick}
+      onClick={demo ? undefined : onClick}
+      title={demo ? 'Demo — noch nicht verdrahtet' : undefined}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
         display: 'flex', alignItems: 'center', gap: '11px', width: '100%',
-        padding: '10px 14px', borderRadius: 'var(--radius-pill)', border: 'none', cursor: 'pointer',
+        padding: '10px 14px', borderRadius: 'var(--radius-pill)', border: 'none', cursor: demo ? 'help' : 'pointer',
+        opacity: demo ? 0.55 : 1,
         fontFamily: 'var(--font-body)', fontSize: '13.5px', fontWeight: active ? 600 : 500,
         color: active ? 'var(--accent-contrast)' : 'var(--rail-muted)',
-        background: active ? 'var(--accent)' : hover ? 'var(--rail-glass)' : 'transparent',
+        background: active ? 'var(--accent)' : hover && !demo ? 'var(--rail-glass)' : 'transparent',
         boxShadow: active ? 'var(--shadow-accent)' : 'none',
         textAlign: 'left',
-        transform: hover && !active ? 'translateX(2px)' : 'none',
+        transform: hover && !active && !demo ? 'translateX(2px)' : 'none',
         transition: 'background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), transform var(--dur-med) var(--ease-spring), box-shadow var(--dur-fast) var(--ease-out)',
       }}
     >

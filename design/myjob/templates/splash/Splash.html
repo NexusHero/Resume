@@ -91,6 +91,7 @@
   @media (prefers-reduced-motion: reduce) {
     .mark, .blk, .playhead, .dot, .word, .tag, .kicker { animation: none; }
   }
+  .skip-hint { position: fixed; bottom: 26px; left: 0; right: 0; text-align: center; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255,255,255,0.3); animation: rise 4.2s var(--ease-out) both; }
 </style>
 </head>
 <body>
@@ -108,14 +109,12 @@
   <script>
     // Sting läuft einmal und endet sichtbar; zur Demo alle 6s neu abspielen.
     (function () {
-      if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-      var els = document.querySelectorAll('.mark,.blk,.playhead,.dot,.word,.tag,.kicker');
-      setInterval(function () {
-        els.forEach(function (el) { el.style.animation = 'none'; });
-        void document.body.offsetWidth;
-        els.forEach(function (el) { el.style.animation = ''; });
-      }, 6000);
+      var go = function () { window.location.href = '../../screens/Workspace.html'; };
+      document.addEventListener('click', go);
+      document.addEventListener('keydown', go);
+      setTimeout(go, 4600);
     })();
   </script>
+<div class="skip-hint">Klicken zum Fortfahren</div>
 </body>
 </html>

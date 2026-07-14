@@ -49,6 +49,7 @@
   }
 @media (prefers-reduced-motion: reduce) { .toast, .mstack > * { animation: none; } }
 </style>
+<script>(function(){try{if(localStorage.getItem('myjob.mode')==='dark'){var e=document.documentElement;e.setAttribute('data-mode','dark');e.setAttribute('data-theme','ember');}}catch(err){}})();</script>
 </head>
 <body>
 <div id="root"></div>
@@ -380,9 +381,13 @@ const RECRUIT_NAV = [
   { id: 'pool', label: 'Talent-Pool', icon: 'users' },
   { id: 'stellen', label: 'Stellen', icon: 'briefcase' },
   { id: 'matching', label: 'Matching', icon: 'search' },
-  { id: 'pipeline', label: 'Pipeline', icon: 'columns', badge: 2 },
-  { id: 'inbox', label: 'Inbox', icon: 'inbox', badge: 3 },
+  { id: 'pipeline', label: 'Pipeline', icon: 'columns', badge: 2, demo: true },
+  { id: 'inbox', label: 'Inbox', icon: 'inbox', badge: 3, demo: true },
 ];
+
+/* nav routing — Sub-Flows behalten den Eltern-Eintrag (readme ▸ Nav-Regel) */
+const NAV_ROUTES = { workspace: '../../screens/Workspace.html', pool: '../../screens/Talent-Pool.html', stellen: '../../screens/Matching.html', matching: '../../screens/Matching.html', __settings: '../../screens/Settings.html' };
+const goNav = (id) => { const t = NAV_ROUTES[id]; if (t) window.location.href = t; };
 
 /* The recruiter's candidates. SUHAY is one of them; the matching basis in
    candidate-first (auto) mode, and just one option in job-first (manual) mode. */
@@ -453,11 +458,11 @@ function ModeToggle({ mode, setMode, autoCount, manualCount }) {
 }
 
 function CountryFilter({ value, setValue }) {
-  const opts = [['ALL', 'Alle'], ['CH', '🇨🇭 Schweiz'], ['DE', '🇩🇪 Deutschland'], ['AT', '🇦🇹 Österreich']];
+  const opts = [['ALL', 'Alle', null], ['CH', 'Schweiz', 'CH'], ['DE', 'Deutschland', 'DE'], ['AT', 'Österreich', 'AT']];
   return (
     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-      {opts.map(([k, lbl]) => (
-        <button key={k} className={'chip' + (value === k ? ' on' : '')} onClick={() => setValue(k)}>{lbl}</button>
+      {opts.map(([k, lbl, cc]) => (
+        <button key={k} className={'chip' + (value === k ? ' on' : '')} onClick={() => setValue(k)} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>{cc && <Flag country={cc} />}{lbl}</button>
       ))}
     </div>
   );
@@ -500,7 +505,7 @@ function CandidateSwitcher({ value, onChange }) {
             </button>
           );
         })}
-        <button className="candchip addnew" onClick={() => {}}><Icon name="plus" size={14} />Kandidat anlegen</button>
+        <button className="candchip addnew" title="Demo — noch nicht verdrahtet" style={{ cursor: 'help', opacity: 0.6 }}><Icon name="plus" size={14} />Kandidat anlegen</button>
       </div>
     </div>
   );
@@ -663,7 +668,7 @@ function CreateJobModal({ onClose, onCreate }) {
           <Input wrapStyle={{ gridColumn: '1 / -1' }} label="Stellentitel *" icon="briefcase" placeholder="z. B. Senior Frontend Engineer" value={f.title} onChange={upd('title')} />
           <Input label="Firma *" icon="building" placeholder="z. B. Helvetia Digital AG" value={f.company} onChange={upd('company')} />
           <Input label="Ort" icon="pin" placeholder="z. B. Zürich" value={f.location} onChange={upd('location')} />
-          <Select label="Land" value={f.country} onChange={upd('country')} options={[{ value: 'CH', label: '🇨🇭 Schweiz' }, { value: 'DE', label: '🇩🇪 Deutschland' }, { value: 'AT', label: '🇦🇹 Österreich' }]} />
+          <Select label="Land" value={f.country} onChange={upd('country')} options={[{ value: 'CH', label: 'Schweiz' }, { value: 'DE', label: 'Deutschland' }, { value: 'AT', label: 'Österreich' }]} />
           <Input label="Pensum" placeholder="z. B. 80–100%" value={f.pensum} onChange={upd('pensum')} />
           <Input label="Gehalt" icon="tag" placeholder="z. B. CHF 110–130k" value={f.salary} onChange={upd('salary')} />
           <Input label="Quelle / Link" icon="search" placeholder="z. B. jobs.ch/de/…" value={f.link} onChange={upd('link')} />
@@ -823,7 +828,7 @@ function MatchingScreen() {
     <React.Fragment>
       <AppShell
         product="recruit" posture="rail"
-        nav={RECRUIT_NAV} active="matching" onNav={() => {}}
+        nav={RECRUIT_NAV} active="matching" onNav={goNav}
         account={{ name: 'Suhay Sevinc', meta: 'Ich · +3 Talente', src: '../../assets/img/suhay-photo-sm.jpg' }}
         title="Matching"
         subtitle={mode === 'auto'

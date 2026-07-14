@@ -8,6 +8,30 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+### Fixed
+
+- **Better-Auth now scales horizontally with `STORE=sql` (#227).** Credentials
+  and sessions were always kept on a per-instance embedded SQLite file, even
+  when `STORE=sql` — so two app instances behind a load balancer had disjoint
+  accounts. `BetterAuthEngine` now sources a dedicated Postgres pool from
+  `config.databaseUrl` whenever `STORE=sql`, so every store (domain data and
+  auth) is actually shared across instances; the SQLite path is unchanged and
+  remains the default. Verified against a real Postgres: an integration test
+  proves two independently-constructed engines share accounts/sessions, and a
+  manual two-instance run confirms it end to end over HTTP (register on one
+  instance, log in and resolve the session on the other). That run also
+  surfaced and fixed a pre-existing, unrelated bug: `AppModule` registered the
+  `DB` provider twice (a static import plus the dynamic `.forRoot()` one),
+  which meant a real `STORE=sql` boot failed before ever reaching auth — this
+  path had no test coverage before now.
+- **`MatchService` no longer recomputes a talent's profile embedding on every
+  ranking call (#228).** A talent's embedding is a pure function of their own
+  record/documents, but it was re-embedded on every `rank`/`rankForJobText`
+  call — amplified by the assistant's playbook, which ranks once per active
+  mandate (pool × mandates re-embeds per scheduled run). Now cached per
+  talent, invalidated when either the talent record or their documents change,
+  and pruned when a talent leaves the pool.
+
 ### Changed
 
 - **Design-system handoff refresh (v3).** Re-adopts a third myJob design-system

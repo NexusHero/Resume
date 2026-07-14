@@ -1,16 +1,39 @@
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import Database from 'better-sqlite3';
+import { Pool } from 'pg';
 import { betterAuth } from 'better-auth';
 import { bearer } from 'better-auth/plugins/bearer';
 import { getMigrations } from 'better-auth/db/migration';
 import type { AuthEngine, AuthEngineSession, AuthEngineUser } from '../../ports/auth-engine.js';
 
 /**
- * Better-Auth credential + session engine backed by **embedded SQLite**
- * (ADR-0043). Better-Auth is a self-hosted framework with no external service,
- * and better-sqlite3 is a local file — so the offline-first property (ADR-0003)
- * is preserved: no server, no network, just a file next to the JSON store.
+ * Better-Auth credential + session engine, backed by either an **embedded
+ * SQLite** file (ADR-0043, the offline-first single-instance default) or a
+ * **dedicated Postgres pool** (ADR-0043 update, #227) when `postgresUrl` is
+ * given — which is the case whenever the app runs with `STORE=sql`. Better-Auth
+ * builds on Kysely and auto-detects the dialect from what it's handed (a
+ * `pg.Pool` → `PostgresDialect`, a `better-sqlite3.Database` → `SqliteDialect`),
+ * so the only thing that changes between modes is which database object we
+ * construct; every other line of this adapter is dialect-agnostic.
+ *
+ * Why this matters: `STORE=sql` is the flag the production-readiness gate
+ * (`config-validation.ts`) already requires for a horizontally-scaled
+ * deployment (the filesystem store can't be shared across instances) — but
+ * until now credentials/sessions stayed on a **per-instance SQLite file**
+ * regardless of that flag, so two app instances would each keep their own,
+ * disjoint set of accounts. Sourcing Better-Auth's database from
+ * `config.databaseUrl` (the same Postgres the rest of the app already uses via
+ * `STORE=sql`) closes that gap: `STORE=sql` now means every store — including
+ * auth — is actually shared.
+ *
+ * A dedicated `pg.Pool` (not the app's main Drizzle pool) is used deliberately:
+ * Better-Auth's Kysely adapter owns whatever pool it's given (schema
+ * migrations, its own connection lifecycle), so sharing the main pool object
+ * would couple two independent consumers to one connection budget/lifecycle
+ * for no benefit — a second, modestly-sized pool against the same database is
+ * the standard way to embed a library like this alongside an existing
+ * connection. This engine owns that pool and closes it via {@link close}.
  *
  * We drive Better-Auth **headlessly** via its server API (`auth.api.*`) plus its
  * internal adapter (for admin-style operations that need no request context),
@@ -23,11 +46,12 @@ import type { AuthEngine, AuthEngineSession, AuthEngineUser } from '../../ports/
  * other adapter); the schema migration runs **lazily on first use** and once.
  *
  * Note: this wraps a third-party framework + a native module, so it is exercised
- * by its own integration-style test (real SQLite) rather than being
+ * by its own integration-style tests (real SQLite, and real Postgres gated on
+ * `DATABASE_URL` like the other SQL adapters) rather than being
  * unit-coverage-counted — consistent with the sql/smtp/s3 adapters.
  */
 export interface BetterAuthEngineOptions {
-  /** SQLite file path, or `':memory:'` for tests. Parent dirs are created. */
+  /** SQLite file path, or `':memory:'` for tests. Ignored when `postgresUrl` is set. */
   dbPath: string;
   /** Signing secret for sessions (reuse `APP_SECRET`). */
   secret: string;
@@ -40,6 +64,13 @@ export interface BetterAuthEngineOptions {
    * configured/cookie value.
    */
   sessionTtlSeconds?: number;
+  /**
+   * Postgres connection string (config.databaseUrl). When set, Better-Auth is
+   * backed by a dedicated Postgres pool instead of the embedded SQLite file —
+   * required for a horizontally-scaled deployment so every instance shares the
+   * same credential/session store (#227). `dbPath` is ignored in this mode.
+   */
+  postgresUrl?: string;
 }
 
 /** The subset of Better-Auth's api result we rely on (its full types are generic). */
@@ -66,13 +97,25 @@ const bearerHeaders = (token: string): Headers => new Headers({ authorization: `
 export class BetterAuthEngine implements AuthEngine {
   private migrated?: Promise<void>;
 
-  private constructor(private readonly auth: ReturnType<typeof betterAuth>) {}
+  private constructor(
+    private readonly auth: ReturnType<typeof betterAuth>,
+    /** Set only when this engine created its own dedicated Postgres pool. */
+    private readonly ownedPgPool?: Pool,
+  ) {}
 
   /** Build the engine (synchronous). The schema is applied lazily on first use. */
   static create(opts: BetterAuthEngineOptions): BetterAuthEngine {
-    if (opts.dbPath !== ':memory:') mkdirSync(dirname(opts.dbPath), { recursive: true });
+    let pgPool: Pool | undefined;
+    let database: Database.Database | Pool;
+    if (opts.postgresUrl) {
+      pgPool = new Pool({ connectionString: opts.postgresUrl });
+      database = pgPool;
+    } else {
+      if (opts.dbPath !== ':memory:') mkdirSync(dirname(opts.dbPath), { recursive: true });
+      database = new Database(opts.dbPath);
+    }
     const auth = betterAuth({
-      database: new Database(opts.dbPath),
+      database,
       secret: opts.secret,
       baseURL: opts.baseURL ?? 'http://localhost',
       emailAndPassword: { enabled: true },
@@ -81,7 +124,12 @@ export class BetterAuthEngine implements AuthEngine {
         ? { session: { expiresIn: opts.sessionTtlSeconds, updateAge: opts.sessionTtlSeconds } }
         : {}),
     });
-    return new BetterAuthEngine(auth as unknown as ReturnType<typeof betterAuth>);
+    return new BetterAuthEngine(auth as unknown as ReturnType<typeof betterAuth>, pgPool);
+  }
+
+  /** Close the dedicated Postgres pool, if this engine created one (no-op otherwise). */
+  async close(): Promise<void> {
+    await this.ownedPgPool?.end();
   }
 
   /** Apply Better-Auth's schema to the database, once, before the first operation. */

@@ -43,4 +43,6 @@ export interface AuthEngine {
   revokeSessions(email: string): Promise<void>;
   /** Remove the account entirely — credential + all sessions (DSGVO erasure). */
   erase(email: string): Promise<void>;
+  /** Release any resources this engine owns (e.g. a dedicated pool). Optional — implementations without one can omit it. */
+  close?(): Promise<void>;
 }

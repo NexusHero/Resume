@@ -1,6 +1,8 @@
 import { type TalentMatch, scoreTalent, hybridScore, matchText } from '../domain/match.js';
 import { similarityScore } from '../domain/embedding.js';
 import { NotFoundError } from '../domain/errors.js';
+import type { Talent } from '../domain/talent.js';
+import type { TalentDocuments } from '../domain/talent-documents.js';
 import type { MandateRepository } from '../ports/mandate-repository.js';
 import type { TalentRepository } from '../ports/talent-repository.js';
 import type { DocumentRepository } from '../ports/document-repository.js';
@@ -30,6 +32,20 @@ export class MatchService {
   private readonly documents: DocumentRepository;
   private readonly candidacies: CandidacyRepository;
   private readonly embeddings: EmbeddingProvider;
+
+  /**
+   * A talent's profile embedding is a pure function of their own record +
+   * documents — it does not depend on the query being ranked against, so
+   * recomputing it on every `rankPool` call (once per mandate, per scheduled
+   * assistant run) was pure waste, amplified by pool size × active mandates.
+   * Cached per `scope:talentId`, invalidated by a version key built from both
+   * `updatedAt` timestamps (`matchText` reads fields from both), so an edited
+   * profile or CV is re-embedded on the very next rank; a stale profile never
+   * is. Process-lifetime only (a fresh instance starts cold); `rankPool`
+   * prunes entries for talents no longer in the pool on every call, so a
+   * deleted talent's cache entry doesn't linger forever.
+   */
+  private readonly profileVectorCache = new Map<string, { version: string; vector: number[] }>();
 
   constructor(deps: MatchServiceDeps) {
     this.mandates = deps.mandateRepository;
@@ -73,13 +89,14 @@ export class MatchService {
   ): Promise<TalentMatch[]> {
     const queryVector = await this.embeddings.embed(query);
     const talents = await this.talents.list(scope);
+    this.prunePool(scope, talents);
     const matches = await Promise.all(
       talents
         .filter((t) => !t.anonymizedAt) // no identifiable data to present
         .map(async (t) => {
           const documents = await this.documents.get(scope, t.id);
           const { score: skillScore, matched } = scoreTalent(t, documents, query);
-          const profileVector = await this.embeddings.embed(matchText(t, documents));
+          const profileVector = await this.profileVector(scope, t, documents);
           const semanticScore = similarityScore(queryVector, profileVector);
           return {
             talentId: t.id,
@@ -98,5 +115,30 @@ export class MatchService {
     return matches
       .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
       .slice(0, limit);
+  }
+
+  /** A talent's profile embedding, from cache when neither the talent record
+      nor their documents have changed since it was last computed. */
+  private async profileVector(
+    scope: string,
+    talent: Talent,
+    documents: TalentDocuments | null,
+  ): Promise<number[]> {
+    const key = `${scope}:${talent.id}`;
+    const version = `${talent.updatedAt}|${documents?.updatedAt ?? ''}`;
+    const cached = this.profileVectorCache.get(key);
+    if (cached && cached.version === version) return cached.vector;
+    const vector = await this.embeddings.embed(matchText(talent, documents));
+    this.profileVectorCache.set(key, { version, vector });
+    return vector;
+  }
+
+  /** Drop cache entries for talents no longer in the pool (removed/moved scope). */
+  private prunePool(scope: string, talents: Talent[]): void {
+    const prefix = `${scope}:`;
+    const alive = new Set(talents.map((t) => `${prefix}${t.id}`));
+    for (const key of this.profileVectorCache.keys()) {
+      if (key.startsWith(prefix) && !alive.has(key)) this.profileVectorCache.delete(key);
+    }
   }
 }

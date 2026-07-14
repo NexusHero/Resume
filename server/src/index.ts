@@ -16,7 +16,14 @@ import { TEAM_SCOPE } from './http/current-user.js';
 import { AppModule } from './nest/app.module.js';
 import { configureHttpEdge } from './nest/http-edge.js';
 import { ProblemJsonFilter } from './nest/problem-json.filter.js';
-import { LOGGER, ASSISTANT_SERVICE, MAIL_SERVICE, RETENTION_SERVICE } from './nest/tokens.js';
+import {
+  LOGGER,
+  ASSISTANT_SERVICE,
+  MAIL_SERVICE,
+  RETENTION_SERVICE,
+  AUTH_ENGINE,
+} from './nest/tokens.js';
+import type { AuthEngine } from './ports/auth-engine.js';
 
 async function main(): Promise<void> {
   const config = loadConfig();
@@ -129,9 +136,10 @@ async function main(): Promise<void> {
     `Application suite running on http://localhost:${config.port}`,
   );
 
+  const authEngine = app.get<AuthEngine>(AUTH_ENGINE);
   const shutdown = (signal: string) => {
     logger.info({ signal }, 'shutting down');
-    void app.close().then(() => process.exit(0));
+    void Promise.all([app.close(), authEngine.close?.()]).then(() => process.exit(0));
   };
   process.on('SIGINT', () => shutdown('SIGINT'));
   process.on('SIGTERM', () => shutdown('SIGTERM'));

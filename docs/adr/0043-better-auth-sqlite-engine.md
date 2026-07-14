@@ -69,3 +69,48 @@ Database(path), secret, emailAndPassword, plugins: [bearer()] })`. It is driven
   `users.password_hash` column is kept (always `''` for new accounts) to avoid a
   destructive schema migration; retiring it is a separate, optional step.
 - 2FA/passkeys (Better-Auth plugins) become incremental now that the engine is live.
+
+## Update — Postgres-backed engine for horizontal scaling (#227)
+
+The embedded-SQLite engine is **per-instance**: it satisfies offline-first, but
+it also meant `STORE=sql` (the flag `config-validation.ts` already requires for
+a horizontally-scaled deployment, since the filesystem store can't be shared)
+did not actually make the app stateless — credentials and sessions stayed on
+each instance's own local file, so two instances behind a load balancer kept
+disjoint accounts.
+
+`BetterAuthEngine.create()` now takes an optional `postgresUrl`. When set (the
+`InfraModule` factory passes `config.databaseUrl` whenever `config.store ===
+'sql'`), Better-Auth is backed by a **dedicated `pg.Pool`** instead of the
+SQLite file — Better-Auth's Kysely adapter auto-detects the dialect from what
+it is handed (`pg.Pool` → `PostgresDialect`), so every other line of the engine
+is unchanged. The pool is dedicated (not the app's main Drizzle pool) because
+Better-Auth's adapter owns whatever database object it is given; sharing the
+main pool would couple two independent consumers to one connection budget for
+no benefit. The engine owns and closes this pool (`BetterAuthEngine.close()`,
+wired into `index.ts`'s shutdown handler via the new optional `AuthEngine.close()`
+port method).
+
+`STORE=sql` now means every store — domain data **and** auth — is shared.
+`dbPath`/embedded SQLite remains the default and is unaffected.
+
+Verified against a real Postgres at three levels (`postgresUrl` is not
+mockable — Better-Auth's dialect auto-detection and migrations are exercised
+for real): `better-auth-engine.test.ts` (SQLite, unchanged),
+`better-auth-postgres.integration.test.ts` (gated on `DATABASE_URL`, two
+independently-constructed engines sharing accounts/sessions against one
+Postgres), and a manual end-to-end run of two full server instances on
+different ports against one Postgres — register via instance A, log in via
+instance B with the same credentials, and resolve instance A's session cookie
+via instance B.
+
+That end-to-end run also surfaced a pre-existing, unrelated bug it would
+otherwise have masked: `AppModule`'s static `imports` listed the bare
+`PersistenceModule` **in addition to** the `PersistenceModule.forRoot(db)` the
+dynamic module always supplies, so the two competing `DB` providers didn't
+merge as intended and a real `STORE=sql` boot failed before ever reaching the
+auth engine. Fixed by dropping the redundant static import — `AppModule` is
+only ever constructed via `.forRoot()`, so nothing else relied on it. This path
+had no test coverage (the acceptance harness bypasses `AppModule`/
+`PersistenceModule`/`InfraModule` entirely with fakes), which is why it went
+undetected until now.

@@ -5,7 +5,6 @@ import { IconName } from '../core/Icon';
  * A KPI tile for dashboards — big display number, mono label, optional delta
  * trend and an accent icon chip.
  *
- * @startingPoint section="Data" subtitle="Dashboard KPI tile — number, delta, icon" viewport="700x150"
  */
 export interface StatCardProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Small uppercase mono label. */

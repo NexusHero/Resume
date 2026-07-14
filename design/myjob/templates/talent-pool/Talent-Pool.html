@@ -1,12 +1,12 @@
-<!-- @dsCard group="myJob App" viewport="1280x800" name="Talent-Pool" subtitle="Foto-Kacheln — bunter Kandidaten-Pool, Klick öffnet das volle Profil; „Ich" als Talent #1" -->
+<!-- @template name="App: Talent-Pool" description="Candidate pool — photo tiles, match scores, KI-Kurzprofil, detail panel" -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>myJob Recruit — Talent-Pool</title>
-<link rel="icon" href="../assets/logo/favicon.svg" />
-<link rel="stylesheet" href="../styles.css" />
+<link rel="icon" href="../../assets/logo/favicon.svg" />
+<link rel="stylesheet" href="../../styles.css" />
 <style>
   html, body { margin: 0; height: 100%; background: var(--surface-app); }
   #root { height: 100vh; }
@@ -94,8 +94,8 @@
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
-<script src="../_ds_bundle.js"></script>
-<script src="../data/talent-pool.js"></script>
+<script src="../../_ds_bundle.js"></script>
+<script src="../../data/talent-pool.js"></script>
 <script type="text/babel">
 const DS = window.MyJobDesignSystem_5611b7 || window.DesignSystem_5611b7;
 const { AppShell, Avatar, Icon, Button, MetaPill, StatusBadge } = DS;
@@ -147,7 +147,7 @@ function CvProfile({ c }) {
             <div className="cap">KI-Kurzprofil · aus dem CV</div>
             <p>{kiSummary(c)}</p>
           </div>
-          <a className="act" href="Bewerbung-vorbereiten.html"><Button size="sm" iconLeft={<Icon name="mail" size={14} />}>Anschreiben entwerfen</Button></a>
+          <a className="act" href="../../screens/Bewerbung-vorbereiten.html"><Button size="sm" iconLeft={<Icon name="mail" size={14} />}>Anschreiben entwerfen</Button></a>
         </div>
 
         {c.about && (

@@ -9,3 +9,5 @@ The primary action control — mono uppercase-feel label on a pill, the brand's 
 - `variant`: `primary` (accent fill, one per view) · `ink` (dark, strong secondary) · `outline` (secondary) · `ghost` (tertiary) · `danger` (destructive).
 - `size`: `sm` / `md` / `lg`. `block` stretches full width.
 - Hover lifts 1px + shadow automatically. Pass `iconLeft`/`iconRight` as `<Icon/>`.
+
+`demo` marks a not-yet-wired action honestly: dashed border, dimmed, `cursor:help`, tooltip "Demo — noch nicht verdrahtet", click suppressed. Rule: a dead action must never look like a live primary — use `demo` instead of a normal button.

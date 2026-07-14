@@ -6,7 +6,6 @@ import { PipelineStage } from './StatusBadge';
  * position, match score, pipeline status and a timestamp. Composes Avatar +
  * StatusBadge. Hover lifts; the whole row is clickable.
  *
- * @startingPoint section="Recruiting" subtitle="Candidate list row — avatar, score, status, time" viewport="700x150"
  */
 export interface CandidateRowProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onClick'> {
   name: string;

@@ -1,7 +1,7 @@
 Candidate / user avatar. Initials are drawn behind the photo, so a missing or broken `src` still reads as a person.
 
 ```jsx
-<Avatar name="Suhay Sevinc" src="assets/img/candidate-portrait-sm.jpg" size="md" />
+<Avatar name="Suhay Sevinc" src="assets/img/suhay-photo-sm.jpg" size="md" />
 <Avatar name="Lena Bauer" size="sm" ring />
 <Avatar name="Suhay Sevinc" size={120} radius="var(--radius-lg)" />  {/* square doc portrait */}
 ```

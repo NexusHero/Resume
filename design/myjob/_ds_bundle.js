@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"MyJobDesignSystem_5611b7","components":[{"name":"Logomark","sourcePath":"components/app/AppShell.jsx"},{"name":"AppShell","sourcePath":"components/app/AppShell.jsx"},{"name":"Avatar","sourcePath":"components/core/Avatar.jsx"},{"name":"Badge","sourcePath":"components/core/Badge.jsx"},{"name":"Button","sourcePath":"components/core/Button.jsx"},{"name":"EntityTile","sourcePath":"components/core/EntityTile.jsx"},{"name":"Icon","sourcePath":"components/core/Icon.jsx"},{"name":"ICON_NAMES","sourcePath":"components/core/Icon.jsx"},{"name":"IconButton","sourcePath":"components/core/IconButton.jsx"},{"name":"MetaPill","sourcePath":"components/core/MetaPill.jsx"},{"name":"ApplicationRow","sourcePath":"components/data/ApplicationRow.jsx"},{"name":"CandidateRow","sourcePath":"components/data/CandidateRow.jsx"},{"name":"Card","sourcePath":"components/data/Card.jsx"},{"name":"MatchIndicator","sourcePath":"components/data/MatchIndicator.jsx"},{"name":"PositionCard","sourcePath":"components/data/PositionCard.jsx"},{"name":"ProgressBar","sourcePath":"components/data/ProgressBar.jsx"},{"name":"StatCard","sourcePath":"components/data/StatCard.jsx"},{"name":"STAGES","sourcePath":"components/data/StatusBadge.jsx"},{"name":"StatusBadge","sourcePath":"components/data/StatusBadge.jsx"},{"name":"Tabs","sourcePath":"components/data/Tabs.jsx"},{"name":"Checkbox","sourcePath":"components/forms/Checkbox.jsx"},{"name":"Input","sourcePath":"components/forms/Input.jsx"},{"name":"Select","sourcePath":"components/forms/Select.jsx"},{"name":"Switch","sourcePath":"components/forms/Switch.jsx"},{"name":"Textarea","sourcePath":"components/forms/Textarea.jsx"}],"sourceHashes":{"components/app/AppShell.jsx":"3ea7aff9cc8a","components/core/Avatar.jsx":"642d834429aa","components/core/Badge.jsx":"c65e71a1747c","components/core/Button.jsx":"5f9cb3122052","components/core/EntityTile.jsx":"c6e7448180b1","components/core/Icon.jsx":"7acd36c8049a","components/core/IconButton.jsx":"11c416bbf004","components/core/MetaPill.jsx":"127e09c1b1d7","components/data/ApplicationRow.jsx":"2c61c6905714","components/data/CandidateRow.jsx":"d1f314f43799","components/data/Card.jsx":"6ecddbff63e5","components/data/MatchIndicator.jsx":"a8b2803d6891","components/data/PositionCard.jsx":"90dcd4ead3e6","components/data/ProgressBar.jsx":"39c4ae9bb2b5","components/data/StatCard.jsx":"afa0089bbae3","components/data/StatusBadge.jsx":"9e218736fd5f","components/data/Tabs.jsx":"d7895fd812a5","components/forms/Checkbox.jsx":"3ff388154f50","components/forms/Input.jsx":"d4c959e866f5","components/forms/Select.jsx":"c4da8171f3d4","components/forms/Switch.jsx":"798cb097d1f9","components/forms/Textarea.jsx":"a49a73a5a3fb","data/talent-pool.js":"6539dca5854c"},"inlinedExternals":[],"unexposedExports":[]} */
+/* @ds-bundle: {"format":4,"namespace":"MyJobDesignSystem_5611b7","components":[{"name":"Logomark","sourcePath":"components/app/AppShell.jsx"},{"name":"AppShell","sourcePath":"components/app/AppShell.jsx"},{"name":"Avatar","sourcePath":"components/core/Avatar.jsx"},{"name":"Badge","sourcePath":"components/core/Badge.jsx"},{"name":"Button","sourcePath":"components/core/Button.jsx"},{"name":"EntityTile","sourcePath":"components/core/EntityTile.jsx"},{"name":"Icon","sourcePath":"components/core/Icon.jsx"},{"name":"ICON_NAMES","sourcePath":"components/core/Icon.jsx"},{"name":"IconButton","sourcePath":"components/core/IconButton.jsx"},{"name":"MetaPill","sourcePath":"components/core/MetaPill.jsx"},{"name":"Sparkle","sourcePath":"components/core/Sparkle.jsx"},{"name":"ApplicationRow","sourcePath":"components/data/ApplicationRow.jsx"},{"name":"CandidateRow","sourcePath":"components/data/CandidateRow.jsx"},{"name":"Card","sourcePath":"components/data/Card.jsx"},{"name":"MatchIndicator","sourcePath":"components/data/MatchIndicator.jsx"},{"name":"CountryFlag","sourcePath":"components/data/PositionCard.jsx"},{"name":"PositionCard","sourcePath":"components/data/PositionCard.jsx"},{"name":"ProgressBar","sourcePath":"components/data/ProgressBar.jsx"},{"name":"StatCard","sourcePath":"components/data/StatCard.jsx"},{"name":"STAGES","sourcePath":"components/data/StatusBadge.jsx"},{"name":"StatusBadge","sourcePath":"components/data/StatusBadge.jsx"},{"name":"Tabs","sourcePath":"components/data/Tabs.jsx"},{"name":"Checkbox","sourcePath":"components/forms/Checkbox.jsx"},{"name":"Input","sourcePath":"components/forms/Input.jsx"},{"name":"Select","sourcePath":"components/forms/Select.jsx"},{"name":"Switch","sourcePath":"components/forms/Switch.jsx"},{"name":"Textarea","sourcePath":"components/forms/Textarea.jsx"}],"sourceHashes":{"components/app/AppShell.jsx":"a6a0e6b1efb6","components/core/Avatar.jsx":"642d834429aa","components/core/Badge.jsx":"c65e71a1747c","components/core/Button.jsx":"c48fb21812cc","components/core/EntityTile.jsx":"c6e7448180b1","components/core/Icon.jsx":"7acd36c8049a","components/core/IconButton.jsx":"11c416bbf004","components/core/MetaPill.jsx":"127e09c1b1d7","components/core/Sparkle.jsx":"d13a1e445ea7","components/data/ApplicationRow.jsx":"2c61c6905714","components/data/CandidateRow.jsx":"d1f314f43799","components/data/Card.jsx":"6ecddbff63e5","components/data/MatchIndicator.jsx":"a8b2803d6891","components/data/PositionCard.jsx":"7ccfb1499919","components/data/ProgressBar.jsx":"39c4ae9bb2b5","components/data/StatCard.jsx":"afa0089bbae3","components/data/StatusBadge.jsx":"9e218736fd5f","components/data/Tabs.jsx":"d7895fd812a5","components/forms/Checkbox.jsx":"3ff388154f50","components/forms/Input.jsx":"d4c959e866f5","components/forms/Select.jsx":"c4da8171f3d4","components/forms/Switch.jsx":"798cb097d1f9","components/forms/Textarea.jsx":"a49a73a5a3fb","data/talent-pool.js":"566b17e49c00"},"inlinedExternals":[],"unexposedExports":[]} */
 
 (() => {
 
@@ -249,13 +249,17 @@ function Button({
   iconRight = null,
   block = false,
   disabled = false,
+  demo = false,
   type = 'button',
   style = {},
+  onClick,
   ...rest
 }) {
   return /*#__PURE__*/React.createElement("button", _extends({
     type: type,
     disabled: disabled,
+    title: demo ? 'Demo — noch nicht verdrahtet' : rest.title,
+    onClick: demo ? e => e.preventDefault() : onClick,
     style: {
       display: block ? 'flex' : 'inline-flex',
       width: block ? '100%' : 'auto',
@@ -266,15 +270,16 @@ function Button({
       lineHeight: 1,
       whiteSpace: 'nowrap',
       borderRadius: 'var(--radius-pill)',
-      cursor: disabled ? 'not-allowed' : 'pointer',
-      opacity: disabled ? 0.45 : 1,
+      cursor: disabled ? 'not-allowed' : demo ? 'help' : 'pointer',
+      opacity: disabled ? 0.45 : demo ? 0.6 : 1,
+      borderStyle: demo ? 'dashed' : undefined,
       transition: 'transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out)',
       ...SIZES[size],
       ...VARIANTS[variant],
       ...style
     },
     onMouseEnter: e => {
-      if (!disabled) {
+      if (!disabled && !demo) {
         e.currentTarget.style.transform = 'translateY(-1px)';
         e.currentTarget.style.boxShadow = 'var(--shadow-md)';
       }
@@ -1250,7 +1255,7 @@ function RailNavItem({
   }, item.label), item.badge != null && item.badge > 0 && /*#__PURE__*/React.createElement("span", {
     style: {
       fontFamily: 'var(--font-mono)',
-      fontSize: '10px',
+      fontSize: 'var(--fs-3xs)',
       fontWeight: 700,
       color: active ? 'var(--accent-strong)' : 'var(--live-contrast)',
       background: active ? '#ffffff' : 'var(--live)',
@@ -1494,7 +1499,7 @@ function RailShell({
     style: {
       display: 'block',
       fontFamily: 'var(--font-mono)',
-      fontSize: '10px',
+      fontSize: 'var(--fs-3xs)',
       color: 'var(--rail-soft)'
     }
   }, account.meta)), /*#__PURE__*/React.createElement(__ds_scope.Icon, {
@@ -1693,7 +1698,7 @@ function TabsShell({
       }
     }, n.badge)), /*#__PURE__*/React.createElement("span", {
       style: {
-        fontSize: '10px',
+        fontSize: 'var(--fs-3xs)',
         fontWeight: on ? 600 : 500,
         letterSpacing: '0.01em',
         whiteSpace: 'nowrap'
@@ -1833,6 +1838,39 @@ function MetaPill({
 }
 Object.assign(__ds_scope, { MetaPill });
 })(); } catch (e) { __ds_ns.__errors.push({ path: "components/core/MetaPill.jsx", error: String((e && e.message) || e) }); }
+
+// components/core/Sparkle.jsx
+try { (() => {
+/**
+ * Sparkle — the AI-signature glyph. Marks everything the Matching-KI /
+ * Assistent produces (KI-Callouts, „Warum"-Begründungen, Magic-Buttons).
+ * Deterministic UI never wears it. Single source of truth — screens import
+ * this instead of local copies.
+ */
+function Sparkle({
+  size = 16,
+  style = {}
+}) {
+  return /*#__PURE__*/React.createElement("svg", {
+    viewBox: "0 0 24 24",
+    width: size,
+    height: size,
+    fill: "currentColor",
+    "aria-hidden": "true",
+    style: {
+      display: 'block',
+      flexShrink: 0,
+      ...style
+    }
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M12 2l1.6 5.1a5 5 0 0 0 3.3 3.3L22 12l-5.1 1.6a5 5 0 0 0-3.3 3.3L12 22l-1.6-5.1a5 5 0 0 0-3.3-3.3L2 12l5.1-1.6a5 5 0 0 0 3.3-3.3L12 2z"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M19 3l.6 1.9a2 2 0 0 0 1.3 1.3L22.8 7l-1.9.6a2 2 0 0 0-1.3 1.3L19 11l-.6-1.9a2 2 0 0 0-1.3-1.3L15.2 7l1.9-.6a2 2 0 0 0 1.3-1.3L19 3z",
+    opacity: "0.7"
+  }));
+}
+Object.assign(__ds_scope, { Sparkle });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/core/Sparkle.jsx", error: String((e && e.message) || e) }); }
 
 // components/data/Card.jsx
 try { (() => {
@@ -2664,7 +2702,7 @@ const COUNTRY_LABEL = {
   AT: 'Österreich',
   CH: 'Schweiz'
 };
-function Flag({
+function CountryFlag({
   country
 }) {
   const f = FLAGS[country];
@@ -2810,7 +2848,7 @@ function PositionCard({
       overflow: 'hidden',
       textOverflow: 'ellipsis'
     }
-  }, company, location ? ` · ${location}` : ''), country && /*#__PURE__*/React.createElement(Flag, {
+  }, company, location ? ` · ${location}` : ''), country && /*#__PURE__*/React.createElement(CountryFlag, {
     country: country
   }))), matched ? /*#__PURE__*/React.createElement(__ds_scope.MatchIndicator, {
     value: match,
@@ -2924,7 +2962,7 @@ function PositionCard({
     size: 15
   }))));
 }
-Object.assign(__ds_scope, { PositionCard });
+Object.assign(__ds_scope, { CountryFlag, PositionCard });
 })(); } catch (e) { __ds_ns.__errors.push({ path: "components/data/PositionCard.jsx", error: String((e && e.message) || e) }); }
 
 // components/data/Tabs.jsx
@@ -3434,7 +3472,6 @@ try { (() => {
     name: 'Milan Ebert',
     role: 'Backend Engineer',
     headline: 'Go · Kubernetes · verteilte Systeme',
-    photo: '../assets/img/candidate-portrait-sm.jpg',
     location: 'Berlin, DE',
     available: 'sofort',
     salaryTarget: '€ 80–92k',
@@ -3497,6 +3534,8 @@ __ds_ns.IconButton = __ds_scope.IconButton;
 
 __ds_ns.MetaPill = __ds_scope.MetaPill;
 
+__ds_ns.Sparkle = __ds_scope.Sparkle;
+
 __ds_ns.ApplicationRow = __ds_scope.ApplicationRow;
 
 __ds_ns.CandidateRow = __ds_scope.CandidateRow;
@@ -3504,6 +3543,8 @@ __ds_ns.CandidateRow = __ds_scope.CandidateRow;
 __ds_ns.Card = __ds_scope.Card;
 
 __ds_ns.MatchIndicator = __ds_scope.MatchIndicator;
+
+__ds_ns.CountryFlag = __ds_scope.CountryFlag;
 
 __ds_ns.PositionCard = __ds_scope.PositionCard;
 

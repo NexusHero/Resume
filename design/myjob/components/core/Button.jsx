@@ -32,14 +32,18 @@ export function Button({
   iconRight = null,
   block = false,
   disabled = false,
+  demo = false,
   type = 'button',
   style = {},
+  onClick,
   ...rest
 }) {
   return (
     <button
       type={type}
       disabled={disabled}
+      title={demo ? 'Demo — noch nicht verdrahtet' : rest.title}
+      onClick={demo ? (e) => e.preventDefault() : onClick}
       style={{
         display: block ? 'flex' : 'inline-flex',
         width: block ? '100%' : 'auto',
@@ -50,15 +54,16 @@ export function Button({
         lineHeight: 1,
         whiteSpace: 'nowrap',
         borderRadius: 'var(--radius-pill)',
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.45 : 1,
+        cursor: disabled ? 'not-allowed' : demo ? 'help' : 'pointer',
+        opacity: disabled ? 0.45 : demo ? 0.6 : 1,
+        borderStyle: demo ? 'dashed' : undefined,
         transition: 'transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out)',
         ...SIZES[size],
         ...VARIANTS[variant],
         ...style,
       }}
       onMouseEnter={(e) => {
-        if (!disabled) {
+        if (!disabled && !demo) {
           e.currentTarget.style.transform = 'translateY(-1px)';
           e.currentTarget.style.boxShadow = 'var(--shadow-md)';
         }

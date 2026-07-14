@@ -72,7 +72,7 @@ function RailNavItem({ item, active, onClick }) {
       <Icon name={item.icon} size={17} solid={active} style={{ color: 'currentColor' }} />
       <span style={{ flex: 1 }}>{item.label}</span>
       {item.badge != null && item.badge > 0 && (
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 700, color: active ? 'var(--accent-strong)' : 'var(--live-contrast)', background: active ? '#ffffff' : 'var(--live)', borderRadius: 'var(--radius-pill)', padding: '2px 7px', minWidth: '18px', textAlign: 'center' }}>{item.badge}</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-3xs)', fontWeight: 700, color: active ? 'var(--accent-strong)' : 'var(--live-contrast)', background: active ? '#ffffff' : 'var(--live)', borderRadius: 'var(--radius-pill)', padding: '2px 7px', minWidth: '18px', textAlign: 'center' }}>{item.badge}</span>
       )}
     </button>
   );
@@ -142,7 +142,7 @@ function RailShell({ product, nav, active, onNav, account, settingsLabel, title,
               <Avatar name={account.name} src={account.src} size="sm" ring />
               <span style={{ flex: 1, minWidth: 0 }}>
                 <span style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: 'var(--rail-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{account.name}</span>
-                {account.meta && <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--rail-soft)' }}>{account.meta}</span>}
+                {account.meta && <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-3xs)', color: 'var(--rail-soft)' }}>{account.meta}</span>}
               </span>
               <Icon name="chevronRight" size={14} style={{ color: 'var(--rail-soft)' }} />
             </button>
@@ -203,7 +203,7 @@ function TabsShell({ product, nav, active, onNav, account, title, actions, child
                   <span style={{ position: 'absolute', top: '-5px', right: '-8px', fontFamily: 'var(--font-mono)', fontSize: '9px', fontWeight: 700, color: 'var(--live-contrast)', background: 'var(--live)', borderRadius: 'var(--radius-pill)', padding: '0 4px', minWidth: '15px', textAlign: 'center', lineHeight: '15px' }}>{n.badge}</span>
                 )}
               </span>
-              <span style={{ fontSize: '10px', fontWeight: on ? 600 : 500, letterSpacing: '0.01em', whiteSpace: 'nowrap' }}>{n.label}</span>
+              <span style={{ fontSize: 'var(--fs-3xs)', fontWeight: on ? 600 : 500, letterSpacing: '0.01em', whiteSpace: 'nowrap' }}>{n.label}</span>
             </button>
           );
         })}

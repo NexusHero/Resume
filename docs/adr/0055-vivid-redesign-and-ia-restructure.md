@@ -86,3 +86,29 @@ styling and is never themed.
   assert the new German IA. The CV-render and backend tests are unaffected.
 - Risk accepted: this is a large single change (one PR by owner request) rather
   than the incremental per-issue cadence used previously.
+
+## Update — 2026-07 handoff refresh (v2)
+
+A second design-system handoff was adopted **1:1** into `design/myjob/`. The
+namespace is unchanged (`MyJobDesignSystem_5611b7`), so this is a non-breaking
+refresh of the same system, not a re-migration. Deltas:
+
+- **New components.** `Sparkle` (the AI/accent affordance) and `CountryFlag`
+  (promoted from a private `PositionCard` helper to a public DS component).
+- **`Button.demo`.** A dashed, non-interactive button state with a „Demo — noch
+  nicht verdrahtet" tooltip, for affordances that are visible but not yet wired;
+  clicks are suppressed. `onClick` is now an explicit prop.
+- **Tokens.** A global `:focus-visible` outline joins the base layer, and the
+  nav rail's badge/label font sizes move off a hard-coded `10px` onto the
+  existing `--fs-3xs` token.
+- **Docs in-repo.** The handoff's `templates/` (matching, pitch-deck, splash,
+  talent-pool, workspace), refreshed `screens/`, `decisions/` and `readme.md`
+  land in the repo as design documentation alongside the runtime bundle.
+- **Cleanup.** The unused `candidate-portrait-sm` avatar asset is dropped (its
+  references were removed in the handoff).
+
+Because the recruiting SPA consumes the system through `_ds_bundle.js` and the
+shared `styles.css`/tokens, the refresh propagates without SPA code changes;
+`vite build` regenerates the served `dist/`. The single deliberate repo-local
+delta from the raw handoff remains the shared-font import path in `styles.css`
+(`../fonts/fonts.css`), because the webfonts live in `design/fonts/`.

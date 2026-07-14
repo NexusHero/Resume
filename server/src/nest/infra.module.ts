@@ -53,6 +53,12 @@ import {
           dbPath: config.auth.betterAuthDbPath,
           secret: config.security.encryptionSecret,
           sessionTtlSeconds: Math.round(config.auth.sessionTtlMs / 1000),
+          // STORE=sql already means "this deployment can run more than one
+          // instance" (the readiness gate requires it for exactly that reason);
+          // sourcing Better-Auth from the same Postgres makes credentials and
+          // sessions shared across instances too, instead of per-instance
+          // SQLite (#227).
+          postgresUrl: config.store === 'sql' ? config.databaseUrl : undefined,
         }),
       inject: [CONFIG],
     },

@@ -81,9 +81,21 @@ export const FEATURE_MODULES = [
  * auth, DSGVO registries, AI services) plus every feature slice. This replaces
  * `container.ts` + `create-app.ts` — Nest owns construction and routing; the
  * hexagonal services stay decorator-free behind their injection tokens.
+ *
+ * `PersistenceModule` is deliberately **not** listed here: `AppModule` is only
+ * ever constructed via {@link AppModule.forRoot}, which supplies
+ * `PersistenceModule.forRoot(db)`. Also statically importing the bare
+ * `PersistenceModule` used to register a *second* `DB` provider
+ * (`useValue: null`) for the same `@Global` module — with `STORE=sql`, Nest's
+ * merge of the two competing `DB` bindings did not reliably keep the migrated
+ * Drizzle handle from `forRoot`, so `PersistenceModule`'s factory saw `db: null`
+ * and threw "STORE=sql requires a database connection" even though one was
+ * configured. This path had no test coverage (the acceptance harness bypasses
+ * `AppModule`/`PersistenceModule` entirely with fakes), so it went undetected
+ * until a real `STORE=sql` boot was exercised (#227).
  */
 @Module({
-  imports: [CoreModule, PersistenceModule, InfraModule, AuthModule, ...FEATURE_MODULES],
+  imports: [CoreModule, InfraModule, AuthModule, ...FEATURE_MODULES],
   controllers: [HealthController],
 })
 export class AppModule {

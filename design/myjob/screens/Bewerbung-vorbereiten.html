@@ -65,7 +65,7 @@
   .cvline .tag { margin-left: auto; font-family: var(--font-mono); font-size: var(--fs-3xs); font-weight: var(--fw-semibold); color: var(--accent-strong); white-space: nowrap; flex: none; }
 
   /* sticky decision footer */
-  .decide { position: sticky; bottom: 0; margin-top: 20px; background: color-mix(in oklch, var(--paper) 96%, transparent); backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); padding: 14px 18px; display: flex; align-items: center; gap: 16px; }
+  .decide { position: sticky; bottom: 0; margin-top: 20px; margin-bottom: 4px; background: color-mix(in oklch, var(--paper) 96%, transparent); backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); padding: 14px 18px; display: flex; align-items: center; gap: 16px; }
   .decide .checks { display: flex; gap: 16px; flex-wrap: wrap; }
   .decide .ck { display: inline-flex; align-items: center; gap: 7px; font-size: var(--fs-sm); color: var(--text-muted); }
   .decide .ck .box { width: 18px; height: 18px; border-radius: 5px; display: grid; place-items: center; border: 1px solid var(--border-strong); color: transparent; flex: none; }
@@ -78,6 +78,7 @@
   .toast b { color: var(--accent-on-dark); }
 @media (prefers-reduced-motion: reduce) { .magic::after, .skel, .toast { animation: none; } }
 </style>
+<script>(function(){try{if(localStorage.getItem('myjob.mode')==='dark'){var e=document.documentElement;e.setAttribute('data-mode','dark');e.setAttribute('data-theme','ember');}}catch(err){}})();</script>
 </head>
 <body>
 <div id="root"></div>
@@ -94,9 +95,13 @@ const RECRUIT_NAV = [
   { id: 'pool', label: 'Talent-Pool', icon: 'users' },
   { id: 'stellen', label: 'Stellen', icon: 'briefcase' },
   { id: 'matching', label: 'Matching', icon: 'search' },
-  { id: 'pipeline', label: 'Pipeline', icon: 'columns', badge: 2 },
-  { id: 'inbox', label: 'Inbox', icon: 'inbox', badge: 3 },
+  { id: 'pipeline', label: 'Pipeline', icon: 'columns', badge: 2, demo: true },
+  { id: 'inbox', label: 'Inbox', icon: 'inbox', badge: 3, demo: true },
 ];
+
+/* nav routing — Sub-Flows behalten den Eltern-Eintrag (readme ▸ Nav-Regel) */
+const NAV_ROUTES = { workspace: 'Workspace.html', pool: 'Talent-Pool.html', stellen: 'Matching.html', matching: 'Matching.html', __settings: 'Settings.html' };
+const goNav = (id) => { const t = NAV_ROUTES[id]; if (t) window.location.href = t; };
 
 /* The application being prepared: Suhay × the Helvetia position. */
 const CTX = {
@@ -368,7 +373,7 @@ function PrepScreen() {
     <React.Fragment>
       <AppShell
         product="recruit" posture="rail"
-        nav={RECRUIT_NAV} active="matching" onNav={() => {}}
+        nav={RECRUIT_NAV} active="matching" onNav={goNav}
         account={{ name: 'Suhay Sevinc', meta: 'Ich · +3 Talente', src: '../assets/img/suhay-photo-sm.jpg' }}
         title="Bewerbung vorbereiten"
         subtitle="Magic-Entwürfe · du bestätigst"
@@ -384,7 +389,7 @@ function PrepScreen() {
               <span className={'ck' + (letter === 'done' ? ' on' : '')}><span className="box"><Icon name="check" size={12} /></span>Anschreiben</span>
               <span className={'ck' + (cv === 'done' ? ' on' : '')}><span className="box"><Icon name="check" size={12} /></span>CV-Anpassung</span>
             </div>
-            <button className="send" disabled={!both} onClick={() => both && setSent(true)}>
+            <button className="send" disabled={!both} title={!both ? 'Erst Anschreiben und CV-Anpassung übernehmen' : undefined} onClick={() => both && setSent(true)}>
               <Icon name="send" size={15} />Bewerbung absenden
             </button>
           </div>

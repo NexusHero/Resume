@@ -8,6 +8,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+### Changed
+
+- **Design-system handoff refresh (v3).** Re-adopts a third myJob design-system
+  handoff **1:1** into `design/myjob/` (namespace unchanged,
+  `MyJobDesignSystem_5611b7`). The `AppShell` nav rail now supports the same
+  **`demo`** affordance `Button` already had: a not-yet-wired nav item renders
+  with reduced opacity, a `help` cursor and a „Demo — noch nicht verdrahtet"
+  tooltip, and swallows its click instead of navigating. The design system's
+  own demo data (`data/talent-pool.js`, used by the handoff's preview
+  screens/templates, not by the shipped app) resolves its sample photo path
+  more robustly. Regenerated `_ds_bundle.js`/manifest and screens/templates
+  ship as in-repo design documentation alongside the runtime bundle.
+
 ### Fixed
 
 - **Multi-lens audit follow-through — 17 quality/security fixes.** Following a

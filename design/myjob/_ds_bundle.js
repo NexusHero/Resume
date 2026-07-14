@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"MyJobDesignSystem_5611b7","components":[{"name":"Logomark","sourcePath":"components/app/AppShell.jsx"},{"name":"AppShell","sourcePath":"components/app/AppShell.jsx"},{"name":"Avatar","sourcePath":"components/core/Avatar.jsx"},{"name":"Badge","sourcePath":"components/core/Badge.jsx"},{"name":"Button","sourcePath":"components/core/Button.jsx"},{"name":"EntityTile","sourcePath":"components/core/EntityTile.jsx"},{"name":"Icon","sourcePath":"components/core/Icon.jsx"},{"name":"ICON_NAMES","sourcePath":"components/core/Icon.jsx"},{"name":"IconButton","sourcePath":"components/core/IconButton.jsx"},{"name":"MetaPill","sourcePath":"components/core/MetaPill.jsx"},{"name":"Sparkle","sourcePath":"components/core/Sparkle.jsx"},{"name":"ApplicationRow","sourcePath":"components/data/ApplicationRow.jsx"},{"name":"CandidateRow","sourcePath":"components/data/CandidateRow.jsx"},{"name":"Card","sourcePath":"components/data/Card.jsx"},{"name":"MatchIndicator","sourcePath":"components/data/MatchIndicator.jsx"},{"name":"CountryFlag","sourcePath":"components/data/PositionCard.jsx"},{"name":"PositionCard","sourcePath":"components/data/PositionCard.jsx"},{"name":"ProgressBar","sourcePath":"components/data/ProgressBar.jsx"},{"name":"StatCard","sourcePath":"components/data/StatCard.jsx"},{"name":"STAGES","sourcePath":"components/data/StatusBadge.jsx"},{"name":"StatusBadge","sourcePath":"components/data/StatusBadge.jsx"},{"name":"Tabs","sourcePath":"components/data/Tabs.jsx"},{"name":"Checkbox","sourcePath":"components/forms/Checkbox.jsx"},{"name":"Input","sourcePath":"components/forms/Input.jsx"},{"name":"Select","sourcePath":"components/forms/Select.jsx"},{"name":"Switch","sourcePath":"components/forms/Switch.jsx"},{"name":"Textarea","sourcePath":"components/forms/Textarea.jsx"}],"sourceHashes":{"components/app/AppShell.jsx":"a6a0e6b1efb6","components/core/Avatar.jsx":"642d834429aa","components/core/Badge.jsx":"c65e71a1747c","components/core/Button.jsx":"c48fb21812cc","components/core/EntityTile.jsx":"c6e7448180b1","components/core/Icon.jsx":"7acd36c8049a","components/core/IconButton.jsx":"11c416bbf004","components/core/MetaPill.jsx":"127e09c1b1d7","components/core/Sparkle.jsx":"d13a1e445ea7","components/data/ApplicationRow.jsx":"2c61c6905714","components/data/CandidateRow.jsx":"d1f314f43799","components/data/Card.jsx":"6ecddbff63e5","components/data/MatchIndicator.jsx":"a8b2803d6891","components/data/PositionCard.jsx":"7ccfb1499919","components/data/ProgressBar.jsx":"39c4ae9bb2b5","components/data/StatCard.jsx":"afa0089bbae3","components/data/StatusBadge.jsx":"9e218736fd5f","components/data/Tabs.jsx":"d7895fd812a5","components/forms/Checkbox.jsx":"3ff388154f50","components/forms/Input.jsx":"d4c959e866f5","components/forms/Select.jsx":"c4da8171f3d4","components/forms/Switch.jsx":"798cb097d1f9","components/forms/Textarea.jsx":"a49a73a5a3fb","data/talent-pool.js":"566b17e49c00"},"inlinedExternals":[],"unexposedExports":[]} */
+/* @ds-bundle: {"format":4,"namespace":"MyJobDesignSystem_5611b7","components":[{"name":"Logomark","sourcePath":"components/app/AppShell.jsx"},{"name":"AppShell","sourcePath":"components/app/AppShell.jsx"},{"name":"Avatar","sourcePath":"components/core/Avatar.jsx"},{"name":"Badge","sourcePath":"components/core/Badge.jsx"},{"name":"Button","sourcePath":"components/core/Button.jsx"},{"name":"EntityTile","sourcePath":"components/core/EntityTile.jsx"},{"name":"Icon","sourcePath":"components/core/Icon.jsx"},{"name":"ICON_NAMES","sourcePath":"components/core/Icon.jsx"},{"name":"IconButton","sourcePath":"components/core/IconButton.jsx"},{"name":"MetaPill","sourcePath":"components/core/MetaPill.jsx"},{"name":"Sparkle","sourcePath":"components/core/Sparkle.jsx"},{"name":"ApplicationRow","sourcePath":"components/data/ApplicationRow.jsx"},{"name":"CandidateRow","sourcePath":"components/data/CandidateRow.jsx"},{"name":"Card","sourcePath":"components/data/Card.jsx"},{"name":"MatchIndicator","sourcePath":"components/data/MatchIndicator.jsx"},{"name":"CountryFlag","sourcePath":"components/data/PositionCard.jsx"},{"name":"PositionCard","sourcePath":"components/data/PositionCard.jsx"},{"name":"ProgressBar","sourcePath":"components/data/ProgressBar.jsx"},{"name":"StatCard","sourcePath":"components/data/StatCard.jsx"},{"name":"STAGES","sourcePath":"components/data/StatusBadge.jsx"},{"name":"StatusBadge","sourcePath":"components/data/StatusBadge.jsx"},{"name":"Tabs","sourcePath":"components/data/Tabs.jsx"},{"name":"Checkbox","sourcePath":"components/forms/Checkbox.jsx"},{"name":"Input","sourcePath":"components/forms/Input.jsx"},{"name":"Select","sourcePath":"components/forms/Select.jsx"},{"name":"Switch","sourcePath":"components/forms/Switch.jsx"},{"name":"Textarea","sourcePath":"components/forms/Textarea.jsx"}],"sourceHashes":{"components/app/AppShell.jsx":"6891872c7e94","components/core/Avatar.jsx":"642d834429aa","components/core/Badge.jsx":"c65e71a1747c","components/core/Button.jsx":"c48fb21812cc","components/core/EntityTile.jsx":"c6e7448180b1","components/core/Icon.jsx":"7acd36c8049a","components/core/IconButton.jsx":"11c416bbf004","components/core/MetaPill.jsx":"127e09c1b1d7","components/core/Sparkle.jsx":"d13a1e445ea7","components/data/ApplicationRow.jsx":"2c61c6905714","components/data/CandidateRow.jsx":"d1f314f43799","components/data/Card.jsx":"6ecddbff63e5","components/data/MatchIndicator.jsx":"a8b2803d6891","components/data/PositionCard.jsx":"7ccfb1499919","components/data/ProgressBar.jsx":"39c4ae9bb2b5","components/data/StatCard.jsx":"afa0089bbae3","components/data/StatusBadge.jsx":"9e218736fd5f","components/data/Tabs.jsx":"d7895fd812a5","components/forms/Checkbox.jsx":"3ff388154f50","components/forms/Input.jsx":"d4c959e866f5","components/forms/Select.jsx":"c4da8171f3d4","components/forms/Switch.jsx":"798cb097d1f9","components/forms/Textarea.jsx":"a49a73a5a3fb","data/talent-pool.js":"0156c1befaf7"},"inlinedExternals":[],"unexposedExports":[]} */
 
 (() => {
 
@@ -1218,8 +1218,10 @@ function RailNavItem({
   onClick
 }) {
   const [hover, setHover] = React.useState(false);
+  const demo = !!item.demo;
   return /*#__PURE__*/React.createElement("button", {
-    onClick: onClick,
+    onClick: demo ? undefined : onClick,
+    title: demo ? 'Demo — noch nicht verdrahtet' : undefined,
     onMouseEnter: () => setHover(true),
     onMouseLeave: () => setHover(false),
     style: {
@@ -1230,15 +1232,16 @@ function RailNavItem({
       padding: '10px 14px',
       borderRadius: 'var(--radius-pill)',
       border: 'none',
-      cursor: 'pointer',
+      cursor: demo ? 'help' : 'pointer',
+      opacity: demo ? 0.55 : 1,
       fontFamily: 'var(--font-body)',
       fontSize: '13.5px',
       fontWeight: active ? 600 : 500,
       color: active ? 'var(--accent-contrast)' : 'var(--rail-muted)',
-      background: active ? 'var(--accent)' : hover ? 'var(--rail-glass)' : 'transparent',
+      background: active ? 'var(--accent)' : hover && !demo ? 'var(--rail-glass)' : 'transparent',
       boxShadow: active ? 'var(--shadow-accent)' : 'none',
       textAlign: 'left',
-      transform: hover && !active ? 'translateX(2px)' : 'none',
+      transform: hover && !active && !demo ? 'translateX(2px)' : 'none',
       transition: 'background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), transform var(--dur-med) var(--ease-spring), box-shadow var(--dur-fast) var(--ease-out)'
     }
   }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
@@ -3370,7 +3373,13 @@ try { (() => {
   const suhay = {
     id: 'me',
     name: 'Suhay Sevinc',
-    photo: '../assets/img/suhay-photo-sm.jpg',
+    photo: function () {
+      try {
+        return new URL('../assets/img/suhay-photo-sm.jpg', document.currentScript.src).pathname;
+      } catch (e) {
+        return '../assets/img/suhay-photo-sm.jpg';
+      }
+    }(),
     role: 'M.Sc. Software Engineer',
     headline: 'C++ / C#-.NET · Echtzeit- & verteilte Systeme',
     location: 'Blumberg, DE',

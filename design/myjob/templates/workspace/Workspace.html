@@ -102,6 +102,7 @@
   .qa a:nth-child(5) .ic { background: var(--surface-sunk); color: var(--text-muted); }
   .qa a .ar { margin-left: auto; color: var(--text-soft); }
 </style>
+<script>(function(){try{if(localStorage.getItem('myjob.mode')==='dark'){var e=document.documentElement;e.setAttribute('data-mode','dark');e.setAttribute('data-theme','ember');}}catch(err){}})();</script>
 </head>
 <body>
 <div id="root"></div>
@@ -123,9 +124,13 @@ const NAV = [
   { id: 'pool', label: 'Talent-Pool', icon: 'users' },
   { id: 'stellen', label: 'Stellen', icon: 'briefcase' },
   { id: 'matching', label: 'Matching', icon: 'search' },
-  { id: 'pipeline', label: 'Pipeline', icon: 'columns', badge: 2 },
-  { id: 'inbox', label: 'Inbox', icon: 'inbox', badge: 3 },
+  { id: 'pipeline', label: 'Pipeline', icon: 'columns', badge: 2, demo: true },
+  { id: 'inbox', label: 'Inbox', icon: 'inbox', badge: 3, demo: true },
 ];
+
+/* nav routing — Sub-Flows behalten den Eltern-Eintrag (readme ▸ Nav-Regel) */
+const NAV_ROUTES = { workspace: '../../screens/Workspace.html', pool: '../../screens/Talent-Pool.html', stellen: '../../screens/Matching.html', matching: '../../screens/Matching.html', __settings: '../../screens/Settings.html' };
+const goNav = (id) => { const t = NAV_ROUTES[id]; if (t) window.location.href = t; };
 
 const PHOTOS = { 'Suhay Sevinc': '../../assets/img/suhay-photo-sm.jpg' };
 
@@ -171,6 +176,10 @@ function GhostBlocks() {
 
 function Workspace() {
   const me = T.me;
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
+  const h = now.getHours();
+  const greeting = h < 11 ? 'Guten Morgen' : h < 18 ? 'Guten Tag' : 'Guten Abend';
   const detail = (
     <div className="panel">
       <div className="me">
@@ -194,9 +203,9 @@ function Workspace() {
   return (
     <AppShell
       product="recruit" posture="rail"
-      nav={NAV} active="workspace" onNav={() => {}}
+      nav={NAV} active="workspace" onNav={goNav}
       account={{ name: 'Suhay Sevinc', meta: 'Ich · +3 Talente', src: me.photo }}
-      title="Workspace" subtitle="Sonntag, 28. Juni"
+      title="Workspace" subtitle={dateStr}
       search searchPlaceholder="Kandidaten, Stellen, Bewerbungen …"
       actions={<Button size="sm" iconLeft={<Icon name="plus" size={15} />} style={{ borderRadius: 'var(--radius-pill)', boxShadow: 'var(--shadow-accent)' }} onClick={() => { window.location.href = '../../screens/Matching.html'; }}>Neue Bewerbung</Button>}
       detail={detail}
@@ -204,7 +213,7 @@ function Workspace() {
       <div className="ws">
         <div className="hero rise" data-screen-label="Workspace">
           <div className="now"><span className="dot"></span>Interview morgen · 14:00</div>
-          <h1 className="greet">Guten Abend, Suhay</h1>
+          <h1 className="greet">{greeting}, Suhay</h1>
           <p className="greet-sub">4 aktive Bewerbungen · 1 Angebot offen · 1 Interview morgen</p>
           <GhostBlocks />
         </div>

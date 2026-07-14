@@ -7,7 +7,7 @@
   const suhay = {
     id: 'me',
     name: 'Suhay Sevinc',
-    photo: '../assets/img/suhay-photo-sm.jpg',
+    photo: (function () { try { return new URL('../assets/img/suhay-photo-sm.jpg', document.currentScript.src).pathname; } catch (e) { return '../assets/img/suhay-photo-sm.jpg'; } })(),
     role: 'M.Sc. Software Engineer',
     headline: 'C++ / C#-.NET · Echtzeit- & verteilte Systeme',
     location: 'Blumberg, DE',

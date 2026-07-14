@@ -88,6 +88,7 @@
     @keyframes profin { from { opacity: 0; transform: translateY(8px); } }
   }
 </style>
+<script>(function(){try{if(localStorage.getItem('myjob.mode')==='dark'){var e=document.documentElement;e.setAttribute('data-mode','dark');e.setAttribute('data-theme','ember');}}catch(err){}})();</script>
 </head>
 <body>
 <div id="root"></div>
@@ -106,9 +107,13 @@ const RECRUIT_NAV = [
   { id: 'pool', label: 'Talent-Pool', icon: 'users' },
   { id: 'stellen', label: 'Stellen', icon: 'briefcase' },
   { id: 'matching', label: 'Matching', icon: 'search' },
-  { id: 'pipeline', label: 'Pipeline', icon: 'columns', badge: 2 },
-  { id: 'inbox', label: 'Inbox', icon: 'inbox', badge: 3 },
+  { id: 'pipeline', label: 'Pipeline', icon: 'columns', badge: 2, demo: true },
+  { id: 'inbox', label: 'Inbox', icon: 'inbox', badge: 3, demo: true },
 ];
+
+/* nav routing — Sub-Flows behalten den Eltern-Eintrag (readme ▸ Nav-Regel) */
+const NAV_ROUTES = { workspace: 'Workspace.html', pool: 'Talent-Pool.html', stellen: 'Matching.html', matching: 'Matching.html', __settings: 'Settings.html' };
+const goNav = (id) => { const t = NAV_ROUTES[id]; if (t) window.location.href = t; };
 
 const Sparkle = (p) => { const C = window.MyJobDesignSystem_5611b7.Sparkle; return C ? <C {...p} /> : <span style={{ width: (p.size||16)+"px", display: "inline-block" }} />; };
 
@@ -138,7 +143,7 @@ function CvProfile({ c }) {
               {c.workPermit && <MetaPill icon="id">{c.workPermit}</MetaPill>}
             </div>
           </div>
-          <Button size="sm" variant="outline" iconLeft={<Icon name="edit" size={14} />}>CV bearbeiten</Button>
+          <a href="CV-Builder.html" style={{ textDecoration: 'none' }}><Button size="sm" variant="outline" iconLeft={<Icon name="edit" size={14} />}>CV bearbeiten</Button></a>
         </div>
 
         <div className="ki">
@@ -227,21 +232,24 @@ function CvProfile({ c }) {
 }
 
 function Pool() {
+  const [q, setQ] = React.useState('');
+  const shown = T.all.filter((c) => (c.name + ' ' + c.role + ' ' + (c.skills || []).join(' ')).toLowerCase().includes(q.trim().toLowerCase()));
   const [sel, setSel] = React.useState('me');
   const cand = T.all.find((c) => c.id === sel);
   return (
     <AppShell
       product="recruit" posture="rail"
-      nav={RECRUIT_NAV} active="pool" onNav={() => {}}
+      nav={RECRUIT_NAV} active="pool" onNav={goNav}
       account={{ name: 'Suhay Sevinc', meta: 'Ich · +3 Talente', src: T.me.photo }}
       title="Talent-Pool"
       subtitle={`${T.all.length} Kandidaten`}
-      search searchPlaceholder="Kandidaten suchen …"
+      search searchPlaceholder="Kandidaten suchen …" searchValue={q} onSearch={setQ}
     >
       <div style={{ height: '100%', border: '1px solid var(--border)', borderRadius: 'var(--radius-2xl)', overflow: 'hidden', background: 'var(--surface-card)', boxShadow: 'var(--shadow-sm)' }}>
         <div className="pool" data-screen-label="Talent-Pool">
           <div className="tiles">
-            {T.all.map((c) => (
+            {shown.length === 0 && <div style={{ padding: '26px 14px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 'var(--fs-sm)' }}>Keine Kandidat:innen gefunden — Suchbegriff anpassen.</div>}
+            {shown.map((c) => (
               <div key={c.id} className={'tile' + (sel === c.id ? ' on' : '')} onClick={() => setSel(c.id)}>
                 {c.id === 'me' && <span className="me">Ich</span>}
                 <Avatar name={c.name} src={c.photo} size={64} ring={sel === c.id} />

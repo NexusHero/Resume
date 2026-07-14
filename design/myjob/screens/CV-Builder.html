@@ -80,6 +80,7 @@
   .api-note .t { display: flex; align-items: center; gap: 7px; font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--text-heading); margin-bottom: 7px; }
   .api-note code { display: block; font-family: var(--font-mono); font-size: var(--fs-2xs); color: var(--accent-strong); background: var(--surface-card); border: 1px solid var(--border); border-radius: 6px; padding: 8px 9px; white-space: pre-wrap; line-height: 1.5; }
 </style>
+<script>(function(){try{if(localStorage.getItem('myjob.mode')==='dark'){var e=document.documentElement;e.setAttribute('data-mode','dark');e.setAttribute('data-theme','ember');}}catch(err){}})();</script>
 </head>
 <body>
 <div id="root"></div>
@@ -99,9 +100,13 @@ const RECRUIT_NAV = [
   { id: 'pool', label: 'Talent-Pool', icon: 'users' },
   { id: 'stellen', label: 'Stellen', icon: 'briefcase' },
   { id: 'matching', label: 'Matching', icon: 'search' },
-  { id: 'pipeline', label: 'Pipeline', icon: 'columns', badge: 2 },
-  { id: 'inbox', label: 'Inbox', icon: 'inbox', badge: 3 },
+  { id: 'pipeline', label: 'Pipeline', icon: 'columns', badge: 2, demo: true },
+  { id: 'inbox', label: 'Inbox', icon: 'inbox', badge: 3, demo: true },
 ];
+
+/* nav routing — Sub-Flows behalten den Eltern-Eintrag (readme ▸ Nav-Regel) */
+const NAV_ROUTES = { workspace: 'Workspace.html', pool: 'Talent-Pool.html', stellen: 'Matching.html', matching: 'Matching.html', __settings: 'Settings.html' };
+const goNav = (id) => { const t = NAV_ROUTES[id]; if (t) window.location.href = t; };
 
 /* ===========================================================================
    cvConfig — the SINGLE source of truth for the CV's look. The control panel
@@ -303,7 +308,7 @@ function Builder() {
   return (
     <AppShell
       product="recruit" posture="rail"
-      nav={RECRUIT_NAV} active="pool" onNav={() => {}}
+      nav={RECRUIT_NAV} active="pool" onNav={goNav}
       account={{ name: 'Suhay Sevinc', meta: 'Ich · +3 Talente', src: '../assets/img/suhay-photo-sm.jpg' }}
       title="CV-Builder"
       subtitle={`${ME.name} · Lebenslauf`}

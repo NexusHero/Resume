@@ -37,6 +37,7 @@
   @keyframes toastin { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
 @media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
 </style>
+<script>(function(){try{if(localStorage.getItem('myjob.mode')==='dark'){var e=document.documentElement;e.setAttribute('data-mode','dark');e.setAttribute('data-theme','ember');}}catch(err){}})();</script>
 </head>
 <body>
 <div id="root"></div>
@@ -356,9 +357,13 @@ const RECRUIT_NAV = [
   { id: 'pool', label: 'Talent-Pool', icon: 'users' },
   { id: 'stellen', label: 'Stellen', icon: 'briefcase' },
   { id: 'matching', label: 'Matching', icon: 'search' },
-  { id: 'pipeline', label: 'Pipeline', icon: 'columns', badge: 2 },
-  { id: 'inbox', label: 'Inbox', icon: 'inbox', badge: 3 },
+  { id: 'pipeline', label: 'Pipeline', icon: 'columns', badge: 2, demo: true },
+  { id: 'inbox', label: 'Inbox', icon: 'inbox', badge: 3, demo: true },
 ];
+
+/* nav routing — Sub-Flows behalten den Eltern-Eintrag (readme ▸ Nav-Regel) */
+const NAV_ROUTES = { workspace: 'Workspace.html', pool: 'Talent-Pool.html', stellen: 'Matching.html', matching: 'Matching.html', __settings: 'Settings.html' };
+const goNav = (id) => { const t = NAV_ROUTES[id]; if (t) window.location.href = t; };
 
 /* The recruiter's candidates. SUHAY is one of them; the matching basis in
    candidate-first (auto) mode, and just one option in job-first (manual) mode. */
@@ -768,7 +773,7 @@ function MatchingScreen() {
     <React.Fragment>
       <AppShell
         product="recruit" posture="rail"
-        nav={RECRUIT_NAV} active="matching" onNav={() => {}}
+        nav={RECRUIT_NAV} active="matching" onNav={goNav}
         account={{ name: 'Suhay Sevinc', meta: 'Ich · +3 Talente', src: '../assets/img/suhay-photo-sm.jpg' }}
         title="Matching"
         subtitle={mode === 'auto'

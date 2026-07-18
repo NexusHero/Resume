@@ -51,7 +51,7 @@
     "puppeteer": "^25.3.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
-    "swagger-ui-dist": "^5.32.8",
+    "swagger-ui-dist": "^5.32.9",
     "zod": "^4.4.3"
   },
   "devDependencies": {

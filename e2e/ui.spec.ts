@@ -757,4 +757,108 @@ test.describe('UI acceptance — the suite renders in German', () => {
       timeout: 15000,
     });
   });
+
+  test('Recruiting_ApplyFromMatching_ShowsUpInThePipeline', async ({ page }) => {
+    // End-to-end: search the live job boards, apply on the pinned "me"
+    // candidate's behalf to one specific company's posting, then confirm the
+    // application actually lands on the Pipeline board with that company and
+    // role — the seam from ADR-0046/0048 that had no e2e coverage.
+    const applications: Record<string, unknown>[] = [];
+    await page.route('**/api/v1/jobs', (route) => {
+      if (route.request().method() !== 'GET') return route.continue();
+      return route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          top: [
+            {
+              id: 'j-nordwind-1',
+              role: 'Backend Engineer',
+              company: 'Nordwind Logistik AG',
+              city: 'Hamburg',
+              country: 'DE',
+              source: 'Arbeitnow',
+              mode: 'Vollzeit',
+              salary: '',
+              posted: '2026-07-01',
+              url: 'https://example.de/jobs/j-nordwind-1',
+              skills: ['Go', 'Kubernetes'],
+            },
+            {
+              id: 'j-acme-1',
+              role: 'Frontend Developer',
+              company: 'Acme Corp',
+              city: 'Berlin',
+              country: 'DE',
+              source: 'Arbeitnow',
+              mode: 'Vollzeit',
+              salary: '',
+              posted: '2026-07-01',
+              url: 'https://example.de/jobs/j-acme-1',
+              skills: ['React'],
+            },
+          ],
+          more: [],
+          liveSourcesDown: false,
+        }),
+      });
+    });
+    await page.route('**/api/v1/applications', (route) => {
+      const req = route.request();
+      if (req.method() === 'POST') {
+        const body = JSON.parse(req.postData() || '{}');
+        const created = {
+          id: 'app-new-1',
+          company: body.company,
+          position: body.position,
+          talentId: body.talentId || null,
+          talentName: body.talentName || '',
+          status: body.status || 'sent',
+          score: null,
+          date: '2026-07-01',
+          source: body.source || '',
+        };
+        applications.push(created);
+        return route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ application: created }),
+        });
+      }
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify(applications) });
+    });
+    await page.route('**/api/v1/talents', (route) => {
+      if (route.request().method() !== 'GET') return route.continue();
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify([]) });
+    });
+    await page.route('**/api/v1/mandates', (route) => {
+      if (route.request().method() !== 'GET') return route.continue();
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify([]) });
+    });
+    await page.route('**/api/v1/auth/me', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id: 'user1', email: 'nora@example.de' } }),
+      }),
+    );
+    await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
+
+    // Matching folds under Mandate as the "Stellensuche" tab.
+    await page.getByRole('button', { name: /Mandate/ }).click();
+    await page.getByRole('tab', { name: 'Stellensuche' }).click();
+    await page.getByRole('button', { name: 'Manuell' }).click();
+
+    // Search narrows the live postings down to the one specific company.
+    await page.getByPlaceholder(/Stelle suchen/).fill('Nordwind');
+    await expect(page.locator('main')).toContainText('Nordwind Logistik AG');
+    await expect(page.locator('main')).not.toContainText('Acme Corp');
+
+    // Apply the pinned "me" candidate to that posting.
+    await page.getByRole('button', { name: /Nora bewerben/ }).click();
+    await expect(page.getByRole('button', { name: /Beworben · Nora/ })).toBeVisible();
+
+    // The application is recorded and shows up on the Pipeline board.
+    await page.getByRole('button', { name: /Pipeline/ }).click();
+    await expect(page.locator('main')).toContainText('Nordwind Logistik AG');
+    await expect(page.locator('main')).toContainText('Backend Engineer');
+  });
 });

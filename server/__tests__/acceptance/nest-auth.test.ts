@@ -14,7 +14,9 @@ import {
   EMAIL_VERIFICATION_TOKEN_STORE,
   MAILER,
   PLAN_PROVIDER,
+  RATE_LIMITER,
 } from '../../src/nest/tokens.js';
+import { InMemoryRateLimiter } from '../../src/adapters/in-memory-rate-limiter.js';
 import {
   InMemoryUserRepository,
   InMemoryTenantRepository,
@@ -49,6 +51,7 @@ describe('NestJS auth vertical', () => {
       },
       { provide: MAILER, useValue: new RecordingMailer() },
       { provide: PLAN_PROVIDER, useValue: new EnvPlanProvider(config.plan) },
+      { provide: RATE_LIMITER, useValue: new InMemoryRateLimiter() },
     ];
     @Global()
     @Module({

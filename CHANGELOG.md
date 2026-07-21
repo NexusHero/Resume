@@ -10,6 +10,38 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Fixed
 
+- **Availability hardening batch (ADR-0056): eight gaps in how the running
+  system survives load, restarts, and horizontal scale-out.**
+  - The PDF renderer could poison itself: a single transient Chromium launch
+    failure or a later crash left a dead promise cached forever, breaking
+    every export until restart. `browser()` now clears the cached launch on
+    failure/disconnect instead of replaying it.
+  - Two instances cold-booting against a fresh `STORE=sql` database at the
+    same time raced on migrations (reproduced: one crashed with a duplicate
+    Postgres type error). `migrate()` now serializes the DDL block behind a
+    blocking advisory lock.
+  - The container had no healthcheck; the Dockerfile and `docker-compose.yml`
+    now probe `/api/v1/health`, and the compose file ships a clearly-marked
+    dev-only `APP_SECRET` so it boots out of the box.
+  - Shutdown never released the Postgres pool or the PDF renderer's Chromium
+    process, and nothing bounded a hang. `index.ts` now drains in-flight
+    requests, then releases the auth engine/renderer/pool, with a 10s
+    force-exit timeout.
+  - The credential and AI-spend rate limiters kept per-instance counts, so
+    the effective limit multiplied with instance count under `STORE=sql`. A
+    new `RateLimiter` port (`InMemoryRateLimiter` / `SqlRateLimiter`) shares
+    the count across instances when `STORE=sql`; `STORE=fs` is unchanged.
+  - The assistant/retention/reply-sync scheduled jobs only ever ran for the
+    default tenant; self-registered tenants under `SELF_SERVE_TENANTS=true`
+    silently never got scheduled runs. The scheduler now covers every tenant
+    `TenantService.list()` reports.
+  - A job board that stayed down for a while still paid full timeout+retry
+    cost on every search. A new per-source circuit breaker
+    (`JOB_SOURCE_CIRCUIT_THRESHOLD`/`JOB_SOURCE_CIRCUIT_RESET_MS`) fails fast
+    after repeated failures without affecting healthy boards.
+  - The Postgres connection budget (main pool + Better-Auth's own pool, per
+    instance) was undocumented; ADR-0056 spells out the multiplication for
+    anyone sizing `max_connections` at scale-out time.
 - **Better-Auth now scales horizontally with `STORE=sql` (#227).** Credentials
   and sessions were always kept on a per-instance embedded SQLite file, even
   when `STORE=sql` — so two app instances behind a load balancer had disjoint

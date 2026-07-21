@@ -25,7 +25,9 @@ import {
   AUTH_ENGINE,
   PASSWORD_RESET_TOKEN_STORE,
   MAILER,
+  RATE_LIMITER,
 } from '../../src/nest/tokens.js';
+import { InMemoryRateLimiter } from '../../src/adapters/in-memory-rate-limiter.js';
 import {
   InMemoryDocumentRepository,
   InMemoryTalentRepository,
@@ -62,6 +64,7 @@ describe('NestJS documents + attachments + password-reset verticals', () => {
       { provide: AUTH_ENGINE, useValue: new FakeAuthEngine() },
       { provide: PASSWORD_RESET_TOKEN_STORE, useValue: new InMemoryPasswordResetTokenStore() },
       { provide: MAILER, useValue: new RecordingMailer() },
+      { provide: RATE_LIMITER, useValue: new InMemoryRateLimiter() },
     ];
     @Global()
     @Module({ providers: fakes, exports: fakes.map((p) => (p as { provide: symbol }).provide) })

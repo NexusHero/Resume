@@ -1,6 +1,8 @@
-import { Injectable, type CanActivate, type ExecutionContext } from '@nestjs/common';
+import { Inject, Injectable, type CanActivate, type ExecutionContext } from '@nestjs/common';
 import type { Request } from 'express';
 import { RateLimitError } from '../domain/errors.js';
+import type { RateLimiter } from '../ports/rate-limiter.js';
+import { RATE_LIMITER } from './tokens.js';
 
 /**
  * Throttle for the credential endpoints (register/login/accept-invite/password
@@ -8,39 +10,24 @@ import { RateLimitError } from '../domain/errors.js';
  * the Nest replacement for the Express `authLimiter`. Fixed 15-minute window of
  * 10 attempts per client IP; the problem+json body carries the real reason so
  * the login form can show "too many attempts" instead of a generic failure.
+ *
+ * The count itself lives behind the injected {@link RateLimiter} port, so it is
+ * shared across every instance of a horizontally-scaled deployment
+ * (`STORE=sql`) instead of being a per-process count that gets N times more
+ * permissive as the deployment scales out.
  */
 const WINDOW_MS = 15 * 60 * 1000;
 const LIMIT = 10;
 
-// Bound how long a stale per-client window lingers: without this, a window
-// map keyed on many distinct clients (or `req.ip` when trust-proxy is
-// misconfigured) only ever grows for the life of the process.
-const SWEEP_EVERY = 200;
-
 @Injectable()
 export class AuthRateLimitGuard implements CanActivate {
-  private readonly windows = new Map<string, { count: number; resetAt: number }>();
-  private hits = 0;
+  constructor(@Inject(RATE_LIMITER) private readonly limiter: RateLimiter) {}
 
-  private sweepExpired(now: number): void {
-    if (++this.hits % SWEEP_EVERY !== 0) return;
-    for (const [key, window] of this.windows) {
-      if (window.resetAt <= now) this.windows.delete(key);
-    }
-  }
-
-  canActivate(ctx: ExecutionContext): boolean {
+  async canActivate(ctx: ExecutionContext): Promise<boolean> {
     const req = ctx.switchToHttp().getRequest<Request>();
     const key = req.ip ?? 'anon';
-    const now = Date.now();
-    this.sweepExpired(now);
-    const window = this.windows.get(key);
-    if (!window || window.resetAt <= now) {
-      this.windows.set(key, { count: 1, resetAt: now + WINDOW_MS });
-      return true;
-    }
-    window.count += 1;
-    if (window.count > LIMIT) {
+    const { count } = await this.limiter.hit(key, WINDOW_MS);
+    if (count > LIMIT) {
       throw new RateLimitError('Too many attempts. Please wait a few minutes and try again.');
     }
     return true;

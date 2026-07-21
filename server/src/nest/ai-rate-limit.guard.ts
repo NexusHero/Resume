@@ -2,8 +2,11 @@ import { Inject, Injectable, type CanActivate, type ExecutionContext } from '@ne
 import type { Request } from 'express';
 import { RateLimitError } from '../domain/errors.js';
 import type { AppConfig } from '../config.js';
+import type { RateLimiter } from '../ports/rate-limiter.js';
 import { optionalUserId } from '../http/current-user.js';
-import { CONFIG } from './tokens.js';
+import { CONFIG, RATE_LIMITER } from './tokens.js';
+
+const WINDOW_MS = 60_000;
 
 /**
  * Per-user throttle on the generative AI routes (the only ones that spend the
@@ -11,38 +14,26 @@ import { CONFIG } from './tokens.js';
  * middleware. Fixed one-minute window keyed by the acting user (falling back to
  * the client IP) so one recruiter can't exhaust the shared quota.
  * `security.aiRateLimitPerMinute = 0` disables it; non-AI routes never see it.
+ *
+ * The count itself lives behind the injected {@link RateLimiter} port, so it is
+ * shared across every instance of a horizontally-scaled deployment
+ * (`STORE=sql`) instead of being a per-process count that gets N times more
+ * permissive as the deployment scales out.
  */
-// Bound how long a stale per-client window lingers (see AuthRateLimitGuard).
-const SWEEP_EVERY = 200;
-
 @Injectable()
 export class AiRateLimitGuard implements CanActivate {
-  private readonly windows = new Map<string, { count: number; resetAt: number }>();
-  private hits = 0;
+  constructor(
+    @Inject(CONFIG) private readonly config: AppConfig,
+    @Inject(RATE_LIMITER) private readonly limiter: RateLimiter,
+  ) {}
 
-  constructor(@Inject(CONFIG) private readonly config: AppConfig) {}
-
-  private sweepExpired(now: number): void {
-    if (++this.hits % SWEEP_EVERY !== 0) return;
-    for (const [key, window] of this.windows) {
-      if (window.resetAt <= now) this.windows.delete(key);
-    }
-  }
-
-  canActivate(ctx: ExecutionContext): boolean {
+  async canActivate(ctx: ExecutionContext): Promise<boolean> {
     const limit = this.config.security.aiRateLimitPerMinute;
     if (!(limit > 0)) return true;
     const req = ctx.switchToHttp().getRequest<Request>();
     const key = optionalUserId(req) ?? req.ip ?? 'anon';
-    const now = Date.now();
-    this.sweepExpired(now);
-    const window = this.windows.get(key);
-    if (!window || window.resetAt <= now) {
-      this.windows.set(key, { count: 1, resetAt: now + 60_000 });
-      return true;
-    }
-    window.count += 1;
-    if (window.count > limit) throw new RateLimitError();
+    const { count } = await this.limiter.hit(key, WINDOW_MS);
+    if (count > limit) throw new RateLimitError();
     return true;
   }
 }

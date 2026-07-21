@@ -16,10 +16,7 @@ import { ComplianceModule } from '../../src/nest/compliance/compliance.module.js
 import { MailModule } from '../../src/nest/mail/mail.module.js';
 import { TalentImportModule } from '../../src/nest/talents/talent-import.module.js';
 import { AuthGuard } from '../../src/nest/auth.guard.js';
-import { AiRateLimitGuard } from '../../src/nest/ai-rate-limit.guard.js';
 import { ProblemJsonFilter } from '../../src/nest/problem-json.filter.js';
-import { RateLimitError } from '../../src/domain/errors.js';
-import type { AppConfig } from '../../src/config.js';
 import type { Plan } from '../../src/domain/plan.js';
 import {
   DOCUMENT_AI_SERVICE,
@@ -40,7 +37,9 @@ import {
   USAGE_METER,
   PDF_TEXT_EXTRACTOR,
   INTERVIEW_OBSERVATION_REPOSITORY,
+  RATE_LIMITER,
 } from '../../src/nest/tokens.js';
+import { InMemoryRateLimiter } from '../../src/adapters/in-memory-rate-limiter.js';
 import {
   InMemoryMandateRepository,
   InMemoryTalentRepository,
@@ -106,6 +105,7 @@ describe('NestJS AI-backed verticals (match-ai, compliance, mail, documents-AI, 
       { provide: USAGE_METER, useValue: new InMemoryUsageMeter() },
       { provide: PDF_TEXT_EXTRACTOR, useValue: {} },
       { provide: INTERVIEW_OBSERVATION_REPOSITORY, useValue: {} },
+      { provide: RATE_LIMITER, useValue: new InMemoryRateLimiter() },
     ];
     @Global()
     @Module({ providers: fakes, exports: fakes.map((p) => (p as { provide: symbol }).provide) })
@@ -262,30 +262,5 @@ describe('NestJS AI-backed verticals (match-ai, compliance, mail, documents-AI, 
       .send({ files: [] });
     expect(denied.status).toBe(402);
     expect(denied.body.type).toBe('about:blank#plan-required');
-  });
-});
-
-describe('AiRateLimitGuard', () => {
-  const ctx = (userId?: string) =>
-    ({
-      switchToHttp: () => ({ getRequest: () => ({ userId, ip: '203.0.113.9' }) }),
-    }) as never;
-  const config = (aiRateLimitPerMinute: number) =>
-    ({ security: { aiRateLimitPerMinute } }) as AppConfig;
-
-  it('Disabled_WhenTheLimitIsZero', () => {
-    const guard = new AiRateLimitGuard(config(0));
-    expect(guard.canActivate(ctx('u1'))).toBe(true);
-    expect(guard.canActivate(ctx('u1'))).toBe(true);
-  });
-
-  it('Throws429_OncePastTheLimit_PerUser', () => {
-    const guard = new AiRateLimitGuard(config(2));
-    expect(guard.canActivate(ctx('u1'))).toBe(true);
-    expect(guard.canActivate(ctx('u1'))).toBe(true);
-    expect(() => guard.canActivate(ctx('u1'))).toThrow(RateLimitError);
-    // A different user has their own window; anonymous callers fall back to the IP.
-    expect(guard.canActivate(ctx('u2'))).toBe(true);
-    expect(guard.canActivate(ctx(undefined))).toBe(true);
   });
 });

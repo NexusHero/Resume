@@ -211,6 +211,14 @@ export interface JobSourcesConfig {
   requestTimeoutMs: number;
   /** Extra attempts after the first on a transient failure. */
   retries: number;
+  /**
+   * Consecutive failures (after timeout+retries are exhausted) before a
+   * board's circuit breaker opens and starts failing fast instead of
+   * hammering it — see adapters/circuit-breaker.ts.
+   */
+  circuitBreakerThreshold: number;
+  /** How long an open circuit stays open before allowing one trial request through (ms). */
+  circuitBreakerResetMs: number;
 }
 
 /**
@@ -351,6 +359,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       descriptorsFile: env.JOB_SOURCES_FILE ? path.resolve(env.JOB_SOURCES_FILE) : null,
       requestTimeoutMs: Math.max(1000, Number(env.JOB_SOURCE_TIMEOUT_MS) || 8000),
       retries: Math.max(0, Number(env.JOB_SOURCE_RETRIES) || 1),
+      circuitBreakerThreshold: Math.max(1, Number(env.JOB_SOURCE_CIRCUIT_THRESHOLD) || 5),
+      circuitBreakerResetMs: Math.max(1000, Number(env.JOB_SOURCE_CIRCUIT_RESET_MS) || 60000),
     },
     store: env.STORE === 'sql' ? 'sql' : 'fs',
     selfServeTenants: env.SELF_SERVE_TENANTS === 'true',

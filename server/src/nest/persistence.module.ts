@@ -84,7 +84,10 @@ const repoProviders: Provider[] = REPO_BINDINGS.map(([token, key]) => ({
     },
     ...repoProviders,
   ],
-  exports: [PERSISTENCE, ...REPO_BINDINGS.map(([token]) => token)],
+  // DB is exported (not just PERSISTENCE/the repos) so InfraModule's
+  // RATE_LIMITER factory, the only consumer outside this module, can inject it
+  // directly to reach the raw pool for SqlRateLimiter.
+  exports: [PERSISTENCE, DB, ...REPO_BINDINGS.map(([token]) => token)],
 })
 export class PersistenceModule {
   /** The SQL path: the booted index.ts passes the migrated Drizzle handle in. */

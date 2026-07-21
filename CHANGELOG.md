@@ -8,6 +8,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+### Added
+
+- **E2E coverage for applying to a specific company's live job posting
+  (ADR-0046/0048).** Search-and-apply was previously only tested in
+  isolation (job search and application creation each had their own
+  fixtures); a new Playwright test now drives the actual seam end to end:
+  search the live boards, apply the pinned "me" candidate to one named
+  company's posting from Matching, and confirm the application shows up on
+  the Pipeline board with that company and role.
+
 ### Fixed
 
 - **Availability hardening batch (ADR-0056): eight gaps in how the running

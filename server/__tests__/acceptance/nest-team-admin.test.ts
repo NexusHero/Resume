@@ -23,7 +23,9 @@ import {
   INVITE_REPOSITORY,
   AUTH_ENGINE,
   MAILER,
+  RATE_LIMITER,
 } from '../../src/nest/tokens.js';
+import { InMemoryRateLimiter } from '../../src/adapters/in-memory-rate-limiter.js';
 import {
   InMemoryUserRepository,
   InMemoryTenantRepository,
@@ -59,6 +61,7 @@ describe('NestJS team-admin authorization', () => {
       { provide: INVITE_REPOSITORY, useValue: new InMemoryInviteRepository() },
       { provide: AUTH_ENGINE, useValue: new FakeAuthEngine() },
       { provide: MAILER, useValue: new RecordingMailer() },
+      { provide: RATE_LIMITER, useValue: new InMemoryRateLimiter() },
     ];
     @Global()
     @Module({ providers: fakes, exports: fakes.map((p) => (p as { provide: symbol }).provide) })

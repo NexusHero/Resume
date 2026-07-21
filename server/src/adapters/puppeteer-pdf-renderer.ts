@@ -47,7 +47,23 @@ export class PuppeteerPdfRenderer implements PdfRenderer {
 
   private browser(): Promise<Browser> {
     if (!this.browserPromise) {
-      this.browserPromise = puppeteer.launch(puppeteerLaunchOptions());
+      // Memoizing a promise that then rejects (Chromium slow to start, OOM, missing
+      // executable) would poison every future call forever, since the rejected
+      // promise itself is what's cached — so on failure (or a later crash/kill of an
+      // already-launched browser) the slot is cleared, but only if it still holds
+      // *this* attempt: a stale launch settling after a newer one has already taken
+      // over must not clobber it.
+      const launching = puppeteer.launch(puppeteerLaunchOptions());
+      this.browserPromise = launching;
+      launching
+        .then((browser) => {
+          browser.on('disconnected', () => {
+            if (this.browserPromise === launching) this.browserPromise = null;
+          });
+        })
+        .catch(() => {
+          if (this.browserPromise === launching) this.browserPromise = null;
+        });
     }
     return this.browserPromise;
   }

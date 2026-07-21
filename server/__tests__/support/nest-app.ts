@@ -16,6 +16,7 @@ import { nodeFetch } from '../../src/adapters/node-fetch.js';
 import { EnvPlanProvider } from '../../src/adapters/env-plan-provider.js';
 import { RoleAuthorizer } from '../../src/adapters/role-authorizer.js';
 import { HashedEmbeddingProvider } from '../../src/adapters/hashed-embedding-provider.js';
+import { InMemoryRateLimiter } from '../../src/adapters/in-memory-rate-limiter.js';
 import {
   CONFIG,
   LOGGER,
@@ -56,6 +57,7 @@ import {
   AUTHORIZER,
   EMBEDDING_PROVIDER,
   LLM_SERVICE,
+  RATE_LIMITER,
 } from '../../src/nest/tokens.js';
 import {
   InMemoryApplicationRepository,
@@ -174,6 +176,7 @@ export async function makeNestApp(
     { provide: AUTHORIZER, useValue: new RoleAuthorizer() },
     { provide: EMBEDDING_PROVIDER, useValue: new HashedEmbeddingProvider() },
     { provide: LLM_SERVICE, useValue: llmService },
+    { provide: RATE_LIMITER, useValue: new InMemoryRateLimiter() },
   ];
 
   @Global()

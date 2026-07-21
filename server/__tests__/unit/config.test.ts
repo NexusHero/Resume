@@ -25,3 +25,38 @@ describe('loadConfig — auth hardening', () => {
     ).toEqual(['https://a.example', 'https://b.example']);
   });
 });
+
+describe('loadConfig — job source circuit breaker', () => {
+  it('Defaults_FiveFailuresAnd60sReset', () => {
+    const c = loadConfig({});
+    expect(c.jobSources.circuitBreakerThreshold).toBe(5);
+    expect(c.jobSources.circuitBreakerResetMs).toBe(60000);
+  });
+
+  it('EnvOverrides_ThresholdAndResetMs_Applied', () => {
+    const c = loadConfig({
+      JOB_SOURCE_CIRCUIT_THRESHOLD: '3',
+      JOB_SOURCE_CIRCUIT_RESET_MS: '15000',
+    });
+    expect(c.jobSources.circuitBreakerThreshold).toBe(3);
+    expect(c.jobSources.circuitBreakerResetMs).toBe(15000);
+  });
+
+  it('NonNumericEnvValue_FallsBackToDefault', () => {
+    // A non-numeric env value parses to NaN, which is falsy, so the || default applies.
+    expect(
+      loadConfig({ JOB_SOURCE_CIRCUIT_THRESHOLD: 'not-a-number' }).jobSources
+        .circuitBreakerThreshold,
+    ).toBe(5);
+  });
+
+  it('BelowFloorEnvValues_ClampedByMathMax', () => {
+    // A too-low explicit value is still floored by Math.max, not accepted as-is.
+    const c = loadConfig({
+      JOB_SOURCE_CIRCUIT_THRESHOLD: '-2',
+      JOB_SOURCE_CIRCUIT_RESET_MS: '500',
+    });
+    expect(c.jobSources.circuitBreakerThreshold).toBe(1);
+    expect(c.jobSources.circuitBreakerResetMs).toBe(1000);
+  });
+});

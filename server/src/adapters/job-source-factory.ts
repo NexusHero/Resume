@@ -13,6 +13,7 @@ import { BUILTIN_JOB_SOURCE_DESCRIPTORS } from './builtin-job-sources.js';
 import { CompositeJobSource } from './composite-job-source.js';
 import { EmptyJobSource } from './empty-job-source.js';
 import { resilientFetch } from './resilient-fetch.js';
+import { circuitBreaker } from './circuit-breaker.js';
 
 export interface JobSourceFactoryDeps {
   config: AppConfig;
@@ -49,11 +50,22 @@ export function createJobSource(deps: JobSourceFactoryDeps): JobSource {
   const cfg = config.jobSources;
   // Every board request gets a timeout + bounded retry so a slow/flaky board
   // can't hang or silently empty the search (see resilient-fetch).
-  const httpFetch = resilientFetch(deps.httpFetch, {
+  const resilientHttpFetch = resilientFetch(deps.httpFetch, {
     timeoutMs: cfg.requestTimeoutMs,
     retries: cfg.retries,
     logger,
   });
+  // On top of that, each board gets its OWN circuit breaker (a fresh instance
+  // per source, never shared) so a board that stays down for a while is
+  // failed fast — no more per-search timeout+retries hammering it — while its
+  // healthy neighbors are unaffected (see circuit-breaker.ts).
+  const forSource = (label: string) =>
+    circuitBreaker(resilientHttpFetch, {
+      failureThreshold: cfg.circuitBreakerThreshold,
+      resetTimeoutMs: cfg.circuitBreakerResetMs,
+      logger,
+      label,
+    });
 
   // Same allow/deny rule the config applied to the hand-written boards, reused
   // for descriptor boards so one switch governs every source uniformly.
@@ -64,17 +76,21 @@ export function createJobSource(deps: JobSourceFactoryDeps): JobSource {
   const sources: JobSource[] = [];
 
   if (cfg.arbeitnow.enabled) {
-    sources.push(new ArbeitnowJobSource({ httpFetch, logger }));
+    sources.push(new ArbeitnowJobSource({ httpFetch: forSource('Arbeitnow'), logger }));
   }
   if (cfg.bundesagentur.enabled) {
     sources.push(
-      new BundesagenturJobSource({ httpFetch, logger, apiKey: cfg.bundesagentur.apiKey }),
+      new BundesagenturJobSource({
+        httpFetch: forSource('Bundesagentur'),
+        logger,
+        apiKey: cfg.bundesagentur.apiKey,
+      }),
     );
   }
   if (cfg.adzuna.enabled) {
     sources.push(
       new AdzunaJobSource({
-        httpFetch,
+        httpFetch: forSource('Adzuna'),
         logger,
         appId: cfg.adzuna.appId,
         appKey: cfg.adzuna.appKey,
@@ -89,7 +105,7 @@ export function createJobSource(deps: JobSourceFactoryDeps): JobSource {
   ];
   for (const descriptor of descriptors) {
     if (descriptor.enabled === false || !on(descriptor.name)) continue;
-    sources.push(new RestJobSource({ descriptor, httpFetch, logger }));
+    sources.push(new RestJobSource({ descriptor, httpFetch: forSource(descriptor.name), logger }));
   }
 
   if (sources.length === 0) {

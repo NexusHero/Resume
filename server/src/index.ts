@@ -12,6 +12,7 @@ import type { Logger } from './ports/logger.js';
 import type { AssistantService } from './services/assistant-service.js';
 import type { MailService } from './services/mail-service.js';
 import type { RetentionService } from './services/retention-service.js';
+import type { TenantService } from './services/tenant-service.js';
 import { TEAM_SCOPE } from './http/current-user.js';
 import { AppModule } from './nest/app.module.js';
 import { configureHttpEdge } from './nest/http-edge.js';
@@ -21,9 +22,12 @@ import {
   ASSISTANT_SERVICE,
   MAIL_SERVICE,
   RETENTION_SERVICE,
+  TENANT_SERVICE,
   AUTH_ENGINE,
+  PDF_RENDERER,
 } from './nest/tokens.js';
 import type { AuthEngine } from './ports/auth-engine.js';
+import type { PdfRenderer } from './ports/pdf-renderer.js';
 
 async function main(): Promise<void> {
   const config = loadConfig();
@@ -86,13 +90,36 @@ async function main(): Promise<void> {
     ? new PgAdvisorySchedulerLock(pool)
     : new NoopSchedulerLock();
 
+  // Every scheduled job below only ever ran for TEAM_SCOPE (the implicit
+  // single-tenant default) — harmless for a single-tenant deployment, but
+  // under SELF_SERVE_TENANTS=true every self-registered tenant has its own
+  // scope, and their retention/assistant/reply-sync jobs silently never ran.
+  // TenantService.list() already carries the "registry + implicit default
+  // when populated" logic (used by the super-admin console); reuse it here so
+  // a job tick covers every tenant that actually exists.
+  const tenantService = app.get<TenantService>(TENANT_SERVICE);
+  const tenantScopes = async (): Promise<string[]> => {
+    if (!config.selfServeTenants) return [TEAM_SCOPE];
+    const tenants = await tenantService.list();
+    return tenants.length > 0 ? tenants.map((t) => t.id) : [TEAM_SCOPE];
+  };
+
   // The assistant's scheduler: a light minute-tick asks the service whether a
   // run is due (enabled + interval elapsed). unref() keeps it from blocking
-  // shutdown; failures are logged, never fatal.
+  // shutdown; one tenant's failure is logged and does not stop the others.
   const assistantService = app.get<AssistantService>(ASSISTANT_SERVICE);
   const assistantTimer = setInterval(() => {
     schedulerLock
-      .runExclusive('assistant', () => assistantService.runIfDue(TEAM_SCOPE).then(() => {}))
+      .runExclusive('assistant', async () => {
+        for (const scope of await tenantScopes()) {
+          await assistantService.runIfDue(scope).catch((err: unknown) => {
+            logger.warn(
+              { err: err instanceof Error ? err.message : String(err), scope },
+              'assistant scheduled run failed',
+            );
+          });
+        }
+      })
       .catch((err: unknown) => {
         logger.warn(
           { err: err instanceof Error ? err.message : String(err) },
@@ -108,9 +135,11 @@ async function main(): Promise<void> {
   if (mailService.replySyncEnabled) {
     const pollMs = config.mail.imap.pollMinutes * 60_000;
     const replyTimer = setInterval(() => {
-      void schedulerLock.runExclusive('reply-sync', () =>
-        mailService.syncRepliesSafely(TEAM_SCOPE),
-      );
+      void schedulerLock.runExclusive('reply-sync', async () => {
+        for (const scope of await tenantScopes()) {
+          await mailService.syncRepliesSafely(scope);
+        }
+      });
     }, pollMs);
     replyTimer.unref();
     logger.info(
@@ -124,9 +153,16 @@ async function main(): Promise<void> {
   // tick). unref()ed, never fatal.
   const retentionService = app.get<RetentionService>(RETENTION_SERVICE);
   const retentionTimer = setInterval(() => {
-    void schedulerLock.runExclusive('retention', () =>
-      retentionService.runAutoAnonymizeIfDue(TEAM_SCOPE),
-    );
+    void schedulerLock.runExclusive('retention', async () => {
+      for (const scope of await tenantScopes()) {
+        await retentionService.runAutoAnonymizeIfDue(scope).catch((err: unknown) => {
+          logger.warn(
+            { err: err instanceof Error ? err.message : String(err), scope },
+            'retention scheduled run failed',
+          );
+        });
+      }
+    });
   }, 60 * 60_000);
   retentionTimer.unref();
 
@@ -137,9 +173,35 @@ async function main(): Promise<void> {
   );
 
   const authEngine = app.get<AuthEngine>(AUTH_ENGINE);
+  const pdfRenderer = app.get<PdfRenderer>(PDF_RENDERER);
+
+  // Graceful shutdown: let in-flight requests drain (app.close() waits on the
+  // HTTP server) before releasing what they might still be using — the auth
+  // engine, the PDF renderer's Chromium process, and the pool. A hung close
+  // (e.g. a connection that never drains) must not wedge the process forever,
+  // so a bounded timeout force-exits instead.
+  const SHUTDOWN_TIMEOUT_MS = 10_000;
+  let shuttingDown = false;
   const shutdown = (signal: string) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
     logger.info({ signal }, 'shutting down');
-    void Promise.all([app.close(), authEngine.close?.()]).then(() => process.exit(0));
+    const forceExit = setTimeout(() => {
+      logger.error({ signal }, 'graceful shutdown timed out, forcing exit');
+      process.exit(1);
+    }, SHUTDOWN_TIMEOUT_MS);
+    forceExit.unref();
+    void app
+      .close()
+      .then(() => Promise.all([authEngine.close?.(), pdfRenderer.close?.(), pool?.end()]))
+      .then(() => process.exit(0))
+      .catch((err: unknown) => {
+        logger.error(
+          { err: err instanceof Error ? err.message : String(err), signal },
+          'error during shutdown',
+        );
+        process.exit(1);
+      });
   };
   process.on('SIGINT', () => shutdown('SIGINT'));
   process.on('SIGTERM', () => shutdown('SIGTERM'));

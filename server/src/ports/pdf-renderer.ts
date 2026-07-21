@@ -17,4 +17,6 @@ export interface PdfRenderer {
   /** Render an arbitrary self-contained HTML string (e.g. built from a talent's
    *  saved documents) to PDF. */
   renderHtml(html: string): Promise<Buffer>;
+  /** Release any held resources (e.g. a running browser) on shutdown. */
+  close?(): Promise<void>;
 }

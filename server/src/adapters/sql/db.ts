@@ -1,8 +1,13 @@
 import { Pool } from 'pg';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from './schema.js';
+import { lockId } from './pg-advisory-scheduler-lock.js';
 
-export type Db = NodePgDatabase<typeof schema>;
+// `& { $client: Pool }` keeps the underlying pool reachable off the Drizzle
+// handle (drizzle() actually returns this intersection; the plain
+// NodePgDatabase type alone drops it) — used by SqlRateLimiter, which needs
+// raw pool.query access rather than Drizzle's query builder.
+export type Db = NodePgDatabase<typeof schema> & { $client: Pool };
 
 /** Open a connection pool and a Drizzle handle for the given Postgres URL. */
 export function createDb(databaseUrl: string): { db: Db; pool: Pool } {
@@ -10,9 +15,39 @@ export function createDb(databaseUrl: string): { db: Db; pool: Pool } {
   return { db: drizzle(pool, { schema }), pool };
 }
 
-/** Create the tables if they do not exist. Idempotent; run on boot. */
+/** Stable advisory-lock id serializing concurrent migrations (see below). */
+const MIGRATION_LOCK_ID = lockId('migrate');
+
+/**
+ * Create the tables if they do not exist. Idempotent; run on boot.
+ *
+ * Serialized behind a **blocking** Postgres advisory lock (`pg_advisory_lock`,
+ * not the scheduler's non-blocking `pg_try_advisory_lock` — every instance
+ * must eventually run this, none may just skip it) so a multi-instance cold
+ * start can't race on it: `CREATE TABLE IF NOT EXISTS` is not safe under true
+ * concurrency (Postgres can raise `duplicate key value violates unique
+ * constraint "pg_type_typname_nsp_index"` when two sessions both create the
+ * same table's implicit row type at once — reproduced by hand while verifying
+ * #227's multi-instance Postgres path). Held on a single dedicated connection
+ * for the duration of the whole DDL block, then released; the other
+ * instance(s) simply wait their turn and find everything already created.
+ */
 export async function migrate(pool: Pool): Promise<void> {
-  await pool.query(`
+  const client = await pool.connect();
+  try {
+    await client.query('SELECT pg_advisory_lock($1)', [MIGRATION_LOCK_ID]);
+    try {
+      await runMigrationDdl(client);
+    } finally {
+      await client.query('SELECT pg_advisory_unlock($1)', [MIGRATION_LOCK_ID]);
+    }
+  } finally {
+    client.release();
+  }
+}
+
+async function runMigrationDdl(client: { query: Pool['query'] }): Promise<void> {
+  await client.query(`
     CREATE TABLE IF NOT EXISTS users (
       id text PRIMARY KEY,
       email text NOT NULL UNIQUE,
@@ -256,5 +291,10 @@ export async function migrate(pool: Pool): Promise<void> {
       at text NOT NULL
     );
     CREATE INDEX IF NOT EXISTS stage_transitions_owner_idx ON stage_transitions (owner_id, candidacy_id);
+    CREATE TABLE IF NOT EXISTS rate_limit_windows (
+      key text PRIMARY KEY,
+      count integer NOT NULL,
+      reset_at bigint NOT NULL
+    );
   `);
 }

@@ -35,4 +35,10 @@ COPY --from=build /app/assets ./assets
 # The file-backed user/session store and PDF archive live here; mount a volume.
 RUN mkdir -p archive
 EXPOSE 4178
+# Let the orchestrator (docker/compose/k8s) detect an unhealthy instance and
+# gate rolling deploys on the new instance actually serving traffic. Uses
+# node's own http client instead of curl/wget, neither of which is installed
+# in this slim image.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD ["node", "-e", "require('http').get('http://localhost:4178/api/v1/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
 CMD ["node", "server/dist/index.js"]

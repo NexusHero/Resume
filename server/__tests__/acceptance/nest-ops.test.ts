@@ -47,7 +47,9 @@ import {
   PASSWORD_RESET_TOKEN_STORE,
   EMAIL_VERIFICATION_TOKEN_STORE,
   USAGE_METER,
+  RATE_LIMITER,
 } from '../../src/nest/tokens.js';
+import { InMemoryRateLimiter } from '../../src/adapters/in-memory-rate-limiter.js';
 import {
   InMemoryMandateRepository,
   InMemoryTalentRepository,
@@ -127,6 +129,7 @@ describe('NestJS ops verticals (match, artifacts, retention, account, assistant)
         useValue: new InMemoryEmailVerificationTokenStore(),
       },
       { provide: USAGE_METER, useValue: new InMemoryUsageMeter() },
+      { provide: RATE_LIMITER, useValue: new InMemoryRateLimiter() },
     ];
     @Global()
     @Module({ providers: fakes, exports: fakes.map((p) => (p as { provide: symbol }).provide) })

@@ -2,6 +2,8 @@ import { Global, Module } from '@nestjs/common';
 import type { AppConfig } from '../config.js';
 import type { Logger } from '../ports/logger.js';
 import type { HttpFetch } from '../ports/http-fetch.js';
+import type { RateLimiter } from '../ports/rate-limiter.js';
+import type { Db } from '../adapters/sql/db.js';
 import { BetterAuthEngine } from '../adapters/better-auth/better-auth-engine.js';
 import { RoleAuthorizer } from '../adapters/role-authorizer.js';
 import { createMailer } from '../adapters/mailer-factory.js';
@@ -17,11 +19,14 @@ import { createEmbeddingProvider } from '../adapters/create-embedding-provider.j
 import { AnthropicLlmProvider } from '../adapters/anthropic-llm-provider.js';
 import { GeminiLlmProvider } from '../adapters/gemini-llm-provider.js';
 import { resilientFetch } from '../adapters/resilient-fetch.js';
+import { InMemoryRateLimiter } from '../adapters/in-memory-rate-limiter.js';
+import { SqlRateLimiter } from '../adapters/sql/sql-rate-limiter.js';
 import { LlmService } from '../services/llm-service.js';
 import {
   CONFIG,
   LOGGER,
   HTTP_FETCH,
+  DB,
   AUTH_ENGINE,
   AUTHORIZER,
   MAILER,
@@ -34,6 +39,7 @@ import {
   PLAN_PROVIDER,
   EMBEDDING_PROVIDER,
   LLM_SERVICE,
+  RATE_LIMITER,
 } from './tokens.js';
 
 /**
@@ -106,6 +112,18 @@ import {
       inject: [CONFIG, LOGGER, HTTP_FETCH],
     },
     {
+      // Shared across instances when STORE=sql (a Postgres-backed counter, so
+      // the credential brute-force and AI-spend guards enforce one true limit
+      // across a horizontally-scaled deployment); a per-process Map otherwise
+      // — correct for the single-instance fs-store default, and avoids a
+      // Postgres round-trip on every guarded request when there is no shared
+      // store to begin with.
+      provide: RATE_LIMITER,
+      useFactory: (config: AppConfig, db: Db | null): RateLimiter =>
+        config.store === 'sql' && db ? new SqlRateLimiter(db.$client) : new InMemoryRateLimiter(),
+      inject: [CONFIG, DB],
+    },
+    {
       provide: LLM_SERVICE,
       useFactory: (config: AppConfig, logger: Logger, httpFetch: HttpFetch) => {
         // A hung LLM call (unlike job sources / embeddings, which already go
@@ -142,6 +160,7 @@ import {
     PLAN_PROVIDER,
     EMBEDDING_PROVIDER,
     LLM_SERVICE,
+    RATE_LIMITER,
   ],
 })
 export class InfraModule {}

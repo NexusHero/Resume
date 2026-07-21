@@ -41,6 +41,7 @@ export const PDF_RENDERER = Symbol('PdfRenderer');
 export const PDF_TEXT_EXTRACTOR = Symbol('PdfTextExtractor');
 export const PLACEMENT_REPOSITORY = Symbol('PlacementRepository');
 export const PLAN_PROVIDER = Symbol('PlanProvider');
+export const RATE_LIMITER = Symbol('RateLimiter');
 export const RETENTION_POLICY_STORE = Symbol('RetentionPolicyStore');
 export const SAVED_SEARCH_REPOSITORY = Symbol('SavedSearchRepository');
 export const SCHEDULER_LOCK = Symbol('SchedulerLock');

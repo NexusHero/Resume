@@ -19,8 +19,10 @@ import {
   API_KEY_STORE,
   USER_REPOSITORY,
   PLAN_PROVIDER,
+  RATE_LIMITER,
 } from '../../src/nest/tokens.js';
 import { InMemoryApiKeyStore, InMemoryUserRepository, noopLogger } from '../support/fakes.js';
+import { InMemoryRateLimiter } from '../../src/adapters/in-memory-rate-limiter.js';
 
 class StampGuard implements CanActivate {
   canActivate(ctx: ExecutionContext): boolean {
@@ -47,6 +49,7 @@ describe('NestJS llm vertical (provider settings + keys)', () => {
       { provide: USER_REPOSITORY, useValue: new InMemoryUserRepository() },
       // The cover-letter route's PlanGuard resolves the caller's plan.
       { provide: PLAN_PROVIDER, useValue: { planFor: async () => 'pro' } },
+      { provide: RATE_LIMITER, useValue: new InMemoryRateLimiter() },
     ];
     @Global()
     @Module({ providers: fakes, exports: fakes.map((p) => (p as { provide: symbol }).provide) })

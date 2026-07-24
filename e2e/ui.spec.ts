@@ -834,6 +834,15 @@ test.describe('UI acceptance — the suite renders in German', () => {
       if (route.request().method() !== 'GET') return route.continue();
       return route.fulfill({ contentType: 'application/json', body: JSON.stringify([]) });
     });
+    // ApplyModal loads the candidate's documents/attachments before letting the
+    // recruiter submit; the pinned "me" candidate has none of either.
+    await page.route('**/api/v1/talents/user1/documents', (route) =>
+      route.fulfill({ status: 404, contentType: 'application/json', body: JSON.stringify({}) }),
+    );
+    await page.route('**/api/v1/talents/user1/attachments', (route) => {
+      if (route.request().method() !== 'GET') return route.continue();
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify([]) });
+    });
     await page.route('**/api/v1/auth/me', (route) =>
       route.fulfill({
         contentType: 'application/json',
@@ -852,8 +861,13 @@ test.describe('UI acceptance — the suite renders in German', () => {
     await expect(page.locator('main')).toContainText('Nordwind Logistik AG');
     await expect(page.locator('main')).not.toContainText('Acme Corp');
 
-    // Apply the pinned "me" candidate to that posting.
+    // "Bewerben" opens the ApplyModal (ZIP download + HTML parsing); submitting
+    // there is what actually records the application.
     await page.getByRole('button', { name: /Nora bewerben/ }).click();
+    const modal = page.getByRole('dialog', { name: 'Bewerbung vorbereiten' });
+    await expect(modal).toBeVisible();
+    await modal.getByRole('button', { name: 'Im System speichern' }).click();
+    await expect(modal).toBeHidden();
     await expect(page.getByRole('button', { name: /Beworben · Nora/ })).toBeVisible();
 
     // The application is recorded and shows up on the Pipeline board.

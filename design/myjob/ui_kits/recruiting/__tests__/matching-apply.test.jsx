@@ -9,6 +9,7 @@ let Matching;
 
 beforeAll(async () => {
   await import('../DataStates.jsx');
+  await import('../ApplyModal.jsx');
   await import('../Matching.jsx');
   Matching = window.Matching;
 });
@@ -33,6 +34,8 @@ describe('Matching — apply on a candidate’s behalf', () => {
   beforeEach(() => {
     window.RecruitApi = {
       searchJobs: vi.fn().mockResolvedValue({ jobs: [job], liveDown: false }),
+      getTalentDocuments: vi.fn().mockResolvedValue(null),
+      listAttachments: vi.fn().mockResolvedValue([]),
     };
   });
 
@@ -43,8 +46,16 @@ describe('Matching — apply on a candidate’s behalf', () => {
     await waitFor(() => expect(screen.getByText('Nora bewerben')).toBeInTheDocument());
     await userEvent.click(screen.getByText('Nora bewerben'));
 
-    expect(onApply).toHaveBeenCalledTimes(1);
-    expect(onApply.mock.calls[0][0]).toMatchObject({ id: 'j1', company: 'Aurora Systems' });
+    const saveBtn = await screen.findByRole('button', { name: /^Im System speichern/i });
+    await waitFor(() => expect(saveBtn).not.toBeDisabled());
+    await userEvent.click(saveBtn);
+
+    await waitFor(() => expect(onApply).toHaveBeenCalledTimes(1));
+    expect(onApply.mock.calls[0][0]).toMatchObject({
+      id: 'j1',
+      company: 'Aurora Systems',
+      title: 'Bewerbung als Senior C++ Engineer',
+    });
     expect(onApply.mock.calls[0][1]).toMatchObject({ id: 'me', name: 'Nora Kessler' });
     await waitFor(() => expect(screen.getByText('Beworben · Nora')).toBeInTheDocument());
   });
@@ -111,7 +122,19 @@ describe('Matching — apply without a job board', () => {
 
   beforeEach(() => {
     // No live postings at all — the manual apply path must still work.
-    window.RecruitApi = { searchJobs: vi.fn().mockResolvedValue({ jobs: [], liveDown: true }) };
+    window.FileReader = vi.fn().mockImplementation(() => ({
+      readAsDataURL: function () {
+        this.result = 'data:application/pdf;base64,fake-pdf-base64';
+        this.onload();
+      },
+    }));
+    window.RecruitApi = {
+      searchJobs: vi.fn().mockResolvedValue({ jobs: [], liveDown: true }),
+      getTalentDocuments: vi.fn().mockResolvedValue(null),
+      listAttachments: vi.fn().mockResolvedValue([]),
+      talentDossierPreviewZip: vi.fn().mockResolvedValue(new Blob(['pdf'])),
+      talentDossierPreviewPdf: vi.fn().mockResolvedValue(new Blob(['pdf'])),
+    };
   });
 
   it('ManualRole_TypedCompanyAndRole_AppliesSelectedCandidate', async () => {
@@ -121,10 +144,17 @@ describe('Matching — apply without a job board', () => {
     await userEvent.click(await screen.findByText('Manuell'));
     await userEvent.type(screen.getByLabelText('Unternehmen'), 'Helio GmbH');
     await userEvent.type(screen.getByLabelText('Stelle'), 'Backend Engineer');
-    await userEvent.click(screen.getByRole('button', { name: /^Bewerben$/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^Bewerben/i }));
 
-    expect(onApply).toHaveBeenCalledTimes(1);
-    expect(onApply.mock.calls[0][0]).toMatchObject({ company: 'Helio GmbH', title: 'Backend Engineer' });
+    const saveBtn = await screen.findByRole('button', { name: /^Im System speichern/i });
+    await waitFor(() => expect(saveBtn).not.toBeDisabled());
+    await userEvent.click(saveBtn);
+
+    await waitFor(() => expect(onApply).toHaveBeenCalledTimes(1));
+    expect(onApply.mock.calls[0][0]).toMatchObject({
+      company: 'Helio GmbH',
+      title: 'Bewerbung als Backend Engineer',
+    });
     expect(onApply.mock.calls[0][1]).toMatchObject({ id: 'me' });
     await waitFor(() => expect(screen.getByText('Beworben')).toBeInTheDocument());
   });

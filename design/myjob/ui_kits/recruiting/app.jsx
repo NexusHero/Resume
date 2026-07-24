@@ -199,8 +199,8 @@ function Workspace({ user, onLogout }) {
   // Apply on a candidate's behalf from Matching: record the application (which
   // captures the posting's company + role) and refresh the pipeline so it shows
   // up on the Applications board.
-  const applyFromMatching = (job, talent) =>
-    window.RecruitApi.applyCandidate(job, talent).then((app) => {
+  const applyFromMatching = (job, talent, pdfBase64) =>
+    window.RecruitApi.applyCandidate(job, talent, pdfBase64).then((app) => {
       applicationsRes.reload();
       return app;
     });
@@ -434,7 +434,7 @@ function Workspace({ user, onLogout }) {
       children: (
         <>
           <window.Editor talent={editTalent} onClose={() => setEditing(null)} onCreateMappe={() => { setMappeFor(editTalent); }} />
-          {mappeFor && <window.MappeModal talent={mappeFor} onClose={() => setMappeFor(null)} />}
+          {mappeFor && <window.ApplyModal target={{ talent: mappeFor }} onClose={() => setMappeFor(null)} />}
         </>
       ),
     });
@@ -510,7 +510,7 @@ function Workspace({ user, onLogout }) {
       <>
         {subTabs}
         {body}
-        {mappeFor && <window.MappeModal talent={mappeFor} onClose={() => setMappeFor(null)} />}
+        {mappeFor && <window.ApplyModal target={{ talent: mappeFor }} onClose={() => setMappeFor(null)} />}
         {formKind && (
           <window.RecordFormModal
             kind={formKind}

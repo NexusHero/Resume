@@ -114,6 +114,68 @@ export class DocumentsController {
     res.setHeader('Content-Disposition', `inline; filename="dossier-${id}.pdf"`);
     res.send(buffer);
   }
+
+  @Post('dossier/pdf')
+  @HttpCode(200)
+  async previewDossier(
+    @CurrentScope() scope: string,
+    @Param('id') id: string,
+    @Query() q: Record<string, unknown>,
+    @Body(new ZodValidationPipe(saveDocumentsSchema))
+    input: ReturnType<typeof saveDocumentsSchema.parse>,
+    @Res() res: Response,
+  ) {
+    const attachmentIds = (str(q.attachments) ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const buffer = await this.service.renderDossierFromDocuments(
+      scope,
+      input as unknown as import('../../domain/talent-documents.js').TalentDocuments,
+      {
+        company: str(q.company),
+        contactName: str(q.contact),
+        street: str(q.street),
+        postalCodeCity: str(q.plzOrt),
+        subject: str(q.subject),
+      },
+      attachmentIds,
+    );
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="dossier-${id}.pdf"`);
+    res.send(buffer);
+  }
+
+  @Post('dossier/zip')
+  @HttpCode(200)
+  async previewDossierZip(
+    @CurrentScope() scope: string,
+    @Param('id') id: string,
+    @Query() q: Record<string, unknown>,
+    @Body(new ZodValidationPipe(saveDocumentsSchema))
+    input: ReturnType<typeof saveDocumentsSchema.parse>,
+    @Res() res: Response,
+  ) {
+    const attachmentIds = (str(q.attachments) ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const buffer = await this.service.renderDossierZip(
+      scope,
+      input as unknown as import('../../domain/talent-documents.js').TalentDocuments,
+      {
+        company: str(q.company),
+        contactName: str(q.contact),
+        street: str(q.street),
+        postalCodeCity: str(q.plzOrt),
+        subject: str(q.subject),
+      },
+      attachmentIds,
+    );
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="Bewerbung-${id}.zip"`);
+    res.send(buffer);
+  }
 }
 
 @Module({

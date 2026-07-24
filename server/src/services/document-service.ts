@@ -9,6 +9,7 @@ import {
 import { detectLanguage } from '../domain/language.js';
 import type { OutputLang } from '../domain/language.js';
 import { documentsToHtml } from '../domain/documents-html.js';
+import AdmZip from 'adm-zip';
 import { deriveDisplayNameFromEmail } from '../domain/display-name.js';
 import { NotFoundError } from '../domain/errors.js';
 import type { DocumentRepository } from '../ports/document-repository.js';
@@ -206,6 +207,46 @@ export class DocumentService {
   ): Promise<Buffer> {
     const documents = await this.get(ownerId, talentId);
     return this.renderDossierFromDocuments(ownerId, documents, recipient, attachmentIds);
+  }
+
+  /**
+   * Render a Bewerbungsmappe as a ZIP archive containing the PDF and a self-contained HTML file
+   * (which embeds the structured documents JSON for reliable re-import).
+   */
+  async renderDossierZip(
+    ownerId: string,
+    documents: TalentDocuments,
+    recipient: DossierRecipient,
+    attachmentIds: string[] = [],
+  ): Promise<Buffer> {
+    const merged: TalentDocuments = {
+      ...documents,
+      letter: {
+        ...documents.letter,
+        firma: recipient.company || documents.letter.firma,
+        ansprechpartner: recipient.contactName || documents.letter.ansprechpartner,
+        strasse: recipient.street || documents.letter.strasse,
+        plzOrt: recipient.postalCodeCity || documents.letter.plzOrt,
+        betreff: recipient.subject || documents.letter.betreff,
+      },
+    };
+
+    const pdfBuffer = await this.renderDossierFromDocuments(
+      ownerId,
+      documents,
+      recipient,
+      attachmentIds,
+    );
+    const htmlString = documentsToHtml(merged, { letterDate: this.letterDate(merged) });
+    const finalHtml =
+      htmlString +
+      `\n<script id="myjob-resume-data" type="application/json">${JSON.stringify(documents)}</script>`;
+
+    const zip = new AdmZip();
+    zip.addFile('Bewerbung.pdf', pdfBuffer);
+    zip.addFile('Bewerbung.html', Buffer.from(finalHtml, 'utf8'));
+
+    return zip.toBuffer();
   }
 
   /**

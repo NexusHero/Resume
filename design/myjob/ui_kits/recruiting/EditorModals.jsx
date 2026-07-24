@@ -31,39 +31,56 @@ function ImportCvModal({ talentId, onParsed, onClose }) {
     }
     setParsing(false);
   };
-  const runImportPdf = async (e) => {
+  const runImportFile = async (e) => {
     const file = e.target.files && e.target.files[0];
     e.target.value = '';
     if (!file || !talentId) return;
     setParsing(true);
     setImportHint('');
     try {
-      const dataBase64 = await new Promise((res, rej) => {
-        const r = new FileReader();
-        r.onload = () => res(String(r.result).split(',')[1] || '');
-        r.onerror = rej;
-        r.readAsDataURL(file);
-      });
-      const parsed = await window.RecruitApi.parseDocumentPdf(talentId, dataBase64);
-      if (parsed.extractedChars === 0) {
-        // scanned/image-only PDF — no text layer to read
-        setImportHint('In diesem PDF wurde kein Text gefunden (gescanntes Bild?). Bitte füge den Text stattdessen ein.');
-      } else {
-        onParsed(parsed);
+      if (file.name.endsWith('.html') || file.type === 'text/html') {
+        const text = await file.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, 'text/html');
+        const script = doc.getElementById('myjob-resume-data');
+        if (script && script.textContent) {
+          const documents = JSON.parse(script.textContent);
+          onParsed({ resume: documents.resume, contact: documents.contact, provider: 'html' });
+          onClose();
+          setParsing(false);
+          return;
+        }
+        // Fallback if no json data island found, extract text
+        const bodyText = doc.body ? doc.body.innerText : text;
+        onParsed(await window.RecruitApi.parseDocument(talentId, bodyText));
         onClose();
+      } else {
+        const dataBase64 = await new Promise((res, rej) => {
+          const r = new FileReader();
+          r.onload = () => res(String(r.result).split(',')[1] || '');
+          r.onerror = rej;
+          r.readAsDataURL(file);
+        });
+        const parsed = await window.RecruitApi.parseDocumentPdf(talentId, dataBase64);
+        if (parsed.extractedChars === 0) {
+          setImportHint('In diesem PDF wurde kein Text gefunden (gescanntes Bild?). Bitte füge den Text stattdessen ein.');
+        } else {
+          onParsed(parsed);
+          onClose();
+        }
       }
     } catch {
-      setImportHint('Dieses PDF konnte nicht gelesen werden. Bitte füge den Text stattdessen ein.');
+      setImportHint('Die Datei konnte nicht gelesen werden. Bitte füge den Text stattdessen ein.');
     }
     setParsing(false);
   };
 
   return (
-    <EdmModalShell title="CV importieren" subtitle="PDF hochladen oder den Lebenslauf-Text einfügen — die KI übernimmt Kurzprofil, Berufserfahrung und Skills in den Editor." onClose={onClose} scroll={false}>
-      <input ref={pdfInputRef} type="file" accept="application/pdf,.pdf" onChange={runImportPdf} style={{ display: 'none' }} />
+    <EdmModalShell title="CV importieren" subtitle="PDF/HTML hochladen oder den Lebenslauf-Text einfügen — die KI übernimmt Kurzprofil, Berufserfahrung und Skills in den Editor." onClose={onClose} scroll={false}>
+      <input ref={pdfInputRef} type="file" accept=".pdf,.html" onChange={runImportFile} style={{ display: 'none' }} />
       <div style={{ marginBottom: '12px' }}>
         <button onClick={() => pdfInputRef.current && pdfInputRef.current.click()} disabled={parsing} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'none', border: '1px dashed var(--border-strong)', borderRadius: 'var(--radius-md)', cursor: parsing ? 'default' : 'pointer', fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-soft)', padding: '10px 16px', width: '100%', justifyContent: 'center' }}>
-          <EDM.Icon name="upload" size={14} /> {parsing ? 'Lese…' : 'PDF hochladen'}
+          <EDM.Icon name="upload" size={14} /> {parsing ? 'Lese…' : 'PDF / HTML hochladen'}
         </button>
       </div>
       <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'center', margin: '0 0 10px' }}>oder Text einfügen</div>

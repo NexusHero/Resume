@@ -262,13 +262,16 @@ function Matching({ talents, mandates = [], onCreateMandate, onApply }) {
         )}
       </div>
 
-      {applyTarget && (
-        <window.ApplyModal
-          target={applyTarget}
-          onClose={() => setApplyTarget(null)}
-          onApply={handleApplyConfirm}
-        />
-      )}
+      {applyTarget && (() => {
+        const Modal = window.ApplyModal;
+        return (
+          <Modal
+            target={applyTarget}
+            onClose={() => setApplyTarget(null)}
+            onApply={handleApplyConfirm}
+          />
+        );
+      })()}
     </div>
   );
 }

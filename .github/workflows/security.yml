@@ -31,7 +31,7 @@ jobs:
     # (Settings → Code security → Dependency graph). Informational until then.
     if: github.event_name == 'pull_request'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/dependency-review-action@v5
         continue-on-error: true
         with:

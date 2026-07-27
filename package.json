@@ -41,7 +41,7 @@
     "better-sqlite3": "^12.11.1",
     "drizzle-orm": "^0.45.2",
     "express": "^5.2.1",
-    "express-rate-limit": "^8.5.2",
+    "express-rate-limit": "^8.6.1",
     "imapflow": "^1.4.7",
     "nodemailer": "^9.0.3",
     "pdf-lib": "^1.17.1",

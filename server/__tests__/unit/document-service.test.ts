@@ -1,3 +1,4 @@
+import AdmZip from 'adm-zip';
 import { DocumentService } from '../../src/services/document-service.js';
 import { NotFoundError } from '../../src/domain/errors.js';
 import {
@@ -340,6 +341,55 @@ describe('DocumentService', () => {
     );
     const pdf = await c.service.renderDossierPdf(OWNER, 't1', {}, ['a1']);
     expect(pdf.toString()).not.toContain('PNG-BYTES'); // non-PDF not merged
+  });
+
+  it('RenderDossierZip_ContainsPdfAndHtmlWithRecipientAndEmbeddedDocumentsJson', async () => {
+    const c = ctx();
+    await c.talents.add(talent('t1'));
+    await c.service.save(OWNER, 't1', input);
+    const documents = await c.service.get(OWNER, 't1');
+
+    const zipBuffer = await c.service.renderDossierZip(OWNER, documents, {
+      company: 'Helio GmbH',
+      subject: 'Bewerbung als Lead',
+    });
+
+    const zip = new AdmZip(zipBuffer);
+    const entryNames = zip.getEntries().map((e) => e.entryName);
+    expect(entryNames.sort()).toEqual(['Bewerbung.html', 'Bewerbung.pdf']);
+
+    const pdfEntry = zip.getEntry('Bewerbung.pdf')?.getData();
+    expect(pdfEntry?.length).toBeGreaterThan(0);
+
+    const htmlEntry = zip.getEntry('Bewerbung.html')?.getData().toString('utf8') ?? '';
+    expect(htmlEntry).toContain('Helio GmbH'); // recipient override, in the letter
+    expect(htmlEntry).toContain('<script id="myjob-resume-data" type="application/json">'); // embedded structured documents for re-import
+    expect(htmlEntry).toContain('"firma":"Aurora Systems GmbH"'); // embedded JSON keeps the saved (unmerged) letter
+  });
+
+  it('RenderDossierZip_AppendsSelectedPdfAttachments', async () => {
+    const c = ctx();
+    await c.talents.add(talent('t1'));
+    await c.service.save(OWNER, 't1', input);
+    const documents = await c.service.get(OWNER, 't1');
+    await c.attachments.add(
+      {
+        id: 'a1',
+        ownerId: OWNER,
+        talentId: 't1',
+        name: 'Zeugnis.pdf',
+        contentType: 'application/pdf',
+        size: 5,
+        createdAt: 'now',
+      },
+      Buffer.from('ATTACHMENT-BYTES'),
+    );
+
+    const zipBuffer = await c.service.renderDossierZip(OWNER, documents, {}, ['a1']);
+
+    const zip = new AdmZip(zipBuffer);
+    const pdfEntry = zip.getEntry('Bewerbung.pdf')?.getData().toString() ?? '';
+    expect(pdfEntry).toContain('ATTACHMENT-BYTES'); // attachment merged into the PDF part
   });
 
   it('Get_UnknownTalent_Throws404', async () => {

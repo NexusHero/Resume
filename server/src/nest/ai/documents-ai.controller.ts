@@ -34,8 +34,10 @@ export class DocumentsAiController {
     @Body(new ZodValidationPipe(aiSuggestSchema))
     body: ReturnType<typeof aiSuggestSchema.parse>,
   ) {
-    const { action, role, company } = body;
-    return { suggestion: await this.ai.suggest(scope, userId, id, action, { role, company }) };
+    const { action, role, company, jobText } = body;
+    return {
+      suggestion: await this.ai.suggest(scope, userId, id, action, { role, company, jobText }),
+    };
   }
 
   @Post('parse')

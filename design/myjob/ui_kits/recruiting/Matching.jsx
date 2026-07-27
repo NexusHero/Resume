@@ -24,10 +24,13 @@ function Matching({ talents, mandates = [], onCreateMandate, onApply }) {
   const [query, setQuery] = React.useState('');
   // Per-job apply state: 'busy' | 'done' | 'error' (absent = idle).
   const [applyState, setApplyState] = React.useState({});
+  // The target for the ApplyModal: { job, cand }
+  const [applyTarget, setApplyTarget] = React.useState(null);
+
   // Board-independent "apply to a role": company + role typed directly or
   // prefilled from one of the recruiter's own mandates. This makes applying a
   // candidate possible even when no live posting is loaded (offline / board down).
-  const [manual, setManual] = React.useState({ company: '', role: '' });
+  const [manual, setManual] = React.useState({ company: '', role: '', location: '' });
 
   // Live postings — loaded once; the search box filters client-side so typing
   // stays instant (the boards are already merged server-side).
@@ -55,25 +58,34 @@ function Matching({ talents, mandates = [], onCreateMandate, onApply }) {
   }, [load]);
 
   const cand = talents.find((t) => t.id === candId) || talents[0];
-  // Apply the selected candidate to a posting. Keyed by candidate+job so the
-  // "Applied" state is specific to who you applied, not just which role.
-  const apply = (job) => {
+  
+  // Confirmed apply from the modal (updates local state so the button shows 'Beworben')
+  const handleApplyConfirm = async (job, cand, pdfBase64) => {
     if (!onApply) return;
-    const key = `${cand.id}:${job.id}`;
+    const key = job.id === 'manual' ? `${cand.id}:manual` : `${cand.id}:${job.id}`;
     setApplyState((s) => ({ ...s, [key]: 'busy' }));
-    Promise.resolve(onApply(job, cand))
-      .then(() => setApplyState((s) => ({ ...s, [key]: 'done' })))
-      .catch(() => setApplyState((s) => ({ ...s, [key]: 'error' })));
+    try {
+      await Promise.resolve(onApply(job, cand, pdfBase64));
+      setApplyState((s) => {
+        const next = { ...s, [key]: 'done' };
+        if (job.id === 'manual') next['manual-dirty'] = false;
+        return next;
+      });
+    } catch (e) {
+      setApplyState((s) => ({ ...s, [key]: 'error' }));
+      throw e;
+    }
   };
-  // Apply the selected candidate to a typed/mandate-derived role — no posting needed.
+
+  // Open the ApplyModal for a posting.
+  const apply = (job) => {
+    setApplyTarget({ job, cand });
+  };
+  // Open the ApplyModal for a typed/mandate-derived role.
   const applyManual = () => {
     if (!onApply) return;
-    const job = { id: 'manual', company: manual.company.trim(), title: manual.role.trim(), url: '' };
-    const key = `${cand.id}:manual`;
-    setApplyState((s) => ({ ...s, [key]: 'busy' }));
-    Promise.resolve(onApply(job, cand))
-      .then(() => setApplyState((s) => ({ ...s, [key]: 'done', 'manual-dirty': false })))
-      .catch(() => setApplyState((s) => ({ ...s, [key]: 'error' })));
+    const job = { id: 'manual', company: manual.company.trim(), title: manual.role.trim(), location: manual.location?.trim() || '', url: '' };
+    setApplyTarget({ job, cand });
   };
   if (error) return <window.ErrorState onRetry={load} />;
   if (jobs === null) return <window.LoadingState />;
@@ -163,6 +175,7 @@ function Matching({ talents, mandates = [], onCreateMandate, onApply }) {
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
               <input value={manual.company} onChange={(e) => setManual((s) => ({ ...s, company: e.target.value }))} placeholder="Unternehmen" aria-label="Unternehmen" style={inp} />
               <input value={manual.role} onChange={(e) => setManual((s) => ({ ...s, role: e.target.value }))} placeholder="Stelle" aria-label="Stelle" style={inp} />
+              <input value={manual.location || ''} onChange={(e) => setManual((s) => ({ ...s, location: e.target.value }))} placeholder="Ort" aria-label="Ort" style={inp} />
               <button
                 onClick={applyManual}
                 disabled={!ready || st === 'busy'}
@@ -248,6 +261,14 @@ function Matching({ talents, mandates = [], onCreateMandate, onApply }) {
           <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-soft)', border: '1px dashed var(--border-strong)', borderRadius: 'var(--radius-lg)' }}>Keine Treffer.</div>
         )}
       </div>
+
+      {applyTarget && (
+        <window.ApplyModal
+          target={applyTarget}
+          onClose={() => setApplyTarget(null)}
+          onApply={handleApplyConfirm}
+        />
+      )}
     </div>
   );
 }

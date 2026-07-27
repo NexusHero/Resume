@@ -11,12 +11,14 @@ export const aiSuggestSchema = z.object({
   action: z.enum(['summary', 'letter']),
   role: z.string().optional(),
   company: z.string().optional(),
+  jobText: z.string().optional(),
 });
 
 /** Optional targeting for a cover letter — the role/company it's aimed at. */
 export interface DocumentAiTarget {
   role?: string;
   company?: string;
+  jobText?: string;
 }
 
 /** Prompt to rewrite the resume summary from the talent's own facts. */
@@ -56,7 +58,7 @@ export function letterPrompt(
       (lang === 'de' ? ' Antworte ausschließlich auf Deutsch.' : ' Respond in English only.'),
     prompt: `Candidate facts:\n${candidateFacts(documents)}\n\nTarget position: ${
       aim || '(not specified)'
-    }\n\nReturn only the three paragraphs.`,
+    }\n\n${target.jobText ? `Job ad description:\n${target.jobText}\n\n` : ''}Return only the three paragraphs.`,
   };
 }
 

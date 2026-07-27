@@ -489,7 +489,7 @@ const RecruitApi = {
   /* Apply on a candidate's behalf from Matching: record an application that
      carries the posting's company + role, so it lands in the Applications
      pipeline and the company data is captured on the submission. */
-  async applyCandidate(job, talent) {
+  async applyCandidate(job, talent, pdfBase64 = null) {
     const body = {
       company: job.company || '',
       position: job.title || '',
@@ -498,8 +498,8 @@ const RecruitApi = {
       status: 'sent',
       talentName: (talent && talent.name) || '',
     };
-    // The pinned "me" profile has no talent row, so only link a real pool talent.
     if (talent && talent.id && talent.id !== 'me') body.talentId = talent.id;
+    if (pdfBase64) body.pdfBase64 = pdfBase64;
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/applications`, {
         method: 'POST',
@@ -809,6 +809,30 @@ const RecruitApi = {
     for (const [k, v] of Object.entries(recipient)) if (v) q.set(k, v);
     const qs = q.toString();
     return `${RECRUIT_API_BASE}/talents/${talentId}/dossier/pdf${qs ? `?${qs}` : ''}`;
+  },
+  async talentDossierPreviewPdf(talentId, documents, recipient = {}) {
+    const q = new URLSearchParams();
+    for (const [k, v] of Object.entries(recipient)) if (v) q.set(k, v);
+    const qs = q.toString();
+    const res = await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/dossier/pdf${qs ? `?${qs}` : ''}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(documents),
+    });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return await res.blob();
+  },
+  async talentDossierPreviewZip(talentId, documents, recipient = {}) {
+    const q = new URLSearchParams();
+    for (const [k, v] of Object.entries(recipient)) if (v) q.set(k, v);
+    const qs = q.toString();
+    const res = await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/dossier/zip${qs ? `?${qs}` : ''}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(documents),
+    });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return await res.blob();
   },
   /* ---- Attachments (files stored server-side per talent) ---- */
   async listAttachments(talentId) {

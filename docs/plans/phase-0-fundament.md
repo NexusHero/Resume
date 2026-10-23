@@ -4,6 +4,8 @@ Issue #309 · Branch `claude/app-matching-bugs-d0crk0` · Entscheidung: [ADR-005
 
 Stand: überarbeitet nach Plan-Review Runde 1 und den Owner-Entscheidungen (Abschnitt 9.2). Es gibt noch keinen Code und keine Tests. Alle Pfade sind relativ zur Repo-Wurzel; `UI/` steht für `design/myjob/ui_kits/recruiting/`.
 
+> **Überholt (ADR-0057, Issue #311):** Der DSGVO-Export enthält aktuell KEINE Dokumente/`rawText`. Die in diesem Plan-Dokument enthaltenen Aussagen dazu sind als **veraltet** zu lesen; Issue #311 plant, die Dokumente/`rawText` in den Export aufzunehmen.
+
 ---
 
 ## 1. Ziel

@@ -36,6 +36,8 @@ docker-compose.override.yml
 !archive/bewerbungen/*.pdf
 # ...but never the dev filesystem store's JSON files (DATA_DIR defaults here)
 archive/bewerbungen/*.json
+# ...nor the attachment blobs (uploaded CV PDFs etc. with personal data)
+archive/bewerbungen/attachments/
 
 # Vite build output (recruiting kit)
 design/myjob/ui_kits/recruiting/dist/

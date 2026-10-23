@@ -41,8 +41,10 @@ job-application toolkit:
   grounding self-check over generated text. There is **no template fallback** that
   impersonates AI (ADR-0057). The one named exception is the CV import without a
   key: "Text übernehmen (ohne KI)" stores the full CV text in `resume.rawText`
-  (≤ 50,000 characters) and invents no structure; `rawText` is exported in the
-  GDPR export, never rendered/sent in prompts, and cleared on anonymisation.
+  (≤ 50,000 characters) and invents no structure; `rawText` is an internal raw
+  source — never rendered/sent in prompts, cleared on anonymisation, and **not**
+  (yet) part of the GDPR account export (the export ships no documents; adding
+  them is tracked in issue #311).
 - **CoRecruiter** — an in-process agent (ADR-0013) that prepares the desk proactively
   (shortlists, stalled-pipeline nudges, data-gap flags) and, in its top `autopilot` gear
   (ADR-0019), builds complete tailored application packets for strong matches and stages

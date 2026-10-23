@@ -58,6 +58,17 @@ describe('documentsToHtml', () => {
     expect(html).toContain('Zweiter Absatz.');
   });
 
+  it('DocumentRendering_ExcludesRawText', () => {
+    // The internal raw CV text is never rendered into the preview HTML / PDF
+    // (ADR-0057): only the structured sections are.
+    const withRaw = {
+      ...documents,
+      resume: { ...documents.resume, rawText: 'CONFIDENTIAL-RAW-CV-CONTENT' },
+    };
+    const html = documentsToHtml(withRaw);
+    expect(html).not.toContain('CONFIDENTIAL-RAW-CV-CONTENT');
+  });
+
   it('AppliesTheSharedAccentStyle', () => {
     const html = documentsToHtml(documents);
     expect(html).toContain('#1F8A5B'); // accent drives the page

@@ -66,6 +66,15 @@ describe('document-translate', () => {
     it('GermanTarget_NamesGerman', () => {
       expect(translatePrompt(docs(), 'de').system).toContain('German');
     });
+    it('TranslatePrompt_ExcludesRawText', () => {
+      // The internal raw CV text must never be sent to a model, even for
+      // translation (ADR-0057): the prompt carries the structured resume only.
+      const d = docs();
+      d.resume.rawText = 'CONFIDENTIAL-RAW-CV-CONTENT';
+      const { prompt } = translatePrompt(d, 'en');
+      expect(prompt).not.toContain('CONFIDENTIAL-RAW-CV-CONTENT');
+      expect(prompt).toContain('Erfahrene Entwicklerin'); // the structured body IS sent
+    });
   });
 
   describe('translateResultSchema', () => {

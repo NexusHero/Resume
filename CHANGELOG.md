@@ -74,10 +74,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
   generation (ADR-0057): a failed/unusable upstream call is now `502`, a
   missing key `503`. Deterministic non-generative helpers (offline matching,
   grounding, AGG check/rewrite, ATS gap) stay offline.
-- **Removed per-user AI keys and the per-user provider choice** (ADR-0057).
-  The `settings/keys` routes, the encrypted key store and `secret-cipher` are
-  gone; a boot-time file migration deletes the legacy `api-keys.json`, and the
-  SQL migration drops `api_keys` and `users.llm_provider`.
+- **Removed per-user AI keys** (ADR-0057). The `settings/keys` routes, the
+  encrypted key store and `secret-cipher` are gone; a boot-time file migration
+  deletes the legacy `api-keys.json`, and the SQL migration deletes the
+  `api_keys` **rows** but keeps the table (expand/contract, `DROP TABLE` follows
+  in a later release). The persisted per-user provider choice
+  (`users.llm_provider`) is kept, limited to providers with a server key.
 
 ### Fixed
 
@@ -135,26 +137,6 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
   talent, invalidated when either the talent record or their documents change,
   and pruned when a talent leaves the pool.
 
-### Changed (breaking)
-
-- **`POST /api/v1/cover-letter` now requires a login** (anonymous callers get
-  `401`). The open route with the template fallback is gone (ADR-0057).
-- **`/api/v1/settings/keys*` is removed** (per-user AI keys). The AI routes
-  answer `503 ai-not-configured` instead of template text; a failed provider
-  call is `502`.
-- **Navigation/API switch:** the intermediary features are **off for every
-  workspace** by default. An admin enables them under Einstellungen → Workspace
-  → Vermittlung. At boot the server logs one warning per workspace that holds
-  recruiter data while the switch is off. Nothing is deleted; data reappears
-  unchanged after switching on.
-- **CV import without a key** is the named mode "Text übernehmen (ohne KI)":
-  the full CV text is stored (`resume.rawText`, up to 50,000 characters), the
-  PDF is kept as an attachment on bulk import, and no structure is invented.
-- **Database (expand/contract):** `api_keys` rows are deleted on boot, the empty
-  table stays for one release (a later release drops it); `users.llm_provider`
-  is preserved (the provider choice stays, limited to providers with a server
-  key).
-
 ### Changed
 
 - **Design-system handoff refresh (v3).** Re-adopts a third myJob design-system
@@ -207,26 +189,6 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
   off per-instance SQLite onto the shared Postgres pool (blocks true
   horizontal scaling), and caching per-talent profile embeddings in
   `MatchService.rankPool` (recomputed on every ranking call today).
-
-### Changed (breaking)
-
-- **`POST /api/v1/cover-letter` now requires a login** (anonymous callers get
-  `401`). The open route with the template fallback is gone (ADR-0057).
-- **`/api/v1/settings/keys*` is removed** (per-user AI keys). The AI routes
-  answer `503 ai-not-configured` instead of template text; a failed provider
-  call is `502`.
-- **Navigation/API switch:** the intermediary features are **off for every
-  workspace** by default. An admin enables them under Einstellungen → Workspace
-  → Vermittlung. At boot the server logs one warning per workspace that holds
-  recruiter data while the switch is off. Nothing is deleted; data reappears
-  unchanged after switching on.
-- **CV import without a key** is the named mode "Text übernehmen (ohne KI)":
-  the full CV text is stored (`resume.rawText`, up to 50,000 characters), the
-  PDF is kept as an attachment on bulk import, and no structure is invented.
-- **Database (expand/contract):** `api_keys` rows are deleted on boot, the empty
-  table stays for one release (a later release drops it); `users.llm_provider`
-  is preserved (the provider choice stays, limited to providers with a server
-  key).
 
 ### Changed
 
@@ -379,26 +341,6 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
   spine keeps the dark band full-height on every page while the cover letter
   stays clean.
 
-### Changed (breaking)
-
-- **`POST /api/v1/cover-letter` now requires a login** (anonymous callers get
-  `401`). The open route with the template fallback is gone (ADR-0057).
-- **`/api/v1/settings/keys*` is removed** (per-user AI keys). The AI routes
-  answer `503 ai-not-configured` instead of template text; a failed provider
-  call is `502`.
-- **Navigation/API switch:** the intermediary features are **off for every
-  workspace** by default. An admin enables them under Einstellungen → Workspace
-  → Vermittlung. At boot the server logs one warning per workspace that holds
-  recruiter data while the switch is off. Nothing is deleted; data reappears
-  unchanged after switching on.
-- **CV import without a key** is the named mode "Text übernehmen (ohne KI)":
-  the full CV text is stored (`resume.rawText`, up to 50,000 characters), the
-  PDF is kept as an attachment on bulk import, and no structure is invented.
-- **Database (expand/contract):** `api_keys` rows are deleted on boot, the empty
-  table stays for one release (a later release drops it); `users.llm_provider`
-  is preserved (the provider choice stays, limited to providers with a server
-  key).
-
 ### Changed
 
 - **Clearer navigation taxonomy.** Matching moved from **People** into the
@@ -486,26 +428,6 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
   persisted by both the file and SQL stores.
 - **Placements can be deleted from the UI** (ADR-0047, FR-17): the edit form has a
   confirming Delete action wired to the existing `DELETE /placements/:id`.
-
-### Changed (breaking)
-
-- **`POST /api/v1/cover-letter` now requires a login** (anonymous callers get
-  `401`). The open route with the template fallback is gone (ADR-0057).
-- **`/api/v1/settings/keys*` is removed** (per-user AI keys). The AI routes
-  answer `503 ai-not-configured` instead of template text; a failed provider
-  call is `502`.
-- **Navigation/API switch:** the intermediary features are **off for every
-  workspace** by default. An admin enables them under Einstellungen → Workspace
-  → Vermittlung. At boot the server logs one warning per workspace that holds
-  recruiter data while the switch is off. Nothing is deleted; data reappears
-  unchanged after switching on.
-- **CV import without a key** is the named mode "Text übernehmen (ohne KI)":
-  the full CV text is stored (`resume.rawText`, up to 50,000 characters), the
-  PDF is kept as an attachment on bulk import, and no structure is invented.
-- **Database (expand/contract):** `api_keys` rows are deleted on boot, the empty
-  table stays for one release (a later release drops it); `users.llm_provider`
-  is preserved (the provider choice stays, limited to providers with a server
-  key).
 
 ### Changed
 
@@ -699,26 +621,6 @@ See **Breaking** below before upgrading a live deployment.
 - A Vitest/jsdom unit + component test base for the recruiting kit (ADR-0023),
   used throughout this release's frontend work.
 
-### Changed (breaking)
-
-- **`POST /api/v1/cover-letter` now requires a login** (anonymous callers get
-  `401`). The open route with the template fallback is gone (ADR-0057).
-- **`/api/v1/settings/keys*` is removed** (per-user AI keys). The AI routes
-  answer `503 ai-not-configured` instead of template text; a failed provider
-  call is `502`.
-- **Navigation/API switch:** the intermediary features are **off for every
-  workspace** by default. An admin enables them under Einstellungen → Workspace
-  → Vermittlung. At boot the server logs one warning per workspace that holds
-  recruiter data while the switch is off. Nothing is deleted; data reappears
-  unchanged after switching on.
-- **CV import without a key** is the named mode "Text übernehmen (ohne KI)":
-  the full CV text is stored (`resume.rawText`, up to 50,000 characters), the
-  PDF is kept as an attachment on bulk import, and no structure is invented.
-- **Database (expand/contract):** `api_keys` rows are deleted on boot, the empty
-  table stays for one release (a later release drops it); `users.llm_provider`
-  is preserved (the provider choice stays, limited to providers with a server
-  key).
-
 ### Changed
 
 - **The auth stack was hardened in two stages this release**: first the
@@ -870,26 +772,6 @@ sample-data pretence, and every AI feature with an honest offline fallback.
   the first PlantUML system-context diagram.
 - **We now merge only via Pull Request — no direct pushes to `main`.**
 
-### Changed (breaking)
-
-- **`POST /api/v1/cover-letter` now requires a login** (anonymous callers get
-  `401`). The open route with the template fallback is gone (ADR-0057).
-- **`/api/v1/settings/keys*` is removed** (per-user AI keys). The AI routes
-  answer `503 ai-not-configured` instead of template text; a failed provider
-  call is `502`.
-- **Navigation/API switch:** the intermediary features are **off for every
-  workspace** by default. An admin enables them under Einstellungen → Workspace
-  → Vermittlung. At boot the server logs one warning per workspace that holds
-  recruiter data while the switch is off. Nothing is deleted; data reappears
-  unchanged after switching on.
-- **CV import without a key** is the named mode "Text übernehmen (ohne KI)":
-  the full CV text is stored (`resume.rawText`, up to 50,000 characters), the
-  PDF is kept as an attachment on bulk import, and no structure is invented.
-- **Database (expand/contract):** `api_keys` rows are deleted on boot, the empty
-  table stays for one release (a later release drops it); `users.llm_provider`
-  is preserved (the provider choice stays, limited to providers with a server
-  key).
-
 ### Changed
 
 - **Inbox hidden** — the placeholder Inbox view is out of the navigation until it is wired
@@ -916,25 +798,6 @@ sample-data pretence, and every AI feature with an honest offline fallback.
 
 ### Added
 ### Changed (breaking)
-
-- **`POST /api/v1/cover-letter` now requires a login** (anonymous callers get
-  `401`). The open route with the template fallback is gone (ADR-0057).
-- **`/api/v1/settings/keys*` is removed** (per-user AI keys). The AI routes
-  answer `503 ai-not-configured` instead of template text; a failed provider
-  call is `502`.
-- **Navigation/API switch:** the intermediary features are **off for every
-  workspace** by default. An admin enables them under Einstellungen → Workspace
-  → Vermittlung. At boot the server logs one warning per workspace that holds
-  recruiter data while the switch is off. Nothing is deleted; data reappears
-  unchanged after switching on.
-- **CV import without a key** is the named mode "Text übernehmen (ohne KI)":
-  the full CV text is stored (`resume.rawText`, up to 50,000 characters), the
-  PDF is kept as an attachment on bulk import, and no structure is invented.
-- **Database (expand/contract):** `api_keys` rows are deleted on boot, the empty
-  table stays for one release (a later release drops it); `users.llm_provider`
-  is preserved (the provider choice stays, limited to providers with a server
-  key).
-
 ### Changed
 ### Fixed
 ### Removed

@@ -76,8 +76,12 @@ function ctx(stub: ProviderStub = {}, pdfText: string | Error = '', logger = noo
       return { text, usage: { inputTokens: 5, outputTokens: 7 } };
     },
   };
+  // A gemini twin so tests can exercise the persisted per-user provider choice
+  // (ADR-0011, kept by ADR-0057): with 'claude' as the default it is only
+  // reachable through a user's stored preference.
+  const gemini: LlmProvider = { ...provider, id: 'gemini', label: 'Gemini' };
   const llm = new LlmService({
-    providers: [provider],
+    providers: [provider, gemini],
     defaultProvider: stub.id ?? 'claude',
     logger: noopLogger,
   });
@@ -135,6 +139,23 @@ describe('DocumentAiService.suggest', () => {
 
     const letter = await c.service.suggest(OWNER, OWNER, 't1', 'letter', { role: 'X' });
     expect(letter.paragraphs).toEqual(['AI PARA ONE.', 'AI PARA TWO.', 'AI PARA THREE.']);
+  });
+
+  it('Suggest_UsesTheUsersPersistedProviderChoice', async () => {
+    // The configured default is claude, but this user persisted a gemini choice
+    // on the account (ADR-0011) — the choice must win, also after a restart.
+    const c = ctx({ available: true });
+    await c.talents.add(talent('t1'));
+    await c.users.add({
+      id: OWNER,
+      email: 'owner@example.com',
+      passwordHash: 'h',
+      roles: ['recruiter'],
+      createdAt: '2026-06-25T10:00:00.000Z',
+      llmProvider: 'gemini',
+    });
+    const summary = await c.service.suggest(OWNER, OWNER, 't1', 'summary');
+    expect(summary.provider).toBe('gemini');
   });
 
   it('Suggest_NoProviderConfigured_ThrowsAiNotConfigured', async () => {
@@ -263,6 +284,27 @@ describe('DocumentAiService.parse', () => {
     await expect(c.service.parse(OWNER, OWNER, 't1', 'the cv')).rejects.toBeInstanceOf(
       UpstreamProviderError,
     );
+  });
+
+  it('CvParse_ProviderReturnsMalformedPayload_ThrowsUpstreamProviderError', async () => {
+    // Valid JSON, but the shape fails the documents schema: that is an unusable
+    // provider reply (502), not a client validation error (400).
+    const c = ctx({
+      available: true,
+      generate: async () => JSON.stringify({ contact: 'not-an-object', resume: 42 }),
+    });
+    await c.talents.add(talent('t1'));
+    await expect(c.service.parse(OWNER, OWNER, 't1', 'the cv')).rejects.toBeInstanceOf(
+      UpstreamProviderError,
+    );
+  });
+
+  it('CvParse_AiMode_OverLimitText_SetsTruncatedFlag', async () => {
+    const c = ctx({ available: true, generate: async () => RESUME_JSON });
+    await c.talents.add(talent('t1'));
+    const parsed = await c.service.parse(OWNER, OWNER, 't1', 'x'.repeat(50_001));
+    expect(parsed.mode).toBe('ai');
+    expect(parsed.truncated).toBe(true);
   });
 
   it('Parse_UnknownTalent_Throws404', async () => {

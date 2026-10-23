@@ -100,6 +100,7 @@ G8 Merge        → nur der Owner merged (oder er gibt es ausdrücklich frei)
    - **Testplan** in drei Ebenen (s. §5) mit konkreten Testnamen
      (`Subject_StateUnderTest_ExpectedBehaviour`)
    - **manuelles Testprotokoll** als nummerierte Schritte mit erwartetem Ergebnis
+   - eine **AK-Matrix**: jede AK-ID der Phase (§3) → Test(s) bzw. Protokollschritt, der sie belegt
    - Risiken und offene Fragen
 
 ### G2/G5 — Auftrag an den Reviewer (immer mitgeben)
@@ -114,6 +115,7 @@ G8 Merge        → nur der Owner merged (oder er gibt es ausdrücklich frei)
 > - **Sicherheit:** SSRF bei „Stelle per URL einfügen“, Eingabevalidierung (zod), Auth-Guards auf jeder neuen Route, keine Secrets und keine personenbezogenen Testdaten im Diff.
 > - **Scope:** nichts außerhalb der Phase, keine Änderungen an eingefrorenen Vermittler-Funktionen außer dem Schalter.
 >   Führe **selbst** aus: `./test.sh`, die betroffenen e2e-Tests, und einen manuellen Smoke anhand des Protokolls gegen einen echt gestarteten Server.
+>   Prüfe jede AK-ID der Phase einzeln gegen die AK-Matrix: Ist sie wirklich belegt, und belegt der Test tatsächlich das Kriterium? Ein unbelegtes oder schwach belegtes AK ist ein Major-Befund.
 >   Liefere Befunde als Liste: `[Blocker|Major|Minor] Datei:Zeile — Problem — konkretes Fehlerszenario — Vorschlag`. Ohne Fehlerszenario kein Befund. Zum Schluss ein Urteil: **freigegeben** / **nicht freigegeben**.
 
 Der Orchestrator prüft strittige Befunde selbst nach, bevor er sie an den
@@ -123,70 +125,105 @@ entscheidet der Owner.
 
 ---
 
-## 3. Phasen und Akzeptanzkriterien
+## 3. Phasen, Definition of Done und Akzeptanzkriterien
+
+### 3.0 Allgemeine Definition of Done (gilt für jede Phase)
+
+Eine Phase ist erst fertig, wenn **alle** Punkte erfüllt sind:
+
+1. Reviewer-Urteil **„freigegeben“**, keine offenen Blocker/Major-Befunde.
+2. `./test.sh`, alle e2e-Tests (Desktop + Mobile) und alle CI-Checks sind grün; Jest-Coverage ≥ 90 % (Schwellen unverändert).
+3. Alle phasenspezifischen Akzeptanzkriterien (unten) sind durch einen **benannten Test** oder einen **Schritt im manuellen Protokoll** belegt, und jedes Kriterium ist im PR auf den Beleg verlinkt.
+4. Das manuelle Testprotokoll ist gegen einen echt gestarteten Server mit **`STORE=sql` und `STORE=fs`** ausgefüllt und vollständig „ok“.
+5. ADR (falls nötig), `docs/requirements.md`, `docs/architecture.md` (+ betroffene UML), OpenAPI-Contract und `CHANGELOG.md` sind aktualisiert.
+6. Der Owner hat die Phase auf einem echten Server vorgeführt bekommen und hat **selbst gemerged**.
+
+Jedes Kriterium unten heißt **AK-<Phase>.<Nr>**. Implementierungsplan, Tests und PR verweisen auf diese IDs.
 
 ### Phase 0 — Aufräumen & Fundament
 
-- Workspace-Setting `vermittlung: boolean` (Standard `false`), persistiert in fs + sql.
-  Wenn aus: Nav und Routen für Suchaufträge, Pipeline, Platzierungen,
-  Performance, Postfach und CoRecruiter sind ausgeblendet. Die API-Routen
-  liefern `404` oder `403` mit problem+json (Entscheidung im ADR).
-- UI-Texte: Talent → Mandant, Mandat → Suchauftrag, Tenant → Workspace (alle Views, Toasts, Leerzustände, e2e-Erwartungen).
-- KI: Key nur über Env (`ANTHROPIC_API_KEY`, optional `GEMINI_API_KEY`). Per-User-Key-UI und `API_KEY_STORE`-Nutzung für LLM entfernen.
-  Ohne Key liefern alle KI-Routen einen klaren Fehler (`problem+json`, Typ `ai-not-configured`), und die UI zeigt „KI nicht eingerichtet“ statt Template-Text.
-  Den `LlmFeatureRunner`-Fallback für nutzersichtbare Generierung entfernen; deterministische Logik, die keine Generierung ersetzt (Matching, Grounding), bleibt.
-- ADR 0057 + Update von `docs/requirements.md` (neue FR für den Bewerbungs-Flow, NFR „kein stiller KI-Fallback“).
-- **Akzeptanz:** Frischer Workspace zeigt nur Workspace, Mandanten, Stellen, Bewerbungen, Einstellungen. Ohne Key ist jeder KI-Button sichtbar deaktiviert oder meldet klar „KI nicht eingerichtet“.
+Umfang: Workspace-Setting `vermittlung` (Standard aus), neue Begriffe in der gesamten UI, KI nur noch über einen zentralen Key ohne Template-Fallback, ADR 0057, Requirements-Update.
+
+- **AK-0.1** Ein frischer Workspace zeigt in der Navigation nur: Workspace, Mandanten, Stellen, Bewerbungen, Einstellungen. Suchaufträge, Pipeline, Platzierungen, Performance, Postfach und CoRecruiter sind unsichtbar.
+- **AK-0.2** Bei ausgeschalteter Vermittlung antwortet **jede** Vermittler-API-Route mit **404** problem+json (Acceptance-Test pro Route). Die Daten bleiben erhalten und sind nach dem Einschalten unverändert wieder da.
+- **AK-0.3** Nur ein **Workspace-Admin** kann den Schalter in den Einstellungen umlegen. Andere Rollen bekommen 403; der Schalter ist für sie nicht sichtbar.
+- **AK-0.4** Keine UI-Zeichenkette enthält mehr „Talent“ für die Person, „Mandat“ für den Firmenauftrag oder „Mandant“ für den Workspace. Belegt durch einen Test, der die UI-Strings gegen eine Verbotsliste prüft.
+- **AK-0.5** Ohne `ANTHROPIC_API_KEY` (und ohne `GEMINI_API_KEY`) antwortet jede KI-Route mit **503** problem+json, Typ `ai-not-configured`. Ein Test pro KI-Route belegt, dass **kein** Template-Text ausgeliefert wird.
+- **AK-0.6** Ohne Key zeigt jeder KI-Button einen Hinweis „KI nicht eingerichtet“ mit Link zu den Einstellungen und löst keine Anfrage aus.
+- **AK-0.7** Per-User-API-Keys werden ignoriert und per idempotenter Migration (fs + sql) gelöscht. Die UI zum Hinterlegen eigener Keys ist entfernt.
+- **AK-0.8** Mit gesetztem Key funktionieren die vorhandenen KI-Funktionen (Zusammenfassung, Anschreiben) weiterhin; Beleg im manuellen Protokoll.
 
 ### Phase 1 — Stellen
 
-- Neue Entität **`JobPosting`** (UI: „Stelle“): `id, scope, source, sourceId?, url?, company, title, location, country, description (voller Text), requirements[], createdAt`. Port + fs- + sql-Adapter + Migration.
-- „Stelle übernehmen“ aus der Portal-Suche. Fehlt der volle Text, wird er pro Quelle nachgeladen (Detail-Abruf). Wo das nicht geht, steht das sichtbar an der Stelle.
-- „Stelle einfügen“: per **Text** (KI extrahiert die Felder) und per **URL** (Server lädt die Seite, **SSRF-geschützt**: nur http/https, keine privaten/link-local IPs, Größen- und Zeitlimit, Redirects begrenzt, dann Extraktion).
-- Stellen-Liste mit Suche und Löschen, Detailansicht mit vollem Text.
-- Duplikate (gleiche Quelle + sourceId oder gleiche URL) werden erkannt.
-- **Akzeptanz:** Eine Stelle aus jeder Eintrittsart ist gespeichert, nach einem Reload noch da und zeigt den vollen Anzeigentext.
+Umfang: Entität `JobPosting` („Stelle“) mit fs- und sql-Adapter, „Stelle übernehmen“ aus der Portal-Suche, „Stelle einfügen“ per Text und URL, Stellen-Liste und Detailansicht.
+
+- **AK-1.1** „Stelle übernehmen“ speichert die Stelle. Nach einem Reload ist sie mit Quelle, Firma, Titel, Ort, URL und Anzeigentext vorhanden.
+- **AK-1.2** Arbeitnow und Bundesagentur liefern den **vollen** Anzeigentext (bei der Bundesagentur per Detail-Abruf). Quellen ohne Volltext (z. B. Adzuna) werden trotzdem gespeichert, sichtbar als **„Anzeigentext unvollständig“** markiert und bieten „Text ergänzen“.
+- **AK-1.3** „Stelle einfügen“ per Text: Bei 5 anonymisierten Fixture-Anzeigen (jobs.ch, StepStone, LinkedIn, Firmen-Karriereseite, Freitext) werden Firma, Titel und Ort in **5 von 5** Fällen korrekt extrahiert. Alle Felder sind vor dem Speichern editierbar.
+- **AK-1.4** „Stelle einfügen“ per URL ist **SSRF-geschützt**: `127.0.0.1`, `localhost`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.0.0/16`, IPv6-Loopback/-Link-Local, `file://` und Redirects auf solche Ziele werden abgelehnt (ein Test pro Fall). Größen-, Zeit- und Redirect-Limits sind getestet.
+- **AK-1.5** Seiten, die Login oder JavaScript brauchen bzw. keinen extrahierbaren Text liefern, melden klar „Bitte Anzeigentext einfügen“ statt einer leeren Stelle.
+- **AK-1.6** Duplikate (gleiche Quelle + `sourceId` oder gleiche URL) erzeugen keinen zweiten Eintrag; die UI zeigt „Bereits gespeichert → öffnen“.
+- **AK-1.7** Die Stellen-Liste ist durchsuchbar, Stellen sind löschbar (mit Undo, wie in #200), und die Detailansicht zeigt den vollen Text.
+- **AK-1.8** Ein Workspace sieht keine Stellen eines anderen (Acceptance-Test mit zwei Workspaces).
 
 ### Phase 2 — Bewerbung = Stelle × Mandant
 
-- `Application` erweitern: `jobPostingId, talentId (Mandant), documents (eigene Kopie von CV + Anschreiben), status ∈ {draft, sent, interview, offer, rejected}`. Migration bestehender Bewerbungen dokumentieren.
-- Flow: Stelle → „Bewerbung erstellen“ → Mandant wählen → Kopie anlegen → Bewerbungs-Editor öffnen.
-- Anschreiben-Generierung nutzt den **vollen Anzeigentext** der Stelle, nicht die Skill-Tags.
-- Der Bewerbungs-Editor ersetzt das ApplyModal (Editor-Komponenten wiederverwenden, kein drittes Editor-Paradigma).
-- **Akzeptanz:** Zwei Bewerbungen desselben Mandanten auf zwei Stellen haben unabhängige Dokumente, und der Basis-CV bleibt nachweislich unverändert.
+Umfang: Bewerbung verknüpft Stelle und Mandant, bekommt eine eigene Dokumentkopie und einen Status; der Bewerbungs-Editor ersetzt das ApplyModal.
+
+- **AK-2.1** Auf einer Stelle führt „Bewerbung erstellen → Mandant wählen“ zu einer Bewerbung mit einer **Kopie** von Basis-CV und -Anschreiben; der Bewerbungs-Editor öffnet sich.
+- **AK-2.2** Pro (Stelle, Mandant) gibt es **genau eine** Bewerbung. Ein zweiter Versuch öffnet die bestehende (Unit- und Acceptance-Test).
+- **AK-2.3** Änderungen in einer Bewerbung verändern **weder** den Basis-CV **noch** eine andere Bewerbung desselben Mandanten (Test vergleicht den Basis-CV vorher/nachher byte-gleich).
+- **AK-2.4** Das generierte Anschreiben besteht automatische Prüfungen: nennt Firma und Stellentitel, ist in der Sprache der Anzeige, hat 250–400 Wörter, enthält mindestens 2 konkrete Bezüge zum Anzeigentext und keine Fakten außerhalb des Basis-CV (Grounding-Check).
+- **AK-2.5** Der Generierung wird der **volle Anzeigentext** übergeben, nicht nur die Skill-Tags (Test auf den Prompt-Inhalt).
+- **AK-2.6** Der Owner nimmt **3 echte Anschreiben** ab (dokumentiert im PR).
+- **AK-2.7** Bestehende Bewerbungen werden migriert: Zu jeder wird eine Stelle aus Firma/Titel/URL angelegt, die Dokumente sind eine Kopie des aktuellen Basis-CV. Die Migration ist idempotent und in fs + sql getestet.
+- **AK-2.8** Das ApplyModal ist entfernt; es gibt nur noch den Bewerbungs-Editor, der die vorhandenen Editor-Komponenten wiederverwendet.
 
 ### Phase 3 — Magic Pen
 
-- KI-Aktionen erweitern: `headline`, `summary`, `experience[i]` (Bullets), `skills` (Auswahl/Reihenfolge), `letter`. Jeweils auf die Bewerbungs-Kopie und mit dem Anzeigentext als Kontext.
-- UI: Stift-Symbol an jedem Abschnitt → Vorschlag als Vorher/Nachher → Übernehmen / Verwerfen / Neu.
-- „Alles für diese Stelle anpassen“: führt alle Abschnitte aus, zeigt einen gesammelten Diff, einzeln übernehmbar (`tailorForMandate` dafür auf `JobPosting` umbauen).
-- Grounding-Check (ADR-0009) pro Vorschlag: Behauptungen ohne Beleg im Basis-CV werden markiert oder verworfen.
-- **Akzeptanz:** Jeder Abschnitt ist einzeln anpassbar, nichts wird ohne Klick übernommen, und erfundene Fakten werden im Test erkannt.
+Umfang: KI-Aktionen pro Abschnitt der Bewerbungs-Kopie mit Vorher/Nachher, „Alles für diese Stelle anpassen“, Grounding-Check.
+
+- **AK-3.1** Jeder Abschnitt (Headline, Profil, jede Station, Skills, Anschreiben) hat einen Magic-Pen-Button. Der Vorschlag erscheint als Vorher/Nachher mit Übernehmen / Verwerfen / Neu. **Nichts** wird ohne Klick übernommen.
+- **AK-3.2** Erlaubt ist umformulieren, kürzen, Bullets und Skills umsortieren sowie Begriffe der Anzeige verwenden, sofern sie im Basis-CV belegt sind. **Nicht** erlaubt ist, Arbeitgeber, Daten, Titel, Abschlüsse, Kennzahlen oder Skills zu erfinden.
+- **AK-3.3** Grounding-Testsuite: 10 Basis-CVs × Anzeigen mit verlockenden Lücken. Gegen das echte Modell gelten **0** durchgelassene erfundene Arbeitgeber, Daten oder Abschlüsse und **≥ 90 %** markierte erfundene Skills oder Kennzahlen. Die Suite läuft separat (manuell/nächtlich), nicht in der Standard-CI; das Ergebnis steht im PR.
+- **AK-3.4** Markierte Grounding-Verstöße werden im Vorschlag hervorgehoben und lassen sich nicht ungeprüft übernehmen.
+- **AK-3.5** „Alles für diese Stelle anpassen“ läuft die Abschnitte parallel, zeigt den Fortschritt pro Abschnitt, ist abbrechbar und braucht für einen typischen CV **unter 30 s** (gemessen im manuellen Protokoll). Danach gibt es einen gesammelten Diff, einzeln übernehmbar.
+- **AK-3.6** Jeder Magic-Pen-Aufruf wird im Usage-Metering erfasst.
 
 ### Phase 4 — Abschluss
 
-- Mappe (PDF/ZIP) aus der **Bewerbungs-Kopie** inkl. ausgewählter Anhänge (vorhandenen ZIP-Export aus #239 wiederverwenden).
-- Statuswechsel mit Zeitstempel, Bewerbungsübersicht pro Mandant und gesamt, filterbar nach Status.
-- **Akzeptanz:** Die heruntergeladene Mappe enthält genau die angepasste Fassung, und der Status ist nach einem Reload erhalten.
+Umfang: Mappe als PDF und ZIP aus der Bewerbungs-Kopie, Status mit Verlauf, Übersichten.
+
+- **AK-4.1** Die Mappe hat die feste Reihenfolge Anschreiben → CV → gewählte Anhänge. Die Dateinamen lauten `Bewerbung_<Mandant>_<Firma>.pdf` bzw. `.zip`.
+- **AK-4.2** Ein Test extrahiert den PDF-Text und belegt, dass die **angepasste** Fassung enthalten ist und nicht der Basis-CV. Seitenzahl plausibel, Anhänge vorhanden.
+- **AK-4.3** Der Owner prüft das Layout einmal visuell (dokumentiert im PR).
+- **AK-4.4** Status Entwurf → versendet → Gespräch → Zusage/Absage. Jeder Wechsel ist erlaubt (auch zurück) und wird mit Zeitstempel im Verlauf festgehalten.
+- **AK-4.5** Ab „versendet“ sind die Dokumente **eingefroren**. Eine Änderung ist nur nach ausdrücklicher Rückfrage möglich und wird im Verlauf vermerkt.
+- **AK-4.6** Es gibt eine Bewerbungsübersicht pro Mandant und eine gesamt, beide nach Status filterbar. Der Status bleibt nach einem Reload erhalten.
 
 ### Phase 5 — Chat-Agent
 
-- ADR (Tool-Use-Schleife, Streaming, Limits, Kosten).
-- Serverseitige Claude-Tool-Use-Schleife. Werkzeuge = dünne Wrapper über die Services aus Phase 1–4: `search_jobs`, `save_job`, `list_mandanten`, `assess_fit`, `create_application`, `generate_letter`, `tailor_section`, `tailor_all`, `list_applications`.
-- Ausschließlich Entwürfe. Kein Versand, kein Löschen. Max. Schritte und Tokens pro Lauf. Jeder Tool-Aufruf läuft unter dem Workspace-Scope des Nutzers.
-- Chat-Panel mit Streaming, sichtbaren Tool-Schritten und Links auf erzeugte Entwürfe.
-- Prompt-Injection: Anzeigentexte gelten als Daten, nicht als Anweisungen (Test dafür).
-- **Akzeptanz:** „Such für <Mandant> X-Jobs in Y und bereite die 3 besten Bewerbungen vor“ erzeugt nachvollziehbar drei Entwürfe, die im UI identisch zu manuell erstellten sind.
+Umfang: Claude-Tool-Use-Schleife über die Services aus Phase 1–4, Chat-Panel mit Streaming, gespeicherte Verläufe, ADR.
+
+- **AK-5.1** Die Werkzeuge sind dünne Wrapper über dieselben Services wie die UI. Vom Agenten erstellte Entwürfe sind im UI **identisch** zu manuell erstellten.
+- **AK-5.2** Der Agent legt nur Entwürfe an: kein Versand, kein Löschen, kein Statuswechsel über „Entwurf“ hinaus (Test pro verbotener Aktion).
+- **AK-5.3** Pro Lauf gelten höchstens 25 Tool-Schritte, höchstens 5 neue Bewerbungs-Entwürfe und ein konfigurierbares Token-Budget. Bei Erreichen eines Limits stoppt der Agent und fasst zusammen, was fertig ist. Verbrauchte Tokens und Kosten stehen sichtbar im Chat.
+- **AK-5.4** Jeder Tool-Aufruf läuft im Workspace-Scope des Nutzers (Test: kein Zugriff auf Daten eines anderen Workspace).
+- **AK-5.5** Szenarien-Suite mit 5 Fällen: (a) „3 beste Bewerbungen für <Mandant>“, (b) „Stelle aus URL anlegen und für <Mandant> bewerben“, (c) Prompt-Injection im Anzeigentext, (d) unklare Anfrage → Rückfrage, (e) Limit erreicht. In der CI läuft sie mit gemocktem LLM und prüft die Tool-Abfolge. Live gegen das echte Modell müssen **≥ 4/5** bestehen, Szenario (c) **muss** bestehen.
+- **AK-5.6** Das Chat-Panel streamt, zeigt jeden Tool-Schritt sichtbar an und verlinkt erzeugte Entwürfe.
+- **AK-5.7** Chatverläufe werden pro Nutzer im Workspace gespeichert, sind löschbar und Teil von DSGVO-Export und -Löschung.
 
 ### Phase 6 — Vorzeigbar
 
-- e2e: goldener Pfad manuell und per Agent (LLM gemockt), Mobile-Smoke.
-- Tote-Buttons-Audit: jeder sichtbare Button hat eine Wirkung oder ist deaktiviert mit Grund.
-- Live-Instanz mit echtem Key, Demo-Workspace mit einem Demo-Mandanten (**synthetische** Daten).
-- Datenschutz-Hinweis/Einwilligung für die Übermittlung von CV-Daten an den KI-Anbieter.
-- **Akzeptanz:** Der goldene Pfad läuft live in unter 5 Minuten durch, ohne Fehler und ohne Konsole-Errors.
+Umfang: e2e des goldenen Pfads, Klick-Audit, Live-Deployment, Qualitätshürden.
 
----
+- **AK-6.1** Ein e2e-Test spielt den goldenen Pfad manuell und per Agent (LLM gemockt) durch, auf Desktop **und** Mobil (393 px).
+- **AK-6.2** Automatisierter Klick-Audit (Vermittlung aus): Ein Playwright-Lauf klickt jeden sichtbaren Button jeder Ansicht. Jeder hat eine sichtbare Wirkung (Navigation, Dialog, Toast, Statusänderung) oder ist deaktiviert mit Tooltip-Grund. Keine Konsolen-Fehler.
+- **AK-6.3** Ein manueller Rundgang durch den Owner ergibt keine offenen Funde.
+- **AK-6.4** Lighthouse (Desktop) erreicht für die Hauptansichten Performance, Accessibility und Best Practices **≥ 90**.
+- **AK-6.5** Die Live-Instanz läuft über den bestehenden Docker-/Compose-Weg mit `STORE=sql`, HTTPS, echten Secrets und echtem KI-Key. Das Deployment ist mit einem Befehl reproduzierbar und in `docs/deployment.md` dokumentiert.
+- **AK-6.6** Es gibt einen Demo-Workspace mit einem Demo-Mandanten aus **synthetischen** Daten.
+- **AK-6.7** Der goldene Pfad läuft live in **unter 5 Minuten** durch, ohne Fehler und ohne Konsolen-Errors (Abnahme durch den Owner).
 
 ## 4. Repo-Regeln (gelten für jeden Subagent)
 
@@ -220,7 +257,7 @@ entscheidet der Owner.
 
 ## 6. Abschluss jeder Phase (Orchestrator)
 
-1. Reviewer-Urteil „freigegeben“ liegt vor, ohne offene Blocker/Major.
+1. Die Definition of Done aus §3.0 und alle AK-IDs der Phase sind erfüllt und belegt; das Reviewer-Urteil „freigegeben“ liegt vor.
 2. `git status` sauber, Diff manuell geprüft (§4).
 3. Commit, Push, **Draft-PR** nach `.github/pull_request_template.md`, `Closes #<issue>`, manuelles Testprotokoll und Reviewer-Befunde (mit ihrem Status) in der Beschreibung.
 4. PR-Aktivität abonnieren, CI auf grün fahren (bei roten Checks: diagnostizieren und fixen, nie Tests abschwächen), eine Check-in-Erinnerung setzen.

@@ -7,9 +7,10 @@ import {
   importedSkills,
   DEFAULT_IMPORT_NAME,
   nameFromFilename,
+  safeFilename,
 } from '../domain/talent-import.js';
 import { NoTextLayerError } from '../domain/errors.js';
-import { saveDocumentsSchema } from '../domain/talent-documents.js';
+import { ORIGINAL_CV_ATTACHMENT_NAME, saveDocumentsSchema } from '../domain/talent-documents.js';
 import type { Logger } from '../ports/logger.js';
 import type { TalentService } from './talent-service.js';
 import type { DocumentService } from './document-service.js';
@@ -65,8 +66,9 @@ export class TalentImportService {
     scope: string,
     userId: string,
     dataBase64: string,
-    filename: string,
+    rawFilename: string,
   ): Promise<ImportResult> {
+    const filename = safeFilename(rawFilename);
     const talent = await this.talents.create(
       scope,
       createTalentSchema.parse({ name: DEFAULT_IMPORT_NAME }),
@@ -132,7 +134,7 @@ export class TalentImportService {
       talentId,
       saveDocumentsSchema.parse({ contact: parsed.contact, resume: parsed.resume }),
     );
-    const attachmentId = await this.attachPdf(scope, talentId, filename, pdf);
+    const attachmentId = await this.attachPdf(scope, talentId, pdf);
     return {
       ok: true,
       talentId,
@@ -145,26 +147,29 @@ export class TalentImportService {
     };
   }
 
-  /** Store the PDF, replacing an existing attachment with the same name + size. */
+  /**
+   * Store the original CV under the fixed reference name. Upload first, then
+   * remove older originals (a failed upload must not leave the candidate with
+   * no CV attachment). The PDF stays a reference: it is never preselected for an
+   * application and never attached automatically (ADR-0057).
+   */
   private async attachPdf(
     scope: string,
     talentId: string,
-    filename: string,
     pdf: Buffer,
   ): Promise<string | undefined> {
-    const name = filename || 'lebenslauf.pdf';
     try {
-      const existing = await this.attachments.list(scope, talentId);
-      for (const att of existing) {
-        if (att.name === name && att.size === pdf.length) {
-          await this.attachments.remove(scope, att.id).catch(() => undefined);
-        }
-      }
       const created = await this.attachments.upload(scope, talentId, {
-        name,
+        name: ORIGINAL_CV_ATTACHMENT_NAME,
         contentType: 'application/pdf',
         dataBase64: pdf.toString('base64'),
       });
+      const existing = await this.attachments.list(scope, talentId);
+      for (const att of existing) {
+        if (att.id !== created.id && att.name === ORIGINAL_CV_ATTACHMENT_NAME) {
+          await this.attachments.remove(scope, att.id).catch(() => undefined);
+        }
+      }
       return created.id;
     } catch (err) {
       // The import itself succeeded; a failed attachment must not lose the CV

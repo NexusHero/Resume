@@ -3,6 +3,10 @@
    the live API — there is no sample data; views render loading, error or empty
    states instead (see app.jsx useResource). */
 
+/* Fixed name of the imported original CV — mirrored from the server
+   (domain/talent-documents.ts). It is a reference attachment only. */
+const ORIGINAL_CV_ATTACHMENT_NAME = 'Original-Lebenslauf (Import).pdf';
+
 const STAGES_ORDER = ['new', 'review', 'interview', 'offer', 'hired'];
 const STAGE_LABELS = { new: 'Neu', review: 'Sichtung', interview: 'Interview', offer: 'Angebot', hired: 'Eingestellt', rejected: 'Absage' };
 
@@ -927,7 +931,8 @@ const RecruitApi = {
     return data.suggestion; // { action, text?, paragraphs?, provider }
   },
   async parseDocument(talentId, text) {
-    await requireAi();
+    // No AI gate: without a key the server answers the named text mode
+    // ("Text übernehmen (ohne KI)") with the full CV text.
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/documents/parse`, {
         method: 'POST',
@@ -938,7 +943,7 @@ const RecruitApi = {
     return data.parsed; // { contact, resume, provider }
   },
   async parseDocumentPdf(talentId, dataBase64) {
-    await requireAi();
+    // No AI gate: the server chooses text vs ai mode (ADR-0057).
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/documents/parse-pdf`, {
         method: 'POST',
@@ -1094,6 +1099,7 @@ function computeApplicationKpis(apps) {
 
 Object.assign(window, {
   STAGES_ORDER,
+  ORIGINAL_CV_ATTACHMENT_NAME,
   STAGE_LABELS,
   RecruitApi,
   computeVermittlerKpis,

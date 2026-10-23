@@ -55,7 +55,11 @@ function ApplyModal({ target, onClose, onApply }) {
         if (d.letter) setParagraphs(d.letter.absaetze || []);
       }
       setAttachments(list);
-      setPicked(new Set(list.map((a) => a.id)));
+      // The imported original CV is a reference attachment: visible and
+      // selectable, but never preselected for an application (ADR-0057).
+      const originalName =
+        window.ORIGINAL_CV_ATTACHMENT_NAME || 'Original-Lebenslauf (Import).pdf';
+      setPicked(new Set(list.filter((a) => a.name !== originalName).map((a) => a.id)));
       setLoading(false);
     });
     return () => { alive = false; };

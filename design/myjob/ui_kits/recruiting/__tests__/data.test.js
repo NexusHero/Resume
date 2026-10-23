@@ -94,3 +94,47 @@ describe('RecruitApi AI status cache', () => {
     expect(await window.RecruitApi.aiConfigured()).toBe(true);
   });
 });
+
+describe('CV import without a key (Fehler 1)', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('DataParseDocument_NoAiKey_CallsServerWithoutRequireAi', async () => {
+    const calls = [];
+    vi.stubGlobal('fetch', vi.fn(async (url) => {
+      calls.push(String(url));
+      return new Response(JSON.stringify({ parsed: { mode: 'text', resume: { rawText: 'CV' } } }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }));
+    window.RecruitApi.invalidateAiStatus();
+
+    const parsed = await window.RecruitApi.parseDocument('t1', 'Mein CV');
+
+    expect(parsed.mode).toBe('text');
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toContain('/talents/t1/documents/parse');
+    expect(calls.some((u) => u.includes('/settings/llm'))).toBe(false);
+  });
+
+  it('DataParseDocumentPdf_NoAiKey_CallsServerWithoutRequireAi', async () => {
+    const calls = [];
+    vi.stubGlobal('fetch', vi.fn(async (url) => {
+      calls.push(String(url));
+      return new Response(JSON.stringify({ parsed: { mode: 'text', resume: { rawText: 'PDF' } } }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }));
+    window.RecruitApi.invalidateAiStatus();
+
+    const parsed = await window.RecruitApi.parseDocumentPdf('t1', 'JVBERg==');
+
+    expect(parsed.mode).toBe('text');
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toContain('/talents/t1/documents/parse-pdf');
+    expect(calls.some((u) => u.includes('/settings/llm'))).toBe(false);
+  });
+});

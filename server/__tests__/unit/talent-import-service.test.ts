@@ -170,7 +170,7 @@ describe('TalentImportService.importPdfs', () => {
     expect(docs.resume.rawText).toHaveLength(50_000);
   });
 
-  it('TextImport_Pdf_StoredAsAttachment', async () => {
+  it('TalentImportService_TextMode_StoresOriginalAsReferenceAttachment', async () => {
     const c = ctx();
     const { results } = await c.service.importPdfs(OWNER, OWNER, {
       items: [{ dataBase64: pdfBase64('a'), filename: 'ada.pdf' }],
@@ -179,7 +179,10 @@ describe('TalentImportService.importPdfs', () => {
     expect(first.attachmentId).toBeTruthy();
     const attachments = await c.attachmentService.list(OWNER, first.talentId);
     expect(attachments).toHaveLength(1);
-    expect(attachments[0]).toMatchObject({ name: 'ada.pdf', contentType: 'application/pdf' });
+    expect(attachments[0]).toMatchObject({
+      name: 'Original-Lebenslauf (Import).pdf',
+      contentType: 'application/pdf',
+    });
   });
 
   it('TalentImportService_TextMode_DerivesNameFromFilename', async () => {

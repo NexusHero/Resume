@@ -88,7 +88,9 @@ Three further problems surfaced while planning that path:
    KI)"**: the full CV text is stored (`resume.rawText`, up to the existing 50,000
    character limit), an uploaded PDF is kept as an attachment of the Mandant, the
    editor only fills empty fields and never overwrites an existing section, and
-   structuring into stations and skills is available only with AI. The response says
+   structuring into stations and skills is available only with AI. Das abgelegte PDF
+   ist ein Referenz-Anhang, nicht vorausgewählt und wird nie automatisch angehängt.
+   The response says
    `mode: 'text'` instead of a provider name and the UI states "Text übernommen (ohne
    KI) — Stationen und Skills bitte manuell ergänzen oder KI in den Einstellungen
    einrichten". With a key the AI is used (`mode: 'ai'`); if that call fails the

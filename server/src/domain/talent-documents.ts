@@ -228,3 +228,10 @@ export function normalizeDocuments(documents: TalentDocuments): TalentDocuments 
   if (typeof documents.resume.rawText === 'string') return documents;
   return { ...documents, resume: { ...documents.resume, rawText: '' } };
 }
+
+/**
+ * Fixed name of the imported original CV (mass import and editor text import).
+ * It is a reference attachment only: never preselected for an application and
+ * never attached automatically (ADR-0057).
+ */
+export const ORIGINAL_CV_ATTACHMENT_NAME = 'Original-Lebenslauf (Import).pdf';

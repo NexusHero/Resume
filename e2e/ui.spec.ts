@@ -1305,3 +1305,112 @@ test.describe('Phase 0 — central-key and vocabulary guarantees', () => {
     }
   });
 });
+
+test.describe('Fehler 1 — CV text import without a key', () => {
+  const KIT = '/design/myjob/ui_kits/recruiting/dist/index.html';
+  const TALENT = {
+    id: 't-api-1',
+    name: 'Tobias Wirth',
+    role: 'Staff Engineer',
+    headline: '',
+    location: '',
+    email: '',
+    phone: '',
+    availability: '',
+    salary: '',
+    skills: [],
+    createdAt: '2026-06-25T10:00:00.000Z',
+    updatedAt: '2026-06-25T10:00:00.000Z',
+  };
+  const DOCS = {
+    documents: {
+      contact: {
+        name: 'Tobias Wirth',
+        role: 'Staff Engineer',
+        email: '',
+        phone: '',
+        location: '',
+        linkedin: '',
+      },
+      resume: {
+        summary: 'Bestehendes Profil',
+        experience: [
+          {
+            role: 'Senior Dev',
+            company: 'Acme',
+            period: '',
+            location: '',
+            bullets: [],
+            skills: [],
+          },
+        ],
+        education: [],
+        skillGroups: [],
+        rawText: '',
+      },
+      letter: {
+        firma: '',
+        ansprechpartner: '',
+        strasse: '',
+        plzOrt: '',
+        betreff: '',
+        anrede: '',
+        absaetze: [''],
+        gruss: '',
+      },
+      style: { accent: '#000', strong: '#000', onDark: '#000', font: 'x', size: 1 },
+      updatedAt: '2026-06-25T10:00:00.000Z',
+    },
+  };
+
+  test('NoAiKey_CvTextImport_ShowsNoticeKeepsExistingStationAndFillsRawText', async ({ page }) => {
+    const json = (route, body, status = 200) =>
+      route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
+    await page.route('**/api/v1/settings/workspace', (r) => json(r, { vermittlung: false }));
+    await page.route('**/api/v1/settings/llm', (r) =>
+      json(r, { configured: false, current: null, providers: [] }),
+    );
+    await page.route('**/api/v1/auth/me', (r) =>
+      json(r, { user: { id: 'user1', email: 'me@example.de', roles: ['admin'] } }),
+    );
+    await page.route('**/api/v1/talents', (r) =>
+      r.request().method() === 'GET' ? json(r, [TALENT]) : r.continue(),
+    );
+    await page.route('**/api/v1/talents/t-api-1/documents', (r) => json(r, DOCS));
+    let parsed = 0;
+    await page.route('**/api/v1/talents/t-api-1/documents/parse', (r) => {
+      parsed += 1;
+      return json(r, {
+        parsed: { mode: 'text', contact: {}, resume: { rawText: 'VOLLER CV TEXT '.repeat(40) } },
+      });
+    });
+    await page.route('**/api/v1/talents/t-api-1/documents', (r) =>
+      r.request().method() === 'PUT' ? json(r, DOCS) : json(r, DOCS),
+    );
+
+    await page.goto(KIT);
+    await page
+      .locator('nav')
+      .getByRole('button', { name: /Mandanten/ })
+      .click();
+    await page.getByText('Tobias Wirth').first().click({ force: true });
+    await page
+      .getByRole('button', { name: /Lebenslauf (anlegen|bearbeiten)/ })
+      .first()
+      .click({ force: true });
+    await page.locator('[data-doc-hydrated="true"]').waitFor();
+
+    await page.getByRole('button', { name: /CV importieren/ }).click();
+    await expect(page.getByText(/Text übernommen \(ohne KI\)/).first()).toBeVisible();
+    await page.getByPlaceholder('CV-Text hier einfügen…').fill('VOLLER CV TEXT');
+    await page.getByRole('button', { name: 'Analysieren & übernehmen' }).click();
+    await expect.poll(() => parsed).toBe(1);
+    await expect(page.getByText(/Text übernommen \(ohne KI\)/).first()).toBeVisible();
+
+    await page.getByRole('button', { name: 'Übernehmen' }).click();
+    await expect(page.getByText('Importierter Text (ohne KI)')).toBeVisible();
+    // The existing station and profile are still in the form.
+    await expect(page.locator('input[value="Senior Dev"]')).toBeVisible();
+    expect(await page.locator('textarea').first().inputValue()).toContain('Bestehendes Profil');
+  });
+});

@@ -1,7 +1,7 @@
 import type { ApplicationTarget } from '../domain/application-target.js';
 import type { ApplicationPayload } from '../domain/assistant.js';
 import type { TalentDocuments } from '../domain/talent-documents.js';
-import { withoutRawText } from '../domain/talent-documents.js';
+import { ORIGINAL_CV_ATTACHMENT_NAME, withoutRawText } from '../domain/talent-documents.js';
 import type { DocumentAiService } from './document-ai-service.js';
 import type { DocumentService } from './document-service.js';
 import type { AttachmentService } from './attachment-service.js';
@@ -50,7 +50,7 @@ export class ApplicationBuilder {
       lang: target.lang,
     });
     const pdfCertificates = (await this.attachments.list(scope, talentId))
-      .filter((a) => a.contentType === 'application/pdf')
+      .filter((a) => a.contentType === 'application/pdf' && a.name !== ORIGINAL_CV_ATTACHMENT_NAME)
       .map((a) => a.id);
 
     return {

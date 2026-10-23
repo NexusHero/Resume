@@ -304,20 +304,25 @@ function Editor({ talent, onClose, onCreateMappe, onOpenSettings }) {
     setContact((s) => ({ ...s, ...merged.contact }));
     setResume((s) => ({ ...merged.resume, rawText: s.rawText && !merged.resume.rawText ? s.rawText : merged.resume.rawText }));
     if (pendingImport.file && canPersist) {
+      const originalName =
+        window.ORIGINAL_CV_ATTACHMENT_NAME || 'Original-Lebenslauf (Import).pdf';
       try {
-        const atts = await window.RecruitApi.listAttachments(talentId);
-        const bytes = Math.ceil((pendingImport.file.dataBase64.length * 3) / 4);
-        for (const att of atts || []) {
-          if (att.name === pendingImport.file.name && att.size === bytes) {
-            await window.RecruitApi.deleteAttachment(att.id).catch(() => {});
-          }
-        }
-        await window.RecruitApi.uploadAttachment(talentId, {
-          name: pendingImport.file.name,
+        // Upload FIRST, then remove older originals: a failed upload never
+        // leaves the candidate without the CV (ADR-0057).
+        const created = await window.RecruitApi.uploadAttachment(talentId, {
+          name: originalName,
           contentType: 'application/pdf',
           dataBase64: pendingImport.file.dataBase64,
         });
+        const atts = await window.RecruitApi.listAttachments(talentId);
+        for (const att of atts || []) {
+          if (att.id !== created.id && att.name === originalName) {
+            await window.RecruitApi.deleteAttachment(att.id).catch(() => {});
+          }
+        }
       } catch {
+        // The imported text is already applied and stays; only the attachment
+        // failed — show it visibly.
         setAiError('Der Text wurde übernommen, das PDF konnte aber nicht gespeichert werden.');
       }
     }
@@ -472,6 +477,15 @@ function Editor({ talent, onClose, onCreateMappe, onOpenSettings }) {
                 <div style={{ padding: '12px 13px' }}>
                   {gen ? (
                     <div style={{ fontSize: '12.5px', color: 'var(--accent-strong)', fontStyle: 'italic' }}>myJob passt an …</div>
+                  ) : pending.kind === 'import' && pending.mode === 'text' && window.TextImportNotice ? (
+                    <div>
+                      <window.TextImportNotice />
+                      <div style={{ fontSize: '12.5px', lineHeight: 1.7, color: 'var(--text-soft)', marginTop: '8px' }}>
+                        Der volle CV-Text wird als „Importierter Text (ohne KI)“ gespeichert. Vorhandene
+                        Stationen, Ausbildung, Skills, Profil und Kontakt bleiben unverändert; nur leere
+                        Felder werden gefüllt.
+                      </div>
+                    </div>
                   ) : pending.kind === 'import' ? (
                     <div style={{ fontSize: '12.5px', lineHeight: 1.7, color: 'var(--text-soft)' }}>
                       <div style={{ fontWeight: 600, color: 'var(--text-heading)', marginBottom: '4px' }}>Aus dem CV gelesen:</div>

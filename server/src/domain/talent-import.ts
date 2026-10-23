@@ -8,7 +8,12 @@ import type { DocumentContact, ResumeContent } from './talent-documents.js';
  */
 export const importPdfsSchema = z.object({
   items: z
-    .array(z.object({ dataBase64: z.string().min(1), filename: z.string().default('') }))
+    .array(
+      z.object({
+        dataBase64: z.string().min(1).max(21_000_000),
+        filename: z.string().default(''),
+      }),
+    )
     .min(1, 'at least one CV is required')
     .max(20, 'import at most 20 CVs at a time'),
 });
@@ -44,6 +49,16 @@ export type ImportResult = ImportedTalent | FailedImport;
 
 /** Placeholder name for a CV whose parse/filename yielded no name. */
 export const DEFAULT_IMPORT_NAME = 'Importierter Lebenslauf';
+
+/** Fallback attachment filename when the upload carried none. */
+export const FALLBACK_CV_FILENAME = 'lebenslauf.pdf';
+
+/** Keep user-supplied filenames bounded (and safe for the attachment store). */
+export function safeFilename(filename: string): string {
+  const trimmed = (filename || '').trim();
+  if (!trimmed) return FALLBACK_CV_FILENAME;
+  return trimmed.slice(0, 200);
+}
 
 /**
  * Derive a display name from an uploaded CV filename: drop the `.pdf` suffix,

@@ -1,6 +1,11 @@
 import { Catch, HttpException, type ArgumentsHost, type ExceptionFilter } from '@nestjs/common';
 import type { Response } from 'express';
-import { mapErrorToProblem, sendProblem, type Problem } from '../http/problem.js';
+import {
+  mapErrorToProblem,
+  sendProblem,
+  isExpectedClient5xx,
+  type Problem,
+} from '../http/problem.js';
 import type { Logger } from '../ports/logger.js';
 import { LOGGER } from './tokens.js';
 import { Inject } from '@nestjs/common';
@@ -24,7 +29,19 @@ export class ProblemJsonFilter implements ExceptionFilter {
     const problem =
       err instanceof HttpException ? this.fromHttpException(err) : mapErrorToProblem(err);
     if (problem.status >= 500) {
-      this.logger.error({ err: err instanceof Error ? err.stack : String(err) }, 'unhandled error');
+      if (isExpectedClient5xx(err)) {
+        // 503 ai-not-configured is the by-design answer without a key — log it
+        // without a stack trace so a keyless server is not log-spammed (ADR-0057).
+        this.logger.info(
+          { status: problem.status, type: problem.type },
+          'expected client-facing response',
+        );
+      } else {
+        this.logger.error(
+          { err: err instanceof Error ? err.stack : String(err) },
+          'unhandled error',
+        );
+      }
     }
     sendProblem(res, problem);
   }

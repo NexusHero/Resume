@@ -103,6 +103,22 @@ describe('Editor text import (Fehler 1)', () => {
     );
     expect(container.textContent).not.toContain('Senior Dev gelöscht');
   });
+
+  it('EditorImport_TruncatedText_ShowsTruncationNotice', async () => {
+    // The server flags a CV cut at 50,000 chars; the editor must surface it
+    // (text AND ai mode go through the same preview block).
+    window.RecruitApi.parseDocument.mockResolvedValue({
+      mode: 'text',
+      truncated: true,
+      contact: {},
+      resume: { rawText: 'x'.repeat(50000) },
+    });
+    await openEditor();
+    await userEvent.click(screen.getByText('CV importieren'));
+    await userEvent.type(screen.getByPlaceholderText('CV-Text hier einfügen…'), 'Mein CV');
+    await userEvent.click(screen.getByText('Analysieren & übernehmen'));
+    expect(await screen.findByText('Text wurde bei 50.000 Zeichen gekürzt.')).toBeInTheDocument();
+  });
 });
 
 describe('Editor import attachment lifecycle (Fehler 2)', () => {

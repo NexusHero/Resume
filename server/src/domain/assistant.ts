@@ -62,7 +62,13 @@ export const updateAssistantSettingsSchema = z.object({
 });
 export type UpdateAssistantSettingsInput = z.infer<typeof updateAssistantSettingsSchema>;
 
-export const SUGGESTION_KINDS = ['shortlist-add', 'follow-up', 'data-gap', 'application'] as const;
+export const SUGGESTION_KINDS = [
+  'shortlist-add',
+  'follow-up',
+  'data-gap',
+  'application',
+  'autopilot-error',
+] as const;
 export type SuggestionKind = (typeof SUGGESTION_KINDS)[number];
 
 /**

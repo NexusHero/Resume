@@ -90,4 +90,31 @@ describe('AssistantView errors', () => {
     fireEvent.click(toggle);
     expect(window.RecruitApi.updateAssistant).not.toHaveBeenCalled();
   });
+
+  it('AssistantView_ErrorKind_ShowsLabelAndOnlyDismiss', async () => {
+    window.RecruitApi = api();
+    window.RecruitApi.listAssistantSuggestions.mockResolvedValue([
+      {
+        id: 'e1',
+        kind: 'autopilot-error',
+        title: 'Autopilot: application for Ada could not be built',
+        rationale: 'The AI provider failed.',
+        status: 'proposed',
+        createdAt: '2026-01-01T00:00:00.000Z',
+      },
+    ]);
+    render(<AssistantView />);
+    expect(await screen.findByText('Fehlgeschlagen')).toBeInTheDocument();
+    expect(await screen.findByText('Schließen')).toBeInTheDocument();
+    // An error hint has no meaningful "accept" action — only dismiss.
+    expect(screen.queryByText('Annehmen')).not.toBeInTheDocument();
+  });
+
+  it('AssistantView_RunResult_ShowsFailedCount', async () => {
+    window.RecruitApi = api();
+    window.RecruitApi.runAssistant.mockResolvedValue({ proposed: 2, failures: 1, applied: 0 });
+    render(<AssistantView />);
+    fireEvent.click(await screen.findByRole('button', { name: /Jetzt ausführen/ }));
+    expect(await screen.findByText(/1 fehlgeschlagen/)).toBeInTheDocument();
+  });
 });

@@ -2,6 +2,7 @@ import { jest } from '@jest/globals';
 import { z } from 'zod';
 import type { Request, Response } from 'express';
 import { errorHandler, notFound, sendProblem } from '../../src/http/problem.js';
+import { ProblemJsonFilter } from '../../src/nest/problem-json.filter.js';
 import {
   AiNotConfiguredError,
   InternalError,
@@ -83,6 +84,41 @@ describe('errorHandler', () => {
     expect(res.statusCode).toBe(503);
     expect(res.contentType).toBe('application/problem+json');
     expect(res.body).toMatchObject({ status: 503, type: 'about:blank#ai-not-configured' });
+  });
+
+  it('Handler_AiNotConfiguredError_LogsInfoWithoutStack', () => {
+    // A keyless server answering 503 ai-not-configured is the by-design response,
+    // not a server fault: it must not be logged as an error with a stack trace.
+    const error = jest.fn();
+    const info = jest.fn();
+    const res = mockRes();
+    run(new AiNotConfiguredError(), res, { ...silentLogger, error, info });
+    expect(res.statusCode).toBe(503);
+    expect(error).not.toHaveBeenCalled();
+    expect(info).toHaveBeenCalled();
+  });
+
+  it('Catch_AiNotConfiguredError_LogsInfoWithoutStack', () => {
+    // Same contract for the active NestJS filter (the Express handler above is
+    // retired): 503 ai-not-configured is info, never error+stack.
+    const error = jest.fn();
+    const info = jest.fn();
+    const filter = new ProblemJsonFilter({ info, warn: jest.fn(), error, debug: jest.fn() });
+    const json = jest.fn();
+    const res = {
+      headersSent: false,
+      status: jest.fn().mockReturnThis(),
+      type: jest.fn().mockReturnThis(),
+      json,
+    };
+    const host = { switchToHttp: () => ({ getResponse: () => res }) };
+    filter.catch(new AiNotConfiguredError(), host as never);
+    expect(res.status).toHaveBeenCalledWith(503);
+    expect(json).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'about:blank#ai-not-configured' }),
+    );
+    expect(error).not.toHaveBeenCalled();
+    expect(info).toHaveBeenCalled();
   });
 
   it('MapErrorToProblem_InternalError_Returns500ProblemJson', () => {

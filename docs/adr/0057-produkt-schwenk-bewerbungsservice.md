@@ -98,10 +98,12 @@ Three further problems surfaced while planning that path:
    therefore do not answer 503. A PDF without readable text (a scan or a protected
    file) cannot be used in either mode and answers 422 `no-text-layer`.
    The stored raw text (`resume.rawText`) contains all personal data of the CV, so it
-   is an **internal raw source**: it is part of the DSGVO export, it is never rendered,
-   never part of a Mappe (the ZIP's embedded data file included), never sent to a
-   model except as the input of the AI import itself (translation prompts exclude
-   it), and it is cleared when a Mandant is anonymized.
+   is an **internal raw source**: it is never rendered, never part of a Mappe (the
+   ZIP's embedded data file included), never sent to a model except as the input of
+   the AI import itself (translation prompts exclude it), and it is cleared when a
+   Mandant is anonymized. It is **not** (yet) part of the DSGVO account export — the
+   export ships no documents at all; adding them (and the raw text) is tracked in
+   issue #311.
 5. **Per-user API keys are removed.** The routes, the `ApiKeyStore` port with both
    adapters, the secret cipher that only protected them and the UI to enter a key are
    deleted. Stored keys are ignored from the first request on and are deleted by an

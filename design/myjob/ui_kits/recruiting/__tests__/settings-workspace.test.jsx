@@ -18,7 +18,7 @@ afterEach(() => {
 const baseApi = (roles) => ({
   getLlmSettings: vi.fn().mockResolvedValue({ current: 'claude', providers: [] }),
   getWorkspaceSettings: vi.fn().mockResolvedValue({ vermittlung: false }),
-  setWorkspaceSettings: vi.fn().mockResolvedValue({ vermittlung: true }),
+  updateWorkspaceSettings: vi.fn().mockResolvedValue({ vermittlung: true }),
   getMyProfileName: vi.fn().mockResolvedValue(''),
   getUsage: vi.fn().mockResolvedValue({ requests: 0 }),
   listMembers: vi.fn().mockResolvedValue([]),
@@ -35,14 +35,14 @@ describe('SettingsView — Workspace switch (AK-0.3)', () => {
     const toggle = await screen.findByLabelText('Vermittlung aktivieren');
     fireEvent.click(toggle);
     await waitFor(() =>
-      expect(window.RecruitApi.setWorkspaceSettings).toHaveBeenCalledWith({ vermittlung: true }),
+      expect(window.RecruitApi.updateWorkspaceSettings).toHaveBeenCalledWith({ vermittlung: true }),
     );
   });
 
   it('SettingsToggle_AsRecruiter_NotRendered', async () => {
     window.RecruitApi = baseApi(['recruiter']);
     render(<SettingsView user={{ id: 'me' }} />);
-    await screen.findByText('KI-Einrichtung');
+    await screen.findByText('KI-Anbindung');
     await waitFor(() => expect(window.RecruitApi.authMe).toHaveBeenCalled());
     expect(screen.queryByLabelText('Vermittlung aktivieren')).toBeNull();
   });

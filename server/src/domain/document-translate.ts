@@ -1,6 +1,11 @@
 import { z } from 'zod';
 import type { OutputLang } from './language.js';
-import { type TalentDocuments, resumeSchema, letterSchema } from './talent-documents.js';
+import {
+  type TalentDocuments,
+  resumeSchema,
+  letterSchema,
+  withoutRawText,
+} from './talent-documents.js';
 
 /**
  * Translate a talent's documents (resume + cover letter) into another language.
@@ -30,7 +35,8 @@ export function translatePrompt(
   documents: TalentDocuments,
   target: OutputLang,
 ): { system: string; prompt: string } {
-  const body = { resume: documents.resume, letter: documents.letter };
+  const clean = withoutRawText(documents);
+  const body = { resume: clean.resume, letter: clean.letter };
   return {
     system:
       `You are a professional translator for job-application documents. Translate ` +

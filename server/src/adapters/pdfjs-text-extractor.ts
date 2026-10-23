@@ -1,18 +1,12 @@
 import type { PdfTextExtractor } from '../ports/pdf-text-extractor.js';
 
-// pdfjs-dist v4 ships as ESM only. This project compiles to CommonJS, where
-// `import()` would be transpiled to `require()` — which cannot load an ESM
-// package. Route the import through `new Function` so TypeScript leaves it as a
-// genuine dynamic import that Node resolves as ESM at runtime.
-const importEsm = new Function('specifier', 'return import(specifier)') as (
-  specifier: string,
-) => Promise<Record<string, unknown>>;
-
 /** PDF → text via Mozilla's pdf.js (legacy build, no worker, no canvas). */
 export class PdfjsTextExtractor implements PdfTextExtractor {
   async extract(pdf: Buffer): Promise<string> {
+    // The project is native ESM (package.json "type": "module"), so a plain
+    // dynamic import loads pdfjs-dist's ESM build in both Node and Jest.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const pdfjs: any = await importEsm('pdfjs-dist/legacy/build/pdf.mjs');
+    const pdfjs: any = await import('pdfjs-dist/legacy/build/pdf.mjs');
     const task = pdfjs.getDocument({
       data: new Uint8Array(pdf),
       useSystemFonts: true,
@@ -32,7 +26,9 @@ export class PdfjsTextExtractor implements PdfTextExtractor {
         .replace(/[ \t]+/g, ' ')
         .trim();
     } finally {
-      await doc.destroy();
+      // pdfjs-dist 6 removed PDFDocumentProxy.destroy(); cleanup() releases the
+      // page/font resources without tearing down the loading task.
+      await doc.cleanup();
     }
   }
 }

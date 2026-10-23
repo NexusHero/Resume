@@ -27,7 +27,6 @@ import type { Clock } from '../../ports/clock.js';
 import type { IdGenerator } from '../../ports/id-generator.js';
 import type { Logger } from '../../ports/logger.js';
 import { AuthGuard } from '../auth.guard.js';
-import { VermittlungGuard } from '../vermittlung.guard.js';
 import { CurrentScope } from '../params.js';
 import { ZodValidationPipe } from '../zod-validation.pipe.js';
 import {
@@ -49,7 +48,7 @@ import {
  * stage updates. Team-scoped.
  */
 @Controller('api/v1')
-@UseGuards(AuthGuard, VermittlungGuard)
+@UseGuards(AuthGuard)
 export class ApplicationsController {
   constructor(@Inject(APPLICATION_SERVICE) private readonly service: ApplicationService) {}
 

@@ -1,7 +1,7 @@
 {
-  "name": "myJob — Recruiting",
+  "name": "myJob — Bewerbungsservice",
   "short_name": "myJob",
-  "description": "Mandates, talent pool, pipeline, placements and AI recruiting assistance.",
+  "description": "Mandanten, Stellen und Bewerbungen — CV und Anschreiben pro Stelle anpassen und die Bewerbungsmappe herunterladen.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

@@ -148,12 +148,7 @@ test.describe('Mobile acceptance (#202)', () => {
     await page.goto(KIT);
     // Signed in → the Workspace shell with the bottom tab bar (first five
     // destinations). No off-canvas drawer in the Vivid AppShell tabs posture.
-    await expect(
-      page
-        .locator('nav')
-        .last()
-        .getByRole('button', { name: /Pipeline/ }),
-    ).toBeVisible();
+    await expect(page.locator('nav').last().getByRole('button', { name: /Mehr/ })).toBeVisible();
     await expectNoHorizontalBodyScroll(page);
 
     await navigate(page, /Mandanten/);
@@ -168,7 +163,9 @@ test.describe('Mobile acceptance (#202)', () => {
     await expect(page.locator('main')).toBeVisible();
     await expectNoHorizontalBodyScroll(page);
 
-    await navigate(page, /Pipeline/);
+    await navigate(page, /Mehr/);
+    await expect(page.locator('main')).toBeVisible();
+    await page.getByRole('button', { name: /Suchaufträge/ }).click();
     await expect(page.locator('main')).toBeVisible();
     await expectNoHorizontalBodyScroll(page);
   });
@@ -190,7 +187,7 @@ test.describe('Mobile acceptance (#202)', () => {
   test('Mobile_ApplicationsBoard_ScrollsAndStageChanges', async ({ page }) => {
     const patched = await mockSession(page);
     await page.goto(KIT);
-    await navigate(page, /Pipeline/);
+    await navigate(page, /Bewerbungen/);
 
     // The board is a horizontal snap-scroller wider than the viewport, but it is
     // its OWN scroll container — the body stays put (the .board-scroll element).
@@ -226,7 +223,8 @@ test('MobileNav_FreshWorkspace_ShowsOnlyFiveDestinations', async ({ page }) => {
   await expect(nav.getByRole('button', { name: /Mandanten/ })).toBeVisible();
   await expect(nav.getByRole('button', { name: /Stellen/ })).toBeVisible();
   await expect(nav.getByRole('button', { name: /Bewerbungen/ })).toBeVisible();
-  for (const label of ['Suchaufträge', 'Pipeline', 'Performance', 'Postfach']) {
+  await expect(nav.getByRole('button', { name: /Einstellungen/ })).toBeVisible();
+  for (const label of ['Suchaufträge', 'Pipeline', 'Performance', 'Postfach', 'Mehr']) {
     await expect(nav.getByRole('button', { name: new RegExp(label) })).toHaveCount(0);
   }
   await expect(page.getByRole('button', { name: /CoRecruiter/ })).toHaveCount(0);

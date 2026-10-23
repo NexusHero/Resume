@@ -14,7 +14,7 @@ rectangle "myJob Recruiting Suite" as System {
   component "Recruiting Workspace\n(Vite/React, self-hosted assets)" as UI
 }
 
-cloud "LLM providers\nClaude - Gemini\n(per-user keys, optional)" as LLM
+cloud "LLM providers\nClaude - Gemini\n(one central server key, optional)" as LLM
 cloud "Job boards\nArbeitnow - Bundesagentur - Adzuna\n(optional; offline sample otherwise)" as Jobs
 node "SMTP mailer\n(verification - password reset)" as Mail
 node "Headless Chromium\n(Puppeteer, PDF render)" as Chromium

@@ -77,7 +77,14 @@ function scriptedReply(system: string, prompt: string): string {
       scorecard: ['Kommunikation'],
     });
   }
-  if (has('preparing an applicant')) return JSON.stringify({});
+  if (has('preparing an applicant'))
+    return JSON.stringify({
+      likelyQuestions: [
+        { category: 'Technik', question: 'Wie arbeitest du mit React?', why: 'Rollenfit' },
+      ],
+      starAnswers: [{ competency: 'React', prompt: 'Projekt?', scaffold: 'Situation: …' }],
+      candidateQuestions: ['Wie sieht Erfolg aus?'],
+    });
   if (has('preparing a job application')) {
     return JSON.stringify({
       summary: 'Passgenaue Zusammenfassung.',
@@ -114,7 +121,7 @@ const scriptedLlmService = () =>
 // modules. Every app gets a scripted central key (ADR-0057) — the no-key
 // contract is covered by the dedicated `nest-llm`/`nest-ai-routes` suites.
 const makeApp = (config: AppConfig = loadConfig({}), opts: NestTestAppOptions = {}) =>
-  makeNestApp(config, { llmService: scriptedLlmService(), ...opts });
+  makeNestApp(config, { llmService: scriptedLlmService(), vermittlung: true, ...opts });
 
 afterEach(async () => {
   await closeNestApps();
@@ -728,7 +735,11 @@ describe('REST API /api/v1', () => {
       expect(res.body.results.every((r: { ok: boolean }) => r.ok)).toBe(true);
       // The parse returns no name, so the import keeps the placeholder and the
       // talents land in the pool.
-      expect(res.body.results[0]).toMatchObject({ ok: true, name: 'Imported CV' });
+      expect(res.body.results[0]).toMatchObject({
+        ok: true,
+        mode: 'ai',
+        name: 'Importierter Lebenslauf',
+      });
       const list = await agent.get('/api/v1/talents');
       expect(list.body).toHaveLength(2);
     });
@@ -2292,14 +2303,17 @@ describe('REST API /api/v1', () => {
     ]);
   });
 
-  it('CoverLetter_PostMissingCompany_Returns400', async () => {
-    const res = await request(app).post('/api/v1/cover-letter').send({ role: 'Engineer' });
-    expect(res.status).toBe(400);
+  it('CoverLetter_Anonymous_Returns401', async () => {
+    // Breaking change (ADR-0057/Q11): the cover letter requires a login.
+    const res = await request(app)
+      .post('/api/v1/cover-letter')
+      .send({ company: 'Helio', role: 'Engineer' });
+    expect(res.status).toBe(401);
   });
 });
 
 describe('Plan gating (ADR-0021)', () => {
-  const freeApp = () => makeNestApp(loadConfig({ PLAN: 'free' }));
+  const freeApp = () => makeApp(loadConfig({ PLAN: 'free' }));
 
   it('FreePlan_MeReportsFreePlan', async () => {
     const app = await freeApp();

@@ -6,38 +6,45 @@ import {
   importedName,
   importedSkills,
   DEFAULT_IMPORT_NAME,
+  nameFromFilename,
 } from '../domain/talent-import.js';
+import { NoTextLayerError } from '../domain/errors.js';
 import { saveDocumentsSchema } from '../domain/talent-documents.js';
 import type { Logger } from '../ports/logger.js';
 import type { TalentService } from './talent-service.js';
 import type { DocumentService } from './document-service.js';
 import type { DocumentAiService } from './document-ai-service.js';
+import type { ParsedPdfDocument } from './cv-parse-service.js';
+import type { AttachmentService } from './attachment-service.js';
 
 export interface TalentImportServiceDeps {
   talentService: TalentService;
   documentService: DocumentService;
   documentAiService: DocumentAiService;
+  attachmentService: AttachmentService;
   logger: Logger;
 }
 
 /**
  * Bulk CV import: turn a batch of uploaded PDF CVs into talents. Each CV is
- * handled independently — a failure on one is reported and the batch continues —
- * by reusing the existing single-CV path: create a talent, parse its PDF into
- * structured contact + resume, then persist name/skills and the document set.
- * A talent that fails after creation is rolled back so the pool gets no empty
- * shells.
+ * handled independently — a failure on one is reported and the batch continues.
+ * Without a server AI key the import runs the named text-only mode: the full CV
+ * text is stored in `resume.rawText`, the PDF is kept as an attachment (there is
+ * no "discard" in a bulk import) and no structure is invented. A talent that
+ * fails after creation is rolled back so the pool gets no empty shells.
  */
 export class TalentImportService {
   private readonly talents: TalentService;
   private readonly documents: DocumentService;
   private readonly ai: DocumentAiService;
+  private readonly attachments: AttachmentService;
   private readonly logger: Logger;
 
   constructor(deps: TalentImportServiceDeps) {
     this.talents = deps.talentService;
     this.documents = deps.documentService;
     this.ai = deps.documentAiService;
+    this.attachments = deps.attachmentService;
     this.logger = deps.logger;
   }
 
@@ -60,19 +67,18 @@ export class TalentImportService {
     dataBase64: string,
     filename: string,
   ): Promise<ImportResult> {
-    // Create first (parse needs an existing talent to attach to), then roll the
-    // talent back if anything downstream throws.
     const talent = await this.talents.create(
       scope,
       createTalentSchema.parse({ name: DEFAULT_IMPORT_NAME }),
     );
     try {
-      const parsed = await this.ai.parsePdf(
-        scope,
-        userId,
-        talent.id,
-        Buffer.from(dataBase64, 'base64'),
-      );
+      const pdf = Buffer.from(dataBase64, 'base64');
+      const parsed = await this.ai.parsePdf(scope, userId, talent.id, pdf);
+
+      if (parsed.mode === 'text') {
+        return await this.importText(scope, talent.id, filename, pdf, parsed);
+      }
+
       const name = importedName(parsed.contact);
       const skills = importedSkills(parsed.resume);
       await this.talents.update(scope, talent.id, {
@@ -93,7 +99,9 @@ export class TalentImportService {
         talentId: talent.id,
         name,
         skillCount: skills.length,
+        mode: 'ai',
         provider: parsed.provider,
+        usage: parsed.usage,
         extractedChars: parsed.extractedChars,
       };
     } catch (err) {
@@ -101,7 +109,71 @@ export class TalentImportService {
       this.logger.warn({ talentId: talent.id, error }, 'bulk CV import failed for one file');
       // Undo the placeholder so a failed import leaves nothing behind.
       await this.talents.remove(scope, talent.id).catch(() => undefined);
-      return { ok: false, filename, error };
+      return {
+        ok: false,
+        filename,
+        error: err instanceof NoTextLayerError ? 'no-text-layer' : error,
+      };
+    }
+  }
+
+  /** Text mode: keep the full text, name from the filename, PDF as attachment. */
+  private async importText(
+    scope: string,
+    talentId: string,
+    filename: string,
+    pdf: Buffer,
+    parsed: ParsedPdfDocument,
+  ): Promise<ImportResult> {
+    const name = nameFromFilename(filename);
+    await this.talents.update(scope, talentId, { name });
+    await this.documents.save(
+      scope,
+      talentId,
+      saveDocumentsSchema.parse({ contact: parsed.contact, resume: parsed.resume }),
+    );
+    const attachmentId = await this.attachPdf(scope, talentId, filename, pdf);
+    return {
+      ok: true,
+      talentId,
+      name,
+      skillCount: 0,
+      mode: 'text',
+      attachmentId,
+      ...(parsed.truncated ? { truncated: true } : {}),
+      extractedChars: parsed.extractedChars,
+    };
+  }
+
+  /** Store the PDF, replacing an existing attachment with the same name + size. */
+  private async attachPdf(
+    scope: string,
+    talentId: string,
+    filename: string,
+    pdf: Buffer,
+  ): Promise<string | undefined> {
+    const name = filename || 'lebenslauf.pdf';
+    try {
+      const existing = await this.attachments.list(scope, talentId);
+      for (const att of existing) {
+        if (att.name === name && att.size === pdf.length) {
+          await this.attachments.remove(scope, att.id).catch(() => undefined);
+        }
+      }
+      const created = await this.attachments.upload(scope, talentId, {
+        name,
+        contentType: 'application/pdf',
+        dataBase64: pdf.toString('base64'),
+      });
+      return created.id;
+    } catch (err) {
+      // The import itself succeeded; a failed attachment must not lose the CV
+      // text. Log it and leave `attachmentId` out.
+      this.logger.warn(
+        { talentId, err: err instanceof Error ? err.message : String(err) },
+        'CV attachment could not be stored',
+      );
+      return undefined;
     }
   }
 }

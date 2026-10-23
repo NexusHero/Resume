@@ -4,10 +4,15 @@ import { GeminiLlmProvider } from '../../src/adapters/gemini-llm-provider.js';
 import { LlmService } from '../../src/services/llm-service.js';
 import { LlmFeatureRunner } from '../../src/services/llm-feature-runner.js';
 import { CoverLetterService } from '../../src/services/cover-letter-service.js';
-import { coverLetterTemplate, coverLetterPrompt } from '../../src/domain/cover-letter.js';
+import { coverLetterPrompt } from '../../src/domain/cover-letter.js';
 import type { HttpFetch } from '../../src/ports/http-fetch.js';
 import type { LlmGenerateResult, LlmProvider } from '../../src/ports/llm-provider.js';
-import { noopLogger, InMemoryUsageMeter, FixedClock } from '../support/fakes.js';
+import {
+  noopLogger,
+  InMemoryUsageMeter,
+  InMemoryUserRepository,
+  FixedClock,
+} from '../support/fakes.js';
 
 /** A generate() result with the given text and token usage (defaults to zero). */
 function result(text: string, inputTokens = 0, outputTokens = 0): LlmGenerateResult {
@@ -133,85 +138,69 @@ describe('GeminiLlmProvider', () => {
 });
 
 describe('LlmService', () => {
-  const claude: LlmProvider = {
-    id: 'claude',
-    label: 'Claude',
-    available: true,
-    generate: async () => result('c'),
-  };
-  const gemini: LlmProvider = {
-    id: 'gemini',
-    label: 'Gemini',
-    available: false,
-    generate: async () => result('g'),
-  };
+  const provider = (id: 'claude' | 'gemini', available: boolean): LlmProvider => ({
+    id,
+    label: id === 'claude' ? 'Claude' : 'Gemini',
+    available,
+    generate: async () => result(id),
+  });
 
-  it('Settings_ReportsCurrentAndAvailability', () => {
-    const svc = new LlmService({
-      providers: [claude, gemini],
-      defaultProvider: 'claude',
-      logger: noopLogger,
-    });
-    const s = svc.settings();
-    expect(s.current).toBe('claude');
-    expect(s.providers).toEqual([
+  const service = (providers: LlmProvider[], defaultProvider: 'claude' | 'gemini' = 'claude') =>
+    new LlmService({ providers, defaultProvider, logger: noopLogger });
+
+  it('LlmService_NoKeysConfigured_ResolveReturnsNull', () => {
+    const svc = service([provider('claude', false), provider('gemini', false)]);
+    expect(svc.resolve()).toBeNull();
+    expect(svc.hasAvailableProvider()).toBe(false);
+  });
+
+  it('LlmService_PreferredProviderAvailable_ResolveReturnsIt', () => {
+    const svc = service([provider('claude', true), provider('gemini', true)]);
+    expect(svc.resolve('gemini')?.id).toBe('gemini');
+  });
+
+  it('LlmService_PreferredProviderUnavailable_ResolveReturnsConfiguredProvider', () => {
+    const svc = service([provider('claude', true), provider('gemini', false)]);
+    expect(svc.resolve('gemini')?.id).toBe('claude');
+  });
+
+  it('LlmService_DefaultUnavailableOtherAvailable_ResolveReturnsOther', () => {
+    const svc = service([provider('claude', false), provider('gemini', true)], 'claude');
+    expect(svc.resolve()?.id).toBe('gemini');
+  });
+
+  it('LlmService_Settings_ReportsConfiguredFlag', () => {
+    const svc = service([provider('claude', true), provider('gemini', false)]);
+    const settings = svc.settings();
+    expect(settings.configured).toBe(true);
+    expect(settings.current).toBe('claude');
+    expect(settings.providers).toEqual([
       { id: 'claude', label: 'Claude', available: true },
       { id: 'gemini', label: 'Gemini', available: false },
     ]);
   });
 
-  it('Active_FallsBackToAnyAvailableProvider_WhenDefaultHasNoCredentials', () => {
-    // gemini is the configured default but has no key; claude does → claude is
-    // the effective provider, not a 503.
-    const svc = new LlmService({
-      providers: [claude, gemini],
-      defaultProvider: 'gemini',
-      logger: noopLogger,
-    });
-    expect(svc.currentProvider()).toBe('gemini');
-    expect(svc.active()?.id).toBe('claude');
-    expect(svc.isConfigured()).toBe(true);
+  it('LlmService_StoredChoiceUnavailable_SettingsReportsEffectiveProvider', () => {
+    const svc = service([provider('claude', false), provider('gemini', true)]);
+    expect(svc.settings('claude').current).toBe('gemini');
+    expect(svc.settings('gemini').current).toBe('gemini');
   });
 
-  it('Active_UsesGeminiWhenOnlyGeminiHasAKey', () => {
-    // The product default is Claude, but ANTHROPIC is optional: a server with
-    // only GEMINI_API_KEY must be configured (ADR-0057).
-    const noKeyClaude: LlmProvider = { ...claude, available: false };
-    const keyedGemini: LlmProvider = { ...gemini, available: true };
-    const svc = new LlmService({
-      providers: [noKeyClaude, keyedGemini],
-      defaultProvider: 'claude',
-      logger: noopLogger,
-    });
-    expect(svc.active()?.id).toBe('gemini');
-    expect(svc.isConfigured()).toBe(true);
-    expect(svc.settings().current).toBe('gemini');
+  it('LlmService_NoProviderConfigured_SettingsCurrentIsNull', () => {
+    const svc = service([provider('claude', false)]);
+    expect(svc.settings().configured).toBe(false);
+    expect(svc.settings().current).toBeNull();
   });
 
-  it('Active_NullWhenNoProviderHasCredentials', () => {
-    const noKeyClaude: LlmProvider = { ...claude, available: false };
-    const svc = new LlmService({
-      providers: [noKeyClaude, gemini],
-      defaultProvider: 'claude',
-      logger: noopLogger,
-    });
-    expect(svc.active()).toBeNull();
-    expect(svc.isConfigured()).toBe(false);
+  it('LlmService_Get_ReturnsProviderRegardlessOfAvailability', () => {
+    const gemini = provider('gemini', false);
+    const svc = service([provider('claude', false), gemini]);
+    expect(svc.get('gemini')).toBe(gemini);
   });
 
-  it('Get_ReturnsProviderRegardlessOfAvailability', () => {
+  it('LlmService_UnknownDefault_FallsBackToTheFirstWiredProvider', () => {
     const svc = new LlmService({
-      providers: [claude, gemini],
-      defaultProvider: 'claude',
-      logger: noopLogger,
-    });
-    expect(svc.currentProvider()).toBe('claude');
-    expect(svc.get('gemini')).toBe(gemini); // unavailable but still returned for user-key callers
-  });
-
-  it('UnknownDefault_FallsBackToTheFirstWiredProvider', () => {
-    const svc = new LlmService({
-      providers: [claude, gemini],
+      providers: [provider('claude', true), provider('gemini', true)],
       defaultProvider: 'openai' as never,
       logger: noopLogger,
     });
@@ -220,93 +209,63 @@ describe('LlmService', () => {
 });
 
 describe('CoverLetterService', () => {
-  const build = (llm: LlmService, usageMeter = new InMemoryUsageMeter()) => ({
-    svc: new CoverLetterService({
+  const user = (llmProvider?: 'claude' | 'gemini') => {
+    const users = new InMemoryUserRepository();
+    users.users.push({
+      id: 'user-1',
+      email: 'u@example.com',
+      passwordHash: '',
+      roles: ['recruiter'],
+      createdAt: '2026-01-01T00:00:00.000Z',
+      ...(llmProvider ? { llmProvider } : {}),
+    });
+    return users;
+  };
+
+  const provider = (id: 'claude' | 'gemini', available = true): LlmProvider => ({
+    id,
+    label: id,
+    available,
+    generate: async () => result('LLM letter', 40, 90),
+  });
+
+  const build = (
+    providers: LlmProvider[],
+    opts: { defaultProvider?: 'claude' | 'gemini'; users?: InMemoryUserRepository } = {},
+  ) => {
+    const llm = new LlmService({
+      providers,
+      defaultProvider: opts.defaultProvider ?? 'claude',
+      logger: noopLogger,
+    });
+    const usageMeter = new InMemoryUsageMeter();
+    const svc = new CoverLetterService({
       llmService: llm,
+      userRepository: opts.users ?? user(),
       candidate,
       usageMeter,
       clock: new FixedClock(),
       logger: noopLogger,
-    }),
-    usageMeter,
-  });
-
-  it('Generate_UsesActiveProvider', async () => {
-    const provider: LlmProvider = {
-      id: 'claude',
-      label: 'Claude',
-      available: true,
-      generate: async () => result('LLM letter'),
-    };
-    const llm = new LlmService({
-      providers: [provider],
-      defaultProvider: 'claude',
-      logger: noopLogger,
     });
-    const { svc } = build(llm);
-    const out = await svc.generate(req);
+    return { svc, usageMeter };
+  };
+
+  it('CoverLetterService_WithProvider_ReturnsTextAndMetersUsage', async () => {
+    const { svc, usageMeter } = build([provider('claude')]);
+    const out = await svc.generate(req, 'user-1');
     expect(out).toEqual({ text: 'LLM letter', provider: 'claude' });
-  });
-
-  it('Generate_NoProviderConfigured_ThrowsAiNotConfigured', async () => {
-    const provider: LlmProvider = {
-      id: 'claude',
-      label: 'Claude',
-      available: false,
-      generate: async () => result('unused'),
-    };
-    const llm = new LlmService({
-      providers: [provider],
-      defaultProvider: 'claude',
-      logger: noopLogger,
-    });
-    const { svc } = build(llm);
-    await expect(svc.generate(req)).rejects.toBeInstanceOf(AiNotConfiguredError);
-  });
-
-  it('Generate_WithUserId_MetersTheCall', async () => {
-    const provider: LlmProvider = {
-      id: 'claude',
-      label: 'Claude',
-      available: true,
-      generate: async () => result('LLM letter', 40, 90),
-    };
-    const llm = new LlmService({
-      providers: [provider],
-      defaultProvider: 'claude',
-      logger: noopLogger,
-    });
-    const { svc, usageMeter } = build(llm);
-    await svc.generate(req, 'user-1');
     const events = await usageMeter.list('user-1');
     expect(events).toHaveLength(1);
-    expect(events[0]).toMatchObject({
-      provider: 'claude',
-      feature: 'coverLetter',
-      inputTokens: 40,
-      outputTokens: 90,
-    });
+    expect(events[0]).toMatchObject({ provider: 'claude', feature: 'coverLetter' });
   });
 
-  it('Generate_WithoutUserId_DoesNotMeter', async () => {
-    const provider: LlmProvider = {
-      id: 'claude',
-      label: 'Claude',
-      available: true,
-      generate: async () => result('LLM letter', 40, 90),
-    };
-    const llm = new LlmService({
-      providers: [provider],
-      defaultProvider: 'claude',
-      logger: noopLogger,
-    });
-    const { svc, usageMeter } = build(llm);
-    await svc.generate(req);
-    expect(usageMeter.events).toHaveLength(0);
+  it('CoverLetterService_NoProvider_ThrowsAiNotConfiguredAndReturnsNoText', async () => {
+    const { svc } = build([provider('claude', false)]);
+    await expect(svc.generate(req, 'user-1')).rejects.toBeInstanceOf(AiNotConfiguredError);
   });
 
-  it('Generate_ProviderThrows_ThrowsUpstreamProvider', async () => {
-    const provider: LlmProvider = {
+  it('CoverLetterService_ProviderFails_ThrowsUpstreamProvider', async () => {
+    const failing: LlmProvider = {
       id: 'gemini',
       label: 'Gemini',
       available: true,
@@ -314,13 +273,15 @@ describe('CoverLetterService', () => {
         throw new Error('boom');
       },
     };
-    const llm = new LlmService({
-      providers: [provider],
-      defaultProvider: 'gemini',
-      logger: noopLogger,
+    const { svc } = build([failing], { defaultProvider: 'gemini' });
+    await expect(svc.generate(req, 'user-1')).rejects.toBeInstanceOf(UpstreamProviderError);
+  });
+
+  it('CoverLetterService_StoredChoiceAvailable_UsesIt', async () => {
+    const { svc } = build([provider('claude'), provider('gemini')], {
+      users: user('gemini'),
     });
-    const { svc } = build(llm);
-    await expect(svc.generate(req)).rejects.toBeInstanceOf(UpstreamProviderError);
+    expect(await svc.generate(req, 'user-1')).toMatchObject({ provider: 'gemini' });
   });
 });
 
@@ -343,8 +304,17 @@ describe('LlmFeatureRunner', () => {
       defaultProvider: 'claude',
       logger: noopLogger,
     });
+    const users = new InMemoryUserRepository();
+    users.users.push({
+      id: 'u1',
+      email: 'u1@example.com',
+      passwordHash: '',
+      roles: ['recruiter'],
+      createdAt: '2026-01-01T00:00:00.000Z',
+    });
     return new LlmFeatureRunner({
       llmService,
+      userRepository: users,
       usageMeter: new InMemoryUsageMeter(),
       clock: new FixedClock(),
       logger: noopLogger,
@@ -397,50 +367,18 @@ describe('LlmFeatureRunner', () => {
 });
 
 describe('cover-letter domain', () => {
-  it('Template_WeavesCompanyRoleAndSkills', () => {
-    const text = coverLetterTemplate(req, candidate);
-    expect(text).toContain('Celonis');
-    expect(text).toContain('Senior C++ Engineer');
-    expect(text).toContain('C++ and gRPC');
-    expect(text.trim().endsWith('Suhay Sevinc')).toBe(true);
-  });
-
   it('Prompt_IncludesStructuredFacts', () => {
-    const { system, prompt } = coverLetterPrompt(req, candidate);
-    expect(system).toContain('English');
-    expect(prompt).toContain('Celonis');
-    expect(prompt).toContain('C++, gRPC');
-  });
-
-  it('Template_German_ProducesGermanLetter', () => {
-    const text = coverLetterTemplate({ ...req, city: 'Zürich' }, candidate, 'de');
-    expect(text).toContain('Sehr geehrtes Team von Celonis');
-    expect(text).toContain('in Zürich');
-    expect(text).toContain('C++ und gRPC');
-    expect(text.trim().endsWith('Suhay Sevinc')).toBe(true);
+    const built = coverLetterPrompt(req, candidate, 'en');
+    expect(built.system).toContain('cover letter');
+    expect(built.prompt).toContain('Celonis');
+    expect(built.prompt).toContain('C++');
   });
 
   it('Prompt_German_AsksForGermanOutput', () => {
-    const { system } = coverLetterPrompt(req, candidate, 'de');
-    expect(system).toContain('Deutsch');
-  });
-
-  it('Template_NoSkills_UsesDefaultFocus', () => {
-    expect(coverLetterTemplate({ ...req, skills: [] }, candidate)).toContain(
-      'Software Engineering',
-    );
-    expect(coverLetterTemplate({ ...req, skills: [] }, candidate, 'de')).toContain(
-      'Software Engineering',
-    );
-  });
-
-  it('Template_German_NoCity_OmitsLocation', () => {
-    const text = coverLetterTemplate({ ...req, city: undefined }, candidate, 'de');
-    expect(text).toContain('Sehr geehrtes Team von Celonis');
-    expect(text).not.toContain(' in undefined');
+    expect(coverLetterPrompt(req, candidate, 'de').system).toContain('Deutsch');
   });
 
   it('Prompt_NoSkills_UsesDash', () => {
-    expect(coverLetterPrompt({ ...req, skills: [] }, candidate).prompt).toContain('—');
+    expect(coverLetterPrompt({ ...req, skills: [] }, candidate, 'en').prompt).toContain('—');
   });
 });

@@ -289,6 +289,7 @@ export function rowToUser(row: UserRow): User {
     createdAt: row.createdAt,
     ...(row.tenantId ? { tenantId: row.tenantId } : {}),
     ...(row.verifiedAt ? { verifiedAt: row.verifiedAt } : {}),
+    ...(row.llmProvider ? { llmProvider: row.llmProvider as User['llmProvider'] } : {}),
   };
 }
 
@@ -301,6 +302,7 @@ export function userToRow(user: User): UserInsert {
     createdAt: user.createdAt,
     ...(user.tenantId ? { tenantId: user.tenantId } : {}),
     ...(user.verifiedAt ? { verifiedAt: user.verifiedAt } : {}),
+    ...(user.llmProvider ? { llmProvider: user.llmProvider } : {}),
   };
 }
 

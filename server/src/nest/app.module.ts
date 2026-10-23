@@ -33,7 +33,7 @@ import { ArtifactsModule } from './artifacts/artifacts.module.js';
 import { RetentionModule } from './retention/retention.module.js';
 import { AccountModule } from './account/account.module.js';
 import { AssistantModule } from './assistant/assistant.module.js';
-import { WorkspaceSettingsModule } from './workspace-settings/workspace-settings.module.js';
+import { WorkspaceSettingsModule } from './workspace/workspace.module.js';
 
 /** Open liveness probe — the one API route with no guard and no service behind it. */
 @Controller('api/v1')

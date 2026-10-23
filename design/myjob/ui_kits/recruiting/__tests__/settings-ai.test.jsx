@@ -19,7 +19,7 @@ afterEach(() => {
 const baseApi = () => ({
   getLlmSettings: vi.fn().mockResolvedValue({ current: 'claude', providers: [{ id: 'claude', label: 'Claude', available: false }] }),
   getWorkspaceSettings: vi.fn().mockResolvedValue({ vermittlung: false }),
-  setWorkspaceSettings: vi.fn().mockResolvedValue({ vermittlung: true }),
+  updateWorkspaceSettings: vi.fn().mockResolvedValue({ vermittlung: true }),
   getMyProfileName: vi.fn().mockResolvedValue(''),
   getUsage: vi.fn().mockResolvedValue({ requests: 0 }),
   listMembers: vi.fn().mockResolvedValue([]),

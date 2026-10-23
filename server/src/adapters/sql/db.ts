@@ -58,8 +58,17 @@ async function runMigrationDdl(client: { query: Pool['query'] }): Promise<void> 
     ALTER TABLE users ADD COLUMN IF NOT EXISTS roles jsonb NOT NULL DEFAULT '["recruiter"]'::jsonb;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS tenant_id text;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS verified_at text;
-    ALTER TABLE users DROP COLUMN IF EXISTS llm_provider;
-    DROP TABLE IF EXISTS api_keys;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS llm_provider text;
+    -- Per-user API keys are gone (ADR-0057), but the table is kept for one
+    -- release (expand/contract) so old instances of a rolling deploy can still
+    -- read it. Its rows are deleted below; DROP TABLE follows in a later release.
+    CREATE TABLE IF NOT EXISTS api_keys (
+      owner_id text NOT NULL,
+      provider text NOT NULL,
+      value text NOT NULL,
+      PRIMARY KEY (owner_id, provider)
+    );
+    DELETE FROM api_keys;
     CREATE TABLE IF NOT EXISTS password_reset_tokens (
       token text PRIMARY KEY,
       user_id text NOT NULL,
@@ -292,7 +301,7 @@ async function runMigrationDdl(client: { query: Pool['query'] }): Promise<void> 
       reset_at bigint NOT NULL
     );
     CREATE TABLE IF NOT EXISTS workspace_settings (
-      owner_id text PRIMARY KEY,
+      workspace_id text PRIMARY KEY,
       settings jsonb NOT NULL
     );
   `);

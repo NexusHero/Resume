@@ -24,7 +24,7 @@ else needs translating
   Svc -> Runner : resolveProvider(user)
   alt no provider
     Runner --> Svc : null
-    Svc --> Ctrl : ValidationError ("add a key")  — no fallback here
+    Svc --> Ctrl : AiNotConfiguredError (503) / UpstreamProviderError (502) — no fallback
   else provider available
     Svc -> Runner : generateAndMeter('translate', prompt)
     Runner --> Svc : translated { resume, letter }

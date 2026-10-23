@@ -63,6 +63,8 @@ NODE_ENV=production                       # auto-enables Secure cookies
 STORE=sql
 DATABASE_URL=postgres://user:pass@db:5432/myjob
 APP_SECRET=<long, stable, secret>         # signs/encrypts the auth store
+ANTHROPIC_API_KEY=<central AI key>        # optional GEMINI_API_KEY; without a key AI routes answer 503
+# ANTHROPIC_MODEL / GEMINI_MODEL are operator parameters (code default, issue #310).
 
 # Shared PDF archive (drop for a single-instance volume-backed deploy)
 PDF_ARCHIVE=s3

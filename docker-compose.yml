@@ -28,6 +28,13 @@ services:
       # `openssl rand -base64 32`) and set it here (or better, via a secret
       # store / env file that isn't checked into git) in production:
       APP_SECRET: 'local-dev-example-secret-71O4u8jID-RWFtEcThDC6t6Iwb3KNke3-CHANGE-ME'
+      # Central AI key(s): pass through from the environment — never commit a
+      # value here. Without either key the AI routes answer 503 (ADR-0057).
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      LLM_PROVIDER: ${LLM_PROVIDER:-claude}
+      # Model ids are operator parameters; the default lives in the code (issue #310)
+      # — set ANTHROPIC_MODEL / GEMINI_MODEL via an env file when needed.
       # Restrict CORS to your real origin(s) in production (comma-separated):
       # CORS_ORIGINS: https://app.example.com
     ports:

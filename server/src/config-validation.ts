@@ -39,6 +39,12 @@ export function checkProductionReadiness(config: AppConfig): ReadinessReport {
     errors.push('DATABASE_URL must be set when STORE=sql.');
   }
 
+  if (!config.llm.anthropic.apiKey && !config.llm.gemini.apiKey) {
+    warnings.push(
+      'No AI key configured (ANTHROPIC_API_KEY / GEMINI_API_KEY): generative AI routes answer 503 ai-not-configured.',
+    );
+  }
+
   if (config.mail.transport !== 'smtp') {
     warnings.push(
       'MAIL_TRANSPORT is not "smtp": password-reset and email-verification links are only logged, not delivered.',

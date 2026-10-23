@@ -58,47 +58,6 @@ export function explainPrompt(
   };
 }
 
-/**
- * Deterministic fallback: honest reasons from the skill overlap and the
- * candidate's own stations — no LLM needed.
- */
-export function fallbackExplanation(
-  documents: TalentDocuments | null,
-  mandate: MandateContext,
-  matchedSkills: string[],
-): MatchExplanation {
-  const name = documents?.contact.name || 'The candidate';
-  const reasons: string[] = [];
-
-  if (matchedSkills.length) {
-    reasons.push(`Skills matching the mandate: ${matchedSkills.slice(0, 6).join(', ')}.`);
-  }
-  const firstStation = documents?.resume.experience[0];
-  if (firstStation && (firstStation.role || firstStation.company)) {
-    reasons.push(
-      `Relevant experience as ${[firstStation.role, firstStation.company]
-        .filter(Boolean)
-        .join(' at ')}.`,
-    );
-  }
-  if (documents?.resume.summary) {
-    reasons.push(documents.resume.summary.replace(/\s+/g, ' ').trim().slice(0, 200));
-  }
-  if (reasons.length === 0) {
-    reasons.push(
-      'No strong evidence in the profile yet — assess fit for the role in a first call.',
-    );
-  }
-
-  const summary = matchedSkills.length
-    ? `${name} brings ${matchedSkills.length} matching skill${
-        matchedSkills.length === 1 ? '' : 's'
-      } for "${mandate.role}".`
-    : `${name} — clarify fit for "${mandate.role}" in a call.`;
-
-  return { summary, reasons: reasons.slice(0, 4), matchedSkills };
-}
-
 /** The shape the LLM must return; validated leniently, then normalized. */
 export const explanationResultSchema = z.object({
   summary: z.string().default(''),

@@ -20,6 +20,8 @@ export interface AppConfig {
   attachmentsFile: string;
   attachmentsDir: string;
   usersFile: string;
+  /** Legacy per-user API-key file: only ever deleted at boot (ADR-0057). */
+  legacyApiKeysFile: string;
   passwordResetTokensFile: string;
   emailVerificationTokensFile: string;
   inviteTokensFile: string;
@@ -287,6 +289,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     attachmentsFile: path.join(storeDir, 'attachments.json'),
     attachmentsDir: path.join(storeDir, 'attachments'),
     usersFile: path.join(storeDir, 'users.json'),
+    legacyApiKeysFile: path.join(storeDir, 'api-keys.json'),
     passwordResetTokensFile: path.join(storeDir, 'password-reset-tokens.json'),
     emailVerificationTokensFile: path.join(storeDir, 'email-verification-tokens.json'),
     inviteTokensFile: path.join(storeDir, 'tenant-invites.json'),

@@ -3,6 +3,7 @@ import path from 'node:path';
 import type { AppConfig } from '../config.js';
 import type { User, Role } from '../domain/user.js';
 import type { UserRepository } from '../ports/user-repository.js';
+import type { LlmProviderId } from '../ports/llm-provider.js';
 
 /** File-backed repository: the JSON array in bewerbungen/users.json. */
 export class FsUserRepository implements UserRepository {
@@ -48,6 +49,12 @@ export class FsUserRepository implements UserRepository {
   async updateRoles(id: string, roles: Role[]): Promise<void> {
     const all = await this.list();
     const next = all.map((u) => (u.id === id ? { ...u, roles } : u));
+    await this.write(next);
+  }
+
+  async setLlmProvider(id: string, provider: LlmProviderId): Promise<void> {
+    const all = await this.list();
+    const next = all.map((u) => (u.id === id ? { ...u, llmProvider: provider } : u));
     await this.write(next);
   }
 

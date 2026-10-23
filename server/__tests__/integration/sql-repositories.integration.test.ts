@@ -46,7 +46,7 @@ suite('SQL repositories (real Postgres)', () => {
 
   beforeEach(async () => {
     await pool.query(
-      'TRUNCATE applications, audit_events, saved_searches, mandates, talents, placements, talent_documents, attachments, users, password_reset_tokens RESTART IDENTITY',
+      'TRUNCATE applications, audit_events, saved_searches, mandates, talents, placements, talent_documents, attachments, users, password_reset_tokens, api_keys, workspace_settings RESTART IDENTITY',
     );
   });
 
@@ -375,7 +375,7 @@ suite('SQL repositories (real Postgres)', () => {
     expect(await store.get('other', 'a3')).not.toBeNull(); // other owner untouched
   });
 
-  it('SqlWorkspaceSettingsStore_SetGet_RoundTrip', async () => {
+  it('SqlWorkspaceSettingsStore_SetThenGet_RoundTrips', async () => {
     const store = new SqlWorkspaceSettingsStore({ db });
     await store.set('ws-a', { vermittlung: true });
     expect(await store.get('ws-a')).toEqual({ vermittlung: true });
@@ -385,24 +385,45 @@ suite('SQL repositories (real Postgres)', () => {
     expect(await store.get('ws-a')).toEqual({ vermittlung: false });
   });
 
-  it('SqlWorkspaceSettingsStore_GetMissingOwner_ReturnsNull', async () => {
+  it('SqlWorkspaceSettingsStore_UnknownWorkspace_ReturnsNull', async () => {
     const store = new SqlWorkspaceSettingsStore({ db });
     expect(await store.get('never-written')).toBeNull();
   });
 
-  it('SqlMigration_DropApiKeysAndLlmProvider_RemovesColumns', async () => {
-    // The migration already ran in beforeAll; re-running must stay idempotent.
+  it('Migrate_LegacyRows_DeletedAndLegacyReadsSucceed', async () => {
+    await pool.query("INSERT INTO api_keys (owner_id, provider, value) VALUES ('u1','claude','x')");
     await migrate(pool);
 
-    const apiKeys = await pool.query("SELECT to_regclass('api_keys') AS reg");
-    expect(apiKeys.rows[0].reg).toBeNull();
+    const count = await pool.query('SELECT count(*)::int AS n FROM api_keys');
+    expect(count.rows[0].n).toBe(0);
+    // Expand/contract: the table still exists, so an old instance can still read.
+    const read = await pool.query('SELECT * FROM api_keys');
+    expect(read.rows).toEqual([]);
+  });
 
+  it('Migrate_RunTwice_IsIdempotent', async () => {
+    await expect(migrate(pool)).resolves.toBeUndefined();
+    await expect(migrate(pool)).resolves.toBeUndefined();
+  });
+
+  it('Migrate_RunConcurrentlyFromTwoPools_BothSucceed', async () => {
+    const second = createDb(url as string);
+    try {
+      await expect(Promise.all([migrate(pool), migrate(second.pool)])).resolves.toBeDefined();
+    } finally {
+      await second.pool.end();
+    }
+  });
+
+  it('Migrate_FreshDatabase_CreatesWorkspaceSettingsTable', async () => {
+    const ws = await pool.query("SELECT to_regclass('workspace_settings') AS reg");
+    expect(ws.rows[0].reg).not.toBeNull();
+  });
+
+  it('Migrate_UsersLlmProviderColumn_IsPreserved', async () => {
     const llm = await pool.query(
       "SELECT column_name FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'llm_provider'",
     );
-    expect(llm.rows).toHaveLength(0);
-
-    const ws = await pool.query("SELECT to_regclass('workspace_settings') AS reg");
-    expect(ws.rows[0].reg).not.toBeNull();
+    expect(llm.rows).toHaveLength(1);
   });
 });

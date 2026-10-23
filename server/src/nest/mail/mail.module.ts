@@ -18,7 +18,7 @@ import type { TalentRepository } from '../../ports/talent-repository.js';
 import type { ArtifactLogRepository } from '../../ports/artifact-log-repository.js';
 import type { Logger } from '../../ports/logger.js';
 import { AuthGuard } from '../auth.guard.js';
-import { VermittlungGuard } from '../vermittlung.guard.js';
+import { RequiresVermittlung, VermittlungGuard } from '../vermittlung.guard.js';
 import { CurrentScope } from '../params.js';
 import { ZodValidationPipe } from '../zod-validation.pipe.js';
 import {
@@ -38,6 +38,7 @@ import {
  */
 @Controller('api/v1')
 @UseGuards(AuthGuard, VermittlungGuard)
+@RequiresVermittlung()
 export class MailController {
   constructor(@Inject(MAIL_SERVICE) private readonly mailService: MailService) {}
 

@@ -15,6 +15,7 @@ import { NotFoundError } from '../../domain/errors.js';
 import type { ArtifactLogRepository } from '../../ports/artifact-log-repository.js';
 import type { Clock } from '../../ports/clock.js';
 import { AuthGuard } from '../auth.guard.js';
+import { RequiresVermittlung, VermittlungGuard } from '../vermittlung.guard.js';
 import { CurrentScope } from '../params.js';
 import { ZodValidationPipe } from '../zod-validation.pipe.js';
 import { ARTIFACT_LOG_REPOSITORY, CLOCK } from '../tokens.js';
@@ -25,7 +26,8 @@ import { ARTIFACT_LOG_REPOSITORY, CLOCK } from '../tokens.js';
  * stats, and stamping what became of an outreach.
  */
 @Controller('api/v1/artifacts')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, VermittlungGuard)
+@RequiresVermittlung()
 export class ArtifactsController {
   constructor(
     @Inject(ARTIFACT_LOG_REPOSITORY) private readonly artifacts: ArtifactLogRepository,

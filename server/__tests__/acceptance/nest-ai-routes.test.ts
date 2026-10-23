@@ -37,6 +37,7 @@ import {
   ARTIFACT_LOG_REPOSITORY,
   LLM_SERVICE,
   WORKSPACE_SETTINGS_STORE,
+  WORKSPACE_SETTINGS_SERVICE,
   USAGE_METER,
   PDF_TEXT_EXTRACTOR,
   INTERVIEW_OBSERVATION_REPOSITORY,
@@ -86,8 +87,10 @@ const aiStub = {
 };
 
 const llmStub = (configured: boolean) => ({
+  hasAvailableProvider: () => configured,
   isConfigured: () => configured,
   active: () => (configured ? { id: 'claude', label: 'Claude', available: true } : null),
+  resolve: () => (configured ? { id: 'claude', label: 'Claude', available: true } : null),
   settings: () => ({ current: 'claude', providers: [] }),
   currentProvider: () => 'claude',
   get: () => (configured ? { id: 'claude', label: 'Claude', available: true } : undefined),
@@ -114,6 +117,13 @@ async function makeApp(opts: { configured: boolean; vermittlung: boolean }) {
     { provide: ARTIFACT_LOG_REPOSITORY, useValue: new InMemoryArtifactLogRepository() },
     { provide: LLM_SERVICE, useValue: llmStub(opts.configured) },
     { provide: WORKSPACE_SETTINGS_STORE, useValue: workspaceSettings },
+    {
+      provide: WORKSPACE_SETTINGS_SERVICE,
+      useValue: {
+        isVermittlungEnabled: async () => opts.vermittlung,
+        get: async () => ({ vermittlung: opts.vermittlung }),
+      },
+    },
     { provide: USAGE_METER, useValue: new InMemoryUsageMeter() },
     { provide: PDF_TEXT_EXTRACTOR, useValue: {} },
     { provide: INTERVIEW_OBSERVATION_REPOSITORY, useValue: {} },
@@ -143,7 +153,7 @@ async function makeApp(opts: { configured: boolean; vermittlung: boolean }) {
 
   const app = moduleRef.createNestApplication();
   app.useGlobalFilters(new ProblemJsonFilter(noopLogger));
-  await app.init();
+  await app.listen(0, '127.0.0.1');
 
   await mandates.add({
     id: 'm1',
@@ -305,16 +315,6 @@ describe('NestJS AI routes without a key (503 ai-not-configured)', () => {
       { action: 'summary' },
     ],
     [
-      'Ai_DocumentsParse_NoKey_Returns503AiNotConfigured',
-      '/api/v1/talents/t1/documents/parse',
-      { text: 'cv' },
-    ],
-    [
-      'Ai_DocumentsParsePdf_NoKey_Returns503AiNotConfigured',
-      '/api/v1/talents/t1/documents/parse-pdf',
-      { dataBase64: 'JVBERg==' },
-    ],
-    [
       'Ai_DocumentsAts_NoKey_Returns503AiNotConfigured',
       '/api/v1/talents/t1/documents/ats',
       { jobText: 'job' },
@@ -397,17 +397,13 @@ describe('NestJS AI routes with a configured central key (ADR-0057)', () => {
   });
 
   it('Ai_AssistantRun_WhenOnWithoutKey_Returns503', async () => {
-    // The autopilot builds application packets through the generative tailoring
-    // path, so without a key it must surface the missing configuration rather
-    // than silently skipping (owner decision §9-6).
-    const srv = await makeNestApp(undefined, { vermittlung: true });
-    const agent = await registeredAgent(srv);
-    await agent.put('/api/v1/assistant').send({
-      enabled: true,
-      mode: 'autopilot',
-      applySource: 'mandates',
-      minApplyScore: 0,
+    // Seeded autopilot mode without a key: the run must answer 503 before the
+    // first step, stage nothing and leave `lastRunAt` untouched.
+    const srv = await makeNestApp(undefined, {
+      vermittlung: true,
+      assistantSettings: { enabled: true, mode: 'autopilot' },
     });
+    const agent = await registeredAgent(srv);
     await agent.post('/api/v1/mandates').send({
       client: 'Nordwind GmbH',
       role: 'Backend Engineer',
@@ -419,9 +415,16 @@ describe('NestJS AI routes with a configured central key (ADR-0057)', () => {
       role: 'Backend Engineer',
       skills: ['Go', 'PostgreSQL'],
     });
-
+    const before = await agent.get('/api/v1/assistant');
     const res = await agent.post('/api/v1/assistant/run');
     expect(res.status).toBe(503);
     expect(res.body.type).toBe('about:blank#ai-not-configured');
+    expect((await agent.get('/api/v1/assistant/suggestions')).body).toEqual([]);
+    const after = await agent.get('/api/v1/assistant');
+    expect(after.body.settings.lastRunAt).toBe(before.body.settings.lastRunAt);
+
+    const settings = await agent.put('/api/v1/assistant').send({ mode: 'autopilot' });
+    expect(settings.status).toBe(503);
+    expect(settings.body.type).toBe('about:blank#ai-not-configured');
   });
 });

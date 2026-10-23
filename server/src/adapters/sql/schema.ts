@@ -20,6 +20,7 @@ export const users = pgTable('users', {
   createdAt: text('created_at').notNull(),
   tenantId: text('tenant_id'),
   verifiedAt: text('verified_at'),
+  llmProvider: text('llm_provider'),
 });
 
 /** One-time, expiring email-verification tokens — separate from reset tokens on purpose. */
@@ -210,7 +211,7 @@ export const retentionPolicies = pgTable('retention_policies', {
 
 /** Per-workspace feature settings (mirrors domain `WorkspaceSettings`, ADR-0057). */
 export const workspaceSettings = pgTable('workspace_settings', {
-  ownerId: text('owner_id').primaryKey(),
+  workspaceId: text('workspace_id').primaryKey(),
   settings: jsonb('settings').$type<WorkspaceSettings>().notNull(),
 });
 

@@ -7,7 +7,7 @@ import type { DocumentRepository } from '../../ports/document-repository.js';
 import type { CandidacyRepository } from '../../ports/candidacy-repository.js';
 import type { EmbeddingProvider } from '../../ports/embedding-provider.js';
 import { AuthGuard } from '../auth.guard.js';
-import { VermittlungGuard } from '../vermittlung.guard.js';
+import { RequiresVermittlung, VermittlungGuard } from '../vermittlung.guard.js';
 import { CurrentScope } from '../params.js';
 import { ZodValidationPipe } from '../zod-validation.pipe.js';
 import {
@@ -22,6 +22,7 @@ import {
 /** Mandate → shortlist ranking (ADR-0051 port of MatchController). */
 @Controller('api/v1/mandates/:id')
 @UseGuards(AuthGuard, VermittlungGuard)
+@RequiresVermittlung()
 export class MatchController {
   constructor(@Inject(MATCH_SERVICE) private readonly service: MatchService) {}
 

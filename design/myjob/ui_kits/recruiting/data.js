@@ -62,19 +62,31 @@ async function _downloadPdf(url, filename) {
   _saveBlob(await res.blob(), filename);
 }
 
+function _apiError(status, body) {
+  const code = String((body && body.type) || '').split('#').pop() || `http-${status}`;
+  const err = new Error((body && body.detail) || `API ${status}`);
+  err.status = status;
+  err.code = code;
+  return err;
+}
+
 async function _jsonOrThrow(res) {
   if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
     // A Pro-gated feature (ADR-0021) — surface an upgrade hint, not a raw code.
-    if (res.status === 402) {
-      const body = await res.json().catch(() => ({}));
-      throw new Error(body.detail || 'This is a Pro feature. Upgrade to unlock it.');
-    }
+    if (res.status === 402) throw _apiError(res.status, body);
+    // No central AI key (ADR-0057) / a PDF without a text layer (422).
     if (res.status === 503) {
-      // No central AI key (ADR-0057): surface the server's clear message.
-      const body = await res.json().catch(() => ({}));
-      throw new Error(body.detail || 'KI nicht eingerichtet.');
+      if (window.AiStatus) window.AiStatus.refresh();
+      throw _apiError(res.status, body);
     }
-    throw new Error(`API ${res.status}`);
+    if (res.status === 422) throw _apiError(res.status, body);
+    // A workspace feature that another admin switched off: refresh the store so
+    // the navigation reflects the server state, then surface the error.
+    if (res.status === 404 && String((body && body.detail) || '').includes('not enabled for this workspace')) {
+      if (window.WorkspaceSettings) window.WorkspaceSettings.refresh();
+    }
+    throw _apiError(res.status, body);
   }
   return res.json();
 }
@@ -95,7 +107,7 @@ async function aiConfigured() {
   if (_aiReady === null) {
     try {
       const s = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/settings/llm`));
-      _aiReady = (Array.isArray(s && s.providers) ? s.providers : []).some((p) => p && p.available);
+      _aiReady = !!(s && (s.configured ?? (Array.isArray(s.providers) && s.providers.some((p) => p && p.available))));
     } catch {
       _aiReady = false;
     }
@@ -465,7 +477,7 @@ const RecruitApi = {
   async getWorkspaceSettings() {
     return _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/settings/workspace`));
   },
-  async setWorkspaceSettings(patch) {
+  async updateWorkspaceSettings(patch) {
     return _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/settings/workspace`, {
         method: 'PATCH',
@@ -475,6 +487,15 @@ const RecruitApi = {
     );
   },
   /* ---- LLM server status (central key, no per-user keys) ---- */
+  async updateLlmSettings(patch) {
+    return _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/settings/llm`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(patch),
+      }),
+    );
+  },
   async getLlmSettings() {
     // Reading the authoritative status resets the cached answer, so the next AI
     // action re-checks (e.g. after a restart with a key added).
@@ -1056,4 +1077,26 @@ function deriveReportClients(mandates, placements) {
   return names;
 }
 
-Object.assign(window, { STAGES_ORDER, STAGE_LABELS, RecruitApi, computeVermittlerKpis, deriveReportClients });
+/**
+ * Application-first dashboard KPIs (ADR-0057): how many applications are in
+ * each meaningful state. Statuses map onto the pipeline stages the board uses.
+ */
+function computeApplicationKpis(apps) {
+  const list = Array.isArray(apps) ? apps : [];
+  const count = (statuses) => list.filter((a) => statuses.includes(a.status)).length;
+  return [
+    { label: 'Gesendet', value: String(count(['sent', 'new'])), icon: 'send' },
+    { label: 'Interview', value: String(count(['interview'])), icon: 'users' },
+    { label: 'Angebot', value: String(count(['offer'])), icon: 'check' },
+    { label: 'Eingestellt', value: String(count(['hired', 'placed'])), icon: 'briefcase' },
+  ];
+}
+
+Object.assign(window, {
+  STAGES_ORDER,
+  STAGE_LABELS,
+  RecruitApi,
+  computeVermittlerKpis,
+  computeApplicationKpis,
+  deriveReportClients,
+});

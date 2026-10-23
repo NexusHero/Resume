@@ -5,7 +5,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import { loadConfig } from './config.js';
 import { checkProductionReadiness } from './config-validation.js';
 import { createDb, migrate, type Db } from './adapters/sql/db.js';
-import { runFsMigrations } from './adapters/fs-migrations.js';
+import { removeLegacyApiKeysFile } from './adapters/legacy-cleanup.js';
 import type { SchedulerLock } from './ports/scheduler-lock.js';
 import { NoopSchedulerLock } from './adapters/noop-scheduler-lock.js';
 import { PgAdvisorySchedulerLock } from './adapters/sql/pg-advisory-scheduler-lock.js';
@@ -15,6 +15,14 @@ import type { MailService } from './services/mail-service.js';
 import type { RetentionService } from './services/retention-service.js';
 import type { TenantService } from './services/tenant-service.js';
 import { TEAM_SCOPE } from './http/current-user.js';
+import {
+  logHiddenVermittlerData,
+  runAssistantTick,
+  runReplySyncTick,
+} from './services/scheduler-ticks.js';
+import type { WorkspaceSettingsService } from './services/workspace-settings-service.js';
+import type { MandateRepository } from './ports/mandate-repository.js';
+import type { PlacementRepository } from './ports/placement-repository.js';
 import { AppModule } from './nest/app.module.js';
 import { configureHttpEdge } from './nest/http-edge.js';
 import { ProblemJsonFilter } from './nest/problem-json.filter.js';
@@ -24,6 +32,9 @@ import {
   MAIL_SERVICE,
   RETENTION_SERVICE,
   TENANT_SERVICE,
+  WORKSPACE_SETTINGS_SERVICE,
+  MANDATE_REPOSITORY,
+  PLACEMENT_REPOSITORY,
   AUTH_ENGINE,
   PDF_RENDERER,
 } from './nest/tokens.js';
@@ -65,15 +76,18 @@ async function main(): Promise<void> {
 
   let db: Db | null = null;
   let pool: Pool | undefined;
+  // Idempotent legacy cleanup (per-user API-key file, ADR-0057) — in both
+  // store modes, before Nest starts.
+  const removedLegacyKeys = await removeLegacyApiKeysFile(config.legacyApiKeysFile);
+  if (removedLegacyKeys) {
+    console.info('[config] removed legacy per-user API-key file');
+  }
+
   if (config.store === 'sql') {
-    // Idempotent file-store cleanup (legacy per-user API-key file, ADR-0057).
-    await runFsMigrations(config);
     const conn = createDb(config.databaseUrl);
     await migrate(conn.pool);
     db = conn.db;
     pool = conn.pool;
-  } else {
-    await runFsMigrations(config);
   }
 
   // The NestJS composition root (ADR-0051): AppModule replaces container.ts and
@@ -112,19 +126,18 @@ async function main(): Promise<void> {
   // The assistant's scheduler: a light minute-tick asks the service whether a
   // run is due (enabled + interval elapsed). unref() keeps it from blocking
   // shutdown; one tenant's failure is logged and does not stop the others.
+  // Workspaces with `vermittlung` off are skipped (ADR-0057).
   const assistantService = app.get<AssistantService>(ASSISTANT_SERVICE);
   const assistantTimer = setInterval(() => {
     schedulerLock
-      .runExclusive('assistant', async () => {
-        for (const scope of await tenantScopes()) {
-          await assistantService.runIfDue(scope).catch((err: unknown) => {
-            logger.warn(
-              { err: err instanceof Error ? err.message : String(err), scope },
-              'assistant scheduled run failed',
-            );
-          });
-        }
-      })
+      .runExclusive('assistant', () =>
+        runAssistantTick({
+          scopes: tenantScopes,
+          settings: app.get<WorkspaceSettingsService>(WORKSPACE_SETTINGS_SERVICE),
+          assistant: assistantService,
+          logger,
+        }),
+      )
       .catch((err: unknown) => {
         logger.warn(
           { err: err instanceof Error ? err.message : String(err) },
@@ -135,16 +148,20 @@ async function main(): Promise<void> {
   assistantTimer.unref();
 
   // Reply detection: poll the configured IMAP mailbox so pending email
-  // outreach resolves itself. Off entirely without MAIL_IMAP_HOST.
+  // outreach resolves itself. Off entirely without MAIL_IMAP_HOST; workspaces
+  // with `vermittlung` off are skipped.
   const mailService = app.get<MailService>(MAIL_SERVICE);
   if (mailService.replySyncEnabled) {
     const pollMs = config.mail.imap.pollMinutes * 60_000;
     const replyTimer = setInterval(() => {
-      void schedulerLock.runExclusive('reply-sync', async () => {
-        for (const scope of await tenantScopes()) {
-          await mailService.syncRepliesSafely(scope);
-        }
-      });
+      void schedulerLock.runExclusive('reply-sync', () =>
+        runReplySyncTick({
+          scopes: tenantScopes,
+          settings: app.get<WorkspaceSettingsService>(WORKSPACE_SETTINGS_SERVICE),
+          mail: mailService,
+          logger,
+        }),
+      );
     }, pollMs);
     replyTimer.unref();
     logger.info(
@@ -152,6 +169,21 @@ async function main(): Promise<void> {
       'reply sync enabled (IMAP mailbox configured)',
     );
   }
+
+  // Boot warning for workspaces that hold recruiter data while the switch is off
+  // (owner decision Q1); the changelog carries the upgrade hint.
+  await logHiddenVermittlerData({
+    scopes: tenantScopes,
+    settings: app.get<WorkspaceSettingsService>(WORKSPACE_SETTINGS_SERVICE),
+    mandates: app.get<MandateRepository>(MANDATE_REPOSITORY),
+    placements: app.get<PlacementRepository>(PLACEMENT_REPOSITORY),
+    logger,
+  }).catch((err: unknown) => {
+    logger.warn(
+      { err: err instanceof Error ? err.message : String(err) },
+      'hidden recruiter data check failed',
+    );
+  });
 
   // Löschfristen-Automatik: an hourly sweep anonymizes candidates past the
   // deletion deadline — but only for teams whose policy opts in (checked each

@@ -5,35 +5,84 @@ const SV = window.MyJobDesignSystem_5611b7;
 
 /* The central AI setup (ADR-0057): one server key, no per-user keys. */
 function AiSetupCard() {
-  const [state, setState] = React.useState(null); // null = loading, else { configured, providers }
-  React.useEffect(() => {
-    let alive = true;
+  const [state, setState] = React.useState(null); // null = loading; error = fetch failed
+  const [busy, setBusy] = React.useState(false);
+  const [error, setError] = React.useState('');
+  const load = React.useCallback(() => {
     window.RecruitApi.getLlmSettings()
       .then((s) => {
-        if (!alive) return;
         const providers = Array.isArray(s && s.providers) ? s.providers : [];
-        setState({ configured: providers.some((p) => p && p.available), providers });
-        // Tell the data layer the status was observed: drop its cached answer so
-        // a later AI action re-checks (e.g. after a restart with a key added).
+        setState({
+          configured: !!(s && s.configured),
+          providers,
+          current: (s && s.current) || null,
+        });
         try {
           window.dispatchEvent(new CustomEvent('myjob:aistatuschange'));
         } catch {
           /* ignore */
         }
       })
-      .catch(() => { if (alive) setState({ configured: false, providers: [] }); });
-    return () => { alive = false; };
+      .catch(() => setState({ error: true, configured: false, providers: [], current: null }));
   }, []);
+  React.useEffect(() => { load(); }, [load]);
+  const choose = (id) => {
+    setBusy(true);
+    setError('');
+    window.RecruitApi.updateLlmSettings({ provider: id })
+      .then((s) => {
+        const providers = Array.isArray(s && s.providers) ? s.providers : [];
+        setState({ configured: !!(s && s.configured), providers, current: (s && s.current) || null });
+        try {
+          window.dispatchEvent(new CustomEvent('myjob:aistatuschange'));
+        } catch {
+          /* ignore */
+        }
+      })
+      .catch(() => setError('Der Anbieter konnte nicht gewechselt werden.'))
+      .finally(() => setBusy(false));
+  };
 
   return (
     <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '22px 24px' }}>
-      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>KI-Einrichtung</h2>
+      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>KI-Anbindung</h2>
       <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Ein zentraler Schlüssel pro Server. Ohne Schlüssel zeigt jeder KI-Knopf „KI nicht eingerichtet“ und sendet keine Anfrage.</div>
       {state === null ? (
         <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Wird geladen…</div>
+      ) : state.error ? (
+        <div role="alert" style={{ marginTop: '14px', padding: '12px 14px', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '12.5px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <span style={{ flex: 1 }}>Der KI-Status konnte nicht geladen werden. Ob ein Schlüssel gesetzt ist, lässt sich gerade nicht feststellen.</span>
+          <button type="button" onClick={load} style={{ cursor: 'pointer', border: '1px solid var(--border-strong)', background: 'none', color: 'var(--text-heading)', borderRadius: 'var(--radius-pill)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '4px 12px' }}>
+            Erneut laden
+          </button>
+        </div>
       ) : state.configured ? (
-        <div role="status" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '14px', fontSize: '13px', color: 'var(--status-hired-strong)' }}>
-          <SV.Icon name="check" size={16} /> KI eingerichtet
+        <div style={{ marginTop: '14px' }}>
+          <div role="status" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--status-hired-strong)' }}>
+            <SV.Icon name="check" size={16} /> KI eingerichtet
+            {state.current && (
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>
+                · {state.current}
+              </span>
+            )}
+          </div>
+          {state.providers.some((p) => p.available) && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Anbieter</span>
+              {state.providers.filter((p) => p.available).map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  disabled={busy || state.current === p.id}
+                  onClick={() => choose(p.id)}
+                  style={{ cursor: busy || state.current === p.id ? 'default' : 'pointer', border: `1px solid ${state.current === p.id ? 'var(--accent)' : 'var(--border-strong)'}`, background: state.current === p.id ? 'var(--accent-soft)' : 'var(--surface-card)', color: state.current === p.id ? 'var(--accent-strong)' : 'var(--text-muted)', borderRadius: 'var(--radius-pill)', fontFamily: 'var(--font-mono)', fontSize: '11px', padding: '4px 12px' }}
+                >
+                  {p.label || p.id}
+                </button>
+              ))}
+            </div>
+          )}
+          {error && <div role="alert" style={{ fontSize: '12.5px', color: 'var(--danger)', marginTop: '8px' }}>{error}</div>}
         </div>
       ) : (
         <div role="alert" style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginTop: '14px', padding: '12px 14px', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
@@ -74,12 +123,13 @@ function WorkspaceSettingsCard() {
     const next = !vermittlung;
     setBusy(true);
     setError('');
-    window.RecruitApi.setWorkspaceSettings({ vermittlung: next })
+    window.RecruitApi.updateWorkspaceSettings({ vermittlung: next })
       .then((s) => {
         const on = !!(s && s.vermittlung);
         setVermittlung(on);
-        // Let the shell re-render the rail immediately (no reload needed).
-        try { window.dispatchEvent(new CustomEvent('myjob:workspacechange', { detail: on })); } catch { /* ignore */ }
+        // The shared store feeds the rail; refresh it so the nav re-renders
+        // immediately (no reload needed).
+        if (window.WorkspaceSettings) window.WorkspaceSettings.refresh();
       })
       .catch(() => setError('Der Schalter konnte nicht gespeichert werden. Bitte versuche es erneut.'))
       .finally(() => setBusy(false));
@@ -90,7 +140,7 @@ function WorkspaceSettingsCard() {
   return (
     <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '22px 24px' }}>
       <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>Workspace</h2>
-      <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Der Bewerbungsservice ist der Hauptweg. Die Vermittler-Funktionen (Suchaufträge, Pipeline, Platzierungen, Performance, Postfach, CoRecruiter) sind standardmäßig aus.</div>
+      <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Der Bewerbungsservice ist der Hauptweg. Die Vermittler-Funktionen (Suchaufträge, Pipeline, Platzierungen, Performance, Postfach, CoRecruiter) sind standardmäßig aus. Ausschalten löscht keine Daten — sie sind nach dem Einschalten unverändert da.</div>
       <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '16px', cursor: isAdmin ? 'pointer' : 'default', fontSize: '13.5px', color: 'var(--text-heading)' }}>
         <input type="checkbox" checked={vermittlung} onChange={toggle} disabled={!isAdmin || busy} aria-label="Vermittlung aktivieren" />
         Vermittlung aktivieren

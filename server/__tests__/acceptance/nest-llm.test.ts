@@ -20,10 +20,16 @@ import {
   PLAN_PROVIDER,
   RATE_LIMITER,
   CANDIDATE,
+  USER_REPOSITORY,
 } from '../../src/nest/tokens.js';
 import { LlmService } from '../../src/services/llm-service.js';
 import { CoverLetterService } from '../../src/services/cover-letter-service.js';
-import { FakeLlmProvider, InMemoryUsageMeter, noopLogger } from '../support/fakes.js';
+import {
+  FakeLlmProvider,
+  InMemoryUserRepository,
+  InMemoryUsageMeter,
+  noopLogger,
+} from '../support/fakes.js';
 import { InMemoryRateLimiter } from '../../src/adapters/in-memory-rate-limiter.js';
 import { FixedClock } from '../support/fakes.js';
 
@@ -45,8 +51,17 @@ async function makeApp(configured: boolean): Promise<INestApplication> {
     defaultProvider: 'claude',
     logger: noopLogger,
   });
+  const users = new InMemoryUserRepository();
+  users.users.push({
+    id: 'user1',
+    email: 'u1@example.com',
+    passwordHash: '',
+    roles: ['recruiter'],
+    createdAt: '2026-01-01T00:00:00.000Z',
+  });
   const coverLetter = new CoverLetterService({
     llmService,
+    userRepository: users,
     candidate: { name: 'Test Person', title: 'Engineer' },
     usageMeter: new InMemoryUsageMeter(),
     clock: new FixedClock(),
@@ -60,6 +75,7 @@ async function makeApp(configured: boolean): Promise<INestApplication> {
     { provide: PLAN_PROVIDER, useValue: { planFor: async () => 'pro' } },
     { provide: RATE_LIMITER, useValue: new InMemoryRateLimiter() },
     { provide: CANDIDATE, useValue: { name: 'Test Person', title: 'Engineer' } },
+    { provide: USER_REPOSITORY, useValue: users },
   ];
   @Global()
   @Module({ providers: fakes, exports: fakes.map((p) => (p as { provide: symbol }).provide) })
@@ -76,7 +92,7 @@ async function makeApp(configured: boolean): Promise<INestApplication> {
 
   const app = moduleRef.createNestApplication();
   app.useGlobalFilters(new ProblemJsonFilter(noopLogger));
-  await app.init();
+  await app.listen(0, '127.0.0.1');
   return app;
 }
 
@@ -100,8 +116,8 @@ describe('NestJS llm vertical (server status + cover letter)', () => {
     it('Settings_Llm_ReturnsServerStatusOnly', async () => {
       const res = await request(app.getHttpServer()).get('/api/v1/settings/llm');
       expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({ configured: true, current: 'claude' });
       expect(res.body).toHaveProperty('providers');
-      expect(res.body.current).toBe('claude');
     });
 
     it('Settings_KeysRoute_Returns404', async () => {
@@ -109,11 +125,12 @@ describe('NestJS llm vertical (server status + cover letter)', () => {
       expect(res.status).toBe(404);
     });
 
-    it('Settings_PutLlmRoute_Returns404', async () => {
+    it('SettingsLlm_PutUnavailableProvider_Returns400', async () => {
       const res = await request(app.getHttpServer())
         .put('/api/v1/settings/llm')
         .send({ provider: 'gemini' });
-      expect(res.status).toBe(404);
+      expect(res.status).toBe(400);
+      expect(res.body.type).toBe('about:blank#validation-error');
     });
 
     it('Ai_CoverLetter_WithKey_ReturnsProviderResult', async () => {
@@ -133,6 +150,12 @@ describe('NestJS llm vertical (server status + cover letter)', () => {
     });
     afterAll(async () => {
       await app.close();
+    });
+
+    it('SettingsLlm_NoKey_ReportsConfiguredFalseAndCurrentNull', async () => {
+      const res = await request(app.getHttpServer()).get('/api/v1/settings/llm');
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({ configured: false, current: null });
     });
 
     it('Ai_CoverLetter_NoKey_Returns503AiNotConfigured', async () => {

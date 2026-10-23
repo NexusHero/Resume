@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { LlmProviderId } from '../ports/llm-provider.js';
 
 /**
  * Team roles a user can hold. Roles are a set — a person can be several at once
@@ -28,6 +29,12 @@ export interface User {
   tenantId?: string;
   /** When the email address was confirmed via the emailed link (soft check). */
   verifiedAt?: string;
+  /**
+   * The persisted provider choice (ADR-0011, kept by ADR-0057). It is only used
+   * when that provider has a central server key; otherwise resolution falls back
+   * to the server default / any available provider.
+   */
+  llmProvider?: LlmProviderId;
 }
 
 /** The public projection of a user — no secrets. */

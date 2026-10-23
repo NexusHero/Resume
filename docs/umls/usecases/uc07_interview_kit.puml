@@ -12,10 +12,10 @@ Recruiter -> Ctrl : POST /mandates/:id/talents/:tid/interview-kit
 activate Ctrl
 Ctrl -> Svc : interviewKit(scope, user, tid, mandate)
 activate Svc
-Svc -> Runner : runFeature('interviewKit', prompt,\n{ schema, normalize, accept: questions>0, fallback: template })
+Svc -> Runner : runFeature('interviewKit', prompt,\n{ schema, normalize, accept: questions>0 })
 Runner --> Svc : { content, provider, usage }
 Svc --> Ctrl : { questions[], scorecard, provider }
 deactivate Svc
-Ctrl --> Recruiter : structured questions + scorecard\n(always usable, LLM or template)
+Ctrl --> Recruiter : structured questions + scorecard\n(AI-only; without a key 503, unusable reply 502)
 deactivate Ctrl
 @enduml

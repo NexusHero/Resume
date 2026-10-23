@@ -42,16 +42,6 @@ const VERMITTLER_ROUTES: Array<[Method, string]> = [
   ['post', '/api/v1/assistant/suggestions/s1/accept'],
   ['post', '/api/v1/assistant/suggestions/s1/dismiss'],
   ['get', '/api/v1/assistant/suggestions/s1/dossier.pdf'],
-  ['get', '/api/v1/applications'],
-  ['get', '/api/v1/history'],
-  ['post', '/api/v1/applications'],
-  ['post', '/api/v1/applications/build'],
-  ['patch', '/api/v1/applications/a1'],
-  ['delete', '/api/v1/applications/a1'],
-  ['get', '/api/v1/searches'],
-  ['post', '/api/v1/searches'],
-  ['delete', '/api/v1/searches/s1'],
-  ['get', '/api/v1/searches/s1/run'],
   ['post', '/api/v1/talents/t1/documents/pitch'],
   ['post', '/api/v1/talents/t1/documents/outreach'],
 ];
@@ -93,17 +83,6 @@ describe('Vermittlung switch off → every agency route answers 404', () => {
     expect(res.status).toBe(401);
   });
 
-  it('Vermittlung_FreePlanPitch_WhenOff_Returns402Not404', async () => {
-    // Owner decision §9-8: the class-level Pro gate runs before the switch, so a
-    // Free user gets 402 even when Vermittlung is off (and no AI key is set).
-    const srv = await makeNestApp(loadConfig({ PLAN: 'free' }), { vermittlung: false });
-    const agent = await registeredAgent(srv);
-    const res = await agent.post('/api/v1/talents/t1/documents/pitch').send({});
-    expect(res.status).toBe(402);
-    expect(res.headers['content-type']).toMatch(/application\/problem\+json/);
-    expect(res.body.type).toBe('about:blank#plan-required');
-  });
-
   it('Vermittlung_Mandates_WhenOn_ReturnsExistingData', async () => {
     const srv = await server();
     const agent = await registeredAgent(srv);
@@ -125,6 +104,24 @@ describe('Vermittlung switch off → every agency route answers 404', () => {
     expect(list.status).toBe(200);
     expect(list.body).toHaveLength(1);
     expect(list.body[0]).toMatchObject({ client: 'Aurora GmbH', role: 'Staff Engineer' });
+  });
+
+  it('VermittlerRoute_FreePlanAndVermittlungOff_Returns404Not402', async () => {
+    const srv = await makeNestApp(loadConfig({ PLAN: 'free' }), { vermittlung: false });
+    const agent = await registeredAgent(srv);
+    const res = await agent.post('/api/v1/talents/t1/documents/pitch').send({});
+    expect(res.status).toBe(404);
+  });
+
+  it('VermittlungSwitch_Off_ApplicationServiceRoutesStillWork', async () => {
+    const srv = await server();
+    const agent = await registeredAgent(srv);
+    expect((await agent.get('/api/v1/applications')).status).toBe(200);
+    expect((await agent.get('/api/v1/history')).status).toBe(200);
+    expect((await agent.get('/api/v1/searches')).status).toBe(200);
+    expect((await agent.get('/api/v1/talents')).status).toBe(200);
+    expect((await agent.get('/api/v1/settings/usage')).status).toBe(200);
+    expect((await agent.get('/api/v1/members')).status).toBe(200);
   });
 
   it('Ai_DocumentsPitch_WhenOffWithoutKey_Returns404Not503', async () => {

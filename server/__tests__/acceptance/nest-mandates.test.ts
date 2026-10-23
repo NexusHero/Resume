@@ -17,6 +17,7 @@ import {
   MANDATE_REPOSITORY,
   CANDIDACY_REPOSITORY,
   WORKSPACE_SETTINGS_STORE,
+  WORKSPACE_SETTINGS_SERVICE,
 } from '../../src/nest/tokens.js';
 import {
   InMemoryMandateRepository,
@@ -42,6 +43,13 @@ describe('NestJS mandates vertical', () => {
       { provide: MANDATE_REPOSITORY, useValue: new InMemoryMandateRepository() },
       { provide: CANDIDACY_REPOSITORY, useValue: new InMemoryCandidacyRepository() },
       {
+        provide: WORKSPACE_SETTINGS_SERVICE,
+        useValue: {
+          isVermittlungEnabled: async () => true,
+          get: async () => ({ vermittlung: true }),
+        },
+      },
+      {
         provide: WORKSPACE_SETTINGS_STORE,
         useValue: { get: async () => ({ vermittlung: true }), set: async () => undefined },
       },
@@ -59,7 +67,7 @@ describe('NestJS mandates vertical', () => {
 
     app = moduleRef.createNestApplication();
     app.useGlobalFilters(new ProblemJsonFilter(noopLogger));
-    await app.init();
+    await app.listen(0, '127.0.0.1');
   });
 
   afterAll(async () => {

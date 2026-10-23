@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const PORT = 4188;
+const PORT = Number(process.env.PORT) || 4188;
 const baseURL = `http://127.0.0.1:${PORT}`;
 
 /** UI acceptance tests: boot the real server and drive the web UIs in a browser. */

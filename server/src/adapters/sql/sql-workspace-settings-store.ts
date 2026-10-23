@@ -12,18 +12,18 @@ export class SqlWorkspaceSettingsStore implements WorkspaceSettingsStore {
     this.db = deps.db;
   }
 
-  async get(ownerId: string): Promise<WorkspaceSettings | null> {
+  async get(workspaceId: string): Promise<WorkspaceSettings | null> {
     const rows = await this.db
       .select()
       .from(workspaceSettings)
-      .where(eq(workspaceSettings.ownerId, ownerId));
+      .where(eq(workspaceSettings.workspaceId, workspaceId));
     return rows[0]?.settings ?? null;
   }
 
-  async set(ownerId: string, settings: WorkspaceSettings): Promise<void> {
+  async set(workspaceId: string, settings: WorkspaceSettings): Promise<void> {
     await this.db
       .insert(workspaceSettings)
-      .values({ ownerId, settings })
-      .onConflictDoUpdate({ target: workspaceSettings.ownerId, set: { settings } });
+      .values({ workspaceId: workspaceId, settings })
+      .onConflictDoUpdate({ target: workspaceSettings.workspaceId, set: { settings } });
   }
 }

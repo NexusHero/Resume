@@ -8,6 +8,11 @@ import './setup-globals.js'; // sets window.React/ReactDOM first
 import '../../_ds_bundle.js'; // window.MyJobDesignSystem_5611b7 (uses window.React)
 import './data.js';
 import './use-viewport.jsx'; // window.useViewport — read by the shell + views
+import './workspace-settings.js'; // window.WorkspaceSettings — per-workspace switch store
+import './use-workspace-settings.jsx'; // window.useWorkspaceSettings
+import './ai-status.js'; // window.AiStatus — central-key status store
+import './use-ai-status.jsx'; // window.useAiStatus
+import './AiGate.jsx'; // window.AiButton / AiNotConfiguredHint / TextImportNotice
 import './use-theme.jsx'; // window.useTheme — appearance binding for Settings + rail
 import './use-dialog.jsx'; // window.useDialog — modal focus trap / Esc / return focus (#203)
 import './use-online.jsx'; // window.useOnline — connectivity for the offline banner
@@ -31,6 +36,7 @@ import './TalentProfile.jsx';
 import './EditorShared.jsx';
 import './EditorDocs.jsx';
 import './EditorModals.jsx';
+import './import-merge.js'; // window.mergeTextImport — text-import merge (ADR-0057)
 import './Editor.jsx';
 
 import './ConfirmDialog.jsx'; // window.ConfirmDialog — designed confirm for irreversible actions (#200)

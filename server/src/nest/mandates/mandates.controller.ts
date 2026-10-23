@@ -13,7 +13,7 @@ import {
 import { createMandateSchema, updateMandateSchema } from '../../domain/mandate.js';
 import type { MandateService } from '../../services/mandate-service.js';
 import { AuthGuard } from '../auth.guard.js';
-import { VermittlungGuard } from '../vermittlung.guard.js';
+import { RequiresVermittlung, VermittlungGuard } from '../vermittlung.guard.js';
 import { CurrentScope } from '../params.js';
 import { ZodValidationPipe } from '../zod-validation.pipe.js';
 import { MANDATE_SERVICE } from '../tokens.js';
@@ -25,6 +25,7 @@ import { MANDATE_SERVICE } from '../tokens.js';
  */
 @Controller('api/v1/mandates')
 @UseGuards(AuthGuard, VermittlungGuard)
+@RequiresVermittlung()
 export class MandatesController {
   constructor(@Inject(MANDATE_SERVICE) private readonly service: MandateService) {}
 

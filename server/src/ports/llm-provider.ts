@@ -14,8 +14,6 @@ export interface LlmGenerateInput {
   prompt: string;
   /** Soft cap on generated tokens (provider default applies when unset). */
   maxTokens?: number;
-  /** Override the configured credential for this call (e.g. the user's own key). */
-  apiKey?: string;
 }
 
 /** Tokens a single generation consumed, as reported by the provider. */

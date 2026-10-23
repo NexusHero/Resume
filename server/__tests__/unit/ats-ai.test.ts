@@ -1,4 +1,4 @@
-import { atsPrompt, fallbackAts, normalizeAts } from '../../src/domain/ats-ai.js';
+import { atsPrompt, normalizeAts } from '../../src/domain/ats-ai.js';
 import type { TalentDocuments } from '../../src/domain/talent-documents.js';
 
 const documents: TalentDocuments = {
@@ -53,19 +53,6 @@ describe('ats-ai', () => {
     // it must still reach the analyst so it is not reported as a missing keyword.
     const { prompt } = atsPrompt(documents, 'We need a C++ and gRPC expert');
     expect(prompt).toContain('gRPC');
-  });
-
-  it('FallbackAts_ScoresKeywordOverlap', () => {
-    const res = fallbackAts(documents, 'Looking for strong C++ and Rust skills.');
-    expect(res.score).toBeGreaterThan(0);
-    expect(res.score).toBeLessThanOrEqual(100);
-    expect(res.matched).toEqual(expect.arrayContaining(['C++', 'Rust']));
-    expect(res.suggestions.length).toBeGreaterThan(0);
-  });
-
-  it('FallbackAts_NoMatch_ScoresLow', () => {
-    const res = fallbackAts(documents, 'We need a florist and a barista.');
-    expect(res.score).toBe(0);
   });
 
   it('NormalizeAts_ClampsScoreTo0to100', () => {

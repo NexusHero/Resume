@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { UpstreamProviderError } from './errors.js';
 import type { TalentDocuments } from './talent-documents.js';
 import { tokenize } from './ats-ai.js';
 import { jobClusters, skillMatchesJob } from './skill-semantics.js';
@@ -114,66 +115,28 @@ export function prepPrompt(
   };
 }
 
-/** Deterministic prep — grounded, always available, no LLM. */
-export function fallbackPrep(
+/** The factual, grounded part of a prep pack (the LLM writes only the narrative). */
+export type CandidatePrepFacts = Omit<
+  CandidatePrep,
+  'likelyQuestions' | 'starAnswers' | 'candidateQuestions'
+>;
+
+/**
+ * Facts for the prep prompt: company archetype/observations, obligations,
+ * requirement coverage and strengths. Deterministic; no template coaching text.
+ */
+export function prepFacts(
   documents: TalentDocuments | null,
-  mandate: MandateContext,
   company: CompanyProfile,
   requirements: JobRequirements,
   jobText: string,
-): CandidatePrep {
+): CandidatePrepFacts {
   const skills = documentSkills(documents);
   const strengths = strengthsFromAd(documents, jobText);
-  const topSkills = (strengths.length ? strengths : skills).slice(0, 3);
-  const firstStation = documents?.resume.experience[0];
-  const stationLabel =
-    firstStation && (firstStation.role || firstStation.company)
-      ? [firstStation.role, firstStation.company].filter(Boolean).join(' at ')
-      : 'one of your roles';
-
   const requirementChecks: RequirementCheck[] = requirements.musts.map((text) => ({
     text,
     covered: coveredByCv(text, skills),
   }));
-
-  const likelyQuestions: PrepQuestion[] = [
-    ...company.style.formats.slice(0, 3).map((f) => ({
-      category: 'Format',
-      question: `Expect: ${f}.`,
-      why: `typical for ${company.label}`,
-    })),
-    ...topSkills.slice(0, 2).map((s) => ({
-      category: 'Technical',
-      question: `Go deep on your experience with ${s} using a concrete project.`,
-      why: 'relevant in both profile and ad',
-    })),
-    {
-      category: 'Behavior',
-      question: `Give an example that demonstrates "${company.style.emphasis[0] ?? 'your strength'}".`,
-      why: `weighted particularly heavily at ${company.label}`,
-    },
-  ];
-
-  const starAnswers: StarAnswer[] = [
-    ...topSkills.slice(0, 1).map((s) => ({
-      competency: s,
-      prompt: `Tell us about a project involving ${s}.`,
-      scaffold: `Situation: your role at ${stationLabel}. Task: the goal. Action: what YOU specifically did with ${s}. Result: a measurable outcome.`,
-    })),
-    {
-      competency: 'Challenge',
-      prompt: 'Describe a difficult situation and how you resolved it.',
-      scaffold: `Situation: e.g. at ${stationLabel}. Task: the problem. Action: your concrete steps. Result: what was better in the end.`,
-    },
-  ];
-
-  const candidateQuestions = [
-    'What does success in this role look like after 6–12 months?',
-    "How is the team I'd be working with set up?",
-    'What does onboarding look like in the first few weeks?',
-    `What do you value most in the selection process (${company.style.emphasis[0] ?? 'technical skills'})?`,
-  ];
-
   return {
     companyLabel: company.label,
     companySource: company.source,
@@ -185,9 +148,6 @@ export function fallbackPrep(
     processHints: requirements.processHints,
     strengths,
     requirementChecks,
-    likelyQuestions,
-    starAnswers,
-    candidateQuestions,
   };
 }
 
@@ -199,7 +159,7 @@ const trim = (s: string): string => s.replace(/\s+/g, ' ').trim();
  * strengths) stays as computed — that is the anti-hallucination guarantee.
  */
 export function mergePrep(
-  base: CandidatePrep,
+  facts: CandidatePrepFacts,
   raw: z.infer<typeof prepResultSchema>,
 ): CandidatePrep {
   const questions = raw.likelyQuestions
@@ -215,10 +175,15 @@ export function mergePrep(
     .filter((s) => s.scaffold)
     .slice(0, 3);
   const asks = raw.candidateQuestions.map(trim).filter(Boolean).slice(0, 4);
+  // An empty required section means the model did not produce a usable pack —
+  // an upstream error, never a silent fall back to template coaching text.
+  if (!questions.length || !stars.length || !asks.length) {
+    throw new UpstreamProviderError('The AI provider returned an incomplete interview prep.');
+  }
   return {
-    ...base,
-    likelyQuestions: questions.length ? questions : base.likelyQuestions,
-    starAnswers: stars.length ? stars : base.starAnswers,
-    candidateQuestions: asks.length ? asks : base.candidateQuestions,
+    ...facts,
+    likelyQuestions: questions,
+    starAnswers: stars,
+    candidateQuestions: asks,
   };
 }

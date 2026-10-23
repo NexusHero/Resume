@@ -35,7 +35,7 @@ const baseApi = () => ({
     providers: [{ id: 'claude', label: 'Claude', available: true }],
   }),
   getWorkspaceSettings: vi.fn().mockResolvedValue({ vermittlung: false }),
-  setWorkspaceSettings: vi.fn().mockResolvedValue({ vermittlung: true }),
+  updateWorkspaceSettings: vi.fn().mockResolvedValue({ vermittlung: true }),
   getMyProfileName: vi.fn().mockResolvedValue(''),
   authMe: vi.fn().mockResolvedValue({ id: 'me', email: 'me@x.io', roles: ['admin'] }),
   getUsage: vi.fn().mockResolvedValue({ requests: 0 }),
@@ -55,14 +55,14 @@ describe('SettingsView — responsive cards', () => {
   it('AiSetupAndWorkspaceCards_Desktop_Render', async () => {
     stubMatchMedia(false);
     const { findByText, findByLabelText } = render(<SettingsView user={user} />);
-    await findByText('KI-Einrichtung');
+    await findByText('KI-Anbindung');
     await findByLabelText('Vermittlung aktivieren');
   });
 
   it('AiSetupAndWorkspaceCards_Mobile_Render', async () => {
     stubMatchMedia(true);
     const { findByText, findByLabelText } = render(<SettingsView user={user} />);
-    await findByText('KI-Einrichtung');
+    await findByText('KI-Anbindung');
     await findByLabelText('Vermittlung aktivieren');
   });
 });

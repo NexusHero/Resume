@@ -1,7 +1,6 @@
 import { mandateToTarget, jobToTarget } from '../../src/domain/application-target.js';
 import {
   tailorPrompt,
-  fallbackTailor,
   normalizeTailored,
   tailorResultSchema,
 } from '../../src/domain/application-tailor.js';
@@ -113,15 +112,6 @@ describe('application-tailor', () => {
   it('TailorPrompt_NoAdText_ShowsPlaceholder', () => {
     const built = tailorPrompt(docs(), { role: 'Dev', company: '', jobText: '' }, 'en');
     expect(built.prompt).toContain('(no ad text provided)');
-  });
-
-  it('FallbackTailor_ReusesEditorFallbacks_InTargetLanguage', () => {
-    const de = fallbackTailor(docs(), { role: 'Entwickler', company: 'Globex', jobText: '' }, 'de');
-    expect(de.summary).toMatch(/Erfahren|Fachkraft|Engineer/);
-    expect(de.paragraphs).toHaveLength(3);
-    expect(de.paragraphs[0]).toContain('Globex');
-    const en = fallbackTailor(docs(), { role: 'Dev', company: 'ACME', jobText: '' }, 'en');
-    expect(en.paragraphs[0]).toContain('ACME');
   });
 
   it('NormalizeTailored_TrimsAndDropsEmptyParagraphs', () => {

@@ -39,7 +39,10 @@ job-application toolkit:
   kits, candidate prep, client pitch + outreach, ATS gap analysis, AGG compliance — with a
   central server key, a clear "KI nicht eingerichtet" state when it is absent, and a
   grounding self-check over generated text. There is **no template fallback** that
-  impersonates AI (ADR-0057).
+  impersonates AI (ADR-0057). The one named exception is the CV import without a
+  key: "Text übernehmen (ohne KI)" stores the full CV text in `resume.rawText`
+  (≤ 50,000 characters) and invents no structure; `rawText` is exported in the
+  GDPR export, never rendered/sent in prompts, and cleared on anonymisation.
 - **CoRecruiter** — an in-process agent (ADR-0013) that prepares the desk proactively
   (shortlists, stalled-pipeline nudges, data-gap flags) and, in its top `autopilot` gear
   (ADR-0019), builds complete tailored application packets for strong matches and stages
@@ -337,7 +340,7 @@ Full log in [`docs/adr/`](adr). Summary:
 | 0008 | Skill canonicalization taxonomy                                                                        | Accepted                        |
 | 0009 | Grounding self-check over generated text                                                               | Accepted                        |
 | 0010 | Team scope as the ownership boundary for recruiting data                                               | Accepted                        |
-| 0011 | Per-user, persisted LLM provider choice                                                                | Superseded by 0057              |
+| 0011 | Per-user, persisted LLM provider choice                                                                | Partially superseded by 0057    |
 | 0012 | Hand-maintained OpenAPI contract + self-hosted Swagger UI                                              | Accepted                        |
 | 0013 | In-process assistant agent with staged-suggestion autonomy                                             | Accepted (extended by 0019)     |
 | 0014 | First-party outcome loop (artefact → result tracking)                                                  | Accepted                        |

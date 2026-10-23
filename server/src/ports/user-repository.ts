@@ -1,4 +1,5 @@
 import type { User, Role } from '../domain/user.js';
+import type { LlmProviderId } from './llm-provider.js';
 
 /** Persistence of registered accounts. */
 export interface UserRepository {
@@ -11,6 +12,8 @@ export interface UserRepository {
   updateRoles(id: string, roles: Role[]): Promise<void>;
   /** Stamp the account as email-verified (soft verification flow). */
   markVerified(id: string, at: string): Promise<void>;
+  /** Persist the user's preferred AI provider (ADR-0011, kept by ADR-0057). */
+  setLlmProvider(id: string, provider: LlmProviderId): Promise<void>;
   /** Delete an account by id; returns whether a row was removed (DSGVO erasure). */
   remove(id: string): Promise<boolean>;
 }

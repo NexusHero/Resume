@@ -43,6 +43,8 @@ import {
   PDF_RENDERER,
   PDF_MERGER,
   WORKSPACE_SETTINGS_STORE,
+  WORKSPACE_SETTINGS_SERVICE,
+  LLM_SERVICE,
   AUTH_ENGINE,
   PASSWORD_RESET_TOKEN_STORE,
   EMAIL_VERIFICATION_TOKEN_STORE,
@@ -98,6 +100,7 @@ describe('NestJS ops verticals (match, artifacts, retention, account, assistant)
     await workspaceSettings.set('team', { vermittlung: true });
     const fakes: Provider[] = [
       { provide: AUTHORIZER, useValue: new RoleAuthorizer() },
+      { provide: LLM_SERVICE, useValue: { hasAvailableProvider: () => true } },
       { provide: PLAN_PROVIDER, useValue: { planFor: async () => plan } },
       { provide: EMBEDDING_PROVIDER, useValue: { embed: async () => [1, 0, 0] } },
       { provide: DOCUMENT_AI_SERVICE, useValue: {} },
@@ -124,6 +127,13 @@ describe('NestJS ops verticals (match, artifacts, retention, account, assistant)
       { provide: PDF_RENDERER, useValue: new FakePdfRenderer() },
       { provide: PDF_MERGER, useValue: new FakePdfMerger() },
       { provide: WORKSPACE_SETTINGS_STORE, useValue: workspaceSettings },
+      {
+        provide: WORKSPACE_SETTINGS_SERVICE,
+        useValue: {
+          isVermittlungEnabled: async () => true,
+          get: async () => ({ vermittlung: true }),
+        },
+      },
       { provide: AUTH_ENGINE, useValue: new FakeAuthEngine() },
       { provide: PASSWORD_RESET_TOKEN_STORE, useValue: new InMemoryPasswordResetTokenStore() },
       {
@@ -158,7 +168,7 @@ describe('NestJS ops verticals (match, artifacts, retention, account, assistant)
 
     app = moduleRef.createNestApplication();
     app.useGlobalFilters(new ProblemJsonFilter(noopLogger));
-    await app.init();
+    await app.listen(0, '127.0.0.1');
   });
 
   afterAll(async () => {

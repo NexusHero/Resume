@@ -65,12 +65,14 @@ import {
               await documentRepository.removeForTalent(scope, talentId);
               return;
             }
-            // anonymize: keep the résumé body, clear the identifying contact block.
+            // anonymize: keep the structured résumé body, but clear the
+            // identifying contact block and the raw CV text (ADR-0057).
             const documents = await documentRepository.get(scope, talentId);
             if (documents) {
               await documentRepository.save({
                 ...documents,
                 contact: { ...emptyContact },
+                resume: { ...documents.resume, rawText: '' },
                 updatedAt: clock.isoNow(),
               });
             }

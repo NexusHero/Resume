@@ -49,6 +49,8 @@ import type {
   LlmProviderId,
 } from '../../src/ports/llm-provider.js';
 import type { WorkspaceSettingsStore } from '../../src/ports/workspace-settings-store.js';
+import { WorkspaceSettingsService } from '../../src/services/workspace-settings-service.js';
+import { LlmService } from '../../src/services/llm-service.js';
 import type { WorkspaceSettings } from '../../src/domain/workspace-settings.js';
 import type { UsageMeter } from '../../src/ports/usage-meter.js';
 import type { UsageEvent } from '../../src/domain/usage.js';
@@ -614,19 +616,74 @@ export class InMemoryWorkspaceSettingsStore implements WorkspaceSettingsStore {
   }
 }
 
-/** A fake LLM provider: reports availability and returns a scripted reply. */
+/**
+ * A fake LLM provider: reports availability (mutable at runtime), returns a
+ * scripted reply per call, counts calls and can be told to throw. Tests can
+ * switch a running server between "configured" and "not configured".
+ */
 export class FakeLlmProvider implements LlmProvider {
   readonly label = 'Fake';
   lastInput?: LlmGenerateInput;
+  calls = 0;
+  /** Replies are consumed in order; the last one repeats. */
+  replies: string[];
+  /** When set, `generate` rejects with this error instead of replying. */
+  failWith: Error | null = null;
+
   constructor(
     readonly id: LlmProviderId = 'claude',
-    readonly available = true,
-    private readonly reply = '{"ok":true}',
-  ) {}
-  async generate(input: LlmGenerateInput): Promise<LlmGenerateResult> {
-    this.lastInput = input;
-    return { text: this.reply, usage: { inputTokens: 1, outputTokens: 1 } };
+    public available = true,
+    reply: string | string[] = '{"ok":true}',
+  ) {
+    this.replies = Array.isArray(reply) ? [...reply] : [reply];
   }
+
+  async generate(input: LlmGenerateInput): Promise<LlmGenerateResult> {
+    this.calls += 1;
+    this.lastInput = input;
+    if (this.failWith) throw this.failWith;
+    const text = this.replies.length > 1 ? (this.replies.shift() as string) : this.replies[0];
+    return { text, usage: { inputTokens: 1, outputTokens: 1 } };
+  }
+}
+
+/** A workspace settings store + service, switched on/off for every scope. */
+export function fakeWorkspaceSettings(opts: { vermittlung: boolean }): {
+  store: InMemoryWorkspaceSettingsStore;
+  service: WorkspaceSettingsService;
+} {
+  const store = new InMemoryWorkspaceSettingsStore();
+  const service = new WorkspaceSettingsService({ workspaceSettingsStore: store });
+  const scopes = new Set<string>();
+  store.set = async (scope: string, settings: WorkspaceSettings): Promise<void> => {
+    scopes.add(scope);
+    store.rows.set(scope, settings);
+  };
+  // Pre-seed the default team and make unknown scopes answer the same value.
+  void store.set('team', { vermittlung: opts.vermittlung });
+  const originalGet = store.get.bind(store);
+  store.get = async (scope: string): Promise<WorkspaceSettings | null> =>
+    (await originalGet(scope)) ?? { vermittlung: opts.vermittlung };
+  void scopes;
+  return { store, service };
+}
+
+/** A real LlmService over a single fake provider. */
+export function fakeLlmService(opts: {
+  available: boolean;
+  id?: LlmProviderId;
+  reply?: string | string[];
+  provider?: FakeLlmProvider;
+}): { service: LlmService; provider: FakeLlmProvider } {
+  const provider =
+    opts.provider ??
+    new FakeLlmProvider(opts.id ?? 'claude', opts.available, opts.reply ?? '{"ok":true}');
+  const service = new LlmService({
+    providers: [provider],
+    defaultProvider: provider.id,
+    logger: noopLogger,
+  });
+  return { service, provider };
 }
 
 export class InMemoryUsageMeter implements UsageMeter {

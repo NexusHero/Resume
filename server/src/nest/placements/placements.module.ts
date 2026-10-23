@@ -17,7 +17,7 @@ import type { PlacementRepository } from '../../ports/placement-repository.js';
 import type { Clock } from '../../ports/clock.js';
 import type { IdGenerator } from '../../ports/id-generator.js';
 import { AuthGuard } from '../auth.guard.js';
-import { VermittlungGuard } from '../vermittlung.guard.js';
+import { RequiresVermittlung, VermittlungGuard } from '../vermittlung.guard.js';
 import { CurrentScope } from '../params.js';
 import { ZodValidationPipe } from '../zod-validation.pipe.js';
 import { PLACEMENT_SERVICE, PLACEMENT_REPOSITORY, CLOCK, ID_GENERATOR } from '../tokens.js';
@@ -25,6 +25,7 @@ import { PLACEMENT_SERVICE, PLACEMENT_REPOSITORY, CLOCK, ID_GENERATOR } from '..
 /** Placements CRUD under /api/v1/placements (ADR-0051 port of PlacementController). */
 @Controller('api/v1/placements')
 @UseGuards(AuthGuard, VermittlungGuard)
+@RequiresVermittlung()
 export class PlacementsController {
   constructor(@Inject(PLACEMENT_SERVICE) private readonly service: PlacementService) {}
 

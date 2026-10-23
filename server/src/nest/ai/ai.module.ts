@@ -10,6 +10,7 @@ import { CoverLetterService } from '../../services/cover-letter-service.js';
 import type { LlmService } from '../../services/llm-service.js';
 import type { DocumentService } from '../../services/document-service.js';
 import type { UsageMeter } from '../../ports/usage-meter.js';
+import type { UserRepository } from '../../ports/user-repository.js';
 import type { PdfTextExtractor } from '../../ports/pdf-text-extractor.js';
 import type { ArtifactLogRepository } from '../../ports/artifact-log-repository.js';
 import type { InterviewObservationRepository } from '../../ports/interview-observation-repository.js';
@@ -29,6 +30,7 @@ import {
   DOCUMENT_AI_SERVICE,
   COVER_LETTER_SERVICE,
   LLM_SERVICE,
+  USER_REPOSITORY,
   DOCUMENT_SERVICE,
   USAGE_METER,
   PDF_TEXT_EXTRACTOR,
@@ -54,14 +56,21 @@ import {
   providers: [
     {
       provide: LLM_FEATURE_RUNNER,
-      useFactory: (llmService: LlmService, usageMeter: UsageMeter, clock: Clock, logger: Logger) =>
+      useFactory: (
+        llmService: LlmService,
+        userRepository: UserRepository,
+        usageMeter: UsageMeter,
+        clock: Clock,
+        logger: Logger,
+      ) =>
         new LlmFeatureRunner({
           llmService,
+          userRepository,
           usageMeter,
           clock,
           logger,
         }),
-      inject: [LLM_SERVICE, USAGE_METER, CLOCK, LOGGER],
+      inject: [LLM_SERVICE, USER_REPOSITORY, USAGE_METER, CLOCK, LOGGER],
     },
     {
       provide: DOCUMENT_ASSIST_SERVICE,
@@ -76,11 +85,19 @@ import {
       provide: CV_PARSE_SERVICE,
       useFactory: (
         llmFeatureRunner: LlmFeatureRunner,
+        llmService: LlmService,
         documentService: DocumentService,
         pdfTextExtractor: PdfTextExtractor,
         logger: Logger,
-      ) => new CvParseService({ llmFeatureRunner, documentService, pdfTextExtractor, logger }),
-      inject: [LLM_FEATURE_RUNNER, DOCUMENT_SERVICE, PDF_TEXT_EXTRACTOR, LOGGER],
+      ) =>
+        new CvParseService({
+          llmFeatureRunner,
+          llmService,
+          documentService,
+          pdfTextExtractor,
+          logger,
+        }),
+      inject: [LLM_FEATURE_RUNNER, LLM_SERVICE, DOCUMENT_SERVICE, PDF_TEXT_EXTRACTOR, LOGGER],
     },
     {
       provide: ATS_AI_SERVICE,
@@ -153,12 +170,21 @@ import {
       provide: COVER_LETTER_SERVICE,
       useFactory: (
         llmService: LlmService,
+        userRepository: UserRepository,
         candidate: CandidateIdentity,
         usageMeter: UsageMeter,
         clock: Clock,
         logger: Logger,
-      ) => new CoverLetterService({ llmService, candidate, usageMeter, clock, logger }),
-      inject: [LLM_SERVICE, CANDIDATE, USAGE_METER, CLOCK, LOGGER],
+      ) =>
+        new CoverLetterService({
+          llmService,
+          userRepository,
+          candidate,
+          usageMeter,
+          clock,
+          logger,
+        }),
+      inject: [LLM_SERVICE, USER_REPOSITORY, CANDIDATE, USAGE_METER, CLOCK, LOGGER],
     },
   ],
   exports: [

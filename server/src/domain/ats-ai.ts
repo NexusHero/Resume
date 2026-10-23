@@ -65,36 +65,6 @@ export function tokenize(text: string): Set<string> {
   );
 }
 
-/**
- * Deterministic fallback (no LLM): how many of the candidate's stated skills the
- * job mentions. A coarse proxy — the LLM path is the real analysis — but it
- * always returns a usable, honest score.
- */
-export function fallbackAts(documents: TalentDocuments, jobText: string): AtsScore {
-  const skills = [
-    ...documents.resume.skillGroups.flatMap((g) => g.items),
-    ...documents.resume.experience.flatMap((e) => e.skills),
-  ]
-    .map((s) => s.trim())
-    .filter(Boolean);
-  const jobTokens = tokenize(jobText);
-  const unique = [...new Set(skills.map((s) => s.toLowerCase()))];
-  const matched = unique.filter(
-    (s) => jobTokens.has(s) || [...jobTokens].some((t) => s.includes(t)),
-  );
-  const score = unique.length ? Math.round((matched.length / unique.length) * 100) : 0;
-  const matchedLabels = skills.filter((s) => matched.includes(s.toLowerCase()));
-  return {
-    score,
-    matched: [...new Set(matchedLabels)],
-    missing: [],
-    suggestions: [
-      "Mirror the job ad's key terms verbatim in your summary and experience.",
-      'Back core competencies with measurable results (numbers, impact).',
-    ],
-  };
-}
-
 /** Clamp/repair an LLM-produced score into a valid AtsScore. */
 export function normalizeAts(raw: z.infer<typeof atsResultSchema>): AtsScore {
   const score = Math.max(0, Math.min(100, Math.round(raw.score)));

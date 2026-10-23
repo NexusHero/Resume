@@ -41,7 +41,7 @@ describe('NestJS jobs vertical', () => {
 
     app = moduleRef.createNestApplication();
     app.useGlobalFilters(new ProblemJsonFilter(noopLogger));
-    await app.init();
+    await app.listen(0, '127.0.0.1');
   });
 
   afterAll(async () => {

@@ -16,8 +16,8 @@ import {
   type CandidatePrep,
   prepPrompt,
   prepResultSchema,
-  fallbackPrep,
   mergePrep,
+  prepFacts,
 } from '../domain/candidate-prep.js';
 import { companyInterviewProfile } from '../domain/company-archetype.js';
 import { extractRequirements } from '../domain/job-requirements.js';
@@ -134,20 +134,19 @@ export class MatchAiService {
       observed,
     );
     const requirements = extractRequirements(jobText);
-    // The deterministic pack is the prompt foundation only (ADR-0057): the
-    // factual parts (company profile, obligations, requirement coverage,
-    // strengths) stay grounded, but the route is generative and answers 503
-    // without a key rather than shipping the templated coaching narrative.
-    const base = fallbackPrep(documents, mandate, company, requirements, jobText);
+    // The deterministic facts are the prompt foundation only (ADR-0057): the
+    // company profile, obligations, requirement coverage and strengths stay
+    // grounded, but the narrative comes from the model — no template text.
+    const facts = prepFacts(documents, company, requirements, jobText);
 
     const { content, provider, usage } = await this.runner.runFeature(
       userId,
       'candidatePrep',
       MAX_TOKENS.candidatePrep,
-      prepPrompt(documents, mandate, company, base.strengths),
+      prepPrompt(documents, mandate, company, facts.strengths),
       {
         schema: prepResultSchema,
-        normalize: (parsed) => mergePrep(base, parsed),
+        normalize: (parsed) => mergePrep(facts, parsed),
       },
     );
     return { ...content, provider, usage };

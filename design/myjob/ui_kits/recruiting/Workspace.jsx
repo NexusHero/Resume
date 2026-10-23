@@ -57,6 +57,14 @@ function Dashboard({ me, apps, vkpis, clients, mandates, talentCount, vermittlun
 
       {firstRun && onNav && <OnboardingCard onNav={onNav} vermittlung={vermittlung} />}
 
+      {!vermittlung && (
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '14px' }}>
+          {(window.computeApplicationKpis ? window.computeApplicationKpis(apps) : []).map((k, i) => (
+            <WS.StatCard key={i} {...k} />
+          ))}
+        </div>
+      )}
+
       {vermittlung && (
       <>
       {/* agency kpis */}
@@ -126,6 +134,9 @@ function TalentGrid({ talents, apps, onOpen, onAdd, onImport, importing }) {
         )}
         <WS.Button size="sm" variant="outline" iconLeft={<WS.Icon name="plus" size={14} />} onClick={onAdd}>Mandant hinzufügen</WS.Button>
       </div>
+      {window.useAiStatus && window.useAiStatus().status === 'not-configured' && window.TextImportNotice && (
+        <window.TextImportNotice />
+      )}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
         {talents.map((t) => {
           const n = apps.filter((a) => a.talentId === t.id).length;
@@ -214,4 +225,45 @@ function Inbox({ messages, apps, talents, onOpenTalent }) {
   );
 }
 
-Object.assign(window, { Dashboard, TalentGrid, JobsView, Inbox });
+/* Tabs-mode "Mehr" destination (plan §3.6): every intermediary destination and
+   the settings surface stay reachable on a phone when the switch is on. */
+function MoreView({ onNavigate }) {
+  const entries = [
+    { id: 'mandate', label: 'Suchaufträge', desc: 'Suchaufträge und ihre Pipelines' },
+    { id: 'berichte', label: 'Performance', desc: 'Honorare, Funnel und Auslastung' },
+    { id: 'postfach', label: 'Postfach', desc: 'Nachrichten von Klienten und Unternehmen' },
+    { id: 'assistant', label: 'CoRecruiter', desc: 'Der KI-Assistent für den Desk' },
+    { id: 'einstellungen', label: 'Einstellungen', desc: 'Darstellung, KI-Anbindung und Workspace' },
+  ];
+  return (
+    <WS.Card pad={false}>
+      {entries.map((e) => (
+        <button
+          key={e.id}
+          type="button"
+          onClick={() => onNavigate(e.id)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '13px',
+            width: '100%',
+            textAlign: 'left',
+            background: 'none',
+            border: 'none',
+            borderBottom: '1px solid var(--border)',
+            padding: '16px 18px',
+            cursor: 'pointer',
+          }}
+        >
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: 'block', fontSize: '14px', fontWeight: 700, color: 'var(--text-heading)' }}>{e.label}</span>
+            <span style={{ display: 'block', fontSize: '12px', color: 'var(--text-soft)', marginTop: '2px' }}>{e.desc}</span>
+          </span>
+          <WS.Icon name="chevronRight" size={16} style={{ color: 'var(--text-soft)' }} />
+        </button>
+      ))}
+    </WS.Card>
+  );
+}
+
+Object.assign(window, { Dashboard, TalentGrid, JobsView, Inbox, MoreView });

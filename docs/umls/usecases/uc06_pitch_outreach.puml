@@ -15,7 +15,7 @@ activate Ctrl
 Ctrl -> Svc : pitchForMandate / outreach(scope, user, id, ctx)
 activate Svc
 Svc -> Svc : detectLanguage(job ad, else CV)
-Svc -> Runner : runFeature(feature, prompt(lang),\n{ schema, normalize, accept: non-empty, fallback: template })
+Svc -> Runner : runFeature(feature, prompt(lang),\n{ schema, normalize, accept: non-empty })
 Runner --> Svc : { content, provider, usage }
 Svc -> Ground : checkGrounding(text, CV + mandate)
 Ground --> Svc : { supported, unsupported[] }

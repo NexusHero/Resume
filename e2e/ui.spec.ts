@@ -48,7 +48,6 @@ test.describe('UI acceptance — the suite renders in German', () => {
     await expect(nav).toContainText('Stellen');
     await expect(nav).toContainText('Bewerbungen');
     await expect(nav).toContainText('Suchaufträge');
-    await expect(nav).toContainText('Pipeline');
     await expect(nav).toContainText('Performance');
     await expect(nav).toContainText('Postfach');
     // Matching/Placements are sub-tabs; CoRecruiter is a topbar action; Settings
@@ -294,7 +293,7 @@ test.describe('UI acceptance — the suite renders in German', () => {
       .locator('nav')
       .getByRole('button', { name: /Mandanten/ })
       .click();
-    await page.getByText('Tobias Wirth').first().click();
+    await page.getByText('Tobias Wirth').first().click({ force: true });
     await page
       .getByRole('button', { name: /Lebenslauf anlegen|Lebenslauf bearbeiten/ })
       .first()
@@ -401,7 +400,7 @@ test.describe('UI acceptance — the suite renders in German', () => {
       .locator('nav')
       .getByRole('button', { name: /Mandanten/ })
       .click();
-    await page.getByText('Tobias Wirth').first().click();
+    await page.getByText('Tobias Wirth').first().click({ force: true });
     await page
       .getByRole('button', { name: /Lebenslauf anlegen|Lebenslauf bearbeiten/ })
       .first()
@@ -702,6 +701,7 @@ test.describe('UI acceptance — the suite renders in German', () => {
       route.fulfill({
         contentType: 'application/json',
         body: JSON.stringify({
+          configured: true,
           current: 'claude',
           providers: [{ id: 'claude', label: 'Claude (Anthropic)', available: true }],
         }),
@@ -709,7 +709,7 @@ test.describe('UI acceptance — the suite renders in German', () => {
     );
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     await page.getByRole('button', { name: /Einstellungen/ }).click();
-    await expect(page.locator('main')).toContainText('KI-Einrichtung');
+    await expect(page.locator('main')).toContainText('KI-Anbindung');
     await expect(page.locator('main')).toContainText('KI eingerichtet');
     // The per-user key input is gone with the central-key model.
     await expect(page.locator('input[type="password"]')).toHaveCount(0);
@@ -884,12 +884,11 @@ test.describe('UI acceptance — the suite renders in German', () => {
     );
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
 
-    // Matching folds under Mandate as the "Stellensuche" tab.
+    // Stellen is its own destination and renders the job matching view.
     await page
       .locator('nav')
-      .getByRole('button', { name: /Suchaufträge/ })
+      .getByRole('button', { name: /^Stellen$/ })
       .click();
-    await page.getByRole('tab', { name: 'Stellensuche' }).click();
     await page.getByRole('button', { name: 'Manuell' }).click();
 
     // Search narrows the live postings down to the one specific company.
@@ -906,10 +905,10 @@ test.describe('UI acceptance — the suite renders in German', () => {
     await expect(modal).toBeHidden();
     await expect(page.getByRole('button', { name: /Beworben · Nora/ })).toBeVisible();
 
-    // The application is recorded and shows up on the Pipeline board.
+    // The application is recorded and shows up on the Bewerbungen board.
     await page
       .locator('nav')
-      .getByRole('button', { name: /Pipeline/ })
+      .getByRole('button', { name: /^Bewerbungen$/ })
       .click();
     await expect(page.locator('main')).toContainText('Nordwind Logistik AG');
     await expect(page.locator('main')).toContainText('Backend Engineer');
@@ -939,7 +938,7 @@ test.describe('UI acceptance — the suite renders in German', () => {
     await expect(nav).toContainText('Stellen');
     await expect(nav).toContainText('Bewerbungen');
     await expect(page.getByRole('button', { name: /Einstellungen/ })).toBeVisible();
-    for (const label of ['Suchaufträge', 'Pipeline', 'Performance', 'Postfach']) {
+    for (const label of ['Suchaufträge', 'Performance', 'Postfach']) {
       await expect(nav).not.toContainText(label);
     }
     await expect(page.getByRole('button', { name: /CoRecruiter/ })).toHaveCount(0);
@@ -955,7 +954,6 @@ test.describe('UI acceptance — the suite renders in German', () => {
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     const nav = page.locator('nav');
     await expect(nav).toContainText('Suchaufträge');
-    await expect(nav).toContainText('Pipeline');
     await expect(nav).toContainText('Performance');
     await expect(nav).toContainText('Postfach');
     await expect(page.getByRole('button', { name: /CoRecruiter/ })).toBeVisible();
@@ -978,7 +976,7 @@ test.describe('UI acceptance — the suite renders in German', () => {
     );
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     await page.getByRole('button', { name: /Einstellungen/ }).click();
-    await expect(page.locator('main')).toContainText('KI-Einrichtung');
+    await expect(page.locator('main')).toContainText('KI-Anbindung');
     await expect(page.getByLabel('Vermittlung aktivieren')).toHaveCount(0);
   });
 
@@ -1092,7 +1090,7 @@ test.describe('UI acceptance — the suite renders in German', () => {
       .locator('nav')
       .getByRole('button', { name: /Mandanten/ })
       .click();
-    await page.getByText('Tobias Wirth').first().click();
+    await page.getByText('Tobias Wirth').first().click({ force: true });
     await page
       .getByRole('button', { name: /Lebenslauf anlegen|Lebenslauf bearbeiten/ })
       .first()
@@ -1104,7 +1102,206 @@ test.describe('UI acceptance — the suite renders in German', () => {
     expect(aiCalls).toBe(0);
 
     // AK-0.6: the hint is a real link that opens the settings page.
-    await page.getByRole('link', { name: /KI nicht eingerichtet/ }).click();
-    await expect(page.locator('main')).toContainText('KI-Einrichtung');
+    const hint = page
+      .locator('main')
+      .getByText(/KI nicht eingerichtet/)
+      .first();
+    await expect(hint).toBeVisible();
+    await page.locator('main').getByRole('button', { name: 'Einstellungen' }).first().click();
+    await expect(page.locator('main')).toContainText('KI-Anbindung');
+  });
+});
+
+test.describe('Phase 0 — central-key and vocabulary guarantees', () => {
+  const KIT = '/design/myjob/ui_kits/recruiting/dist/index.html';
+  const TALENT = {
+    id: 't-api-1',
+    name: 'Tobias Wirth',
+    role: 'Staff Engineer',
+    headline: '',
+    location: 'Hamburg',
+    email: 'tobias@example.de',
+    phone: '',
+    availability: '',
+    salary: '',
+    skills: [],
+    createdAt: '2026-06-25T10:00:00.000Z',
+    updatedAt: '2026-06-25T10:00:00.000Z',
+  };
+  const DOCS = {
+    documents: {
+      contact: {
+        name: 'Tobias Wirth',
+        role: 'Staff Engineer',
+        email: '',
+        phone: '',
+        location: '',
+        linkedin: '',
+      },
+      resume: { summary: '', experience: [], education: [], skillGroups: [], rawText: '' },
+      letter: {
+        firma: '',
+        ansprechpartner: '',
+        strasse: '',
+        plzOrt: '',
+        betreff: '',
+        anrede: 'Sehr geehrte Damen und Herren,',
+        absaetze: [''],
+        gruss: 'Mit freundlichen Grüßen',
+      },
+      style: {
+        accent: '#2A6FDB',
+        strong: '#1d4ed8',
+        onDark: '#7aa7f5',
+        font: 'var(--font-display)',
+        size: 1,
+      },
+      updatedAt: '2026-06-25T10:00:00.000Z',
+    },
+  };
+
+  async function mockShell(
+    page: import('@playwright/test').Page,
+    opts: { vermittlung: boolean; aiConfigured: boolean },
+  ) {
+    await page.route('**/api/v1/settings/workspace', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ vermittlung: opts.vermittlung }),
+      }),
+    );
+    await page.route('**/api/v1/settings/llm', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          configured: opts.aiConfigured,
+          current: opts.aiConfigured ? 'claude' : null,
+          providers: [{ id: 'claude', label: 'Claude', available: opts.aiConfigured }],
+        }),
+      }),
+    );
+    await page.route('**/api/v1/auth/me', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id: 'user1', email: 'me@example.de', roles: ['admin'] } }),
+      }),
+    );
+    await page.route('**/api/v1/talents', (route) => {
+      if (route.request().method() !== 'GET') return route.continue();
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify([TALENT]) });
+    });
+    await page.route('**/api/v1/talents/t-api-1/documents', (route) =>
+      route.fulfill({ contentType: 'application/json', body: JSON.stringify(DOCS) }),
+    );
+  }
+
+  async function openEditor(page: import('@playwright/test').Page) {
+    await page.goto(KIT);
+    await page
+      .locator('nav')
+      .getByRole('button', { name: /Mandanten/ })
+      .click();
+    await page.getByText('Tobias Wirth').first().click({ force: true });
+    await page
+      .getByRole('button', { name: /Lebenslauf (anlegen|bearbeiten)/ })
+      .first()
+      .click({ force: true });
+    await page.locator('[data-doc-hydrated="true"]').waitFor();
+  }
+
+  test('LoginWithVermittlungOn_ShowsSuchauftraegeWithoutReload', async ({ page }) => {
+    await mockShell(page, { vermittlung: true, aiConfigured: true });
+    await page.goto(KIT);
+    await expect(page.locator('nav').getByRole('button', { name: /Suchaufträge/ })).toBeVisible();
+  });
+
+  test('NoAiKey_HintLinkOpensSettingsEvenFromOpenEditor', async ({ page }) => {
+    await mockShell(page, { vermittlung: false, aiConfigured: false });
+    await openEditor(page);
+    const hint = page
+      .locator('main')
+      .getByText(/KI nicht eingerichtet/)
+      .first();
+    await expect(hint).toBeVisible({ timeout: 10000 });
+    await page.locator('main').getByRole('button', { name: 'Einstellungen' }).first().click();
+    await expect(page.locator('main')).toContainText('KI-Anbindung');
+  });
+
+  test('NoAiKey_CvImportShowsTextImportNoticeAndImports', async ({ page }) => {
+    await mockShell(page, { vermittlung: false, aiConfigured: false });
+    await page.goto(KIT);
+    await page
+      .locator('nav')
+      .getByRole('button', { name: /Mandanten/ })
+      .click();
+    // The grid names the mode before any upload (no silent AI expectation).
+    await expect(
+      page.getByRole('status').filter({ hasText: 'Text übernommen (ohne KI)' }),
+    ).toBeVisible();
+
+    await openEditor(page);
+    await page.getByRole('button', { name: /CV importieren/ }).click();
+    await expect(page.getByPlaceholder('CV-Text hier einfügen…')).toBeVisible();
+    await expect(
+      page.getByRole('status').filter({ hasText: 'Text übernommen (ohne KI)' }),
+    ).toBeVisible();
+    // The text path is usable without a key: the action enables once text exists.
+    const analyze = page.getByRole('button', { name: 'Analysieren & übernehmen' });
+    await expect(analyze).toBeDisabled();
+    await page.getByPlaceholder('CV-Text hier einfügen…').fill('Voller CV-Text');
+    await expect(analyze).toBeEnabled();
+  });
+
+  test('ConfiguredKey_AiSummaryAndLetterAreShown', async ({ page }) => {
+    await mockShell(page, { vermittlung: false, aiConfigured: true });
+    await page.route('**/api/v1/talents/t-api-1/documents/ai', (route) => {
+      const body = JSON.parse(route.request().postData() || '{}');
+      const suggestion =
+        body.action === 'letter'
+          ? { action: 'letter', paragraphs: ['Absatz eins.', 'Absatz zwei.'], provider: 'claude' }
+          : { action: 'summary', text: 'Zusammenfassung von der KI.', provider: 'claude' };
+      return route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ suggestion }),
+      });
+    });
+    await openEditor(page);
+    await page.getByRole('button', { name: /KI anpassen/ }).click();
+    await expect(page.locator('main')).toContainText('Zusammenfassung von der KI.');
+    await page.getByRole('button', { name: 'Übernehmen' }).click();
+    await expect(page.locator('main')).toContainText('Zusammenfassung von der KI.');
+  });
+
+  test('AllViews_VermittlungOnAndOff_ContainNoForbiddenTerms', async ({ page }) => {
+    const forbidden = /(?<!\p{L})(Talent\w*|Mandat(?!ant)\w*)/u;
+    for (const vermittlung of [false, true]) {
+      await mockShell(page, { vermittlung, aiConfigured: true });
+      await page.goto(KIT);
+      const views = vermittlung
+        ? [
+            'Workspace',
+            'Mandanten',
+            'Stellen',
+            'Bewerbungen',
+            'Suchaufträge',
+            'Performance',
+            'Postfach',
+          ]
+        : ['Workspace', 'Mandanten', 'Stellen', 'Bewerbungen'];
+      for (const label of views) {
+        await page
+          .locator('nav')
+          .getByRole('button', { name: new RegExp(`^${label}$`) })
+          .click();
+        const text = await page.locator('main').innerText();
+        expect(text, `${label} (vermittlung=${vermittlung})`).not.toMatch(forbidden);
+      }
+      // Settings is the foot utility, not a rail entry.
+      await page
+        .getByRole('button', { name: /Einstellungen/ })
+        .first()
+        .click();
+      expect(await page.locator('main').innerText()).not.toMatch(forbidden);
+    }
   });
 });

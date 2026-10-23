@@ -1,5 +1,7 @@
 import {
+  InternalError,
   NotFoundError,
+  NoTextLayerError,
   AiNotConfiguredError,
   UpstreamProviderError,
   ValidationError,
@@ -84,6 +86,7 @@ function ctx(stub: ProviderStub = {}, pdfText: string | Error = '', logger = noo
   const service = buildDocumentAiService({
     documentService,
     llmService: llm,
+    userRepository: users,
     pdfTextExtractor,
     usageMeter,
     interviewObservationRepository: observations,
@@ -236,6 +239,7 @@ describe('DocumentAiService.parse', () => {
     const c = ctx({ available: true, generate: async () => '```json\n' + RESUME_JSON + '\n```' });
     await c.talents.add(talent('t1'));
     const parsed = await c.service.parse(OWNER, OWNER, 't1', 'raw cv text');
+    expect(parsed.mode).toBe('ai');
     expect(parsed.provider).toBe('claude');
     expect(parsed.contact.name).toBe('Max Mustermann');
     expect(parsed.resume.summary).toBe('Senior Engineer.');
@@ -243,12 +247,14 @@ describe('DocumentAiService.parse', () => {
     expect(parsed.resume.education).toEqual([]);
   });
 
-  it('Parse_NoProvider_ThrowsAiNotConfigured', async () => {
+  it('CvParseService_NoProvider_TakesTextWithoutAiAndNamesTheMode', async () => {
     const c = ctx();
     await c.talents.add(talent('t1'));
-    await expect(c.service.parse(OWNER, OWNER, 't1', 'My whole CV as text')).rejects.toBeInstanceOf(
-      AiNotConfiguredError,
-    );
+    const parsed = await c.service.parse(OWNER, OWNER, 't1', 'My whole CV as text');
+    expect(parsed.mode).toBe('text');
+    expect(parsed.provider).toBeUndefined();
+    expect(parsed.resume.rawText).toBe('My whole CV as text');
+    expect(parsed.resume.summary).toBe('');
   });
 
   it('Parse_MalformedJson_ThrowsUpstreamProvider', async () => {
@@ -281,34 +287,40 @@ describe('DocumentAiService.parsePdf', () => {
     );
     await c.talents.add(talent('t1'));
     const parsed = await c.service.parsePdf(OWNER, OWNER, 't1', PDF);
+    expect(parsed.mode).toBe('ai');
     expect(parsed.provider).toBe('claude');
     expect(parsed.contact.name).toBe('Max Mustermann');
     expect(parsed.extractedChars).toBeGreaterThan(0);
   });
 
-  it('ParsePdf_NoProvider_ThrowsAiNotConfigured', async () => {
-    const c = ctx({}, 'Product Designer with 8 years of experience.');
+  it('CvParseService_PdfWithoutTextLayer_ThrowsNoTextLayerInTextMode', async () => {
+    const c = ctx({}, '   ');
     await c.talents.add(talent('t1'));
     await expect(c.service.parsePdf(OWNER, OWNER, 't1', PDF)).rejects.toBeInstanceOf(
-      AiNotConfiguredError,
+      NoTextLayerError,
     );
   });
 
-  it('ParsePdf_ScannedPdf_NoText_ReturnsEmpty', async () => {
+  it('CvParseService_PdfWithoutTextLayer_ThrowsNoTextLayerInAiMode', async () => {
     const c = ctx({ available: true, generate: async () => 'unused' }, '   ');
     await c.talents.add(talent('t1'));
-    const parsed = await c.service.parsePdf(OWNER, OWNER, 't1', PDF);
-    expect(parsed.provider).toBe('none');
-    expect(parsed.extractedChars).toBe(0);
-    expect(parsed.resume.summary).toBe('');
+    await expect(c.service.parsePdf(OWNER, OWNER, 't1', PDF)).rejects.toBeInstanceOf(
+      NoTextLayerError,
+    );
   });
 
-  it('ParsePdf_ExtractorThrows_ReturnsEmpty', async () => {
+  it('CvParseService_PdfTextBelowThreshold_ThrowsNoTextLayer', async () => {
+    const c = ctx({ available: true }, 'short');
+    await c.talents.add(talent('t1'));
+    await expect(c.service.parsePdf(OWNER, OWNER, 't1', PDF)).rejects.toBeInstanceOf(
+      NoTextLayerError,
+    );
+  });
+
+  it('ParsePdf_ExtractorThrows_ThrowsInternalErrorNotNoTextLayer', async () => {
     const c = ctx({ available: true }, new Error('corrupt pdf'));
     await c.talents.add(talent('t1'));
-    const parsed = await c.service.parsePdf(OWNER, OWNER, 't1', PDF);
-    expect(parsed.provider).toBe('none');
-    expect(parsed.extractedChars).toBe(0);
+    await expect(c.service.parsePdf(OWNER, OWNER, 't1', PDF)).rejects.toBeInstanceOf(InternalError);
   });
 
   it('ParsePdf_UnknownTalent_Throws404', async () => {

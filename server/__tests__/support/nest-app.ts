@@ -10,6 +10,8 @@ import { FEATURE_MODULES, HealthController } from '../../src/nest/app.module.js'
 import { configureHttpEdge } from '../../src/nest/http-edge.js';
 import { ProblemJsonFilter } from '../../src/nest/problem-json.filter.js';
 import { LlmService } from '../../src/services/llm-service.js';
+import type { LlmProvider } from '../../src/ports/llm-provider.js';
+import type { AssistantSettings } from '../../src/domain/assistant.js';
 import { AnthropicLlmProvider } from '../../src/adapters/anthropic-llm-provider.js';
 import { GeminiLlmProvider } from '../../src/adapters/gemini-llm-provider.js';
 import { nodeFetch } from '../../src/adapters/node-fetch.js';
@@ -39,6 +41,7 @@ import {
   INVITE_REPOSITORY,
   TENANT_REPOSITORY,
   WORKSPACE_SETTINGS_STORE,
+  WORKSPACE_SETTINGS_SERVICE,
   USAGE_METER,
   INTERVIEW_OBSERVATION_REPOSITORY,
   ASSISTANT_SETTINGS_STORE,
@@ -76,7 +79,6 @@ import {
   InMemoryUserRepository,
   InMemoryInviteRepository,
   InMemoryTenantRepository,
-  InMemoryWorkspaceSettingsStore,
   InMemoryUsageMeter,
   InMemoryInterviewObservationRepository,
   InMemoryPasswordResetTokenStore,
@@ -91,6 +93,7 @@ import {
   FakePdfMerger,
   FakePdfTextExtractor,
   FakeVersioner,
+  fakeWorkspaceSettings,
   FixedClock,
   SequenceIdGenerator,
   noopLogger,
@@ -104,9 +107,17 @@ export interface NestTestAppOptions {
   /** Override the LLM registry (e.g. a fake provider that reports configured). */
   llmService?: LlmService;
   /**
-   * Seed the workspace's `vermittlung` switch. Defaults to **true** so the many
-   * existing agency-route acceptance tests keep exercising their routes; the
-   * dedicated Vermittlung tests pass `false`.
+   * Providers with a "server key" for the test. Default none — i.e. the server
+   * behaves like a fresh install without ANTHROPIC_API_KEY (503 AI routes).
+   */
+  llmProviders?: LlmProvider[];
+  /** Seed the assistant store (needed to put autopilot into an existing state). */
+  assistantSettings?: Partial<AssistantSettings>;
+  /** Text the fake PDF extractor returns (or an error it throws). */
+  pdfText?: string | Error;
+  /**
+   * Seed the workspace's `vermittlung` switch. Defaults to **false** (production
+   * default). Agency-slice tests opt in with `{ vermittlung: true }`.
    */
   vermittlung?: boolean;
 }
@@ -128,16 +139,30 @@ export async function makeNestApp(
   const llmService =
     opts.llmService ??
     new LlmService({
-      providers: [
-        new AnthropicLlmProvider({ httpFetch: nodeFetch, config: config.llm.anthropic }),
-        new GeminiLlmProvider({ httpFetch: nodeFetch, config: config.llm.gemini }),
-      ],
+      providers:
+        opts.llmProviders ??
+        (config.llm.anthropic.apiKey || config.llm.gemini.apiKey
+          ? [
+              new AnthropicLlmProvider({ httpFetch: nodeFetch, config: config.llm.anthropic }),
+              new GeminiLlmProvider({ httpFetch: nodeFetch, config: config.llm.gemini }),
+            ]
+          : []),
       defaultProvider: config.llm.provider,
       logger: noopLogger,
     });
 
-  const workspaceSettings = new InMemoryWorkspaceSettingsStore();
-  await workspaceSettings.set('team', { vermittlung: opts.vermittlung ?? true });
+  const workspaceSettings = fakeWorkspaceSettings({ vermittlung: opts.vermittlung ?? false });
+  const assistantSettingsStore = new InMemoryAssistantSettingsStore();
+  if (opts.assistantSettings) {
+    await assistantSettingsStore.set('team', {
+      enabled: false,
+      mode: 'suggest',
+      intervalMinutes: 60,
+      applySource: 'mandates',
+      minApplyScore: 70,
+      ...opts.assistantSettings,
+    });
+  }
 
   const fakes: Provider[] = [
     { provide: APPLICATION_REPOSITORY, useValue: new InMemoryApplicationRepository() },
@@ -161,13 +186,14 @@ export async function makeNestApp(
     },
     { provide: INVITE_REPOSITORY, useValue: new InMemoryInviteRepository() },
     { provide: TENANT_REPOSITORY, useValue: new InMemoryTenantRepository() },
-    { provide: WORKSPACE_SETTINGS_STORE, useValue: workspaceSettings },
+    { provide: WORKSPACE_SETTINGS_STORE, useValue: workspaceSettings.store },
+    { provide: WORKSPACE_SETTINGS_SERVICE, useValue: workspaceSettings.service },
     { provide: USAGE_METER, useValue: new InMemoryUsageMeter() },
     {
       provide: INTERVIEW_OBSERVATION_REPOSITORY,
       useValue: new InMemoryInterviewObservationRepository(),
     },
-    { provide: ASSISTANT_SETTINGS_STORE, useValue: new InMemoryAssistantSettingsStore() },
+    { provide: ASSISTANT_SETTINGS_STORE, useValue: assistantSettingsStore },
     { provide: RETENTION_POLICY_STORE, useValue: new InMemoryRetentionPolicyStore() },
     {
       provide: ASSISTANT_SUGGESTION_REPOSITORY,
@@ -182,7 +208,7 @@ export async function makeNestApp(
     { provide: PDF_MERGER, useValue: new FakePdfMerger() },
     {
       provide: PDF_TEXT_EXTRACTOR,
-      useValue: new FakePdfTextExtractor('Extracted CV text from PDF.'),
+      useValue: new FakePdfTextExtractor(opts.pdfText ?? 'Extracted CV text from PDF.'),
     },
     { provide: VERSIONER, useValue: new FakeVersioner(null) },
     { provide: PLAN_PROVIDER, useValue: new EnvPlanProvider(config.plan) },
@@ -221,7 +247,17 @@ export async function makeNestApp(
   app.useGlobalFilters(new ProblemJsonFilter(noopLogger));
   await app.init();
   openApps.push(app);
-  return app.getHttpServer() as Server;
+  // Bind explicitly to IPv4: Node may resolve the ephemeral test host to ::1 or
+  // 127.0.0.1 between requests, and supertest's agent then drops the session
+  // cookie (different host) — an intermittent 401 under load.
+  const server = app.getHttpServer() as Server;
+  if (!server.listening) {
+    await new Promise<void>((resolve, reject) => {
+      server.once('error', reject);
+      server.listen(0, '127.0.0.1', () => resolve());
+    });
+  }
+  return server;
 }
 
 /** Close every app the current test created (call from afterEach). */

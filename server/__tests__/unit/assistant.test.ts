@@ -1,4 +1,5 @@
 import { jest } from '@jest/globals';
+import { AiNotConfiguredError } from '../../src/domain/errors.js';
 import {
   DEFAULT_ASSISTANT_SETTINGS,
   isDue,
@@ -102,7 +103,7 @@ const candidacy = (id: string, over: Partial<Candidacy> = {}): Candidacy => ({
   ...over,
 });
 
-function ctx() {
+function ctx(hasProvider = true) {
   const settingsStore = new InMemoryAssistantSettingsStore();
   const suggestions = new InMemoryAssistantSuggestionRepository();
   const mandates = new InMemoryMandateRepository();
@@ -164,6 +165,7 @@ function ctx() {
   });
   const documentAiService = buildDocumentAiService({
     documentService,
+    userRepository: users,
     llmService: new LlmService({
       providers: [
         new FakeLlmProvider(
@@ -214,6 +216,7 @@ function ctx() {
     clock,
     idGenerator: assistantIds,
     logger: noopLogger,
+    llm: { hasAvailableProvider: () => hasProvider },
   });
   return {
     service,
@@ -613,5 +616,82 @@ describe('parseApplicationPayload', () => {
 
   it('WrongType_Throws', () => {
     expect(() => parseApplicationPayload({ ...valid, paragraphs: 'not-an-array' })).toThrow();
+  });
+});
+
+describe('AssistantService without an AI provider (ADR-0057)', () => {
+  it('AssistantRun_AutopilotWithoutProviderAndNoCandidates_ThrowsAiNotConfiguredAndStagesNothing', async () => {
+    const c = ctx(false);
+    await c.settingsStore.set(OWNER, {
+      ...DEFAULT_ASSISTANT_SETTINGS,
+      enabled: true,
+      mode: 'autopilot',
+    });
+    let error: unknown = null;
+    try {
+      await c.service.run(OWNER);
+    } catch (err) {
+      error = err;
+    }
+    expect(error).toBeInstanceOf(AiNotConfiguredError);
+    expect(await c.suggestions.list(OWNER)).toEqual([]);
+  });
+
+  it('AssistantRun_AutopilotWithoutProvider_DoesNotSetLastRunAt', async () => {
+    const c = ctx(false);
+    const before = { ...DEFAULT_ASSISTANT_SETTINGS, enabled: true, mode: 'autopilot' as const };
+    await c.settingsStore.set(OWNER, before);
+    let error: unknown = null;
+    try {
+      await c.service.run(OWNER);
+    } catch (err) {
+      error = err;
+    }
+    expect(error).toBeInstanceOf(AiNotConfiguredError);
+    expect((await c.settingsStore.get(OWNER))?.lastRunAt).toBeUndefined();
+  });
+
+  it('AssistantRun_SuggestModeWithoutProvider_RunsDeterministicPlaybook', async () => {
+    const c = ctx(false);
+    await c.settingsStore.set(OWNER, {
+      ...DEFAULT_ASSISTANT_SETTINGS,
+      enabled: true,
+      mode: 'suggest',
+    });
+    const res = await c.service.run(OWNER);
+    expect(res.runId).toBeTruthy();
+  });
+
+  it('AssistantRunIfDue_AutopilotWithoutProvider_SkipsAndWarnsOnlyOncePerScope', async () => {
+    const c = ctx(false);
+    await c.settingsStore.set(OWNER, {
+      ...DEFAULT_ASSISTANT_SETTINGS,
+      enabled: true,
+      mode: 'autopilot',
+    });
+    await expect(c.service.runIfDue(OWNER)).resolves.toBeNull();
+    await expect(c.service.runIfDue(OWNER)).resolves.toBeNull();
+  });
+
+  it('AssistantUpdateSettings_AutopilotWithoutProvider_ThrowsAiNotConfigured', async () => {
+    const c = ctx(false);
+    let error: unknown = null;
+    try {
+      await c.service.updateSettings(OWNER, { mode: 'autopilot' });
+    } catch (err) {
+      error = err;
+    }
+    expect(error).toBeInstanceOf(AiNotConfiguredError);
+  });
+
+  it('AssistantUpdateSettings_DisableWhileAutopilotWithoutProvider_Succeeds', async () => {
+    const c = ctx(false);
+    await c.settingsStore.set(OWNER, { ...DEFAULT_ASSISTANT_SETTINGS, mode: 'autopilot' });
+    await expect(c.service.updateSettings(OWNER, { enabled: false })).resolves.toMatchObject({
+      enabled: false,
+    });
+    await expect(c.service.updateSettings(OWNER, { mode: 'suggest' })).resolves.toMatchObject({
+      mode: 'suggest',
+    });
   });
 });

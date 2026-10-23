@@ -21,7 +21,7 @@ afterEach(() => {
 const baseApi = (isSuperAdmin) => ({
   getLlmSettings: vi.fn().mockResolvedValue({ current: '', providers: [] }),
   getWorkspaceSettings: vi.fn().mockResolvedValue({ vermittlung: false }),
-  setWorkspaceSettings: vi.fn().mockResolvedValue({ vermittlung: true }),
+  updateWorkspaceSettings: vi.fn().mockResolvedValue({ vermittlung: true }),
   getMyProfileName: vi.fn().mockResolvedValue(''),
   getUsage: vi.fn().mockResolvedValue({ requests: 0 }),
   listMembers: vi.fn().mockResolvedValue([]),
@@ -35,7 +35,7 @@ describe('SettingsView — super-admin console', () => {
   it('NonSuperAdmin_DoesNotSeeTheConsole', async () => {
     window.RecruitApi = { ...baseApi(false) };
     const { findByText, queryByText } = render(<SettingsView user={{ id: 'me' }} />);
-    await findByText('KI-Einrichtung');
+    await findByText('KI-Anbindung');
     await waitFor(() => expect(window.RecruitApi.authMe).toHaveBeenCalled());
     expect(queryByText('Plattform — alle Workspaces')).toBeNull();
   });

@@ -8,6 +8,7 @@ import { MatchAiService } from '../../src/services/match-ai-service.js';
 import type { DocumentService } from '../../src/services/document-service.js';
 import type { LlmService } from '../../src/services/llm-service.js';
 import type { PdfTextExtractor } from '../../src/ports/pdf-text-extractor.js';
+import type { UserRepository } from '../../src/ports/user-repository.js';
 import type { UsageMeter } from '../../src/ports/usage-meter.js';
 import type { InterviewObservationRepository } from '../../src/ports/interview-observation-repository.js';
 import type { ArtifactLogRepository } from '../../src/ports/artifact-log-repository.js';
@@ -23,6 +24,7 @@ import type { Logger } from '../../src/ports/logger.js';
 export function buildDocumentAiService(deps: {
   documentService: DocumentService;
   llmService: LlmService;
+  userRepository: UserRepository;
   pdfTextExtractor: PdfTextExtractor;
   usageMeter: UsageMeter;
   interviewObservationRepository: InterviewObservationRepository;
@@ -33,6 +35,7 @@ export function buildDocumentAiService(deps: {
 }): DocumentAiService {
   const runner = new LlmFeatureRunner({
     llmService: deps.llmService,
+    userRepository: deps.userRepository,
     usageMeter: deps.usageMeter,
     clock: deps.clock,
     logger: deps.logger,
@@ -45,6 +48,7 @@ export function buildDocumentAiService(deps: {
     }),
     cvParseService: new CvParseService({
       llmFeatureRunner: runner,
+      llmService: deps.llmService,
       documentService: deps.documentService,
       pdfTextExtractor: deps.pdfTextExtractor,
       logger: deps.logger,

@@ -48,61 +48,6 @@ export function pitchPrompt(
   };
 }
 
-/**
- * Deterministic fallback (no LLM): assemble an honest short profile straight
- * from the talent's own facts, so the feature always returns something usable.
- */
-export function fallbackPitch(
-  documents: TalentDocuments,
-  mandateContext: string,
-  lang: OutputLang = 'en',
-): CandidatePitch {
-  const { contact, resume } = documents;
-  const de = lang === 'de';
-  const name = contact.name || (de ? 'Der:die Kandidat:in' : 'The candidate');
-  const role = contact.role || resume.experience[0]?.role || (de ? 'Fachkraft' : 'professional');
-  const skills = resume.skillGroups.flatMap((g) => g.items);
-  const stations = resume.experience
-    .map((e) => [e.role, e.company].filter(Boolean).join(de ? ' bei ' : ' at '))
-    .filter(Boolean);
-
-  const headline = de
-    ? `${name} — ${role}${skills.length ? ` mit Schwerpunkt ${skills.slice(0, 3).join(', ')}` : ''}`
-    : `${name} — ${role}${
-        skills.length ? ` with a focus on ${skills.slice(0, 3).join(', ')}` : ''
-      }`;
-
-  const paragraphs = de
-    ? [
-        resume.summary ||
-          `${name} bringt als ${role} fundierte Erfahrung mit und überzeugt durch lösungsorientiertes, verlässliches Arbeiten.`,
-        stations.length
-          ? `Relevante Stationen: ${stations.slice(0, 3).join('; ')}.`
-          : `${name} hat in der bisherigen Laufbahn Verantwortung übernommen und Projekte erfolgreich umgesetzt.`,
-      ]
-    : [
-        resume.summary ||
-          `${name} brings solid experience as a ${role} and stands out through solution-oriented, dependable work.`,
-        stations.length
-          ? `Relevant roles: ${stations.slice(0, 3).join('; ')}.`
-          : `${name} has taken on responsibility throughout their career and delivered projects successfully.`,
-      ];
-  if (mandateContext.trim()) {
-    paragraphs.push(
-      de
-        ? 'Das Profil passt gut zum vorliegenden Mandat; im Gespräch lassen sich die relevanten Kompetenzen gezielt vertiefen.'
-        : 'The profile is a strong fit for this mandate; the relevant competencies can be explored in more depth during an interview.',
-    );
-  }
-
-  const highlights = [
-    ...skills.slice(0, 4),
-    ...(resume.education[0]?.degree ? [resume.education[0].degree] : []),
-  ].slice(0, 5);
-
-  return { headline, paragraphs, highlights };
-}
-
 /** Trim/clamp an LLM-produced pitch into a clean CandidatePitch. */
 export function normalizePitch(raw: z.infer<typeof pitchResultSchema>): CandidatePitch {
   const clean = (list: string[], max: number): string[] =>

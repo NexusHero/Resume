@@ -3,7 +3,7 @@ import { Test } from '@nestjs/testing';
 import { Global, Module, type INestApplication, type Provider } from '@nestjs/common';
 import request from 'supertest';
 import { CoreModule } from '../../src/nest/core.module.js';
-import { WorkspaceSettingsModule } from '../../src/nest/workspace-settings/workspace-settings.module.js';
+import { WorkspaceSettingsModule } from '../../src/nest/workspace/workspace.module.js';
 import { ProblemJsonFilter } from '../../src/nest/problem-json.filter.js';
 import { RoleAuthorizer } from '../../src/adapters/role-authorizer.js';
 import type { UserView } from '../../src/domain/user.js';
@@ -30,7 +30,7 @@ describe('NestJS workspace settings (ADR-0057)', () => {
     }).compile();
     app = moduleRef.createNestApplication();
     app.useGlobalFilters(new ProblemJsonFilter(noopLogger));
-    await app.init();
+    await app.listen(0, '127.0.0.1');
   });
 
   afterAll(async () => {

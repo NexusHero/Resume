@@ -24,6 +24,7 @@ import type { JobSearchService } from '../../services/job-search-service.js';
 import type { DocumentService } from '../../services/document-service.js';
 import type { DocumentAiService } from '../../services/document-ai-service.js';
 import type { AttachmentService } from '../../services/attachment-service.js';
+import type { LlmService } from '../../services/llm-service.js';
 import type {
   AssistantSettingsStore,
   AssistantSuggestionRepository,
@@ -37,7 +38,7 @@ import type { IdGenerator } from '../../ports/id-generator.js';
 import type { Logger } from '../../ports/logger.js';
 import { AuthGuard } from '../auth.guard.js';
 import { AiRateLimitGuard } from '../ai-rate-limit.guard.js';
-import { VermittlungGuard } from '../vermittlung.guard.js';
+import { RequiresVermittlung, VermittlungGuard } from '../vermittlung.guard.js';
 import { PlanGuard, RequiresPlan } from '../plan.guard.js';
 import { CurrentScope } from '../params.js';
 import { ZodValidationPipe } from '../zod-validation.pipe.js';
@@ -64,6 +65,7 @@ import {
   DOCUMENT_SERVICE,
   DOCUMENT_AI_SERVICE,
   ATTACHMENT_SERVICE,
+  LLM_SERVICE,
   CLOCK,
   ID_GENERATOR,
   LOGGER,
@@ -77,6 +79,7 @@ import {
  */
 @Controller('api/v1/assistant')
 @UseGuards(AuthGuard, VermittlungGuard, PlanGuard)
+@RequiresVermittlung()
 export class AssistantController {
   constructor(@Inject(ASSISTANT_SERVICE) private readonly service: AssistantService) {}
 
@@ -228,6 +231,7 @@ export class AssistantController {
         clock: Clock,
         idGenerator: IdGenerator,
         logger: Logger,
+        llm: LlmService,
       ) =>
         new AssistantService({
           assistantSettingsStore,
@@ -242,6 +246,7 @@ export class AssistantController {
           clock,
           idGenerator,
           logger,
+          llm,
         }),
       inject: [
         ASSISTANT_SETTINGS_STORE,
@@ -256,6 +261,7 @@ export class AssistantController {
         CLOCK,
         ID_GENERATOR,
         LOGGER,
+        LLM_SERVICE,
       ],
     },
   ],

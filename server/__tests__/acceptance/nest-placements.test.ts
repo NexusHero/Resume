@@ -13,7 +13,11 @@ import { CoreModule } from '../../src/nest/core.module.js';
 import { PlacementsModule } from '../../src/nest/placements/placements.module.js';
 import { AuthGuard } from '../../src/nest/auth.guard.js';
 import { ProblemJsonFilter } from '../../src/nest/problem-json.filter.js';
-import { PLACEMENT_REPOSITORY, WORKSPACE_SETTINGS_STORE } from '../../src/nest/tokens.js';
+import {
+  PLACEMENT_REPOSITORY,
+  WORKSPACE_SETTINGS_STORE,
+  WORKSPACE_SETTINGS_SERVICE,
+} from '../../src/nest/tokens.js';
 import { InMemoryPlacementRepository, noopLogger } from '../support/fakes.js';
 
 class StampUserGuard implements CanActivate {
@@ -32,6 +36,13 @@ describe('NestJS placements vertical', () => {
     const fakes: Provider[] = [
       { provide: PLACEMENT_REPOSITORY, useValue: new InMemoryPlacementRepository() },
       {
+        provide: WORKSPACE_SETTINGS_SERVICE,
+        useValue: {
+          isVermittlungEnabled: async () => true,
+          get: async () => ({ vermittlung: true }),
+        },
+      },
+      {
         provide: WORKSPACE_SETTINGS_STORE,
         useValue: { get: async () => ({ vermittlung: true }), set: async () => undefined },
       },
@@ -49,7 +60,7 @@ describe('NestJS placements vertical', () => {
 
     app = moduleRef.createNestApplication();
     app.useGlobalFilters(new ProblemJsonFilter(noopLogger));
-    await app.init();
+    await app.listen(0, '127.0.0.1');
   });
 
   afterAll(async () => {

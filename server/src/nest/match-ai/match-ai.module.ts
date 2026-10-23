@@ -4,8 +4,8 @@ import type { MandateRepository } from '../../ports/mandate-repository.js';
 import type { DocumentAiService } from '../../services/document-ai-service.js';
 import { AuthGuard } from '../auth.guard.js';
 import { AiRateLimitGuard } from '../ai-rate-limit.guard.js';
-import { AiConfiguredGuard } from '../ai-configured.guard.js';
-import { VermittlungGuard } from '../vermittlung.guard.js';
+import { AiConfiguredGuard, RequiresAi } from '../ai-configured.guard.js';
+import { RequiresVermittlung, VermittlungGuard } from '../vermittlung.guard.js';
 import { PlanGuard, RequiresPlan } from '../plan.guard.js';
 import { CurrentScope, CurrentUserId } from '../params.js';
 import { MANDATE_REPOSITORY, DOCUMENT_AI_SERVICE } from '../tokens.js';
@@ -19,8 +19,10 @@ import { MANDATE_REPOSITORY, DOCUMENT_AI_SERVICE } from '../tokens.js';
  * switch is off) and `AiConfiguredGuard` (503 when no key) — in that order.
  */
 @Controller('api/v1/mandates/:id/candidates/:talentId')
-@UseGuards(AuthGuard, AiRateLimitGuard, PlanGuard)
+@UseGuards(AuthGuard, VermittlungGuard, AiConfiguredGuard, AiRateLimitGuard, PlanGuard)
 @RequiresPlan('pro')
+@RequiresVermittlung()
+@RequiresAi()
 export class MatchAiController {
   constructor(
     @Inject(MANDATE_REPOSITORY) private readonly mandates: MandateRepository,
@@ -35,7 +37,6 @@ export class MatchAiController {
 
   @Post('explain')
   @HttpCode(200)
-  @UseGuards(VermittlungGuard, AiConfiguredGuard)
   async explain(
     @CurrentScope() scope: string,
     @CurrentUserId() userId: string,
@@ -53,7 +54,6 @@ export class MatchAiController {
 
   @Post('interview-kit')
   @HttpCode(200)
-  @UseGuards(VermittlungGuard, AiConfiguredGuard)
   async interviewKit(
     @CurrentScope() scope: string,
     @CurrentUserId() userId: string,
@@ -71,7 +71,6 @@ export class MatchAiController {
 
   @Post('prep')
   @HttpCode(200)
-  @UseGuards(VermittlungGuard, AiConfiguredGuard)
   async prep(
     @CurrentScope() scope: string,
     @CurrentUserId() userId: string,

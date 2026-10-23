@@ -1,0 +1,93 @@
+/* ADR-0047 — the assistant must never swallow a 503: the user sees why. */
+import { describe, it, expect, beforeAll, afterEach, beforeEach, vi } from 'vitest';
+import { render, fireEvent, screen } from '@testing-library/react';
+
+let AssistantView;
+
+beforeAll(async () => {
+  await import('../use-viewport.jsx');
+  await import('../ai-status.js');
+  await import('../use-ai-status.jsx');
+  await import('../AiGate.jsx');
+  await import('../AssistantView.jsx');
+  AssistantView = window.AssistantView;
+});
+
+afterEach(() => {
+  delete window.RecruitApi;
+});
+
+const api = () => ({
+  getLlmSettings: vi.fn().mockResolvedValue({ configured: false, current: null, providers: [] }),
+  getAssistant: vi.fn().mockResolvedValue({
+    settings: { enabled: true, mode: 'suggest', intervalMinutes: 60, applySource: 'mandates', minApplyScore: 70 },
+    counts: {},
+  }),
+  listAssistantSuggestions: vi.fn().mockResolvedValue([]),
+  updateAssistant: vi.fn().mockRejectedValue(new Error('No AI provider is configured on this server.')),
+  runAssistant: vi.fn().mockRejectedValue(new Error('No AI provider is configured on this server.')),
+  resolveAssistantSuggestion: vi.fn(),
+  assistantDossierUrl: () => '/x',
+});
+
+describe('AssistantView errors', () => {
+  beforeEach(async () => {
+    window.AiStatus.reset();
+  });
+
+  const aiError = () => {
+    const err = new Error('No AI provider is configured on this server.');
+    err.code = 'ai-not-configured';
+    return err;
+  };
+
+  it('AssistantView_RunFailsWith503_ShowsTheErrorInsteadOfSwallowingIt', async () => {
+    window.RecruitApi = api();
+    window.RecruitApi.runAssistant.mockRejectedValue(aiError());
+    render(<AssistantView />);
+    const run = await screen.findByRole('button', { name: /Jetzt ausführen/ });
+    fireEvent.click(run);
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('KI nicht eingerichtet — richte einen Server-Key ein.');
+    expect(alert).toHaveTextContent('Einstellungen');
+  });
+
+  it('AssistantView_PatchFails_ShowsTheError', async () => {
+    window.RecruitApi = api();
+    window.RecruitApi.updateAssistant.mockRejectedValue(aiError());
+    render(<AssistantView />);
+    const select = await screen.findByRole('combobox');
+    fireEvent.change(select, { target: { value: '15' } });
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('KI nicht eingerichtet — richte einen Server-Key ein.');
+    expect(alert).toHaveTextContent('Einstellungen');
+  });
+
+  it('AssistantView_Generic500_ShowsRawMessageWithoutSettingsLink', async () => {
+    window.RecruitApi = api();
+    const boom = new Error('Unexpected server failure');
+    boom.code = 'internal-error';
+    window.RecruitApi.runAssistant.mockRejectedValue(boom);
+    render(<AssistantView />);
+    fireEvent.click(await screen.findByRole('button', { name: /Jetzt ausführen/ }));
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('Unexpected server failure');
+    expect(alert).not.toHaveTextContent('Einstellungen');
+  });
+
+  it('AssistantView_AutopilotWithoutKey_DisablesEnableSwitchAndShowsHint', async () => {
+    window.RecruitApi = api();
+    window.RecruitApi.getAssistant.mockResolvedValue({
+      settings: { enabled: false, mode: 'autopilot', intervalMinutes: 60, applySource: 'mandates', minApplyScore: 70 },
+      counts: {},
+    });
+    // Observe the key status through the shared store (as the app does).
+    await window.AiStatus.refresh();
+    render(<AssistantView />);
+    const toggle = await screen.findByRole('button', { name: 'Einschalten' });
+    expect(toggle).toBeDisabled();
+    expect(screen.getAllByText(/KI nicht eingerichtet/).length).toBeGreaterThan(0);
+    fireEvent.click(toggle);
+    expect(window.RecruitApi.updateAssistant).not.toHaveBeenCalled();
+  });
+});

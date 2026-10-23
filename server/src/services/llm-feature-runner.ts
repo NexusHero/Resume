@@ -6,6 +6,7 @@ import type { LlmProvider, LlmProviderId, TokenUsage } from '../ports/llm-provid
 import type { UsageMeter } from '../ports/usage-meter.js';
 import type { Clock } from '../ports/clock.js';
 import type { Logger } from '../ports/logger.js';
+import type { UserRepository } from '../ports/user-repository.js';
 import type { LlmService } from './llm-service.js';
 
 /** Max output tokens per generation, sized to each feature's expected reply. */
@@ -51,6 +52,7 @@ export function errMessage(err: unknown): string {
 
 export interface LlmFeatureRunnerDeps {
   llmService: LlmService;
+  userRepository: UserRepository;
   usageMeter: UsageMeter;
   clock: Clock;
   logger: Logger;
@@ -67,12 +69,14 @@ export interface LlmFeatureRunnerDeps {
  */
 export class LlmFeatureRunner {
   private readonly llm: LlmService;
+  private readonly users: UserRepository;
   private readonly usage: UsageMeter;
   private readonly clock: Clock;
   private readonly logger: Logger;
 
   constructor(deps: LlmFeatureRunnerDeps) {
     this.llm = deps.llmService;
+    this.users = deps.userRepository;
     this.usage = deps.usageMeter;
     this.clock = deps.clock;
     this.logger = deps.logger;
@@ -100,10 +104,11 @@ export class LlmFeatureRunner {
    * The server's active provider (central key from env, ADR-0057). A missing key
    * is a hard error, never a template fallback.
    */
-  async resolveProvider(_userId: string): Promise<ResolvedProvider> {
-    const active = this.llm.active();
-    if (!active) throw new AiNotConfiguredError();
-    return { provider: active };
+  async resolveProvider(userId: string): Promise<ResolvedProvider> {
+    const stored = (await this.users.findById(userId))?.llmProvider;
+    const provider = this.llm.resolve(stored);
+    if (!provider) throw new AiNotConfiguredError();
+    return { provider };
   }
 
   /**

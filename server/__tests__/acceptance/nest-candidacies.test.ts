@@ -20,6 +20,7 @@ import {
   STAGE_TRANSITION_REPOSITORY,
   PLACEMENT_REPOSITORY,
   WORKSPACE_SETTINGS_STORE,
+  WORKSPACE_SETTINGS_SERVICE,
 } from '../../src/nest/tokens.js';
 import {
   InMemoryCandidacyRepository,
@@ -56,6 +57,13 @@ describe('NestJS candidacies vertical', () => {
       { provide: STAGE_TRANSITION_REPOSITORY, useValue: new InMemoryStageTransitionRepository() },
       { provide: PLACEMENT_REPOSITORY, useValue: new InMemoryPlacementRepository() },
       {
+        provide: WORKSPACE_SETTINGS_SERVICE,
+        useValue: {
+          isVermittlungEnabled: async () => true,
+          get: async () => ({ vermittlung: true }),
+        },
+      },
+      {
         provide: WORKSPACE_SETTINGS_STORE,
         useValue: { get: async () => ({ vermittlung: true }), set: async () => undefined },
       },
@@ -73,7 +81,7 @@ describe('NestJS candidacies vertical', () => {
 
     app = moduleRef.createNestApplication();
     app.useGlobalFilters(new ProblemJsonFilter(noopLogger));
-    await app.init();
+    await app.listen(0, '127.0.0.1');
   });
 
   afterAll(async () => {

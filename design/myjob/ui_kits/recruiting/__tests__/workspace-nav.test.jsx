@@ -37,6 +37,8 @@ beforeAll(async () => {
       </div>
     ),
   });
+  await import('../workspace-settings.js');
+  await import('../use-workspace-settings.jsx');
   await import('../use-viewport.jsx');
   await import('../data.js');
   await import('../Workspace.jsx');
@@ -51,6 +53,7 @@ afterEach(() => {
 describe('Workspace rail (AK-0.1)', () => {
   it('Nav_FreshWorkspace_RendersOnlyFiveDestinations', async () => {
     window.RecruitApi = emptyApi(false);
+    window.WorkspaceSettings.reset();
     const { container } = render(<Workspace user={{ id: 'u1', email: 'u1@x.io', roles: ['recruiter'] }} onLogout={() => {}} />);
     await waitFor(() => expect(window.RecruitApi.getWorkspaceSettings).toHaveBeenCalled());
     await waitFor(() => expect(navLabels(container).length).toBeGreaterThan(0));
@@ -59,13 +62,14 @@ describe('Workspace rail (AK-0.1)', () => {
     // Settings is the foot utility — the fifth destination.
     expect(container.querySelector('[data-settings]').textContent).toBe('Einstellungen');
     // No intermediary destinations.
-    for (const label of ['Suchaufträge', 'Pipeline', 'Performance', 'Postfach']) {
+    for (const label of ['Suchaufträge', 'Performance', 'Postfach']) {
       expect(navLabels(container)).not.toContain(label);
     }
   });
 
   it('Nav_VermittlungOn_RendersAgencyEntries', async () => {
     window.RecruitApi = emptyApi(true);
+    window.WorkspaceSettings.reset();
     const { container } = render(<Workspace user={{ id: 'u1', email: 'u1@x.io', roles: ['admin'] }} onLogout={() => {}} />);
     await waitFor(() => expect(navLabels(container)).toContain('Suchaufträge'));
     expect(navLabels(container)).toEqual([
@@ -73,7 +77,6 @@ describe('Workspace rail (AK-0.1)', () => {
       'Mandanten',
       'Stellen',
       'Bewerbungen',
-      'Pipeline',
       'Suchaufträge',
       'Performance',
       'Postfach',

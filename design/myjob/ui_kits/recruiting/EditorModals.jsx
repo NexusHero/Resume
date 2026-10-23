@@ -13,8 +13,23 @@ const { ModalShell: EdmModalShell, PillButton: EdmPillButton, GroundingWarning: 
 /* Shared input style for the modal textareas / text inputs. */
 const EDM_FIELD = { width: '100%', padding: '11px 13px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', color: 'var(--text-heading)', fontFamily: 'var(--font-body)', fontSize: '13px', outline: 'none' };
 
-/* ---- Import: paste a CV or upload a PDF, let the AI parse it into fields ---- */
+/* Targeted import errors (plan §3.6): a missing text layer is the general
+   "scan/protected" message, an upstream failure is retryable, everything else
+   stays a generic error — never a blanket "could not be read". */
+function importErrorMessage(err) {
+  const code = err && err.code;
+  if (code === 'no-text-layer') {
+    return 'Das PDF enthält keinen lesbaren Text (z. B. Scan oder geschützt). Bitte Text einfügen.';
+  }
+  if (code === 'upstream-provider' || (err && err.status === 502)) {
+    return 'KI-Anbieter nicht erreichbar. Bitte erneut versuchen.';
+  }
+  return 'Der Import ist fehlgeschlagen. Bitte erneut versuchen oder den Text einfügen.';
+}
+
+/* ---- Import: paste a CV or upload a PDF; without a key it keeps the full text ---- */
 function ImportCvModal({ talentId, onParsed, onClose }) {
+  const aiBlocked = !!(window.aiGateBlocked && window.aiGateBlocked());
   const [importText, setImportText] = React.useState('');
   const [parsing, setParsing] = React.useState(false);
   const [importHint, setImportHint] = React.useState('');
@@ -26,8 +41,8 @@ function ImportCvModal({ talentId, onParsed, onClose }) {
     try {
       onParsed(await window.RecruitApi.parseDocument(talentId, importText));
       onClose();
-    } catch {
-      /* ignore parse error */
+    } catch (err) {
+      setImportHint(importErrorMessage(err));
     }
     setParsing(false);
   };
@@ -61,16 +76,13 @@ function ImportCvModal({ talentId, onParsed, onClose }) {
           r.onerror = rej;
           r.readAsDataURL(file);
         });
-        const parsed = await window.RecruitApi.parseDocumentPdf(talentId, dataBase64);
-        if (parsed.extractedChars === 0) {
-          setImportHint('In diesem PDF wurde kein Text gefunden (gescanntes Bild?). Bitte füge den Text stattdessen ein.');
-        } else {
-          onParsed(parsed);
-          onClose();
-        }
+          const parsed = await window.RecruitApi.parseDocumentPdf(talentId, dataBase64);
+        // The editor uploads the PDF only when the user accepts (plan §4.4).
+        onParsed({ ...parsed, file: { name: file.name, dataBase64 } });
+        onClose();
       }
-    } catch {
-      setImportHint('Die Datei konnte nicht gelesen werden. Bitte füge den Text stattdessen ein.');
+    } catch (err) {
+      setImportHint(importErrorMessage(err));
     }
     setParsing(false);
   };
@@ -78,6 +90,9 @@ function ImportCvModal({ talentId, onParsed, onClose }) {
   return (
     <EdmModalShell title="CV importieren" subtitle="PDF/HTML hochladen oder den Lebenslauf-Text einfügen — die KI übernimmt Kurzprofil, Berufserfahrung und Skills in den Editor." onClose={onClose} scroll={false}>
       <input ref={pdfInputRef} type="file" accept=".pdf,.html" onChange={runImportFile} style={{ display: 'none' }} />
+      {window.useAiStatus && window.useAiStatus().status === 'not-configured' && window.TextImportNotice && (
+        <div style={{ marginBottom: '10px' }}><window.TextImportNotice /></div>
+      )}
       <div style={{ marginBottom: '12px' }}>
         <button onClick={() => pdfInputRef.current && pdfInputRef.current.click()} disabled={parsing} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'none', border: '1px dashed var(--border-strong)', borderRadius: 'var(--radius-md)', cursor: parsing ? 'default' : 'pointer', fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-soft)', padding: '10px 16px', width: '100%', justifyContent: 'center' }}>
           <EDM.Icon name="upload" size={14} /> {parsing ? 'Lese…' : 'PDF / HTML hochladen'}
@@ -85,6 +100,9 @@ function ImportCvModal({ talentId, onParsed, onClose }) {
       </div>
       <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'center', margin: '0 0 10px' }}>oder Text einfügen</div>
       <textarea value={importText} onChange={(e) => setImportText(e.target.value)} rows={9} placeholder="CV-Text hier einfügen…" style={{ ...EDM_FIELD, resize: 'vertical' }} />
+      {aiBlocked && window.AiNotConfiguredHint && (
+        <div style={{ marginTop: '10px' }}><window.AiNotConfiguredHint compact /></div>
+      )}
       {importHint && <div style={{ marginTop: '10px', fontSize: '12px', color: 'var(--danger)' }}>{importHint}</div>}
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '14px' }}>
         <EDM.Button variant="ghost" onClick={onClose}>Abbrechen</EDM.Button>
@@ -96,13 +114,20 @@ function ImportCvModal({ talentId, onParsed, onClose }) {
 
 /* ---- ATS check: score the résumé against a pasted job ad ---- */
 function AtsModal({ talentId, onClose }) {
+  const aiBlocked = !!(window.aiGateBlocked && window.aiGateBlocked());
   const [jobText, setJobText] = React.useState('');
   const [ats, setAts] = React.useState(null);
   const [scoring, setScoring] = React.useState(false);
+  const [atsError, setAtsError] = React.useState('');
   const runAts = async () => {
     if (!jobText.trim() || !talentId) return;
+    if (window.AiStatus && window.AiStatus.get().status === 'not-configured') {
+      setAtsError('KI nicht eingerichtet — konfiguriere den zentralen Schlüssel in den Einstellungen.');
+      return;
+    }
     setScoring(true);
     try {
+      setAtsError('');
       setAts(await window.RecruitApi.atsScore(talentId, jobText));
     } catch {
       /* ignore */
@@ -117,6 +142,9 @@ function AtsModal({ talentId, onClose }) {
         <EDM.Button variant="ghost" onClick={onClose}>Schließen</EDM.Button>
         <EDM.Button variant="primary" disabled={scoring || !jobText.trim()} onClick={runAts}>{scoring ? 'Analysiere…' : 'Analysieren'}</EDM.Button>
       </div>
+      {aiBlocked && window.AiNotConfiguredHint && (
+        <div style={{ marginTop: '10px' }}><window.AiNotConfiguredHint compact /></div>
+      )}
       {ats && (
         <div style={{ marginTop: '18px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>

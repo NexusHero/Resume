@@ -130,7 +130,8 @@ function AtsModal({ talentId, onClose }) {
       setAtsError('');
       setAts(await window.RecruitApi.atsScore(talentId, jobText));
     } catch {
-      /* ignore */
+      // A failed score used to leave the modal silent (no result, no message).
+      setAtsError('Der ATS-Abgleich ist fehlgeschlagen. Bitte versuche es erneut.');
     }
     setScoring(false);
   };
@@ -145,6 +146,7 @@ function AtsModal({ talentId, onClose }) {
       {aiBlocked && window.AiNotConfiguredHint && (
         <div style={{ marginTop: '10px' }}><window.AiNotConfiguredHint compact /></div>
       )}
+      {atsError && <div role="alert" style={{ marginTop: '10px', fontSize: '12px', color: 'var(--danger)' }}>{atsError}</div>}
       {ats && (
         <div style={{ marginTop: '18px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
@@ -181,13 +183,17 @@ function PitchModal({ talentId, onClose }) {
   const [pitch, setPitch] = React.useState(null);
   const [pitching, setPitching] = React.useState(false);
   const [pitchCopied, setPitchCopied] = React.useState(false);
+  const [pitchError, setPitchError] = React.useState('');
   const runPitch = async () => {
     if (!talentId) return;
     setPitching(true);
+    setPitchError('');
     try {
       setPitch(await window.RecruitApi.pitchCandidate(talentId, mandateContext));
     } catch {
-      /* ignore */
+      // Keep the modal open and say what happened; a silent failure looked like
+      // a no-op button.
+      setPitchError('Der Pitch konnte nicht erstellt werden. Bitte versuche es erneut.');
     }
     setPitching(false);
   };
@@ -212,6 +218,7 @@ function PitchModal({ talentId, onClose }) {
         <EDM.Button variant="ghost" onClick={onClose}>Schließen</EDM.Button>
         <EDM.Button variant="primary" disabled={pitching} onClick={runPitch}>{pitching ? 'Entwerfe…' : pitch ? 'Neu generieren' : 'Generieren'}</EDM.Button>
       </div>
+      {pitchError && <div role="alert" style={{ marginTop: '10px', fontSize: '12px', color: 'var(--danger)' }}>{pitchError}</div>}
       {pitch && (
         <div style={{ marginTop: '18px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
@@ -246,6 +253,7 @@ function OutreachModal({ talentId, defaultEmail, onClose }) {
   const [outMsg, setOutMsg] = React.useState(null);
   const [outBusy, setOutBusy] = React.useState(false);
   const [outCopied, setOutCopied] = React.useState(false);
+  const [outError, setOutError] = React.useState('');
   // The outcome loop: this talent's past outreach + the desk's hit rate.
   const [history, setHistory] = React.useState([]);
   const [replyRate, setReplyRate] = React.useState(null);
@@ -254,28 +262,35 @@ function OutreachModal({ talentId, defaultEmail, onClose }) {
   const [sendState, setSendState] = React.useState('idle'); // idle | sending | sent | error
   const [syncNote, setSyncNote] = React.useState('');
   React.useEffect(() => {
-    window.RecruitApi.getMailStatus().then(setMailStatus).catch(() => {});
+    window.RecruitApi.getMailStatus()
+      .then(setMailStatus)
+      // Optional mail integration: when unavailable the send button stays hidden.
+      .catch(() => {});
   }, []);
   const loadLoop = React.useCallback(() => {
     if (!talentId) return;
     window.RecruitApi.listArtifacts(talentId)
       .then((all) => setHistory(all.filter((a) => a.kind === 'outreach')))
+      // Outcome history is advisory; a transient failure keeps the last list.
       .catch(() => {});
     window.RecruitApi.getArtifactStats()
       .then((s) => {
         const outreach = (s.byKind || []).find((b) => b.kind === 'outreach');
         setReplyRate(outreach || null);
       })
+      // Reply-rate chip is optional; it stays hidden if stats cannot be loaded.
       .catch(() => {});
   }, [talentId]);
   React.useEffect(loadLoop, [loadLoop]);
   const stampOutcome = (id, outcome) => {
+    // Best-effort write: the next load reflects the server's authoritative state.
     window.RecruitApi.setArtifactOutcome(id, outcome).then(loadLoop).catch(() => {});
   };
   const runOutreach = async () => {
     if (!talentId) return;
     setOutBusy(true);
     setOutCopied(false);
+    setOutError('');
     setSendState('idle');
     try {
       setOutMsg(
@@ -288,7 +303,8 @@ function OutreachModal({ talentId, defaultEmail, onClose }) {
       );
       loadLoop(); // the generation was logged for the outcome loop
     } catch {
-      /* ignore */
+      // A failed draft stays visible as an explicit message, never as a no-op.
+      setOutError('Die Ansprache konnte nicht entworfen werden. Bitte versuche es erneut.');
     }
     setOutBusy(false);
   };
@@ -364,6 +380,7 @@ function OutreachModal({ talentId, defaultEmail, onClose }) {
         <EDM.Button variant="ghost" onClick={onClose}>Schließen</EDM.Button>
         <EDM.Button variant="primary" disabled={outBusy} onClick={runOutreach}>{outBusy ? 'Entwerfe…' : outMsg ? 'Neu generieren' : 'Generieren'}</EDM.Button>
       </div>
+      {outError && <div role="alert" style={{ marginTop: '10px', fontSize: '12px', color: 'var(--danger)' }}>{outError}</div>}
       {outMsg && (
         <div style={{ marginTop: '18px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', marginBottom: '10px' }}>

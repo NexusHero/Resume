@@ -3,7 +3,7 @@ import type { MandateRepository } from '../ports/mandate-repository.js';
 import type { PlacementRepository } from '../ports/placement-repository.js';
 import type { WorkspaceSettingsService } from './workspace-settings-service.js';
 
-/** The scopes (workspaces) the timers iterate, loaded fresh each tick. */
+/** Workspaces the timers iterate, loaded fresh each tick. */
 export type ScopeLoader = () => Promise<string[]>;
 
 export interface SchedulerTickDeps {
@@ -31,11 +31,7 @@ export const HIDDEN_VERMITTLER_DATA_WARNING =
 
 const errMessage = (err: unknown): string => (err instanceof Error ? err.message : String(err));
 
-/**
- * Assistant scheduler tick: only workspaces with the intermediary features on
- * run the (autopilot-capable) assistant. One workspace's failure is logged and
- * does not stop the others.
- */
+/** Assistant tick: only workspaces with Vermittlung on; failures are isolated. */
 export async function runAssistantTick(deps: AssistantTickDeps): Promise<void> {
   const enabled = await deps.settings.filterVermittlungEnabled(await deps.scopes());
   for (const scope of enabled) {
@@ -59,10 +55,7 @@ export async function runReplySyncTick(deps: ReplySyncTickDeps): Promise<void> {
   }
 }
 
-/**
- * Boot warning (owner decision Q1): a workspace that has recruiter data but the
- * switch off would silently hide it. Log one warning per affected workspace.
- */
+/** Boot warning (owner decision Q1): one per workspace whose recruiter data is hidden. */
 export async function logHiddenVermittlerData(deps: HiddenDataDeps): Promise<void> {
   for (const scope of await deps.scopes()) {
     if (await deps.settings.isVermittlungEnabled(scope)) continue;

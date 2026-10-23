@@ -58,13 +58,14 @@ describe('Editor — AI tailor', () => {
     window.RecruitApi.suggestDocument.mockResolvedValue({
       action: 'summary',
       text: 'A crisp tailored summary.',
-      provider: 'template',
+      provider: 'claude',
     });
     render(<Editor talent={talent} onClose={vi.fn()} onCreateMappe={vi.fn()} />);
 
     await userEvent.click(screen.getByText('KI anpassen'));
 
     await waitFor(() => expect(screen.getByText('A crisp tailored summary.')).toBeInTheDocument());
+    expect(screen.getByText('KI · claude')).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 

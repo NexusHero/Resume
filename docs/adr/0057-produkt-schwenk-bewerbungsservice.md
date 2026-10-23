@@ -1,7 +1,7 @@
 # ADR-0057 — Produkt-Schwenk: Bewerbungsservice zuerst
 
 - **Status:** Accepted
-- **Partially supersedes:** ADR-0005 (the deterministic template fallback and the per-user API keys; the metering and grounding parts stay; the rule-based CV parser stays as a named basic mode), ADR-0011 (the per-user key half; the persisted provider choice stays), ADR-0055 (the six-destination navigation is now conditional on the workspace switch)
+- **Partially supersedes:** ADR-0005 (the deterministic template fallback and the per-user API keys; the metering and grounding parts stay; the CV import keeps a named text-only mode without AI), ADR-0011 (the per-user key half; the persisted provider choice stays), ADR-0055 (the six-destination navigation is now conditional on the workspace switch)
 - **Relates to:** ADR-0004 (RBAC), ADR-0010/0033 (scope ownership), ADR-0012 (zod + RFC-9457), ADR-0013/0014/0015/0019 (assistant, outcome loop, mail, autopilot — frozen behind the switch), ADR-0021 (plan gating, unchanged), ADR-0045 (no fabricated data), ADR-0046/0048 (applications), ADR-0051 (NestJS at the edge, hexagonal core)
 - **Requirements:** FR-30, FR-31, FR-43 (changed); FR-70 to FR-73 (new). The implementation plan is [`../plans/phase-0-fundament.md`](../plans/phase-0-fundament.md).
 
@@ -79,17 +79,22 @@ Three further problems surfaced while planning that path:
    downgrade. The deterministic template builders are deleted. Deterministic,
    offline analysis that is not text generation (skill matching, grounding check,
    keyword ATS gap analysis, AGG check) stays as it is. Every AI route needs a
-   signed-in user (the cover-letter route no longer serves anonymous callers from the
+   signed-in user (breaking change, noted in the changelog: the cover-letter route no longer serves anonymous callers from the
    shared key).
    **One owner-decided exception: the CV import.** Reading a CV into the structured
-   model (`parse`, `parse-pdf`, bulk import) keeps its rule-based parser, but as an
-   explicitly named mode, not a hidden fallback: without a key the import runs as
-   **"Einfacher Import (ohne KI)"**, the response says `mode: 'basic'` instead of a
-   provider name, and the UI states it ("für bessere Ergebnisse KI in den
-   Einstellungen einrichten"). With a key the AI is used (`mode: 'ai'`); if that call
-   fails the import fails with 502, it does not quietly downgrade to basic. These
-   routes therefore do not answer 503. A PDF without a text layer (a scan) cannot be
-   read in either mode and answers 422 `no-text-layer`.
+   model (`parse`, `parse-pdf`, bulk import) has no rule-based parser to fall back on
+   (the old fallback only cut 600 characters into the short profile). Without a key
+   the import therefore runs as an explicitly named mode, **"Text übernehmen (ohne
+   KI)"**: the full CV text is stored (`resume.rawText`, up to the existing 50,000
+   character limit), an uploaded PDF is kept as an attachment of the Mandant, the
+   editor only fills empty fields and never overwrites an existing section, and
+   structuring into stations and skills is available only with AI. The response says
+   `mode: 'text'` instead of a provider name and the UI states "Text übernommen (ohne
+   KI) — Stationen und Skills bitte manuell ergänzen oder KI in den Einstellungen
+   einrichten". With a key the AI is used (`mode: 'ai'`); if that call fails the
+   import fails with 502, it does not quietly downgrade to text mode. These routes
+   therefore do not answer 503. A PDF without readable text (a scan or a protected
+   file) cannot be used in either mode and answers 422 `no-text-layer`.
 5. **Per-user API keys are removed.** The routes, the `ApiKeyStore` port with both
    adapters, the secret cipher that only protected them and the UI to enter a key are
    deleted. Stored keys are ignored from the first request on and are deleted by an
@@ -112,7 +117,7 @@ the switch, the vocabulary and the AI-key policy they build on.
   buttons. The recruiter code stays in the coverage base, so it must keep compiling
   and passing; its acceptance tests must switch the setting on for their workspace.
 - The "works with no key at all" promise of ADR-0005 narrows: the core (accounts,
-  Mandanten, CV and cover-letter editing, PDF/Mappe, application tracking, the basic
+  Mandanten, CV and cover-letter editing, PDF/Mappe, application tracking, the text-only
   CV import) still runs with no key and no network, but every AI feature needs a
   configured server key — summaries, letters, tailoring, translation, ATS scoring. An operator without a key sees a clear
   message instead of weak text. Documentation that promised "fully functional with no

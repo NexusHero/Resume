@@ -1,4 +1,5 @@
-import type { Job, JobQuery } from '../domain/job.js';
+import type { Job, JobPostingDetail, JobQuery } from '../domain/job.js';
+import { PostingFetchError } from '../domain/errors.js';
 import type { JobSource } from '../ports/job-source.js';
 import type { HttpFetch } from '../ports/http-fetch.js';
 import type { Logger } from '../ports/logger.js';
@@ -62,5 +63,29 @@ export class BundesagenturJobSource implements JobSource {
       source: this.name,
       url: j.externeUrl ?? `https://www.arbeitsagentur.de/jobsuche/jobdetail/${refnr}`,
     };
+  }
+
+  /**
+   * The full ad text, fetched from the detail endpoint (`…/jobs/{refnr}`) with
+   * the API key. The search payload carries no description, so the detail
+   * request is the only full-text source (AK-1.2). The exact detail field names
+   * are assumed (RI3) and joined defensively.
+   */
+  async getPosting(sourceId: string): Promise<JobPostingDetail | null> {
+    const res = await this.http(`${BASE}/${encodeURIComponent(sourceId)}`, {
+      headers: { 'X-API-Key': this.apiKey },
+    });
+    if (!res.ok) throw new PostingFetchError('detail-fetch');
+    const body = (await res.json()) as Record<string, unknown>;
+    const text = [
+      body.beschreibung,
+      body.stellenbeschreibung,
+      body.berufsfelder,
+      body.kenntnisse,
+      body.anforderungen,
+    ]
+      .filter((v): v is string => typeof v === 'string' && v.trim() !== '')
+      .join('\n');
+    return text.trim() ? { description: text } : null;
   }
 }

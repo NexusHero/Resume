@@ -19,6 +19,9 @@ test-results/
 .env.*
 !.env.example
 
+# Local docker-compose overrides (developer-specific, never committed)
+docker-compose.override.yml
+
 # Better-Auth embedded SQLite database (runtime credential/session store, ADR-0043)
 *.sqlite
 *.sqlite-journal

@@ -6,7 +6,10 @@ import { ProblemJsonFilter } from '../../src/nest/problem-json.filter.js';
 import {
   AiNotConfiguredError,
   InternalError,
+  NoTextError,
   NotFoundError,
+  PostingFetchError,
+  SsrfBlockedError,
   ValidationError,
 } from '../../src/domain/errors.js';
 import type { Logger } from '../../src/ports/logger.js';
@@ -132,6 +135,30 @@ describe('errorHandler', () => {
       title: 'InternalError',
       detail: 'PDF text extraction failed',
     });
+  });
+
+  it('Problem_SsrfBlockedError_MapsTo400SsrfBlocked', () => {
+    const res = mockRes();
+    run(new SsrfBlockedError(), res);
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toMatchObject({ status: 400, type: 'about:blank#ssrf-blocked' });
+  });
+
+  it('Problem_NoTextError_MapsTo422', () => {
+    const res = mockRes();
+    run(new NoTextError(), res);
+    expect(res.statusCode).toBe(422);
+    expect(res.body).toMatchObject({ status: 422, type: 'about:blank#no-text' });
+  });
+
+  it('Problem_PostingFetchError_MapsTo502WithReasonInDetail', () => {
+    for (const reason of ['redirect-limit', 'too-large', 'timeout']) {
+      const res = mockRes();
+      run(new PostingFetchError(reason), res);
+      expect(res.statusCode).toBe(502);
+      expect(res.body).toMatchObject({ status: 502, type: 'about:blank#posting-fetch' });
+      expect(res.body.detail).toContain(reason);
+    }
   });
 
   it('Handler_HeadersAlreadySent_DelegatesToNext', () => {

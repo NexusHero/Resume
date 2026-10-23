@@ -42,6 +42,7 @@ import './Editor.jsx';
 import './ConfirmDialog.jsx'; // window.ConfirmDialog — designed confirm for irreversible actions (#200)
 import './RecordFormModal.jsx';
 import './Matching.jsx';
+import './JobPostings.jsx';
 import './ApplyModal.jsx';
 import './AssistantView.jsx';
 import './SettingsView.jsx';

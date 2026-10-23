@@ -25,6 +25,8 @@ export const MAX_TOKENS = {
   // Prep is the largest structured reply (4–6 questions with rationale, STAR
   // scaffolds, candidate questions); 1200 was regularly truncated mid-JSON.
   candidatePrep: 2000,
+  // Posting extraction returns five short fields; 600 leaves ample headroom.
+  postingExtract: 600,
 } as const;
 
 /** A prompt pair produced by one of the domain prompt builders. */

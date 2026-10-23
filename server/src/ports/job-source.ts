@@ -1,4 +1,4 @@
-import type { Job, JobQuery } from '../domain/job.js';
+import type { Job, JobQuery, JobPostingDetail } from '../domain/job.js';
 
 /**
  * A source of job postings (a board / aggregator). Production adapters wrap
@@ -9,6 +9,14 @@ export interface JobSource {
   /** Stable identifier shown to the user (e.g. "Adzuna"). */
   readonly name: string;
   search(query: JobQuery): Promise<Job[]>;
+  /**
+   * Optional: the full ad text for a single posting, keyed by the source's own
+   * id (`Job.id`). Returns `null` when the source cannot supply a full text
+   * (e.g. it sits behind a JS/login page) — the posting is then stored
+   * `descriptionIncomplete`. The `company`/`title`/`location`/`requirements`
+   * fields come from the client's search result, not from this lookup.
+   */
+  getPosting?(sourceId: string): Promise<JobPostingDetail | null>;
 }
 
 /**

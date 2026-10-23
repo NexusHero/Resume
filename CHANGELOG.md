@@ -26,9 +26,30 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
   - **E2E coverage for applying to a specific company's live job posting
     (ADR-0046/0048).** Search-and-apply was previously only tested in
     isolation; a new Playwright test drives the actual seam end to end.
+- **Phase 1 — Stellen (ADR-0058).** Saved job postings with three entry paths:
+  - **"Stelle übernehmen"** saves a live search result **without AI** (source,
+    company, title, location, URL, full ad text) and survives a reload.
+  - **"Stelle einfügen" per text** extracts the fields with AI into an editable
+    preview before saving.
+  - **"Stelle einfügen" per URL** fetches the page **SSRF-guarded** (http(s)-only;
+    private/loopback/link-local/mapped/IPv6/decimal-notation targets rejected,
+    every redirect re-checked, DNS pinned) with size/time/redirect limits from
+    `JOB_FETCH_MAX_BYTES` / `JOB_FETCH_TIMEOUT_MS` / `JOB_FETCH_MAX_REDIRECTS`.
+  - A searchable **list** with a full-text **detail view** ("Text ergänzen" when a
+    source delivers no full text) and **delete with Undo** (#200). Postings are
+    **workspace-scoped** and **deduplicated** (`(source, sourceId)` or normalised
+    URL) — a duplicate insert returns the existing posting (`alreadySaved: true`)
+    and the UI shows "Bereits gespeichert → öffnen".
+  - New routes under `/api/v1/job-postings` (list/create/adopt/extract/detail/
+    update/delete), documented in the OpenAPI spec.
 
 ### Changed (breaking)
 
+- **`/api/v1/searches` is now workspace-scoped (RI15/Q6).** A saved search
+  belongs to the workspace that created it; other workspaces no longer see,
+  delete or run it. Existing rows backfill to the default `team` workspace (the
+  `saved_searches.owner_id` column + index, `DEFAULT 'team'`), so after the
+  upgrade pre-existing searches belong to `team` only.
 - **`POST /api/v1/cover-letter` now requires a login** (anonymous callers get
   `401`). The open route with the template fallback is gone (ADR-0057).
 - **`/api/v1/settings/keys*` is removed** (per-user AI keys). The AI routes

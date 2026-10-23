@@ -13,6 +13,7 @@ export const USAGE_FEATURES = [
   'interviewKit', // generate an interview kit for a candidate + mandate
   'candidatePrep', // candidate-facing interview preparation pack
   'translate', // translate a talent's documents into another language
+  'postingExtract', // extract the structured fields of a pasted/URL job posting
 ] as const;
 export type UsageFeature = (typeof USAGE_FEATURES)[number];
 

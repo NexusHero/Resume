@@ -16,7 +16,7 @@ function mtSkills(cand, job) {
   return job.req.map((name) => ({ name, met: have.includes(name.toLowerCase()) }));
 }
 
-function Matching({ talents, mandates = [], onCreateMandate, onApply }) {
+function Matching({ talents, mandates = [], onCreateMandate, onApply, onOpenPosting, onAdopted }) {
   const [mode, setMode] = React.useState('auto');
   const [candId, setCandId] = React.useState((talents.find((t) => t.me) || talents[0]).id);
   const [country, setCountry] = React.useState('ALL');
@@ -26,6 +26,10 @@ function Matching({ talents, mandates = [], onCreateMandate, onApply }) {
   const [applyState, setApplyState] = React.useState({});
   // The target for the ApplyModal: { job, cand }
   const [applyTarget, setApplyTarget] = React.useState(null);
+  // Per-job adopt state: 'busy' | 'done' | 'already' | 'error' (absent = idle).
+  const [adoptState, setAdoptState] = React.useState({});
+  // For 'already': the id of the existing posting, so "öffnen" can navigate.
+  const [adoptSavedId, setAdoptSavedId] = React.useState({});
 
   // Board-independent "apply to a role": company + role typed directly or
   // prefilled from one of the recruiter's own mandates. This makes applying a
@@ -86,6 +90,33 @@ function Matching({ talents, mandates = [], onCreateMandate, onApply }) {
     if (!onApply) return;
     const job = { id: 'manual', company: manual.company.trim(), title: manual.role.trim(), location: manual.location?.trim() || '', url: '' };
     setApplyTarget({ job, cand });
+  };
+
+  // "Stelle übernehmen" (AK-1.1) — save a live search result without AI. The
+  // search row carries the source id (`job.id`) and the URL; the server dedups.
+  const adopt = async (job) => {
+    setAdoptState((s) => ({ ...s, [job.id]: 'busy' }));
+    try {
+      const result = await window.RecruitApi.adoptJobPosting({
+        source: job.source || '',
+        sourceId: job.id,
+        url: job.url || undefined,
+        company: job.company,
+        title: job.title,
+        location: job.location || '',
+        country: job.country || '',
+        requirements: Array.isArray(job.req) ? job.req : [],
+      });
+      if (result && result.alreadySaved) {
+        setAdoptSavedId((r) => ({ ...r, [job.id]: result.jobPosting && result.jobPosting.id }));
+        setAdoptState((s) => ({ ...s, [job.id]: 'already' }));
+      } else {
+        setAdoptState((s) => ({ ...s, [job.id]: 'done' }));
+        if (onAdopted) onAdopted();
+      }
+    } catch (e) {
+      setAdoptState((s) => ({ ...s, [job.id]: 'error' }));
+    }
   };
   if (error) return <window.ErrorState onRetry={load} />;
   if (jobs === null) return <window.LoadingState />;
@@ -222,8 +253,28 @@ function Matching({ talents, mandates = [], onCreateMandate, onApply }) {
                 onApply={open}
                 onView={open}
               />
-              {(onApply || onCreateMandate) && (
+              {true && (
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '6px' }}>
+                  {(() => {
+                    const st = adoptState[job.id];
+                    const already = st === 'already';
+                    const label =
+                      st === 'busy' ? 'Übernehme …'
+                      : st === 'done' ? 'Übernommen'
+                      : st === 'already' ? 'Bereits gespeichert → öffnen'
+                      : st === 'error' ? 'Erneut versuchen'
+                      : 'Stelle übernehmen';
+                    return (
+                      <button
+                        onClick={() => (already && onOpenPosting ? onOpenPosting(adoptSavedId[job.id]) : adopt(job))}
+                        disabled={st === 'busy' || st === 'done'}
+                        title="Diese Stelle als gespeicherte Stelle übernehmen (ohne KI)"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: st === 'busy' || st === 'done' ? 'default' : 'pointer', appearance: 'none', background: st === 'done' ? 'var(--surface-sunk)' : 'var(--surface-card)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', color: st === 'done' ? 'var(--text-soft)' : 'var(--text-heading)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '4px 11px' }}
+                      >
+                        <MT.Icon name={st === 'done' ? 'check' : 'bookmark'} size={12} /> {label}
+                      </button>
+                    );
+                  })()}
                   {onApply && (() => {
                     const aState = applyState[`${cand.id}:${job.id}`];
                     const label =

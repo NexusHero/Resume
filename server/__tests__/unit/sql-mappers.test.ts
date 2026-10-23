@@ -5,6 +5,8 @@ import {
   auditEventToRow,
   rowToSavedSearch,
   savedSearchToRow,
+  rowToJobPosting,
+  jobPostingToRow,
   rowToMandate,
   mandateToRow,
   rowToTalent,
@@ -28,6 +30,7 @@ import {
 } from '../../src/adapters/sql/mappers.js';
 import type { Application, AuditEvent } from '../../src/domain/application.js';
 import type { SavedSearch } from '../../src/domain/saved-search.js';
+import type { JobPosting } from '../../src/domain/job-posting.js';
 import type { Mandate } from '../../src/domain/mandate.js';
 import type { Talent } from '../../src/domain/talent.js';
 import type { Placement } from '../../src/domain/placement.js';
@@ -135,12 +138,60 @@ describe('saved-search mappers', () => {
   it('SavedSearch_RoundTrips', () => {
     const search: SavedSearch = {
       id: 's1',
+      ownerId: 'team',
       name: 'Rust',
       query: { q: 'Rust', threshold: 80 },
       createdAt: 'now',
     };
     const row = savedSearchToRow(search);
     expect(rowToSavedSearch(row as Required<typeof row>)).toEqual(search);
+  });
+
+  it('SavedSearchToRow_RoundTripsIncludingOwnerId', () => {
+    const search: SavedSearch = {
+      id: 's2',
+      ownerId: 'acme',
+      name: 'Go',
+      query: { threshold: 60 },
+      createdAt: 'later',
+    };
+    const row = savedSearchToRow(search);
+    expect(row.ownerId).toBe('acme');
+    expect(rowToSavedSearch(row as Required<typeof row>)).toEqual(search);
+  });
+});
+
+describe('job-posting mappers', () => {
+  const posting: JobPosting = {
+    id: 'p1',
+    ownerId: 'team',
+    source: 'Arbeitnow',
+    sourceId: 'slug-1',
+    url: 'https://example.com/job',
+    company: 'Acme',
+    title: 'Engineer',
+    location: 'Berlin',
+    country: 'DE',
+    description: 'Full ad text',
+    requirements: ['Rust', 'gRPC'],
+    descriptionIncomplete: false,
+    createdAt: '2026-06-25T10:00:00.000Z',
+  };
+
+  it('JobPostingToRow_RoundTrips', () => {
+    const row = jobPostingToRow(posting);
+    expect(row.requirements).toEqual(['Rust', 'gRPC']);
+    expect(rowToJobPosting(row as Required<typeof row>)).toEqual(posting);
+  });
+
+  it('RowToJobPosting_HandlesIncompleteFlag', () => {
+    const row = jobPostingToRow({ ...posting, sourceId: undefined, url: undefined });
+    expect(row.sourceId).toBeNull();
+    expect(row.url).toBeNull();
+    const back = rowToJobPosting({ ...row, sourceId: null, url: null });
+    expect(back.descriptionIncomplete).toBe(false);
+    expect('sourceId' in back ? back.sourceId : undefined).toBeUndefined();
+    expect('url' in back ? back.url : undefined).toBeUndefined();
   });
 });
 

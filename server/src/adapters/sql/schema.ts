@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, jsonb, primaryKey } from 'drizzle-orm/pg-core';
+import { pgTable, text, serial, integer, jsonb, boolean, primaryKey } from 'drizzle-orm/pg-core';
 import type {
   DocumentContact,
   ResumeContent,
@@ -91,6 +91,7 @@ export const auditEvents = pgTable('audit_events', {
 /** Named, reusable job searches (mirrors domain `SavedSearch`). */
 export const savedSearches = pgTable('saved_searches', {
   id: text('id').primaryKey(),
+  ownerId: text('owner_id').notNull().default('team'),
   name: text('name').notNull(),
   query: jsonb('query').$type<SavedSearchQueryRow>().notNull(),
   createdAt: text('created_at').notNull(),
@@ -281,4 +282,21 @@ export const placements = pgTable('placements', {
   status: text('status').notNull(),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
+});
+
+/** Saved job postings ("Stellen", mirror domain `JobPosting`). Workspace-scoped. */
+export const jobPostings = pgTable('job_postings', {
+  id: text('id').primaryKey(),
+  ownerId: text('owner_id').notNull(),
+  source: text('source').notNull(),
+  sourceId: text('source_id'),
+  url: text('url'),
+  company: text('company').notNull(),
+  title: text('title').notNull(),
+  location: text('location').notNull(),
+  country: text('country').notNull(),
+  description: text('description').notNull(),
+  requirements: jsonb('requirements').$type<string[]>().notNull(),
+  descriptionIncomplete: boolean('description_incomplete').notNull().default(false),
+  createdAt: text('created_at').notNull(),
 });

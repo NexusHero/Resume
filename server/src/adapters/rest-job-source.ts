@@ -1,4 +1,4 @@
-import type { Job, JobQuery } from '../domain/job.js';
+import type { Job, JobPostingDetail, JobQuery } from '../domain/job.js';
 import type { JobSourceDescriptor } from '../domain/job-source-descriptor.js';
 import type { JobSource } from '../ports/job-source.js';
 import type { HttpFetch } from '../ports/http-fetch.js';
@@ -141,5 +141,13 @@ export class RestJobSource implements JobSource {
       }
       return true;
     });
+  }
+
+  /**
+   * Descriptor-driven boards model no detail endpoint, so there is no full-text
+   * lookup — `null` → the posting is stored `descriptionIncomplete` (AK-1.2).
+   */
+  async getPosting(): Promise<JobPostingDetail | null> {
+    return null;
   }
 }

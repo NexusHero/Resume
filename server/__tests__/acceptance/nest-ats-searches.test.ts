@@ -20,6 +20,8 @@ import {
   WORKSPACE_SETTINGS_STORE,
 } from '../../src/nest/tokens.js';
 import { FakeJobSource, InMemorySavedSearchRepository, noopLogger } from '../support/fakes.js';
+import { loadConfig } from '../../src/config.js';
+import { makeNestApp, closeNestApps } from '../support/nest-app.js';
 
 class StampUserGuard implements CanActivate {
   canActivate(ctx: ExecutionContext): boolean {
@@ -93,5 +95,71 @@ describe('NestJS ats + searches verticals', () => {
 
     const removed = await request(server).delete(`/api/v1/searches/${id}`);
     expect(removed.status).toBe(204);
+  });
+});
+
+describe('Saved searches workspace scope (RI15/Q6)', () => {
+  afterEach(async () => {
+    await closeNestApps();
+  });
+
+  const register = async (agent: ReturnType<typeof request.agent>, email: string) => {
+    await agent.post('/api/v1/auth/register').send({ email, password: 'correct-horse-battery' });
+  };
+
+  it('SavedSearches_NoLogin_Returns401', async () => {
+    const app = await makeNestApp();
+    const req = request(app);
+    const cases: Array<Promise<request.Response>> = [
+      req.get('/api/v1/searches'),
+      req.post('/api/v1/searches').send({ name: 'x' }),
+      req.delete('/api/v1/searches/id1'),
+      req.get('/api/v1/searches/id1/run'),
+    ];
+    for (const promise of cases) {
+      const res = await promise;
+      expect(res.status).toBe(401);
+    }
+  });
+
+  it('SavedSearches_Create_SetsOwnerIdFromScope', async () => {
+    const app = await makeNestApp();
+    const agent = request.agent(app);
+    await register(agent, 'ss-owner@phase1.test');
+    const created = await agent
+      .post('/api/v1/searches')
+      .send({ name: 'Rust', q: 'rust', threshold: 70 });
+    expect(created.status).toBe(201);
+    expect(created.body.search.ownerId).toBe('team');
+  });
+
+  it('SavedSearches_TwoWorkspaces_AreIsolated', async () => {
+    const app = await makeNestApp(loadConfig({ SELF_SERVE_TENANTS: 'true' }));
+    const a = request.agent(app);
+    const b = request.agent(app);
+    await register(a, 'ss-a@phase1.test');
+    await register(b, 'ss-b@phase1.test');
+
+    const created = await a
+      .post('/api/v1/searches')
+      .send({ name: 'Rust', q: 'rust', threshold: 70 });
+    expect(created.status).toBe(201);
+    const id = created.body.search.id;
+
+    expect((await a.get('/api/v1/searches')).body.map((s: { id: string }) => s.id)).toContain(id);
+    expect((await b.get('/api/v1/searches')).body.map((s: { id: string }) => s.id)).not.toContain(
+      id,
+    );
+
+    // A foreign id is invisible: delete/run answer 404, not a cross-tenant leak.
+    expect((await b.delete(`/api/v1/searches/${id}`)).status).toBe(404);
+    expect((await b.get(`/api/v1/searches/${id}/run`)).status).toBe(404);
+  });
+
+  it('SavedSearches_VermittlungOff_StillVisible', async () => {
+    const app = await makeNestApp(loadConfig({}), { vermittlung: false });
+    const agent = request.agent(app);
+    await register(agent, 'ss-visible@phase1.test');
+    expect((await agent.get('/api/v1/searches')).status).toBe(200);
   });
 });

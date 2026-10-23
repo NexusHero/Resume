@@ -138,3 +138,50 @@ describe('CV import without a key (Fehler 1)', () => {
     expect(calls.some((u) => u.includes('/settings/llm'))).toBe(false);
   });
 });
+
+describe('RecruitApi — job posting endpoints', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('RecruitApi_JobPostingMethods_UseCorrectEndpoints', async () => {
+    const calls = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url, init) => {
+        calls.push({ url: String(url), method: (init && init.method) || 'GET' });
+        return new Response(JSON.stringify({ jobPosting: { id: 'p1' }, alreadySaved: false }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }),
+    );
+
+    await window.RecruitApi.listJobPostings('rust');
+    expect(calls[0].url).toContain('/job-postings?q=rust');
+    expect(calls[0].method).toBe('GET');
+
+    await window.RecruitApi.getJobPosting('p1');
+    expect(calls[1].url).toContain('/job-postings/p1');
+
+    await window.RecruitApi.adoptJobPosting({ source: 'A', sourceId: '1', company: 'x', title: 'y' });
+    expect(calls[2].url).toContain('/job-postings/adopt');
+    expect(calls[2].method).toBe('POST');
+
+    await window.RecruitApi.extractJobPosting({ text: 'ad' });
+    expect(calls[3].url).toContain('/job-postings/extract');
+
+    await window.RecruitApi.createJobPosting({ source: 'text', company: 'x', title: 'y' });
+    expect(calls[4].url.endsWith('/job-postings')).toBe(true);
+    expect(calls[4].method).toBe('POST');
+
+    await window.RecruitApi.updateJobPosting('p1', { description: 'x' });
+    expect(calls[5].url).toContain('/job-postings/p1');
+    expect(calls[5].method).toBe('PATCH');
+
+    await window.RecruitApi.deleteJobPosting('p1');
+    expect(calls[6].url).toContain('/job-postings/p1');
+    expect(calls[6].method).toBe('DELETE');
+  });
+});
+

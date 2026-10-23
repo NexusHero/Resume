@@ -20,6 +20,7 @@ const BODY: Record<string, unknown> = {
   K09: { company: 'Helio', role: 'Engineer' },
   K10: undefined,
   K11: { mode: 'autopilot' },
+  K12: { text: 'We are hiring a Senior C++ Engineer in Berlin.' },
 };
 
 const CONDITIONAL = new Set(['K10', 'K11']);

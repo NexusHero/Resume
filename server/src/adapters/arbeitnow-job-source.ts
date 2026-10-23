@@ -1,8 +1,9 @@
-import type { Job, JobQuery } from '../domain/job.js';
+import type { Job, JobPostingDetail, JobQuery } from '../domain/job.js';
+import { PostingFetchError } from '../domain/errors.js';
 import type { JobSource } from '../ports/job-source.js';
 import type { HttpFetch } from '../ports/http-fetch.js';
 import type { Logger } from '../ports/logger.js';
-import { snippetFrom } from './html-text.js';
+import { htmlToText, snippetFrom } from './html-text.js';
 
 const ENDPOINT = 'https://www.arbeitnow.com/api/job-board-api';
 
@@ -55,6 +56,25 @@ export class ArbeitnowJobSource implements JobSource {
       source: this.name,
       url: j.url,
     };
+  }
+
+  /**
+   * The full ad text for one posting. `map()` only keeps the 180-character
+   * `snippet`, so the feed is **always** re-fetched here and the `slug` matched
+   * (the plan/ADR wording "already in the search" is wrong — the search holds
+   * only a snippet).
+   */
+  async getPosting(sourceId: string): Promise<JobPostingDetail | null> {
+    const res = await this.http(ENDPOINT);
+    if (!res.ok) throw new PostingFetchError('detail-fetch');
+    const body = (await res.json()) as { data?: ArbeitnowJob[] };
+    const job = (body.data ?? []).find((j) => j.slug === sourceId);
+    if (!job) return null;
+    const text = htmlToText(job.description ?? '');
+    // An empty (or markup-only) description yields no full text → treat it like
+    // an absent detail so the posting is flagged `descriptionIncomplete` (AK-1.2),
+    // matching the Bundesagentur source.
+    return text.trim() ? { description: text } : null;
   }
 
   private filter(jobs: Job[], query: JobQuery): Job[] {

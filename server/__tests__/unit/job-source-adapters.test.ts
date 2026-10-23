@@ -109,6 +109,27 @@ describe('ArbeitnowJobSource', () => {
       ),
     ).toEqual([]);
   });
+
+  it('GetPosting_ReturnsFullDescription', async () => {
+    // getPosting re-fetches the feed (search only keeps a 180-char snippet) and
+    // returns the full stripped description.
+    const { http, calls } = fakeHttp(body);
+    const src = new ArbeitnowJobSource({ httpFetch: http, logger: noopLogger });
+    const detail = await src.getPosting('rust-eng-berlin');
+    expect(calls).toHaveLength(1);
+    expect(detail?.description).toBe('Build fast systems');
+    expect(await src.getPosting('unknown-slug')).toBeNull();
+  });
+
+  it('GetPosting_EmptyDescription_ReturnsNull', async () => {
+    // A posting whose description strips to empty (markup-only / script-only)
+    // yields no full text → null, so the posting is flagged `descriptionIncomplete`.
+    const { http } = fakeHttp({
+      data: [{ slug: 'no-text', description: '<script>window.x=1;</script>   ' }],
+    });
+    const src = new ArbeitnowJobSource({ httpFetch: http, logger: noopLogger });
+    expect(await src.getPosting('no-text')).toBeNull();
+  });
 });
 
 describe('BundesagenturJobSource', () => {
@@ -185,6 +206,21 @@ describe('BundesagenturJobSource', () => {
         jobQuerySchema.parse({}),
       ),
     ).toEqual([]);
+  });
+
+  it('GetPosting_FetchesDetailEndpoint', async () => {
+    const { http, calls } = fakeHttp({ beschreibung: 'Full job text from BA.' });
+    const src = new BundesagenturJobSource({ httpFetch: http, logger: noopLogger, apiKey: 'k' });
+    const detail = await src.getPosting('14225-abc-S');
+    expect(calls[0]?.url).toContain('/pc/v4/jobs/14225-abc-S');
+    expect(calls[0]?.headers).toEqual({ 'X-API-Key': 'k' });
+    expect(detail?.description).toBe('Full job text from BA.');
+  });
+
+  it('GetPosting_NoDescriptionFields_ReturnsNull', async () => {
+    const { http } = fakeHttp({ refnr: 'x' });
+    const src = new BundesagenturJobSource({ httpFetch: http, logger: noopLogger, apiKey: 'k' });
+    expect(await src.getPosting('14225-abc-S')).toBeNull();
   });
 });
 
@@ -273,5 +309,18 @@ describe('AdzunaJobSource', () => {
         country: 'de',
       }).search(jobQuerySchema.parse({})),
     ).toEqual([]);
+  });
+
+  it('GetPosting_ReturnsNull', async () => {
+    // Adzuna's full text sits behind a JS/login page → no detail lookup.
+    const { http } = fakeHttp({});
+    const src = new AdzunaJobSource({
+      httpFetch: http,
+      logger: noopLogger,
+      appId: 'a',
+      appKey: 'b',
+      country: 'de',
+    });
+    expect(await src.getPosting('12345')).toBeNull();
   });
 });

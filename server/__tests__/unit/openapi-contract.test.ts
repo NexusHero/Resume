@@ -5,6 +5,11 @@ import { createMandateSchema } from '../../src/domain/mandate.js';
 import { createTalentSchema } from '../../src/domain/talent.js';
 import { createPlacementSchema } from '../../src/domain/placement.js';
 import { updateWorkspaceSettingsSchema } from '../../src/domain/workspace-settings.js';
+import {
+  adoptJobPostingSchema,
+  createJobPostingSchema,
+  updateJobPostingSchema,
+} from '../../src/domain/job-posting.js';
 import { VERMITTLER_ROUTES } from '../support/route-inventory.js';
 
 /**
@@ -64,6 +69,9 @@ const CASES: Array<[string, unknown]> = [
   ['MandateInput', createMandateSchema],
   ['TalentInput', createTalentSchema],
   ['PlacementInput', createPlacementSchema],
+  ['CreateJobPostingInput', createJobPostingSchema],
+  ['AdoptJobPostingInput', adoptJobPostingSchema],
+  ['UpdateJobPostingInput', updateJobPostingSchema],
 ];
 
 describe('OpenAPI contract stays in sync with the zod boundary schemas', () => {
@@ -118,6 +126,66 @@ describe('Phase 0 OpenAPI contract (ADR-0057)', () => {
   it('OpenApi_EveryAiOperation_Documents503AndReferencesAiNotConfigured', () => {
     expect(SPEC).toContain('AiNotConfigured');
     expect(SPEC).toContain('about:blank#ai-not-configured');
+  });
+});
+
+describe('Phase 1 OpenAPI contract (ADR-0058, Stellen)', () => {
+  it('OpenApi_JobPostingSchema_DocumentsEveryZodField', () => {
+    const props = openApiProps('JobPosting');
+    expect(props).toEqual(
+      expect.arrayContaining([
+        'id',
+        'ownerId',
+        'source',
+        'sourceId',
+        'url',
+        'company',
+        'title',
+        'location',
+        'country',
+        'description',
+        'requirements',
+        'descriptionIncomplete',
+        'createdAt',
+      ]),
+    );
+    expect(props).toContain('descriptionIncomplete');
+    expect(props).toContain('requirements');
+  });
+
+  it('OpenApi_JobPostingRoutes_Exist', () => {
+    const paths = [
+      '/job-postings',
+      '/job-postings/adopt',
+      '/job-postings/extract',
+      '/job-postings/{id}',
+    ];
+    for (const path of paths) {
+      expect(SPEC).toContain(`  ${path}:`);
+    }
+    // all seven operations are declared
+    for (const op of [
+      'listJobPostings',
+      'createJobPosting',
+      'adoptJobPosting',
+      'extractJobPosting',
+      'getJobPosting',
+      'updateJobPosting',
+      'deleteJobPosting',
+    ]) {
+      expect(SPEC).toContain(`operationId: ${op}`);
+    }
+  });
+
+  it('OpenApi_Extract_Documents503AiNotConfiguredAnd422NoTextAnd400SsrfBlocked', () => {
+    const block = operationBlock('/api/v1/job-postings/extract', 'post');
+    expect(block).toContain('AiNotConfigured');
+    expect(block).toContain('NoText');
+    expect(block).toContain('SsrfBlocked');
+    // 400 is both a validation error and an SSRF block; 502 is both a fetch
+    // failure and an unusable provider reply (G5 review).
+    expect(block).toContain('ValidationProblem');
+    expect(block).toContain('UpstreamProvider');
   });
 });
 

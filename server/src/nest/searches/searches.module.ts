@@ -17,6 +17,7 @@ import type { SavedSearchRepository } from '../../ports/saved-search-repository.
 import type { Clock } from '../../ports/clock.js';
 import type { IdGenerator } from '../../ports/id-generator.js';
 import { AuthGuard } from '../auth.guard.js';
+import { CurrentScope } from '../params.js';
 import { ZodValidationPipe } from '../zod-validation.pipe.js';
 import { JobsModule } from '../jobs/jobs.module.js';
 import {
@@ -29,8 +30,8 @@ import {
 
 /**
  * Saved searches under /api/v1/searches (ADR-0051 port of SavedSearchController):
- * list, create, remove and re-run. These are instance-level (not team-scoped),
- * matching the original service.
+ * list, create, remove and re-run. Workspace-scoped (RI15/Q6) — every operation
+ * is filtered to the caller's `@CurrentScope()`.
  */
 @Controller('api/v1/searches')
 @UseGuards(AuthGuard)
@@ -38,28 +39,29 @@ export class SearchesController {
   constructor(@Inject(SAVED_SEARCH_SERVICE) private readonly service: SavedSearchService) {}
 
   @Get()
-  list() {
-    return this.service.list();
+  list(@CurrentScope() scope: string) {
+    return this.service.list(scope);
   }
 
   @Post()
   @HttpCode(201)
   async create(
+    @CurrentScope() scope: string,
     @Body(new ZodValidationPipe(createSavedSearchSchema))
     input: ReturnType<typeof createSavedSearchSchema.parse>,
   ) {
-    return { search: await this.service.create(input) };
+    return { search: await this.service.create(scope, input) };
   }
 
   @Delete(':id')
   @HttpCode(204)
-  async remove(@Param('id') id: string): Promise<void> {
-    await this.service.remove(id);
+  async remove(@CurrentScope() scope: string, @Param('id') id: string): Promise<void> {
+    await this.service.remove(scope, id);
   }
 
   @Get(':id/run')
-  run(@Param('id') id: string) {
-    return this.service.run(id);
+  run(@CurrentScope() scope: string, @Param('id') id: string) {
+    return this.service.run(scope, id);
   }
 }
 

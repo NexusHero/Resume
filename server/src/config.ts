@@ -77,6 +77,20 @@ export interface AppConfig {
   security: SecurityConfig;
   /** Transactional email + password-reset wiring. */
   mail: MailConfig;
+  /** Where saved job postings live (fs store). */
+  jobPostingsFile: string;
+  /** Resource limits for the SSRF-guarded user-URL fetch (Q5). */
+  jobFetch: JobFetchConfig;
+}
+
+/** Limits for fetching a user-supplied posting URL (ADR-0058 §5, Q5). */
+export interface JobFetchConfig {
+  /** Hard cap on the response body before aborting (default 1 MB). */
+  maxBytes: number;
+  /** Overall wall-clock budget per fetch, incl. redirects (default 10 s). */
+  timeoutMs: number;
+  /** Maximum redirect hops before failing (default 5). */
+  maxRedirects: number;
 }
 
 /** Transactional-email configuration, resolved from the environment. */
@@ -234,6 +248,12 @@ export interface JobSourcesConfig {
  */
 export const DEV_ENCRYPTION_SECRET = 'myjob-dev-insecure-secret';
 
+/** A non-negative integer env value, or `def` when unset/invalid/negative. */
+function nonNegOrDefault(raw: string | undefined, def: number): number {
+  const n = Number(raw);
+  return Number.isFinite(n) && n >= 0 ? n : def;
+}
+
 const CANDIDATE_PROFILE: CandidateProfile = {
   skills: [
     { name: 'C++', weight: 3 },
@@ -281,6 +301,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     logFile: path.join(storeDir, 'log.json'),
     historyFile: path.join(storeDir, 'history.jsonl'),
     savedSearchesFile: path.join(storeDir, 'saved-searches.json'),
+    jobPostingsFile: path.join(storeDir, 'job-postings.json'),
     mandatesFile: path.join(storeDir, 'mandates.json'),
     talentsFile: path.join(storeDir, 'talents.json'),
     placementsFile: path.join(storeDir, 'placements.json'),
@@ -366,6 +387,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       circuitBreakerResetMs: Math.max(1000, Number(env.JOB_SOURCE_CIRCUIT_RESET_MS) || 60000),
     },
     store: env.STORE === 'sql' ? 'sql' : 'fs',
+    // SSRF-guard fetch limits (Q5): non-negative env values override the safe
+    // defaults; anything invalid (negative, non-numeric) falls back to them.
+    jobFetch: {
+      maxBytes: nonNegOrDefault(env.JOB_FETCH_MAX_BYTES, 1_000_000),
+      timeoutMs: nonNegOrDefault(env.JOB_FETCH_TIMEOUT_MS, 10_000),
+      maxRedirects: nonNegOrDefault(env.JOB_FETCH_MAX_REDIRECTS, 5),
+    },
     selfServeTenants: env.SELF_SERVE_TENANTS === 'true',
     superAdminEmails: (env.SUPER_ADMIN_EMAIL ?? '')
       .split(',')

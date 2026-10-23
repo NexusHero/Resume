@@ -1,4 +1,4 @@
-import type { Job, JobQuery } from '../domain/job.js';
+import type { Job, JobPostingDetail, JobQuery } from '../domain/job.js';
 import type { JobSource } from '../ports/job-source.js';
 import type { HttpFetch } from '../ports/http-fetch.js';
 import type { Logger } from '../ports/logger.js';
@@ -83,5 +83,14 @@ export class AdzunaJobSource implements JobSource {
     if (j.salary_min && j.salary_max) return `${fmt(j.salary_min)} – ${fmt(j.salary_max)} €`;
     if (j.salary_min) return `ab ${fmt(j.salary_min)} €`;
     return undefined;
+  }
+
+  /**
+   * Adzuna's full text sits behind a JS/login page we do not fetch, so it has
+   * no detail lookup — `null` → the posting is stored `descriptionIncomplete`
+   * and the UI offers "Text ergänzen" (AK-1.2).
+   */
+  async getPosting(): Promise<JobPostingDetail | null> {
+    return null;
   }
 }

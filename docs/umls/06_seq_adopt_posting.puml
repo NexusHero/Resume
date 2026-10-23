@@ -1,0 +1,41 @@
+@startuml 06_seq_adopt_posting
+title Stelle übernehmen (adopt) — save a live search result without AI (FR-75/76/79, ADR-0058)
+
+skinparam shadowing false
+autonumber
+
+actor Recruiter
+participant "JobPostingsController" as Ctrl
+participant "JobPostingService" as Svc
+participant "JobPostingRepository\n(fs | sql)" as Repo
+participant "JobSource\n(composite)" as Source
+
+Recruiter -> Ctrl : POST /job-postings/adopt { source, sourceId?, url?, company, title, ... }
+activate Ctrl
+Ctrl -> Svc : adopt(ownerId, input)
+activate Svc
+Svc -> Svc : normalizeUrl(url) — once, before dedup + persist
+Svc -> Repo : findDuplicate(ownerId, source, sourceId, url)
+Repo --> Svc : existing | null
+
+alt existing (dedup hit)
+  Svc --> Ctrl : { jobPosting: existing, alreadySaved: true }
+  Ctrl --> Recruiter : 200 → "Bereits gespeichert → öffnen"
+else new
+  alt sourceId present
+    Svc -> Source : getPosting(source, sourceId)
+    Source --> Svc : { description } | null
+    note right of Svc : null → descriptionIncomplete\n(e.g. Adzuna has no detail endpoint)
+  else url only
+    note right of Svc : no sourceId → no detail lookup\n(descriptionIncomplete)
+  end
+  Svc -> Repo : add(posting)
+  Svc -> Repo : findDuplicate(...) — race backstop (ADR-0058)
+  Repo --> Svc : winner | null
+  Svc --> Ctrl : { jobPosting, alreadySaved: false }
+  Ctrl --> Recruiter : 200
+end
+deactivate Svc
+deactivate Ctrl
+
+@enduml

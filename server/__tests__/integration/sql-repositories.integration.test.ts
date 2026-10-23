@@ -12,9 +12,11 @@ import { SqlEmailVerificationTokenStore } from '../../src/adapters/sql/sql-email
 import { SqlWorkspaceSettingsStore } from '../../src/adapters/sql/sql-workspace-settings-store.js';
 import { SqlDocumentRepository } from '../../src/adapters/sql/sql-document-repository.js';
 import { SqlAttachmentStore } from '../../src/adapters/sql/sql-attachment-store.js';
+import { SqlJobPostingRepository } from '../../src/adapters/sql/sql-job-posting-repository.js';
 import { loadConfig } from '../../src/config.js';
 import type { Application, AuditEvent } from '../../src/domain/application.js';
 import type { SavedSearch } from '../../src/domain/saved-search.js';
+import type { JobPosting } from '../../src/domain/job-posting.js';
 import type { Mandate } from '../../src/domain/mandate.js';
 import type { Talent } from '../../src/domain/talent.js';
 import type { Placement } from '../../src/domain/placement.js';
@@ -46,7 +48,7 @@ suite('SQL repositories (real Postgres)', () => {
 
   beforeEach(async () => {
     await pool.query(
-      'TRUNCATE applications, audit_events, saved_searches, mandates, talents, placements, talent_documents, attachments, users, password_reset_tokens, api_keys, workspace_settings RESTART IDENTITY',
+      'TRUNCATE applications, audit_events, saved_searches, mandates, talents, placements, talent_documents, attachments, users, password_reset_tokens, api_keys, workspace_settings, job_postings RESTART IDENTITY',
     );
   });
 
@@ -120,6 +122,25 @@ suite('SQL repositories (real Postgres)', () => {
     createdAt: '2026-06-25T10:00:00.000Z',
   });
 
+  const posting = (
+    id: string,
+    ownerId = 'owner1',
+    overrides: Partial<JobPosting> = {},
+  ): JobPosting => ({
+    id,
+    ownerId,
+    source: 'text',
+    company: 'Acme',
+    title: 'Engineer',
+    location: 'Berlin',
+    country: 'DE',
+    description: 'Full ad text.',
+    requirements: ['Rust'],
+    descriptionIncomplete: false,
+    createdAt: '2026-06-25T10:00:00.000Z',
+    ...overrides,
+  });
+
   it('Applications_AddFindUpdate_RoundTrips', async () => {
     const repo = new SqlApplicationRepository({ db });
     await repo.add(app('a1'));
@@ -164,16 +185,95 @@ suite('SQL repositories (real Postgres)', () => {
     const repo = new SqlSavedSearchRepository({ db });
     const search: SavedSearch = {
       id: 's1',
+      ownerId: 'owner1',
       name: 'Rust',
       query: { q: 'Rust', threshold: 70 },
       createdAt: 'now',
     };
     await repo.add(search);
-    expect(await repo.list()).toEqual([search]);
-    expect(await repo.findById('s1')).toEqual(search);
-    expect(await repo.remove('s1')).toBe(true);
-    expect(await repo.remove('s1')).toBe(false);
-    expect(await repo.list()).toEqual([]);
+    expect(await repo.list('owner1')).toEqual([search]);
+    expect(await repo.findById('owner1', 's1')).toEqual(search);
+    expect(await repo.remove('owner1', 's1')).toBe(true);
+    expect(await repo.remove('owner1', 's1')).toBe(false);
+    expect(await repo.list('owner1')).toEqual([]);
+  });
+
+  it('SqlSavedSearchRepository_List_FiltersByOwner', async () => {
+    const repo = new SqlSavedSearchRepository({ db });
+    const search = (id: string, ownerId: string): SavedSearch => ({
+      id,
+      ownerId,
+      name: id,
+      query: { threshold: 70 },
+      createdAt: 'now',
+    });
+    await repo.add(search('s1', 'owner1'));
+    await repo.add(search('s2', 'owner2'));
+    expect((await repo.list('owner1')).map((s) => s.id)).toEqual(['s1']);
+    expect(await repo.findById('owner1', 's2')).toBeNull();
+  });
+
+  it('SqlSavedSearchRepository_RemoveOnlyOwned', async () => {
+    const repo = new SqlSavedSearchRepository({ db });
+    await repo.add({
+      id: 's1',
+      ownerId: 'owner1',
+      name: 'Rust',
+      query: { threshold: 70 },
+      createdAt: 'now',
+    });
+    expect(await repo.remove('owner2', 's1')).toBe(false);
+    expect(await repo.list('owner1')).toHaveLength(1);
+    expect(await repo.remove('owner1', 's1')).toBe(true);
+  });
+
+  it('SqlJobPostingRepository_List_FiltersByOwner', async () => {
+    const repo = new SqlJobPostingRepository({ db });
+    await repo.add(posting('p1', 'owner1'));
+    await repo.add(posting('p2', 'owner2'));
+    expect((await repo.list('owner1')).map((p) => p.id)).toEqual(['p1']);
+    expect(await repo.findById('owner1', 'p2')).toBeNull();
+  });
+
+  it('SqlJobPostingRepository_AddThenFindDuplicate_ReturnsExisting', async () => {
+    const repo = new SqlJobPostingRepository({ db });
+    await repo.add(posting('p1', 'owner1', { source: 'Arbeitnow', sourceId: 'slug-1' }));
+    const dup = await repo.findDuplicate('owner1', 'Arbeitnow', 'slug-1', undefined);
+    expect(dup).toMatchObject({ id: 'p1', sourceId: 'slug-1' });
+    // same sourceId, different owner → not a duplicate
+    expect(await repo.findDuplicate('owner2', 'Arbeitnow', 'slug-1', undefined)).toBeNull();
+  });
+
+  it('SqlJobPostingRepository_AddThenFindDuplicate_HostCaseTrailingSlash_ReturnsExisting', async () => {
+    const repo = new SqlJobPostingRepository({ db });
+    // the service normalises before calling; the adapter compares raw.
+    await repo.add(posting('p1', 'owner1', { source: 'url', url: 'https://example.com/job' }));
+    const dup = await repo.findDuplicate('owner1', 'url', undefined, 'https://example.com/job');
+    expect(dup).toMatchObject({ id: 'p1' });
+    expect(
+      await repo.findDuplicate('owner1', 'url', undefined, 'https://example.com/other'),
+    ).toBeNull();
+  });
+
+  it('SqlJobPostingRepository_TwoWorkspaces_AreIsolated', async () => {
+    const repo = new SqlJobPostingRepository({ db });
+    await repo.add(posting('p1', 'owner1', { url: 'https://example.com/job' }));
+    await repo.add(posting('p2', 'owner2', { url: 'https://example.com/job' }));
+    // same URL, two workspaces → both exist, scoped reads see only their own.
+    expect((await repo.list('owner1')).map((p) => p.id)).toEqual(['p1']);
+    expect((await repo.list('owner2')).map((p) => p.id)).toEqual(['p2']);
+  });
+
+  it('SqlJobPostingRepository_ConcurrentDuplicateInsert_ReturnsExisting', async () => {
+    const repo = new SqlJobPostingRepository({ db });
+    // Insert a winner first; then a second add with the same dedup key races it.
+    const winner = posting('winner', 'owner1', { source: 'Arbeitnow', sourceId: 'slug-1' });
+    await repo.add(winner);
+    await repo.add(posting('loser', 'owner1', { source: 'Arbeitnow', sourceId: 'slug-1' }));
+    // The unique index swallowed the second insert (23505); the repository re-queries.
+    const dups = await repo.list('owner1');
+    expect(dups).toHaveLength(1);
+    expect(dups[0]?.id).toBe('winner');
   });
 
   it('Mandates_OwnerScoped_CrudRoundTrips', async () => {
@@ -418,6 +518,34 @@ suite('SQL repositories (real Postgres)', () => {
   it('Migrate_FreshDatabase_CreatesWorkspaceSettingsTable', async () => {
     const ws = await pool.query("SELECT to_regclass('workspace_settings') AS reg");
     expect(ws.rows[0].reg).not.toBeNull();
+  });
+
+  it('Migrate_FreshDatabase_CreatesJobPostingsTableAndIndexes', async () => {
+    const table = await pool.query("SELECT to_regclass('job_postings') AS reg");
+    expect(table.rows[0].reg).not.toBeNull();
+    const indexes = await pool.query(
+      "SELECT indexname FROM pg_indexes WHERE tablename = 'job_postings'",
+    );
+    const names = indexes.rows.map((r) => r.indexname as string);
+    expect(names).toEqual(
+      expect.arrayContaining([
+        'job_postings_owner_id_idx',
+        'job_postings_owner_source_idx',
+        'job_postings_owner_url_idx',
+      ]),
+    );
+  });
+
+  it('Migrate_SavedSearchesOwnerId_BackfillsToTeam', async () => {
+    // Simulate a pre-RI15 table: saved_searches without owner_id.
+    await pool.query('DROP INDEX IF EXISTS saved_searches_owner_id_idx');
+    await pool.query('ALTER TABLE saved_searches DROP COLUMN IF EXISTS owner_id');
+    await pool.query(
+      "INSERT INTO saved_searches (id, name, query, created_at) VALUES ('legacy', 'Rust', '{\"q\":\"Rust\",\"threshold\":70}'::jsonb, 'now')",
+    );
+    await migrate(pool);
+    const row = await pool.query("SELECT owner_id FROM saved_searches WHERE id = 'legacy'");
+    expect(row.rows[0].owner_id).toBe('team');
   });
 
   it('Migrate_UsersLlmProviderColumn_IsPreserved', async () => {

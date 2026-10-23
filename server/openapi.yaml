@@ -48,6 +48,8 @@ tags:
   - name: Jobs & Applications
     description: Job search and the applicant-side application log
   - name: Saved searches
+  - name: Job postings
+    description: Saved job postings ("Stellen") — adopt from search, paste text, or fetch a URL (SSRF-guarded)
   - name: Assistant
     description: The in-process agent — settings, manual runs, and the reviewable suggestion queue
   - name: Artifacts
@@ -1552,6 +1554,161 @@ paths:
               schema: { type: object, additionalProperties: true }
         '404': { $ref: '#/components/responses/NotFound' }
 
+  /job-postings:
+    get:
+      tags: [Job postings]
+      summary: List saved job postings (searchable, newest first)
+      operationId: listJobPostings
+      security:
+        - cookieSession: []
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema: { type: string }
+          description: Case-insensitive substring over company, title, location and description.
+      responses:
+        '200':
+          description: The caller's saved postings.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/JobPosting' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Job postings]
+      summary: Persist an edited extract draft (or a full posting)
+      operationId: createJobPosting
+      security:
+        - cookieSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateJobPostingInput' }
+      responses:
+        '201':
+          description: Saved.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JobPostingCreateResult' }
+        '200':
+          description: A posting with the same dedup key already existed — returns that one.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JobPostingCreateResult' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /job-postings/adopt:
+    post:
+      tags: [Job postings]
+      summary: Save a live search result without AI
+      operationId: adoptJobPosting
+      security:
+        - cookieSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdoptJobPostingInput' }
+      responses:
+        '200':
+          description: Saved (or already saved — returns the existing posting).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JobPostingCreateResult' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '502': { $ref: '#/components/responses/PostingFetch' }
+
+  /job-postings/extract:
+    post:
+      tags: [Job postings]
+      summary: Extract posting fields from pasted text or a URL (SSRF-guarded)
+      operationId: extractJobPosting
+      security:
+        - cookieSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ExtractJobPostingInput' }
+      responses:
+        '200':
+          description: An editable draft (never persisted).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JobPostingDraft' }
+        '400':
+          oneOf:
+            - $ref: '#/components/responses/ValidationProblem'
+            - $ref: '#/components/responses/SsrfBlocked'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/NoText' }
+        '502':
+          oneOf:
+            - $ref: '#/components/responses/PostingFetch'
+            - $ref: '#/components/responses/UpstreamProvider'
+        '503': { $ref: '#/components/responses/AiNotConfigured' }
+
+  /job-postings/{id}:
+    get:
+      tags: [Job postings]
+      summary: One saved posting (full text)
+      operationId: getJobPosting
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses:
+        '200':
+          description: The posting.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobPosting: { $ref: '#/components/schemas/JobPosting' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Job postings]
+      summary: Edit the posting's fields
+      operationId: updateJobPosting
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateJobPostingInput' }
+      responses:
+        '200':
+          description: The updated posting.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobPosting: { $ref: '#/components/schemas/JobPosting' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Job postings]
+      summary: Delete a saved posting
+      operationId: deleteJobPosting
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses:
+        '204': { description: Deleted. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
   /members:
     get:
       tags: [Team]
@@ -2636,6 +2793,39 @@ components:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
 
+    SsrfBlocked:
+      description: The URL targets a network address that is not allowed (AK-1.4). `type` is `about:blank#ssrf-blocked`.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+          example:
+            type: about:blank#ssrf-blocked
+            title: SSRF blocked
+            status: 400
+            detail: The URL targets a network address that is not allowed.
+
+    NoText:
+      description: The page yielded no usable posting text (a login/JS-only page) (AK-1.5). `type` is `about:blank#no-text`.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+          example:
+            type: about:blank#no-text
+            title: No text
+            status: 422
+            detail: The page contains no usable posting text.
+
+    PostingFetch:
+      description: Fetching the posting failed (timeout, size/redirect limit, DNS/network error, non-2xx). The `reason` is folded into `detail`.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+          example:
+            type: about:blank#posting-fetch
+            title: Posting fetch failed
+            status: 502
+            detail: 'Could not fetch the posting (redirect-limit).'
+
   schemas:
     Problem:
       type: object
@@ -3006,11 +3196,111 @@ components:
       type: object
       properties:
         id: { type: string }
+        ownerId:
+          type: string
+          description: The owning workspace scope (RI15/Q6).
         name: { type: string }
         q: { type: string }
         city: { type: string }
         country: { type: string }
         threshold: { type: integer }
+
+    JobPosting:
+      type: object
+      properties:
+        id: { type: string }
+        ownerId:
+          type: string
+          description: The owning workspace scope.
+        source:
+          type: string
+          description: Which source supplied the posting (e.g. "Bundesagentur", "text", "url").
+        sourceId:
+          type: string
+          description: The source's id (BA refnr, Arbeitnow slug). Absent for pasted/URL postings.
+        url:
+          type: string
+          format: uri
+        company: { type: string }
+        title: { type: string }
+        location: { type: string }
+        country: { type: string }
+        description:
+          type: string
+          description: The full ad text. Empty + `descriptionIncomplete` when the source lacks it.
+        requirements:
+          type: array
+          items: { type: string }
+        descriptionIncomplete:
+          type: boolean
+          description: The source delivered no full text → the UI offers "Text ergänzen".
+        createdAt: { type: string }
+
+    JobPostingCreateResult:
+      type: object
+      properties:
+        jobPosting: { $ref: '#/components/schemas/JobPosting' }
+        alreadySaved:
+          type: boolean
+          description: True when a posting with the same dedup key already existed.
+
+    AdoptJobPostingInput:
+      type: object
+      required: [source, company, title]
+      properties:
+        source: { type: string }
+        sourceId: { type: string }
+        url: { type: string, format: uri }
+        company: { type: string }
+        title: { type: string }
+        location: { type: string }
+        country: { type: string }
+        requirements: { type: array, items: { type: string } }
+
+    CreateJobPostingInput:
+      type: object
+      required: [source, company, title]
+      properties:
+        source: { type: string }
+        sourceId: { type: string }
+        url: { type: string, format: uri }
+        company: { type: string }
+        title: { type: string }
+        location: { type: string }
+        country: { type: string }
+        description: { type: string }
+        requirements: { type: array, items: { type: string } }
+
+    ExtractJobPostingInput:
+      description: Exactly one of `text` or `url`.
+      type: object
+      properties:
+        text: { type: string, maxLength: 50000 }
+        url: { type: string, format: uri }
+
+    UpdateJobPostingInput:
+      type: object
+      properties:
+        company: { type: string }
+        title: { type: string }
+        location: { type: string }
+        country: { type: string }
+        description: { type: string }
+        requirements: { type: array, items: { type: string } }
+        descriptionIncomplete: { type: boolean }
+
+    JobPostingDraft:
+      type: object
+      description: The edit draft the extract endpoints return (never persisted). `url` is omitted for `fromText`.
+      properties:
+        company: { type: string }
+        title: { type: string }
+        location: { type: string }
+        country: { type: string }
+        requirements: { type: array, items: { type: string } }
+        description: { type: string }
+        source: { type: string, enum: [text, url] }
+        url: { type: string, format: uri }
 
     LlmSettings:
       type: object

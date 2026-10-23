@@ -41,6 +41,7 @@ module.exports = {
     // DATABASE_URL-gated integration test, not unit-covered (pure mappers are).
     '!server/src/adapters/sql/db.ts',
     '!server/src/adapters/sql/sql-application-repository.ts',
+    '!server/src/adapters/sql/sql-job-posting-repository.ts',
     '!server/src/adapters/sql/sql-audit-log.ts',
     '!server/src/adapters/sql/sql-saved-search-repository.ts',
     '!server/src/adapters/sql/sql-mandate-repository.ts',

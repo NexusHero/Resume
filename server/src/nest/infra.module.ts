@@ -21,7 +21,9 @@ import { GeminiLlmProvider } from '../adapters/gemini-llm-provider.js';
 import { resilientFetch } from '../adapters/resilient-fetch.js';
 import { InMemoryRateLimiter } from '../adapters/in-memory-rate-limiter.js';
 import { SqlRateLimiter } from '../adapters/sql/sql-rate-limiter.js';
+import { SsrfFetch } from '../adapters/ssrf-fetch.js';
 import { LlmService } from '../services/llm-service.js';
+import type { PageFetcher } from '../ports/page-fetcher.js';
 import {
   CONFIG,
   LOGGER,
@@ -40,6 +42,7 @@ import {
   EMBEDDING_PROVIDER,
   LLM_SERVICE,
   RATE_LIMITER,
+  PAGE_FETCHER,
 } from './tokens.js';
 
 /**
@@ -101,6 +104,12 @@ import {
     { provide: PDF_MERGER, useFactory: () => new PdfLibMerger() },
     { provide: PDF_TEXT_EXTRACTOR, useFactory: () => new PdfjsTextExtractor() },
     {
+      // The SSRF-guarded fetcher for user-supplied posting URLs (ADR-0058).
+      provide: PAGE_FETCHER,
+      useFactory: (config: AppConfig): PageFetcher => new SsrfFetch({ config: config.jobFetch }),
+      inject: [CONFIG],
+    },
+    {
       provide: PLAN_PROVIDER,
       useFactory: (config: AppConfig) => new EnvPlanProvider(config.plan),
       inject: [CONFIG],
@@ -161,6 +170,7 @@ import {
     EMBEDDING_PROVIDER,
     LLM_SERVICE,
     RATE_LIMITER,
+    PAGE_FETCHER,
   ],
 })
 export class InfraModule {}

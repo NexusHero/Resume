@@ -4,6 +4,8 @@ import { jobQuerySchema } from './job.js';
 /** A named, reusable job search. */
 export interface SavedSearch {
   id: string;
+  /** The owning workspace scope (RI15/Q6, ADR-0010/0033). Set at `create`, never from the body. */
+  ownerId: string;
   name: string;
   query: {
     q?: string;

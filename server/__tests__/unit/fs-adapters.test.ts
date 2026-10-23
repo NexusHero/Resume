@@ -448,8 +448,9 @@ describe('FsPdfArchive', () => {
   });
 });
 
-const search = (id: string, name = 'Rust'): SavedSearch => ({
+const search = (id: string, name = 'Rust', ownerId = 'team'): SavedSearch => ({
   id,
+  ownerId,
   name,
   query: { q: 'Rust', threshold: 80 },
   createdAt: '2026-06-25T10:00:00.000Z',
@@ -458,28 +459,35 @@ const search = (id: string, name = 'Rust'): SavedSearch => ({
 describe('FsSavedSearchRepository', () => {
   it('Repository_NoFile_ListsEmpty', async () => {
     const repo = new FsSavedSearchRepository({ config: tmpConfig() });
-    expect(await repo.list()).toEqual([]);
+    expect(await repo.list('team')).toEqual([]);
   });
 
   it('Repository_AddThenFind_RoundTrips', async () => {
     const repo = new FsSavedSearchRepository({ config: tmpConfig() });
     await repo.add(search('s1'));
-    expect(await repo.findById('s1')).toMatchObject({ id: 's1', name: 'Rust' });
-    expect(await repo.findById('missing')).toBeNull();
+    expect(await repo.findById('team', 's1')).toMatchObject({ id: 's1', name: 'Rust' });
+    expect(await repo.findById('team', 'missing')).toBeNull();
   });
 
   it('Repository_RemoveExisting_ReturnsTrueAndDeletes', async () => {
     const repo = new FsSavedSearchRepository({ config: tmpConfig() });
     await repo.add(search('s1'));
-    expect(await repo.remove('s1')).toBe(true);
-    expect(await repo.list()).toEqual([]);
+    expect(await repo.remove('team', 's1')).toBe(true);
+    expect(await repo.list('team')).toEqual([]);
   });
 
   it('Repository_RemoveUnknown_ReturnsFalse', async () => {
     const repo = new FsSavedSearchRepository({ config: tmpConfig() });
     await repo.add(search('s1'));
-    expect(await repo.remove('nope')).toBe(false);
-    expect(await repo.list()).toHaveLength(1);
+    expect(await repo.remove('team', 'nope')).toBe(false);
+    expect(await repo.list('team')).toHaveLength(1);
+  });
+
+  it('Repository_RemoveOtherOwner_ReturnsFalse', async () => {
+    const repo = new FsSavedSearchRepository({ config: tmpConfig() });
+    await repo.add(search('s1'));
+    expect(await repo.remove('intruder', 's1')).toBe(false);
+    expect(await repo.list('team')).toHaveLength(1);
   });
 
   it('Repository_MalformedFile_ListsEmpty', async () => {
@@ -487,7 +495,7 @@ describe('FsSavedSearchRepository', () => {
     await fs.mkdir(config.storeDir, { recursive: true });
     await fs.writeFile(config.savedSearchesFile, 'not json');
     const repo = new FsSavedSearchRepository({ config });
-    expect(await repo.list()).toEqual([]);
+    expect(await repo.list('team')).toEqual([]);
   });
 
   it('Repository_NonArrayJson_ListsEmpty', async () => {
@@ -495,7 +503,41 @@ describe('FsSavedSearchRepository', () => {
     await fs.mkdir(config.storeDir, { recursive: true });
     await fs.writeFile(config.savedSearchesFile, '{"x":1}');
     const repo = new FsSavedSearchRepository({ config });
-    expect(await repo.list()).toEqual([]);
+    expect(await repo.list('team')).toEqual([]);
+  });
+
+  // RI15/Q6 — workspace scope
+  it('List_FiltersByOwner', async () => {
+    const repo = new FsSavedSearchRepository({ config: tmpConfig() });
+    await repo.add(search('s1', 'Rust', 'team'));
+    await repo.add(search('s2', 'Java', 'other'));
+    expect((await repo.list('team')).map((s) => s.id)).toEqual(['s1']);
+  });
+
+  it('TwoWorkspaces_AreIsolated', async () => {
+    const repo = new FsSavedSearchRepository({ config: tmpConfig() });
+    await repo.add(search('s1', 'Rust', 'team'));
+    await repo.add(search('s2', 'Java', 'other'));
+    expect(await repo.findById('team', 's2')).toBeNull();
+    expect(await repo.findById('other', 's1')).toBeNull();
+    expect(await repo.remove('other', 's1')).toBe(false);
+    expect(await repo.remove('other', 's2')).toBe(true);
+    expect(await repo.list('team')).toHaveLength(1);
+  });
+
+  it('LegacyRowWithoutOwner_DefaultsToTeam', async () => {
+    const config = tmpConfig();
+    await fs.mkdir(config.storeDir, { recursive: true });
+    await fs.writeFile(
+      config.savedSearchesFile,
+      JSON.stringify([
+        { id: 'legacy', name: 'Old', query: { q: 'x', threshold: 80 }, createdAt: 'now' },
+      ]),
+    );
+    const repo = new FsSavedSearchRepository({ config });
+    expect(await repo.findById('team', 'legacy')).toMatchObject({ ownerId: 'team' });
+    // …and it stays deletable (defaults to team at read time).
+    expect(await repo.remove('team', 'legacy')).toBe(true);
   });
 });
 

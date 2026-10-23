@@ -251,3 +251,34 @@ test('MobileAiButton_NoKey_ShowsNotConfigured', async ({ page }) => {
   await expect(page.getByRole('button', { name: /KI anpassen/ })).toBeDisabled();
   await expectNoHorizontalBodyScroll(page);
 });
+
+test('StellenViewMobile_ListAndDetail_Reachable', async ({ page }) => {
+  await mockSession(page);
+  await page.route('**/api/v1/job-postings', (route) => {
+    if (route.request().method() !== 'GET') return route.continue();
+    return route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify([
+        {
+          id: 'p1',
+          ownerId: 'team',
+          source: 'text',
+          company: 'Nordwind Logistik AG',
+          title: 'Backend Engineer',
+          location: 'Hamburg',
+          country: 'DE',
+          description: 'Full ad text.',
+          requirements: ['Go'],
+          descriptionIncomplete: false,
+          createdAt: '2026-06-25T10:00:00.000Z',
+        },
+      ]),
+    });
+  });
+  await page.goto(KIT);
+  await navigate(page, /Stellen/);
+  await expect(page.locator('main')).toContainText('Nordwind Logistik AG');
+  await page.getByText('Nordwind Logistik AG').first().click();
+  await expect(page.locator('main')).toContainText('Full ad text.');
+  await expectNoHorizontalBodyScroll(page);
+});

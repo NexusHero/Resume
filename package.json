@@ -43,6 +43,7 @@
     "express": "^5.2.1",
     "express-rate-limit": "^8.5.2",
     "imapflow": "^1.4.7",
+    "ipaddr.js": "^1.9.1",
     "nodemailer": "^10.2.1",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^6.1.200",
@@ -53,6 +54,7 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "swagger-ui-dist": "^5.32.8",
+    "undici": "^7.30.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {

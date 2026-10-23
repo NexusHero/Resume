@@ -8,6 +8,7 @@ import { RegistriesModule } from './registries.module.js';
 import { AiModule } from './ai/ai.module.js';
 import { ApplicationsModule } from './applications/applications.module.js';
 import { JobsModule } from './jobs/jobs.module.js';
+import { JobPostingsModule } from './job-postings/job-postings.module.js';
 import { AtsModule } from './ats/ats.module.js';
 import { SearchesModule } from './searches/searches.module.js';
 import { MandatesModule } from './mandates/mandates.module.js';
@@ -50,6 +51,7 @@ export const FEATURE_MODULES = [
   AiModule,
   ApplicationsModule,
   JobsModule,
+  JobPostingsModule,
   AtsModule,
   SearchesModule,
   MandatesModule,

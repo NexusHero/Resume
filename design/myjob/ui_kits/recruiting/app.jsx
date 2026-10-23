@@ -173,18 +173,24 @@ function Workspace({ user, onLogout }) {
   const [formPrefill, setFormPrefill] = React.useState(null);
   // The record being edited, as { kind, id, values } — null when not editing.
   const [editRecord, setEditRecord] = React.useState(null);
+  // A saved posting the caller asked to open (e.g. "Bereits gespeichert → öffnen"
+  // from Matching) — handed to JobPostings once and then cleared.
+  const [postingFocus, setPostingFocus] = React.useState(null);
   // Live data sources. Each tracks loading/error and never falls back to
   // fabricated sample data — a recruiter must only ever see real records.
   const listMandates = React.useCallback(() => window.RecruitApi.listMandates(), []);
   const listTalents = React.useCallback(() => window.RecruitApi.listTalents(), []);
   const listPlacements = React.useCallback(() => window.RecruitApi.listPlacements(), []);
   const listApplications = React.useCallback(() => window.RecruitApi.listApplications(), []);
+  const listJobPostings = React.useCallback(() => window.RecruitApi.listJobPostings(), []);
   const mandatesRes = useResource(listMandates, { enabled: vermittlung });
   const talentsRes = useResource(listTalents);
   const placementsRes = useResource(listPlacements, { enabled: vermittlung });
   const applicationsRes = useResource(listApplications);
+  const jobPostingsRes = useResource(listJobPostings);
 
   const mandates = mandatesRes.data;
+  const jobPostings = jobPostingsRes.data;
   // Rows with an undo-pending delete are hidden optimistically (#200); the real
   // DELETE fires when the snackbar times out, and "Undo" un-hides them.
   const [hiddenIds, setHiddenIds] = React.useState(() => new Set());
@@ -254,6 +260,12 @@ function Workspace({ user, onLogout }) {
       return app;
     });
 
+  // "Bereits gespeichert → öffnen" from Matching: jump to Stellen and open it.
+  const openPosting = (id) => {
+    setPostingFocus(id);
+    setNav('stellen');
+  };
+
   // Move an application to another pipeline stage (drag or the card's dropdown),
   // then refresh so the board reflects the persisted status.
   const moveApplication = (id, stage) =>
@@ -280,12 +292,12 @@ function Workspace({ user, onLogout }) {
   // the shared team desk (ADR-0010) show up without a manual reload. Background =
   // the current data stays on screen while it refetches (no spinner flash).
   const goNav = (raw) => {
-    const n = raw === 'matching' ? 'stellen' : raw;
+    const n = raw;
     if (ws.status === 'error') window.WorkspaceSettings.refresh();
     // Commit any pending undo-delete before leaving the view — a queued deletion
     // must not linger silently across a navigation (#200).
     if (window.UndoDelete) window.UndoDelete.flush();
-    const res = n === 'pool' ? talentsRes : n === 'mandate' ? mandatesRes : n === 'bewerbungen' ? applicationsRes : null;
+    const res = n === 'pool' ? talentsRes : n === 'mandate' ? mandatesRes : n === 'bewerbungen' ? applicationsRes : n === 'stellen' ? jobPostingsRes : null;
     // Only refresh a view that already loaded cleanly; a failed load keeps its
     // error state + Retry (don't silently re-fetch over it), and an in-flight
     // load is left alone (no stacked requests).
@@ -554,12 +566,23 @@ function Workspace({ user, onLogout }) {
       />
     );
     else if (nav === 'pool') body = withState(talentsRes, <window.TalentGrid talents={shownTalents} apps={apps} onOpen={goTalent} onAdd={addTalent} onImport={importCvs} importing={importing} />);
-    else if (nav === 'stellen' || nav === 'matching') body = (
+    else if (nav === 'stellen') body = withState(jobPostingsRes, (
+      <window.JobPostings
+        postings={jobPostings}
+        onSearch={() => goNav('matching')}
+        onChanged={() => jobPostingsRes.reload()}
+        focusId={postingFocus}
+        onFocusConsumed={() => setPostingFocus(null)}
+      />
+    ));
+    else if (nav === 'matching') body = (
       <window.Matching
         talents={talents}
         mandates={vermittlung ? mandates : undefined}
         onCreateMandate={vermittlung ? mandateFromJob : undefined}
         onApply={applyFromMatching}
+        onOpenPosting={openPosting}
+        onAdopted={() => jobPostingsRes.reload()}
       />
     );
     else if (nav === 'bewerbungen') body = withState(applicationsRes, (
@@ -589,7 +612,9 @@ function Workspace({ user, onLogout }) {
   // The folded-in destinations are proper sub-tabs of their parent view —
   // Matching under Suchaufträge (Stellensuche), Platzierungen under Performance.
   const subTabs =
-    !talent && vermittlung && (nav === 'berichte' || nav === 'platzierungen')
+    !talent && (nav === 'stellen' || nav === 'matching')
+      ? <A.Tabs tabs={[{ id: 'stellen', label: 'Gespeichert' }, { id: 'matching', label: 'Stellen finden' }]} value={nav} onChange={(id) => goNav(id)} style={{ marginBottom: '18px' }} />
+      : !talent && vermittlung && (nav === 'berichte' || nav === 'platzierungen')
       ? <A.Tabs tabs={[{ id: 'berichte', label: 'Performance' }, { id: 'platzierungen', label: 'Platzierungen' }]} value={nav === 'platzierungen' ? 'platzierungen' : 'berichte'} onChange={(id) => setNav(id)} style={{ marginBottom: '18px' }} />
       : null;
   // The phone app bar is narrow: show only the per-view primary action there;
@@ -610,7 +635,7 @@ function Workspace({ user, onLogout }) {
     title,
     subtitle,
     actions,
-    search: !talent && (nav === 'pool' || nav === 'stellen' || (vermittlung && (nav === 'mandate' || nav === 'berichte'))),
+    search: !talent && (nav === 'pool' || (vermittlung && (nav === 'mandate' || nav === 'berichte'))),
     children: (
       <>
         {ws.status === 'error' && (

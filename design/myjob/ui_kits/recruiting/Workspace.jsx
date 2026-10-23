@@ -168,35 +168,6 @@ function TalentGrid({ talents, apps, onOpen, onAdd, onImport, importing }) {
   );
 }
 
-/* ---------- Stellen ---------- */
-function JobsView({ jobs }) {
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
-      {jobs.map((j) => (
-        <WS.Card key={j.id}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px' }}>
-            <div>
-              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>{j.title}</h3>
-              <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '3px' }}>{j.company}</div>
-            </div>
-            <WS.IconButton icon="bookmark" label="Save" variant={j.saved ? 'accent' : 'ghost'} size="sm" />
-          </div>
-          <div style={{ display: 'flex', gap: '8px', margin: '14px 0', flexWrap: 'wrap' }}>
-            <WS.MetaPill icon="pin">{j.location}</WS.MetaPill>
-            <WS.MetaPill icon="trend">{j.salary}</WS.MetaPill>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '12px', borderTop: '1px solid var(--border)' }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-mono)', fontSize: '12px', color: j.match >= 85 ? 'var(--success)' : 'var(--text-muted)', fontWeight: 600 }}>
-              <WS.Icon name="zap" size={13} />{j.match}% Match
-            </span>
-            <WS.Button size="sm" variant="primary" iconRight={<WS.Icon name="arrowRight" size={14} />}>Apply</WS.Button>
-          </div>
-        </WS.Card>
-      ))}
-    </div>
-  );
-}
-
 /* ---------- Postfach ---------- */
 function Inbox({ messages, apps, talents, onOpenTalent }) {
   const appById = Object.fromEntries(apps.map((a) => [a.id, a]));
@@ -266,4 +237,4 @@ function MoreView({ onNavigate }) {
   );
 }
 
-Object.assign(window, { Dashboard, TalentGrid, JobsView, Inbox, MoreView });
+Object.assign(window, { Dashboard, TalentGrid, Inbox, MoreView });

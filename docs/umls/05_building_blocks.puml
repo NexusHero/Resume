@@ -20,23 +20,25 @@ package "Application (services)" {
   [LlmFeatureRunner\n(provider resolve, generate + meter,\nschema-validate, fallback signal,\ngrounding envelope)] as Runner
   [AI feature services\n(document-assist, cv-parse, ats-ai,\noutreach-ai, match-ai) +\nDocumentAiService facade] as AiSvc
   [recruiting services\n(talent, mandate, candidacy,\nplacement, match, forecast,\nretention, members, usage)] as RecSvc
+  [job-posting services\n(job-posting CRUD/adopt + dedup,\njob-posting-extract)] as JobPostingSvc
   [auth services\n(auth, password reset,\nemail verification, account\n+ personal-data registry)] as AuthSvc
   [LlmService\n(provider registry + default)] as LlmSvc
 }
 
 package "Domain (pure, no I/O)" {
-  [recruiting model\n(talent, mandate, candidacy,\nplacement, user, usage)] as Model
+  [recruiting model\n(talent, mandate, candidacy,\nplacement, user, usage,\njob-posting, saved-search)] as Model
   [AI domain\n(prompts + fallbacks + schemas,\ngrounding, skill-semantics/-taxonomy,\ncompany-archetype, candidate-prep,\nlanguage, agg-check)] as AiDomain
   [errors] as DomainErrors
 }
 
 package "Ports" {
-  interface "repositories\n(user, talent, mandate, candidacy,\nplacement, documents, observations)" as Repos
+  interface "repositories\n(user, talent, mandate, candidacy,\nplacement, documents, observations,\njob-posting, saved-search)" as Repos
   interface LlmProvider
   interface "ApiKeyStore /\nUsageMeter" as Keys
   interface "AuthEngine / Mailer" as AuthPorts
   interface "PdfRenderer / PdfMerger /\nPdfTextExtractor" as PdfPorts
   interface JobSource
+  interface "PageFetcher\n(SSRF-guarded)" as PageFetcher
 }
 
 package "Adapters" {
@@ -45,6 +47,7 @@ package "Adapters" {
   [Better-Auth engine (SQLite) - secret cipher\nSMTP/console mailer] as AuthAdapters
   [Puppeteer renderer - pdf-lib merger\npdfjs text extractor] as PdfAdapters
   [arbeitnow - bundesagentur - adzuna\n+ offline sample (composite)] as JobAdapters
+  [ssrf-fetch + ssrf-guard\n(ipaddr.js classification)] as SsrfAdapter
 }
 
 [container — Awilix\ncomposition root] as Container
@@ -56,6 +59,7 @@ Ctrl ..> Problem
 Ctrl --> AiSvc
 Ctrl --> RecSvc
 Ctrl --> AuthSvc
+Ctrl --> JobPostingSvc
 AiSvc --> Runner
 Runner --> LlmSvc
 Runner --> Keys
@@ -65,7 +69,11 @@ AuthSvc --> AuthPorts
 AiSvc --> Repos
 RecSvc --> Repos
 AuthSvc --> Repos
+JobPostingSvc --> Repos
+JobPostingSvc --> JobSource
+JobPostingSvc --> PageFetcher
 RecSvc ..> DomainErrors
+JobPostingSvc ..> DomainErrors
 AiSvc --> PdfPorts
 RecSvc --> JobSource
 LlmSvc --> LlmProvider
@@ -75,6 +83,7 @@ LlmAdapters ..|> LlmProvider
 AuthAdapters ..|> AuthPorts
 PdfAdapters ..|> PdfPorts
 JobAdapters ..|> JobSource
+SsrfAdapter ..|> PageFetcher
 
 Container ..> StoreAdapters
 Container ..> LlmAdapters

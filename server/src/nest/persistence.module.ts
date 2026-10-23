@@ -9,6 +9,7 @@ import {
   DB,
   PERSISTENCE,
   APPLICATION_REPOSITORY,
+  JOB_POSTING_REPOSITORY,
   ARTIFACT_LOG_REPOSITORY,
   ASSISTANT_SETTINGS_STORE,
   ASSISTANT_SUGGESTION_REPOSITORY,
@@ -35,6 +36,7 @@ import {
 /** Each repository/store token, resolved out of the assembled Persistence bundle. */
 const REPO_BINDINGS: ReadonlyArray<[symbol, keyof Persistence]> = [
   [APPLICATION_REPOSITORY, 'applicationRepository'],
+  [JOB_POSTING_REPOSITORY, 'jobPostingRepository'],
   [AUDIT_LOG, 'auditLog'],
   [SAVED_SEARCH_REPOSITORY, 'savedSearchRepository'],
   [MANDATE_REPOSITORY, 'mandateRepository'],

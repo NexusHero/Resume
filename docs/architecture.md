@@ -243,6 +243,20 @@ account-row-last ordering, and why the verification-token leak cannot recur:
 
 ![Account erase sequence](umls/06_seq_account_erase.svg)
 
+**Stelle übernehmen (adopt)** (FR-75/76/79, ADR-0058) — save a live search result
+without AI: normalise the URL once, dedup against `(source, sourceId)` or the URL,
+fetch the source's full text where available, and persist with a race backstop:
+
+![Stelle übernehmen sequence](umls/06_seq_adopt_posting.svg)
+
+**Stelle per URL einfügen (SSRF)** (FR-78, AK-1.4/1.5) — every hop (initial URL +
+redirects) is re-checked: http(s)-only, non-dotted host special forms normalised,
+every resolved address classified public, the connection pinned to the vetted IP,
+then the text is extracted (or a clear "Bitte Anzeigentext einfügen" for a
+login/JS-only page):
+
+![Stelle per URL sequence](umls/06_seq_insert_url.svg)
+
 ### Traceability matrix
 
 The requirement catalogue ([requirements.md](requirements.md)) lists FR → module.
@@ -251,15 +265,17 @@ sequence diagram** → ADR — so a reviewer can walk from a requirement to the
 behaviour that realises it, not just the file that holds it. Sequence sources are
 in [`docs/umls/`](umls).
 
-| Requirement         | Feature / module                           | Runtime flow (sequence)                                                   | ADR                 |
-| ------------------- | ------------------------------------------ | ------------------------------------------------------------------------- | ------------------- |
-| FR-30, FR-31, FR-38 | AI services + `LlmFeatureRunner`           | [AI generation w/ central key + metering](umls/06_seq_ai_generation.puml) | 0009, 0057          |
-| FR-01               | `auth-service`, `session-store`            | [Login + session, suspension-checked](umls/06_seq_login.puml)             | 0004, 0038          |
-| FR-04 (onboarding)  | `invite-service`, `auth-service`           | [Invite → accept onboarding](umls/06_seq_invite_accept.puml)              | 0035                |
-| FR-30, FR-32, FR-42 | `assistant-service`, `application-builder` | [CoRecruiter autopilot](umls/06_seq_autopilot.puml)                       | 0013, 0019          |
-| FR-60               | `account-service` + personal-data registry | [DSGVO erase via registry](umls/06_seq_account_erase.puml)                | 0004 · security §10 |
-| FR-12, FR-13, FR-14 | `candidacy-service`, `placement-service`   | Pipeline → placement (§6, prose)                                          | 0010                |
-| FR-61               | `retention-service`                        | Retention report + anonymise sweep (§6 companion, ADR-0018)               | 0018                |
+| Requirement         | Feature / module                            | Runtime flow (sequence)                                                   | ADR                 |
+| ------------------- | ------------------------------------------- | ------------------------------------------------------------------------- | ------------------- |
+| FR-30, FR-31, FR-38 | AI services + `LlmFeatureRunner`            | [AI generation w/ central key + metering](umls/06_seq_ai_generation.puml) | 0009, 0057          |
+| FR-01               | `auth-service`, `session-store`             | [Login + session, suspension-checked](umls/06_seq_login.puml)             | 0004, 0038          |
+| FR-04 (onboarding)  | `invite-service`, `auth-service`            | [Invite → accept onboarding](umls/06_seq_invite_accept.puml)              | 0035                |
+| FR-30, FR-32, FR-42 | `assistant-service`, `application-builder`  | [CoRecruiter autopilot](umls/06_seq_autopilot.puml)                       | 0013, 0019          |
+| FR-60               | `account-service` + personal-data registry  | [DSGVO erase via registry](umls/06_seq_account_erase.puml)                | 0004 · security §10 |
+| FR-75, FR-76, FR-79 | `job-posting-service`, `job-source`         | [Stelle übernehmen (adopt)](umls/06_seq_adopt_posting.puml)               | 0058                |
+| FR-78               | `job-posting-extract-service`, `ssrf-fetch` | [Stelle per URL einfügen (SSRF)](umls/06_seq_insert_url.puml)             | 0058                |
+| FR-12, FR-13, FR-14 | `candidacy-service`, `placement-service`    | Pipeline → placement (§6, prose)                                          | 0010                |
+| FR-61               | `retention-service`                         | Retention report + anonymise sweep (§6 companion, ADR-0018)               | 0018                |
 
 Rows without a sequence diagram are single-collaborator flows adequately covered
 by prose; the five diagrammed flows are the multi-actor / multi-branch ones where

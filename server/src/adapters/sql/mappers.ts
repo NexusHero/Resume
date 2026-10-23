@@ -1,5 +1,6 @@
 import type { Application, AuditEvent } from '../../domain/application.js';
 import type { SavedSearch } from '../../domain/saved-search.js';
+import type { JobPosting } from '../../domain/job-posting.js';
 import type { Mandate, MandatePriority, MandateStatus } from '../../domain/mandate.js';
 import type { Talent } from '../../domain/talent.js';
 import type { Placement, PlacementStatus } from '../../domain/placement.js';
@@ -18,6 +19,7 @@ import {
   applications,
   auditEvents,
   savedSearches,
+  jobPostings,
   mandates,
   talents,
   placements,
@@ -36,6 +38,8 @@ type AuditRow = typeof auditEvents.$inferSelect;
 type AuditInsert = typeof auditEvents.$inferInsert;
 type SavedSearchRow = typeof savedSearches.$inferSelect;
 type SavedSearchInsert = typeof savedSearches.$inferInsert;
+type JobPostingRow = typeof jobPostings.$inferSelect;
+type JobPostingInsert = typeof jobPostings.$inferInsert;
 type MandateRow = typeof mandates.$inferSelect;
 type MandateInsert = typeof mandates.$inferInsert;
 type TalentRow = typeof talents.$inferSelect;
@@ -127,6 +131,7 @@ export function auditEventToRow(event: AuditEvent): AuditInsert {
 export function rowToSavedSearch(row: SavedSearchRow): SavedSearch {
   return {
     id: row.id,
+    ownerId: row.ownerId,
     name: row.name,
     query: row.query,
     createdAt: row.createdAt,
@@ -136,9 +141,46 @@ export function rowToSavedSearch(row: SavedSearchRow): SavedSearch {
 export function savedSearchToRow(search: SavedSearch): SavedSearchInsert {
   return {
     id: search.id,
+    ownerId: search.ownerId,
     name: search.name,
     query: search.query,
     createdAt: search.createdAt,
+  };
+}
+
+export function rowToJobPosting(row: JobPostingRow): JobPosting {
+  return {
+    id: row.id,
+    ownerId: row.ownerId,
+    source: row.source,
+    sourceId: orUndef(row.sourceId),
+    url: orUndef(row.url),
+    company: row.company,
+    title: row.title,
+    location: row.location,
+    country: row.country,
+    description: row.description,
+    requirements: row.requirements,
+    descriptionIncomplete: row.descriptionIncomplete,
+    createdAt: row.createdAt,
+  };
+}
+
+export function jobPostingToRow(posting: JobPosting): JobPostingInsert {
+  return {
+    id: posting.id,
+    ownerId: posting.ownerId,
+    source: posting.source,
+    sourceId: posting.sourceId ?? null,
+    url: posting.url ?? null,
+    company: posting.company,
+    title: posting.title,
+    location: posting.location,
+    country: posting.country,
+    description: posting.description,
+    requirements: posting.requirements,
+    descriptionIncomplete: posting.descriptionIncomplete,
+    createdAt: posting.createdAt,
   };
 }
 

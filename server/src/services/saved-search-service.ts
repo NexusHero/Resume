@@ -13,7 +13,7 @@ export interface SavedSearchServiceDeps {
   idGenerator: IdGenerator;
 }
 
-/** CRUD for named searches, plus running one through the job search. */
+/** CRUD for named searches, plus running one through the job search. Workspace-scoped (RI15/Q6). */
 export class SavedSearchService {
   private readonly repo: SavedSearchRepository;
   private readonly jobs: JobSearchService;
@@ -27,13 +27,14 @@ export class SavedSearchService {
     this.ids = deps.idGenerator;
   }
 
-  list(): Promise<SavedSearch[]> {
-    return this.repo.list();
+  list(ownerId: string): Promise<SavedSearch[]> {
+    return this.repo.list(ownerId);
   }
 
-  async create(input: CreateSavedSearchInput): Promise<SavedSearch> {
+  async create(ownerId: string, input: CreateSavedSearchInput): Promise<SavedSearch> {
     const search: SavedSearch = {
       id: this.ids.next(),
+      ownerId,
       name: input.name,
       query: {
         q: input.q,
@@ -47,13 +48,13 @@ export class SavedSearchService {
     return search;
   }
 
-  async remove(id: string): Promise<void> {
-    const removed = await this.repo.remove(id);
+  async remove(ownerId: string, id: string): Promise<void> {
+    const removed = await this.repo.remove(ownerId, id);
     if (!removed) throw new NotFoundError(`Saved search ${id} not found`);
   }
 
-  async run(id: string): Promise<JobSearchResult> {
-    const search = await this.repo.findById(id);
+  async run(ownerId: string, id: string): Promise<JobSearchResult> {
+    const search = await this.repo.findById(ownerId, id);
     if (!search) throw new NotFoundError(`Saved search ${id} not found`);
     return this.jobs.search(jobQuerySchema.parse(search.query));
   }

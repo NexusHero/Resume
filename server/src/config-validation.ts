@@ -57,5 +57,23 @@ export function checkProductionReadiness(config: AppConfig): ReadinessReport {
     );
   }
 
+  // SSRF-guard fetch limits (Q5): warn on extreme values a real deployment is
+  // unlikely to want — a runaway redirect chain or an over-long fetch budget.
+  if (config.jobFetch.maxRedirects > 20) {
+    warnings.push(
+      'JOB_FETCH_MAX_REDIRECTS exceeds 20: a posting fetch may follow an unreasonably long redirect chain.',
+    );
+  }
+  if (config.jobFetch.timeoutMs > 60_000) {
+    warnings.push(
+      'JOB_FETCH_TIMEOUT_MS exceeds 60000: a posting fetch may hang a request for over a minute.',
+    );
+  }
+  if (config.jobFetch.maxBytes > 50_000_000) {
+    warnings.push(
+      'JOB_FETCH_MAX_BYTES exceeds 50 MB: a posting fetch may buffer an unreasonably large body.',
+    );
+  }
+
   return { errors, warnings };
 }

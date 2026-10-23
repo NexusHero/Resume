@@ -85,6 +85,11 @@ APP_BASE_URL=https://app.example.com      # so emailed links resolve
 
 # Per-instance tuning
 PDF_RENDER_CONCURRENCY=2                   # size to the instance, scale out for throughput
+
+# Job-posting fetch limits (SSRF-guarded "Stelle per URL einfügen")
+# JOB_FETCH_MAX_BYTES=1000000              # 502 too-large beyond this body size
+# JOB_FETCH_TIMEOUT_MS=10000               # 502 timeout — overall fetch budget (incl. redirects)
+# JOB_FETCH_MAX_REDIRECTS=5                # 502 redirect-limit beyond this
 ```
 
 ## Go-live checklist

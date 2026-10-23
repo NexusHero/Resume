@@ -1,4 +1,5 @@
-import type { Job, JobQuery, JobSourceOutcome } from '../domain/job.js';
+import type { Job, JobPostingDetail, JobQuery, JobSourceOutcome } from '../domain/job.js';
+import { NotFoundError } from '../domain/errors.js';
 import { AllJobSourcesFailedError, type JobSource } from '../ports/job-source.js';
 import type { Logger } from '../ports/logger.js';
 
@@ -33,6 +34,23 @@ export class CompositeJobSource implements JobSource {
 
   async search(query: JobQuery): Promise<Job[]> {
     return (await this.searchDetailed(query)).jobs;
+  }
+
+  /**
+   * The full ad text for a single posting, resolved through the source that
+   * produced it. Looks the source up by `name` and delegates to its optional
+   * port-level `getPosting(sourceId)`. Throws `NotFoundError` when the source is
+   * unknown (the caller maps it to 404 "Quelle unbekannt"); returns `null` when
+   * the source exists but supplies no full text (→ `descriptionIncomplete`).
+   *
+   * Named `getPostingBySource` (not the port's `getPosting(sourceId)`) so the
+   * composite's own two-argument signature does not collide with the single-
+   * argument port method it also delegates to.
+   */
+  async getPostingBySource(source: string, sourceId: string): Promise<JobPostingDetail | null> {
+    const found = this.sources.find((s) => s.name === source);
+    if (!found) throw new NotFoundError(`Unknown job source ${source}`);
+    return found.getPosting ? found.getPosting(sourceId) : null;
   }
 
   async searchDetailed(query: JobQuery): Promise<CompositeSearchOutcome> {

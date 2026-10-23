@@ -1,10 +1,14 @@
 import { CompositeJobSource } from '../../src/adapters/composite-job-source.js';
-import type { Job, JobQuery } from '../../src/domain/job.js';
+import type { Job, JobPostingDetail, JobQuery } from '../../src/domain/job.js';
+import { NotFoundError } from '../../src/domain/errors.js';
 import { AllJobSourcesFailedError, type JobSource } from '../../src/ports/job-source.js';
 import { noopLogger } from '../support/fakes.js';
 
 function stub(name: string, jobs: Job[]): JobSource {
   return { name, search: async () => jobs };
+}
+function postingSource(name: string, detail: JobPostingDetail | null): JobSource {
+  return { name, search: async () => [], getPosting: async () => detail };
 }
 function failing(name: string): JobSource {
   return {
@@ -65,5 +69,15 @@ describe('CompositeJobSource', () => {
       { name: 'Down', count: 0, ok: false },
       { name: 'C', count: 1, ok: true },
     ]);
+  });
+
+  it('GetPosting_DelegatesToMatchingSource', async () => {
+    const c = new CompositeJobSource(
+      [postingSource('A', { description: 'Full text A' }), postingSource('B', null)],
+      noopLogger,
+    );
+    await expect(c.getPostingBySource('A', '1')).resolves.toEqual({ description: 'Full text A' });
+    await expect(c.getPostingBySource('B', '2')).resolves.toBeNull();
+    await expect(c.getPostingBySource('Nope', '3')).rejects.toBeInstanceOf(NotFoundError);
   });
 });

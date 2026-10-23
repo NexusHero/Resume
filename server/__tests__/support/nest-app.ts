@@ -11,6 +11,8 @@ import { configureHttpEdge } from '../../src/nest/http-edge.js';
 import { ProblemJsonFilter } from '../../src/nest/problem-json.filter.js';
 import { LlmService } from '../../src/services/llm-service.js';
 import type { LlmProvider } from '../../src/ports/llm-provider.js';
+import type { PageFetcher } from '../../src/ports/page-fetcher.js';
+import type { JobSource } from '../../src/ports/job-source.js';
 import type { AssistantSettings } from '../../src/domain/assistant.js';
 import { AnthropicLlmProvider } from '../../src/adapters/anthropic-llm-provider.js';
 import { GeminiLlmProvider } from '../../src/adapters/gemini-llm-provider.js';
@@ -26,6 +28,8 @@ import {
   ID_GENERATOR,
   JOB_SOURCE,
   APPLICATION_REPOSITORY,
+  JOB_POSTING_REPOSITORY,
+  PAGE_FETCHER,
   AUDIT_LOG,
   PDF_ARCHIVE,
   SAVED_SEARCH_REPOSITORY,
@@ -64,6 +68,7 @@ import {
 } from '../../src/nest/tokens.js';
 import {
   InMemoryApplicationRepository,
+  InMemoryJobPostingRepository,
   InMemoryArtifactLogRepository,
   InMemoryAssistantSettingsStore,
   InMemoryAssistantSuggestionRepository,
@@ -86,6 +91,7 @@ import {
   RecordingMailer,
   FakeInboxSource,
   FakeJobSource,
+  FakePageFetcher,
   InMemoryStageTransitionRepository,
   InMemoryRetentionPolicyStore,
   FakeAuthEngine,
@@ -120,6 +126,10 @@ export interface NestTestAppOptions {
    * default). Agency-slice tests opt in with `{ vermittlung: true }`.
    */
   vermittlung?: boolean;
+  /** Override the PageFetcher (default: a fake that returns empty text). */
+  pageFetcher?: PageFetcher;
+  /** Override the job source (default: FakeJobSource). */
+  jobSource?: JobSource;
 }
 
 const openApps: INestApplication[] = [];
@@ -166,6 +176,8 @@ export async function makeNestApp(
 
   const fakes: Provider[] = [
     { provide: APPLICATION_REPOSITORY, useValue: new InMemoryApplicationRepository() },
+    { provide: JOB_POSTING_REPOSITORY, useValue: new InMemoryJobPostingRepository() },
+    { provide: PAGE_FETCHER, useValue: opts.pageFetcher ?? new FakePageFetcher() },
     { provide: AUDIT_LOG, useValue: new InMemoryAuditLog() },
     { provide: PDF_ARCHIVE, useValue: new InMemoryPdfArchive() },
     { provide: SAVED_SEARCH_REPOSITORY, useValue: new InMemorySavedSearchRepository() },
@@ -236,7 +248,7 @@ export async function makeNestApp(
     .useValue(new SequenceIdGenerator())
     // Replace JobsModule's own JOB_SOURCE (createJobSource → live boards).
     .overrideProvider(JOB_SOURCE)
-    .useValue(new FakeJobSource())
+    .useValue(opts.jobSource ?? new FakeJobSource())
     .compile();
 
   const app = moduleRef.createNestApplication<NestExpressApplication>({

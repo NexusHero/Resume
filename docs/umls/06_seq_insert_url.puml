@@ -1,0 +1,59 @@
+@startuml 06_seq_insert_url
+title Stelle per URL einfügen — SSRF-guarded fetch + extract (FR-78, AK-1.4/1.5, ADR-0058)
+
+skinparam shadowing false
+autonumber
+
+actor Recruiter
+participant "JobPostingsController" as Ctrl
+participant "JobPostingExtractService" as Svc
+participant "SsrfFetch\n(PageFetcher)" as Fetch
+participant "ssrf-guard\n(classifyAddresses)" as Guard
+participant "LlmFeatureRunner" as Llm
+
+Recruiter -> Ctrl : POST /job-postings/extract { url }
+activate Ctrl
+Ctrl -> Svc : fromUrl(userId, url)
+activate Svc
+Svc -> Fetch : fetchPage(url)
+activate Fetch
+
+loop each hop (initial URL + redirects)
+  Fetch -> Fetch : assertAllowedScheme (http/https only)
+  Fetch -> Fetch : normalizeSpecialHost + resolve
+  Fetch -> Guard : classifyAddresses(addresses)
+  Guard --> Fetch : all public?
+  alt private / loopback / link-local / mapped
+    Fetch --> Svc : SsrfBlockedError
+    Svc --> Ctrl : 400 ssrf-blocked
+    Ctrl --> Recruiter : 400 problem+json
+  else public
+    Fetch -> Fetch : pin connection to the vetted IP\n(no second DNS resolve)
+  end
+end
+
+Fetch -> Fetch : htmlToText + MIN_TEXT_CHARS check
+alt no usable text (login/JS-only page)
+  Fetch --> Svc : NoTextError
+  Svc --> Ctrl : 422 no-text
+  Ctrl --> Recruiter : "Bitte Anzeigentext einfügen"
+else text present
+  Fetch --> Svc : { text, finalUrl }
+  Svc -> Llm : runFeature('postingExtract', prompt, schema)
+  alt no central key
+    Llm --> Svc : AiNotConfiguredError
+    Svc --> Ctrl : 503 ai-not-configured
+  else unusable reply
+    Llm --> Svc : UpstreamProviderError
+    Svc --> Ctrl : 502 upstream-provider
+  else valid fields
+    Llm --> Svc : { company, title, location, country, requirements }
+    Svc --> Ctrl : draft { ..., description, source: 'url', url: finalUrl }
+    Ctrl --> Recruiter : 200 draft (editable, not persisted)
+  end
+end
+deactivate Fetch
+deactivate Svc
+deactivate Ctrl
+
+@enduml

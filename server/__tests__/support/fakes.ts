@@ -1,5 +1,10 @@
 import type { Application, AuditEvent } from '../../src/domain/application.js';
 import type { ApplicationRepository } from '../../src/ports/application-repository.js';
+import type { JobPosting } from '../../src/domain/job-posting.js';
+import type { JobPostingRepository } from '../../src/ports/job-posting-repository.js';
+import type { JobPostingDetail } from '../../src/domain/job.js';
+import type { PageFetcher } from '../../src/ports/page-fetcher.js';
+import { NoTextError, PostingFetchError, SsrfBlockedError } from '../../src/domain/errors.js';
 import type { AuditLog } from '../../src/ports/audit-log.js';
 import type { PdfArchive } from '../../src/ports/pdf-archive.js';
 import type { CoverLetterOptions, PdfRenderer } from '../../src/ports/pdf-renderer.js';
@@ -186,11 +191,18 @@ export const noopSkillExtractor: SkillExtractor = {
  * A deterministic JobSource for tests. Production ships NO sample/mock source
  * (job data comes from real boards like Arbeitnow); this fixture stands in so
  * job-search / autopilot tests stay deterministic and offline. Filters by the
- * query the same way a real board would, on role/company/skills.
+ * query the same way a real board would, on role/company/skills. Its optional
+ * `getPosting` returns the scripted `postings` map (null when unknown).
  */
 export class FakeJobSource implements JobSource {
   readonly name = 'Fake';
+  private readonly postingDetails: Map<string, JobPostingDetail> = new Map();
   constructor(private readonly jobs: Job[] = FAKE_JOBS) {}
+  /** Seed a full-text detail for `getPosting(sourceId)`. */
+  withPosting(sourceId: string, description: string): this {
+    this.postingDetails.set(sourceId, { description });
+    return this;
+  }
   async search(query: JobQuery): Promise<Job[]> {
     const kw = query.q?.trim().toLowerCase();
     const country = query.country?.trim();
@@ -204,6 +216,9 @@ export class FakeJobSource implements JobSource {
         return true;
       })
       .map((j) => ({ ...j, skills: [...j.skills] }));
+  }
+  async getPosting(sourceId: string): Promise<JobPostingDetail | null> {
+    return this.postingDetails.get(sourceId) ?? null;
   }
 }
 
@@ -246,19 +261,80 @@ const FAKE_JOBS: Job[] = [
 
 export class InMemorySavedSearchRepository implements SavedSearchRepository {
   searches: SavedSearch[] = [];
-  async list(): Promise<SavedSearch[]> {
-    return this.searches.map((s) => ({ ...s }));
+  async list(ownerId: string): Promise<SavedSearch[]> {
+    return this.searches.filter((s) => s.ownerId === ownerId).map((s) => ({ ...s }));
   }
-  async findById(id: string): Promise<SavedSearch | null> {
-    return this.searches.find((s) => s.id === id) ?? null;
+  async findById(ownerId: string, id: string): Promise<SavedSearch | null> {
+    return this.searches.find((s) => s.id === id && s.ownerId === ownerId) ?? null;
   }
   async add(search: SavedSearch): Promise<void> {
     this.searches.push(search);
   }
-  async remove(id: string): Promise<boolean> {
+  async remove(ownerId: string, id: string): Promise<boolean> {
     const before = this.searches.length;
-    this.searches = this.searches.filter((s) => s.id !== id);
+    this.searches = this.searches.filter((s) => !(s.id === id && s.ownerId === ownerId));
     return this.searches.length < before;
+  }
+}
+
+export class InMemoryJobPostingRepository implements JobPostingRepository {
+  postings: JobPosting[] = [];
+  async list(ownerId: string): Promise<JobPosting[]> {
+    return this.postings.filter((p) => p.ownerId === ownerId).map((p) => ({ ...p }));
+  }
+  async findById(ownerId: string, id: string): Promise<JobPosting | null> {
+    return this.postings.find((p) => p.id === id && p.ownerId === ownerId) ?? null;
+  }
+  async findDuplicate(
+    ownerId: string,
+    source: string,
+    sourceId: string | undefined,
+    url: string | undefined,
+  ): Promise<JobPosting | null> {
+    return (
+      this.postings.find((p) => {
+        if (p.ownerId !== ownerId) return false;
+        if (sourceId && p.source === source && p.sourceId === sourceId) return true;
+        if (url && p.url === url) return true;
+        return false;
+      }) ?? null
+    );
+  }
+  async add(posting: JobPosting): Promise<void> {
+    this.postings.push(posting);
+  }
+  async update(posting: JobPosting): Promise<void> {
+    const i = this.postings.findIndex((p) => p.id === posting.id && p.ownerId === posting.ownerId);
+    if (i < 0) this.postings.push(posting);
+    else this.postings[i] = posting;
+  }
+  async delete(ownerId: string, id: string): Promise<boolean> {
+    const before = this.postings.length;
+    this.postings = this.postings.filter((p) => !(p.id === id && p.ownerId === ownerId));
+    return this.postings.length < before;
+  }
+}
+
+/** A scriptable PageFetcher: returns text, or throws a chosen SSRF/fetch error. */
+export class FakePageFetcher implements PageFetcher {
+  constructor(
+    private readonly result: { text: string; finalUrl?: string } | Error = { text: '' },
+  ) {}
+  async fetchPage(url: string): Promise<{ text: string; finalUrl: string }> {
+    if (this.result instanceof Error) throw this.result;
+    return { text: this.result.text, finalUrl: this.result.finalUrl ?? url };
+  }
+  /** A fetcher that always throws `SsrfBlockedError`. */
+  static blocked(): FakePageFetcher {
+    return new FakePageFetcher(new SsrfBlockedError());
+  }
+  /** A fetcher that always throws `NoTextError`. */
+  static noText(): FakePageFetcher {
+    return new FakePageFetcher(new NoTextError());
+  }
+  /** A fetcher that always throws `PostingFetchError`. */
+  static postingFetch(reason = 'network'): FakePageFetcher {
+    return new FakePageFetcher(new PostingFetchError(reason));
   }
 }
 

@@ -55,4 +55,37 @@ describe('checkProductionReadiness', () => {
     expect(warnings.join(' ')).toMatch(/MAIL_TRANSPORT/);
     expect(warnings.join(' ')).toMatch(/APP_BASE_URL/);
   });
+
+  it('CheckProductionReadiness_JobFetchDefaults_NoWarning', () => {
+    const { warnings } = check(PROD_ENV);
+    expect(warnings).toEqual([]);
+  });
+
+  it('CheckProductionReadiness_JobFetchExtremeRedirects_Warns', () => {
+    const { warnings } = check({ ...PROD_ENV, JOB_FETCH_MAX_REDIRECTS: '99' });
+    expect(warnings.join(' ')).toMatch(/JOB_FETCH_MAX_REDIRECTS/);
+  });
+
+  it('CheckProductionReadiness_JobFetchExtremeTimeout_Warns', () => {
+    const { warnings } = check({ ...PROD_ENV, JOB_FETCH_TIMEOUT_MS: '120000' });
+    expect(warnings.join(' ')).toMatch(/JOB_FETCH_TIMEOUT_MS/);
+  });
+
+  it('Config_JobFetchEnv_ClampsNegativeValuesToDefaults', () => {
+    const config = loadConfig({
+      JOB_FETCH_MAX_BYTES: '-5',
+      JOB_FETCH_TIMEOUT_MS: '-5',
+      JOB_FETCH_MAX_REDIRECTS: '-5',
+    });
+    expect(config.jobFetch).toEqual({ maxBytes: 1_000_000, timeoutMs: 10_000, maxRedirects: 5 });
+  });
+
+  it('Config_JobFetchEnv_AcceptsZeroAndCustomValues', () => {
+    const config = loadConfig({
+      JOB_FETCH_MAX_REDIRECTS: '0',
+      JOB_FETCH_MAX_BYTES: '1000',
+    });
+    expect(config.jobFetch.maxRedirects).toBe(0);
+    expect(config.jobFetch.maxBytes).toBe(1000);
+  });
 });

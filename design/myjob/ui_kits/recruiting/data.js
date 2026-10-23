@@ -622,6 +622,72 @@ const RecruitApi = {
       total: data.counts && typeof data.counts.total === 'number' ? data.counts.total : jobs.length,
     };
   },
+  // --- Saved job postings ("Stellen", ADR-0058) ---
+  // The three entry paths share one list; dedup is server-side (source+sourceId
+  // or normalised url). `_jsonOrThrow` surfaces the SSRF/fetch/no-text errors via
+  // their `code` (`ssrf-blocked` / `posting-fetch` / `no-text`) so the insert
+  // dialog can show a precise message.
+  async listJobPostings(q = '') {
+    const url = q
+      ? `${RECRUIT_API_BASE}/job-postings?q=${encodeURIComponent(q)}`
+      : `${RECRUIT_API_BASE}/job-postings`;
+    const data = await _jsonOrThrow(await fetch(url));
+    return Array.isArray(data) ? data : [];
+  },
+  async getJobPosting(id) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/job-postings/${encodeURIComponent(id)}`),
+    );
+    return data.jobPosting;
+  },
+  // Save a live search result (no AI). Returns { jobPosting, alreadySaved }.
+  async adoptJobPosting(input) {
+    return _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/job-postings/adopt`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      }),
+    );
+  },
+  // Extract fields from pasted text or a URL (SSRF-guarded). Returns a draft.
+  async extractJobPosting(input) {
+    return _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/job-postings/extract`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      }),
+    );
+  },
+  // Persist an edited draft — the draft is passed through **including `url`**
+  // so a URL-inserted posting can dedup against the URL (AK-1.6).
+  async createJobPosting(draft) {
+    return _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/job-postings`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(draft),
+      }),
+    );
+  },
+  async updateJobPosting(id, patch) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/job-postings/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(patch),
+      }),
+    );
+    return data.jobPosting;
+  },
+  async deleteJobPosting(id) {
+    const res = await fetch(`${RECRUIT_API_BASE}/job-postings/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) throw new Error(`Could not delete posting (${res.status})`);
+  },
+
   // --- Recruiting pipeline (candidacies) ---
   async mandateCandidacies(mandateId) {
     const data = await _jsonOrThrow(

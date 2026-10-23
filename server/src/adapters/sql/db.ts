@@ -135,6 +135,32 @@ async function runMigrationDdl(client: { query: Pool['query'] }): Promise<void> 
       query jsonb NOT NULL,
       created_at text NOT NULL
     );
+    -- Additive owner scope for pre-existing rows: backfill to the default team,
+    -- then every read filters by owner_id (RI15/Q6, ADR-0010/0033).
+    ALTER TABLE saved_searches ADD COLUMN IF NOT EXISTS owner_id text NOT NULL DEFAULT 'team';
+    CREATE INDEX IF NOT EXISTS saved_searches_owner_id_idx ON saved_searches (owner_id);
+    CREATE TABLE IF NOT EXISTS job_postings (
+      id text PRIMARY KEY,
+      owner_id text NOT NULL,
+      source text NOT NULL,
+      source_id text,
+      url text,
+      company text NOT NULL,
+      title text NOT NULL,
+      location text NOT NULL,
+      country text NOT NULL,
+      description text NOT NULL,
+      requirements jsonb NOT NULL,
+      description_incomplete boolean NOT NULL DEFAULT false,
+      created_at text NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS job_postings_owner_id_idx ON job_postings (owner_id);
+    -- Race backstop (ADR-0058): dedup keys within one workspace — the service
+    -- check is authoritative, these catch two simultaneous inserts.
+    CREATE UNIQUE INDEX IF NOT EXISTS job_postings_owner_source_idx
+      ON job_postings (owner_id, source, source_id) WHERE source_id IS NOT NULL;
+    CREATE UNIQUE INDEX IF NOT EXISTS job_postings_owner_url_idx
+      ON job_postings (owner_id, url) WHERE url IS NOT NULL;
     CREATE TABLE IF NOT EXISTS mandates (
       id text PRIMARY KEY,
       owner_id text NOT NULL,

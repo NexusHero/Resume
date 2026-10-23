@@ -882,13 +882,19 @@ test.describe('UI acceptance — the suite renders in German', () => {
         body: JSON.stringify({ user: { id: 'user1', email: 'nora@example.de' } }),
       }),
     );
+    await page.route('**/api/v1/job-postings', (route) => {
+      if (route.request().method() !== 'GET') return route.continue();
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify([]) });
+    });
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
 
-    // Stellen is its own destination and renders the job matching view.
+    // Stellen opens the saved-postings list; the portal search is the "Stellen
+    // finden" sub-tab.
     await page
       .locator('nav')
       .getByRole('button', { name: /^Stellen$/ })
       .click();
+    await page.getByRole('tab', { name: 'Stellen finden' }).click();
     await page.getByRole('button', { name: 'Manuell' }).click();
 
     // Search narrows the live postings down to the one specific company.
@@ -1193,6 +1199,10 @@ test.describe('Phase 0 — central-key and vocabulary guarantees', () => {
     await page.route('**/api/v1/talents/t-api-1/documents', (route) =>
       route.fulfill({ contentType: 'application/json', body: JSON.stringify(DOCS) }),
     );
+    await page.route('**/api/v1/job-postings', (route) => {
+      if (route.request().method() !== 'GET') return route.continue();
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify([]) });
+    });
   }
 
   async function openEditor(page: import('@playwright/test').Page) {
@@ -1412,5 +1422,277 @@ test.describe('Fehler 1 — CV text import without a key', () => {
     // The existing station and profile are still in the form.
     await expect(page.locator('input[value="Senior Dev"]')).toBeVisible();
     expect(await page.locator('textarea').first().inputValue()).toContain('Bestehendes Profil');
+  });
+});
+
+test.describe('Stellen (Phase 1)', () => {
+  const KIT = '/design/myjob/ui_kits/recruiting/dist/index.html';
+  const POSTING = {
+    id: 'p1',
+    ownerId: 'team',
+    source: 'Arbeitnow',
+    sourceId: 'j1',
+    url: 'https://example.de/jobs/j1',
+    company: 'Nordwind Logistik AG',
+    title: 'Backend Engineer',
+    location: 'Hamburg',
+    country: 'DE',
+    description: 'Full ad text.',
+    requirements: ['Go'],
+    descriptionIncomplete: false,
+    createdAt: '2026-06-25T10:00:00.000Z',
+  };
+
+  async function mockSession(page: import('@playwright/test').Page) {
+    await page.route('**/api/v1/settings/workspace', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ vermittlung: true }),
+      }),
+    );
+    await page.route('**/api/v1/settings/llm', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ configured: true, providers: [{ id: 'claude', available: true }] }),
+      }),
+    );
+    await page.route('**/api/v1/auth/me', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id: 'user1', email: 'nora@example.de' } }),
+      }),
+    );
+    await page.route('**/api/v1/jobs', (route) => {
+      if (route.request().method() !== 'GET') return route.continue();
+      return route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          top: [
+            {
+              id: 'j1',
+              role: 'Backend Engineer',
+              company: 'Nordwind Logistik AG',
+              city: 'Hamburg',
+              country: 'DE',
+              source: 'Arbeitnow',
+              mode: 'Vollzeit',
+              salary: '',
+              posted: '2026-07-01',
+              url: 'https://example.de/jobs/j1',
+              skills: ['Go'],
+            },
+          ],
+          more: [],
+          liveSourcesDown: false,
+        }),
+      });
+    });
+  }
+
+  test('StellenView_AdoptFromSearch_PersistsAndAppearsInList', async ({ page }) => {
+    const postings: Record<string, unknown>[] = [];
+    await mockSession(page);
+    await page.route('**/api/v1/job-postings', (route) => {
+      if (route.request().method() !== 'GET') return route.continue();
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify(postings) });
+    });
+    await page.route('**/api/v1/job-postings/adopt', (route) => {
+      const body = JSON.parse(route.request().postData() || '{}');
+      const created = { ...POSTING, company: body.company, title: body.title };
+      postings.push(created);
+      return route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ jobPosting: created, alreadySaved: false }),
+      });
+    });
+
+    await page.goto(KIT);
+    await page
+      .locator('nav')
+      .getByRole('button', { name: /^Stellen$/ })
+      .click();
+    await expect(page.locator('main')).toContainText('Noch keine gespeicherten Stellen.');
+
+    await page.getByRole('tab', { name: 'Stellen finden' }).click();
+    await expect(page.getByRole('button', { name: 'Stelle übernehmen' })).toBeVisible();
+    await page.getByRole('button', { name: 'Stelle übernehmen' }).click();
+    await expect(page.getByRole('button', { name: 'Übernommen' })).toBeVisible();
+
+    // Reload-proof (AK-1.1): back to the saved list, then a full page reload.
+    await page.getByRole('tab', { name: 'Gespeichert' }).click();
+    await page.reload();
+    await page
+      .locator('nav')
+      .getByRole('button', { name: /^Stellen$/ })
+      .click();
+    await expect(page.locator('main')).toContainText('Nordwind Logistik AG');
+  });
+
+  test('StellenView_InsertByText_ExtractsAndSaves', async ({ page }) => {
+    const postings: Record<string, unknown>[] = [];
+    await mockSession(page);
+    await page.route('**/api/v1/job-postings', (route) => {
+      if (route.request().method() === 'POST') {
+        const body = JSON.parse(route.request().postData() || '{}');
+        const created = {
+          id: 'p2',
+          ownerId: 'team',
+          source: 'text',
+          company: body.company,
+          title: body.title,
+          location: body.location || '',
+          country: body.country || '',
+          description: body.description || '',
+          requirements: body.requirements || [],
+          descriptionIncomplete: false,
+          createdAt: '2026-06-25T10:00:00.000Z',
+        };
+        postings.push(created);
+        return route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ jobPosting: created, alreadySaved: false }),
+        });
+      }
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify(postings) });
+    });
+    await page.route('**/api/v1/job-postings/extract', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          company: 'Acme Corp',
+          title: 'Frontend Developer',
+          location: 'Berlin',
+          country: 'DE',
+          requirements: ['React'],
+          description: 'React and TypeScript.',
+          source: 'text',
+        }),
+      }),
+    );
+
+    await page.goto(KIT);
+    await page
+      .locator('nav')
+      .getByRole('button', { name: /^Stellen$/ })
+      .click();
+    await page.getByRole('button', { name: 'Stelle einfügen' }).click();
+    await page.getByLabel('Anzeigentext').fill('React and TypeScript.');
+    await page.getByRole('button', { name: 'Felder extrahieren' }).click();
+
+    await expect(page.getByLabel('Unternehmen')).toHaveValue('Acme Corp');
+    await page.getByRole('button', { name: 'Speichern' }).click();
+
+    await expect(page.locator('main')).toContainText('Frontend Developer');
+  });
+
+  test('StellenView_InsertByUrl_ExtractsAndSaves', async ({ page }) => {
+    const postings: Record<string, unknown>[] = [];
+    await mockSession(page);
+    await page.route('**/api/v1/job-postings', (route) => {
+      if (route.request().method() === 'POST') {
+        const body = JSON.parse(route.request().postData() || '{}');
+        const created = {
+          id: 'p3',
+          ownerId: 'team',
+          source: 'url',
+          url: body.url,
+          company: body.company,
+          title: body.title,
+          location: body.location || '',
+          country: body.country || '',
+          description: body.description || '',
+          requirements: body.requirements || [],
+          descriptionIncomplete: false,
+          createdAt: '2026-06-25T10:00:00.000Z',
+        };
+        postings.push(created);
+        return route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ jobPosting: created, alreadySaved: false }),
+        });
+      }
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify(postings) });
+    });
+    await page.route('**/api/v1/job-postings/extract', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          company: 'Helio GmbH',
+          title: 'Backend Engineer',
+          location: 'Remote',
+          country: 'DE',
+          requirements: ['Go'],
+          description: 'Full ad text from the URL.',
+          source: 'url',
+          url: 'https://example.com/job/123',
+        }),
+      }),
+    );
+
+    await page.goto(KIT);
+    await page
+      .locator('nav')
+      .getByRole('button', { name: /^Stellen$/ })
+      .click();
+    await page.getByRole('button', { name: 'Stelle einfügen' }).click();
+    await page.getByRole('button', { name: 'Von URL' }).click();
+    await page.getByLabel('URL der Stellenanzeige').fill('https://example.com/job/123');
+    await page.getByRole('button', { name: 'Felder extrahieren' }).click();
+
+    await expect(page.getByLabel('Unternehmen')).toHaveValue('Helio GmbH');
+    await page.getByRole('button', { name: 'Speichern' }).click();
+
+    await expect(page.locator('main')).toContainText('Backend Engineer');
+  });
+
+  test('StellenView_DuplicateAdopt_ShowsBereitsGespeichert', async ({ page }) => {
+    await mockSession(page);
+    await page.route('**/api/v1/job-postings', (route) => {
+      if (route.request().method() !== 'GET') return route.continue();
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify([]) });
+    });
+    await page.route('**/api/v1/job-postings/adopt', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ jobPosting: POSTING, alreadySaved: true }),
+      }),
+    );
+
+    await page.goto(KIT);
+    await page
+      .locator('nav')
+      .getByRole('button', { name: /^Stellen$/ })
+      .click();
+    await page.getByRole('tab', { name: 'Stellen finden' }).click();
+    await expect(page.getByRole('button', { name: 'Stelle übernehmen' })).toBeVisible();
+    await page.getByRole('button', { name: 'Stelle übernehmen' }).click();
+
+    await expect(page.getByRole('button', { name: 'Bereits gespeichert → öffnen' })).toBeVisible();
+  });
+
+  test('StellenView_Delete_UndoRestores', async ({ page }) => {
+    await mockSession(page);
+    await page.route('**/api/v1/job-postings', (route) => {
+      if (route.request().method() !== 'GET') return route.continue();
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify([POSTING]) });
+    });
+
+    await page.goto(KIT);
+    await page
+      .locator('nav')
+      .getByRole('button', { name: /^Stellen$/ })
+      .click();
+    await expect(page.locator('main')).toContainText('Nordwind Logistik AG');
+
+    // Open the detail, delete → the undo snackbar appears.
+    await page.getByText('Nordwind Logistik AG').first().click();
+    await page.getByRole('button', { name: 'Löschen' }).click();
+    await expect(page.getByRole('status')).toContainText('entfernt');
+
+    // Undo restores it.
+    await page.getByRole('button', { name: 'Rückgängig' }).click();
+    await expect(page.locator('main')).toContainText('Nordwind Logistik AG');
   });
 });

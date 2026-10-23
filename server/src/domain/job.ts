@@ -24,6 +24,15 @@ export interface ScoredJob extends Job {
   missingSkills: string[];
 }
 
+/**
+ * The full ad text a source's detail lookup adds on top of a search result.
+ * `Job` itself stays a volatile search row; this is the only extra field the
+ * optional `JobSource.getPosting` port returns (ADR-0058).
+ */
+export interface JobPostingDetail {
+  description: string;
+}
+
 /** What one job board contributed to a search — surfaced for per-source counts. */
 export interface JobSourceOutcome {
   /** The board's name (e.g. 'Arbeitnow', 'Remotive'). */

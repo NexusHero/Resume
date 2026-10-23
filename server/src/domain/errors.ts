@@ -140,3 +140,49 @@ export class InternalError extends DomainError {
     this.name = 'InternalError';
   }
 }
+
+/**
+ * A user-supplied URL resolves to a blocked target — not http(s), or a
+ * private/loopback/link-local/mapped address (also on a redirect hop) (400,
+ * AK-1.4). Raised by the `ssrf-fetch` adapter before any request reaches an
+ * internal target.
+ */
+export class SsrfBlockedError extends DomainError {
+  readonly status = 400;
+  readonly type = 'ssrf-blocked';
+
+  constructor(message = 'The URL targets a network address that is not allowed.') {
+    super(message);
+    this.name = 'SSRF blocked';
+  }
+}
+
+/**
+ * Fetching a posting (or its detail) failed for a reason the caller cannot fix:
+ * timeout, size limit, redirect limit, DNS/network error or a non-2xx detail
+ * response (502). The `reason` (e.g. `redirect-limit`, `too-large`, `timeout`)
+ * is folded into the `detail` message — problem+json carries only `detail`.
+ */
+export class PostingFetchError extends DomainError {
+  readonly status = 502;
+  readonly type = 'posting-fetch';
+
+  constructor(readonly reason: string) {
+    super(`Could not fetch the posting (${reason}).`);
+    this.name = 'Posting fetch failed';
+  }
+}
+
+/**
+ * A URL was fetched but yielded no usable text (a login/JS-only page, an empty
+ * body) (422). The UI asks the user to paste the ad text instead (AK-1.5).
+ */
+export class NoTextError extends DomainError {
+  readonly status = 422;
+  readonly type = 'no-text';
+
+  constructor(message = 'The page contains no usable posting text.') {
+    super(message);
+    this.name = 'No text';
+  }
+}

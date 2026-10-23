@@ -4,7 +4,13 @@ import type { AppConfig } from '../config.js';
 import type { SavedSearch } from '../domain/saved-search.js';
 import type { SavedSearchRepository } from '../ports/saved-search-repository.js';
 
-/** File-backed repository: the JSON array in bewerbungen/saved-searches.json. */
+/**
+ * File-backed repository: the JSON array in bewerbungen/saved-searches.json.
+ * Workspace-scoped (RI15/Q6): every read/remove filters on `ownerId`. Unlike
+ * the sql DDL (which has a `DEFAULT 'team'` backfill), the file has no column
+ * defaults — so a legacy row without `ownerId` is assigned the default team at
+ * read time and stays deletable.
+ */
 export class FsSavedSearchRepository implements SavedSearchRepository {
   private readonly file: string;
   private readonly dir: string;
@@ -14,30 +20,38 @@ export class FsSavedSearchRepository implements SavedSearchRepository {
     this.dir = path.dirname(this.file);
   }
 
-  async list(): Promise<SavedSearch[]> {
+  private async readAll(): Promise<SavedSearch[]> {
     try {
       const raw = await fs.readFile(this.file, 'utf8');
       const data = JSON.parse(raw);
-      return Array.isArray(data) ? (data as SavedSearch[]) : [];
+      if (!Array.isArray(data)) return [];
+      return (data as Array<Partial<SavedSearch>>).map((s) => ({
+        ...s,
+        ownerId: typeof s.ownerId === 'string' ? s.ownerId : 'team',
+      })) as SavedSearch[];
     } catch {
       return [];
     }
   }
 
-  async findById(id: string): Promise<SavedSearch | null> {
-    const all = await this.list();
-    return all.find((s) => s.id === id) ?? null;
+  async list(ownerId: string): Promise<SavedSearch[]> {
+    return (await this.readAll()).filter((s) => s.ownerId === ownerId);
+  }
+
+  async findById(ownerId: string, id: string): Promise<SavedSearch | null> {
+    const all = await this.readAll();
+    return all.find((s) => s.id === id && s.ownerId === ownerId) ?? null;
   }
 
   async add(search: SavedSearch): Promise<void> {
-    const all = await this.list();
+    const all = await this.readAll();
     all.push(search);
     await this.write(all);
   }
 
-  async remove(id: string): Promise<boolean> {
-    const all = await this.list();
-    const next = all.filter((s) => s.id !== id);
+  async remove(ownerId: string, id: string): Promise<boolean> {
+    const all = await this.readAll();
+    const next = all.filter((s) => !(s.id === id && s.ownerId === ownerId));
     if (next.length === all.length) return false;
     await this.write(next);
     return true;

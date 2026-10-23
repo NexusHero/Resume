@@ -53,7 +53,7 @@ module.exports = {
     '!server/src/adapters/sql/sql-user-repository.ts',
     '!server/src/adapters/sql/sql-session-store.ts',
     '!server/src/adapters/sql/sql-password-reset-token-store.ts',
-    '!server/src/adapters/sql/sql-api-key-store.ts',
+    '!server/src/adapters/sql/sql-workspace-settings-store.ts',
     '!server/src/adapters/sql/sql-document-repository.ts',
     '!server/src/adapters/sql/sql-attachment-store.ts',
     '!server/src/adapters/sql/sql-usage-meter.ts',

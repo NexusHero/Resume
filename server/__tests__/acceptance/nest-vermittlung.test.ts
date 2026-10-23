@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import request from 'supertest';
 import type { Server } from 'http';
+import { loadConfig } from '../../src/config.js';
 import { makeNestApp, closeNestApps } from '../support/nest-app.js';
 
 /**
@@ -90,6 +91,17 @@ describe('Vermittlung switch off → every agency route answers 404', () => {
     const srv = await server();
     const res = await request(srv).get('/api/v1/mandates');
     expect(res.status).toBe(401);
+  });
+
+  it('Vermittlung_FreePlanPitch_WhenOff_Returns402Not404', async () => {
+    // Owner decision §9-8: the class-level Pro gate runs before the switch, so a
+    // Free user gets 402 even when Vermittlung is off (and no AI key is set).
+    const srv = await makeNestApp(loadConfig({ PLAN: 'free' }), { vermittlung: false });
+    const agent = await registeredAgent(srv);
+    const res = await agent.post('/api/v1/talents/t1/documents/pitch').send({});
+    expect(res.status).toBe(402);
+    expect(res.headers['content-type']).toMatch(/application\/problem\+json/);
+    expect(res.body.type).toBe('about:blank#plan-required');
   });
 
   it('Vermittlung_Mandates_WhenOn_ReturnsExistingData', async () => {

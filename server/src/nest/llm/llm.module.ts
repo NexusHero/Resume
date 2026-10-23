@@ -31,7 +31,7 @@ export class LlmController {
 
   @Post('cover-letter')
   @HttpCode(200)
-  @UseGuards(OptionalAuthGuard, AiConfiguredGuard, AiRateLimitGuard, PlanGuard)
+  @UseGuards(OptionalAuthGuard, AiRateLimitGuard, PlanGuard, AiConfiguredGuard)
   @RequiresPlan('pro')
   async generateCoverLetter(
     @OptionalUserId() userId: string | undefined,

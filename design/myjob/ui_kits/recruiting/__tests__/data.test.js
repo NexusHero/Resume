@@ -3,7 +3,7 @@
    `Object.assign(window, …)`, so the test imports the module for its side effect
    and reads the functions off `window`. This is the cheapest, highest-ROI shape
    of frontend test: deterministic domain logic with zero rendering. */
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterEach, vi } from 'vitest';
 
 let computeVermittlerKpis;
 let deriveReportClients;
@@ -61,5 +61,36 @@ describe('deriveReportClients', () => {
 
   it('DeriveClients_NullInputs_ReturnsEmpty', () => {
     expect(deriveReportClients(null, null)).toEqual([]);
+  });
+});
+
+describe('RecruitApi AI status cache', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    window.RecruitApi.invalidateAiStatus();
+  });
+
+  it('AiConfigured_AfterSettingsObservedStatus_RefetchesNewStatus', async () => {
+    // Regression (G5): the cache was permanent, so after a server restart with a
+    // key added the editor kept saying "KI nicht eingerichtet" until reload.
+    let available = false;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        new Response(JSON.stringify({ providers: [{ id: 'claude', available }] }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      ),
+    );
+
+    window.RecruitApi.invalidateAiStatus();
+    expect(await window.RecruitApi.aiConfigured()).toBe(false);
+    available = true;
+    expect(await window.RecruitApi.aiConfigured()).toBe(false); // still cached
+
+    // The settings surface observed the new status and dropped the cache.
+    window.dispatchEvent(new CustomEvent('myjob:aistatuschange'));
+    expect(await window.RecruitApi.aiConfigured()).toBe(true);
   });
 });

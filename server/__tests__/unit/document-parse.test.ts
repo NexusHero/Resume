@@ -1,7 +1,6 @@
 import {
   parsePrompt,
   extractJson,
-  fallbackParsed,
   parsePdfRequestSchema,
 } from '../../src/domain/document-parse.js';
 
@@ -32,10 +31,5 @@ describe('document-parse', () => {
     expect(extractJson('Hier:\n{"b":2} — fertig')).toEqual({ b: 2 });
     expect(extractJson('no json here')).toBeNull();
     expect(extractJson('{broken')).toBeNull();
-  });
-
-  it('FallbackParsed_KeepsTextAsSummary', () => {
-    const out = fallbackParsed('  Erfahrener   Ingenieur.  ');
-    expect(out.resume.summary).toBe('Erfahrener Ingenieur.');
   });
 });

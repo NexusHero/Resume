@@ -21,10 +21,10 @@ export interface LlmServiceDeps {
 
 /**
  * The LLM provider registry: every wired provider plus the server's configured
- * default. The provider *selection* is per user and persisted on the user
- * record (Settings → AI models), so it survives restarts and is never shared
- * across the team — this service only answers "which providers exist, which
- * have server credentials, and what is the default".
+ * default. Phase 0 (ADR-0057) replaced per-user keys and the persisted per-user
+ * provider choice with **one central server key** (env). This service only
+ * answers "which providers exist, which have server credentials, and what is
+ * the default".
  */
 export class LlmService {
   private readonly providers: Map<LlmProviderId, LlmProvider>;

@@ -46,12 +46,3 @@ export function extractJson(raw: string): unknown | null {
     return null;
   }
 }
-
-/**
- * Deterministic fallback when no LLM is available or the reply is unusable:
- * drop the raw text into the summary so nothing is lost, leave the rest empty.
- */
-export function fallbackParsed(text: string): { contact?: unknown; resume: { summary: string } } {
-  const summary = text.replace(/\s+/g, ' ').trim().slice(0, 600);
-  return { resume: { summary } };
-}

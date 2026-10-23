@@ -1,6 +1,6 @@
-/* SettingsView — AI models & API keys. The active model is wired to the live
-   /settings/llm endpoint; per-provider API keys are stored encrypted on the
-   server (PUT/DELETE /settings/keys/:provider) — never in the browser. German-first. */
+/* SettingsView — AI setup, workspace switch & privacy. The AI card reads the
+   live /settings/llm status (one central server key, ADR-0057) — there are no
+   per-user keys stored in the browser or on the server. German-first. */
 const SV = window.MyJobDesignSystem_5611b7;
 
 /* The central AI setup (ADR-0057): one server key, no per-user keys. */
@@ -13,6 +13,13 @@ function AiSetupCard() {
         if (!alive) return;
         const providers = Array.isArray(s && s.providers) ? s.providers : [];
         setState({ configured: providers.some((p) => p && p.available), providers });
+        // Tell the data layer the status was observed: drop its cached answer so
+        // a later AI action re-checks (e.g. after a restart with a key added).
+        try {
+          window.dispatchEvent(new CustomEvent('myjob:aistatuschange'));
+        } catch {
+          /* ignore */
+        }
       })
       .catch(() => { if (alive) setState({ configured: false, providers: [] }); });
     return () => { alive = false; };

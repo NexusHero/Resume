@@ -81,8 +81,16 @@ async function _jsonOrThrow(res) {
 
 /* One central AI key per server (ADR-0057). Cache the "is AI set up?" answer so
    the editor can show "KI nicht eingerichtet" and every AI action can refuse to
-   send a request at all when there is no key. */
+   send a request at all when there is no key. The cache is invalidated when a
+   settings surface observes the server status (e.g. after a restart with a key
+   added), so the editor never stays disabled on a stale answer. */
 let _aiReady = null;
+function invalidateAiStatus() {
+  _aiReady = null;
+}
+if (typeof window !== 'undefined') {
+  window.addEventListener('myjob:aistatuschange', invalidateAiStatus);
+}
 async function aiConfigured() {
   if (_aiReady === null) {
     try {
@@ -468,11 +476,18 @@ const RecruitApi = {
   },
   /* ---- LLM server status (central key, no per-user keys) ---- */
   async getLlmSettings() {
+    // Reading the authoritative status resets the cached answer, so the next AI
+    // action re-checks (e.g. after a restart with a key added).
+    invalidateAiStatus();
     return _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/settings/llm`));
   },
   /* True only when the server has a central AI key (cached). */
   async aiConfigured() {
     return aiConfigured();
+  },
+  /* Drop the cached AI-status answer (Settings dispatches `myjob:aistatuschange`). */
+  invalidateAiStatus() {
+    invalidateAiStatus();
   },
   async listMandates() {
     const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/mandates`));

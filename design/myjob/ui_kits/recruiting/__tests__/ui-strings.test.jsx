@@ -34,18 +34,84 @@ function walk(dir, exts) {
   return out;
 }
 
+/** Remove balanced `{…}` expressions from a text slice, leaving literal text.
+    Nested braces (ternaries, object literals inside an expression) are handled by
+    counting depth; an unbalanced tail is dropped with its expression. */
+function stripExpressions(s) {
+  let out = '';
+  let depth = 0;
+  for (const ch of s) {
+    if (ch === '{') {
+      depth += 1;
+    } else if (ch === '}') {
+      if (depth > 0) depth -= 1;
+    } else if (depth === 0) {
+      out += ch;
+    }
+  }
+  return out;
+}
+
+/** Lines that are clearly code, not copy — a safety net for regions the tag
+    scanner may pick up. */
+const LOOKS_LIKE_CODE = /(?:=>|\b(?:function|const|let|var|return|class|import|export)\b|;)/;
+
+/** Collect literal JSX/HTML text nodes. Scans tag by tag, tracking quotes and
+    `{…}` depth so a `>` inside an attribute expression (`onClick={() => …}`) or
+    inside text interpolation does not end a tag early. Text between tags may
+    span lines and contain `{' '}`/interpolations; expressions are stripped and
+    only the literal copy is returned. */
+function extractTextNodes(src) {
+  const out = [];
+  let i = 0;
+  while (i < src.length) {
+    const lt = src.indexOf('<', i);
+    if (lt === -1) break;
+    // Only `<Tag`, `</Tag` start a tag; comparisons/code are skipped.
+    if (!/[A-Za-z/]/.test(src[lt + 1] ?? '')) {
+      i = lt + 1;
+      continue;
+    }
+    let j = lt + 1;
+    let depth = 0;
+    let quote = null;
+    for (; j < src.length; j++) {
+      const c = src[j];
+      if (quote) {
+        if (c === quote && src[j - 1] !== '\\') quote = null;
+      } else if (c === '"' || c === "'" || c === '`') {
+        quote = c;
+      } else if (c === '{') {
+        depth += 1;
+      } else if (c === '}') {
+        depth -= 1;
+      } else if (c === '>' && depth === 0) {
+        break;
+      }
+    }
+    if (j >= src.length) break;
+    const end = src.indexOf('<', j + 1);
+    const raw = src.slice(j + 1, end === -1 ? src.length : end);
+    for (const line of stripExpressions(raw).split('\n')) {
+      const text = line.trim();
+      if (text && /\p{L}/u.test(text) && !LOOKS_LIKE_CODE.test(text)) out.push(text);
+    }
+    i = end === -1 ? src.length : end;
+  }
+  return out;
+}
+
 /** Extract UI copy: single/double-quoted strings, simple template literals and
-    single-line JSX/HTML text nodes. Template literals that contain `${…}` or a
-    newline are treated as code, not copy — extracting them would drag identifiers
-    like `TalentGrid` in and produce false positives. */
+    JSX/HTML text nodes. Template literals that contain `${…}` or a newline are
+    treated as code, not copy — extracting them would drag identifiers like
+    `TalentGrid` in and produce false positives. */
 function extractStrings(src) {
   const out = [];
   const quoted = /(['"])((?:\\.|(?!\1)[^\\\n])*)\1/g;
   for (const m of src.matchAll(quoted)) out.push(m[2]);
   const simpleTemplate = /`([^`$\n]*)`/g;
   for (const m of src.matchAll(simpleTemplate)) out.push(m[1]);
-  const textNodes = />([^<>{}\n]*\p{L}[^<>{}\n]*)</gu;
-  for (const m of src.matchAll(textNodes)) out.push(m[1]);
+  out.push(...extractTextNodes(src));
   return out;
 }
 

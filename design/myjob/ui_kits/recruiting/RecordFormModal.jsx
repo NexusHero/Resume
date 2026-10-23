@@ -11,12 +11,12 @@ const MONEY_RE = /^[€$£\s]*\d[\d.,\s]*[€$£]?$/;
 
 const RECORD_FORMS = {
   mandate: {
-    title: 'Neues Mandat',
-    subtitle: 'Ein Suchmandat für einen Klienten öffnen',
-    editTitle: 'Mandat bearbeiten',
+    title: 'Neuer Suchauftrag',
+    subtitle: 'Einen Suchauftrag für einen Klienten öffnen',
+    editTitle: 'Suchauftrag bearbeiten',
     editSubmitLabel: 'Änderungen speichern',
     icon: 'briefcase',
-    submitLabel: 'Mandat anlegen',
+    submitLabel: 'Suchauftrag anlegen',
     fields: [
       { name: 'client', label: 'Klient', icon: 'building', required: true },
       { name: 'role', label: 'Rolle', icon: 'briefcase', required: true },
@@ -30,10 +30,10 @@ const RECORD_FORMS = {
     ],
   },
   talent: {
-    title: 'Talent hinzufügen',
-    subtitle: 'Kandidat:in zum Pool hinzufügen',
+    title: 'Mandant hinzufügen',
+    subtitle: 'Eine Person zum Pool hinzufügen',
     icon: 'user',
-    submitLabel: 'Talent hinzufügen',
+    submitLabel: 'Mandant hinzufügen',
     fields: [
       { name: 'name', label: 'Name', icon: 'user', required: true },
       { name: 'role', label: 'Rolle', icon: 'briefcase' },

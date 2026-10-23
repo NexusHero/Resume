@@ -42,7 +42,7 @@ import {
   ATTACHMENT_STORE,
   PDF_RENDERER,
   PDF_MERGER,
-  API_KEY_STORE,
+  WORKSPACE_SETTINGS_STORE,
   AUTH_ENGINE,
   PASSWORD_RESET_TOKEN_STORE,
   EMAIL_VERIFICATION_TOKEN_STORE,
@@ -65,7 +65,7 @@ import {
   InMemoryStageTransitionRepository,
   InMemoryUserRepository,
   InMemoryAttachmentStore,
-  InMemoryApiKeyStore,
+  InMemoryWorkspaceSettingsStore,
   InMemoryPasswordResetTokenStore,
   InMemoryEmailVerificationTokenStore,
   InMemoryUsageMeter,
@@ -94,6 +94,8 @@ describe('NestJS ops verticals (match, artifacts, retention, account, assistant)
   const mandates = new InMemoryMandateRepository();
 
   beforeAll(async () => {
+    const workspaceSettings = new InMemoryWorkspaceSettingsStore();
+    await workspaceSettings.set('team', { vermittlung: true });
     const fakes: Provider[] = [
       { provide: AUTHORIZER, useValue: new RoleAuthorizer() },
       { provide: PLAN_PROVIDER, useValue: { planFor: async () => plan } },
@@ -121,7 +123,7 @@ describe('NestJS ops verticals (match, artifacts, retention, account, assistant)
       { provide: ATTACHMENT_STORE, useValue: new InMemoryAttachmentStore() },
       { provide: PDF_RENDERER, useValue: new FakePdfRenderer() },
       { provide: PDF_MERGER, useValue: new FakePdfMerger() },
-      { provide: API_KEY_STORE, useValue: new InMemoryApiKeyStore() },
+      { provide: WORKSPACE_SETTINGS_STORE, useValue: workspaceSettings },
       { provide: AUTH_ENGINE, useValue: new FakeAuthEngine() },
       { provide: PASSWORD_RESET_TOKEN_STORE, useValue: new InMemoryPasswordResetTokenStore() },
       {

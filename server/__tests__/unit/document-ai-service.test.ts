@@ -1,16 +1,19 @@
+import {
+  NotFoundError,
+  AiNotConfiguredError,
+  UpstreamProviderError,
+  ValidationError,
+} from '../../src/domain/errors.js';
 import { jest } from '@jest/globals';
-import type { DocumentAiService } from '../../src/services/document-ai-service.js';
-import { buildDocumentAiService } from '../support/build-document-ai.js';
 import { DocumentService } from '../../src/services/document-service.js';
 import { LlmService } from '../../src/services/llm-service.js';
-import { NotFoundError, ValidationError } from '../../src/domain/errors.js';
-import type { LlmGenerateInput, LlmProvider, LlmProviderId } from '../../src/ports/llm-provider.js';
+import type { DocumentAiService } from '../../src/services/document-ai-service.js';
+import type { LlmGenerateInput, LlmProvider } from '../../src/ports/llm-provider.js';
 import {
   InMemoryArtifactLogRepository,
   InMemoryTalentRepository,
   InMemoryUserRepository,
   InMemoryDocumentRepository,
-  InMemoryApiKeyStore,
   InMemoryUsageMeter,
   InMemoryInterviewObservationRepository,
   FakePdfRenderer,
@@ -19,6 +22,7 @@ import {
   SequenceIdGenerator,
   noopLogger,
 } from '../support/fakes.js';
+import { buildDocumentAiService } from '../support/build-document-ai.js';
 import type { Talent } from '../../src/domain/talent.js';
 import { saveDocumentsSchema } from '../../src/domain/talent-documents.js';
 
@@ -27,7 +31,7 @@ const talent = (id: string): Talent => ({
   id,
   ownerId: OWNER,
   name: 'Lena',
-  role: 'Designer',
+  role: 'Designerin',
   headline: '',
   location: '',
   email: '',
@@ -39,12 +43,8 @@ const talent = (id: string): Talent => ({
   updatedAt: '2026-06-25T10:00:00.000Z',
 });
 
-/**
- * A provider stub whose `generate` returns just the text (the token usage is
- * filled in by ctx), so the many test cases below stay terse.
- */
 interface ProviderStub {
-  id?: LlmProviderId;
+  id?: 'claude' | 'gemini';
   label?: string;
   available?: boolean;
   generate?: (input: LlmGenerateInput) => Promise<string>;
@@ -53,7 +53,6 @@ interface ProviderStub {
 function ctx(stub: ProviderStub = {}, pdfText: string | Error = '', logger = noopLogger) {
   const talents = new InMemoryTalentRepository();
   const documents = new InMemoryDocumentRepository();
-  const keys = new InMemoryApiKeyStore();
   const users = new InMemoryUserRepository();
   const usageMeter = new InMemoryUsageMeter();
   const pdfTextExtractor = new FakePdfTextExtractor(pdfText);
@@ -64,25 +63,19 @@ function ctx(stub: ProviderStub = {}, pdfText: string | Error = '', logger = noo
     pdfRenderer: new FakePdfRenderer(),
     clock: new FixedClock(),
   });
-  let usedKey: string | undefined;
   const provider: LlmProvider = {
     id: stub.id ?? 'claude',
     label: stub.label ?? 'Claude',
     available: stub.available ?? false,
     generate: async (input) => {
-      usedKey = input.apiKey;
       const text = stub.generate
         ? await stub.generate(input)
         : 'AI PARA ONE.\n\nAI PARA TWO.\n\nAI PARA THREE.';
       return { text, usage: { inputTokens: 5, outputTokens: 7 } };
     },
   };
-  // A gemini twin of the stub, so tests can exercise the per-user provider
-  // choice; with 'claude' as the configured default it is only reachable via
-  // a persisted user preference.
-  const gemini: LlmProvider = { ...provider, id: 'gemini', label: 'Gemini' };
   const llm = new LlmService({
-    providers: [provider, gemini],
+    providers: [provider],
     defaultProvider: stub.id ?? 'claude',
     logger: noopLogger,
   });
@@ -91,8 +84,6 @@ function ctx(stub: ProviderStub = {}, pdfText: string | Error = '', logger = noo
   const service = buildDocumentAiService({
     documentService,
     llmService: llm,
-    apiKeyStore: keys,
-    userRepository: users,
     pdfTextExtractor,
     usageMeter,
     interviewObservationRepository: observations,
@@ -104,17 +95,14 @@ function ctx(stub: ProviderStub = {}, pdfText: string | Error = '', logger = noo
   return {
     service,
     talents,
-    keys,
     users,
     usageMeter,
     observations,
     artifacts,
     documentService,
-    getUsedKey: () => usedKey,
   };
 }
 
-/** A document set whose resume clearly reads as German (drives language detection). */
 const germanDocuments = saveDocumentsSchema.parse({
   contact: { name: 'Lena', role: 'Produktdesignerin' },
   resume: {
@@ -132,72 +120,29 @@ const germanDocuments = saveDocumentsSchema.parse({
   },
 });
 
-describe('DocumentAiService', () => {
-  it('Suggest_WithUserKey_UsesProviderAndForwardsKey', async () => {
-    const c = ctx();
+describe('DocumentAiService.suggest', () => {
+  it('Suggest_WithProvider_UsesProviderAndAttachesUsage', async () => {
+    const c = ctx({ available: true });
     await c.talents.add(talent('t1'));
-    await c.keys.set(OWNER, 'claude', 'sk-user');
 
     const summary = await c.service.suggest(OWNER, OWNER, 't1', 'summary');
     expect(summary.provider).toBe('claude');
     expect(summary.text).toContain('AI PARA ONE');
-    expect(c.getUsedKey()).toBe('sk-user');
+    expect(summary.usage).toEqual({ inputTokens: 5, outputTokens: 7, costUsd: 0.0001 });
 
     const letter = await c.service.suggest(OWNER, OWNER, 't1', 'letter', { role: 'X' });
     expect(letter.paragraphs).toEqual(['AI PARA ONE.', 'AI PARA TWO.', 'AI PARA THREE.']);
   });
 
-  it('Suggest_WithProvider_AttachesPerCallUsage', async () => {
-    const c = ctx();
+  it('Suggest_NoProviderConfigured_ThrowsAiNotConfigured', async () => {
+    const c = ctx(); // provider unavailable → no central key
     await c.talents.add(talent('t1'));
-    await c.keys.set(OWNER, 'claude', 'sk-user');
-    const summary = await c.service.suggest(OWNER, OWNER, 't1', 'summary');
-    // ctx's provider stub reports 5 in / 7 out; claude 5·$3/M + 7·$15/M ≈ $0.0001
-    expect(summary.usage).toEqual({ inputTokens: 5, outputTokens: 7, costUsd: 0.0001 });
+    await expect(c.service.suggest(OWNER, OWNER, 't1', 'summary')).rejects.toBeInstanceOf(
+      AiNotConfiguredError,
+    );
   });
 
-  it('Suggest_TemplateFallback_HasNoUsage', async () => {
-    const c = ctx(); // no provider → template, nothing was spent
-    await c.talents.add(talent('t1'));
-    const summary = await c.service.suggest(OWNER, OWNER, 't1', 'summary');
-    expect(summary.usage).toBeUndefined();
-  });
-
-  it('Suggest_UsesTheUsersPersistedProviderChoice', async () => {
-    // Config default is claude, but this user switched to gemini (persisted on
-    // the account) and only has a gemini key — the choice must win, also after
-    // a server restart (nothing about it lives in memory).
-    const c = ctx();
-    await c.talents.add(talent('t1'));
-    await c.users.add({
-      id: OWNER,
-      email: 'owner@example.com',
-      passwordHash: 'h',
-      roles: ['recruiter'],
-      createdAt: '2026-06-25T10:00:00.000Z',
-      llmProvider: 'gemini',
-    });
-    await c.keys.set(OWNER, 'gemini', 'g-user-key');
-    const summary = await c.service.suggest(OWNER, OWNER, 't1', 'summary');
-    expect(summary.provider).toBe('gemini');
-    expect(c.getUsedKey()).toBe('g-user-key');
-  });
-
-  it('Suggest_NoKeyNoServerCredential_FallsBackToTemplate', async () => {
-    const c = ctx(); // provider.available=false and no user key → no provider
-    await c.talents.add(talent('t1'));
-
-    const summary = await c.service.suggest(OWNER, OWNER, 't1', 'summary');
-    expect(summary.provider).toBe('template');
-    expect(summary.text).toContain('Designer'); // deterministic fallback
-
-    const letter = await c.service.suggest(OWNER, OWNER, 't1', 'letter', { company: 'Helio' });
-    expect(letter.provider).toBe('template');
-    expect(letter.paragraphs).toHaveLength(3);
-    expect(letter.paragraphs?.[0]).toContain('Helio');
-  });
-
-  it('Suggest_ProviderThrows_FallsBackToTemplate', async () => {
+  it('Suggest_ProviderThrows_ThrowsUpstreamProvider', async () => {
     const c = ctx({
       available: true,
       generate: async () => {
@@ -205,8 +150,9 @@ describe('DocumentAiService', () => {
       },
     });
     await c.talents.add(talent('t1'));
-    const res = await c.service.suggest(OWNER, OWNER, 't1', 'summary');
-    expect(res.provider).toBe('template');
+    await expect(c.service.suggest(OWNER, OWNER, 't1', 'summary')).rejects.toBeInstanceOf(
+      UpstreamProviderError,
+    );
   });
 
   it('Suggest_UnknownTalent_Throws404', async () => {
@@ -230,39 +176,12 @@ describe('DocumentAiService', () => {
     });
   });
 
-  it('Suggest_Fallback_DoesNotMeter', async () => {
-    const c = ctx(); // no provider → template fallback, no LLM call
-    await c.talents.add(talent('t1'));
-    await c.service.suggest(OWNER, OWNER, 't1', 'summary');
-    expect(c.usageMeter.events).toHaveLength(0);
-  });
-
-  it('Suggest_GermanCv_FallsBackToGermanTemplates', async () => {
-    const c = ctx(); // no provider → deterministic fallback
-    await c.talents.add(talent('t1'));
-    await c.documentService.save(OWNER, 't1', germanDocuments);
-
-    const summary = await c.service.suggest(OWNER, OWNER, 't1', 'summary');
-    expect(summary.provider).toBe('template');
-    expect(summary.text).toContain('Produktdesignerin');
-    expect(summary.text).toContain('lösungsorientiert');
-
-    const letter = await c.service.suggest(OWNER, OWNER, 't1', 'letter', {
-      role: 'Lead Designerin',
-      company: 'Helio',
-    });
-    expect(letter.provider).toBe('template');
-    expect(letter.paragraphs).toHaveLength(3);
-    expect(letter.paragraphs?.[0]).toContain('bewerbe ich mich');
-    expect(letter.paragraphs?.[0]).toContain('bei Helio');
-  });
-
   it('Suggest_GermanCv_PromptsCarryGermanDirective', async () => {
     const systems: string[] = [];
     const c = ctx({
       available: true,
       generate: async (input) => {
-        systems.push(input.system);
+        systems.push(input.system ?? '');
         return 'Ein Vorschlag.';
       },
     });
@@ -282,7 +201,7 @@ describe('DocumentAiService', () => {
     const c = ctx({
       available: true,
       generate: async (input) => {
-        systems.push(input.system);
+        systems.push(input.system ?? '');
         return 'A suggestion.';
       },
     });
@@ -315,32 +234,29 @@ describe('DocumentAiService.parse', () => {
 
   it('Parse_WithProvider_ReturnsValidatedStructure', async () => {
     const c = ctx({ available: true, generate: async () => '```json\n' + RESUME_JSON + '\n```' });
-    await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
     const parsed = await c.service.parse(OWNER, OWNER, 't1', 'raw cv text');
     expect(parsed.provider).toBe('claude');
     expect(parsed.contact.name).toBe('Max Mustermann');
     expect(parsed.resume.summary).toBe('Senior Engineer.');
     expect(parsed.resume.experience[0]).toMatchObject({ company: 'Acme', bullets: ['Shipped X'] });
-    // schema fills defaults for omitted fields
     expect(parsed.resume.education).toEqual([]);
   });
 
-  it('Parse_NoProvider_FallsBackToRawSummary', async () => {
-    const c = ctx(); // provider unavailable + no key
+  it('Parse_NoProvider_ThrowsAiNotConfigured', async () => {
+    const c = ctx();
     await c.talents.add(talent('t1'));
-    const parsed = await c.service.parse(OWNER, OWNER, 't1', 'My whole CV as text');
-    expect(parsed.provider).toBe('template');
-    expect(parsed.resume.summary).toContain('My whole CV as text');
+    await expect(c.service.parse(OWNER, OWNER, 't1', 'My whole CV as text')).rejects.toBeInstanceOf(
+      AiNotConfiguredError,
+    );
   });
 
-  it('Parse_MalformedJson_FallsBack', async () => {
+  it('Parse_MalformedJson_ThrowsUpstreamProvider', async () => {
     const c = ctx({ available: true, generate: async () => 'not json at all' });
-    await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
-    const parsed = await c.service.parse(OWNER, OWNER, 't1', 'the cv');
-    expect(parsed.provider).toBe('template');
-    expect(parsed.resume.summary).toContain('the cv');
+    await expect(c.service.parse(OWNER, OWNER, 't1', 'the cv')).rejects.toBeInstanceOf(
+      UpstreamProviderError,
+    );
   });
 
   it('Parse_UnknownTalent_Throws404', async () => {
@@ -363,7 +279,6 @@ describe('DocumentAiService.parsePdf', () => {
       { available: true, generate: async () => RESUME_JSON },
       'Max Mustermann — Senior C++ Engineer at Acme',
     );
-    await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
     const parsed = await c.service.parsePdf(OWNER, OWNER, 't1', PDF);
     expect(parsed.provider).toBe('claude');
@@ -371,30 +286,28 @@ describe('DocumentAiService.parsePdf', () => {
     expect(parsed.extractedChars).toBeGreaterThan(0);
   });
 
-  it('ParsePdf_NoProvider_KeepsExtractedTextAsSummary', async () => {
+  it('ParsePdf_NoProvider_ThrowsAiNotConfigured', async () => {
     const c = ctx({}, 'Product Designer with 8 years of experience.');
     await c.talents.add(talent('t1'));
-    const parsed = await c.service.parsePdf(OWNER, OWNER, 't1', PDF);
-    expect(parsed.provider).toBe('template');
-    expect(parsed.resume.summary).toContain('Product Designer');
-    expect(parsed.extractedChars).toBeGreaterThan(0);
+    await expect(c.service.parsePdf(OWNER, OWNER, 't1', PDF)).rejects.toBeInstanceOf(
+      AiNotConfiguredError,
+    );
   });
 
   it('ParsePdf_ScannedPdf_NoText_ReturnsEmpty', async () => {
     const c = ctx({ available: true, generate: async () => 'unused' }, '   ');
-    await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
     const parsed = await c.service.parsePdf(OWNER, OWNER, 't1', PDF);
-    expect(parsed.provider).toBe('template');
+    expect(parsed.provider).toBe('none');
     expect(parsed.extractedChars).toBe(0);
     expect(parsed.resume.summary).toBe('');
   });
 
   it('ParsePdf_ExtractorThrows_ReturnsEmpty', async () => {
-    const c = ctx({}, new Error('corrupt pdf'));
+    const c = ctx({ available: true }, new Error('corrupt pdf'));
     await c.talents.add(talent('t1'));
     const parsed = await c.service.parsePdf(OWNER, OWNER, 't1', PDF);
-    expect(parsed.provider).toBe('template');
+    expect(parsed.provider).toBe('none');
     expect(parsed.extractedChars).toBe(0);
   });
 
@@ -416,7 +329,6 @@ describe('DocumentAiService.scoreAgainstJob', () => {
 
   it('Score_WithProvider_ReturnsNormalizedResult', async () => {
     const c = ctx({ available: true, generate: async () => ATS_JSON });
-    await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
     const res = await c.service.scoreAgainstJob(OWNER, OWNER, 't1', 'C++ role, Kubernetes a plus');
     expect(res.provider).toBe('claude');
@@ -430,19 +342,17 @@ describe('DocumentAiService.scoreAgainstJob', () => {
       generate: async () =>
         JSON.stringify({ score: 140, matched: [], missing: [], suggestions: [] }),
     });
-    await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
     const res = await c.service.scoreAgainstJob(OWNER, OWNER, 't1', 'job');
     expect(res.score).toBe(100);
   });
 
-  it('Score_NoProvider_FallsBackToKeywordOverlap', async () => {
+  it('Score_NoProvider_ThrowsAiNotConfigured', async () => {
     const c = ctx();
     await c.talents.add(talent('t1'));
-    const res = await c.service.scoreAgainstJob(OWNER, OWNER, 't1', 'any job text');
-    expect(res.provider).toBe('template');
-    expect(typeof res.score).toBe('number');
-    expect(Array.isArray(res.suggestions)).toBe(true);
+    await expect(
+      c.service.scoreAgainstJob(OWNER, OWNER, 't1', 'any job text'),
+    ).rejects.toBeInstanceOf(AiNotConfiguredError);
   });
 
   it('Score_UnknownTalent_Throws404', async () => {
@@ -462,7 +372,6 @@ describe('DocumentAiService.pitchForMandate', () => {
 
   it('Pitch_WithProvider_ReturnsNormalizedResult', async () => {
     const c = ctx({ available: true, generate: async () => '```json\n' + PITCH_JSON + '\n```' });
-    await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
     const res = await c.service.pitchForMandate(OWNER, OWNER, 't1', 'UX Lead gesucht');
     expect(res.provider).toBe('claude');
@@ -471,45 +380,44 @@ describe('DocumentAiService.pitchForMandate', () => {
     expect(res.highlights).toEqual(['Design Systems', 'Prototyping']);
   });
 
-  it('Pitch_EmptyLlmResult_FallsBack', async () => {
+  it('Pitch_EmptyLlmResult_ThrowsUpstreamProvider', async () => {
     const c = ctx({
       available: true,
       generate: async () => JSON.stringify({ headline: '', paragraphs: [], highlights: [] }),
     });
-    await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
-    const res = await c.service.pitchForMandate(OWNER, OWNER, 't1', '');
-    expect(res.provider).toBe('template');
-    expect(res.headline).toContain('Designer');
+    await expect(c.service.pitchForMandate(OWNER, OWNER, 't1', '')).rejects.toBeInstanceOf(
+      UpstreamProviderError,
+    );
   });
 
-  it('Pitch_NoProvider_FallsBackToFacts', async () => {
+  it('Pitch_NoProvider_ThrowsAiNotConfigured', async () => {
     const c = ctx();
     await c.talents.add(talent('t1'));
-    const res = await c.service.pitchForMandate(OWNER, OWNER, 't1', 'any mandate');
-    expect(res.provider).toBe('template');
-    expect(res.paragraphs.length).toBeGreaterThan(0);
+    await expect(
+      c.service.pitchForMandate(OWNER, OWNER, 't1', 'any mandate'),
+    ).rejects.toBeInstanceOf(AiNotConfiguredError);
   });
 
-  it('Pitch_ProviderThrows_FallsBack', async () => {
+  it('Pitch_ProviderThrows_ThrowsUpstreamProvider', async () => {
     const c = ctx({
       available: true,
       generate: async () => {
         throw new Error('boom');
       },
     });
-    await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
-    const res = await c.service.pitchForMandate(OWNER, OWNER, 't1', '');
-    expect(res.provider).toBe('template');
+    await expect(c.service.pitchForMandate(OWNER, OWNER, 't1', '')).rejects.toBeInstanceOf(
+      UpstreamProviderError,
+    );
   });
 
-  it('Pitch_MalformedJson_FallsBack', async () => {
+  it('Pitch_MalformedJson_ThrowsUpstreamProvider', async () => {
     const c = ctx({ available: true, generate: async () => 'not json' });
-    await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
-    const res = await c.service.pitchForMandate(OWNER, OWNER, 't1', '');
-    expect(res.provider).toBe('template');
+    await expect(c.service.pitchForMandate(OWNER, OWNER, 't1', '')).rejects.toBeInstanceOf(
+      UpstreamProviderError,
+    );
   });
 
   it('Pitch_HeadlineOnly_UsesProviderResult', async () => {
@@ -518,7 +426,6 @@ describe('DocumentAiService.pitchForMandate', () => {
       generate: async () =>
         JSON.stringify({ headline: '', paragraphs: ['Ein starker Absatz.'], highlights: [] }),
     });
-    await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
     const res = await c.service.pitchForMandate(OWNER, OWNER, 't1', '');
     expect(res.provider).toBe('claude');
@@ -526,14 +433,12 @@ describe('DocumentAiService.pitchForMandate', () => {
   });
 
   it('Pitch_FabricatedSkill_IsFlaggedByGrounding', async () => {
-    // Talent has no skills, so a Kubernetes claim in the pitch is unsupported.
     const json = JSON.stringify({
       headline: 'Cloud-Profi',
       paragraphs: ['Erfahren mit Kubernetes und Docker.'],
       highlights: [],
     });
     const c = ctx({ available: true, generate: async () => json });
-    await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
     const res = await c.service.pitchForMandate(OWNER, OWNER, 't1', '');
     expect(res.grounding.grounded).toBe(false);
@@ -551,7 +456,7 @@ describe('DocumentAiService.pitchForMandate', () => {
 });
 
 describe('DocumentAiService.outreach', () => {
-  const opts = (over: Partial<Parameters<DocumentAiService['outreach']>[2]> = {}) => ({
+  const opts = (over: Partial<Parameters<DocumentAiService['outreach']>[3]> = {}) => ({
     audience: 'candidate' as const,
     channel: 'email' as const,
     tone: '',
@@ -563,7 +468,6 @@ describe('DocumentAiService.outreach', () => {
   it('Outreach_WithProvider_ReturnsNormalizedMessage', async () => {
     const json = JSON.stringify({ subject: 'Spannende Rolle', body: 'Hallo Lena, …' });
     const c = ctx({ available: true, generate: async () => '```json\n' + json + '\n```' });
-    await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
     const res = await c.service.outreach(OWNER, OWNER, 't1', opts());
     expect(res.provider).toBe('claude');
@@ -574,7 +478,6 @@ describe('DocumentAiService.outreach', () => {
   it('Outreach_LinkedIn_DropsSubjectEvenIfProvided', async () => {
     const json = JSON.stringify({ subject: 'sollte weg', body: 'Kurze DM' });
     const c = ctx({ available: true, generate: async () => json });
-    await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
     const res = await c.service.outreach(OWNER, OWNER, 't1', opts({ channel: 'linkedin' }));
     expect(res.provider).toBe('claude');
@@ -582,37 +485,36 @@ describe('DocumentAiService.outreach', () => {
     expect(res.body).toBe('Kurze DM');
   });
 
-  it('Outreach_EmptyBody_FallsBack', async () => {
+  it('Outreach_EmptyBody_ThrowsUpstreamProvider', async () => {
     const c = ctx({
       available: true,
       generate: async () => JSON.stringify({ subject: 'x', body: '' }),
     });
-    await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
-    const res = await c.service.outreach(OWNER, OWNER, 't1', opts());
-    expect(res.provider).toBe('template');
-    expect(res.body.length).toBeGreaterThan(0);
+    await expect(c.service.outreach(OWNER, OWNER, 't1', opts())).rejects.toBeInstanceOf(
+      UpstreamProviderError,
+    );
   });
 
-  it('Outreach_ProviderThrows_FallsBack', async () => {
+  it('Outreach_ProviderThrows_ThrowsUpstreamProvider', async () => {
     const c = ctx({
       available: true,
       generate: async () => {
         throw new Error('boom');
       },
     });
-    await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
-    const res = await c.service.outreach(OWNER, OWNER, 't1', opts({ audience: 'client' }));
-    expect(res.provider).toBe('template');
-    expect(res.body).toContain('Lena');
+    await expect(
+      c.service.outreach(OWNER, OWNER, 't1', opts({ audience: 'client' })),
+    ).rejects.toBeInstanceOf(UpstreamProviderError);
   });
 
-  it('Outreach_NoProvider_FallsBack', async () => {
+  it('Outreach_NoProvider_ThrowsAiNotConfigured', async () => {
     const c = ctx();
     await c.talents.add(talent('t1'));
-    const res = await c.service.outreach(OWNER, OWNER, 't1', opts());
-    expect(res.provider).toBe('template');
+    await expect(c.service.outreach(OWNER, OWNER, 't1', opts())).rejects.toBeInstanceOf(
+      AiNotConfiguredError,
+    );
   });
 
   it('Outreach_UnknownTalent_Throws404', async () => {
@@ -629,7 +531,6 @@ describe('DocumentAiService.explainMatch', () => {
   it('WithProvider_ReturnsReasonsAndMeters', async () => {
     const json = JSON.stringify({ summary: 'Passt gut.', reasons: ['Starke Skills', 'Erfahrung'] });
     const c = ctx({ available: true, generate: async () => json });
-    await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
     const res = await c.service.explainMatch(OWNER, OWNER, 't1', mandate);
     expect(res.provider).toBe('claude');
@@ -638,23 +539,23 @@ describe('DocumentAiService.explainMatch', () => {
     expect((await c.usageMeter.list(OWNER)).some((e) => e.feature === 'matchExplain')).toBe(true);
   });
 
-  it('NoProvider_FallsBackToDeterministicReasons', async () => {
+  it('NoProvider_ThrowsAiNotConfigured', async () => {
     const c = ctx();
     await c.talents.add(talent('t1'));
-    const res = await c.service.explainMatch(OWNER, OWNER, 't1', mandate);
-    expect(res.provider).toBe('template');
-    expect(res.reasons.length).toBeGreaterThan(0);
+    await expect(c.service.explainMatch(OWNER, OWNER, 't1', mandate)).rejects.toBeInstanceOf(
+      AiNotConfiguredError,
+    );
   });
 
-  it('EmptyLlmReasons_FallsBack', async () => {
+  it('EmptyLlmReasons_ThrowsUpstreamProvider', async () => {
     const c = ctx({
       available: true,
       generate: async () => JSON.stringify({ summary: 'x', reasons: [] }),
     });
-    await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
-    const res = await c.service.explainMatch(OWNER, OWNER, 't1', mandate);
-    expect(res.provider).toBe('template');
+    await expect(c.service.explainMatch(OWNER, OWNER, 't1', mandate)).rejects.toBeInstanceOf(
+      UpstreamProviderError,
+    );
   });
 
   it('UnknownTalent_Throws404', async () => {
@@ -675,7 +576,6 @@ describe('DocumentAiService.interviewKit', () => {
       scorecard: ['Fachtiefe', 'Motivation'],
     });
     const c = ctx({ available: true, generate: async () => json });
-    await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
     const res = await c.service.interviewKit(OWNER, OWNER, 't1', mandate);
     expect(res.provider).toBe('claude');
@@ -684,23 +584,23 @@ describe('DocumentAiService.interviewKit', () => {
     expect((await c.usageMeter.list(OWNER)).some((e) => e.feature === 'interviewKit')).toBe(true);
   });
 
-  it('NoProvider_FallsBackToTemplateKit', async () => {
+  it('NoProvider_ThrowsAiNotConfigured', async () => {
     const c = ctx();
     await c.talents.add(talent('t1'));
-    const res = await c.service.interviewKit(OWNER, OWNER, 't1', mandate);
-    expect(res.provider).toBe('template');
-    expect(res.questions.length).toBeGreaterThan(0);
+    await expect(c.service.interviewKit(OWNER, OWNER, 't1', mandate)).rejects.toBeInstanceOf(
+      AiNotConfiguredError,
+    );
   });
 
-  it('EmptyLlmQuestions_FallsBack', async () => {
+  it('EmptyLlmQuestions_ThrowsUpstreamProvider', async () => {
     const c = ctx({
       available: true,
       generate: async () => JSON.stringify({ focus: 'x', questions: [], scorecard: [] }),
     });
-    await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
-    const res = await c.service.interviewKit(OWNER, OWNER, 't1', mandate);
-    expect(res.provider).toBe('template');
+    await expect(c.service.interviewKit(OWNER, OWNER, 't1', mandate)).rejects.toBeInstanceOf(
+      UpstreamProviderError,
+    );
   });
 
   it('UnknownTalent_Throws404', async () => {
@@ -714,37 +614,32 @@ describe('DocumentAiService.interviewKit', () => {
 describe('DocumentAiService.candidatePrep', () => {
   const mandate = { role: 'Engineer', location: 'Berlin', client: 'Google' };
   const ad = 'Frontend Engineer\n- React erforderlich\n- Führerschein erforderlich';
+  const PREP_JSON = JSON.stringify({
+    likelyQuestions: [{ category: 'Fachlich', question: 'React?', why: 'relevant' }],
+    starAnswers: [{ competency: 'React', prompt: 'P', scaffold: 'Situation: ...' }],
+    candidateQuestions: ['Wie ist das Team?'],
+  });
 
   it('WithProvider_MergesRefinementAndMeters', async () => {
-    const json = JSON.stringify({
-      likelyQuestions: [{ category: 'Fachlich', question: 'React?', why: 'relevant' }],
-      starAnswers: [{ competency: 'React', prompt: 'P', scaffold: 'Situation: ...' }],
-      candidateQuestions: ['Wie ist das Team?'],
-    });
-    const c = ctx({ available: true, generate: async () => json });
-    await c.keys.set(OWNER, 'claude', 'sk-user');
+    const c = ctx({ available: true, generate: async () => PREP_JSON });
     await c.talents.add(talent('t1'));
     const res = await c.service.candidatePrep(OWNER, OWNER, 't1', mandate, ad);
     expect(res.provider).toBe('claude');
     expect(res.likelyQuestions[0]?.question).toBe('React?');
-    // grounded parts computed by us regardless of the LLM
     expect(res.companyLabel).toBe('US Big Tech');
     expect(res.obligations.some((o) => o.includes('Führerschein'))).toBe(true);
     expect((await c.usageMeter.list(OWNER)).some((e) => e.feature === 'candidatePrep')).toBe(true);
   });
 
-  it('NoProvider_FallsBackToDeterministicPack', async () => {
+  it('NoProvider_ThrowsAiNotConfigured', async () => {
     const c = ctx();
     await c.talents.add(talent('t1'));
-    const res = await c.service.candidatePrep(OWNER, OWNER, 't1', mandate, ad);
-    expect(res.provider).toBe('template');
-    expect(res.likelyQuestions.length).toBeGreaterThan(0);
-    expect(res.companyLabel).toBe('US Big Tech');
+    await expect(c.service.candidatePrep(OWNER, OWNER, 't1', mandate, ad)).rejects.toBeInstanceOf(
+      AiNotConfiguredError,
+    );
   });
 
-  it('TruncatedReply_LogsWarningAndFallsBack', async () => {
-    // A reply cut off mid-JSON (e.g. by the token budget) must not be a
-    // silent template fallback — the warn log is what makes it diagnosable.
+  it('TruncatedReply_LogsWarningAndThrowsUpstreamProvider', async () => {
     const warns: string[] = [];
     const logger = { ...noopLogger, warn: (_ctx: unknown, msg?: string) => warns.push(msg ?? '') };
     const c = ctx(
@@ -753,15 +648,15 @@ describe('DocumentAiService.candidatePrep', () => {
       logger,
     );
     await c.talents.add(talent('t1'));
-    const res = await c.service.candidatePrep(OWNER, OWNER, 't1', mandate, ad);
-    expect(res.provider).toBe('template');
+    await expect(c.service.candidatePrep(OWNER, OWNER, 't1', mandate, ad)).rejects.toBeInstanceOf(
+      UpstreamProviderError,
+    );
     expect(warns.some((m) => m.includes('did not match the expected schema'))).toBe(true);
   });
 
   it('ObservationsOverrideArchetypeConfidence', async () => {
-    const c = ctx();
+    const c = ctx({ available: true, generate: async () => PREP_JSON });
     await c.talents.add(talent('t1'));
-    // three recorded observations of 'google' (mandate.client) → observed profile
     for (let i = 0; i < 3; i++) {
       await c.observations.add({
         id: `o${i}`,
@@ -814,16 +709,17 @@ describe('DocumentAiService outcome logging', () => {
     });
   });
 
-  it('Pitch_TemplateFallback_IsLoggedWithProviderTemplate', async () => {
-    const c = ctx(); // no provider → template pitch, still part of the loop
+  it('Pitch_LogsTheProviderThatProducedIt', async () => {
+    const json = JSON.stringify({ headline: 'H', paragraphs: ['P'], highlights: [] });
+    const c = ctx({ available: true, generate: async () => json });
     await c.talents.add(talent('t1'));
     await c.service.pitchForMandate(OWNER, OWNER, 't1', '');
     const [logged] = await c.artifacts.list(OWNER);
-    expect(logged).toMatchObject({ kind: 'pitch', provider: 'template', channel: '' });
+    expect(logged).toMatchObject({ kind: 'pitch', provider: 'claude', channel: '' });
   });
 
   it('Outreach_LoggingFailure_DoesNotBreakTheFeature', async () => {
-    const c = ctx();
+    const c = ctx({ available: true, generate: async () => OUTREACH_JSON });
     await c.talents.add(talent('t1'));
     jest.spyOn(c.artifacts, 'add').mockRejectedValue(new Error('disk full'));
     const message = await c.service.outreach(OWNER, OWNER, 't1', {
@@ -843,18 +739,16 @@ describe('DocumentAiService.translateDocuments', () => {
     letter: { absaetze: ['Hello team'] },
   });
 
-  it('Translate_NoProvider_ThrowsValidation', async () => {
-    const c = ctx(); // provider unavailable + no key
+  it('Translate_NoProvider_ThrowsAiNotConfigured', async () => {
+    const c = ctx();
     await c.talents.add(talent('t1'));
-    // Default docs are empty → detected source 'en'; translate to 'de' needs a provider.
     await expect(c.service.translateDocuments(OWNER, OWNER, 't1', 'de')).rejects.toBeInstanceOf(
-      ValidationError,
+      AiNotConfiguredError,
     );
   });
 
-  it('Translate_SameLanguage_Throws', async () => {
+  it('Translate_SameLanguage_ThrowsValidation', async () => {
     const c = ctx({ available: true, generate: async () => TRANSLATED });
-    await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1')); // empty docs → source 'en'
     await expect(c.service.translateDocuments(OWNER, OWNER, 't1', 'en')).rejects.toBeInstanceOf(
       ValidationError,
@@ -863,7 +757,6 @@ describe('DocumentAiService.translateDocuments', () => {
 
   it('Translate_WithProvider_CreatesAndPersistsVariant', async () => {
     const c = ctx({ available: true, generate: async () => TRANSLATED });
-    await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
 
     const first = await c.service.translateDocuments(OWNER, OWNER, 't1', 'de');
@@ -872,24 +765,21 @@ describe('DocumentAiService.translateDocuments', () => {
     expect(first.translation.resume.summary).toBe('Experienced developer.');
     expect(first.translation.provider).toBe('claude');
 
-    // Second call returns the persisted variant without regenerating.
     const second = await c.service.translateDocuments(OWNER, OWNER, 't1', 'de');
     expect(second.created).toBe(false);
     expect(second.translation.letter.absaetze).toEqual(['Hello team']);
   });
 
-  it('Translate_MalformedResult_Throws', async () => {
+  it('Translate_MalformedResult_ThrowsUpstreamProvider', async () => {
     const c = ctx({ available: true, generate: async () => 'not json at all' });
-    await c.keys.set(OWNER, 'claude', 'sk-user');
     await c.talents.add(talent('t1'));
     await expect(c.service.translateDocuments(OWNER, OWNER, 't1', 'de')).rejects.toBeInstanceOf(
-      ValidationError,
+      UpstreamProviderError,
     );
   });
 
   it('Translate_UnknownTalent_Throws404', async () => {
     const c = ctx({ available: true, generate: async () => TRANSLATED });
-    await c.keys.set(OWNER, 'claude', 'sk-user');
     await expect(
       c.service.translateDocuments(OWNER, OWNER, 'missing', 'de'),
     ).rejects.toBeInstanceOf(NotFoundError);
@@ -918,32 +808,25 @@ describe('DocumentAiService.tailorForMandate', () => {
     expect(res.lang).toBe('en');
     expect(res.usage).toEqual({ inputTokens: 5, outputTokens: 7, costUsd: 0.0001 });
     expect(res.grounding).toBeDefined();
-    // Autopilot tailoring is metered as its own feature, not lumped in with 'suggest'.
     const events = await c.usageMeter.list(OWNER);
     expect(events).toHaveLength(1);
     expect(events[0].feature).toBe('tailor');
   });
 
-  it('NoProvider_FallsBackToTemplateInTargetLanguage', async () => {
-    const c = ctx(); // no provider
+  it('NoProvider_ThrowsAiNotConfigured', async () => {
+    const c = ctx();
     await c.talents.add(talent('t1'));
-    const res = await c.service.tailorForMandate(OWNER, OWNER, 't1', {
-      ...target,
-      lang: 'de',
-      company: 'Globex',
-    });
-    expect(res.provider).toBe('template');
-    expect(res.usage).toBeUndefined();
-    expect(res.paragraphs).toHaveLength(3);
-    expect(res.paragraphs[0]).toContain('Globex');
+    await expect(
+      c.service.tailorForMandate(OWNER, OWNER, 't1', { ...target, lang: 'de', company: 'Globex' }),
+    ).rejects.toBeInstanceOf(AiNotConfiguredError);
   });
 
-  it('MalformedJson_FallsBackToTemplate', async () => {
+  it('MalformedJson_ThrowsUpstreamProvider', async () => {
     const c = ctx({ available: true, generate: async () => 'not json at all' });
     await c.talents.add(talent('t1'));
-    const res = await c.service.tailorForMandate(OWNER, OWNER, 't1', target);
-    expect(res.provider).toBe('template');
-    expect(res.paragraphs).toHaveLength(3);
+    await expect(c.service.tailorForMandate(OWNER, OWNER, 't1', target)).rejects.toBeInstanceOf(
+      UpstreamProviderError,
+    );
   });
 
   it('UnknownTalent_Throws404', async () => {

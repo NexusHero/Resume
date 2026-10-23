@@ -15,7 +15,10 @@ import { MatchAiModule } from '../../src/nest/match-ai/match-ai.module.js';
 import { ComplianceModule } from '../../src/nest/compliance/compliance.module.js';
 import { MailModule } from '../../src/nest/mail/mail.module.js';
 import { TalentImportModule } from '../../src/nest/talents/talent-import.module.js';
+import { AtsModule } from '../../src/nest/ats/ats.module.js';
 import { AuthGuard } from '../../src/nest/auth.guard.js';
+import { makeNestApp, closeNestApps } from '../support/nest-app.js';
+import { LlmService } from '../../src/services/llm-service.js';
 import { ProblemJsonFilter } from '../../src/nest/problem-json.filter.js';
 import type { Plan } from '../../src/domain/plan.js';
 import {
@@ -33,7 +36,7 @@ import {
   INBOX_SOURCE,
   ARTIFACT_LOG_REPOSITORY,
   LLM_SERVICE,
-  API_KEY_STORE,
+  WORKSPACE_SETTINGS_STORE,
   USAGE_METER,
   PDF_TEXT_EXTRACTOR,
   INTERVIEW_OBSERVATION_REPOSITORY,
@@ -47,10 +50,11 @@ import {
   InMemoryUserRepository,
   InMemoryAttachmentStore,
   InMemoryArtifactLogRepository,
-  InMemoryApiKeyStore,
+  InMemoryWorkspaceSettingsStore,
   InMemoryUsageMeter,
   RecordingMailer,
   FakeInboxSource,
+  FakeLlmProvider,
   FakePdfRenderer,
   FakePdfMerger,
   noopLogger,
@@ -81,66 +85,86 @@ const aiStub = {
   candidatePrep: async () => ({ topics: [] }),
 };
 
-describe('NestJS AI-backed verticals (match-ai, compliance, mail, documents-AI, import)', () => {
-  let app: INestApplication;
-  let plan: Plan = 'pro';
+const llmStub = (configured: boolean) => ({
+  isConfigured: () => configured,
+  active: () => (configured ? { id: 'claude', label: 'Claude', available: true } : null),
+  settings: () => ({ current: 'claude', providers: [] }),
+  currentProvider: () => 'claude',
+  get: () => (configured ? { id: 'claude', label: 'Claude', available: true } : undefined),
+});
+
+async function makeApp(opts: { configured: boolean; vermittlung: boolean }) {
+  const workspaceSettings = new InMemoryWorkspaceSettingsStore();
+  await workspaceSettings.set('team', { vermittlung: opts.vermittlung });
   const mandates = new InMemoryMandateRepository();
+  const plan: { value: Plan } = { value: 'pro' };
+
+  const fakes: Provider[] = [
+    { provide: PLAN_PROVIDER, useValue: { planFor: async () => plan.value } },
+    { provide: MANDATE_REPOSITORY, useValue: mandates },
+    { provide: TALENT_REPOSITORY, useValue: new InMemoryTalentRepository() },
+    { provide: DOCUMENT_REPOSITORY, useValue: new InMemoryDocumentRepository() },
+    { provide: USER_REPOSITORY, useValue: new InMemoryUserRepository() },
+    { provide: ATTACHMENT_STORE, useValue: new InMemoryAttachmentStore() },
+    { provide: PDF_RENDERER, useValue: new FakePdfRenderer() },
+    { provide: PDF_MERGER, useValue: new FakePdfMerger() },
+    { provide: TALENT_DATA_PURGERS, useValue: [] },
+    { provide: MAILER, useValue: new RecordingMailer() },
+    { provide: INBOX_SOURCE, useValue: new FakeInboxSource() },
+    { provide: ARTIFACT_LOG_REPOSITORY, useValue: new InMemoryArtifactLogRepository() },
+    { provide: LLM_SERVICE, useValue: llmStub(opts.configured) },
+    { provide: WORKSPACE_SETTINGS_STORE, useValue: workspaceSettings },
+    { provide: USAGE_METER, useValue: new InMemoryUsageMeter() },
+    { provide: PDF_TEXT_EXTRACTOR, useValue: {} },
+    { provide: INTERVIEW_OBSERVATION_REPOSITORY, useValue: {} },
+    { provide: RATE_LIMITER, useValue: new InMemoryRateLimiter() },
+  ];
+  @Global()
+  @Module({ providers: fakes, exports: fakes.map((p) => (p as { provide: symbol }).provide) })
+  class FakePortsModule {}
+
+  const moduleRef = await Test.createTestingModule({
+    imports: [
+      CoreModule,
+      FakePortsModule,
+      AiModule,
+      MatchAiModule,
+      ComplianceModule,
+      MailModule,
+      TalentImportModule,
+      AtsModule,
+    ],
+  })
+    .overrideGuard(AuthGuard)
+    .useClass(StampUserGuard)
+    .overrideProvider(DOCUMENT_AI_SERVICE)
+    .useValue(aiStub)
+    .compile();
+
+  const app = moduleRef.createNestApplication();
+  app.useGlobalFilters(new ProblemJsonFilter(noopLogger));
+  await app.init();
+
+  await mandates.add({
+    id: 'm1',
+    ownerId: 'team',
+    client: 'Aurora GmbH',
+    role: 'Staff Engineer',
+    location: 'Berlin',
+    status: 'open',
+    createdAt: '2026-01-01T00:00:00.000Z',
+  } as never);
+
+  return { app, plan };
+}
+
+describe('NestJS AI-backed verticals (configured, Vermittlung on)', () => {
+  let app: INestApplication;
+  let ctx: Awaited<ReturnType<typeof makeApp>>;
 
   beforeAll(async () => {
-    const fakes: Provider[] = [
-      { provide: PLAN_PROVIDER, useValue: { planFor: async () => plan } },
-      { provide: MANDATE_REPOSITORY, useValue: mandates },
-      { provide: TALENT_REPOSITORY, useValue: new InMemoryTalentRepository() },
-      { provide: DOCUMENT_REPOSITORY, useValue: new InMemoryDocumentRepository() },
-      { provide: USER_REPOSITORY, useValue: new InMemoryUserRepository() },
-      { provide: ATTACHMENT_STORE, useValue: new InMemoryAttachmentStore() },
-      { provide: PDF_RENDERER, useValue: new FakePdfRenderer() },
-      { provide: PDF_MERGER, useValue: new FakePdfMerger() },
-      { provide: TALENT_DATA_PURGERS, useValue: [] },
-      { provide: MAILER, useValue: new RecordingMailer() },
-      { provide: INBOX_SOURCE, useValue: new FakeInboxSource() },
-      { provide: ARTIFACT_LOG_REPOSITORY, useValue: new InMemoryArtifactLogRepository() },
-      { provide: LLM_SERVICE, useValue: {} },
-      { provide: API_KEY_STORE, useValue: new InMemoryApiKeyStore() },
-      { provide: USAGE_METER, useValue: new InMemoryUsageMeter() },
-      { provide: PDF_TEXT_EXTRACTOR, useValue: {} },
-      { provide: INTERVIEW_OBSERVATION_REPOSITORY, useValue: {} },
-      { provide: RATE_LIMITER, useValue: new InMemoryRateLimiter() },
-    ];
-    @Global()
-    @Module({ providers: fakes, exports: fakes.map((p) => (p as { provide: symbol }).provide) })
-    class FakePortsModule {}
-
-    const moduleRef = await Test.createTestingModule({
-      imports: [
-        CoreModule,
-        FakePortsModule,
-        AiModule,
-        MatchAiModule,
-        ComplianceModule,
-        MailModule,
-        TalentImportModule,
-      ],
-    })
-      .overrideGuard(AuthGuard)
-      .useClass(StampUserGuard)
-      .overrideProvider(DOCUMENT_AI_SERVICE)
-      .useValue(aiStub)
-      .compile();
-
-    app = moduleRef.createNestApplication();
-    app.useGlobalFilters(new ProblemJsonFilter(noopLogger));
-    await app.init();
-
-    await mandates.add({
-      id: 'm1',
-      ownerId: 'team',
-      client: 'Aurora GmbH',
-      role: 'Staff Engineer',
-      location: 'Berlin',
-      status: 'open',
-      createdAt: '2026-01-01T00:00:00.000Z',
-    } as never);
+    ctx = await makeApp({ configured: true, vermittlung: true });
+    app = ctx.app;
   });
 
   afterAll(async () => {
@@ -148,7 +172,7 @@ describe('NestJS AI-backed verticals (match-ai, compliance, mail, documents-AI, 
   });
 
   beforeEach(() => {
-    plan = 'pro';
+    ctx.plan.value = 'pro';
   });
 
   it('MatchAi_Explain_UsesTheMandateContext', async () => {
@@ -177,7 +201,7 @@ describe('NestJS AI-backed verticals (match-ai, compliance, mail, documents-AI, 
   });
 
   it('Compliance_AggCheck_IsFreeAndDeterministic', async () => {
-    plan = 'free';
+    ctx.plan.value = 'free';
     const res = await request(app.getHttpServer())
       .post('/api/v1/compliance/agg-check')
       .send({ text: 'Junger Bewerber gesucht' });
@@ -186,13 +210,13 @@ describe('NestJS AI-backed verticals (match-ai, compliance, mail, documents-AI, 
   });
 
   it('Compliance_AggRewrite_IsProGated', async () => {
-    plan = 'free';
+    ctx.plan.value = 'free';
     const denied = await request(app.getHttpServer())
       .post('/api/v1/compliance/agg-rewrite')
       .send({ text: 'Junger Bewerber gesucht' });
     expect(denied.status).toBe(402);
 
-    plan = 'pro';
+    ctx.plan.value = 'pro';
     const ok = await request(app.getHttpServer())
       .post('/api/v1/compliance/agg-rewrite')
       .send({ text: 'Junger Bewerber gesucht' });
@@ -206,7 +230,7 @@ describe('NestJS AI-backed verticals (match-ai, compliance, mail, documents-AI, 
     expect(ok.status).toBe(200);
     expect(ok.body).toEqual({ suggestion: 'a sharper summary' });
 
-    plan = 'free';
+    ctx.plan.value = 'free';
     const denied = await request(app.getHttpServer())
       .post('/api/v1/talents/t1/documents/ai')
       .send({ action: 'summary' });
@@ -247,20 +271,157 @@ describe('NestJS AI-backed verticals (match-ai, compliance, mail, documents-AI, 
     const status = await request(app.getHttpServer()).get('/api/v1/mail/status');
     expect(status.status).toBe(200);
     expect(status.body).toHaveProperty('sendTransport');
-    expect(status.body).toHaveProperty('replySync');
 
-    // No IMAP mailbox is configured in tests, so the on-demand sync explains that.
     const sync = await request(app.getHttpServer()).post('/api/v1/mail/sync-replies');
     expect(sync.status).toBe(400);
     expect(sync.body.detail).toMatch(/IMAP/);
   });
 
   it('TalentImport_IsProGated', async () => {
-    plan = 'free';
+    ctx.plan.value = 'free';
     const denied = await request(app.getHttpServer())
       .post('/api/v1/talents/import')
       .send({ files: [] });
     expect(denied.status).toBe(402);
     expect(denied.body.type).toBe('about:blank#plan-required');
+  });
+});
+
+describe('NestJS AI routes without a key (503 ai-not-configured)', () => {
+  let app: INestApplication;
+
+  beforeAll(async () => {
+    ({ app } = await makeApp({ configured: false, vermittlung: true }));
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  const cases: Array<[string, string, unknown]> = [
+    [
+      'Ai_DocumentsAi_NoKey_Returns503AiNotConfigured',
+      '/api/v1/talents/t1/documents/ai',
+      { action: 'summary' },
+    ],
+    [
+      'Ai_DocumentsParse_NoKey_Returns503AiNotConfigured',
+      '/api/v1/talents/t1/documents/parse',
+      { text: 'cv' },
+    ],
+    [
+      'Ai_DocumentsParsePdf_NoKey_Returns503AiNotConfigured',
+      '/api/v1/talents/t1/documents/parse-pdf',
+      { dataBase64: 'JVBERg==' },
+    ],
+    [
+      'Ai_DocumentsAts_NoKey_Returns503AiNotConfigured',
+      '/api/v1/talents/t1/documents/ats',
+      { jobText: 'job' },
+    ],
+    [
+      'Ai_DocumentsTranslate_NoKey_Returns503AiNotConfigured',
+      '/api/v1/talents/t1/documents/translate',
+      { targetLang: 'de' },
+    ],
+    ['Ai_DocumentsPitch_NoKey_Returns503AiNotConfigured', '/api/v1/talents/t1/documents/pitch', {}],
+    [
+      'Ai_DocumentsOutreach_NoKey_Returns503AiNotConfigured',
+      '/api/v1/talents/t1/documents/outreach',
+      {},
+    ],
+    [
+      'Ai_MatchExplain_NoKey_Returns503AiNotConfigured',
+      '/api/v1/mandates/m1/candidates/t1/explain',
+      {},
+    ],
+    [
+      'Ai_MatchInterviewKit_NoKey_Returns503AiNotConfigured',
+      '/api/v1/mandates/m1/candidates/t1/interview-kit',
+      {},
+    ],
+    ['Ai_MatchPrep_NoKey_Returns503AiNotConfigured', '/api/v1/mandates/m1/candidates/t1/prep', {}],
+  ];
+
+  it.each(cases)('%s', async (_name, path, body) => {
+    const res = await request(app.getHttpServer())
+      .post(path)
+      .send(body as object);
+    expect(res.status).toBe(503);
+    expect(res.headers['content-type']).toMatch(/application\/problem\+json/);
+    expect(res.body.type).toBe('about:blank#ai-not-configured');
+    expect(JSON.stringify(res.body)).not.toContain('Template');
+  });
+
+  it('Ai_DeterministicAts_NoKey_StillWorks', async () => {
+    // /api/v1/ats is deterministic (offline), not generative → no AI gate.
+    const res = await request(app.getHttpServer())
+      .post('/api/v1/ats')
+      .send({ text: 'C++ and Rust' });
+    expect(res.status).toBe(200);
+  });
+});
+
+describe('NestJS AI routes with a configured central key (ADR-0057)', () => {
+  afterEach(async () => {
+    await closeNestApps();
+  });
+
+  const withKey = () => {
+    const llmService = new LlmService({
+      providers: [new FakeLlmProvider('claude', true, 'A sharper summary from the provider.')],
+      defaultProvider: 'claude',
+      logger: noopLogger,
+    });
+    return makeNestApp(undefined, { llmService, vermittlung: true });
+  };
+
+  const registeredAgent = async (srv: Awaited<ReturnType<typeof makeNestApp>>) => {
+    const agent = request.agent(srv);
+    await agent
+      .post('/api/v1/auth/register')
+      .send({ email: 'ai-with-key@phase0.test', password: 'correct-horse-battery' });
+    return agent;
+  };
+
+  it('Ai_DocumentsAi_WithKey_ReturnsProviderResult', async () => {
+    const srv = await withKey();
+    const agent = await registeredAgent(srv);
+    const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
+    const res = await agent
+      .post(`/api/v1/talents/${created.body.talent.id}/documents/ai`)
+      .send({ action: 'summary' });
+    expect(res.status).toBe(200);
+    expect(res.body.suggestion.provider).toBe('claude');
+    expect(res.body.suggestion.text).toBe('A sharper summary from the provider.');
+  });
+
+  it('Ai_AssistantRun_WhenOnWithoutKey_Returns503', async () => {
+    // The autopilot builds application packets through the generative tailoring
+    // path, so without a key it must surface the missing configuration rather
+    // than silently skipping (owner decision §9-6).
+    const srv = await makeNestApp(undefined, { vermittlung: true });
+    const agent = await registeredAgent(srv);
+    await agent.put('/api/v1/assistant').send({
+      enabled: true,
+      mode: 'autopilot',
+      applySource: 'mandates',
+      minApplyScore: 0,
+    });
+    await agent.post('/api/v1/mandates').send({
+      client: 'Nordwind GmbH',
+      role: 'Backend Engineer',
+      location: 'Kiel',
+      jobText: 'Backend Engineer, Go und PostgreSQL.',
+    });
+    await agent.post('/api/v1/talents').send({
+      name: 'Ada Lux',
+      role: 'Backend Engineer',
+      skills: ['Go', 'PostgreSQL'],
+    });
+
+    const res = await agent.post('/api/v1/assistant/run');
+    expect(res.status).toBe(503);
+    expect(res.body.type).toBe('about:blank#ai-not-configured');
   });
 });

@@ -3,7 +3,6 @@ import {
   type MatchExplanation,
   explainPrompt,
   explanationResultSchema,
-  fallbackExplanation,
   matchedForMandate,
   normalizeExplanation,
 } from '../domain/match-explain.js';
@@ -11,7 +10,6 @@ import {
   type InterviewKit,
   interviewKitPrompt,
   interviewKitResultSchema,
-  fallbackInterviewKit,
   normalizeInterviewKit,
 } from '../domain/interview-kit.js';
 import {
@@ -67,7 +65,7 @@ export class MatchAiService {
     userId: string,
     talentId: string,
     mandate: MandateContext,
-  ): Promise<MatchExplanation & { provider: LlmProviderId | 'template'; usage?: CallUsage }> {
+  ): Promise<MatchExplanation & { provider: LlmProviderId; usage?: CallUsage }> {
     const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
     const matchedSkills = matchedForMandate(documents, mandate);
 
@@ -80,7 +78,6 @@ export class MatchAiService {
         schema: explanationResultSchema,
         normalize: (parsed) => normalizeExplanation(parsed, matchedSkills),
         accept: (explanation) => explanation.reasons.length > 0,
-        fallback: () => fallbackExplanation(documents, mandate, matchedSkills),
       },
     );
     return { ...content, provider, usage };
@@ -96,7 +93,7 @@ export class MatchAiService {
     userId: string,
     talentId: string,
     mandate: MandateContext,
-  ): Promise<InterviewKit & { provider: LlmProviderId | 'template'; usage?: CallUsage }> {
+  ): Promise<InterviewKit & { provider: LlmProviderId; usage?: CallUsage }> {
     const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
 
     const { content, provider, usage } = await this.runner.runFeature(
@@ -108,7 +105,6 @@ export class MatchAiService {
         schema: interviewKitResultSchema,
         normalize: normalizeInterviewKit,
         accept: (kit) => kit.questions.length > 0,
-        fallback: () => fallbackInterviewKit(documents, mandate),
       },
     );
     return { ...content, provider, usage };
@@ -127,7 +123,7 @@ export class MatchAiService {
     talentId: string,
     mandate: MandateContext,
     jobText: string,
-  ): Promise<CandidatePrep & { provider: LlmProviderId | 'template'; usage?: CallUsage }> {
+  ): Promise<CandidatePrep & { provider: LlmProviderId; usage?: CallUsage }> {
     const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
     // Blend real observations of this company over the archetype guess (flywheel).
     const observed = aggregateObservations(
@@ -138,6 +134,10 @@ export class MatchAiService {
       observed,
     );
     const requirements = extractRequirements(jobText);
+    // The deterministic pack is the prompt foundation only (ADR-0057): the
+    // factual parts (company profile, obligations, requirement coverage,
+    // strengths) stay grounded, but the route is generative and answers 503
+    // without a key rather than shipping the templated coaching narrative.
     const base = fallbackPrep(documents, mandate, company, requirements, jobText);
 
     const { content, provider, usage } = await this.runner.runFeature(
@@ -148,7 +148,6 @@ export class MatchAiService {
       {
         schema: prepResultSchema,
         normalize: (parsed) => mergePrep(base, parsed),
-        fallback: () => base,
       },
     );
     return { ...content, provider, usage };

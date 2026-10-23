@@ -19,6 +19,7 @@ import {
   TALENT_REPOSITORY,
   STAGE_TRANSITION_REPOSITORY,
   PLACEMENT_REPOSITORY,
+  WORKSPACE_SETTINGS_STORE,
 } from '../../src/nest/tokens.js';
 import {
   InMemoryCandidacyRepository,
@@ -54,6 +55,10 @@ describe('NestJS candidacies vertical', () => {
       { provide: TALENT_REPOSITORY, useValue: new InMemoryTalentRepository() },
       { provide: STAGE_TRANSITION_REPOSITORY, useValue: new InMemoryStageTransitionRepository() },
       { provide: PLACEMENT_REPOSITORY, useValue: new InMemoryPlacementRepository() },
+      {
+        provide: WORKSPACE_SETTINGS_STORE,
+        useValue: { get: async () => ({ vermittlung: true }), set: async () => undefined },
+      },
     ];
     @Global()
     @Module({ providers: fakes, exports: fakes.map((p) => (p as { provide: symbol }).provide) })

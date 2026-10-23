@@ -16,8 +16,8 @@ import { SqlDocumentRepository } from '../../src/adapters/sql/sql-document-repos
 import { SqlAttachmentStore } from '../../src/adapters/sql/sql-attachment-store.js';
 import { SqlUserRepository } from '../../src/adapters/sql/sql-user-repository.js';
 import { SqlPasswordResetTokenStore } from '../../src/adapters/sql/sql-password-reset-token-store.js';
-import { FsApiKeyStore } from '../../src/adapters/fs-api-key-store.js';
-import { SqlApiKeyStore } from '../../src/adapters/sql/sql-api-key-store.js';
+import { FsWorkspaceSettingsStore } from '../../src/adapters/fs-workspace-settings-store.js';
+import { SqlWorkspaceSettingsStore } from '../../src/adapters/sql/sql-workspace-settings-store.js';
 import { loadConfig } from '../../src/config.js';
 import { FixedClock } from '../support/fakes.js';
 import type { Db } from '../../src/adapters/sql/db.js';
@@ -36,7 +36,7 @@ describe('createPersistence', () => {
     expect(p.attachmentStore).toBeInstanceOf(FsAttachmentStore);
     expect(p.userRepository).toBeInstanceOf(FsUserRepository);
     expect(p.passwordResetTokenStore).toBeInstanceOf(FsPasswordResetTokenStore);
-    expect(p.apiKeyStore).toBeInstanceOf(FsApiKeyStore);
+    expect(p.workspaceSettingsStore).toBeInstanceOf(FsWorkspaceSettingsStore);
   });
 
   it('SqlStoreWithDb_UsesSqlAdapters', () => {
@@ -50,7 +50,7 @@ describe('createPersistence', () => {
     expect(p.attachmentStore).toBeInstanceOf(SqlAttachmentStore);
     expect(p.userRepository).toBeInstanceOf(SqlUserRepository);
     expect(p.passwordResetTokenStore).toBeInstanceOf(SqlPasswordResetTokenStore);
-    expect(p.apiKeyStore).toBeInstanceOf(SqlApiKeyStore);
+    expect(p.workspaceSettingsStore).toBeInstanceOf(SqlWorkspaceSettingsStore);
   });
 
   it('SqlStoreWithoutDb_Throws', () => {

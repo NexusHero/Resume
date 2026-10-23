@@ -38,7 +38,7 @@ import {
   EMAIL_VERIFICATION_TOKEN_STORE,
   INVITE_REPOSITORY,
   TENANT_REPOSITORY,
-  API_KEY_STORE,
+  WORKSPACE_SETTINGS_STORE,
   USAGE_METER,
   INTERVIEW_OBSERVATION_REPOSITORY,
   ASSISTANT_SETTINGS_STORE,
@@ -76,7 +76,7 @@ import {
   InMemoryUserRepository,
   InMemoryInviteRepository,
   InMemoryTenantRepository,
-  InMemoryApiKeyStore,
+  InMemoryWorkspaceSettingsStore,
   InMemoryUsageMeter,
   InMemoryInterviewObservationRepository,
   InMemoryPasswordResetTokenStore,
@@ -101,6 +101,14 @@ export interface NestTestAppOptions {
   passwordResetTokenStore?: InMemoryPasswordResetTokenStore;
   emailVerificationTokenStore?: InMemoryEmailVerificationTokenStore;
   inboxSource?: FakeInboxSource;
+  /** Override the LLM registry (e.g. a fake provider that reports configured). */
+  llmService?: LlmService;
+  /**
+   * Seed the workspace's `vermittlung` switch. Defaults to **true** so the many
+   * existing agency-route acceptance tests keep exercising their routes; the
+   * dedicated Vermittlung tests pass `false`.
+   */
+  vermittlung?: boolean;
 }
 
 const openApps: INestApplication[] = [];
@@ -117,14 +125,19 @@ export async function makeNestApp(
   config: AppConfig = loadConfig({}),
   opts: NestTestAppOptions = {},
 ): Promise<Server> {
-  const llmService = new LlmService({
-    providers: [
-      new AnthropicLlmProvider({ httpFetch: nodeFetch, config: config.llm.anthropic }),
-      new GeminiLlmProvider({ httpFetch: nodeFetch, config: config.llm.gemini }),
-    ],
-    defaultProvider: config.llm.provider,
-    logger: noopLogger,
-  });
+  const llmService =
+    opts.llmService ??
+    new LlmService({
+      providers: [
+        new AnthropicLlmProvider({ httpFetch: nodeFetch, config: config.llm.anthropic }),
+        new GeminiLlmProvider({ httpFetch: nodeFetch, config: config.llm.gemini }),
+      ],
+      defaultProvider: config.llm.provider,
+      logger: noopLogger,
+    });
+
+  const workspaceSettings = new InMemoryWorkspaceSettingsStore();
+  await workspaceSettings.set('team', { vermittlung: opts.vermittlung ?? true });
 
   const fakes: Provider[] = [
     { provide: APPLICATION_REPOSITORY, useValue: new InMemoryApplicationRepository() },
@@ -148,7 +161,7 @@ export async function makeNestApp(
     },
     { provide: INVITE_REPOSITORY, useValue: new InMemoryInviteRepository() },
     { provide: TENANT_REPOSITORY, useValue: new InMemoryTenantRepository() },
-    { provide: API_KEY_STORE, useValue: new InMemoryApiKeyStore() },
+    { provide: WORKSPACE_SETTINGS_STORE, useValue: workspaceSettings },
     { provide: USAGE_METER, useValue: new InMemoryUsageMeter() },
     {
       provide: INTERVIEW_OBSERVATION_REPOSITORY,

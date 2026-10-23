@@ -60,7 +60,8 @@ describe('LoginScreen — accept invite', () => {
 describe('SettingsView — Invite a colleague card', () => {
   const baseApi = () => ({
     getLlmSettings: vi.fn().mockResolvedValue({ current: '', providers: [] }),
-    getApiKeyStatus: vi.fn().mockResolvedValue({}),
+    getWorkspaceSettings: vi.fn().mockResolvedValue({ vermittlung: false }),
+    setWorkspaceSettings: vi.fn().mockResolvedValue({ vermittlung: true }),
     getMyProfileName: vi.fn().mockResolvedValue(''),
     getUsage: vi.fn().mockResolvedValue({ requests: 0 }),
     listMembers: vi.fn().mockResolvedValue([]),
@@ -102,7 +103,7 @@ describe('SettingsView — Invite a colleague card', () => {
       authMe: vi.fn().mockResolvedValue({ id: 'me', email: 'r@acme.io', roles: ['recruiter'] }),
     };
     const { findByText, queryByText } = render(<SettingsView user={{ id: 'me' }} />);
-    await findByText('KI-Modelle & API-Schlüssel'); // settings rendered
+    await findByText('KI-Einrichtung'); // settings rendered
     await waitFor(() => expect(window.RecruitApi.authMe).toHaveBeenCalled());
     expect(queryByText('Kolleg:in einladen')).toBeNull();
   });

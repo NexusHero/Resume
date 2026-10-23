@@ -24,7 +24,7 @@ export interface AppConfig {
   emailVerificationTokensFile: string;
   inviteTokensFile: string;
   tenantsFile: string;
-  apiKeysFile: string;
+  workspaceSettingsFile: string;
   usageFile: string;
   interviewObservationsFile: string;
   assistantSettingsFile: string;
@@ -116,9 +116,9 @@ export interface SecurityConfig {
    */
   corsOrigins: string[];
   /**
-   * Secret used to encrypt stored secrets (e.g. per-user LLM API keys) at rest.
-   * Set APP_SECRET in production; a fixed dev default keeps local/CI working but
-   * is NOT secret.
+   * Secret used to sign/encrypt the embedded auth store (Better-Auth sessions and
+   * credentials) at rest. Set APP_SECRET in production; a fixed dev default keeps
+   * local/CI working but is NOT secret.
    */
   encryptionSecret: string;
   /**
@@ -291,7 +291,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     emailVerificationTokensFile: path.join(storeDir, 'email-verification-tokens.json'),
     inviteTokensFile: path.join(storeDir, 'tenant-invites.json'),
     tenantsFile: path.join(storeDir, 'tenants.json'),
-    apiKeysFile: path.join(storeDir, 'api-keys.json'),
+    workspaceSettingsFile: path.join(storeDir, 'workspace-settings.json'),
     usageFile: path.join(storeDir, 'usage.json'),
     interviewObservationsFile: path.join(storeDir, 'interview-observations.json'),
     assistantSettingsFile: path.join(storeDir, 'assistant-settings.json'),

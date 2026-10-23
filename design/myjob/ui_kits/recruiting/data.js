@@ -69,9 +69,39 @@ async function _jsonOrThrow(res) {
       const body = await res.json().catch(() => ({}));
       throw new Error(body.detail || 'This is a Pro feature. Upgrade to unlock it.');
     }
+    if (res.status === 503) {
+      // No central AI key (ADR-0057): surface the server's clear message.
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.detail || 'KI nicht eingerichtet.');
+    }
     throw new Error(`API ${res.status}`);
   }
   return res.json();
+}
+
+/* One central AI key per server (ADR-0057). Cache the "is AI set up?" answer so
+   the editor can show "KI nicht eingerichtet" and every AI action can refuse to
+   send a request at all when there is no key. */
+let _aiReady = null;
+async function aiConfigured() {
+  if (_aiReady === null) {
+    try {
+      const s = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/settings/llm`));
+      _aiReady = (Array.isArray(s && s.providers) ? s.providers : []).some((p) => p && p.available);
+    } catch {
+      _aiReady = false;
+    }
+  }
+  return _aiReady;
+}
+
+const AI_NOT_CONFIGURED =
+  'KI nicht eingerichtet — konfiguriere ANTHROPIC_API_KEY (oder GEMINI_API_KEY) in den Server-Umgebungsvariablen.';
+
+/** Refuse an AI call before sending it when the server has no key. */
+async function requireAi() {
+  if (await aiConfigured()) return;
+  throw new Error(AI_NOT_CONFIGURED);
 }
 
 /* Backend Application → the shape PipelineBoard renders. `talentId`/`talentName`
@@ -423,35 +453,26 @@ const RecruitApi = {
     // download URL for the KI-Audit-Trail CSV (same-origin, cookie-authenticated)
     return `${RECRUIT_API_BASE}/settings/usage/audit.csv`;
   },
-  /* ---- LLM settings (active provider + availability) ---- */
-  async getLlmSettings() {
-    return _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/settings/llm`));
+  /* ---- Workspace settings (ADR-0057): the `vermittlung` feature switch ---- */
+  async getWorkspaceSettings() {
+    return _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/settings/workspace`));
   },
-  async setLlmProvider(provider) {
+  async setWorkspaceSettings(patch) {
     return _jsonOrThrow(
-      await fetch(`${RECRUIT_API_BASE}/settings/llm`, {
-        method: 'PUT',
+      await fetch(`${RECRUIT_API_BASE}/settings/workspace`, {
+        method: 'PATCH',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ provider }),
+        body: JSON.stringify(patch),
       }),
     );
   },
-  /* ---- Per-user API keys (stored encrypted server-side) ---- */
-  async getApiKeyStatus() {
-    // { claude: boolean, gemini: boolean } — never the keys themselves.
-    return _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/settings/keys`));
+  /* ---- LLM server status (central key, no per-user keys) ---- */
+  async getLlmSettings() {
+    return _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/settings/llm`));
   },
-  async setApiKey(provider, key) {
-    const res = await fetch(`${RECRUIT_API_BASE}/settings/keys/${provider}`, {
-      method: 'PUT',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ key }),
-    });
-    if (!res.ok) throw new Error(`API ${res.status}`);
-  },
-  async removeApiKey(provider) {
-    const res = await fetch(`${RECRUIT_API_BASE}/settings/keys/${provider}`, { method: 'DELETE' });
-    if (!res.ok) throw new Error(`API ${res.status}`);
+  /* True only when the server has a central AI key (cached). */
+  async aiConfigured() {
+    return aiConfigured();
   },
   async listMandates() {
     const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/mandates`));
@@ -596,6 +617,7 @@ const RecruitApi = {
     return Array.isArray(data.matches) ? data.matches : [];
   },
   async explainMatch(mandateId, talentId) {
+    await requireAi();
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/mandates/${mandateId}/candidates/${talentId}/explain`, {
         method: 'POST',
@@ -606,6 +628,7 @@ const RecruitApi = {
     return data.explanation; // { summary, reasons[], matchedSkills[], provider }
   },
   async interviewKit(mandateId, talentId) {
+    await requireAi();
     const data = await _jsonOrThrow(
       await fetch(
         `${RECRUIT_API_BASE}/mandates/${mandateId}/candidates/${talentId}/interview-kit`,
@@ -619,6 +642,7 @@ const RecruitApi = {
     return data.kit; // { focus, questions[], scorecard[], provider }
   },
   async candidatePrep(mandateId, talentId) {
+    await requireAi();
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/mandates/${mandateId}/candidates/${talentId}/prep`, {
         method: 'POST',
@@ -856,6 +880,7 @@ const RecruitApi = {
     if (!res.ok) throw new Error(`API ${res.status}`);
   },
   async suggestDocument(talentId, action, target = {}) {
+    await requireAi();
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/documents/ai`, {
         method: 'POST',
@@ -866,6 +891,7 @@ const RecruitApi = {
     return data.suggestion; // { action, text?, paragraphs?, provider }
   },
   async parseDocument(talentId, text) {
+    await requireAi();
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/documents/parse`, {
         method: 'POST',
@@ -876,6 +902,7 @@ const RecruitApi = {
     return data.parsed; // { contact, resume, provider }
   },
   async parseDocumentPdf(talentId, dataBase64) {
+    await requireAi();
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/documents/parse-pdf`, {
         method: 'POST',
@@ -886,6 +913,7 @@ const RecruitApi = {
     return data.parsed; // { contact, resume, provider, extractedChars }
   },
   async atsScore(talentId, jobText) {
+    await requireAi();
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/documents/ats`, {
         method: 'POST',
@@ -896,6 +924,7 @@ const RecruitApi = {
     return data.ats; // { score, matched, missing, suggestions, provider }
   },
   async pitchCandidate(talentId, mandateContext = '') {
+    await requireAi();
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/documents/pitch`, {
         method: 'POST',
@@ -906,6 +935,7 @@ const RecruitApi = {
     return data.pitch; // { headline, paragraphs, highlights, provider }
   },
   async outreachMessage(talentId, opts = {}) {
+    await requireAi();
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/documents/outreach`, {
         method: 'POST',
@@ -916,6 +946,7 @@ const RecruitApi = {
     return data.message; // { subject, body, provider }
   },
   async translateDocuments(talentId, targetLang) {
+    await requireAi();
     const res = await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/documents/translate`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -988,8 +1019,8 @@ function computeVermittlerKpis(mandates, talents, placements) {
   const active = ms.filter((m) => m.status === 'active').length;
   const fees = ps.reduce((a, p) => a + parseFeeAmount(p.fee), 0);
   return [
-    { label: 'Aktive Mandate', value: String(active), icon: 'briefcase' },
-    { label: 'Talente im Pool', value: String(ts.length), icon: 'users' },
+    { label: 'Aktive Suchaufträge', value: String(active), icon: 'briefcase' },
+    { label: 'Mandanten im Pool', value: String(ts.length), icon: 'users' },
     { label: 'Platzierungen', value: String(ps.length), icon: 'award' },
     { label: 'Honorar', value: formatFeeSum(fees), icon: 'trend' },
   ];

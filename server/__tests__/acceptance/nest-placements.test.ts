@@ -13,7 +13,7 @@ import { CoreModule } from '../../src/nest/core.module.js';
 import { PlacementsModule } from '../../src/nest/placements/placements.module.js';
 import { AuthGuard } from '../../src/nest/auth.guard.js';
 import { ProblemJsonFilter } from '../../src/nest/problem-json.filter.js';
-import { PLACEMENT_REPOSITORY } from '../../src/nest/tokens.js';
+import { PLACEMENT_REPOSITORY, WORKSPACE_SETTINGS_STORE } from '../../src/nest/tokens.js';
 import { InMemoryPlacementRepository, noopLogger } from '../support/fakes.js';
 
 class StampUserGuard implements CanActivate {
@@ -31,6 +31,10 @@ describe('NestJS placements vertical', () => {
   beforeAll(async () => {
     const fakes: Provider[] = [
       { provide: PLACEMENT_REPOSITORY, useValue: new InMemoryPlacementRepository() },
+      {
+        provide: WORKSPACE_SETTINGS_STORE,
+        useValue: { get: async () => ({ vermittlung: true }), set: async () => undefined },
+      },
     ];
     @Global()
     @Module({ providers: fakes, exports: fakes.map((p) => (p as { provide: symbol }).provide) })

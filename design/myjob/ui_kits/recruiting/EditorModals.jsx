@@ -178,8 +178,8 @@ function PitchModal({ talentId, onClose }) {
   };
 
   return (
-    <EdmModalShell title="Kandidat:in-Pitch" subtitle="Ein kurzes „Warum diese:r Kandidat:in“-Profil für die Präsentation beim Kunden. Mandat/Rolle für einen zugeschnittenen Pitch ergänzen (optional)." onClose={onClose}>
-      <textarea value={mandateContext} onChange={(e) => setMandateContext(e.target.value)} rows={5} placeholder="Mandat / Rollenkontext (optional)…" style={{ ...EDM_FIELD, resize: 'vertical' }} />
+    <EdmModalShell title="Kandidat:in-Pitch" subtitle="Ein kurzes „Warum diese:r Kandidat:in“-Profil für die Präsentation beim Kunden. Suchauftrag/Rolle für einen zugeschnittenen Pitch ergänzen (optional)." onClose={onClose}>
+      <textarea value={mandateContext} onChange={(e) => setMandateContext(e.target.value)} rows={5} placeholder="Suchauftrag / Rollenkontext (optional)…" style={{ ...EDM_FIELD, resize: 'vertical' }} />
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
         <EDM.Button variant="ghost" onClick={onClose}>Schließen</EDM.Button>
         <EDM.Button variant="primary" disabled={pitching} onClick={runPitch}>{pitching ? 'Entwerfe…' : pitch ? 'Neu generieren' : 'Generieren'}</EDM.Button>
@@ -331,7 +331,7 @@ function OutreachModal({ talentId, defaultEmail, onClose }) {
         </div>
       </div>
       <input value={outTone} onChange={(e) => setOutTone(e.target.value)} placeholder='Ton (optional), z. B. locker („Du“) oder förmlich („Sie“)' style={{ ...EDM_FIELD, padding: '9px 12px', marginBottom: '10px' }} />
-      <textarea value={outContext} onChange={(e) => setOutContext(e.target.value)} rows={4} placeholder="Mandat / Rollenkontext (optional)…" style={{ ...EDM_FIELD, resize: 'vertical' }} />
+      <textarea value={outContext} onChange={(e) => setOutContext(e.target.value)} rows={4} placeholder="Suchauftrag / Rollenkontext (optional)…" style={{ ...EDM_FIELD, resize: 'vertical' }} />
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
         <EDM.Button variant="ghost" onClick={onClose}>Schließen</EDM.Button>
         <EDM.Button variant="primary" disabled={outBusy} onClick={runOutreach}>{outBusy ? 'Entwerfe…' : outMsg ? 'Neu generieren' : 'Generieren'}</EDM.Button>

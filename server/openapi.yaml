@@ -2330,90 +2330,58 @@ paths:
   /settings/llm:
     get:
       tags: [Settings]
-      summary: The caller's AI provider + availability
-      description: Signed-out callers see the server's configured default.
+      summary: The server's central AI provider status (ADR-0057)
+      description: >-
+        Reports the server's configured providers and their availability. There
+        is one central key per server; per-user keys and the per-user provider
+        choice were removed. Generative routes answer 503 `ai-not-configured`
+        when no provider is available.
       operationId: getLlmSettings
       responses:
         '200':
-          description: Current provider and the wired providers.
+          description: The server's provider status.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/LlmSettings' }
-    put:
-      tags: [Settings]
-      summary: Switch the caller's AI provider (persisted per user)
-      operationId: setLlmProvider
-      security:
-        - cookieSession: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [provider]
-              properties:
-                provider: { type: string, enum: [claude, gemini] }
-      responses:
-        '200':
-          description: The caller's updated settings.
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/LlmSettings' }
-        '400': { $ref: '#/components/responses/ValidationProblem' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
 
-  /settings/keys:
+  /settings/workspace:
     get:
       tags: [Settings]
-      summary: Which providers the caller has a key for (booleans, never keys)
-      operationId: keysStatus
+      summary: The workspace's feature settings (ADR-0057)
+      operationId: getWorkspaceSettings
       security:
         - cookieSession: []
       responses:
         '200':
-          description: Per-provider key presence.
+          description: The workspace feature flags.
           content:
             application/json:
-              schema:
-                type: object
-                properties:
-                  claude: { type: boolean }
-                  gemini: { type: boolean }
+              schema: { $ref: '#/components/schemas/WorkspaceSettings' }
         '401': { $ref: '#/components/responses/Unauthorized' }
-
-  /settings/keys/{provider}:
-    put:
+    patch:
       tags: [Settings]
-      summary: Store the caller's API key (encrypted server-side)
-      operationId: setKey
+      summary: Flip the intermediary switch (workspace admin only)
+      description: >-
+        Turns the intermediary (`vermittlung`) features on or off. When off,
+        their routes answer 404 problem+json and their nav entries are hidden;
+        data is preserved. Only a workspace admin may change it (403 otherwise).
+      operationId: updateWorkspaceSettings
       security:
         - cookieSession: []
-      parameters: [{ $ref: '#/components/parameters/provider' }]
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              type: object
-              required: [key]
-              properties:
-                key: { type: string }
+            schema: { $ref: '#/components/schemas/WorkspaceSettings' }
       responses:
-        '204': { description: Stored. }
+        '200':
+          description: The updated workspace settings.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspaceSettings' }
         '400': { $ref: '#/components/responses/ValidationProblem' }
         '401': { $ref: '#/components/responses/Unauthorized' }
-    delete:
-      tags: [Settings]
-      summary: Remove the caller's API key
-      operationId: removeKey
-      security:
-        - cookieSession: []
-      parameters: [{ $ref: '#/components/parameters/provider' }]
-      responses:
-        '204': { description: Removed. }
-        '400': { $ref: '#/components/responses/ValidationProblem' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
 
   /settings/usage:
     get:
@@ -2963,7 +2931,19 @@ components:
               label: { type: string }
               available:
                 type: boolean
-                description: Whether the server holds credentials for it (user keys are separate).
+                description: Whether the server holds the central key for it (ADR-0057).
+
+    WorkspaceSettings:
+      type: object
+      description: Per-workspace feature flags (ADR-0057).
+      required: [vermittlung]
+      properties:
+        vermittlung:
+          type: boolean
+          description: >-
+            When true, the intermediary features (Suchaufträge, Pipeline,
+            Platzierungen, Performance, Postfach, CoRecruiter) are reachable;
+            when false (the default) their routes answer 404.
 
     UsageBucket:
       type: object

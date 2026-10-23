@@ -1,6 +1,6 @@
 # ADR-0005 — Deterministic fallback + per-user keys + metering for all AI
 
-- **Status:** Accepted
+- **Status:** Accepted — partially superseded by ADR-0057 (template fallback and per-user keys removed; metering stays)
 - **Requirements:** FR-30, FR-31, NFR-05, NFR-08
 
 ## Context

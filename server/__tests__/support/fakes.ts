@@ -42,8 +42,14 @@ import type { RetentionPolicyStore } from '../../src/ports/retention-policy-stor
 import type { RetentionPolicy } from '../../src/domain/retention.js';
 import type { StageTransition } from '../../src/domain/stage-history.js';
 import type { InboxMessage } from '../../src/domain/mail-sync.js';
-import type { ApiKeyStore } from '../../src/ports/api-key-store.js';
-import type { LlmProviderId } from '../../src/ports/llm-provider.js';
+import type {
+  LlmGenerateInput,
+  LlmGenerateResult,
+  LlmProvider,
+  LlmProviderId,
+} from '../../src/ports/llm-provider.js';
+import type { WorkspaceSettingsStore } from '../../src/ports/workspace-settings-store.js';
+import type { WorkspaceSettings } from '../../src/domain/workspace-settings.js';
 import type { UsageMeter } from '../../src/ports/usage-meter.js';
 import type { UsageEvent } from '../../src/domain/usage.js';
 import type { InterviewObservationRepository } from '../../src/ports/interview-observation-repository.js';
@@ -452,9 +458,6 @@ export class InMemoryUserRepository implements UserRepository {
   async markVerified(id: string, at: string): Promise<void> {
     this.users = this.users.map((u) => (u.id === id ? { ...u, verifiedAt: at } : u));
   }
-  async setLlmProvider(id: string, provider: LlmProviderId): Promise<void> {
-    this.users = this.users.map((u) => (u.id === id ? { ...u, llmProvider: provider } : u));
-  }
   async remove(id: string): Promise<boolean> {
     const before = this.users.length;
     this.users = this.users.filter((u) => u.id !== id);
@@ -600,22 +603,29 @@ export class FakeInboxSource implements InboxSource {
   }
 }
 
-export class InMemoryApiKeyStore implements ApiKeyStore {
-  keys: { ownerId: string; provider: LlmProviderId; key: string }[] = [];
-  async set(ownerId: string, provider: LlmProviderId, key: string): Promise<void> {
-    this.keys = this.keys.filter((k) => !(k.ownerId === ownerId && k.provider === provider));
-    this.keys.push({ ownerId, provider, key });
+/** A scriptable workspace-settings store (ADR-0057); a missing row means "off". */
+export class InMemoryWorkspaceSettingsStore implements WorkspaceSettingsStore {
+  rows = new Map<string, WorkspaceSettings>();
+  async get(ownerId: string): Promise<WorkspaceSettings | null> {
+    return this.rows.get(ownerId) ?? null;
   }
-  async get(ownerId: string, provider: LlmProviderId): Promise<string | null> {
-    return this.keys.find((k) => k.ownerId === ownerId && k.provider === provider)?.key ?? null;
+  async set(ownerId: string, settings: WorkspaceSettings): Promise<void> {
+    this.rows.set(ownerId, settings);
   }
-  async remove(ownerId: string, provider: LlmProviderId): Promise<boolean> {
-    const before = this.keys.length;
-    this.keys = this.keys.filter((k) => !(k.ownerId === ownerId && k.provider === provider));
-    return this.keys.length < before;
-  }
-  async providersFor(ownerId: string): Promise<LlmProviderId[]> {
-    return this.keys.filter((k) => k.ownerId === ownerId).map((k) => k.provider);
+}
+
+/** A fake LLM provider: reports availability and returns a scripted reply. */
+export class FakeLlmProvider implements LlmProvider {
+  readonly label = 'Fake';
+  lastInput?: LlmGenerateInput;
+  constructor(
+    readonly id: LlmProviderId = 'claude',
+    readonly available = true,
+    private readonly reply = '{"ok":true}',
+  ) {}
+  async generate(input: LlmGenerateInput): Promise<LlmGenerateResult> {
+    this.lastInput = input;
+    return { text: this.reply, usage: { inputTokens: 1, outputTokens: 1 } };
   }
 }
 

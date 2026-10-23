@@ -1,18 +1,120 @@
 import request from 'supertest';
 import type { Server } from 'http';
-import { loadConfig } from '../../src/config.js';
-import { makeNestApp, closeNestApps } from '../support/nest-app.js';
+import { loadConfig, type AppConfig } from '../../src/config.js';
+import { makeNestApp, closeNestApps, type NestTestAppOptions } from '../support/nest-app.js';
 import {
   InMemoryPasswordResetTokenStore,
   InMemoryEmailVerificationTokenStore,
   RecordingMailer,
   FakeInboxSource,
+  noopLogger,
 } from '../support/fakes.js';
+import { LlmService } from '../../src/services/llm-service.js';
+import type {
+  LlmGenerateInput,
+  LlmGenerateResult,
+  LlmProvider,
+  LlmProviderId,
+} from '../../src/ports/llm-provider.js';
+
+/**
+ * A scripted provider for the contract suite. Phase 0 (ADR-0057) removed the
+ * deterministic template fallback: generative routes only answer when the
+ * server has a central key. This provider stands in for that key and returns a
+ * minimal, schema-valid reply for each feature, so the contract tests keep
+ * exercising controller → service → HTTP.
+ */
+class ScriptedLlmProvider implements LlmProvider {
+  readonly id: LlmProviderId = 'claude';
+  readonly label = 'Scripted';
+  readonly available = true;
+
+  async generate(input: LlmGenerateInput): Promise<LlmGenerateResult> {
+    return {
+      text: scriptedReply(input.system, input.prompt),
+      usage: { inputTokens: 10, outputTokens: 10 },
+    };
+  }
+}
+
+function scriptedReply(system: string, prompt: string): string {
+  const has = (marker: string) => system.includes(marker);
+  if (has('resume parser')) {
+    // Echo the CV text as the summary — the parse tests assert it survived.
+    const text = prompt.split('"""')[1]?.trim() ?? '';
+    return JSON.stringify({ contact: { name: '' }, resume: { summary: text } });
+  }
+  if (has('ATS analyst')) {
+    return JSON.stringify({
+      score: 82,
+      matched: ['Figma'],
+      missing: [],
+      suggestions: ['Quantify impact'],
+    });
+  }
+  if (has('present to the client')) {
+    return JSON.stringify({
+      headline: 'Lena Brandt — Product Designer',
+      paragraphs: ['Starke Passung für die Rolle.'],
+      highlights: ['Figma'],
+    });
+  }
+  if (has('first-contact message')) {
+    return JSON.stringify({ subject: 'Kurze Frage', body: 'Hallo, hättest du Interesse?' });
+  }
+  if (has('explain why a candidate')) {
+    return JSON.stringify({
+      summary: 'Gute Passung',
+      reasons: ['React-Erfahrung', 'Rollenfit'],
+    });
+  }
+  if (has('interview guide')) {
+    return JSON.stringify({
+      focus: 'Technik',
+      questions: [
+        { category: 'Skills', question: 'Wie arbeitest du mit React?', lookFor: 'Tiefe' },
+      ],
+      scorecard: ['Kommunikation'],
+    });
+  }
+  if (has('preparing an applicant')) return JSON.stringify({});
+  if (has('preparing a job application')) {
+    return JSON.stringify({
+      summary: 'Passgenaue Zusammenfassung.',
+      paragraphs: ['Absatz eins.', 'Absatz zwei.', 'Absatz drei.'],
+    });
+  }
+  if (has('professional translator')) {
+    return JSON.stringify({
+      resume: { summary: 'Übersetzt.' },
+      letter: { absaetze: ['Übersetzt.'] },
+    });
+  }
+  if (has('application coach')) {
+    return 'Sehr geehrtes Team, hiermit bewerbe ich mich bei Helio.';
+  }
+  if (has('Write the body of a cover')) {
+    return 'Erster Absatz.\n\nZweiter Absatz.\n\nDritter Absatz.';
+  }
+  if (has('concise, compelling summary')) {
+    return 'Product Designer with 8 years of experience.';
+  }
+  return '{}';
+}
+
+const scriptedLlmService = () =>
+  new LlmService({
+    providers: [new ScriptedLlmProvider()],
+    defaultProvider: 'claude',
+    logger: noopLogger,
+  });
 
 // The NestJS test harness (ADR-0051): the same fake leaf ports the retired
 // Express `createApp(deps)` factory wired, assembled by the real feature
-// modules. Same signature, so the 199 contract tests below are unchanged.
-const makeApp = makeNestApp;
+// modules. Every app gets a scripted central key (ADR-0057) — the no-key
+// contract is covered by the dedicated `nest-llm`/`nest-ai-routes` suites.
+const makeApp = (config: AppConfig = loadConfig({}), opts: NestTestAppOptions = {}) =>
+  makeNestApp(config, { llmService: scriptedLlmService(), ...opts });
 
 afterEach(async () => {
   await closeNestApps();
@@ -177,12 +279,14 @@ describe('REST API /api/v1', () => {
     await a
       .post('/api/v1/auth/register')
       .send({ email: 'a@example.com', password: 'correct horse battery' });
+    await a.patch('/api/v1/settings/workspace').send({ vermittlung: true }).expect(200);
     await a.post('/api/v1/applications').send({ company: 'Aurora', talentName: 'Mara' });
 
     const b = request.agent(isolated);
     await b
       .post('/api/v1/auth/register')
       .send({ email: 'b@example.com', password: 'another good passphrase' });
+    await b.patch('/api/v1/settings/workspace').send({ vermittlung: true }).expect(200);
 
     expect((await a.get('/api/v1/applications')).body).toHaveLength(1);
     expect((await b.get('/api/v1/applications')).body).toEqual([]); // isolated
@@ -540,12 +644,11 @@ describe('REST API /api/v1', () => {
         .post('/api/v1/talents')
         .send({ name: 'Lena Brandt', role: 'Designer' });
       const id = created.body.talent.id as string;
-      // No LLM key configured in tests → deterministic template fallback.
       const res = await agent
         .post(`/api/v1/talents/${id}/documents/ai`)
         .send({ action: 'summary' });
       expect(res.status).toBe(200);
-      expect(res.body.suggestion.provider).toBe('template');
+      expect(res.body.suggestion.provider).toBe('claude');
       expect(typeof res.body.suggestion.text).toBe('string');
     });
 
@@ -576,12 +679,11 @@ describe('REST API /api/v1', () => {
     it('DocumentsParse_Text_ReturnsStructuredResume', async () => {
       const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
       const id = created.body.talent.id as string;
-      // no LLM key in tests → deterministic fallback keeps the text as the summary
       const res = await agent
         .post(`/api/v1/talents/${id}/documents/parse`)
         .send({ text: 'Product Designer with 8 years experience.' });
       expect(res.status).toBe(200);
-      expect(res.body.parsed.provider).toBe('template');
+      expect(res.body.parsed.provider).toBe('claude');
       expect(res.body.parsed.resume.summary).toContain('Product Designer');
       expect(Array.isArray(res.body.parsed.resume.experience)).toBe(true);
     });
@@ -601,8 +703,7 @@ describe('REST API /api/v1', () => {
         .post(`/api/v1/talents/${id}/documents/parse-pdf`)
         .send({ dataBase64 });
       expect(res.status).toBe(200);
-      // no LLM key → fallback keeps the (fake-)extracted text as the summary
-      expect(res.body.parsed.provider).toBe('template');
+      expect(res.body.parsed.provider).toBe('claude');
       expect(res.body.parsed.resume.summary).toContain('Extracted CV text');
       expect(res.body.parsed.extractedChars).toBeGreaterThan(0);
     });
@@ -625,8 +726,8 @@ describe('REST API /api/v1', () => {
       expect(res.status).toBe(201);
       expect(res.body.results).toHaveLength(2);
       expect(res.body.results.every((r: { ok: boolean }) => r.ok)).toBe(true);
-      // No LLM key → template parse keeps the (fake-)extracted text; name falls
-      // back to the placeholder, and the talents land in the pool.
+      // The parse returns no name, so the import keeps the placeholder and the
+      // talents land in the pool.
       expect(res.body.results[0]).toMatchObject({ ok: true, name: 'Imported CV' });
       const list = await agent.get('/api/v1/talents');
       expect(list.body).toHaveLength(2);
@@ -647,7 +748,7 @@ describe('REST API /api/v1', () => {
         .post(`/api/v1/talents/${id}/documents/ats`)
         .send({ jobText: 'We need a designer skilled in Figma.' });
       expect(res.status).toBe(200);
-      expect(res.body.ats.provider).toBe('template');
+      expect(res.body.ats.provider).toBe('claude');
       expect(typeof res.body.ats.score).toBe('number');
       expect(res.body.ats.matched).toContain('Figma');
     });
@@ -666,12 +767,11 @@ describe('REST API /api/v1', () => {
         contact: { name: 'Lena Brandt', role: 'Product Designer' },
         resume: { skillGroups: [{ label: 'Tools', items: ['Figma'] }] },
       });
-      // no LLM key in tests → deterministic fallback assembles it from the facts
       const res = await agent
         .post(`/api/v1/talents/${id}/documents/pitch`)
         .send({ mandateContext: 'UX Lead gesucht' });
       expect(res.status).toBe(200);
-      expect(res.body.pitch.provider).toBe('template');
+      expect(res.body.pitch.provider).toBe('claude');
       expect(res.body.pitch.headline).toContain('Lena Brandt');
       expect(Array.isArray(res.body.pitch.paragraphs)).toBe(true);
       expect(res.body.pitch.paragraphs.length).toBeGreaterThan(0);
@@ -682,19 +782,18 @@ describe('REST API /api/v1', () => {
       const id = created.body.talent.id as string;
       const res = await agent.post(`/api/v1/talents/${id}/documents/pitch`).send({});
       expect(res.status).toBe(200);
-      expect(res.body.pitch.provider).toBe('template');
+      expect(res.body.pitch.provider).toBe('claude');
     });
 
-    it('DocumentsTranslate_WithoutKey_AsksForProvider', async () => {
+    it('DocumentsTranslate_WithKey_StoresLanguageVariant', async () => {
       const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
       const id = created.body.talent.id as string;
-      // No LLM key in tests → translation cannot fall back, so it returns a 400
-      // problem+json telling the recruiter to add a key.
       const res = await agent
         .post(`/api/v1/talents/${id}/documents/translate`)
         .send({ targetLang: 'de' });
-      expect(res.status).toBe(400);
-      expect(res.body.detail).toMatch(/provider|key/i);
+      expect(res.status).toBe(200);
+      expect(res.body.created).toBe(true);
+      expect(res.body.translation.provider).toBe('claude');
     });
 
     it('DocumentsTranslate_RejectsUnknownLang', async () => {
@@ -715,7 +814,7 @@ describe('REST API /api/v1', () => {
         .post(`/api/v1/talents/${id}/documents/outreach`)
         .send({ audience: 'candidate', channel: 'email', mandateContext: 'UX Lead' });
       expect(res.status).toBe(200);
-      expect(res.body.message.provider).toBe('template');
+      expect(res.body.message.provider).toBe('claude');
       expect(res.body.message.subject.length).toBeGreaterThan(0);
       expect(res.body.message.body.length).toBeGreaterThan(0);
     });
@@ -1063,8 +1162,7 @@ describe('REST API /api/v1', () => {
         .post(`/api/v1/mandates/${mandateId}/candidates/${talentId}/explain`)
         .send({});
       expect(res.status).toBe(200);
-      // no LLM configured in CI → deterministic template, but always usable
-      expect(res.body.explanation.provider).toBe('template');
+      expect(res.body.explanation.provider).toBe('claude');
       expect(Array.isArray(res.body.explanation.reasons)).toBe(true);
       expect(res.body.explanation.reasons.length).toBeGreaterThan(0);
     });
@@ -1087,7 +1185,7 @@ describe('REST API /api/v1', () => {
         .post(`/api/v1/mandates/${mandateId}/candidates/${talentId}/interview-kit`)
         .send({});
       expect(res.status).toBe(200);
-      expect(res.body.kit.provider).toBe('template'); // no LLM in CI
+      expect(res.body.kit.provider).toBe('claude');
       expect(res.body.kit.questions.length).toBeGreaterThan(0);
       expect(res.body.kit.scorecard.length).toBeGreaterThan(0);
     });
@@ -1123,7 +1221,7 @@ describe('REST API /api/v1', () => {
         .send({});
       expect(res.status).toBe(200);
       const prep = res.body.prep;
-      expect(prep.provider).toBe('template'); // no LLM in CI
+      expect(prep.provider).toBe('claude');
       expect(prep.companyLabel).toBe('US Big Tech'); // Google → curated archetype
       expect(prep.obligations.some((o: string) => o.includes('Führerschein'))).toBe(true);
       expect(prep.strengths).toContain('React');
@@ -2002,19 +2100,18 @@ describe('REST API /api/v1', () => {
     );
   });
 
-  it('CoverLetter_SignedInWithoutKey_UsesTheStoredProviderChoiceAndFallsBack', async () => {
-    // The authed path resolves the user's persisted provider, finds no key,
-    // and degrades to the template — no upstream call is made.
+  it('CoverLetter_SignedIn_UsesTheServerKey', async () => {
+    // One central server key (ADR-0057): a signed-in user generates against it,
+    // with no per-user provider choice or template fallback.
     const agent = request.agent(app);
     await agent
       .post('/api/v1/auth/register')
       .send({ email: 'letter-authed@example.com', password: 'correct horse battery' });
-    await agent.put('/api/v1/settings/llm').send({ provider: 'gemini' });
     const res = await agent
       .post('/api/v1/cover-letter')
       .send({ company: 'Helio', role: 'Engineer', city: 'Berlin', skills: ['Go'] });
     expect(res.status).toBe(200);
-    expect(res.body.provider).toBe('template');
+    expect(res.body.provider).toBe('claude');
     expect(res.body.text).toContain('Helio');
   });
 
@@ -2032,7 +2129,7 @@ describe('REST API /api/v1', () => {
       .send({ name: 'Nora Weiss', role: 'Data Engineer', skills: ['Python'] });
     const talentId = talent.body.talent.id;
 
-    // Generating outreach logs an artifact (template here — no key configured).
+    // Generating outreach logs an artifact for the outcome loop.
     await agent
       .post(`/api/v1/talents/${talentId}/documents/outreach`)
       .send({ audience: 'candidate', channel: 'email' });
@@ -2040,7 +2137,7 @@ describe('REST API /api/v1', () => {
     expect(list.body).toHaveLength(1);
     expect(list.body[0]).toMatchObject({
       kind: 'outreach',
-      provider: 'template',
+      provider: 'claude',
       channel: 'email',
       outcome: 'pending',
     });
@@ -2185,97 +2282,14 @@ describe('REST API /api/v1', () => {
     expect(init.text).toContain('/api/v1/openapi.yaml');
   });
 
-  it('LlmSettings_Get_ReturnsProvidersAndCurrent', async () => {
+  it('LlmSettings_Get_ReturnsServerStatus', async () => {
     const res = await request(app).get('/api/v1/settings/llm');
     expect(res.status).toBe(200);
+    // Server status only: which providers exist and whether the central key is set.
     expect(res.body.current).toBe('claude');
-    expect(res.body.providers.map((p: { id: string }) => p.id).sort()).toEqual([
-      'claude',
-      'gemini',
+    expect(res.body.providers).toEqual([
+      expect.objectContaining({ id: 'claude', available: true }),
     ]);
-    // No API keys configured in the test env → both providers report unavailable.
-    expect(res.body.providers.every((p: { available: boolean }) => p.available === false)).toBe(
-      true,
-    );
-  });
-
-  it('LlmSettings_Put_Unauthenticated_Returns401', async () => {
-    // The provider choice is per user, so switching requires a session.
-    const res = await request(app).put('/api/v1/settings/llm').send({ provider: 'gemini' });
-    expect(res.status).toBe(401);
-  });
-
-  it('LlmSettings_Put_PersistsPerUser_WithoutLeakingAcrossUsers', async () => {
-    const alice = request.agent(app);
-    await alice
-      .post('/api/v1/auth/register')
-      .send({ email: 'alice-llm@example.com', password: 'correct horse battery' });
-    const put = await alice.put('/api/v1/settings/llm').send({ provider: 'gemini' });
-    expect(put.status).toBe(200);
-    expect(put.body.current).toBe('gemini');
-    // Alice keeps her choice on the next read …
-    expect((await alice.get('/api/v1/settings/llm')).body.current).toBe('gemini');
-    // … while a signed-out reader and another user still see the default.
-    expect((await request(app).get('/api/v1/settings/llm')).body.current).toBe('claude');
-    const bob = request.agent(app);
-    await bob
-      .post('/api/v1/auth/register')
-      .send({ email: 'bob-llm@example.com', password: 'correct horse battery' });
-    expect((await bob.get('/api/v1/settings/llm')).body.current).toBe('claude');
-  });
-
-  it('LlmSettings_PutUnknown_Returns400', async () => {
-    const agent = request.agent(app);
-    await agent
-      .post('/api/v1/auth/register')
-      .send({ email: 'llm-unknown@example.com', password: 'correct horse battery' });
-    const res = await agent.put('/api/v1/settings/llm').send({ provider: 'openai' });
-    expect(res.status).toBe(400);
-  });
-
-  it('CoverLetter_Post_FallsBackToTemplate', async () => {
-    const res = await request(app)
-      .post('/api/v1/cover-letter')
-      .send({ company: 'Celonis', role: 'Senior C++ Engineer', city: 'München', skills: ['C++'] });
-    expect(res.status).toBe(200);
-    expect(res.body.provider).toBe('template'); // no keys → deterministic template
-    expect(res.body.text).toContain('Celonis');
-  });
-
-  it('ApiKeys_Unauthenticated_Returns401', async () => {
-    expect((await request(app).get('/api/v1/settings/keys')).status).toBe(401);
-    expect((await request(app).put('/api/v1/settings/keys/claude').send({ key: 'x' })).status).toBe(
-      401,
-    );
-  });
-
-  it('ApiKeys_SetStatusRemove_Flow', async () => {
-    const agent = request.agent(app);
-    await agent
-      .post('/api/v1/auth/register')
-      .send({ email: 'keys@example.com', password: 'correct horse battery' });
-
-    expect((await agent.get('/api/v1/settings/keys')).body).toEqual({
-      claude: false,
-      gemini: false,
-    });
-    expect((await agent.put('/api/v1/settings/keys/claude').send({ key: 'sk-ant-x' })).status).toBe(
-      204,
-    );
-    expect((await agent.get('/api/v1/settings/keys')).body).toEqual({
-      claude: true,
-      gemini: false,
-    });
-    expect((await agent.delete('/api/v1/settings/keys/claude')).status).toBe(204);
-    expect((await agent.get('/api/v1/settings/keys')).body.claude).toBe(false);
-  });
-
-  it('ApiKeys_UnknownProvider_Returns400', async () => {
-    const agent = request.agent(app);
-    await agent
-      .post('/api/v1/auth/register')
-      .send({ email: 'keys2@example.com', password: 'correct horse battery' });
-    expect((await agent.put('/api/v1/settings/keys/openai').send({ key: 'x' })).status).toBe(400);
   });
 
   it('CoverLetter_PostMissingCompany_Returns400', async () => {
@@ -2340,7 +2354,7 @@ describe('Plan gating (ADR-0021)', () => {
       .send({ email: 'pro@example.com', password: 'correct horse battery' });
     const created = await agent.post('/api/v1/talents').send({ name: 'Lena Brandt' });
     const id = created.body.talent.id as string;
-    // No LLM key → the feature runs its template fallback, but the gate lets it through (not 402).
+    // The gate lets a Pro user through to the feature (not 402).
     const res = await agent
       .post(`/api/v1/talents/${id}/documents/pitch`)
       .send({ mandateContext: 'x' });

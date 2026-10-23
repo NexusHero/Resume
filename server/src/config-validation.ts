@@ -27,7 +27,7 @@ export function checkProductionReadiness(config: AppConfig): ReadinessReport {
 
   if (config.security.encryptionSecret === DEV_ENCRYPTION_SECRET) {
     errors.push(
-      'APP_SECRET is unset or the insecure dev default. Set a strong, secret value — it encrypts stored per-user API keys at rest.',
+      'APP_SECRET is unset or the insecure dev default. Set a strong, secret value — it signs and encrypts the auth store at rest.',
     );
   }
 

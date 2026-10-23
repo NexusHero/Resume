@@ -37,6 +37,7 @@ import type { IdGenerator } from '../../ports/id-generator.js';
 import type { Logger } from '../../ports/logger.js';
 import { AuthGuard } from '../auth.guard.js';
 import { AiRateLimitGuard } from '../ai-rate-limit.guard.js';
+import { VermittlungGuard } from '../vermittlung.guard.js';
 import { PlanGuard, RequiresPlan } from '../plan.guard.js';
 import { CurrentScope } from '../params.js';
 import { ZodValidationPipe } from '../zod-validation.pipe.js';
@@ -75,7 +76,7 @@ import {
  * settings PUT) and its generated Bewerbungsmappe are Pro.
  */
 @Controller('api/v1/assistant')
-@UseGuards(AuthGuard, PlanGuard)
+@UseGuards(AuthGuard, VermittlungGuard, PlanGuard)
 export class AssistantController {
   constructor(@Inject(ASSISTANT_SERVICE) private readonly service: AssistantService) {}
 

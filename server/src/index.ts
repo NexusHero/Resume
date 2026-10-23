@@ -5,6 +5,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import { loadConfig } from './config.js';
 import { checkProductionReadiness } from './config-validation.js';
 import { createDb, migrate, type Db } from './adapters/sql/db.js';
+import { runFsMigrations } from './adapters/fs-migrations.js';
 import type { SchedulerLock } from './ports/scheduler-lock.js';
 import { NoopSchedulerLock } from './adapters/noop-scheduler-lock.js';
 import { PgAdvisorySchedulerLock } from './adapters/sql/pg-advisory-scheduler-lock.js';
@@ -65,10 +66,14 @@ async function main(): Promise<void> {
   let db: Db | null = null;
   let pool: Pool | undefined;
   if (config.store === 'sql') {
+    // Idempotent file-store cleanup (legacy per-user API-key file, ADR-0057).
+    await runFsMigrations(config);
     const conn = createDb(config.databaseUrl);
     await migrate(conn.pool);
     db = conn.db;
     pool = conn.pool;
+  } else {
+    await runFsMigrations(config);
   }
 
   // The NestJS composition root (ADR-0051): AppModule replaces container.ts and

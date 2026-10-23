@@ -10,13 +10,33 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Added
 
-- **E2E coverage for applying to a specific company's live job posting
-  (ADR-0046/0048).** Search-and-apply was previously only tested in
-  isolation (job search and application creation each had their own
-  fixtures); a new Playwright test now drives the actual seam end to end:
-  search the live boards, apply the pinned "me" candidate to one named
-  company's posting from Matching, and confirm the application shows up on
-  the Pipeline board with that company and role.
+- **Phase 0 — Bewerbungsservice foundation (ADR-0057).** The application flow is
+  now the primary path:
+  - A per-workspace **`vermittlung` switch** (default **off**) hides the
+    intermediary features (Suchaufträge, Pipeline, Platzierungen, Performance,
+    Postfach, CoRecruiter) in the nav and answers `404` on their routes; their
+    data is preserved. Persisted in both the file store and Postgres
+    (`workspace_settings`), admin-only (`PATCH /api/v1/settings/workspace`).
+  - **New UI vocabulary:** Mandant (the applicant), Suchauftrag (the client
+    assignment), Workspace (the tenant). A string-scan test forbids the old
+    "Talent"/"Mandat"/workspace-"Mandant" copy.
+  - **One central AI key** (`ANTHROPIC_API_KEY`/`GEMINI_API_KEY`). Without it
+    generative routes answer `503 ai-not-configured` and the UI says "KI nicht
+    eingerichtet"; the editor disables "KI anpassen" and sends no request.
+  - **E2E coverage for applying to a specific company's live job posting
+    (ADR-0046/0048).** Search-and-apply was previously only tested in
+    isolation; a new Playwright test drives the actual seam end to end.
+
+### Changed
+
+- **Removed the deterministic template fallback** for user-visible AI
+  generation (ADR-0057): a failed/unusable upstream call is now `502`, a
+  missing key `503`. Deterministic non-generative helpers (offline matching,
+  grounding, AGG check/rewrite, ATS gap) stay offline.
+- **Removed per-user AI keys and the per-user provider choice** (ADR-0057).
+  The `settings/keys` routes, the encrypted key store and `secret-cipher` are
+  gone; a boot-time file migration deletes the legacy `api-keys.json`, and the
+  SQL migration drops `api_keys` and `users.llm_provider`.
 
 ### Fixed
 

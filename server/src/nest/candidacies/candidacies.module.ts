@@ -22,6 +22,7 @@ import type { Clock } from '../../ports/clock.js';
 import type { IdGenerator } from '../../ports/id-generator.js';
 import type { Logger } from '../../ports/logger.js';
 import { AuthGuard } from '../auth.guard.js';
+import { VermittlungGuard } from '../vermittlung.guard.js';
 import { CurrentScope } from '../params.js';
 import { ZodValidationPipe } from '../zod-validation.pipe.js';
 import { PlacementsModule } from '../placements/placements.module.js';
@@ -43,7 +44,7 @@ import {
  * update/removal. Team-scoped via @CurrentScope.
  */
 @Controller('api/v1')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, VermittlungGuard)
 export class CandidaciesController {
   constructor(@Inject(CANDIDACY_SERVICE) private readonly service: CandidacyService) {}
 

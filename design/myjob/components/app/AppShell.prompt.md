@@ -6,8 +6,8 @@
 ```jsx
 const recruitNav = [
   { id: 'overview', label: 'Overview', icon: 'home' },
-  { id: 'mandate', label: 'Mandates', icon: 'briefcase' },
-  { id: 'pool', label: 'Talent Pool', icon: 'users' },
+  { id: 'mandate', label: 'Suchaufträge', icon: 'briefcase' },
+  { id: 'pool', label: 'Mandanten', icon: 'users' },
   { id: 'pipeline', label: 'Pipeline', icon: 'columns' },
   { id: 'performance', label: 'Performance', icon: 'trend' },
   { id: 'inbox', label: 'Inbox', icon: 'inbox', badge: 3 },
@@ -16,7 +16,7 @@ const recruitNav = [
 <AppShell
   product="recruit" posture="rail"
   nav={recruitNav} active={view} onNav={setView}
-  account={{ name: 'Suhay Sevinc', meta: 'Me · +3 Talente' }}
+  account={{ name: 'Suhay Sevinc', meta: 'Me · +3 Mandanten' }}
   title="Overview" subtitle="Dienstag, 27. Juni" search
   detail={<CandidateDetail … />}
 >

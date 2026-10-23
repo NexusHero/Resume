@@ -5,7 +5,6 @@ import {
   InMemoryMandateRepository,
   InMemoryTalentRepository,
   InMemoryPlacementRepository,
-  InMemoryApiKeyStore,
   InMemoryUserRepository,
   InMemoryPasswordResetTokenStore,
   InMemoryEmailVerificationTokenStore,
@@ -32,7 +31,6 @@ function makeService() {
   const mandateRepository = new InMemoryMandateRepository();
   const talentRepository = new InMemoryTalentRepository();
   const placementRepository = new InMemoryPlacementRepository();
-  const apiKeyStore = new InMemoryApiKeyStore();
   const userRepository = new InMemoryUserRepository();
   const authEngine = new FakeAuthEngine();
   const passwordResetTokenStore = new InMemoryPasswordResetTokenStore();
@@ -42,14 +40,6 @@ function makeService() {
   const artifactLogRepository = new InMemoryArtifactLogRepository();
 
   const userErasureSteps: UserErasureStep[] = [
-    {
-      label: 'api-keys',
-      erase: async (userId) => {
-        for (const provider of await apiKeyStore.providersFor(userId)) {
-          await apiKeyStore.remove(userId, provider);
-        }
-      },
-    },
     {
       label: 'auth-credentials',
       erase: async (userId) => {
@@ -88,7 +78,6 @@ function makeService() {
     mandateRepository,
     talentRepository,
     placementRepository,
-    apiKeyStore,
     userRepository,
     authEngine,
     passwordResetTokenStore,
@@ -201,7 +190,6 @@ describe('AccountService', () => {
     const ctx = makeService();
     await ctx.userRepository.add(user(USER));
     await ctx.mandateRepository.add(mandate('m1')); // team-owned
-    await ctx.apiKeyStore.set(USER, 'claude', 'sk-personal');
     const { token } = await ctx.authEngine.signUp(`${USER}@example.com`, 'secret-pass');
     await ctx.passwordResetTokenStore.create(USER);
     await ctx.usageMeter.record({
@@ -219,7 +207,6 @@ describe('AccountService', () => {
     expect(await ctx.userRepository.findById(USER)).toBeNull();
     expect(await ctx.authEngine.resolve(token)).toBeNull(); // engine credential + session erased
     expect(ctx.passwordResetTokenStore.tokens).toEqual([]);
-    expect(await ctx.apiKeyStore.providersFor(USER)).toEqual([]); // personal keys erased
     expect(await ctx.usageMeter.list(USER)).toEqual([]); // usage history erased
     // the shared team workspace stays
     expect(await ctx.mandateRepository.list(TEAM)).toHaveLength(1);

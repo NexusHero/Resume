@@ -40,7 +40,9 @@ export class LlmService {
 
   settings(): LlmSettings {
     return {
-      current: this.currentId,
+      // The effective provider (the one generation would use), so the settings
+      // surface and the server agree when only the optional key is set.
+      current: this.active()?.id ?? this.currentId,
       providers: [...this.providers.values()].map((p) => ({
         id: p.id,
         label: p.label,
@@ -49,15 +51,30 @@ export class LlmService {
     };
   }
 
-  /** The default provider, or null when it has no server credentials configured. */
+  /**
+   * The provider generation will use: the configured default when it has server
+   * credentials, otherwise any other available provider. The product contract is
+   * "ANTHROPIC is the standard, GEMINI the optional fallback" (ADR-0057), so a
+   * server with only `GEMINI_API_KEY` must still be configured — not report 503
+   * while the UI says "KI eingerichtet".
+   */
   active(): LlmProvider | null {
-    const provider = this.providers.get(this.currentId);
-    return provider && provider.available ? provider : null;
+    const preferred = this.providers.get(this.currentId);
+    if (preferred && preferred.available) return preferred;
+    for (const provider of this.providers.values()) {
+      if (provider.available) return provider;
+    }
+    return null;
   }
 
   /** The configured default provider id (regardless of availability). */
   currentProvider(): LlmProviderId {
     return this.currentId;
+  }
+
+  /** True when the server has a usable central key (ADR-0057). */
+  isConfigured(): boolean {
+    return this.active() !== null;
   }
 
   /** A provider by id regardless of availability — for callers supplying their own key. */

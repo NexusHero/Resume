@@ -3,48 +3,92 @@
    server (PUT/DELETE /settings/keys/:provider) — never in the browser. German-first. */
 const SV = window.MyJobDesignSystem_5611b7;
 
-function ProviderRow({ p, active, onActivate, saved, onSave, onRemove }) {
-  const [draft, setDraft] = React.useState('');
-  const [reveal, setReveal] = React.useState(false);
-  const { isMobile } = useViewport();
-  const connected = Boolean(saved) || p.available;
-  return (
-    // On phones the three columns (name · key · controls) can't fit side by side —
-    // stack them so the key input and the Active/Remove controls each get full width.
-    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0,1fr) minmax(0,1.3fr) auto', gap: isMobile ? '12px' : '16px', alignItems: 'center', padding: '16px 0', borderBottom: '1px solid var(--border)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-        <span style={{ width: '36px', height: '36px', flexShrink: 0, borderRadius: 'var(--radius-md)', display: 'grid', placeItems: 'center', background: 'var(--accent-soft)', color: 'var(--accent-strong)', fontFamily: 'var(--font-display)', fontWeight: 700 }}>{p.label.charAt(0).toUpperCase()}</span>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-heading)' }}>
-            {p.label}
-            {connected && <span style={{ marginLeft: '8px', fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--status-hired-strong)', background: 'var(--status-hired-soft)', border: '1px solid var(--status-hired-border)', borderRadius: 'var(--radius-pill)', padding: '1px 8px' }}>Verbunden</span>}
-          </div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11.5px', color: 'var(--text-soft)' }}>{p.id}</div>
-        </div>
-      </div>
+/* The central AI setup (ADR-0057): one server key, no per-user keys. */
+function AiSetupCard() {
+  const [state, setState] = React.useState(null); // null = loading, else { configured, providers }
+  React.useEffect(() => {
+    let alive = true;
+    window.RecruitApi.getLlmSettings()
+      .then((s) => {
+        if (!alive) return;
+        const providers = Array.isArray(s && s.providers) ? s.providers : [];
+        setState({ configured: providers.some((p) => p && p.available), providers });
+      })
+      .catch(() => { if (alive) setState({ configured: false, providers: [] }); });
+    return () => { alive = false; };
+  }, []);
 
-      {saved ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)' }}>{'•'.repeat(18)}</span>
-          <span style={{ fontSize: '11px', color: 'var(--text-soft)' }}>Sicher auf dem Server gespeichert</span>
+  return (
+    <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '22px 24px' }}>
+      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>KI-Einrichtung</h2>
+      <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Ein zentraler Schlüssel pro Server. Ohne Schlüssel zeigt jeder KI-Knopf „KI nicht eingerichtet“ und sendet keine Anfrage.</div>
+      {state === null ? (
+        <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Wird geladen…</div>
+      ) : state.configured ? (
+        <div role="status" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '14px', fontSize: '13px', color: 'var(--status-hired-strong)' }}>
+          <SV.Icon name="check" size={16} /> KI eingerichtet
         </div>
       ) : (
-        <div style={{ display: 'flex', gap: '8px', minWidth: 0 }}>
-          <input type={reveal ? 'text' : 'password'} value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={`${p.label} API-Schlüssel`} autoComplete="off" spellCheck="false" aria-label={`${p.label} API-Schlüssel`} style={{ flex: 1, minWidth: 0, border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', background: 'var(--surface-card)', fontFamily: 'var(--font-mono)', fontSize: '12.5px', color: 'var(--text-heading)', padding: '9px 11px', outline: 'none' }} />
-          <button type="button" onClick={() => setReveal((r) => !r)} aria-label={reveal ? 'Schlüssel verbergen' : 'Schlüssel anzeigen'} style={{ cursor: 'pointer', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', background: 'var(--surface-card)', color: 'var(--text-muted)', padding: '0 11px' }}><SV.Icon name="eye" size={15} /></button>
+        <div role="alert" style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginTop: '14px', padding: '12px 14px', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
+          <SV.Icon name="zap" size={16} style={{ color: 'var(--text-soft)', flexShrink: 0, marginTop: '2px' }} />
+          <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+            <strong style={{ color: 'var(--text-heading)' }}>KI nicht eingerichtet.</strong> Setze <code>ANTHROPIC_API_KEY</code> (oder optional <code>GEMINI_API_KEY</code>) als Server-Umgebungsvariable und starte den Server neu.
+          </div>
         </div>
       )}
+    </div>
+  );
+}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', justifyContent: isMobile ? 'space-between' : 'flex-end' }}>
-        <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: active ? 'var(--text-heading)' : 'var(--text-soft)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-          <input type="radio" name="active-provider" checked={active} onChange={onActivate} /> Aktiv
-        </label>
-        {saved ? (
-          <button type="button" onClick={onRemove} style={{ cursor: 'pointer', background: 'none', border: 'none', color: 'var(--danger)', fontWeight: 600, fontSize: '12.5px' }}>Entfernen</button>
-        ) : (
-          <SV.Button size="sm" disabled={draft.trim().length === 0} onClick={() => { onSave(draft.trim()); setDraft(''); setReveal(false); }}>Schlüssel speichern</SV.Button>
-        )}
-      </div>
+/* The per-workspace intermediary switch (ADR-0057) — admin-only. */
+function WorkspaceSettingsCard() {
+  const [isAdmin, setIsAdmin] = React.useState(null);
+  const [vermittlung, setVermittlung] = React.useState(false);
+  const [busy, setBusy] = React.useState(false);
+  const [error, setError] = React.useState('');
+
+  React.useEffect(() => {
+    let alive = true;
+    window.RecruitApi.authMe()
+      .then((me) => {
+        const admin = !!(me && me.roles && me.roles.includes('admin'));
+        if (!alive) return;
+        setIsAdmin(admin);
+      })
+      .catch(() => { if (alive) setIsAdmin(false); });
+    window.RecruitApi.getWorkspaceSettings()
+      .then((s) => { if (alive) setVermittlung(!!(s && s.vermittlung)); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
+  const toggle = () => {
+    if (!isAdmin || busy) return;
+    const next = !vermittlung;
+    setBusy(true);
+    setError('');
+    window.RecruitApi.setWorkspaceSettings({ vermittlung: next })
+      .then((s) => {
+        const on = !!(s && s.vermittlung);
+        setVermittlung(on);
+        // Let the shell re-render the rail immediately (no reload needed).
+        try { window.dispatchEvent(new CustomEvent('myjob:workspacechange', { detail: on })); } catch { /* ignore */ }
+      })
+      .catch(() => setError('Der Schalter konnte nicht gespeichert werden. Bitte versuche es erneut.'))
+      .finally(() => setBusy(false));
+  };
+
+  if (isAdmin === false) return null; // admin-only
+
+  return (
+    <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '22px 24px' }}>
+      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>Workspace</h2>
+      <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Der Bewerbungsservice ist der Hauptweg. Die Vermittler-Funktionen (Suchaufträge, Pipeline, Platzierungen, Performance, Postfach, CoRecruiter) sind standardmäßig aus.</div>
+      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '16px', cursor: isAdmin ? 'pointer' : 'default', fontSize: '13.5px', color: 'var(--text-heading)' }}>
+        <input type="checkbox" checked={vermittlung} onChange={toggle} disabled={!isAdmin || busy} aria-label="Vermittlung aktivieren" />
+        Vermittlung aktivieren
+      </label>
+      {error && <div role="alert" style={{ fontSize: '12.5px', color: 'var(--danger)', marginTop: '8px' }}>{error}</div>}
     </div>
   );
 }
@@ -98,7 +142,7 @@ function DataPrivacyCard() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', padding: '16px 0', borderBottom: '1px solid var(--border)', marginTop: '8px' }}>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-heading)' }}>Meine Daten exportieren</div>
-          <div style={{ fontSize: '12px', color: 'var(--text-soft)', marginTop: '1px' }}>Lade dein Konto, Mandate, Talente und Platzierungen als JSON herunter.</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-soft)', marginTop: '1px' }}>Lade dein Konto, Suchaufträge, Mandanten und Platzierungen als JSON herunter.</div>
         </div>
         <SV.Button size="sm" variant="outline" disabled={busy !== ''} onClick={exportData}>
           {busy === 'export' ? 'Wird vorbereitet…' : 'Exportieren'}
@@ -333,7 +377,7 @@ function TenantMembers({ tenantId }) {
       const updated = await window.RecruitApi.setTenantMemberRoles(tenantId, m.id, next);
       setMembers((ms) => ms.map((x) => (x.id === m.id ? updated : x)));
     } catch {
-      setNote('Rollen konnten nicht aktualisiert werden — der Mandant muss mindestens einen Admin behalten.');
+      setNote('Rollen konnten nicht aktualisiert werden — der Workspace muss mindestens einen Admin behalten.');
       load();
     }
   };
@@ -404,7 +448,7 @@ function SuperAdminCard() {
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
         <div style={{ flex: 1 }}>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>Plattform — alle Workspaces</h2>
-          <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Instanz-Super-Admin. Jeder Mandant in diesem Deployment; sperre einen, um seine Mitglieder sofort auszusperren, oder ändere die Rollen eines Mitglieds.</div>
+          <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Instanz-Super-Admin. Jeder Workspace in diesem Deployment; sperre einen, um seine Mitglieder sofort auszusperren, oder ändere die Rollen eines Mitglieds.</div>
         </div>
         <span style={{ flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--accent-strong)', background: 'var(--accent-soft)', border: '1px solid var(--accent-border, var(--border))', borderRadius: 'var(--radius-pill)', padding: '3px 9px' }}>Super-Admin</span>
       </div>
@@ -412,7 +456,7 @@ function SuperAdminCard() {
       {tenants === null ? (
         <div style={{ padding: '22px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Wird geladen…</div>
       ) : tenants.length === 0 ? (
-        <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Noch keine Mandanten.</div>
+        <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Noch keine Workspaces.</div>
       ) : (
         <div style={{ marginTop: '12px' }}>
           {tenants.map((t) => {
@@ -851,46 +895,6 @@ function AppearanceCard() {
 }
 
 function SettingsView({ user, onLogout }) {
-  const [settings, setSettings] = React.useState(null); // { current, providers }
-  const [keys, setKeys] = React.useState({});
-  const [busy, setBusy] = React.useState(false);
-
-  React.useEffect(() => {
-    let alive = true;
-    window.RecruitApi.getLlmSettings()
-      .then((s) => { if (alive) setSettings(s); })
-      .catch(() => { if (alive) setSettings({ current: '', providers: [] }); });
-    return () => { alive = false; };
-  }, []);
-
-  // Which providers have a key stored on the server (booleans, never the keys).
-  React.useEffect(() => {
-    let alive = true;
-    window.RecruitApi.getApiKeyStatus()
-      .then((status) => { if (alive) setKeys(status); })
-      .catch(() => {});
-    return () => { alive = false; };
-  }, []);
-
-  const activate = (id) => {
-    if (busy) return;
-    setBusy(true);
-    window.RecruitApi.setLlmProvider(id)
-      .then(setSettings)
-      .catch(() => {})
-      .finally(() => setBusy(false));
-  };
-  const saveKey = (id, value) => {
-    window.RecruitApi.setApiKey(id, value)
-      .then(() => setKeys((k) => ({ ...k, [id]: true })))
-      .catch(() => {});
-  };
-  const removeKey = (id) => {
-    window.RecruitApi.removeApiKey(id)
-      .then(() => setKeys((k) => ({ ...k, [id]: false })))
-      .catch(() => {});
-  };
-
   return (
     <div style={{ maxWidth: '780px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
       <ProfileCard user={user} />
@@ -905,33 +909,8 @@ function SettingsView({ user, onLogout }) {
           <SV.Button variant="outline" size="sm" iconLeft={<SV.Icon name="logout" size={15} />} onClick={onLogout}>Abmelden</SV.Button>
         </div>
       )}
-      <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '22px 24px' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-          <div style={{ flex: 1 }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>KI-Modelle & API-Schlüssel</h2>
-            <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Wähle das aktive Modell und hinterlege einen Provider-Schlüssel für KI-Anschreiben und CV-Anpassung.</div>
-          </div>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-soft)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '4px 10px' }}><SV.Icon name="check" size={12} /> Sicher gespeichert</span>
-        </div>
-
-        {!settings ? (
-          <div style={{ padding: '34px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Wird geladen…</div>
-        ) : settings.providers.length === 0 ? (
-          <div style={{ padding: '28px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Keine Anbieter verfügbar.</div>
-        ) : (
-          <div style={{ marginTop: '10px' }}>
-            {settings.providers.map((p) => (
-              <ProviderRow key={p.id} p={p} active={settings.current === p.id} onActivate={() => activate(p.id)} saved={keys[p.id]} onSave={(v) => saveKey(p.id, v)} onRemove={() => removeKey(p.id)} />
-            ))}
-          </div>
-        )}
-
-        <div style={{ display: 'flex', gap: '10px', marginTop: '16px', padding: '12px 14px', background: 'var(--surface-subtle)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '12.5px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-          <SV.Icon name="check" size={16} style={{ flexShrink: 0, color: 'var(--text-soft)', marginTop: '2px' }} />
-          <span>Schlüssel bleiben in diesem Browser und werden nur beim Generieren über einen verschlüsselten Kanal übertragen. Das aktive Modell wird mit deinem Konto gespeichert — es übersteht Neustarts und wird nicht mit Teammitgliedern geteilt. Entferne einen Schlüssel jederzeit, um den Zugriff zu widerrufen.</span>
-        </div>
-      </div>
-
+      <AiSetupCard />
+      <WorkspaceSettingsCard />
       <UsageCard />
       <TeamCard />
       <InvitesCard />

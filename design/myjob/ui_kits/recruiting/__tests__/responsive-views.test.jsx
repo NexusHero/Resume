@@ -37,6 +37,7 @@ const dashboardProps = {
   vkpis: [{ label: 'A' }, { label: 'B' }, { label: 'C' }, { label: 'D' }],
   clients: [],
   mandates: [],
+  vermittlung: true,
   onOpenTalent: vi.fn(),
   onOpenPipeline: vi.fn(),
   onOpenMandate: vi.fn(),

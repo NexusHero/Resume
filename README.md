@@ -1,10 +1,12 @@
 <div align="center">
 
-# myJob — Recruiting Suite
+# myJob — Bewerbungsservice
 
-**Run your desk on myJob.** Mandates, talent pool and placements in one calm
-workspace — from first sighting to booked fee. Plus an interactive CV, a cover-letter
-and Bewerbungsmappe builder, and a small REST API behind it all.
+**Apply better.** A Mandant turns their own CV and a job ad into a tailored
+Bewerbung — interactive CV, cover letter and Bewerbungsmappe included. Agency
+teams can switch the intermediary features (Suchaufträge, Pipeline,
+Platzierungen) on per Workspace; the application flow stays the primary path.
+A small REST API sits behind it all.
 
 [![CI](https://github.com/NexusHero/Resume/actions/workflows/ci.yml/badge.svg)](https://github.com/NexusHero/Resume/actions/workflows/ci.yml)
 ![Node](https://img.shields.io/badge/node-%E2%89%A524-339933?logo=node.js&logoColor=white)
@@ -127,7 +129,9 @@ See **[docs/deployment.md](docs/deployment.md)** for configuration (`STORE`, `DA
   only — no scraping. See the [EU AI Act brief](docs/eu-ai-act.md) for how these map to the
   Act's transparency and human-oversight obligations for recruiting AI.
 - **AI cover letters** — `POST /api/v1/cover-letter` writes a tailored Anschreiben via
-  Claude or Gemini, per-user switchable and persisted; deterministic template fallback.
+  one central server key (`ANTHROPIC_API_KEY`, optionally `GEMINI_API_KEY`). Without a
+  key every generative route answers `503 ai-not-configured`; there is no template
+  fallback that impersonates AI.
 - **Job search & ATS** — skill-matched two-tier search across job boards (honest offline
   sample when live sources are down), a JobScan-style gap analysis and an AGG check.
 - **Hardened & honest** — CORS allow-list, baseline security headers, rate-limited
@@ -215,7 +219,8 @@ for browsing without running the server ([ADR-0044](docs/adr/0044-github-pages-a
 | `GET /settings/usage/audit.csv` · `POST /compliance/agg-rewrite`  | KI-Audit-Trail export · AGG neutral rewrite                |
 | `GET /members` · `PATCH /members/:id/roles`                       | team members · RBAC role management (admin)                |
 | `GET /jobs` · `POST /ats` · `POST /compliance/agg-check`          | job search · ATS gap · AGG compliance check                |
-| `POST /cover-letter` · `PUT /settings/llm` · `…/keys`             | AI Anschreiben · switch Claude/Gemini · per-user keys      |
+| `POST /cover-letter` · `GET /settings/llm`                        | AI Anschreiben · server AI status ("KI eingerichtet")      |
+| `GET·PATCH /settings/workspace`                                   | read · admin-only switch `vermittlung` (agency mode)       |
 
 ## npm scripts
 

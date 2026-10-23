@@ -7,9 +7,9 @@
 const L = window.MyJobDesignSystem_5611b7;
 
 const POINTS = [
-  'Mandate, Talent-Pool und Platzierungen in einem Workspace',
-  'Kandidat:innen stellvertretend bewerben, jede Stufe verfolgen',
-  'Honorare und Funnel auf einen Blick',
+  'Mandanten, Stellen und Bewerbungen in einem Workspace',
+  'Bewerbungen erstellen, Dokumente pro Stelle anpassen',
+  'Alles an einem Ort — ohne tote Buttons',
 ];
 
 function readQueryToken(name) {
@@ -191,7 +191,7 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
             Dein Recruiting-Desk — an einem Ort.
           </h1>
           <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.82)', marginTop: '14px', maxWidth: '38ch', lineHeight: 1.6 }}>
-            Mandate, Talente und Platzierungen in einem ruhigen Workspace — von der ersten Sichtung bis zum gebuchten Honorar.
+            Mandanten, Stellen und Bewerbungen in einem ruhigen Workspace — von der ersten Idee bis zur fertigen Bewerbungsmappe.
           </p>
         </div>
 
@@ -207,7 +207,7 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
         </ul>
 
         <p style={{ position: 'relative', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.55)', marginTop: 'auto' }}>
-          We connect partners — Talent zu Mandat.
+          Mandanten, Stellen und Bewerbungen — an einem Ort.
         </p>
       </aside>
 

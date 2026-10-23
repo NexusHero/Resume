@@ -57,7 +57,7 @@ Resolved from the environment (see `server/src/config.ts`):
 | `OLLAMA_URL` / `OLLAMA_EMBED_MODEL`                         | `http://localhost:11434` / `nomic-embed-text`              | Ollama server + embedding model (when `EMBEDDING_PROVIDER=ollama`).                                                                     |
 | `OPENAI_API_KEY` / `OPENAI_EMBED_MODEL` / `OPENAI_BASE_URL` | — / `text-embedding-3-small` / `https://api.openai.com/v1` | OpenAI embeddings (when `EMBEDDING_PROVIDER=openai`; without the key it stays hashed).                                                  |
 | `PLAN`                                                      | `pro`                                                      | Subscription plan: `pro` (default) leaves all AI features open; `free` gates them behind a 402 (ADR-0021).                              |
-| `APP_SECRET`                                                | _(dev)_                                                    | Secret that encrypts stored secrets (per-user API keys) at rest. **Set in production.**                                                 |
+| `APP_SECRET`                                                | _(dev)_                                                    | Secret that signs/encrypts the embedded auth store at rest. **Set in production.**                                                      |
 | `MAIL_TRANSPORT`                                            | `console`                                                  | `smtp` sends real email via nodemailer; otherwise the dev console transport logs it.                                                    |
 | `MAIL_FROM`                                                 | `myJob …`                                                  | From address on outgoing mail.                                                                                                          |
 | `APP_BASE_URL`                                              | `http://localhost:$PORT`                                   | Public origin used to build links in emails (e.g. the password-reset link).                                                             |
@@ -112,7 +112,7 @@ size it per instance and scale out for more throughput.
 
 - **Persistence:** with `STORE=sql`, everything (recruiting records,
   applications, audit events, saved searches, users, sessions, password-reset
-  tokens and the encrypted per-user API keys) lives in Postgres. The PDF archive
+  tokens and the workspace settings) lives in Postgres. The PDF archive
   is the one file-backed store left — set `PDF_ARCHIVE=s3` (ADR-0031) to move it
   to an S3-compatible bucket (AWS, Cloudflare R2, Hetzner, MinIO), so nothing is
   bound to a single machine and instances share it; otherwise mount a volume at

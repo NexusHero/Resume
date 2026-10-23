@@ -35,7 +35,7 @@ function FormGroup({ title, children, onAdd }) {
   );
 }
 
-function Editor({ talent, onClose, onCreateMappe }) {
+function Editor({ talent, onClose, onCreateMappe, onOpenSettings }) {
   /* ---- Identity & persistence flags first — used by every handler below.
      The pinned "me" profile has no server row, so it stays local-only. ---- */
   const talentId = talent.id;
@@ -114,7 +114,20 @@ function Editor({ talent, onClose, onCreateMappe }) {
   // A failed AI call must never be silent — the recruiter sees why it stopped
   // (missing key, Pro gate, network) instead of a button that does nothing.
   const [aiError, setAiError] = React.useState(null);
+  const [aiReady, setAiReady] = React.useState(null);
+  React.useEffect(() => {
+    let alive = true;
+    const p = window.RecruitApi && window.RecruitApi.aiConfigured
+      ? window.RecruitApi.aiConfigured()
+      : Promise.resolve(true);
+    p.then((ok) => { if (alive) setAiReady(ok); }).catch(() => { if (alive) setAiReady(false); });
+    return () => { alive = false; };
+  }, []);
   const runAI = async () => {
+    if (aiReady === false) {
+      setAiError('KI nicht eingerichtet — konfiguriere den zentralen Schlüssel in den Einstellungen.');
+      return;
+    }
     setGen(true);
     setAiError(null);
     setPending(null);
@@ -518,7 +531,17 @@ function Editor({ talent, onClose, onCreateMappe }) {
               <ED.Icon name="eye" size={14} /> Live-Vorschau · {doc === 'lebenslauf' ? 'Lebenslauf' : 'Anschreiben'}
             </span>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button onClick={runAI} style={{ appearance: 'none', cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12.5px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-md)', padding: isMobile ? '10px 14px' : '7px 12px', minHeight: isMobile ? '44px' : undefined }}>
+              {aiReady === false && (
+                <button
+                  type="button"
+                  role="link"
+                  onClick={() => onOpenSettings && onOpenSettings()}
+                  style={{ alignSelf: 'center', appearance: 'none', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--danger)' }}
+                >
+                  KI nicht eingerichtet — in den Einstellungen konfigurieren
+                </button>
+              )}
+              <button onClick={runAI} disabled={aiReady === false} title={aiReady === false ? 'KI nicht eingerichtet — in den Einstellungen konfigurieren' : undefined} style={{ appearance: 'none', cursor: aiReady === false ? 'default' : 'pointer', opacity: aiReady === false ? 0.5 : 1, border: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12.5px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-md)', padding: isMobile ? '10px 14px' : '7px 12px', minHeight: isMobile ? '44px' : undefined }}>
                 <ED.Icon name="zap" size={14} />KI anpassen
               </button>
               <ED.Button size="sm" variant="outline" iconLeft={<ED.Icon name="download" size={14} />} onClick={exportPdf} disabled={pdfBusy}>{pdfBusy ? 'PDF…' : 'PDF'}</ED.Button>

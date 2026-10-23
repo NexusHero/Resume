@@ -16,7 +16,9 @@ import { FsAttachmentStore } from '../../src/adapters/fs-attachment-store.js';
 import { FsUserRepository } from '../../src/adapters/fs-user-repository.js';
 import { FsPasswordResetTokenStore } from '../../src/adapters/fs-password-reset-token-store.js';
 import { FsEmailVerificationTokenStore } from '../../src/adapters/fs-email-verification-token-store.js';
-import { FsApiKeyStore } from '../../src/adapters/fs-api-key-store.js';
+import { FsWorkspaceSettingsStore } from '../../src/adapters/fs-workspace-settings-store.js';
+import { FsTenantRepository } from '../../src/adapters/fs-tenant-repository.js';
+import { FsInviteRepository } from '../../src/adapters/fs-invite-repository.js';
 import { FsUsageMeter } from '../../src/adapters/fs-usage-meter.js';
 import { FsInterviewObservationRepository } from '../../src/adapters/fs-interview-observation-repository.js';
 import {
@@ -26,7 +28,6 @@ import {
 import { FsArtifactLogRepository } from '../../src/adapters/fs-artifact-log-repository.js';
 import { FsStageTransitionRepository } from '../../src/adapters/fs-stage-transition-repository.js';
 import { FsRetentionPolicyStore } from '../../src/adapters/fs-retention-policy-store.js';
-import { SecretCipher } from '../../src/adapters/secret-cipher.js';
 import { FixedClock } from '../support/fakes.js';
 import type { Application, AuditEvent } from '../../src/domain/application.js';
 import type { User } from '../../src/domain/user.js';
@@ -54,9 +55,11 @@ function tmpConfig(): AppConfig {
     attachmentsFile: path.join(storeDir, 'attachments.json'),
     attachmentsDir: path.join(storeDir, 'attachments'),
     usersFile: path.join(storeDir, 'users.json'),
+    inviteTokensFile: path.join(storeDir, 'tenant-invites.json'),
+    tenantsFile: path.join(storeDir, 'tenants.json'),
     passwordResetTokensFile: path.join(storeDir, 'password-reset-tokens.json'),
     emailVerificationTokensFile: path.join(storeDir, 'email-verification-tokens.json'),
-    apiKeysFile: path.join(storeDir, 'api-keys.json'),
+    workspaceSettingsFile: path.join(storeDir, 'workspace-settings.json'),
     usageFile: path.join(storeDir, 'usage.json'),
     interviewObservationsFile: path.join(storeDir, 'interview-observations.json'),
     assistantSettingsFile: path.join(storeDir, 'assistant-settings.json'),
@@ -147,16 +150,6 @@ describe('FsUserRepository', () => {
     await repo.add(user('u1', 'a@example.com'));
     expect(await repo.remove('nope')).toBe(false);
   });
-
-  it('Repository_SetLlmProvider_PersistsAcrossInstances', async () => {
-    const config = tmpConfig();
-    const repo = new FsUserRepository({ config });
-    await repo.add(user('u1', 'a@example.com'));
-    await repo.setLlmProvider('u1', 'gemini');
-    // A fresh instance (e.g. after a restart) still sees the choice.
-    const fresh = new FsUserRepository({ config });
-    expect((await fresh.findById('u1'))?.llmProvider).toBe('gemini');
-  });
 });
 
 const fixedClock = new FixedClock();
@@ -237,55 +230,24 @@ describe('FsEmailVerificationTokenStore', () => {
   });
 });
 
-describe('FsApiKeyStore', () => {
-  const cipher = () => new SecretCipher({ config: { security: { encryptionSecret: 's3cret' } } });
-
-  it('SetGet_RoundTrips_AndStoresCiphertextNotPlaintext', async () => {
-    const config = tmpConfig();
-    const store = new FsApiKeyStore({ config, secretCipher: cipher() });
-    await store.set('owner1', 'claude', 'sk-ant-PLAINTEXT');
-    expect(await store.get('owner1', 'claude')).toBe('sk-ant-PLAINTEXT');
-    // the file must not contain the plaintext key
-    const raw = await fs.readFile(config.apiKeysFile, 'utf8');
-    expect(raw).not.toContain('sk-ant-PLAINTEXT');
+describe('FsWorkspaceSettingsStore', () => {
+  it('SetGet_RoundTrip', async () => {
+    const store = new FsWorkspaceSettingsStore({ config: tmpConfig() });
+    await store.set('owner1', { vermittlung: true });
+    expect(await store.get('owner1')).toEqual({ vermittlung: true });
   });
 
-  it('Set_OverwritesExisting_PerProvider', async () => {
-    const store = new FsApiKeyStore({ config: tmpConfig(), secretCipher: cipher() });
-    await store.set('owner1', 'claude', 'first');
-    await store.set('owner1', 'claude', 'second');
-    expect(await store.get('owner1', 'claude')).toBe('second');
-  });
-
-  it('Get_ScopedToOwnerAndProvider', async () => {
-    const store = new FsApiKeyStore({ config: tmpConfig(), secretCipher: cipher() });
-    await store.set('owner1', 'claude', 'a');
-    expect(await store.get('owner2', 'claude')).toBeNull();
-    expect(await store.get('owner1', 'gemini')).toBeNull();
-  });
-
-  it('ProvidersFor_ListsConfiguredProviders', async () => {
-    const store = new FsApiKeyStore({ config: tmpConfig(), secretCipher: cipher() });
-    await store.set('owner1', 'claude', 'a');
-    await store.set('owner1', 'gemini', 'b');
-    await store.set('other', 'claude', 'c');
-    expect((await store.providersFor('owner1')).sort()).toEqual(['claude', 'gemini']);
-  });
-
-  it('Remove_DeletesAndReportsWhether', async () => {
-    const store = new FsApiKeyStore({ config: tmpConfig(), secretCipher: cipher() });
-    await store.set('owner1', 'claude', 'a');
-    expect(await store.remove('owner1', 'claude')).toBe(true);
-    expect(await store.remove('owner1', 'claude')).toBe(false);
-    expect(await store.get('owner1', 'claude')).toBeNull();
+  it('GetMissingOwner_ReturnsNull', async () => {
+    const store = new FsWorkspaceSettingsStore({ config: tmpConfig() });
+    expect(await store.get('owner1')).toBeNull();
   });
 
   it('MalformedFile_TreatedAsEmpty', async () => {
     const config = tmpConfig();
     await fs.mkdir(config.storeDir, { recursive: true });
-    await fs.writeFile(config.apiKeysFile, 'not json');
-    const store = new FsApiKeyStore({ config, secretCipher: cipher() });
-    expect(await store.get('owner1', 'claude')).toBeNull();
+    await fs.writeFile(config.workspaceSettingsFile, 'not json');
+    const store = new FsWorkspaceSettingsStore({ config });
+    expect(await store.get('owner1')).toBeNull();
   });
 });
 
@@ -1140,5 +1102,94 @@ describe('FsStageTransitionRepository', () => {
     await fs.mkdir(config.storeDir, { recursive: true });
     await fs.writeFile(config.stageTransitionsFile, 'not json');
     expect(await new FsStageTransitionRepository({ config }).list('team')).toEqual([]);
+  });
+});
+
+const tenant = (id: string, createdAt: string, status: 'active' | 'suspended' = 'active') => ({
+  id,
+  name: `Workspace ${id}`,
+  createdAt,
+  status,
+});
+
+describe('FsTenantRepository', () => {
+  it('Repository_NoFile_ReadsEmpty', async () => {
+    const repo = new FsTenantRepository({ config: tmpConfig() });
+    expect(await repo.list()).toEqual([]);
+    expect(await repo.findById('missing')).toBeNull();
+    expect(await repo.setStatus('missing', 'suspended')).toBe(false);
+  });
+
+  it('Repository_CreateThenList_SortsByCreation', async () => {
+    const repo = new FsTenantRepository({ config: tmpConfig() });
+    await repo.create(tenant('t2', '2026-07-02T10:00:00.000Z'));
+    await repo.create(tenant('t1', '2026-07-01T10:00:00.000Z'));
+    expect((await repo.list()).map((t) => t.id)).toEqual(['t1', 't2']);
+    expect(await repo.findById('t1')).toMatchObject({ name: 'Workspace t1' });
+  });
+
+  it('Repository_NonArrayFile_ReadsEmpty', async () => {
+    const config = tmpConfig();
+    await fs.mkdir(config.storeDir, { recursive: true });
+    await fs.writeFile(config.tenantsFile, '{"x":1}');
+    expect(await new FsTenantRepository({ config }).list()).toEqual([]);
+  });
+
+  it('SetStatus_ChangedStatus_Persists', async () => {
+    const config = tmpConfig();
+    const repo = new FsTenantRepository({ config });
+    await repo.create(tenant('t1', '2026-07-01T10:00:00.000Z'));
+    expect(await repo.setStatus('t1', 'suspended')).toBe(true);
+    expect(await new FsTenantRepository({ config }).findById('t1')).toMatchObject({
+      status: 'suspended',
+    });
+  });
+
+  it('SetStatus_UnchangedStatus_ReportsNoChange', async () => {
+    const repo = new FsTenantRepository({ config: tmpConfig() });
+    await repo.create(tenant('t1', '2026-07-01T10:00:00.000Z'));
+    expect(await repo.setStatus('t1', 'active')).toBe(false);
+  });
+});
+
+const invite = (token: string, tenantId: string, createdAt: string) => ({
+  token,
+  tenantId,
+  email: 'invite@example.com',
+  roles: ['recruiter' as const],
+  invitedBy: 'u1',
+  createdAt,
+  expiresAt: '2026-08-01T00:00:00.000Z',
+});
+
+describe('FsInviteRepository', () => {
+  it('Repository_NoFile_FindsNothing', async () => {
+    const repo = new FsInviteRepository({ config: tmpConfig() });
+    expect(await repo.findByToken('nope')).toBeNull();
+    expect(await repo.listByTenant('team')).toEqual([]);
+    expect(await repo.consume('nope')).toBeNull();
+  });
+
+  it('Repository_CreateThenFind_RoundTrips', async () => {
+    const repo = new FsInviteRepository({ config: tmpConfig() });
+    await repo.create(invite('a', 'team', '2026-07-02T10:00:00.000Z'));
+    await repo.create(invite('b', 'team', '2026-07-01T10:00:00.000Z'));
+    await repo.create(invite('c', 'other', '2026-07-03T10:00:00.000Z'));
+    expect(await repo.findByToken('a')).toMatchObject({ token: 'a' });
+    expect((await repo.listByTenant('team')).map((i) => i.token)).toEqual(['a', 'b']);
+  });
+
+  it('Consume_ExistingToken_RemovesItOnce', async () => {
+    const repo = new FsInviteRepository({ config: tmpConfig() });
+    await repo.create(invite('a', 'team', '2026-07-02T10:00:00.000Z'));
+    expect(await repo.consume('a')).toMatchObject({ token: 'a' });
+    expect(await repo.consume('a')).toBeNull(); // single-use
+  });
+
+  it('Repository_NonArrayFile_FindsNothing', async () => {
+    const config = tmpConfig();
+    await fs.mkdir(config.storeDir, { recursive: true });
+    await fs.writeFile(config.inviteTokensFile, '{}');
+    expect(await new FsInviteRepository({ config }).findByToken('a')).toBeNull();
   });
 });

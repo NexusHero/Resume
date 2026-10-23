@@ -20,8 +20,9 @@ afterEach(() => {
 // The other Settings cards fire these; a super-admin is also a normal admin.
 const baseApi = (isSuperAdmin) => ({
   getLlmSettings: vi.fn().mockResolvedValue({ current: '', providers: [] }),
-  getApiKeyStatus: vi.fn().mockResolvedValue({}),
-    getMyProfileName: vi.fn().mockResolvedValue(''),
+  getWorkspaceSettings: vi.fn().mockResolvedValue({ vermittlung: false }),
+  setWorkspaceSettings: vi.fn().mockResolvedValue({ vermittlung: true }),
+  getMyProfileName: vi.fn().mockResolvedValue(''),
   getUsage: vi.fn().mockResolvedValue({ requests: 0 }),
   listMembers: vi.fn().mockResolvedValue([]),
   listInvites: vi.fn().mockResolvedValue([]),
@@ -34,7 +35,7 @@ describe('SettingsView — super-admin console', () => {
   it('NonSuperAdmin_DoesNotSeeTheConsole', async () => {
     window.RecruitApi = { ...baseApi(false) };
     const { findByText, queryByText } = render(<SettingsView user={{ id: 'me' }} />);
-    await findByText('KI-Modelle & API-Schlüssel');
+    await findByText('KI-Einrichtung');
     await waitFor(() => expect(window.RecruitApi.authMe).toHaveBeenCalled());
     expect(queryByText('Plattform — alle Workspaces')).toBeNull();
   });

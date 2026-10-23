@@ -13,7 +13,11 @@ import { CoreModule } from '../../src/nest/core.module.js';
 import { MandatesModule } from '../../src/nest/mandates/mandates.module.js';
 import { AuthGuard } from '../../src/nest/auth.guard.js';
 import { ProblemJsonFilter } from '../../src/nest/problem-json.filter.js';
-import { MANDATE_REPOSITORY, CANDIDACY_REPOSITORY } from '../../src/nest/tokens.js';
+import {
+  MANDATE_REPOSITORY,
+  CANDIDACY_REPOSITORY,
+  WORKSPACE_SETTINGS_STORE,
+} from '../../src/nest/tokens.js';
 import {
   InMemoryMandateRepository,
   InMemoryCandidacyRepository,
@@ -37,6 +41,10 @@ describe('NestJS mandates vertical', () => {
     const fakes: Provider[] = [
       { provide: MANDATE_REPOSITORY, useValue: new InMemoryMandateRepository() },
       { provide: CANDIDACY_REPOSITORY, useValue: new InMemoryCandidacyRepository() },
+      {
+        provide: WORKSPACE_SETTINGS_STORE,
+        useValue: { get: async () => ({ vermittlung: true }), set: async () => undefined },
+      },
     ];
     @Global()
     @Module({ providers: fakes, exports: fakes.map((p) => (p as { provide: symbol }).provide) })

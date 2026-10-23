@@ -19,7 +19,6 @@ import {
   DOCUMENT_REPOSITORY,
   ATTACHMENT_STORE,
   CANDIDACY_REPOSITORY,
-  API_KEY_STORE,
   USER_REPOSITORY,
   AUTH_ENGINE,
   PASSWORD_RESET_TOKEN_STORE,
@@ -60,7 +59,6 @@ describe('NestJS talents vertical', () => {
       // RegistriesModule's user-level erase/export registries pull these leaf
       // ports too; the talents routes never touch them, so bare stubs suffice.
       ...[
-        API_KEY_STORE,
         USER_REPOSITORY,
         AUTH_ENGINE,
         PASSWORD_RESET_TOKEN_STORE,

@@ -92,7 +92,7 @@ const { AppShell, Avatar, Icon, Button, Textarea, StatusBadge } = DS;
 
 const RECRUIT_NAV = [
   { id: 'workspace', label: 'Workspace', icon: 'home' },
-  { id: 'pool', label: 'Talent-Pool', icon: 'users' },
+  { id: 'pool', label: 'Mandanten', icon: 'users' },
   { id: 'stellen', label: 'Stellen', icon: 'briefcase' },
   { id: 'matching', label: 'Matching', icon: 'search' },
   { id: 'pipeline', label: 'Pipeline', icon: 'columns', badge: 2, demo: true },
@@ -374,7 +374,7 @@ function PrepScreen() {
       <AppShell
         product="recruit" posture="rail"
         nav={RECRUIT_NAV} active="matching" onNav={goNav}
-        account={{ name: 'Suhay Sevinc', meta: 'Ich · +3 Talente', src: '../assets/img/suhay-photo-sm.jpg' }}
+        account={{ name: 'Suhay Sevinc', meta: 'Ich · +3 Mandanten', src: '../assets/img/suhay-photo-sm.jpg' }}
         title="Bewerbung vorbereiten"
         subtitle="Magic-Entwürfe · du bestätigst"
       >

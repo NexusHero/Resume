@@ -21,6 +21,7 @@ import {
   STAGE_TRANSITION_REPOSITORY,
   INTERVIEW_OBSERVATION_REPOSITORY,
   USAGE_METER,
+  WORKSPACE_SETTINGS_STORE,
 } from '../../src/nest/tokens.js';
 import {
   InMemoryMandateRepository,
@@ -53,6 +54,10 @@ describe('NestJS insights verticals (forecast, observations, usage)', () => {
         useValue: new InMemoryInterviewObservationRepository(),
       },
       { provide: USAGE_METER, useValue: new InMemoryUsageMeter() },
+      {
+        provide: WORKSPACE_SETTINGS_STORE,
+        useValue: { get: async () => ({ vermittlung: true }), set: async () => undefined },
+      },
     ];
     @Global()
     @Module({ providers: fakes, exports: fakes.map((p) => (p as { provide: symbol }).provide) })

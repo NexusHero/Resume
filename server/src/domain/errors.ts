@@ -89,4 +89,24 @@ export class RateLimitError extends DomainError {
 export class UpstreamProviderError extends DomainError {
   readonly status = 502;
   readonly type = 'upstream-provider';
+
+  constructor(message = 'The AI provider could not produce a usable result.') {
+    super(message);
+  }
+}
+
+/**
+ * No AI provider is configured on the server (503). The product contract is
+ * "no template fallback, no silent failure": a generative route answers with a
+ * clear `ai-not-configured` problem instead of fabricating text (ADR-0057).
+ */
+export class AiNotConfiguredError extends DomainError {
+  readonly status = 503;
+  readonly type = 'ai-not-configured';
+
+  constructor(
+    message = 'KI nicht eingerichtet — konfiguriere ANTHROPIC_API_KEY (oder GEMINI_API_KEY) in den Server-Umgebungsvariablen.',
+  ) {
+    super(message);
+  }
 }

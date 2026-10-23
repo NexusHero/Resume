@@ -13,6 +13,7 @@ import {
 import { createMandateSchema, updateMandateSchema } from '../../domain/mandate.js';
 import type { MandateService } from '../../services/mandate-service.js';
 import { AuthGuard } from '../auth.guard.js';
+import { VermittlungGuard } from '../vermittlung.guard.js';
 import { CurrentScope } from '../params.js';
 import { ZodValidationPipe } from '../zod-validation.pipe.js';
 import { MANDATE_SERVICE } from '../tokens.js';
@@ -23,7 +24,7 @@ import { MANDATE_SERVICE } from '../tokens.js';
  * AuthGuard stamped, so a mandate is only ever read/written within its team.
  */
 @Controller('api/v1/mandates')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, VermittlungGuard)
 export class MandatesController {
   constructor(@Inject(MANDATE_SERVICE) private readonly service: MandateService) {}
 

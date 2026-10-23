@@ -1,9 +1,10 @@
-import { parsePrompt, extractJson, fallbackParsed } from '../domain/document-parse.js';
+import { parsePrompt, extractJson } from '../domain/document-parse.js';
 import {
   type DocumentContact,
   type ResumeContent,
   saveDocumentsSchema,
 } from '../domain/talent-documents.js';
+import { UpstreamProviderError } from '../domain/errors.js';
 import type { LlmProviderId } from '../ports/llm-provider.js';
 import type { PdfTextExtractor } from '../ports/pdf-text-extractor.js';
 import type { Logger } from '../ports/logger.js';
@@ -14,7 +15,8 @@ import type { DocumentService } from './document-service.js';
 export interface ParsedDocument {
   contact: DocumentContact;
   resume: ResumeContent;
-  provider: LlmProviderId | 'template';
+  /** The provider that produced the parse, or `none` for an empty (scanned) PDF. */
+  provider: LlmProviderId | 'none';
   usage?: CallUsage;
 }
 
@@ -59,18 +61,21 @@ export class CvParseService {
     await this.documents.get(scope, talentId); // 404s on unknown talent
 
     const res = await this.runner.run(userId, 'parse', MAX_TOKENS.parse, parsePrompt(text));
-    const raw: unknown = res ? extractJson(res.reply) : null;
-    const provider: LlmProviderId | 'template' = res && raw ? res.provider : 'template';
-    const usage = res && raw ? res.usage : undefined;
+    const raw: unknown = extractJson(res.reply);
+    if (!raw || typeof raw !== 'object') {
+      throw new UpstreamProviderError();
+    }
 
-    // Validate whatever we have (LLM JSON or fallback) through the save schema,
-    // which fills defaults for any missing/invalid field.
-    const source = (raw && typeof raw === 'object' ? raw : fallbackParsed(text)) as {
-      contact?: unknown;
-      resume?: unknown;
-    };
+    // Validate whatever the LLM returned through the save schema, which fills
+    // defaults for any missing/invalid field.
+    const source = raw as { contact?: unknown; resume?: unknown };
     const validated = saveDocumentsSchema.parse({ contact: source.contact, resume: source.resume });
-    return { contact: validated.contact, resume: validated.resume, provider, usage };
+    return {
+      contact: validated.contact,
+      resume: validated.resume,
+      provider: res.provider,
+      usage: res.usage,
+    };
   }
 
   /**
@@ -99,7 +104,7 @@ export class CvParseService {
       return {
         contact: empty.contact,
         resume: empty.resume,
-        provider: 'template',
+        provider: 'none',
         extractedChars: 0,
       };
     }

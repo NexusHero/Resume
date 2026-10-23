@@ -1,7 +1,8 @@
-import { UpstreamProviderError } from '../../src/domain/errors.js';
+import { AiNotConfiguredError, UpstreamProviderError } from '../../src/domain/errors.js';
 import { AnthropicLlmProvider } from '../../src/adapters/anthropic-llm-provider.js';
 import { GeminiLlmProvider } from '../../src/adapters/gemini-llm-provider.js';
 import { LlmService } from '../../src/services/llm-service.js';
+import { LlmFeatureRunner } from '../../src/services/llm-feature-runner.js';
 import { CoverLetterService } from '../../src/services/cover-letter-service.js';
 import { coverLetterTemplate, coverLetterPrompt } from '../../src/domain/cover-letter.js';
 import type { HttpFetch } from '../../src/ports/http-fetch.js';
@@ -159,15 +160,43 @@ describe('LlmService', () => {
     ]);
   });
 
-  it('Active_NullWhenDefaultProviderHasNoCredentials', () => {
-    // gemini as the configured default, but without server credentials
+  it('Active_FallsBackToAnyAvailableProvider_WhenDefaultHasNoCredentials', () => {
+    // gemini is the configured default but has no key; claude does → claude is
+    // the effective provider, not a 503.
     const svc = new LlmService({
       providers: [claude, gemini],
       defaultProvider: 'gemini',
       logger: noopLogger,
     });
     expect(svc.currentProvider()).toBe('gemini');
+    expect(svc.active()?.id).toBe('claude');
+    expect(svc.isConfigured()).toBe(true);
+  });
+
+  it('Active_UsesGeminiWhenOnlyGeminiHasAKey', () => {
+    // The product default is Claude, but ANTHROPIC is optional: a server with
+    // only GEMINI_API_KEY must be configured (ADR-0057).
+    const noKeyClaude: LlmProvider = { ...claude, available: false };
+    const keyedGemini: LlmProvider = { ...gemini, available: true };
+    const svc = new LlmService({
+      providers: [noKeyClaude, keyedGemini],
+      defaultProvider: 'claude',
+      logger: noopLogger,
+    });
+    expect(svc.active()?.id).toBe('gemini');
+    expect(svc.isConfigured()).toBe(true);
+    expect(svc.settings().current).toBe('gemini');
+  });
+
+  it('Active_NullWhenNoProviderHasCredentials', () => {
+    const noKeyClaude: LlmProvider = { ...claude, available: false };
+    const svc = new LlmService({
+      providers: [noKeyClaude, gemini],
+      defaultProvider: 'claude',
+      logger: noopLogger,
+    });
     expect(svc.active()).toBeNull();
+    expect(svc.isConfigured()).toBe(false);
   });
 
   it('Get_ReturnsProviderRegardlessOfAvailability', () => {
@@ -219,7 +248,7 @@ describe('CoverLetterService', () => {
     expect(out).toEqual({ text: 'LLM letter', provider: 'claude' });
   });
 
-  it('Generate_FallsBackToTemplateWhenNoProvider', async () => {
+  it('Generate_NoProviderConfigured_ThrowsAiNotConfigured', async () => {
     const provider: LlmProvider = {
       id: 'claude',
       label: 'Claude',
@@ -232,32 +261,7 @@ describe('CoverLetterService', () => {
       logger: noopLogger,
     });
     const { svc } = build(llm);
-    const out = await svc.generate(req);
-    expect(out.provider).toBe('template');
-    expect(out.text).toContain('Celonis');
-    expect(out.text).toContain('Suhay Sevinc');
-  });
-
-  it('Generate_WithOverride_UsesUserKeyAndProviderEvenWhenServerUnavailable', async () => {
-    let usedKey: string | undefined;
-    const provider: LlmProvider = {
-      id: 'claude',
-      label: 'Claude',
-      available: false, // no server credentials
-      generate: async (input) => {
-        usedKey = input.apiKey;
-        return result('user-key letter');
-      },
-    };
-    const llm = new LlmService({
-      providers: [provider],
-      defaultProvider: 'claude',
-      logger: noopLogger,
-    });
-    const { svc } = build(llm);
-    const out = await svc.generate(req, { provider: 'claude', apiKey: 'sk-user' });
-    expect(out).toEqual({ text: 'user-key letter', provider: 'claude' });
-    expect(usedKey).toBe('sk-user');
+    await expect(svc.generate(req)).rejects.toBeInstanceOf(AiNotConfiguredError);
   });
 
   it('Generate_WithUserId_MetersTheCall', async () => {
@@ -273,7 +277,7 @@ describe('CoverLetterService', () => {
       logger: noopLogger,
     });
     const { svc, usageMeter } = build(llm);
-    await svc.generate(req, undefined, 'user-1');
+    await svc.generate(req, 'user-1');
     const events = await usageMeter.list('user-1');
     expect(events).toHaveLength(1);
     expect(events[0]).toMatchObject({
@@ -301,7 +305,7 @@ describe('CoverLetterService', () => {
     expect(usageMeter.events).toHaveLength(0);
   });
 
-  it('Generate_FallsBackToTemplateWhenProviderThrows', async () => {
+  it('Generate_ProviderThrows_ThrowsUpstreamProvider', async () => {
     const provider: LlmProvider = {
       id: 'gemini',
       label: 'Gemini',
@@ -316,8 +320,79 @@ describe('CoverLetterService', () => {
       logger: noopLogger,
     });
     const { svc } = build(llm);
-    const out = await svc.generate(req);
-    expect(out.provider).toBe('template');
+    await expect(svc.generate(req)).rejects.toBeInstanceOf(UpstreamProviderError);
+  });
+});
+
+describe('LlmFeatureRunner', () => {
+  const build = (
+    available: boolean,
+    generate?: (input: {
+      prompt: string;
+    }) => Promise<{ text: string; usage: { inputTokens: number; outputTokens: number } }>,
+  ) => {
+    const provider: LlmProvider = {
+      id: 'claude',
+      label: 'Claude',
+      available,
+      generate:
+        generate ?? (async () => ({ text: 'ok', usage: { inputTokens: 1, outputTokens: 1 } })),
+    };
+    const llmService = new LlmService({
+      providers: [provider],
+      defaultProvider: 'claude',
+      logger: noopLogger,
+    });
+    return new LlmFeatureRunner({
+      llmService,
+      usageMeter: new InMemoryUsageMeter(),
+      clock: new FixedClock(),
+      logger: noopLogger,
+    });
+  };
+
+  it('LlmFeatureRunner_ResolveProvider_NoProviderConfigured_ThrowsAiNotConfigured', async () => {
+    const runner = build(false);
+    await expect(runner.resolveProvider('u1')).rejects.toBeInstanceOf(AiNotConfiguredError);
+  });
+
+  it('LlmFeatureRunner_Run_GenerationFails_ThrowsUpstreamProvider', async () => {
+    const runner = build(true, async () => {
+      throw new Error('boom');
+    });
+    await expect(
+      runner.run('u1', 'suggest', 10, { system: 's', prompt: 'p' }),
+    ).rejects.toBeInstanceOf(UpstreamProviderError);
+  });
+
+  it('LlmFeatureRunner_RunFeature_NoFallback_ReturnsProviderOnly', async () => {
+    const runner = build(true, async () => ({
+      text: JSON.stringify({ value: 'x' }),
+      usage: { inputTokens: 1, outputTokens: 1 },
+    }));
+    const { content, provider } = await runner.runFeature(
+      'u1',
+      'suggest',
+      10,
+      { system: 's', prompt: 'p' },
+      {
+        schema: {
+          safeParse: (v: unknown) => ({ success: true as const, data: v as { value: string } }),
+        },
+        normalize: (p) => p,
+      },
+    );
+    expect(content).toEqual({ value: 'x' });
+    expect(provider).toBe('claude');
+  });
+
+  it('LlmFeatureRunner_ParseReply_InvalidJson_ThrowsUpstreamProvider', () => {
+    const runner = build(true);
+    expect(() =>
+      runner.parseReply('suggest', 'not json', {
+        safeParse: () => ({ success: false as const }),
+      }),
+    ).toThrow(UpstreamProviderError);
   });
 });
 

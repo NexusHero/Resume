@@ -9,6 +9,7 @@ import type {
 import type { Role } from '../../domain/user.js';
 import type { AssistantSettings } from '../../domain/assistant.js';
 import type { RetentionPolicy } from '../../domain/retention.js';
+import type { WorkspaceSettings } from '../../domain/workspace-settings.js';
 
 /** Registered accounts (mirrors domain `User`). */
 export const users = pgTable('users', {
@@ -19,7 +20,6 @@ export const users = pgTable('users', {
   createdAt: text('created_at').notNull(),
   tenantId: text('tenant_id'),
   verifiedAt: text('verified_at'),
-  llmProvider: text('llm_provider'),
 });
 
 /** One-time, expiring email-verification tokens — separate from reset tokens on purpose. */
@@ -54,16 +54,7 @@ export const passwordResetTokens = pgTable('password_reset_tokens', {
   createdAt: text('created_at').notNull(),
 });
 
-/** Per-user LLM API keys, encrypted at rest. PK is (owner_id, provider). */
-export const apiKeys = pgTable(
-  'api_keys',
-  {
-    ownerId: text('owner_id').notNull(),
-    provider: text('provider').notNull(),
-    value: text('value').notNull(),
-  },
-  (t) => ({ pk: primaryKey({ columns: [t.ownerId, t.provider] }) }),
-);
+/** Per-user LLM API keys were removed with the central-key model (ADR-0057). */
 
 /** Recorded job applications (mirrors domain `Application`). */
 export const applications = pgTable('applications', {
@@ -215,6 +206,12 @@ export const assistantSettings = pgTable('assistant_settings', {
 export const retentionPolicies = pgTable('retention_policies', {
   ownerId: text('owner_id').primaryKey(),
   policy: jsonb('policy').$type<RetentionPolicy>().notNull(),
+});
+
+/** Per-workspace feature settings (mirrors domain `WorkspaceSettings`, ADR-0057). */
+export const workspaceSettings = pgTable('workspace_settings', {
+  ownerId: text('owner_id').primaryKey(),
+  settings: jsonb('settings').$type<WorkspaceSettings>().notNull(),
 });
 
 /** The assistant's suggestion queue (mirrors domain `AssistantSuggestion`). Team-scoped. */

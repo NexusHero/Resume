@@ -6,7 +6,6 @@ import type { UserErasureStep, UserExportSection } from '../ports/personal-data.
 import type { DocumentRepository } from '../ports/document-repository.js';
 import type { AttachmentStore } from '../ports/attachment-store.js';
 import type { CandidacyRepository } from '../ports/candidacy-repository.js';
-import type { ApiKeyStore } from '../ports/api-key-store.js';
 import type { UserRepository } from '../ports/user-repository.js';
 import type { AuthEngine } from '../ports/auth-engine.js';
 import type { PasswordResetTokenStore } from '../ports/password-reset-token-store.js';
@@ -26,7 +25,6 @@ import {
   DOCUMENT_REPOSITORY,
   ATTACHMENT_STORE,
   CANDIDACY_REPOSITORY,
-  API_KEY_STORE,
   USER_REPOSITORY,
   AUTH_ENGINE,
   PASSWORD_RESET_TOKEN_STORE,
@@ -102,21 +100,12 @@ import {
       // and a forgotten one (as email-verification tokens once were) can't recur.
       provide: USER_ERASURE_STEPS,
       useFactory: (
-        apiKeyStore: ApiKeyStore,
         userRepository: UserRepository,
         authEngine: AuthEngine,
         passwordResetTokenStore: PasswordResetTokenStore,
         emailVerificationTokenStore: EmailVerificationTokenStore,
         usageMeter: UsageMeter,
       ): UserErasureStep[] => [
-        {
-          label: 'api-keys',
-          erase: async (userId) => {
-            for (const provider of await apiKeyStore.providersFor(userId)) {
-              await apiKeyStore.remove(userId, provider);
-            }
-          },
-        },
         {
           // Better-Auth owns credentials + sessions (ADR-0043): erase the account
           // there (removes the credential and every session) by email.
@@ -137,7 +126,6 @@ import {
         { label: 'usage', erase: (userId) => usageMeter.removeForUser(userId) },
       ],
       inject: [
-        API_KEY_STORE,
         USER_REPOSITORY,
         AUTH_ENGINE,
         PASSWORD_RESET_TOKEN_STORE,

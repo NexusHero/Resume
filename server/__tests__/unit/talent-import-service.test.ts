@@ -13,7 +13,6 @@ import {
   InMemoryUserRepository,
   InMemoryDocumentRepository,
   InMemoryCandidacyRepository,
-  InMemoryApiKeyStore,
   InMemoryUsageMeter,
   InMemoryInterviewObservationRepository,
   InMemoryAttachmentStore,
@@ -67,8 +66,6 @@ function ctx(generate?: (p: string) => string, pdfText = 'Extracted CV text.') {
       defaultProvider: 'claude',
       logger: noopLogger,
     }),
-    apiKeyStore: new InMemoryApiKeyStore(),
-    userRepository: users,
     pdfTextExtractor: new FakePdfTextExtractor(pdfText),
     usageMeter: new InMemoryUsageMeter(),
     interviewObservationRepository: new InMemoryInterviewObservationRepository(),
@@ -133,12 +130,13 @@ describe('TalentImportService.importPdfs', () => {
     expect(docs.resume.summary).toBe('Builds engines.');
   });
 
-  it('NoProvider_FallsBackToPlaceholderName', async () => {
-    const c = ctx(); // no LLM → template parse keeps text, no name
+  it('NoProvider_ImportReportsFailureAndRollsBack', async () => {
+    const c = ctx(); // no LLM key → parse throws 503, the file is reported failed
     const { results } = await c.service.importPdfs(OWNER, OWNER, {
       items: [{ dataBase64: b64('%PDF a'), filename: 'a.pdf' }],
     });
-    expect(results[0]).toMatchObject({ ok: true, name: 'Imported CV', provider: 'template' });
+    expect(results[0]).toMatchObject({ ok: false, filename: 'a.pdf' });
+    expect(await c.talents.list(OWNER)).toHaveLength(0);
   });
 
   it('DownstreamFailure_RollsBackTheTalent', async () => {

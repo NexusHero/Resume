@@ -40,14 +40,14 @@ function MandateView({ mandates, onEdit, onOpenPipeline }) {
               <div style={{ flex: 1 }}>
                 <div style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 700, color: 'var(--text-heading)', letterSpacing: '-0.01em' }}>{client}</div>
               </div>
-              <VV.Badge variant="subtle" size="sm">{ms.length} Mandate</VV.Badge>
+              <VV.Badge variant="subtle" size="sm">{ms.length} Suchaufträge</VV.Badge>
             </header>
             {/* Fixed-width columns don't fit a phone; scroll the table sideways
                 on mobile rather than misaligning the cells (ADR-0026). */}
             <div style={{ overflowX: isMobile ? 'auto' : 'visible' }}>
             <div style={{ minWidth: isMobile ? '620px' : 'auto' }}>
             {ms.map((m) => (
-              <div key={m.id} onClick={onEdit ? () => onEdit(m) : undefined} role={onEdit ? 'button' : undefined} title={onEdit ? 'Mandat bearbeiten' : undefined} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.5fr) 96px 104px 116px 116px', alignItems: 'center', gap: '14px', padding: '13px 18px', borderBottom: '1px solid var(--border)', cursor: onEdit ? 'pointer' : 'default' }}>
+              <div key={m.id} onClick={onEdit ? () => onEdit(m) : undefined} role={onEdit ? 'button' : undefined} title={onEdit ? 'Suchauftrag bearbeiten' : undefined} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.5fr) 96px 104px 116px 116px', alignItems: 'center', gap: '14px', padding: '13px 18px', borderBottom: '1px solid var(--border)', cursor: onEdit ? 'pointer' : 'default' }}>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-heading)' }}>{m.role}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', marginTop: '2px' }}><VV.Icon name="pin" size={11} />{m.location}</div>
@@ -83,7 +83,7 @@ function MandateView({ mandates, onEdit, onOpenPipeline }) {
       {order.length === 0 && (
         <VV.Card>
           <div style={{ padding: '40px', textAlign: 'center', fontSize: '13px', color: 'var(--text-soft)' }}>
-            Noch keine Mandate.
+            Noch keine Suchaufträge.
           </div>
         </VV.Card>
       )}
@@ -104,7 +104,7 @@ function PlatzierungenView({ placements, kpis, onEdit }) {
         <div style={{ overflowX: isMobile ? 'auto' : 'visible' }}>
         <div style={{ minWidth: isMobile ? '600px' : 'auto' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.4fr) minmax(0,1.2fr) 110px 110px 110px', gap: '14px', padding: '11px 18px', fontFamily: 'var(--font-mono)', fontSize: '9.5px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-soft)', borderBottom: '1px solid var(--border)', background: 'var(--surface-subtle)' }}>
-          <span>Talent</span><span>Klient · Rolle</span><span>Start</span><span>Honorar</span><span style={{ textAlign: 'right' }}>Status</span>
+          <span>Mandant</span><span>Klient · Rolle</span><span>Start</span><span>Honorar</span><span style={{ textAlign: 'right' }}>Status</span>
         </div>
         {placements.map((p) => (
           <div key={p.id} onClick={onEdit ? () => onEdit(p) : undefined} role={onEdit ? 'button' : undefined} title={onEdit ? 'Platzierung bearbeiten' : undefined} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.4fr) minmax(0,1.2fr) 110px 110px 110px', gap: '14px', alignItems: 'center', padding: '13px 18px', borderBottom: '1px solid var(--border)', cursor: onEdit ? 'pointer' : 'default' }}>
@@ -197,7 +197,7 @@ function ForecastCard() {
   }, []);
 
   return (
-    <VV.Card title="Pipeline-Prognose" subtitle="Gewichteter erwarteter Umsatz über aktive Mandate">
+    <VV.Card title="Pipeline-Prognose" subtitle="Gewichteter erwarteter Umsatz über aktive Suchaufträge">
       {error ? (
         <div style={{ padding: '18px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Prognose konnte nicht geladen werden.</div>
       ) : data === null ? (

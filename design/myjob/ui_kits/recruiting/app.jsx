@@ -3,27 +3,31 @@ const A = window.MyJobDesignSystem_5611b7;
 
 const TITLES = {
   uebersicht: ['Workspace', 'Was heute deine Aufmerksamkeit braucht'],
-  mandate: ['Mandate', 'Deine Suchmandate — Stellen, Fristen, Honorar'],
-  pool: ['Talent-Pool', 'Die Kandidat:innen, die du vertrittst'],
-  matching: ['Stellensuche & Matching', 'Passende Rollen finden — stellvertretend bewerben'],
-  bewerbungen: ['Pipeline', 'Alle Bewerbungen über die Stufen hinweg'],
+  mandate: ['Suchaufträge', 'Deine Suchaufträge — Stellen, Fristen, Honorar'],
+  pool: ['Mandanten', 'Die Personen, die du beim Bewerben begleitest'],
+  matching: ['Stellensuche & Matching', 'Passende Rollen finden'],
+  stellen: ['Stellen', 'Gespeicherte Stellenanzeigen'],
+  bewerbungen: ['Bewerbungen', 'Deine Bewerbungen im Überblick'],
+  pipeline: ['Pipeline', 'Alle Bewerbungen über die Stufen hinweg'],
   platzierungen: ['Platzierungen', 'Gebuchte Platzierungen und Honorare'],
   berichte: ['Performance', 'Honorare, Funnel und Auslastung'],
   assistant: ['CoRecruiter', 'Dein KI-Assistent — bereitet den Desk vor, du entscheidest'],
   postfach: ['Postfach', 'Nachrichten von Klienten und Unternehmen'],
-  einstellungen: ['Einstellungen', 'Darstellung, KI-Schlüssel & Agentic-Modus'],
+  einstellungen: ['Einstellungen', 'Darstellung, KI & Workspace'],
 };
 
-/* The collapsed primary navigation for the 2026 restructure — six destinations
-   in the floating rail; Matching folds under Mandate/Stellen, Placements under
-   Performance, the assistant is a topbar action, and Settings is a foot utility
-   (AppShell renders it below the nav). Everything else — CV, Anschreiben,
-   Bewerbungen, Dossier — lives inside a candidate or a Stelle, not as a page. */
-const NAV = [
+/* The application-first rail (ADR-0057). The intermediary features are appended
+   only when the workspace switch `vermittlung` is on. */
+const BASE_NAV = [
   { id: 'uebersicht', label: 'Workspace', icon: 'home' },
-  { id: 'mandate', label: 'Mandate', icon: 'briefcase' },
-  { id: 'pool', label: 'Talent-Pool', icon: 'users' },
-  { id: 'bewerbungen', label: 'Pipeline', icon: 'columns' },
+  { id: 'pool', label: 'Mandanten', icon: 'users' },
+  { id: 'stellen', label: 'Stellen', icon: 'briefcase' },
+  { id: 'bewerbungen', label: 'Bewerbungen', icon: 'columns' },
+];
+
+const VERMITTLER_NAV = [
+  { id: 'pipeline', label: 'Pipeline', icon: 'columns' },
+  { id: 'mandate', label: 'Suchaufträge', icon: 'briefcase' },
   { id: 'berichte', label: 'Performance', icon: 'trend' },
   { id: 'postfach', label: 'Postfach', icon: 'inbox' },
 ];
@@ -110,10 +114,38 @@ function makeMeProfile(user) {
   };
 }
 
+/* An honest empty state for the application-first destinations that land in
+   later phases (Stellen = Phase 1, Bewerbungen = Phase 2). */
+function PlaceholderView({ title, text }) {
+  return (
+    <A.Card>
+      <div style={{ padding: '34px 24px', textAlign: 'center' }}>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 700, color: 'var(--text-heading)' }}>{title}</div>
+        <div style={{ fontSize: '13px', color: 'var(--text-soft)', marginTop: '6px', lineHeight: 1.6 }}>{text}</div>
+      </div>
+    </A.Card>
+  );
+}
+
 function Workspace({ user, onLogout }) {
   const { isMobile } = window.useViewport ? window.useViewport() : { isMobile: false };
   const [nav, setNav] = React.useState('uebersicht');
   const [search, setSearch] = React.useState('');
+  // The per-workspace intermediary switch (ADR-0057). Off by default; fetched
+  // from the server so the rail and the settings card agree.
+  const [vermittlung, setVermittlung] = React.useState(false);
+  React.useEffect(() => {
+    let alive = true;
+    window.RecruitApi.getWorkspaceSettings()
+      .then((s) => { if (alive) setVermittlung(!!(s && s.vermittlung)); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+  React.useEffect(() => {
+    const onChange = (e) => setVermittlung(!!(e && e.detail));
+    window.addEventListener('myjob:workspacechange', onChange);
+    return () => window.removeEventListener('myjob:workspacechange', onChange);
+  }, []);
   const [openTalent, setOpenTalent] = React.useState(null);
   const [openPipeline, setOpenPipeline] = React.useState(null); // mandate id whose pipeline is open
   const [mappeFor, setMappeFor] = React.useState(null);
@@ -362,13 +394,15 @@ function Workspace({ user, onLogout }) {
 
   const unread = messages.filter((m) => m.unread).length;
   // Hide the count badges at zero — a "0" reads as a pending indicator (like the inbox).
-  const badges = { bewerbungen: apps.filter((a) => a.status !== 'rejected' && a.status !== 'hired').length || undefined, postfach: unread || undefined };
+  const badges = { pipeline: apps.filter((a) => a.status !== 'rejected' && a.status !== 'hired').length || undefined, postfach: (vermittlung && unread) || undefined };
 
   // The one shared shell (AppShell): a floating white rail on desktop, a bottom
   // tab bar on a phone. Settings + account live at the rail foot; the assistant
-  // is a topbar action, not a destination.
-  const account = { name: (me && me.name) || 'Me', src: me && me.src, meta: `Me · +${Math.max(0, talents.length - 1)} Talente` };
-  const navItems = NAV.map((n) => ({ ...n, badge: badges[n.id] }));
+  // is a topbar action, not a destination. The intermediary destinations only
+  // appear when the workspace switch is on (ADR-0057).
+  const account = { name: (me && me.name) || 'Me', src: me && me.src, meta: `Me · +${Math.max(0, talents.length - 1)} Mandanten` };
+  const navList = vermittlung ? [...BASE_NAV, ...VERMITTLER_NAV] : BASE_NAV;
+  const navItems = navList.map((n) => ({ ...n, badge: badges[n.id] }));
   const shellNav = (n) => {
     if (window.UndoDelete) window.UndoDelete.flush();
     setOpenTalent(null);
@@ -391,7 +425,7 @@ function Workspace({ user, onLogout }) {
       title={t}
       subtitle={s}
       search={showSearch}
-      searchPlaceholder="Talente, Firmen, Rollen …"
+      searchPlaceholder="Mandanten, Firmen, Rollen …"
       searchValue={search}
       onSearch={setSearch}
       actions={a}
@@ -433,7 +467,7 @@ function Workspace({ user, onLogout }) {
       subtitle: 'Lebenslauf & Anschreiben bearbeiten',
       children: (
         <>
-          <window.Editor talent={editTalent} onClose={() => setEditing(null)} onCreateMappe={() => { setMappeFor(editTalent); }} />
+          <window.Editor talent={editTalent} onClose={() => setEditing(null)} onCreateMappe={() => { setMappeFor(editTalent); }} onOpenSettings={() => { setEditing(null); setOpenTalent(null); setNav('einstellungen'); }} />
           {mappeFor && <window.ApplyModal target={{ talent: mappeFor }} onClose={() => setMappeFor(null)} />}
         </>
       ),
@@ -450,41 +484,40 @@ function Workspace({ user, onLogout }) {
     // Guard against an unknown nav key — destructuring `undefined` here would
     // white-screen the whole workspace.
     [title, subtitle] = TITLES[nav] || TITLES.uebersicht;
-    if (nav === 'uebersicht') body = <window.Dashboard me={me} apps={apps} vkpis={vkpis} clients={clients} mandates={mandates} talentCount={talents.filter((t) => !t.me).length} onNav={setNav} onOpenTalent={goTalent} onOpenPipeline={() => setNav('mandate')} onOpenMandate={() => setNav('mandate')} />;
-    else if (nav === 'mandate') body = withState(mandatesRes, <window.MandateView mandates={shownMandates} onEdit={editMandate} onOpenPipeline={goPipeline} />);
+    if (nav === 'uebersicht') body = <window.Dashboard me={me} apps={apps} vkpis={vkpis} clients={clients} mandates={mandates} talentCount={talents.filter((t) => !t.me).length} vermittlung={vermittlung} onNav={setNav} onOpenTalent={goTalent} onOpenPipeline={() => setNav('pipeline')} onOpenMandate={() => setNav('mandate')} />;
     else if (nav === 'pool') body = withState(talentsRes, <window.TalentGrid talents={shownTalents} apps={apps} onOpen={goTalent} onAdd={addTalent} onImport={importCvs} importing={importing} />);
-    else if (nav === 'matching') body = <window.Matching talents={talents} mandates={mandates} onCreateMandate={mandateFromJob} onApply={applyFromMatching} />;
-    else if (nav === 'bewerbungen') body = withState(applicationsRes, (
+    else if (nav === 'stellen') body = <PlaceholderView title="Noch keine Stellen" text="Hier sammelst du deine Stellen. In Phase 1 kannst du eine Stelle aus der Suche übernehmen oder per URL bzw. Text einfügen." />;
+    else if (nav === 'bewerbungen') body = <PlaceholderView title="Noch keine Bewerbungen" text="Hier entstehen deine Bewerbungen. In Phase 2 wählst du zu einer Stelle einen Mandanten und erstellst deine eigene Dokumentkopie." />;
+    else if (nav === 'einstellungen') body = <window.SettingsView user={user} onLogout={onLogout} />;
+    else if (vermittlung && nav === 'mandate') body = withState(mandatesRes, <window.MandateView mandates={shownMandates} onEdit={editMandate} onOpenPipeline={goPipeline} />);
+    else if (vermittlung && nav === 'matching') body = <window.Matching talents={talents} mandates={mandates} onCreateMandate={mandateFromJob} onApply={applyFromMatching} />;
+    else if (vermittlung && nav === 'pipeline') body = withState(applicationsRes, (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '100%' }}>
         <window.PipelineBoard apps={apps} talents={talents} onOpen={goTalent} onMove={moveApplication} onDelete={deleteApplication} />
       </div>
     ));
-    else if (nav === 'platzierungen') body = withState(placementsRes, <window.PlatzierungenView placements={shownPlacements} kpis={vkpis} onEdit={editPlacement} />);
-    else if (nav === 'assistant') body = <window.AssistantView onChanged={() => { mandatesRes.reload(); }} />;
-    else if (nav === 'berichte') body = <window.ReportsView clients={reportClients} mandates={mandates} placements={placements} apps={apps} kpis={vkpis} />;
-    else if (nav === 'postfach') body = <window.Inbox messages={messages} apps={apps} talents={talents} onOpenTalent={goTalent} />;
-    else if (nav === 'einstellungen') body = <window.SettingsView user={user} onLogout={onLogout} />;
+    else if (vermittlung && nav === 'platzierungen') body = withState(placementsRes, <window.PlatzierungenView placements={shownPlacements} kpis={vkpis} onEdit={editPlacement} />);
+    else if (vermittlung && nav === 'assistant') body = <window.AssistantView onChanged={() => { mandatesRes.reload(); }} />;
+    else if (vermittlung && nav === 'berichte') body = <window.ReportsView clients={reportClients} mandates={mandates} placements={placements} apps={apps} kpis={vkpis} />;
+    else if (vermittlung && nav === 'postfach') body = <window.Inbox messages={messages} apps={apps} talents={talents} onOpenTalent={goTalent} />;
+    else body = <PlaceholderView title="Nicht verfügbar" text="Diese Ansicht ist in diesem Workspace nicht aktiviert." />;
   }
 
-  // Topbar actions: a per-view primary (create), an optional secondary that
-  // reaches a folded-in destination (Matching under Mandate, Platzierungen under
-  // Performance), and the CoRecruiter assistant — a topbar action, not a page.
+  // Topbar actions: a per-view primary (create) for the intermediary views, and
+  // the CoRecruiter assistant — a topbar action, not a page. Both only appear
+  // when the workspace switch is on (ADR-0057).
   const primaryAction =
-    (!talent && (nav === 'bewerbungen' || nav === 'uebersicht'))
-      ? <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="plus" size={15} />} onClick={() => setMappeFor(me)}>Bewerbung erfassen</A.Button>
-      : (!talent && nav === 'mandate')
-      ? <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="plus" size={15} />} onClick={addMandate}>Neues Mandat</A.Button>
-      : (!talent && nav === 'platzierungen')
+    (!talent && vermittlung && nav === 'mandate')
+      ? <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="plus" size={15} />} onClick={addMandate}>Neuer Suchauftrag</A.Button>
+      : (!talent && vermittlung && nav === 'platzierungen')
       ? <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="plus" size={15} />} onClick={addPlacement}>Platzierung</A.Button>
       : null;
   // The folded-in destinations are proper sub-tabs of their parent view —
-  // Matching under Mandate (Stellensuche), Platzierungen under Performance — so
-  // they read as one place and stay reachable identically on desktop and phone
-  // (no narrow-app-bar overflow, no floating button).
+  // Matching under Suchaufträge (Stellensuche), Platzierungen under Performance.
   const subTabs =
-    !talent && (nav === 'mandate' || nav === 'matching')
-      ? <A.Tabs tabs={[{ id: 'mandate', label: 'Mandate' }, { id: 'matching', label: 'Stellensuche' }]} value={nav === 'matching' ? 'matching' : 'mandate'} onChange={(id) => setNav(id)} style={{ marginBottom: '18px' }} />
-      : !talent && (nav === 'berichte' || nav === 'platzierungen')
+    !talent && vermittlung && (nav === 'mandate' || nav === 'matching')
+      ? <A.Tabs tabs={[{ id: 'mandate', label: 'Suchaufträge' }, { id: 'matching', label: 'Stellensuche' }]} value={nav === 'matching' ? 'matching' : 'mandate'} onChange={(id) => setNav(id)} style={{ marginBottom: '18px' }} />
+      : !talent && vermittlung && (nav === 'berichte' || nav === 'platzierungen')
       ? <A.Tabs tabs={[{ id: 'berichte', label: 'Performance' }, { id: 'platzierungen', label: 'Platzierungen' }]} value={nav === 'platzierungen' ? 'platzierungen' : 'berichte'} onChange={(id) => setNav(id)} style={{ marginBottom: '18px' }} />
       : null;
   // The phone app bar is narrow: show only the per-view primary action there;
@@ -493,7 +526,7 @@ function Workspace({ user, onLogout }) {
     primaryAction
   ) : (
     <>
-      {nav !== 'assistant' && (
+      {vermittlung && nav !== 'assistant' && (
         <A.Button variant="ghost" size="sm" iconLeft={<A.Icon name="zap" size={15} />} onClick={() => setNav('assistant')}>CoRecruiter</A.Button>
       )}
       {primaryAction}
@@ -505,7 +538,7 @@ function Workspace({ user, onLogout }) {
     title,
     subtitle,
     actions,
-    search: !talent && (nav === 'pool' || nav === 'mandate' || nav === 'berichte'),
+    search: !talent && (nav === 'pool' || (vermittlung && (nav === 'mandate' || nav === 'berichte'))),
     children: (
       <>
         {subTabs}
@@ -614,4 +647,4 @@ function App() {
   );
 }
 
-Object.assign(window, { App });
+Object.assign(window, { App, Workspace });

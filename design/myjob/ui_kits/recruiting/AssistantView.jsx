@@ -100,7 +100,7 @@ function AssistantView({ onChanged }) {
           <div style={{ flex: '1 1 320px', minWidth: 0 }}>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0 }}>CoRecruiter</h2>
             <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '4px', lineHeight: 1.55 }}>
-              Erstellt Shortlists von Kandidat:innen für aktive Mandate, markiert stockende Pipeline-Karten und
+              Erstellt Shortlists von Kandidat:innen für aktive Suchaufträge, markiert stockende Pipeline-Karten und
               leere Profile — und baut auf <strong>Autopilot</strong> vollständige Bewerbungen (maßgeschneiderter
               Lebenslauf + Anschreiben + Bewerbungsmappe) für starke Matches. Läuft im Hintergrund auf dem Server —
               auch während du abgemeldet bist — und legt alles hier zur Prüfung bereit. Er versendet nie etwas und löscht nie.
@@ -146,7 +146,7 @@ function AssistantView({ onChanged }) {
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '6px' }}>Bewerben auf</div>
               <div style={{ display: 'flex', gap: '4px', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-md)', padding: '4px' }}>
                 <AvModePill active={settings.applySource === 'jobs'} onClick={() => patch({ applySource: 'jobs' })} label="Stellenanzeigen" hint="Stellen von den Jobbörsen." />
-                <AvModePill active={settings.applySource === 'mandates'} onClick={() => patch({ applySource: 'mandates' })} label="Eigene Mandate" hint="Deine aktiven Klienten-Mandate." />
+                <AvModePill active={settings.applySource === 'mandates'} onClick={() => patch({ applySource: 'mandates' })} label="Eigene Suchaufträge" hint="Deine aktiven Klienten-Suchaufträge." />
               </div>
             </div>
             <div>

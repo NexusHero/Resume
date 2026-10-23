@@ -39,7 +39,6 @@ import {
   InMemoryStageTransitionRepository,
   InMemoryUserRepository,
   InMemoryAttachmentStore,
-  InMemoryApiKeyStore,
   InMemoryUsageMeter,
   InMemoryInterviewObservationRepository,
   InMemoryArtifactLogRepository,
@@ -47,6 +46,7 @@ import {
   FakePdfMerger,
   FakePdfTextExtractor,
   FakeJobSource,
+  FakeLlmProvider,
 } from '../support/fakes.js';
 
 const OWNER = 'team';
@@ -164,9 +164,17 @@ function ctx() {
   });
   const documentAiService = buildDocumentAiService({
     documentService,
-    llmService: new LlmService({ providers: [], defaultProvider: 'claude', logger: noopLogger }),
-    apiKeyStore: new InMemoryApiKeyStore(),
-    userRepository: users,
+    llmService: new LlmService({
+      providers: [
+        new FakeLlmProvider(
+          'claude',
+          true,
+          JSON.stringify({ summary: 'Tuned summary', paragraphs: ['A', 'B', 'C'] }),
+        ),
+      ],
+      defaultProvider: 'claude',
+      logger: noopLogger,
+    }),
     pdfTextExtractor: new FakePdfTextExtractor(''),
     usageMeter: new InMemoryUsageMeter(),
     interviewObservationRepository: new InMemoryInterviewObservationRepository(),

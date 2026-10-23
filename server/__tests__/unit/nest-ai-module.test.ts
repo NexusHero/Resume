@@ -8,7 +8,7 @@ import {
   COVER_LETTER_SERVICE,
   LLM_FEATURE_RUNNER,
   LLM_SERVICE,
-  API_KEY_STORE,
+  WORKSPACE_SETTINGS_STORE,
   USER_REPOSITORY,
   USAGE_METER,
   PDF_TEXT_EXTRACTOR,
@@ -35,7 +35,7 @@ describe('AiModule wiring', () => {
     const stub = () => ({}) as never;
     const leafTokens = [
       LLM_SERVICE,
-      API_KEY_STORE,
+      WORKSPACE_SETTINGS_STORE,
       USER_REPOSITORY,
       USAGE_METER,
       PDF_TEXT_EXTRACTOR,

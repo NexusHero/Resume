@@ -37,8 +37,8 @@ const { AppShell, ApplicationRow, MatchIndicator, CandidateRow, StatCard, Status
 
 const recruitNav = [
   { id: 'overview', label: 'Overview', icon: 'home' },
-  { id: 'mandate', label: 'Mandates', icon: 'briefcase' },
-  { id: 'pool', label: 'Talent Pool', icon: 'users' },
+  { id: 'mandate', label: 'Suchaufträge', icon: 'briefcase' },
+  { id: 'pool', label: 'Mandanten', icon: 'users' },
   { id: 'pipeline', label: 'Pipeline', icon: 'columns' },
   { id: 'performance', label: 'Performance', icon: 'trend' },
   { id: 'inbox', label: 'Inbox', icon: 'inbox', badge: 3 },
@@ -72,7 +72,7 @@ function RecruitDemo() {
   const t = talents[sel];
   const detail = (
     <div className="panel-pad">
-      <div className="det-cap">Talent · Detail</div>
+      <div className="det-cap">Mandant · Detail</div>
       <div className="det-name">{t.name}</div>
       <div className="det-role">{t.role}</div>
       <MatchIndicator
@@ -83,7 +83,7 @@ function RecruitDemo() {
         ]}
       />
       <div className="det-divider"></div>
-      <div className="kfact"><span className="k">Mandat</span><span className="v">React Engineer</span></div>
+      <div className="kfact"><span className="k">Suchauftrag</span><span className="v">React Engineer</span></div>
       <div className="kfact"><span className="k">Status</span><StatusBadge status={t.status} size="sm" /></div>
       <div className="kfact"><span className="k">Gehalt erwartet</span><span className="v">78.000 €</span></div>
       <div className="kfact"><span className="k">Verfügbar ab</span><span className="v">01.09.</span></div>
@@ -97,11 +97,11 @@ function RecruitDemo() {
     <AppShell
       product="recruit" posture="rail"
       nav={recruitNav} active="pool" onNav={() => {}}
-      account={{ name: 'Suhay Sevinc', meta: 'Me · +3 Talente' }}
-      title="Talent Pool" subtitle="4 Talente · React Engineer" search searchPlaceholder="Talente, Firmen, Rollen …"
+      account={{ name: 'Suhay Sevinc', meta: 'Me · +3 Mandanten' }}
+      title="Mandanten" subtitle="4 Mandanten · React Engineer" search searchPlaceholder="Mandanten, Firmen, Rollen …"
       detail={detail}
     >
-      <Card title="React Engineer · Acme" subtitle="4 passende Talente" pad={false}>
+      <Card title="React Engineer · Acme" subtitle="4 passende Mandanten" pad={false}>
         {talents.map((c, i) => (
           <CandidateRow key={i} {...c} selected={i === sel} onClick={() => setSel(i)} />
         ))}

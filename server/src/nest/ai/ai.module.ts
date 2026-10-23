@@ -9,8 +9,6 @@ import { DocumentAiService } from '../../services/document-ai-service.js';
 import { CoverLetterService } from '../../services/cover-letter-service.js';
 import type { LlmService } from '../../services/llm-service.js';
 import type { DocumentService } from '../../services/document-service.js';
-import type { ApiKeyStore } from '../../ports/api-key-store.js';
-import type { UserRepository } from '../../ports/user-repository.js';
 import type { UsageMeter } from '../../ports/usage-meter.js';
 import type { PdfTextExtractor } from '../../ports/pdf-text-extractor.js';
 import type { ArtifactLogRepository } from '../../ports/artifact-log-repository.js';
@@ -32,8 +30,6 @@ import {
   COVER_LETTER_SERVICE,
   LLM_SERVICE,
   DOCUMENT_SERVICE,
-  API_KEY_STORE,
-  USER_REPOSITORY,
   USAGE_METER,
   PDF_TEXT_EXTRACTOR,
   ARTIFACT_LOG_REPOSITORY,
@@ -58,23 +54,14 @@ import {
   providers: [
     {
       provide: LLM_FEATURE_RUNNER,
-      useFactory: (
-        llmService: LlmService,
-        apiKeyStore: ApiKeyStore,
-        userRepository: UserRepository,
-        usageMeter: UsageMeter,
-        clock: Clock,
-        logger: Logger,
-      ) =>
+      useFactory: (llmService: LlmService, usageMeter: UsageMeter, clock: Clock, logger: Logger) =>
         new LlmFeatureRunner({
           llmService,
-          apiKeyStore,
-          userRepository,
           usageMeter,
           clock,
           logger,
         }),
-      inject: [LLM_SERVICE, API_KEY_STORE, USER_REPOSITORY, USAGE_METER, CLOCK, LOGGER],
+      inject: [LLM_SERVICE, USAGE_METER, CLOCK, LOGGER],
     },
     {
       provide: DOCUMENT_ASSIST_SERVICE,

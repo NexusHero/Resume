@@ -64,7 +64,7 @@ function AddCandidateModal({ mandate, excludeTalentIds, onClose, onAdded }) {
       } catch {
         if (live) setPool([]);
         // eslint-disable-next-line no-alert
-        window.alert('Konnte den Talent-Pool nicht laden. Bitte erneut versuchen.');
+        window.alert('Konnte die Mandanten nicht laden. Bitte erneut versuchen.');
       }
     })();
     return () => { live = false; };
@@ -84,7 +84,7 @@ function AddCandidateModal({ mandate, excludeTalentIds, onClose, onAdded }) {
   return (
     <ModalOverlay onClose={onClose} zIndex={60} width="min(520px, 92vw)" backdrop="rgba(8,11,18,0.45)">
       <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)', marginBottom: '4px' }}>Kandidat:in hinzufügen</div>
-      <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginBottom: '14px' }}>Wähle ein Talent aus dem Pool für die Pipeline dieses Mandats.</div>
+      <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginBottom: '14px' }}>Wähle einen Mandanten aus dem Pool für die Pipeline dieses Suchauftrags.</div>
       {addable.length === 0 && (
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-soft)', padding: '8px 0' }}>Alle im Pool sind bereits in dieser Pipeline.</div>
       )}

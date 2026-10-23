@@ -58,7 +58,8 @@ async function runMigrationDdl(client: { query: Pool['query'] }): Promise<void> 
     ALTER TABLE users ADD COLUMN IF NOT EXISTS roles jsonb NOT NULL DEFAULT '["recruiter"]'::jsonb;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS tenant_id text;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS verified_at text;
-    ALTER TABLE users ADD COLUMN IF NOT EXISTS llm_provider text;
+    ALTER TABLE users DROP COLUMN IF EXISTS llm_provider;
+    DROP TABLE IF EXISTS api_keys;
     CREATE TABLE IF NOT EXISTS password_reset_tokens (
       token text PRIMARY KEY,
       user_id text NOT NULL,
@@ -86,12 +87,6 @@ async function runMigrationDdl(client: { query: Pool['query'] }): Promise<void> 
       created_at text NOT NULL
     );
     CREATE INDEX IF NOT EXISTS email_verification_tokens_user_id_idx ON email_verification_tokens (user_id);
-    CREATE TABLE IF NOT EXISTS api_keys (
-      owner_id text NOT NULL,
-      provider text NOT NULL,
-      value text NOT NULL,
-      PRIMARY KEY (owner_id, provider)
-    );
     CREATE TABLE IF NOT EXISTS applications (
       id text PRIMARY KEY,
       owner_id text NOT NULL,
@@ -295,6 +290,10 @@ async function runMigrationDdl(client: { query: Pool['query'] }): Promise<void> 
       key text PRIMARY KEY,
       count integer NOT NULL,
       reset_at bigint NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS workspace_settings (
+      owner_id text PRIMARY KEY,
+      settings jsonb NOT NULL
     );
   `);
 }

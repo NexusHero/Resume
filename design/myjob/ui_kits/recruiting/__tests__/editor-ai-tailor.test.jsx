@@ -67,4 +67,23 @@ describe('Editor — AI tailor', () => {
     await waitFor(() => expect(screen.getByText('A crisp tailored summary.')).toBeInTheDocument());
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
+
+  it('AiNotConfigured_ShowsSettingsLinkThatNavigatesAndSendsNoRequest', async () => {
+    window.RecruitApi.aiConfigured = vi.fn().mockResolvedValue(false);
+    const onOpenSettings = vi.fn();
+    render(
+      <Editor
+        talent={talent}
+        onClose={vi.fn()}
+        onCreateMappe={vi.fn()}
+        onOpenSettings={onOpenSettings}
+      />,
+    );
+
+    const link = await screen.findByRole('link', { name: /KI nicht eingerichtet/ });
+    await userEvent.click(link);
+
+    expect(onOpenSettings).toHaveBeenCalledTimes(1);
+    expect(window.RecruitApi.suggestDocument).not.toHaveBeenCalled();
+  });
 });

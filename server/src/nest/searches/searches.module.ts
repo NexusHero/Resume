@@ -17,6 +17,7 @@ import type { SavedSearchRepository } from '../../ports/saved-search-repository.
 import type { Clock } from '../../ports/clock.js';
 import type { IdGenerator } from '../../ports/id-generator.js';
 import { AuthGuard } from '../auth.guard.js';
+import { VermittlungGuard } from '../vermittlung.guard.js';
 import { ZodValidationPipe } from '../zod-validation.pipe.js';
 import { JobsModule } from '../jobs/jobs.module.js';
 import {
@@ -33,7 +34,7 @@ import {
  * matching the original service.
  */
 @Controller('api/v1/searches')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, VermittlungGuard)
 export class SearchesController {
   constructor(@Inject(SAVED_SEARCH_SERVICE) private readonly service: SavedSearchService) {}
 

@@ -11,6 +11,8 @@ import type { Authorizer, AuthPrincipal, AuthResource } from '../ports/authorize
 const POLICY: Record<string, Record<string, Role[]>> = {
   // Team administration — only admins manage members, their roles, and invites.
   member: { list: ['admin'], setRoles: ['admin'], invite: ['admin'], listInvites: ['admin'] },
+  // Workspace feature settings — only a workspace admin flips `vermittlung` (ADR-0057).
+  workspace: { update: ['admin'] },
   // DSGVO retention review + anonymize — admin-only (no recruiter rule).
   retention: {},
   // Recruiting work is shared across the team: any recruiter (or admin) may do it.

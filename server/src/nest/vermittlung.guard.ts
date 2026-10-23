@@ -16,19 +16,16 @@ import { WORKSPACE_SETTINGS_SERVICE } from './tokens.js';
 export const REQUIRES_VERMITTLUNG = 'requires:vermittlung';
 
 /**
- * Marks a controller/route as belonging to the intermediary features. The
- * `VermittlungGuard` is a no-op without this metadata; the marker (not a
- * per-route guard) keeps the whole guard chain on the class, so `VermittlungGuard`
- * always runs directly after `AuthGuard` (ADR-0057, plan §3.5).
+ * Marks an intermediary route. The marker (not a per-route guard) keeps the
+ * whole chain on the class, so `VermittlungGuard` always runs directly after
+ * `AuthGuard` (ADR-0057, plan §3.5).
  */
 export const RequiresVermittlung = () => SetMetadata(REQUIRES_VERMITTLUNG, true);
 
 /**
- * Hides the intermediary ("Vermittlung") feature routes when the workspace has
- * the switch off (ADR-0057). It answers `404`, not `403`: the route simply does
- * not exist in an application-first workspace. It must run **after**
- * `AuthGuard` (it reads the stamped workspace scope) and is a no-op on routes
- * without {@link RequiresVermittlung}.
+ * Hides intermediary routes when the workspace switch is off. It answers 404,
+ * not 403: the route does not exist in an application-first workspace. Runs
+ * after `AuthGuard` (it reads the stamped scope); no-op without the marker.
  */
 @Injectable()
 export class VermittlungGuard implements CanActivate {

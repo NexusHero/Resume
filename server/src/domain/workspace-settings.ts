@@ -1,23 +1,21 @@
 import { z } from 'zod';
 
 /**
- * Per-workspace feature settings (ADR-0057). Today the only flag is
- * `vermittlung`: when off (the default), the intermediary features
- * (Suchaufträge, Pipeline, Platzierungen, Performance, Postfach, CoRecruiter)
- * are hidden in the UI and answer 404 on the API. Their data is untouched.
+ * Per-workspace feature settings (ADR-0057). `vermittlung` hides the recruiter
+ * features (Suchaufträge, Pipeline, Platzierungen, Performance, Postfach,
+ * CoRecruiter) in the UI and answers 404 on the API; their data is untouched.
  */
 export interface WorkspaceSettings {
-  /** Recruiter functions (Suchaufträge, pipeline, placements, …) are reachable. Default off. */
+  /** Recruiter functions are reachable. Default off. */
   vermittlung: boolean;
 }
 
-/** A fresh workspace starts with the intermediary features switched off. */
+/** A fresh workspace starts application-first. */
 export const DEFAULT_WORKSPACE_SETTINGS: WorkspaceSettings = { vermittlung: false };
 
 /**
- * The 404 detail for a route that belongs to a switched-off feature. The UI
- * recognises it to refresh the workspace settings (another admin may have
- * flipped the switch).
+ * 404 detail for a switched-off feature. The UI recognises it to refresh the
+ * workspace settings (another admin may have flipped the switch).
  */
 export const FEATURE_NOT_ENABLED_DETAIL = 'This feature is not enabled for this workspace.';
 
@@ -28,7 +26,7 @@ export function withDefaults(
   return { ...DEFAULT_WORKSPACE_SETTINGS, ...(stored ?? {}) };
 }
 
-/** PATCH /api/v1/settings/workspace — only a workspace admin may flip the switch. */
+/** PATCH /api/v1/settings/workspace — workspace admins only. */
 export const updateWorkspaceSettingsSchema = z
   .object({ vermittlung: z.boolean() })
   .partial()

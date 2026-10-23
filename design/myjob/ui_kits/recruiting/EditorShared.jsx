@@ -73,14 +73,15 @@ function formatCallCost(v) {
 }
 
 /**
- * Which backend produced a generated draft — honesty over polish: recruiters
- * should always see whether AI or the deterministic template wrote the text.
- * When the response carries its per-call usage, the badge also shows what the
- * generation cost (tokens + estimated USD) right where the result appears.
+ * Which provider produced a generated draft: recruiters should always see that
+ * AI wrote the text. Since ADR-0057 no fresh result carries the retired
+ * `template` fallback; historical artifacts are shown as raw log text, never
+ * through this badge. When the response carries its per-call usage, the badge
+ * also shows what the generation cost (tokens + estimated USD).
  */
 function ProviderBadge({ provider, usage }) {
   if (!provider) return null;
-  const label = provider === 'template' ? 'Vorlage · keine KI' : `KI · ${provider}`;
+  const label = `KI · ${provider}`;
   const spend = usage
     ? ` · ${formatCallTokens(usage.inputTokens + usage.outputTokens)} tok · ${formatCallCost(usage.costUsd)}`
     : '';

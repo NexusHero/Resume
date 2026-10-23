@@ -4,13 +4,21 @@
  * as "text" (a login/SPA page full of script must read as empty, AK-1.5).
  */
 export function stripHtml(input: string): string {
-  return input
-    .replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, ' ')
-    .replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi, ' ')
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/&[a-z]+;/gi, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return (
+    input
+      // Remove `<script>…</script>` and `<style>…</style>` blocks **first**, before
+      // the generic tag strip, so inline JS/CSS never counts as "text" (AK-1.5).
+      // Robust to any case, arbitrary start-tag attributes, and — the reason this
+      // is `[^>]*` rather than `\s*` — obfuscated end tags that carry junk between
+      // the tag name and `>` (`</script\t\nbar>`); the lazy body also matches empty
+      // `<script></script>` blocks.
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script[^>]*>/gi, ' ')
+      .replace(/<style\b[^>]*>[\s\S]*?<\/style[^>]*>/gi, ' ')
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/&[a-z]+;/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+  );
 }
 
 /**

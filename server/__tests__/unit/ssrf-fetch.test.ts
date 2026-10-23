@@ -92,7 +92,7 @@ describe('SsrfFetch — host resolution & classification', () => {
     const { fetcher } = makeFetcher({
       lookup: { 'example.com': [{ address: '93.184.216.34', family: 4 }] },
       onFetch: (url) =>
-        url.includes('example.com')
+        new URL(url).hostname === 'example.com'
           ? new Response('', { status: 302, headers: { location: 'http://10.0.0.1/' } })
           : new Response(html),
     });
@@ -156,7 +156,7 @@ describe('SsrfFetch — redirects', () => {
         'jobs.example.org': [{ address: '93.184.216.35', family: 4 }],
       },
       onFetch: (url) =>
-        url.includes('example.com')
+        new URL(url).hostname === 'example.com'
           ? new Response('', {
               status: 302,
               headers: { location: 'https://jobs.example.org/role' },

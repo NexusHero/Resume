@@ -149,6 +149,19 @@ describe('Text import mode (T01–T03)', () => {
     expect(res.body.parsed.resume.rawText).toHaveLength(5_000);
   });
 
+  it('CvImport_RawTextOverLimit_IsTruncatedNotRejected', async () => {
+    // A CV longer than the 50k cap is truncated server-side (and flagged), not
+    // rejected with a 400.
+    const { app, agent } = await appWith();
+    const id = await talentId(app);
+    const text = 'x'.repeat(60_000);
+    const res = await agent.post(`/api/v1/talents/${id}/documents/parse`).send({ text });
+    expect(res.status).toBe(200);
+    expect(res.body.parsed.mode).toBe('text');
+    expect(res.body.parsed.resume.rawText).toHaveLength(50_000);
+    expect(res.body.parsed.truncated).toBe(true);
+  });
+
   it('ParsePdfNoKey_DoesNotStoreAnAttachment (T02)', async () => {
     const { app, agent } = await appWith();
     const id = await talentId(app);

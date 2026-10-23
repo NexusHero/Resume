@@ -475,6 +475,11 @@ function Editor({ talent, onClose, onCreateMappe, onOpenSettings }) {
                   )}
                 </div>
                 <div style={{ padding: '12px 13px' }}>
+                  {!gen && pending.truncated && (
+                    <div role="status" style={{ fontSize: '12px', fontWeight: 600, color: 'var(--warning-strong, #8a6d00)', marginBottom: '8px' }}>
+                      Text wurde bei 50.000 Zeichen gekürzt.
+                    </div>
+                  )}
                   {gen ? (
                     <div style={{ fontSize: '12.5px', color: 'var(--accent-strong)', fontStyle: 'italic' }}>myJob passt an …</div>
                   ) : pending.kind === 'import' && pending.mode === 'text' && window.TextImportNotice ? (

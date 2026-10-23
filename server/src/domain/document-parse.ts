@@ -2,7 +2,10 @@ import { z } from 'zod';
 
 /** POST /api/v1/talents/:id/documents/parse */
 export const parseRequestSchema = z.object({
-  text: z.string().min(1, 'text is required').max(50_000),
+  // A long CV is accepted and truncated server-side to {@link MAX_IMPORT_TEXT}
+  // (both text and ai mode set the `truncated` flag at >50k, ADR-0057) — the
+  // boundary must not reject an over-limit text with a 400.
+  text: z.string().min(1, 'text is required'),
 });
 
 /**

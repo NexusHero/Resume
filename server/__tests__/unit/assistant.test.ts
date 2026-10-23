@@ -20,6 +20,8 @@ import { AttachmentService } from '../../src/services/attachment-service.js';
 import { buildDocumentAiService } from '../support/build-document-ai.js';
 import { ApplicationBuilder } from '../../src/services/application-builder.js';
 import { LlmService } from '../../src/services/llm-service.js';
+import type { LlmProvider } from '../../src/ports/llm-provider.js';
+import type { Logger } from '../../src/ports/logger.js';
 import { KeywordSkillExtractor } from '../../src/adapters/keyword-skill-extractor.js';
 import { ConflictError, NotFoundError } from '../../src/domain/errors.js';
 import type { Candidacy } from '../../src/domain/candidacy.js';
@@ -103,7 +105,8 @@ const candidacy = (id: string, over: Partial<Candidacy> = {}): Candidacy => ({
   ...over,
 });
 
-function ctx(hasProvider = true) {
+function ctx(hasProvider = true, opts: { llmProvider?: LlmProvider; logger?: Logger } = {}) {
+  const logger = opts.logger ?? noopLogger;
   const settingsStore = new InMemoryAssistantSettingsStore();
   const suggestions = new InMemoryAssistantSuggestionRepository();
   const mandates = new InMemoryMandateRepository();
@@ -168,14 +171,15 @@ function ctx(hasProvider = true) {
     userRepository: users,
     llmService: new LlmService({
       providers: [
-        new FakeLlmProvider(
-          'claude',
-          true,
-          JSON.stringify({ summary: 'Tuned summary', paragraphs: ['A', 'B', 'C'] }),
-        ),
+        opts.llmProvider ??
+          new FakeLlmProvider(
+            'claude',
+            true,
+            JSON.stringify({ summary: 'Tuned summary', paragraphs: ['A', 'B', 'C'] }),
+          ),
       ],
       defaultProvider: 'claude',
-      logger: noopLogger,
+      logger,
     }),
     pdfTextExtractor: new FakePdfTextExtractor(''),
     usageMeter: new InMemoryUsageMeter(),
@@ -183,7 +187,7 @@ function ctx(hasProvider = true) {
     artifactLogRepository: new InMemoryArtifactLogRepository(),
     idGenerator: new SequenceIdGenerator('art'),
     clock,
-    logger: noopLogger,
+    logger,
   });
   const applicationBuilder = new ApplicationBuilder({
     documentAiService,
@@ -201,7 +205,7 @@ function ctx(hasProvider = true) {
     applicationBuilder,
     clock,
     idGenerator: assistantIds,
-    logger: noopLogger,
+    logger,
   });
   const service = new AssistantService({
     assistantSettingsStore: settingsStore,
@@ -215,7 +219,7 @@ function ctx(hasProvider = true) {
     autopilotService,
     clock,
     idGenerator: assistantIds,
-    logger: noopLogger,
+    logger,
     llm: { hasAvailableProvider: () => hasProvider },
   });
   return {
@@ -584,6 +588,215 @@ describe('AssistantService autopilot (ADR-0019)', () => {
     await c.talents.add(talent('t1', { skills: ['Go', 'PostgreSQL'] }));
     const res = await c.service.run(OWNER);
     expect(res.proposed).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('AssistantService autopilot provider failure (Phase-0 hardening)', () => {
+  const autopilot = (over = {}) => ({
+    enabled: true,
+    mode: 'autopilot' as const,
+    applySource: 'mandates' as const,
+    minApplyScore: 10,
+    intervalMinutes: 60,
+    ...over,
+  });
+
+  const reply = () => JSON.stringify({ summary: 'Tuned summary', paragraphs: ['A', 'B', 'C'] });
+
+  /** A provider that fails its first call (one candidate) and then succeeds. */
+  const flakyProvider = (): LlmProvider => {
+    let calls = 0;
+    return {
+      id: 'claude',
+      label: 'Claude',
+      available: true,
+      generate: async () => {
+        calls += 1;
+        if (calls === 1) throw new Error('upstream down');
+        return { text: reply(), usage: { inputTokens: 1, outputTokens: 1 } };
+      },
+    };
+  };
+
+  /** A provider whose every call fails. */
+  const failingProvider = (): LlmProvider => ({
+    id: 'claude',
+    label: 'Claude',
+    available: true,
+    generate: async () => {
+      throw new Error('upstream down');
+    },
+  });
+
+  it('Autopilot_ProviderFailsOneCandidate_OthersStillProcessed', async () => {
+    const c = ctx(true, { llmProvider: flakyProvider() });
+    await c.settingsStore.set(OWNER, autopilot());
+    await c.mandates.add(mandate('m1', { jobText: 'Go PostgreSQL' }));
+    await c.talents.add(talent('t1', { skills: ['Go', 'PostgreSQL'] }));
+    await c.talents.add(talent('t2', { skills: ['Go', 'PostgreSQL'] }));
+
+    const res = await c.service.run(OWNER);
+    const all = await c.suggestions.list(OWNER);
+    const apps = all.filter((s) => s.kind === 'application');
+    const errors = all.filter((s) => s.kind === 'autopilot-error');
+    // One candidate's build failed on the provider; the other still staged.
+    expect(res.failures).toBe(1);
+    expect(apps).toHaveLength(1);
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatchObject({ status: 'proposed', talentId: expect.any(String) });
+  });
+
+  it('Autopilot_ProviderFails_LetsRunFinishAndPreventsImmediateRerun', async () => {
+    const c = ctx(true, { llmProvider: failingProvider() });
+    await c.settingsStore.set(OWNER, autopilot());
+    await c.mandates.add(mandate('m1', { jobText: 'Go PostgreSQL' }));
+    await c.talents.add(talent('t1', { skills: ['Go', 'PostgreSQL'] }));
+
+    // The run must not throw — the provider failure is staged, not fatal.
+    const res = await c.service.run(OWNER);
+    expect(res.failures).toBe(1);
+    // The run still counts as finished: `lastRunAt` is stamped…
+    expect((await c.service.getSettings(OWNER)).lastRunAt).toBe(NOW);
+    // …so the scheduler does not restart it on the next tick.
+    expect(await c.service.runIfDue(OWNER)).toBeNull();
+    const errors = (await c.suggestions.list(OWNER)).filter((s) => s.kind === 'autopilot-error');
+    expect(errors).toHaveLength(1);
+  });
+
+  it('AssistantRunIfDue_ProviderFailure_LogsOnceAndReports', async () => {
+    const warns: Array<{ obj: unknown; msg?: string }> = [];
+    const logger: Logger = {
+      info: () => {},
+      warn: (obj, msg) => {
+        warns.push({ obj, msg });
+      },
+      error: () => {},
+      debug: () => {},
+    };
+    const c = ctx(true, { llmProvider: failingProvider(), logger });
+    await c.settingsStore.set(OWNER, autopilot());
+    await c.mandates.add(mandate('m1', { jobText: 'Go PostgreSQL' }));
+    await c.talents.add(talent('t1', { skills: ['Go', 'PostgreSQL'] }));
+
+    const res = await c.service.runIfDue(OWNER);
+    expect(res).not.toBeNull();
+    expect(res?.failures).toBe(1);
+    // The provider failure is reported once at warn (no stack spam).
+    const providerWarns = warns.filter((w) =>
+      w.msg?.includes('autopilot run finished with provider failures'),
+    );
+    expect(providerWarns).toHaveLength(1);
+  });
+
+  it('Autopilot_ProviderFails_WarnsOncePerRun', async () => {
+    const warns: Array<{ msg?: string }> = [];
+    const logger: Logger = {
+      info: () => {},
+      warn: (_obj, msg) => {
+        warns.push({ msg });
+      },
+      error: () => {},
+      debug: () => {},
+    };
+    const c = ctx(true, { llmProvider: failingProvider(), logger });
+    await c.settingsStore.set(OWNER, autopilot());
+    await c.mandates.add(mandate('m1', { jobText: 'Go PostgreSQL' }));
+    await c.mandates.add(mandate('m2', { jobText: 'Go PostgreSQL' }));
+    await c.talents.add(talent('t1', { skills: ['Go', 'PostgreSQL'] }));
+    await c.talents.add(talent('t2', { skills: ['Go', 'PostgreSQL'] }));
+
+    const res = await c.service.run(OWNER);
+    expect(res.failures).toBe(4); // 2 mandates × 2 talents all fail
+    // One aggregated warning per run — not one per candidate.
+    const aggregated = warns.filter((w) =>
+      w.msg?.includes('autopilot run finished with provider failures'),
+    );
+    expect(aggregated).toHaveLength(1);
+    const perCandidate = warns.filter((w) => w.msg?.includes('autopilot application build failed'));
+    expect(perCandidate).toHaveLength(0);
+  });
+
+  it('Autopilot_ProviderFails_DeduplicatesErrorCardsAcrossRuns', async () => {
+    const c = ctx(true, { llmProvider: failingProvider() });
+    await c.settingsStore.set(OWNER, autopilot());
+    await c.mandates.add(mandate('m1', { jobText: 'Go PostgreSQL' }));
+    await c.talents.add(talent('t1', { skills: ['Go', 'PostgreSQL'] }));
+
+    await c.service.run(OWNER);
+    await c.service.run(OWNER);
+    // While the error card stays open, a later run must not re-nag: still one
+    // open card (the second run neither rebuilds nor re-stages it).
+    const open = (await c.suggestions.list(OWNER)).filter(
+      (s) => s.kind === 'autopilot-error' && s.status === 'proposed',
+    );
+    expect(open).toHaveLength(1);
+
+    // Closing the card re-opens the retry path: with the provider still dead,
+    // the next run rebuilds and stages a fresh (open) card rather than leaving
+    // the candidate silently excluded.
+    await c.service.dismiss(OWNER, open[0]!.id);
+    await c.service.run(OWNER);
+    const after = (await c.suggestions.list(OWNER)).filter((s) => s.kind === 'autopilot-error');
+    expect(after).toHaveLength(2); // one dismissed + one freshly proposed
+    expect(after.filter((s) => s.status === 'proposed')).toHaveLength(1);
+  });
+
+  it('Autopilot_ProviderRecovers_CandidateGetsBuiltNextRun', async () => {
+    // Provider dead in the first run, healthy afterwards.
+    let healthy = false;
+    const provider: LlmProvider = {
+      id: 'claude',
+      label: 'Claude',
+      available: true,
+      generate: async () => {
+        if (!healthy) throw new Error('upstream down');
+        return { text: reply(), usage: { inputTokens: 1, outputTokens: 1 } };
+      },
+    };
+    const c = ctx(true, { llmProvider: provider });
+    await c.settingsStore.set(OWNER, autopilot());
+    await c.mandates.add(mandate('m1', { jobText: 'Go PostgreSQL' }));
+    await c.talents.add(talent('t1', { skills: ['Go', 'PostgreSQL'] }));
+    const errors = () =>
+      c.suggestions.list(OWNER).then((all) => all.filter((s) => s.kind === 'autopilot-error'));
+    const apps = () =>
+      c.suggestions.list(OWNER).then((all) => all.filter((s) => s.kind === 'application'));
+
+    // RUN1 (provider dead) → failures=1, one open error card.
+    const r1 = await c.service.run(OWNER);
+    expect(r1.failures).toBe(1);
+    expect(await errors()).toHaveLength(1);
+
+    // Provider recovers while the card is still open.
+    healthy = true;
+
+    // RUN2 (healthy, card open) → no re-nag: candidate not yet rebuilt.
+    await c.service.run(OWNER);
+    expect(await apps()).toHaveLength(0);
+
+    // Close the card.
+    await c.service.dismiss(OWNER, (await errors())[0]!.id);
+
+    // RUN3 (healthy, card closed) → retry path: candidate is built and staged.
+    await c.service.run(OWNER);
+    expect(await apps()).toHaveLength(1);
+  });
+
+  it('Autopilot_ProviderFails_CountsFailedBuildsTowardLimit', async () => {
+    const c = ctx(true, { llmProvider: failingProvider() });
+    await c.settingsStore.set(OWNER, autopilot());
+    await c.mandates.add(mandate('m1', { jobText: 'Go PostgreSQL' }));
+    await c.mandates.add(mandate('m2', { jobText: 'Go PostgreSQL' }));
+    await c.mandates.add(mandate('m3', { jobText: 'Go PostgreSQL' }));
+    await c.talents.add(talent('t1', { skills: ['Go', 'PostgreSQL'] }));
+    await c.talents.add(talent('t2', { skills: ['Go', 'PostgreSQL'] }));
+    await c.talents.add(talent('t3', { skills: ['Go', 'PostgreSQL'] }));
+
+    const res = await c.service.run(OWNER);
+    const errors = (await c.suggestions.list(OWNER)).filter((s) => s.kind === 'autopilot-error');
+    // 9 candidates match, but failed builds count toward BUILD_LIMIT (5).
+    expect(res.failures).toBe(5);
+    expect(errors).toHaveLength(5);
   });
 });
 

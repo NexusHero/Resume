@@ -31,6 +31,8 @@ export interface AssistantRunResult {
   proposed: number;
   /** Actions the assistant applied itself (mode 'act' only). */
   applied: number;
+  /** Provider-dependent steps that failed individually (mode 'autopilot' only). */
+  failures: number;
 }
 
 export interface AssistantServiceDeps {
@@ -157,6 +159,7 @@ export class AssistantService {
     const seen = new Set((await this.suggestions.list(scope)).map(suggestionKey));
     let proposed = 0;
     let applied = 0;
+    let failures = 0;
 
     const stage: StageFn = async (s, autoApply) => {
       if (seen.has(suggestionKey(s))) return;
@@ -196,14 +199,17 @@ export class AssistantService {
     await this.proposeDataGaps(scope, stage);
 
     // Autopilot: build full application packets for strong matches and stage them
-    // for approval. Only in the top gear — this is the token-spending step.
+    // for approval. Only in the top gear — this is the token-spending step. A
+    // provider failure here does not abort the run (it is staged + counted).
     if (settings.mode === 'autopilot') {
-      proposed += await this.autopilot.propose(scope, settings, runId, now);
+      const autopilot = await this.autopilot.propose(scope, settings, runId, now);
+      proposed += autopilot.proposed;
+      failures += autopilot.failures;
     }
 
     await this.settingsStore.set(scope, { ...settings, lastRunAt: now });
-    this.logger.info({ runId, proposed, applied }, 'assistant run finished');
-    return { runId, proposed, applied };
+    this.logger.info({ runId, proposed, applied, failures }, 'assistant run finished');
+    return { runId, proposed, applied, failures };
   }
 
   /** Step 1 — shortlists: clear pool fits not in the pipeline yet. In mode 'act'

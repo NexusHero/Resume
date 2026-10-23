@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
-import { DomainError, ValidationError } from '../domain/errors.js';
+import { AiNotConfiguredError, DomainError, ValidationError } from '../domain/errors.js';
 import type { Logger } from '../ports/logger.js';
 
 /** RFC 9457 problem detail. */
@@ -72,6 +72,16 @@ export function mapErrorToProblem(err: unknown): Problem {
   };
 }
 
+/**
+ * True when a 5xx is an *expected*, operator-config-driven answer — 503
+ * `ai-not-configured` (the server has no AI key, so generative routes decline
+ * by design). Such responses are a normal part of running without a key and must
+ * not be logged as errors with a stack trace; genuine 5xx keep error+stack.
+ */
+export function isExpectedClient5xx(err: unknown): boolean {
+  return err instanceof AiNotConfiguredError;
+}
+
 /** Express error middleware mapping known errors to problem+json. */
 export function errorHandler(logger: Logger) {
   return (err: unknown, _req: Request, res: Response, next: NextFunction): void => {
@@ -81,7 +91,14 @@ export function errorHandler(logger: Logger) {
     }
     const problem = mapErrorToProblem(err);
     if (problem.status >= 500) {
-      logger.error({ err: err instanceof Error ? err.stack : String(err) }, 'unhandled error');
+      if (isExpectedClient5xx(err)) {
+        logger.info(
+          { status: problem.status, type: problem.type },
+          'expected client-facing response',
+        );
+      } else {
+        logger.error({ err: err instanceof Error ? err.stack : String(err) }, 'unhandled error');
+      }
     }
     sendProblem(res, problem);
   };

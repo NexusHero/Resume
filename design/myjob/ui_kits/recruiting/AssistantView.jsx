@@ -11,6 +11,7 @@ const AV_KIND_LABELS = {
   'follow-up': 'Follow-up',
   'data-gap': 'Data gap',
   application: 'Application',
+  'autopilot-error': 'Fehlgeschlagen',
 };
 const AV_STATUS_LABELS = {
   accepted: 'angenommen',
@@ -23,6 +24,7 @@ const AV_KIND_COLORS = {
   'follow-up': 'var(--warning-strong, #8a6d00)',
   'data-gap': 'var(--text-soft)',
   application: 'var(--accent-strong)',
+  'autopilot-error': 'var(--danger)',
 };
 
 function AvCard({ children, style }) {
@@ -237,8 +239,10 @@ function AssistantView({ onChanged }) {
           </div>
         )}
         {lastRun && (
-          <div role="status" style={{ marginTop: '12px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--positive, #1F8A5B)' }}>
-            Lauf abgeschlossen — {lastRun.proposed} vorgeschlagen{lastRun.applied ? `, ${lastRun.applied} automatisch angewendet` : ''}.
+          <div role="status" style={{ marginTop: '12px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: lastRun.failures ? 'var(--warning-strong, #8a6d00)' : 'var(--positive, #1F8A5B)' }}>
+            Lauf abgeschlossen — {lastRun.proposed} vorgeschlagen
+            {lastRun.failures ? `, ${lastRun.failures} fehlgeschlagen` : ''}
+            {lastRun.applied ? `, ${lastRun.applied} automatisch angewendet` : ''}.
           </div>
         )}
       </AvCard>
@@ -282,8 +286,10 @@ function AssistantView({ onChanged }) {
                   )}
                 </div>
                 <div style={{ flexShrink: 0, display: 'flex', gap: '8px', justifyContent: isMobile ? 'flex-end' : 'flex-start' }}>
-                  <AV.Button variant="primary" size="sm" onClick={() => resolve(s.id, 'accept')}>{s.kind === 'application' ? 'Freigeben' : 'Annehmen'}</AV.Button>
-                  <AV.Button variant="ghost" size="sm" onClick={() => resolve(s.id, 'dismiss')}>Verwerfen</AV.Button>
+                  {s.kind !== 'autopilot-error' && (
+                    <AV.Button variant="primary" size="sm" onClick={() => resolve(s.id, 'accept')}>{s.kind === 'application' ? 'Freigeben' : 'Annehmen'}</AV.Button>
+                  )}
+                  <AV.Button variant="ghost" size="sm" onClick={() => resolve(s.id, 'dismiss')}>{s.kind === 'autopilot-error' ? 'Schließen' : 'Verwerfen'}</AV.Button>
                 </div>
               </div>
             ))}

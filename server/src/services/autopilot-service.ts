@@ -46,6 +46,15 @@ const TARGET_LIMIT = 10;
 const MATCH_LIMIT = 3;
 
 /**
+ * Dedup key for a staged `autopilot-error` hint: one per (opening ref, talent),
+ * mirroring {@link applicationDedupKey} so a candidate that already has a card
+ * (open or dismissed) is not re-nagged on later runs.
+ */
+function autopilotErrorDedupKey(targetRef: string, talentId: string): string {
+  return `autopilot-error|${targetRef}|${talentId}`;
+}
+
+/**
  * The auto-apply gear of the one agent (ADR-0019), split out of the assistant's
  * deterministic playbook so the token-spending orchestration lives on its own.
  * The assistant calls `propose` in `autopilot` mode to stage full application
@@ -83,33 +92,49 @@ export class AutopilotService {
    * postings or own mandates), rank the pool against each, and for the strong,
    * not-yet-applied matches build a tailored application packet and stage it.
    * Bounded per run so token spend stays predictable; dedup keeps it from
-   * rebuilding an application it already staged. Returns the count staged.
+   * rebuilding an application it already staged. A provider-dependent step may
+   * fail on its own without killing the run: the failure is staged as a visible
+   * error hint, counted, and the remaining candidates keep processing (ADR-0047).
+   * A failed candidate is re-tried on later runs once its error hint has been
+   * closed, so a recovered provider can still build it.
+   * Returns the counts staged and failed.
    */
   async propose(
     scope: string,
     settings: AssistantSettings,
     runId: string,
     now: string,
-  ): Promise<number> {
-    // Scan already-staged applications to avoid rebuilding one. This is a batch
-    // read, so a single malformed/legacy record is skipped (logged) rather than
-    // allowed to abort the whole run.
+  ): Promise<{ proposed: number; failures: number }> {
+    // Scan already-staged applications and *open* error hints to avoid
+    // rebuilding or re-nagging. This is a batch read, so a single malformed
+    // legacy record is skipped (logged) rather than allowed to abort the run.
+    // Error hints are only deduplicated while they are still `proposed` — a
+    // closed (dismissed/accepted) card re-opens the retry path so a recovered
+    // provider can still build the candidate on a later run.
     const seenApps = new Set<string>();
+    const seenErrors = new Set<string>();
     for (const s of await this.suggestions.list(scope)) {
-      if (s.kind !== 'application') continue;
-      const parsed = applicationPayloadSchema.safeParse(s.payload);
-      if (!parsed.success) {
-        this.logger.warn(
-          { suggestionId: s.id },
-          'skipping malformed application payload in dedup scan',
-        );
-        continue;
+      if (s.kind === 'application') {
+        const parsed = applicationPayloadSchema.safeParse(s.payload);
+        if (!parsed.success) {
+          this.logger.warn(
+            { suggestionId: s.id },
+            'skipping malformed application payload in dedup scan',
+          );
+          continue;
+        }
+        seenApps.add(applicationDedupKey(parsed.data.targetRef, s.talentId ?? ''));
+      } else if (s.kind === 'autopilot-error' && s.status === 'proposed') {
+        const ref = (s.payload as { targetRef?: unknown } | undefined)?.targetRef;
+        if (typeof ref === 'string') {
+          seenErrors.add(autopilotErrorDedupKey(ref, s.talentId ?? ''));
+        }
       }
-      seenApps.add(applicationDedupKey(parsed.data.targetRef, s.talentId ?? ''));
     }
     const targets = await this.targets(scope, settings);
     let built = 0;
     let proposed = 0;
+    let failures = 0;
 
     for (const target of targets) {
       if (built >= BUILD_LIMIT) break;
@@ -119,23 +144,32 @@ export class AutopilotService {
         if (m.inPipeline || m.score < settings.minApplyScore) continue;
         const key = applicationDedupKey(target.ref, m.talentId);
         if (seenApps.has(key)) continue;
+        // A candidate with a still-OPEN error hint is neither rebuilt nor
+        // re-nagged: the recruiter has not decided yet. Once the card is closed
+        // (dismissed/accepted), the next run retries the build — a recovered
+        // provider can then succeed, or a fresh card is staged if it fails again.
+        if (seenErrors.has(autopilotErrorDedupKey(target.ref, m.talentId))) continue;
         seenApps.add(key);
 
         let payload: ApplicationPayload;
         try {
           payload = await this.builder.build(scope, scope, target, m.talentId, m.score);
         } catch (err) {
-          // A missing key / upstream failure is a real, actionable error — the
-          // owner decided `/assistant/run` must answer 503 instead of silently
-          // returning zero packets (ADR-0047, ADR-0057). Other build failures
-          // (a single malformed record) are logged and skipped as before.
+          // A failed build still counts toward the run cap, so a dead provider
+          // stops the pass at BUILD_LIMIT instead of walking every match.
+          built += 1;
+          const message = err instanceof Error ? err.message : String(err);
           if (err instanceof AiNotConfiguredError || err instanceof UpstreamProviderError) {
-            throw err;
+            failures += 1;
+            seenErrors.add(autopilotErrorDedupKey(target.ref, m.talentId));
+            await this.stageBuildError(scope, target, m, message, runId, now);
+          } else {
+            // A single malformed/legacy record is logged and skipped as before.
+            this.logger.warn(
+              { targetRef: target.ref, err: message },
+              'autopilot application build failed, skipping',
+            );
           }
-          this.logger.warn(
-            { targetRef: target.ref, err: err instanceof Error ? err.message : String(err) },
-            'autopilot application build failed, skipping',
-          );
           continue;
         }
         built += 1;
@@ -162,7 +196,45 @@ export class AutopilotService {
         proposed += 1;
       }
     }
-    return proposed;
+
+    // One warning per run (not per candidate) when the provider failed: the
+    // per-call detail already goes through the runner's own "llm generation
+    // failed" warn, so a second warn per candidate is redundant (ADR-0047).
+    if (failures > 0) {
+      this.logger.warn({ runId, failures }, 'autopilot run finished with provider failures');
+    }
+    return { proposed, failures };
+  }
+
+  /** Stage a visible error hint for a provider-dependent build that failed. */
+  private async stageBuildError(
+    scope: string,
+    target: ApplicationTarget,
+    m: { talentId: string; name: string },
+    message: string,
+    runId: string,
+    now: string,
+  ): Promise<void> {
+    await this.suggestions.add({
+      id: this.ids.next(),
+      ownerId: scope,
+      kind: 'autopilot-error',
+      title: `Autopilot: application for ${m.name} could not be built`,
+      rationale:
+        `The AI provider failed while tailoring for ${target.company} — ${target.role} ` +
+        `(${message}). The run continued with the other candidates.`,
+      ...(target.source === 'mandates' && target.ref ? { mandateId: target.ref } : {}),
+      talentId: m.talentId,
+      payload: {
+        targetRef: target.ref,
+        role: target.role,
+        company: target.company,
+        error: message,
+      },
+      status: 'proposed',
+      createdAt: now,
+      runId,
+    });
   }
 
   /** The openings autopilot applies to, normalized from the configured source. */

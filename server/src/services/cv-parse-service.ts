@@ -13,6 +13,7 @@ import {
 import { InternalError, NoTextLayerError, UpstreamProviderError } from '../domain/errors.js';
 import type { LlmProviderId } from '../ports/llm-provider.js';
 import type { PdfTextExtractor } from '../ports/pdf-text-extractor.js';
+import { ZodError } from 'zod';
 import type { Logger } from '../ports/logger.js';
 import { type CallUsage } from '../domain/usage.js';
 import { MAX_TOKENS, errMessage, type LlmFeatureRunner } from './llm-feature-runner.js';
@@ -31,7 +32,8 @@ export interface ParsedDocument {
   /** Present only in `ai` mode. */
   provider?: LlmProviderId;
   usage?: CallUsage;
-  /** Text mode only: the raw text exceeded the import limit and was cut. */
+  /** The pasted text exceeded the import limit and was cut (text mode stores the
+   *  truncated raw text; ai mode truncates only the prompt). */
   truncated?: boolean;
 }
 
@@ -99,13 +101,26 @@ export class CvParseService {
       throw new UpstreamProviderError();
     }
     const source = raw as { contact?: unknown; resume?: unknown };
-    const validated = saveDocumentsSchema.parse({ contact: source.contact, resume: source.resume });
+    let validated;
+    try {
+      validated = saveDocumentsSchema.parse({ contact: source.contact, resume: source.resume });
+    } catch (err) {
+      // A provider reply that fails the JSON/schema parse is an unusable upstream
+      // result (502), not a client validation error (400) — ADR-0057. Log once,
+      // keep the provider boundary, never fall back to text mode.
+      if (err instanceof ZodError) {
+        this.logger.warn({ err: errMessage(err) }, 'CV parse reply did not match the schema');
+        throw new UpstreamProviderError();
+      }
+      throw err;
+    }
     return {
       contact: validated.contact,
       resume: validated.resume,
       mode: 'ai',
       provider: res.provider,
       usage: res.usage,
+      ...(text.length > MAX_IMPORT_TEXT ? { truncated: true } : {}),
     };
   }
 
@@ -127,8 +142,9 @@ export class CvParseService {
     try {
       text = await this.pdfText.extract(pdf);
     } catch (err) {
-      // A crashing extractor is a server fault, not a scanned PDF: log it and
-      // answer 500 (InternalError), never the 422 "no text layer" path (Q1).
+      // A password-protected / broken PDF is a client input problem (422
+      // `no-text-layer`); anything else is a server fault (500) — Q1.
+      if (err instanceof NoTextLayerError) throw err;
       this.logger.error({ err: errMessage(err) }, 'PDF text extraction failed');
       throw new InternalError('PDF text extraction failed');
     }

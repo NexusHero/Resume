@@ -64,7 +64,7 @@ function AddCandidateModal({ mandate, excludeTalentIds, onClose, onAdded }) {
       } catch {
         if (live) setPool([]);
         // eslint-disable-next-line no-alert
-        window.alert('Konnte den Talent-Pool nicht laden. Bitte erneut versuchen.');
+        window.alert('Konnte die Mandanten nicht laden. Bitte erneut versuchen.');
       }
     })();
     return () => { live = false; };
@@ -84,7 +84,7 @@ function AddCandidateModal({ mandate, excludeTalentIds, onClose, onAdded }) {
   return (
     <ModalOverlay onClose={onClose} zIndex={60} width="min(520px, 92vw)" backdrop="rgba(8,11,18,0.45)">
       <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)', marginBottom: '4px' }}>Kandidat:in hinzufügen</div>
-      <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginBottom: '14px' }}>Wähle ein Talent aus dem Pool für die Pipeline dieses Mandats.</div>
+      <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginBottom: '14px' }}>Wähle einen Mandanten aus dem Pool für die Pipeline dieses Suchauftrags.</div>
       {addable.length === 0 && (
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-soft)', padding: '8px 0' }}>Alle im Pool sind bereits in dieser Pipeline.</div>
       )}
@@ -308,7 +308,9 @@ function FindMatchesModal({ mandate, onClose, onOpenTalent, onAdded }) {
       setMatchLoading(false);
     }
   };
+  const aiBlocked = !!(window.aiGateBlocked && window.aiGateBlocked());
   const toggleExplain = async (talentId) => {
+    if (aiBlocked) return;
     const cur = explains[talentId];
     if (cur && cur.data) {
       setExplains((e) => ({ ...e, [talentId]: { ...cur, open: !cur.open } }));
@@ -326,6 +328,7 @@ function FindMatchesModal({ mandate, onClose, onOpenTalent, onAdded }) {
     }
   };
   const openInterview = async (talentId, name) => {
+    if (aiBlocked) { setInterview({ name, loading: false, data: null, error: true }); return; }
     setInterview({ name, loading: true, data: null });
     try {
       const data = await window.RecruitApi.interviewKit(mandate.id, talentId);
@@ -335,6 +338,7 @@ function FindMatchesModal({ mandate, onClose, onOpenTalent, onAdded }) {
     }
   };
   const openPrep = async (talentId, name) => {
+    if (aiBlocked) { setPrep({ name, loading: false, data: null, error: true }); return; }
     setPrep({ name, loading: true, data: null });
     try {
       const data = await window.RecruitApi.candidatePrep(mandate.id, talentId);
@@ -355,7 +359,10 @@ function FindMatchesModal({ mandate, onClose, onOpenTalent, onAdded }) {
     <>
       <ModalOverlay onClose={onClose} zIndex={60} width="min(600px, 94vw)" maxHeight="84vh" flexColumn backdrop="rgba(8,11,18,0.45)">
         <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)', marginBottom: '4px' }}>Find matches</div>
-        <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginBottom: '14px' }}>Rank the talent pool for <strong>{mandate.role}</strong>. Leave the ad empty to match on the mandate itself, or paste a job ad to sharpen the ranking.</div>
+        {aiBlocked && window.AiNotConfiguredHint && (
+          <div style={{ marginBottom: '8px' }}><window.AiNotConfiguredHint compact /></div>
+        )}
+        <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginBottom: '14px' }}>Rank the Mandanten pool for <strong>{mandate.role}</strong>. Leave the ad empty to match on the mandate itself, or paste a job ad to sharpen the ranking.</div>
         <MPM.Textarea
           rows={4}
           placeholder={`Optional: Stellenanzeige für „${mandate.role}“ einfügen, um gegen ihre Anforderungen zu ranken…`}

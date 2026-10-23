@@ -9,15 +9,15 @@
 ## 1. Assets and trust boundary
 
 The system holds **candidate personal data** (names, contacts, CVs, interview
-notes), **recruiter accounts** (password hashes, sessions), and **per-user LLM
-API keys**. Everything of value sits _behind_ the REST API; the browser kit and
+notes), **recruiter accounts** (password hashes, sessions), and the **central
+LLM API key** (server environment only). Everything of value sits _behind_ the REST API; the browser kit and
 every external actor sit _outside_ it.
 
 ```
         ┌─────────────────────── trust boundary (the API process) ───────────────────────┐
  Recruiter ─cookie session─▶  Express app  ─▶ services ─▶ ports ─▶ adapters ─▶ store (fs / Postgres)
  External integrator ─┘        (authn, authz,                         │
- Candidate (subject) ─┘         CORS, headers,                        ├─▶ LLM providers (per-user key)
+ Candidate (subject) ─┘         CORS, headers,                        ├─▶ LLM providers (central server key)
                                 rate limit)                           ├─▶ job boards (read-only, no PII)
                                                                       └─▶ SMTP / IMAP (links, envelopes)
         └────────────────────────────────────────────────────────────────────────────────┘
@@ -91,15 +91,15 @@ too: an admin only lists and re-roles their _own_ tenant's members.
   resolving (`isTenantSuspended` returns `null` on session lookup), so suspension
   locks members out immediately rather than at next expiry.
 
-## 6. Secrets at rest (FR-31, ADR-0029)
+## 6. Secrets at rest (FR-31, ADR-0029/0057)
 
-- **Per-user LLM API keys** are encrypted with **AES-256-GCM**
-  (`secret-cipher.ts`); the key is derived via scrypt from `APP_SECRET`, and
-  ciphertext is stored as `v1:base64(iv|tag|ciphertext)` so the scheme is
-  versioned and tamper-evident (GCM auth tag).
-- The **production readiness gate** (ADR-0029) fails fast at boot if `APP_SECRET`
-  is unset (or left at the dev default) in production, so keys are never
-  encrypted under a known constant on a real deployment.
+- The **AI key is central and environment-only** (`ANTHROPIC_API_KEY` or
+  `GEMINI_API_KEY`, ADR-0057). It is never stored in the database, never sent to
+  the browser, and there are **no per-user keys** any more — the encrypted key
+  store and `secret-cipher.ts` were removed in Phase 0.
+- `APP_SECRET` signs and encrypts the embedded **Better-Auth** store (sessions and
+  credentials). The **production readiness gate** (ADR-0029) fails fast at boot if
+  it is unset (or left at the dev default) in production.
 - **No secrets in the repo:** `.env` is gitignored; only `.env.example` ships.
 
 ## 7. Transport, CORS and headers
@@ -161,7 +161,7 @@ happened once with email-verification tokens. Retention/anonymisation
 | Tenant data isolation              | 0033/0034, `current-user`       | acceptance tests per scope         |
 | Non-escalatable super-admin        | 0037, `SUPER_ADMIN_EMAIL`       | auth/tenant-admin tests            |
 | Suspension enforced in auth        | 0038, `auth-service`            | auth-service tests                 |
-| Encrypted API keys at rest         | FR-31, `secret-cipher`          | secret-cipher unit tests           |
+| Central AI key stays server-side   | FR-31, ADR-0057                 | `settings/llm` + AI-route tests    |
 | Production readiness gate          | 0029, `config` boot check       | readiness-gate tests               |
 | CORS allow-list + headers + CSP    | NFR-06, `security.ts`           | security middleware tests          |
 | Auth rate limiting                 | `create-app` limiter            | acceptance test (429)              |

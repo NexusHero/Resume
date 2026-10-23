@@ -164,7 +164,7 @@ describe('Matching — apply without a job board', () => {
     render(<Matching talents={talents} mandates={mandates} onApply={onApply} />);
 
     await userEvent.click(await screen.findByText('Manuell'));
-    await userEvent.selectOptions(screen.getByLabelText('Aus einem Mandat vorbefüllen'), 'm1');
+    await userEvent.selectOptions(screen.getByLabelText('Aus einem Suchauftrag vorbefüllen'), 'm1');
 
     expect(screen.getByLabelText('Unternehmen')).toHaveValue('Aurora Systems GmbH');
     expect(screen.getByLabelText('Stelle')).toHaveValue('Senior C++ Engineer');

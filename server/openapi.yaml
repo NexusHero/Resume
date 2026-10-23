@@ -21,11 +21,11 @@ info:
     missing session `401`, missing role `403`, rejected upstream AI keys `502`.
 
     ### AI features
-    Every AI feature resolves the caller's stored key for their chosen
-    provider (Settings → AI models), meters token spend per user, and — except
-    translation, which requires a provider — falls back to a deterministic
-    template (`provider: "template"`). LLM-backed responses carry a `usage`
-    object (tokens + estimated USD) so clients can show what a call cost.
+    One central server key per provider (ADR-0057). Every AI feature meters
+    token spend per user and answers `503 ai-not-configured` when no key is
+    configured — there is no template fallback. A failed or unusable provider
+    reply is `502`. LLM-backed responses carry a `usage` object (tokens +
+    estimated USD) so clients can show what a call cost.
   license:
     name: MIT
     identifier: MIT
@@ -473,6 +473,7 @@ paths:
                 type: array
                 items: { $ref: '#/components/schemas/Candidacy' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
 
   /talents/{id}/documents:
     get:
@@ -562,7 +563,7 @@ paths:
     post:
       tags: [Documents]
       summary: 'AI tailor: rewrite the summary or draft cover-letter paragraphs'
-      description: Output language follows the candidate's documents. Falls back to a deterministic template without a provider.
+      description: Output language follows the candidate's documents. Requires the central AI key; without one the route answers 503.
       operationId: aiSuggest
       security:
         - cookieSession: []
@@ -731,7 +732,7 @@ paths:
         # Representative Pro gate (ADR-0021); every generative route returns this
         # on a Free plan. Full per-route annotation follows when the plan goes live.
         '402': { $ref: '#/components/responses/PlanRequired' }
-        '404': { $ref: '#/components/responses/NotFound' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
         '502': { $ref: '#/components/responses/UpstreamProblem' }
 
   /talents/{id}/documents/outreach:
@@ -764,7 +765,7 @@ paths:
                 properties:
                   message: { $ref: '#/components/schemas/OutreachMessage' }
         '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { $ref: '#/components/responses/NotFound' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
         '502': { $ref: '#/components/responses/UpstreamProblem' }
 
   /talents/{id}/documents/translate:
@@ -898,6 +899,7 @@ paths:
                 type: array
                 items: { $ref: '#/components/schemas/Mandate' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
     post:
       tags: [Mandates]
       summary: Create a mandate
@@ -945,6 +947,7 @@ paths:
                   updatedAt: '2026-07-01T08:15:00.000Z'
         '400': { $ref: '#/components/responses/ValidationProblem' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
 
   /mandates/{id}:
     patch:
@@ -969,7 +972,7 @@ paths:
                 properties:
                   mandate: { $ref: '#/components/schemas/Mandate' }
         '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { $ref: '#/components/responses/NotFound' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
     delete:
       tags: [Mandates]
       summary: Delete a mandate (cascades to its candidacies)
@@ -980,7 +983,7 @@ paths:
       responses:
         '204': { description: Deleted. }
         '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { $ref: '#/components/responses/NotFound' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
 
   /mandates/{id}/match:
     post:
@@ -1016,7 +1019,7 @@ paths:
                 type: array
                 items: { $ref: '#/components/schemas/MatchResult' }
         '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { $ref: '#/components/responses/NotFound' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
 
   /mandates/{id}/candidates/{talentId}/explain:
     post:
@@ -1041,7 +1044,7 @@ paths:
                   provider: { $ref: '#/components/schemas/ProviderId' }
                   usage: { $ref: '#/components/schemas/CallUsage' }
         '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { $ref: '#/components/responses/NotFound' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
         '502': { $ref: '#/components/responses/UpstreamProblem' }
 
   /mandates/{id}/candidates/{talentId}/interview-kit:
@@ -1075,7 +1078,7 @@ paths:
                   provider: { $ref: '#/components/schemas/ProviderId' }
                   usage: { $ref: '#/components/schemas/CallUsage' }
         '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { $ref: '#/components/responses/NotFound' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
         '502': { $ref: '#/components/responses/UpstreamProblem' }
 
   /mandates/{id}/candidates/{talentId}/prep:
@@ -1103,7 +1106,7 @@ paths:
                 properties:
                   prep: { $ref: '#/components/schemas/CandidatePrep' }
         '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { $ref: '#/components/responses/NotFound' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
         '502': { $ref: '#/components/responses/UpstreamProblem' }
 
   /mandates/{id}/observations:
@@ -1121,7 +1124,7 @@ paths:
             application/json:
               schema: { type: object, additionalProperties: true }
         '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { $ref: '#/components/responses/NotFound' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
     post:
       tags: [Mandates]
       summary: Record how an interview at this company actually ran
@@ -1149,7 +1152,7 @@ paths:
               schema: { type: object, additionalProperties: true }
         '400': { $ref: '#/components/responses/ValidationProblem' }
         '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { $ref: '#/components/responses/NotFound' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
 
   /mandates/{id}/candidacies:
     get:
@@ -1168,7 +1171,7 @@ paths:
                 type: array
                 items: { $ref: '#/components/schemas/Candidacy' }
         '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { $ref: '#/components/responses/NotFound' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
     post:
       tags: [Pipeline]
       summary: Add a talent to the mandate's pipeline
@@ -1198,7 +1201,7 @@ paths:
                   candidacy: { $ref: '#/components/schemas/Candidacy' }
         '400': { $ref: '#/components/responses/ValidationProblem' }
         '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { $ref: '#/components/responses/NotFound' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
         '409':
           description: The talent is already in this pipeline.
           content:
@@ -1234,7 +1237,7 @@ paths:
                 properties:
                   candidacy: { $ref: '#/components/schemas/Candidacy' }
         '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { $ref: '#/components/responses/NotFound' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
     delete:
       tags: [Pipeline]
       summary: Remove a candidacy from the pipeline
@@ -1245,7 +1248,7 @@ paths:
       responses:
         '204': { description: Removed. }
         '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { $ref: '#/components/responses/NotFound' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
 
   /placements:
     get:
@@ -1263,6 +1266,7 @@ paths:
                 type: array
                 items: { $ref: '#/components/schemas/Placement' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
     post:
       tags: [Placements]
       summary: Record a placement
@@ -1285,6 +1289,7 @@ paths:
                   placement: { $ref: '#/components/schemas/Placement' }
         '400': { $ref: '#/components/responses/ValidationProblem' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
 
   /placements/{id}:
     patch:
@@ -1309,7 +1314,7 @@ paths:
                 properties:
                   placement: { $ref: '#/components/schemas/Placement' }
         '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { $ref: '#/components/responses/NotFound' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
     delete:
       tags: [Placements]
       summary: Delete a placement
@@ -1320,7 +1325,7 @@ paths:
       responses:
         '204': { description: Deleted. }
         '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { $ref: '#/components/responses/NotFound' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
 
   /jobs:
     get:
@@ -1897,6 +1902,7 @@ paths:
             application/json:
               schema: { type: object, additionalProperties: true }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
 
   /compliance/agg-rewrite:
     post:
@@ -1936,6 +1942,7 @@ paths:
                         to: { type: string }
                   unresolved: { type: array, items: { type: object, additionalProperties: true } }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
 
   /forecast:
     get:
@@ -1992,6 +1999,7 @@ paths:
                         placements: { type: integer }
                         rate: { type: integer }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
 
   /assistant:
     get:
@@ -2017,6 +2025,7 @@ paths:
                       dismissed: { type: integer }
                       autoApplied: { type: integer }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
     put:
       tags: [Assistant]
       summary: Update the assistant's settings (persisted; survives restarts)
@@ -2056,6 +2065,7 @@ paths:
                   settings: { $ref: '#/components/schemas/AssistantSettings' }
         '400': { $ref: '#/components/responses/ValidationProblem' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
 
   /assistant/run:
     post:
@@ -2081,6 +2091,7 @@ paths:
             application/problem+json:
               schema: { $ref: '#/components/schemas/Problem' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
 
   /assistant/suggestions:
     get:
@@ -2098,6 +2109,7 @@ paths:
                 type: array
                 items: { $ref: '#/components/schemas/AssistantSuggestion' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
 
   /assistant/suggestions/{id}/accept:
     post:
@@ -2117,7 +2129,7 @@ paths:
                 properties:
                   suggestion: { $ref: '#/components/schemas/AssistantSuggestion' }
         '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { $ref: '#/components/responses/NotFound' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
         '409':
           description: Already resolved.
           content:
@@ -2142,7 +2154,7 @@ paths:
                 properties:
                   suggestion: { $ref: '#/components/schemas/AssistantSuggestion' }
         '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { $ref: '#/components/responses/NotFound' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
         '409':
           description: Already resolved.
           content:
@@ -2165,7 +2177,7 @@ paths:
             application/pdf:
               schema: { type: string, format: binary }
         '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { $ref: '#/components/responses/NotFound' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
 
   /artifacts:
     get:
@@ -2188,6 +2200,7 @@ paths:
                 type: array
                 items: { $ref: '#/components/schemas/ArtifactLog' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
 
   /artifacts/stats:
     get:
@@ -2214,6 +2227,7 @@ paths:
                     type: array
                     items: { $ref: '#/components/schemas/ArtifactBucket' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
 
   /artifacts/{id}/outcome:
     post:
@@ -2245,7 +2259,7 @@ paths:
                   artifact: { $ref: '#/components/schemas/ArtifactLog' }
         '400': { $ref: '#/components/responses/ValidationProblem' }
         '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { $ref: '#/components/responses/NotFound' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
 
   /talents/{id}/outreach/send:
     post:
@@ -2280,7 +2294,7 @@ paths:
                   to: { type: string }
         '400': { $ref: '#/components/responses/ValidationProblem' }
         '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { $ref: '#/components/responses/NotFound' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
 
   /mail/sync-replies:
     post:
@@ -2306,6 +2320,7 @@ paths:
                   replies: { type: integer, description: Artifacts stamped as replied. }
         '400': { $ref: '#/components/responses/ValidationProblem' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
 
   /mail/status:
     get:
@@ -2326,23 +2341,29 @@ paths:
                   replySync: { type: boolean }
                   pollMinutes: { type: integer }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
 
   /settings/llm:
     get:
       tags: [Settings]
-      summary: The caller's AI provider + availability
-      description: Signed-out callers see the server's configured default.
+      summary: The server's central AI provider status (ADR-0057)
+      description: >-
+        Reports the server's configured providers and their availability. There
+        is one central key per server; per-user keys and the per-user provider
+        choice were removed. Generative routes answer 503 `ai-not-configured`
+        when no provider is available.
       operationId: getLlmSettings
       responses:
         '200':
-          description: Current provider and the wired providers.
+          description: The server's provider status.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/LlmSettings' }
+
     put:
       tags: [Settings]
-      summary: Switch the caller's AI provider (persisted per user)
-      operationId: setLlmProvider
+      summary: Choose the caller's preferred AI provider (among available ones)
+      operationId: updateLlmSettings
       security:
         - cookieSession: []
       requestBody:
@@ -2353,67 +2374,54 @@ paths:
               type: object
               required: [provider]
               properties:
-                provider: { type: string, enum: [claude, gemini] }
+                provider: { $ref: '#/components/schemas/ProviderId' }
       responses:
         '200':
-          description: The caller's updated settings.
+          description: The updated server status for this caller.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/LlmSettings' }
         '400': { $ref: '#/components/responses/ValidationProblem' }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
-  /settings/keys:
+  /settings/workspace:
     get:
       tags: [Settings]
-      summary: Which providers the caller has a key for (booleans, never keys)
-      operationId: keysStatus
+      summary: The workspace's feature settings (ADR-0057)
+      operationId: getWorkspaceSettings
       security:
         - cookieSession: []
       responses:
         '200':
-          description: Per-provider key presence.
+          description: The workspace feature flags.
           content:
             application/json:
-              schema:
-                type: object
-                properties:
-                  claude: { type: boolean }
-                  gemini: { type: boolean }
+              schema: { $ref: '#/components/schemas/WorkspaceSettings' }
         '401': { $ref: '#/components/responses/Unauthorized' }
-
-  /settings/keys/{provider}:
-    put:
+    patch:
       tags: [Settings]
-      summary: Store the caller's API key (encrypted server-side)
-      operationId: setKey
+      summary: Flip the intermediary switch (workspace admin only)
+      description: >-
+        Turns the intermediary (`vermittlung`) features on or off. When off,
+        their routes answer 404 problem+json and their nav entries are hidden;
+        data is preserved. Only a workspace admin may change it (403 otherwise).
+      operationId: updateWorkspaceSettings
       security:
         - cookieSession: []
-      parameters: [{ $ref: '#/components/parameters/provider' }]
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              type: object
-              required: [key]
-              properties:
-                key: { type: string }
+            schema: { $ref: '#/components/schemas/WorkspaceSettings' }
       responses:
-        '204': { description: Stored. }
+        '200':
+          description: The updated workspace settings.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspaceSettings' }
         '400': { $ref: '#/components/responses/ValidationProblem' }
         '401': { $ref: '#/components/responses/Unauthorized' }
-    delete:
-      tags: [Settings]
-      summary: Remove the caller's API key
-      operationId: removeKey
-      security:
-        - cookieSession: []
-      parameters: [{ $ref: '#/components/parameters/provider' }]
-      responses:
-        '204': { description: Removed. }
-        '400': { $ref: '#/components/responses/ValidationProblem' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
 
   /settings/usage:
     get:
@@ -2474,8 +2482,13 @@ paths:
     post:
       tags: [Documents]
       summary: Generate a tailored cover letter (applicant flow)
-      description: Uses the signed-in caller's own key/provider when present; open route with template fallback.
+      description: >-
+        Requires a signed-in session (breaking change, ADR-0057). Generates with
+        the server's central key; without one it answers 503 ai-not-configured
+        instead of template text.
       operationId: coverLetter
+      security:
+        - cookieSession: []
       requestBody:
         required: true
         content:
@@ -2499,6 +2512,8 @@ paths:
                   text: { type: string }
                   provider: { $ref: '#/components/schemas/ProviderId' }
         '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '503': { $ref: '#/components/responses/AiNotConfigured' }
         '502': { $ref: '#/components/responses/UpstreamProblem' }
 
 components:
@@ -2587,6 +2602,34 @@ components:
             title: Too Many Requests
             status: 429
             detail: Too many attempts. Please wait a few minutes and try again.
+    AiNotConfigured:
+      description: No central AI provider is configured on this server (ADR-0057).
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+          example:
+            type: about:blank#ai-not-configured
+            title: AI not configured
+            status: 503
+            detail: No AI provider is configured on this server. Set ANTHROPIC_API_KEY or GEMINI_API_KEY.
+
+    NoTextLayer:
+      description: The uploaded PDF has no readable text layer (e.g. a scan or protected file).
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+          example:
+            type: about:blank#no-text-layer
+            title: No text layer
+            status: 422
+            detail: The PDF contains no readable text (e.g. a scan or protected file).
+
+    NotFoundOrNotEnabled:
+      description: Unknown resource, or the feature is not enabled for this workspace.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+
     UpstreamProblem:
       description: The AI provider rejected the request (e.g. an invalid API key).
       content:
@@ -2655,12 +2698,12 @@ components:
 
     ProviderId:
       type: string
-      description: Which backend produced the result; `template` = deterministic fallback, no AI.
-      enum: [claude, gemini, template]
+      description: Which central AI backend produced the result. There is no `template` (ADR-0057).
+      enum: [claude, gemini]
 
     CallUsage:
       type: object
-      description: What one LLM call cost. Absent on template results — nothing was spent.
+      description: What one LLM call cost. Present on every AI-generated result.
       properties:
         inputTokens: { type: integer }
         outputTokens: { type: integer }
@@ -2801,6 +2844,13 @@ components:
           type: object
           properties:
             summary: { type: string }
+            rawText:
+              type: string
+              maxLength: 50000
+              description: >-
+                Internal raw CV source kept by the text-only import. Exported in
+                the GDPR export, never rendered or sent in AI prompts, cleared on
+                anonymisation.
             experience:
               type: array
               items:
@@ -2848,6 +2898,18 @@ components:
       properties:
         contact: { type: object, additionalProperties: true }
         resume: { type: object, additionalProperties: true }
+        mode:
+          type: string
+          enum: [text, ai]
+          description: >-
+            `text` = "Text übernehmen (ohne KI)" (full CV text in resume.rawText,
+            no provider); `ai` = structured by the model.
+        truncated:
+          type: boolean
+          description: Text mode only — the CV exceeded the 50,000-character limit.
+        attachmentId:
+          type: string
+          description: Bulk import text mode only — the stored PDF attachment.
         provider: { $ref: '#/components/schemas/ProviderId' }
         usage: { $ref: '#/components/schemas/CallUsage' }
 
@@ -2953,7 +3015,13 @@ components:
     LlmSettings:
       type: object
       properties:
-        current: { type: string, enum: [claude, gemini] }
+        configured:
+          type: boolean
+          description: True when at least one provider has a central server key.
+        current:
+          type: string
+          nullable: true
+          enum: [claude, gemini, null]
         providers:
           type: array
           items:
@@ -2963,7 +3031,19 @@ components:
               label: { type: string }
               available:
                 type: boolean
-                description: Whether the server holds credentials for it (user keys are separate).
+                description: Whether the server holds the central key for it (ADR-0057).
+
+    WorkspaceSettings:
+      type: object
+      description: Per-workspace feature flags (ADR-0057).
+      required: [vermittlung]
+      properties:
+        vermittlung:
+          type: boolean
+          description: >-
+            When true, the intermediary features (Suchaufträge, Pipeline,
+            Platzierungen, Performance, Postfach, CoRecruiter) are reachable;
+            when false (the default) their routes answer 404.
 
     UsageBucket:
       type: object
@@ -3044,8 +3124,7 @@ components:
         id: { type: string }
         kind: { type: string, enum: [outreach, pitch] }
         talentId: { type: string }
-        provider:
-          { type: string, description: Which backend produced it (claude, gemini, template). }
+        provider: { type: string, description: Which central AI backend produced it. }
         channel: { type: string, description: email / linkedin; empty for pitches. }
         audience: { type: string, description: candidate / client; empty for pitches. }
         outcome: { type: string, enum: [pending, replied, no-reply, converted] }

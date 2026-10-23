@@ -160,15 +160,15 @@ function Matching({ talents, mandates = [], onCreateMandate, onApply }) {
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '18px', padding: '14px', border: '1px solid var(--accent-border)', background: 'var(--accent-soft)', borderRadius: 'var(--radius-lg)' }}>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--accent-strong)' }}>{cand.name.split(' ')[0]} stellvertretend bewerben</div>
-            <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '-4px' }}>Stelle eingeben oder eines deiner Mandate wählen — keine Live-Stelle nötig.</div>
+            <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '-4px' }}>Stelle eingeben oder einen deiner Suchaufträge wählen — keine Live-Stelle nötig.</div>
             {mandates.length > 0 && (
               <select
-                aria-label="Aus einem Mandat vorbefüllen"
+                aria-label="Aus einem Suchauftrag vorbefüllen"
                 value=""
                 onChange={(e) => { const m = mandates.find((x) => x.id === e.target.value); if (m) setManual({ company: m.client || '', role: m.role || '' }); }}
                 style={{ ...inp, cursor: 'pointer' }}
               >
-                <option value="">Aus einem deiner Mandate…</option>
+                <option value="">Aus einem deiner Suchaufträge…</option>
                 {mandates.map((m) => <option key={m.id} value={m.id}>{m.role} · {m.client}</option>)}
               </select>
             )}
@@ -246,10 +246,10 @@ function Matching({ talents, mandates = [], onCreateMandate, onApply }) {
                   {onCreateMandate && (
                     <button
                       onClick={() => onCreateMandate(job)}
-                      title="Ein Klienten-Mandat aus dieser Stelle entwerfen"
+                      title="Einen Klienten-Suchauftrag aus dieser Stelle entwerfen"
                       style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', appearance: 'none', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '11px', padding: '4px 11px' }}
                     >
-                      <MT.Icon name="briefcase" size={12} /> Mandat anlegen
+                      <MT.Icon name="briefcase" size={12} /> Suchauftrag anlegen
                     </button>
                   )}
                 </div>

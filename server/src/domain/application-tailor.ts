@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import type { TalentDocuments } from './talent-documents.js';
 import { candidateFacts } from './candidate-facts.js';
-import { fallbackSummary, fallbackLetter } from './document-ai.js';
 import type { OutputLang } from './language.js';
 
 /**
@@ -9,8 +8,7 @@ import type { OutputLang } from './language.js';
  * candidate's real facts and the ad, produce a résumé summary tuned to the ad
  * plus a cover-letter body — in the AD's language, in a single LLM call. The
  * result is a snapshot the auto-apply agent stores on its draft; it is NEVER
- * written back over the candidate's canonical documents. Deterministic
- * template fallback so it works offline like the rest of DocumentAiService.
+ * written back over the candidate's canonical documents.
  */
 export interface TailorTarget {
   role: string;
@@ -63,17 +61,5 @@ export function tailorPrompt(
       `Candidate facts:\n${candidateFacts(documents)}\n\n` +
       `Job ad — "${target.role}"${target.company ? ` at ${target.company}` : ''}:\n"""\n` +
       `${target.jobText.slice(0, 6000) || '(no ad text provided)'}\n"""`,
-  };
-}
-
-/** Deterministic fallback when no provider is available — reuses the editor's fallbacks. */
-export function fallbackTailor(
-  documents: TalentDocuments,
-  target: TailorTarget,
-  lang: OutputLang = 'en',
-): TailoredApplication {
-  return {
-    summary: fallbackSummary(documents, lang),
-    paragraphs: fallbackLetter(documents, { role: target.role, company: target.company }, lang),
   };
 }

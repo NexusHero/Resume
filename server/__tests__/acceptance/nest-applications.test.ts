@@ -20,6 +20,7 @@ import {
   PDF_RENDERER,
   PDF_MERGER,
   VERSIONER,
+  WORKSPACE_SETTINGS_STORE,
 } from '../../src/nest/tokens.js';
 import {
   InMemoryApplicationRepository,
@@ -53,6 +54,10 @@ describe('NestJS applications vertical', () => {
       { provide: PDF_RENDERER, useValue: new FakePdfRenderer() },
       { provide: PDF_MERGER, useValue: new FakePdfMerger() },
       { provide: VERSIONER, useValue: new FakeVersioner(null) },
+      {
+        provide: WORKSPACE_SETTINGS_STORE,
+        useValue: { get: async () => ({ vermittlung: true }), set: async () => undefined },
+      },
     ];
     @Global()
     @Module({ providers: fakes, exports: fakes.map((p) => (p as { provide: symbol }).provide) })
@@ -67,7 +72,7 @@ describe('NestJS applications vertical', () => {
 
     app = moduleRef.createNestApplication();
     app.useGlobalFilters(new ProblemJsonFilter(noopLogger));
-    await app.init();
+    await app.listen(0, '127.0.0.1');
   });
 
   afterAll(async () => {

@@ -21,6 +21,8 @@ import {
   STAGE_TRANSITION_REPOSITORY,
   INTERVIEW_OBSERVATION_REPOSITORY,
   USAGE_METER,
+  WORKSPACE_SETTINGS_STORE,
+  WORKSPACE_SETTINGS_SERVICE,
 } from '../../src/nest/tokens.js';
 import {
   InMemoryMandateRepository,
@@ -53,6 +55,17 @@ describe('NestJS insights verticals (forecast, observations, usage)', () => {
         useValue: new InMemoryInterviewObservationRepository(),
       },
       { provide: USAGE_METER, useValue: new InMemoryUsageMeter() },
+      {
+        provide: WORKSPACE_SETTINGS_SERVICE,
+        useValue: {
+          isVermittlungEnabled: async () => true,
+          get: async () => ({ vermittlung: true }),
+        },
+      },
+      {
+        provide: WORKSPACE_SETTINGS_STORE,
+        useValue: { get: async () => ({ vermittlung: true }), set: async () => undefined },
+      },
     ];
     @Global()
     @Module({ providers: fakes, exports: fakes.map((p) => (p as { provide: symbol }).provide) })
@@ -67,7 +80,7 @@ describe('NestJS insights verticals (forecast, observations, usage)', () => {
 
     app = moduleRef.createNestApplication();
     app.useGlobalFilters(new ProblemJsonFilter(noopLogger));
-    await app.init();
+    await app.listen(0, '127.0.0.1');
   });
 
   afterAll(async () => {

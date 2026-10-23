@@ -1,6 +1,5 @@
 import {
   interviewKitPrompt,
-  fallbackInterviewKit,
   normalizeInterviewKit,
   interviewKitResultSchema,
 } from '../../src/domain/interview-kit.js';
@@ -69,52 +68,6 @@ describe('interview-kit domain', () => {
       const { prompt } = interviewKitPrompt(sparse, { role: 'Engineer', location: '' });
       expect(prompt).toContain('Engineer');
       expect(prompt).not.toContain(' at '); // no client
-    });
-  });
-
-  describe('fallbackInterviewKit', () => {
-    it('BuildsSkillQuestionsAndScorecard', () => {
-      const kit = fallbackInterviewKit(docs(), mandate);
-      expect(kit.questions.length).toBeGreaterThanOrEqual(3);
-      // a skill question references a matched skill
-      expect(kit.questions.some((q) => q.question.includes('React'))).toBe(true);
-      // always has a motivation question referencing the role
-      expect(kit.questions.some((q) => q.category === 'Motivation')).toBe(true);
-      expect(kit.scorecard.length).toBeGreaterThan(0);
-      expect(kit.focus).toBeTruthy();
-    });
-
-    it('EmptyDocuments_StillProducesGenericKit', () => {
-      const kit = fallbackInterviewKit(null, mandate);
-      expect(kit.questions.length).toBeGreaterThan(0);
-      expect(kit.questions.some((q) => q.category === 'Culture')).toBe(true);
-      expect(kit.focus).toContain('basic suitability');
-    });
-
-    it('IncludesStationQuestionWhenExperiencePresent', () => {
-      const kit = fallbackInterviewKit(docs(), mandate);
-      expect(kit.questions.some((q) => q.category === 'Experience')).toBe(true);
-    });
-
-    it('StationWithCompanyOnly_StillAsksExperienceQuestion', () => {
-      const d = docs({
-        experience: [
-          { role: '', company: 'BetaCorp', period: '', location: '', bullets: [], skills: [] },
-        ],
-      });
-      const kit = fallbackInterviewKit(d, mandate);
-      expect(
-        kit.questions.some((q) => q.category === 'Experience' && q.question.includes('BetaCorp')),
-      ).toBe(true);
-    });
-
-    it('NoSkillOverlap_FallsBackToOwnSkills_AndNoClientInQuestion', () => {
-      // mandate unrelated to the candidate's skills → matched empty, use own skills
-      const kit = fallbackInterviewKit(docs(), { role: 'Data Scientist', location: '' });
-      expect(kit.questions.some((q) => q.question.includes('React'))).toBe(true);
-      const motivation = kit.questions.find((q) => q.category === 'Motivation');
-      expect(motivation?.question).not.toContain(' at ');
-      expect(kit.focus).toContain('basic suitability');
     });
   });
 

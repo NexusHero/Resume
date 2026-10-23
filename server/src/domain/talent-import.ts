@@ -20,7 +20,15 @@ export interface ImportedTalent {
   talentId: string;
   name: string;
   skillCount: number;
-  provider: string;
+  /** `text` = "Text übernehmen (ohne KI)", `ai` = structured by the model. */
+  mode: 'text' | 'ai';
+  /** Present only in `ai` mode. */
+  provider?: string;
+  usage?: { inputTokens: number; outputTokens: number };
+  /** Text mode: the CV exceeded the import limit and was cut. */
+  truncated?: boolean;
+  /** Text mode bulk import: the PDF stored as an attachment. */
+  attachmentId?: string;
   /** 0 for a scanned/image-only PDF whose text layer could not be extracted. */
   extractedChars: number;
 }
@@ -34,8 +42,27 @@ export interface FailedImport {
 
 export type ImportResult = ImportedTalent | FailedImport;
 
-/** Placeholder name for a CV whose parse yielded no name. */
-export const DEFAULT_IMPORT_NAME = 'Imported CV';
+/** Placeholder name for a CV whose parse/filename yielded no name. */
+export const DEFAULT_IMPORT_NAME = 'Importierter Lebenslauf';
+
+/**
+ * Derive a display name from an uploaded CV filename: drop the `.pdf` suffix,
+ * turn `_`/`-` into spaces and capitalise each word. Unusable names fall back to
+ * the German placeholder (also used in AI mode).
+ */
+export function nameFromFilename(filename: string): string {
+  const base = filename
+    .replace(/\.[^.]+$/, '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!base) return DEFAULT_IMPORT_NAME;
+  const named = base
+    .split(' ')
+    .map((w) => (w.length ? w.slice(0, 1).toLocaleUpperCase('de-DE') + w.slice(1) : w))
+    .join(' ');
+  return named || DEFAULT_IMPORT_NAME;
+}
 
 /** The display name for an imported talent: the parsed CV name, else a placeholder. */
 export function importedName(contact: DocumentContact): string {

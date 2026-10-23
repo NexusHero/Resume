@@ -88,6 +88,12 @@ async function mockSession(page: Page): Promise<string[]> {
     if (route.request().method() !== 'GET') return route.continue();
     return route.fulfill({ contentType: 'application/json', body: '[]' });
   });
+  await page.route('**/api/v1/settings/workspace', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({ vermittlung: true }),
+    }),
+  );
   await page.route('**/api/v1/auth/me', (route) =>
     route.fulfill({
       contentType: 'application/json',
@@ -142,34 +148,32 @@ test.describe('Mobile acceptance (#202)', () => {
     await page.goto(KIT);
     // Signed in → the Workspace shell with the bottom tab bar (first five
     // destinations). No off-canvas drawer in the Vivid AppShell tabs posture.
-    await expect(
-      page
-        .locator('nav')
-        .last()
-        .getByRole('button', { name: /Pipeline/ }),
-    ).toBeVisible();
+    await expect(page.locator('nav').last().getByRole('button', { name: /Mehr/ })).toBeVisible();
     await expectNoHorizontalBodyScroll(page);
 
-    await navigate(page, /Mandate/);
+    await navigate(page, /Mandanten/);
     await expect(page.locator('main')).toBeVisible();
     await expectNoHorizontalBodyScroll(page);
 
-    await navigate(page, /Talent-Pool/);
+    await navigate(page, /Stellen/);
     await expect(page.locator('main')).toBeVisible();
     await expectNoHorizontalBodyScroll(page);
 
-    await navigate(page, /Pipeline/);
+    await navigate(page, /Bewerbungen/);
     await expect(page.locator('main')).toBeVisible();
     await expectNoHorizontalBodyScroll(page);
 
-    await navigate(page, /Performance/);
+    await navigate(page, /Mehr/);
+    await expect(page.locator('main')).toBeVisible();
+    await page.getByRole('button', { name: /Suchaufträge/ }).click();
+    await expect(page.locator('main')).toBeVisible();
     await expectNoHorizontalBodyScroll(page);
   });
 
   test('Mobile_OpenTalent_OpensEditor', async ({ page }) => {
     await mockSession(page);
     await page.goto(KIT);
-    await navigate(page, /Talent-Pool/);
+    await navigate(page, /Mandanten/);
     await page.getByText('Tobias Wirth').first().click();
     await page
       .getByRole('button', { name: /Lebenslauf (bearbeiten|anlegen)/ })
@@ -183,7 +187,7 @@ test.describe('Mobile acceptance (#202)', () => {
   test('Mobile_ApplicationsBoard_ScrollsAndStageChanges', async ({ page }) => {
     const patched = await mockSession(page);
     await page.goto(KIT);
-    await navigate(page, /Pipeline/);
+    await navigate(page, /Bewerbungen/);
 
     // The board is a horizontal snap-scroller wider than the viewport, but it is
     // its OWN scroll container — the body stays put (the .board-scroll element).
@@ -203,4 +207,47 @@ test.describe('Mobile acceptance (#202)', () => {
     await expect.poll(() => patched.length).toBeGreaterThan(0);
     expect(patched.some((b) => b.includes('interview'))).toBe(true);
   });
+});
+
+test('MobileNav_FreshWorkspace_ShowsOnlyFiveDestinations', async ({ page }) => {
+  await mockSession(page);
+  await page.route('**/api/v1/settings/workspace', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({ vermittlung: false }),
+    }),
+  );
+  await page.goto(KIT);
+  const nav = page.locator('nav').last();
+  await expect(nav.getByRole('button', { name: /Workspace/ })).toBeVisible();
+  await expect(nav.getByRole('button', { name: /Mandanten/ })).toBeVisible();
+  await expect(nav.getByRole('button', { name: /Stellen/ })).toBeVisible();
+  await expect(nav.getByRole('button', { name: /Bewerbungen/ })).toBeVisible();
+  await expect(nav.getByRole('button', { name: /Einstellungen/ })).toBeVisible();
+  for (const label of ['Suchaufträge', 'Pipeline', 'Performance', 'Postfach', 'Mehr']) {
+    await expect(nav.getByRole('button', { name: new RegExp(label) })).toHaveCount(0);
+  }
+  await expect(page.getByRole('button', { name: /CoRecruiter/ })).toHaveCount(0);
+  await expectNoHorizontalBodyScroll(page);
+});
+
+test('MobileAiButton_NoKey_ShowsNotConfigured', async ({ page }) => {
+  await mockSession(page);
+  await page.route('**/api/v1/settings/llm', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({ current: 'claude', providers: [] }),
+    }),
+  );
+  await page.goto(KIT);
+  await navigate(page, /Mandanten/);
+  await page.getByText('Tobias Wirth').first().click();
+  await page
+    .getByRole('button', { name: /Lebenslauf (bearbeiten|anlegen)/ })
+    .first()
+    .click();
+  await expect(page.locator('[data-doc-hydrated="true"]')).toBeVisible();
+  await expect(page.getByText('KI nicht eingerichtet')).toBeVisible();
+  await expect(page.getByRole('button', { name: /KI anpassen/ })).toBeDisabled();
+  await expectNoHorizontalBodyScroll(page);
 });

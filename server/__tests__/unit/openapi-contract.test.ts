@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url';
 import { createMandateSchema } from '../../src/domain/mandate.js';
 import { createTalentSchema } from '../../src/domain/talent.js';
 import { createPlacementSchema } from '../../src/domain/placement.js';
+import { updateWorkspaceSettingsSchema } from '../../src/domain/workspace-settings.js';
+import { VERMITTLER_ROUTES } from '../support/route-inventory.js';
 
 /**
  * Drift guard for the hand-maintained OpenAPI spec (ADR-0012). The zod schemas
@@ -71,5 +73,86 @@ describe('OpenAPI contract stays in sync with the zod boundary schemas', () => {
     const documented = new Set(openApiProps(name));
     const missing = zodFields.filter((field) => !documented.has(field));
     expect(missing).toEqual([]);
+  });
+});
+
+describe('Phase 0 OpenAPI contract (ADR-0057)', () => {
+  it('OpenApi_ProviderId_HasNoTemplate', () => {
+    expect(SPEC).toContain('enum: [claude, gemini]');
+    expect(SPEC).not.toMatch(/enum: \[claude, gemini, template\]/);
+  });
+
+  it('OpenApi_KeyRoutes_AreRemoved', () => {
+    expect(SPEC).not.toContain('/settings/keys');
+  });
+
+  it('OpenApi_CoverLetter_RequiresSession', () => {
+    const block = SPEC.slice(SPEC.indexOf('  /cover-letter:'), SPEC.indexOf('components:'));
+    expect(block).toContain('cookieSession: []');
+    expect(block).toContain("'401'");
+    expect(block).not.toMatch(/open route with template fallback/);
+  });
+
+  it('OpenApi_ResumeSchema_DocumentsRawText', () => {
+    expect(openApiProps('TalentDocuments')).toContain('resume');
+    expect(SPEC).toContain('rawText:');
+  });
+
+  it('OpenApi_UpdateWorkspaceSettingsInput_DocumentsEveryZodField', () => {
+    expect(openApiProps('WorkspaceSettings')).toEqual(
+      expect.arrayContaining(zodKeys(updateWorkspaceSettingsSchema)),
+    );
+  });
+
+  it('OpenApi_ParsePdf_Documents422NoTextLayer', () => {
+    expect(SPEC).toContain('NoTextLayer');
+    expect(SPEC).toContain('about:blank#no-text-layer');
+  });
+
+  it('OpenApi_ImportResponses_DocumentModeTruncatedAndAttachmentId', () => {
+    expect(SPEC).toContain('truncated:');
+    expect(SPEC).toContain('attachmentId:');
+    expect(SPEC).toContain('enum: [text, ai]');
+  });
+
+  it('OpenApi_EveryAiOperation_Documents503AndReferencesAiNotConfigured', () => {
+    expect(SPEC).toContain('AiNotConfigured');
+    expect(SPEC).toContain('about:blank#ai-not-configured');
+  });
+});
+
+/** One operation block (`path` + method) from the hand-written spec. */
+function operationBlock(path: string, method: string): string {
+  const lines = SPEC.split('\n');
+  const rel = path.replace('/api/v1', '').replace(':talentId', '{talentId}').replace(':id', '{id}');
+  const start = lines.findIndex((l) => l === `  ${rel}:`);
+  if (start === -1) throw new Error(`path ${rel} not found`);
+  let end = lines.length;
+  for (let i = start + 1; i < lines.length; i += 1) {
+    if (/^ {2}\/\S+:/.test(lines[i]) || lines[i] === 'components:') {
+      end = i;
+      break;
+    }
+  }
+  const block = lines.slice(start, end);
+  const mStart = block.findIndex((l) => l === `    ${method.toLowerCase()}:`);
+  if (mStart === -1) throw new Error(`${method} ${rel} not found`);
+  const mEnd = block.findIndex((l, i) => i > mStart && /^ {4}[a-z]+:$/.test(l));
+  return (mEnd === -1 ? block.slice(mStart) : block.slice(mStart, mEnd)).join('\n');
+}
+
+describe('OpenAPI: every intermediary operation has one documented 404', () => {
+  it('OpenApi_EveryVermittlerOperation_HasExactlyOne404ReferencingNotFoundOrNotEnabled', () => {
+    const problems: string[] = [];
+    for (const route of VERMITTLER_ROUTES) {
+      const op = operationBlock(route.path, route.method);
+      const refs = op.split('\n').filter((l) => /^ {8}'404':/.test(l));
+      if (refs.length !== 1) {
+        problems.push(`${route.id}: ${refs.length} 404 keys`);
+      } else if (!refs[0].includes('NotFoundOrNotEnabled')) {
+        problems.push(`${route.id}: 404 does not reference NotFoundOrNotEnabled`);
+      }
+    }
+    expect(problems).toEqual([]);
   });
 });

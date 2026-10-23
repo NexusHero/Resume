@@ -17,39 +17,6 @@ export const coverLetterRequestSchema = z.object({
 });
 export type CoverLetterRequest = z.infer<typeof coverLetterRequestSchema>;
 
-/**
- * Deterministic cover-letter template. Used as the fallback when no LLM
- * provider is configured, and mirrors the applicant app's local draft so the
- * UX is identical with or without a model. Defaults to English; pass
- * `lang === 'de'` for the German variant.
- */
-export function coverLetterTemplate(
-  req: CoverLetterRequest,
-  me: CandidateIdentity,
-  lang: OutputLang = 'en',
-): string {
-  if (lang === 'de') {
-    const focus = req.skills.slice(0, 2).join(' und ') || 'Software Engineering';
-    const ort = req.city ? ` in ${req.city}` : '';
-    return (
-      `Sehr geehrtes Team von ${req.company},\n\n` +
-      `mit großem Interesse habe ich Ihre Ausschreibung als ${req.role}${ort} gelesen. ` +
-      `Als ${me.title} mit Schwerpunkt ${focus} bringe ich genau die Erfahrung mit, die Sie suchen.\n\n` +
-      `Über ein persönliches Gespräch freue ich mich sehr.\n\n` +
-      `Mit freundlichen Grüßen\n${me.name}`
-    );
-  }
-  const focus = req.skills.slice(0, 2).join(' and ') || 'Software Engineering';
-  const location = req.city ? ` in ${req.city}` : '';
-  return (
-    `Dear ${req.company} team,\n\n` +
-    `I read your posting for the ${req.role} role${location} with great interest. ` +
-    `As a ${me.title} focused on ${focus}, I bring exactly the experience you are looking for.\n\n` +
-    `I would be delighted to discuss my application in person.\n\n` +
-    `Kind regards\n${me.name}`
-  );
-}
-
 /** Build the system + user prompt for an LLM-generated cover letter. */
 export function coverLetterPrompt(
   req: CoverLetterRequest,

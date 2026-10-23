@@ -1,6 +1,7 @@
 import { Body, Controller, HttpCode, Module, Post, UseGuards } from '@nestjs/common';
 import { aggCheckSchema, checkAgg, rewriteAgg } from '../../domain/agg-check.js';
 import { AuthGuard } from '../auth.guard.js';
+import { RequiresVermittlung, VermittlungGuard } from '../vermittlung.guard.js';
 import { AiRateLimitGuard } from '../ai-rate-limit.guard.js';
 import { PlanGuard, RequiresPlan } from '../plan.guard.js';
 import { ZodValidationPipe } from '../zod-validation.pipe.js';
@@ -11,7 +12,8 @@ import { ZodValidationPipe } from '../zod-validation.pipe.js';
  * (Free); only the LLM-generated neutral rewrite is Pro + rate-limited.
  */
 @Controller('api/v1/compliance')
-@UseGuards(AuthGuard, PlanGuard)
+@UseGuards(AuthGuard, VermittlungGuard, PlanGuard)
+@RequiresVermittlung()
 export class ComplianceController {
   @Post('agg-check')
   @HttpCode(200)

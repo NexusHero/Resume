@@ -241,7 +241,7 @@ function AttachmentsTab({ talent, apps, onUploaded }) {
 /* ---- Bewerbungen tab ---- */
 function TalentApplications({ apps, onCreateMappe }) {
   return (
-    <TP.Card pad={false} title="Bewerbungen" subtitle="Alle Mappen für dieses Talent"
+    <TP.Card pad={false} title="Bewerbungen" subtitle="Alle Mappen für diesen Mandanten"
       action={<TP.Button size="sm" variant="primary" iconLeft={<TP.Icon name="plus" size={14} />} onClick={onCreateMappe}>Neue Mappe</TP.Button>}>
       {apps.length === 0 && <div style={{ padding: '40px', textAlign: 'center', fontSize: '13px', color: 'var(--text-soft)' }}>Noch keine Bewerbungen.</div>}
       {apps.map((a) => (

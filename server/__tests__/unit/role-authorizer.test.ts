@@ -25,6 +25,14 @@ describe('RoleAuthorizer', () => {
     expect(authz.check(recruiter, { kind: 'member' }, 'setRoles')).toBe(false);
   });
 
+  it('RoleAuthorizer_Check_WorkspaceUpdateByRecruiter_ReturnsFalse', () => {
+    expect(authz.check(recruiter, { kind: 'workspace' }, 'update')).toBe(false);
+  });
+
+  it('RoleAuthorizer_Check_WorkspaceUpdateByAdmin_ReturnsTrue', () => {
+    expect(authz.check(admin, { kind: 'workspace' }, 'update')).toBe(true);
+  });
+
   it('UnknownKind_IsDenied', () => {
     expect(authz.check(recruiter, { kind: 'billing' }, 'read')).toBe(false);
   });

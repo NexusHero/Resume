@@ -23,7 +23,7 @@ const mandates = [{ id: 'm1', client: 'Aurora Systems', role: 'C++ Engineer', st
 describe('Dashboard — agency framing', () => {
   it('NextSteps_ShowsDeskInterviewOfferApps_NotOwnApplications', () => {
     render(
-      <Dashboard me={me} apps={apps} vkpis={vkpis} clients={[]} mandates={mandates} onOpenTalent={() => {}} onOpenPipeline={() => {}} onOpenMandate={() => {}} />,
+      <Dashboard me={me} apps={apps} vkpis={vkpis} clients={[]} mandates={mandates} vermittlung onOpenTalent={() => {}} onOpenPipeline={() => {}} onOpenMandate={() => {}} />,
     );
     // The design-system stub renders a Card's title as a host `title` attribute.
     expect(screen.getByTitle('Bewerbungen im Fortschritt')).toBeInTheDocument();
@@ -35,7 +35,7 @@ describe('Dashboard — agency framing', () => {
 
   it('Greeting_CountsInterviewAndOfferApps', () => {
     render(
-      <Dashboard me={me} apps={apps} vkpis={vkpis} clients={[]} mandates={mandates} onOpenTalent={() => {}} onOpenPipeline={() => {}} onOpenMandate={() => {}} />,
+      <Dashboard me={me} apps={apps} vkpis={vkpis} clients={[]} mandates={mandates} vermittlung onOpenTalent={() => {}} onOpenPipeline={() => {}} onOpenMandate={() => {}} />,
     );
     // 1 app is in interview, none in offer → "1 application in interview or offer".
     expect(screen.getByText(/1 Bewerbung in Interview oder Angebot/)).toBeInTheDocument();
@@ -44,16 +44,16 @@ describe('Dashboard — agency framing', () => {
   it('EmptyDesk_ShowsOnboardingWithFirstActions', () => {
     const onNav = vi.fn();
     render(
-      <Dashboard me={me} apps={[]} vkpis={vkpis} clients={[]} mandates={[]} talentCount={0} onNav={onNav} onOpenTalent={() => {}} onOpenPipeline={() => {}} onOpenMandate={() => {}} />,
+      <Dashboard me={me} apps={[]} vkpis={vkpis} clients={[]} mandates={[]} talentCount={0} vermittlung onNav={onNav} onOpenTalent={() => {}} onOpenPipeline={() => {}} onOpenMandate={() => {}} />,
     );
     expect(screen.getByText('Leg mit deinem Desk los')).toBeInTheDocument();
-    fireEvent.click(screen.getByText('Mandat anlegen'));
+    fireEvent.click(screen.getByText('Suchauftrag anlegen'));
     expect(onNav).toHaveBeenCalledWith('mandate');
   });
 
   it('DeskWithData_HidesOnboarding', () => {
     render(
-      <Dashboard me={me} apps={apps} vkpis={vkpis} clients={[]} mandates={mandates} talentCount={2} onNav={() => {}} onOpenTalent={() => {}} onOpenPipeline={() => {}} onOpenMandate={() => {}} />,
+      <Dashboard me={me} apps={apps} vkpis={vkpis} clients={[]} mandates={mandates} talentCount={2} vermittlung onNav={() => {}} onOpenTalent={() => {}} onOpenPipeline={() => {}} onOpenMandate={() => {}} />,
     );
     expect(screen.queryByText('Leg mit deinem Desk los')).toBeNull();
   });

@@ -27,9 +27,6 @@ module.exports = {
     '!server/src/container.ts',
     '!server/src/adapters/puppeteer-pdf-renderer.ts',
     '!server/src/adapters/pdf-lib-merger.ts',
-    // Text extraction runs Mozilla's pdf.js against a real PDF binary — exercised
-    // by a manual/integration smoke, not unit-covered (the port has a fake).
-    '!server/src/adapters/pdfjs-text-extractor.ts',
     '!server/src/adapters/git-versioner.ts',
     '!server/src/adapters/pino-logger.ts',
     '!server/src/adapters/node-fetch.ts',
@@ -53,7 +50,7 @@ module.exports = {
     '!server/src/adapters/sql/sql-user-repository.ts',
     '!server/src/adapters/sql/sql-session-store.ts',
     '!server/src/adapters/sql/sql-password-reset-token-store.ts',
-    '!server/src/adapters/sql/sql-api-key-store.ts',
+    '!server/src/adapters/sql/sql-workspace-settings-store.ts',
     '!server/src/adapters/sql/sql-document-repository.ts',
     '!server/src/adapters/sql/sql-attachment-store.ts',
     '!server/src/adapters/sql/sql-usage-meter.ts',

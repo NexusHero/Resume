@@ -27,7 +27,7 @@ export function checkProductionReadiness(config: AppConfig): ReadinessReport {
 
   if (config.security.encryptionSecret === DEV_ENCRYPTION_SECRET) {
     errors.push(
-      'APP_SECRET is unset or the insecure dev default. Set a strong, secret value — it encrypts stored per-user API keys at rest.',
+      'APP_SECRET is unset or the insecure dev default. Set a strong, secret value — it signs and encrypts the auth store at rest.',
     );
   }
 
@@ -37,6 +37,12 @@ export function checkProductionReadiness(config: AppConfig): ReadinessReport {
     );
   } else if (!config.databaseUrl) {
     errors.push('DATABASE_URL must be set when STORE=sql.');
+  }
+
+  if (!config.llm.anthropic.apiKey && !config.llm.gemini.apiKey) {
+    warnings.push(
+      'No AI key configured (ANTHROPIC_API_KEY / GEMINI_API_KEY): generative AI routes answer 503 ai-not-configured.',
+    );
   }
 
   if (config.mail.transport !== 'smtp') {

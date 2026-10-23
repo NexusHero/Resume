@@ -1,10 +1,10 @@
-<!-- @dsCard group="myJob App" viewport="1280x800" name="Talent-Pool" subtitle="Foto-Kacheln — bunter Kandidaten-Pool, Klick öffnet das volle Profil; „Ich" als Talent #1" -->
+<!-- @dsCard group="myJob App" viewport="1280x800" name="Mandanten" subtitle="Foto-Kacheln — bunter Kandidaten-Pool, Klick öffnet das volle Profil; „Ich" als Mandant #1" -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>myJob Recruit — Talent-Pool</title>
+<title>myJob Recruit — Mandanten</title>
 <link rel="icon" href="../assets/logo/favicon.svg" />
 <link rel="stylesheet" href="../styles.css" />
 <style>
@@ -104,7 +104,7 @@ const T = window.MyJobTalents;
 
 const RECRUIT_NAV = [
   { id: 'workspace', label: 'Workspace', icon: 'home' },
-  { id: 'pool', label: 'Talent-Pool', icon: 'users' },
+  { id: 'pool', label: 'Mandanten', icon: 'users' },
   { id: 'stellen', label: 'Stellen', icon: 'briefcase' },
   { id: 'matching', label: 'Matching', icon: 'search' },
   { id: 'pipeline', label: 'Pipeline', icon: 'columns', badge: 2, demo: true },
@@ -122,14 +122,14 @@ function kiSummary(c) {
   const top = (c.skills || []).slice(0, 3).join(', ');
   const parts = [`${c.seniority}-Profil mit ${c.years} Jahren Erfahrung — Kern: ${top}.`];
   if (c.available) parts.push(`Verfügbar ${c.available}${c.salaryTarget ? `, Ziel ${c.salaryTarget}` : ''}.`);
-  if (c.workPermit) parts.push(`Bewilligung ${c.workPermit.split(' ')[0]} — passt für Schweizer Mandate.`);
+  if (c.workPermit) parts.push(`Bewilligung ${c.workPermit.split(' ')[0]} — passt für Schweizer Suchaufträge.`);
   return parts.join(' ');
 }
 
 function CvProfile({ c }) {
   const full = c.experience; // only Suhay has the full CV; others show a light profile
   return (
-    <div className="prof" data-screen-label="Talent-Profil">
+    <div className="prof" data-screen-label="Mandanten-Profil">
       <div className="prof-max">
         <div className="cv-head">
           <Avatar name={c.name} src={c.photo} size={88} ring />
@@ -240,13 +240,13 @@ function Pool() {
     <AppShell
       product="recruit" posture="rail"
       nav={RECRUIT_NAV} active="pool" onNav={goNav}
-      account={{ name: 'Suhay Sevinc', meta: 'Ich · +3 Talente', src: T.me.photo }}
-      title="Talent-Pool"
+      account={{ name: 'Suhay Sevinc', meta: 'Ich · +3 Mandanten', src: T.me.photo }}
+      title="Mandanten"
       subtitle={`${T.all.length} Kandidaten`}
       search searchPlaceholder="Kandidaten suchen …" searchValue={q} onSearch={setQ}
     >
       <div style={{ height: '100%', border: '1px solid var(--border)', borderRadius: 'var(--radius-2xl)', overflow: 'hidden', background: 'var(--surface-card)', boxShadow: 'var(--shadow-sm)' }}>
-        <div className="pool" data-screen-label="Talent-Pool">
+        <div className="pool" data-screen-label="Mandanten">
           <div className="tiles">
             {shown.length === 0 && <div style={{ padding: '26px 14px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 'var(--fs-sm)' }}>Keine Kandidat:innen gefunden — Suchbegriff anpassen.</div>}
             {shown.map((c) => (

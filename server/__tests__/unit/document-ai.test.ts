@@ -1,10 +1,4 @@
-import {
-  summaryPrompt,
-  letterPrompt,
-  toParagraphs,
-  fallbackSummary,
-  fallbackLetter,
-} from '../../src/domain/document-ai.js';
+import { summaryPrompt, letterPrompt, toParagraphs } from '../../src/domain/document-ai.js';
 import type { TalentDocuments } from '../../src/domain/talent-documents.js';
 
 const documents: TalentDocuments = {
@@ -79,47 +73,5 @@ describe('document-ai prompts', () => {
   it('ToParagraphs_SplitsOnBlankLines', () => {
     expect(toParagraphs('One.\n\nTwo.\n\nThree.')).toEqual(['One.', 'Two.', 'Three.']);
     expect(toParagraphs('   Single.   ')).toEqual(['Single.']);
-  });
-});
-
-describe('document-ai fallbacks', () => {
-  it('FallbackSummary_UsesRoleAndSkills', () => {
-    const text = fallbackSummary(documents);
-    expect(text).toContain('Product Designer');
-    expect(text).toContain('Figma');
-  });
-
-  it('FallbackLetter_ReturnsThreeParagraphsTargeted', () => {
-    const paras = fallbackLetter(documents, { role: 'Lead Designer', company: 'Helio' });
-    expect(paras).toHaveLength(3);
-    expect(paras[0]).toContain('Lead Designer');
-    expect(paras[0]).toContain('Helio');
-  });
-
-  it('FallbackSummary_German_ProducesGermanText', () => {
-    const text = fallbackSummary(documents, 'de');
-    expect(text).toContain('Product Designer');
-    expect(text).toContain('mit Schwerpunkt auf Figma, Sketch');
-    expect(text).toContain('lösungsorientiert');
-  });
-
-  it('FallbackLetter_German_ProducesGermanParagraphsTargeted', () => {
-    const paras = fallbackLetter(documents, { role: 'Lead Designer', company: 'Helio' }, 'de');
-    expect(paras).toHaveLength(3);
-    expect(paras[0]).toContain('die Stelle als Lead Designer bei Helio');
-    expect(paras[1]).toContain('Figma');
-    expect(paras[2]).toContain('würde ich mich sehr freuen');
-  });
-
-  it('GermanFallbacks_WithoutRoleAndSkills_UseGenericPhrasing', () => {
-    const bare: TalentDocuments = {
-      ...documents,
-      contact: { ...documents.contact, role: '' },
-      resume: { ...documents.resume, skillGroups: [] },
-    };
-    expect(fallbackSummary(bare, 'de')).toContain('Fachkraft');
-    const paras = fallbackLetter(bare, {}, 'de');
-    expect(paras[0]).toContain('die ausgeschriebene Stelle');
-    expect(paras[1]).not.toContain('insbesondere mit');
   });
 });

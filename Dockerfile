@@ -28,10 +28,12 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 # Compiled server
 COPY --from=build /app/server/dist ./server/dist
-# Static UIs are served from the repo root (config.staticDir)
-COPY --from=build /app/index.html ./index.html
+# Static UIs are served from the repo root (config.staticDir). There is no root
+# index.html: '/' 302-redirects to the recruiting kit (see nest/http-edge.ts).
 COPY --from=build /app/design ./design
 COPY --from=build /app/assets ./assets
+# OpenAPI contract behind /api/v1/openapi.yaml and the self-hosted Swagger UI.
+COPY --from=build /app/server/openapi.yaml ./server/openapi.yaml
 # The file-backed user/session store and PDF archive live here; mount a volume.
 RUN mkdir -p archive
 EXPOSE 4178

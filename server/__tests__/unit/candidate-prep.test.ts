@@ -1,5 +1,5 @@
 import {
-  fallbackPrep,
+  prepFacts,
   mergePrep,
   prepPrompt,
   prepResultSchema,
@@ -59,16 +59,15 @@ const jobAd = [
 ].join('\n');
 
 const build = (documents: TalentDocuments | null = docs(), ad = jobAd) =>
-  fallbackPrep(
+  prepFacts(
     documents,
-    mandate,
     companyInterviewProfile(mandate.client ?? '', mandate.role, ad),
     extractRequirements(ad),
     ad,
   );
 
 describe('candidate-prep domain', () => {
-  describe('fallbackPrep', () => {
+  describe('prepFacts', () => {
     it('CarriesCompanyStyleWithProvenance', () => {
       const p = build();
       expect(p.companyLabel).toBe('US Big Tech'); // Google → curated
@@ -77,74 +76,25 @@ describe('candidate-prep domain', () => {
       expect(p.formats.join(' ')).toMatch(/coding/i);
     });
 
-    it('SurfacesObligationsAndProcessFromAd', () => {
+    it('SurfacesObligationsAndRequirementCoverage', () => {
       const p = build();
       expect(p.obligations.some((o) => o.includes('Führerschein'))).toBe(true);
-      expect(p.processHints.some((h) => h.includes('Coding-Challenge'))).toBe(true);
-    });
-
-    it('MarksRequirementCoverageAgainstCv', () => {
-      const p = build();
-      const react = p.requirementChecks.find((c) => c.text.includes('React'));
-      expect(react?.covered).toBe(true); // CV shows React
-    });
-
-    it('ListsMatchingStrengthsFromCv', () => {
-      const p = build();
+      expect(p.requirementChecks.some((c) => c.text.includes('React') && c.covered)).toBe(true);
       expect(p.strengths).toContain('React');
     });
 
-    it('ProducesLikelyQuestionsStarAnswersAndCandidateQuestions', () => {
-      const p = build();
-      expect(p.likelyQuestions.length).toBeGreaterThan(0);
-      expect(p.starAnswers.length).toBeGreaterThan(0);
-      expect(p.starAnswers[0]?.scaffold).toMatch(/Situation:/);
-      expect(p.candidateQuestions.length).toBeGreaterThan(0);
+    it('LegacyDocumentWithoutRawText_IsAccepted', () => {
+      const legacy = docs();
+      delete (legacy.resume as { rawText?: string }).rawText;
+      expect(() => build(legacy)).not.toThrow();
     });
+  });
 
-    it('NullDocuments_StillProducesGroundedPack', () => {
-      const p = build(null);
-      expect(p.strengths).toEqual([]);
-      expect(p.likelyQuestions.length).toBeGreaterThan(0);
-      expect(p.starAnswers[0]?.scaffold).toContain('one of your roles');
-    });
-
-    it('NoAdOverlap_UsesOwnSkillsForQuestions', () => {
-      // CV skill (Cobol) not mentioned in the ad → strengths empty, falls back to own skills
-      const d = docs({ skillGroups: [{ label: 'x', items: ['Cobol'] }], experience: [] });
-      const p = build(d, 'Frontend Engineer\n- React erforderlich');
-      expect(p.strengths).toEqual([]);
-      expect(p.likelyQuestions.some((q) => q.question.includes('Cobol'))).toBe(true);
-    });
-
-    it('StationWithCompanyOnly_UsedInStarScaffold', () => {
-      const d = docs({
-        experience: [
-          { role: '', company: 'BetaCorp', period: '', location: '', bullets: [], skills: [] },
-        ],
-      });
-      const p = build(d);
-      expect(p.starAnswers.some((s) => s.scaffold.includes('BetaCorp'))).toBe(true);
-    });
-
-    it('MarksUncoveredRequirementAsToVerify', () => {
-      const d = docs({ skillGroups: [{ label: 'x', items: ['React'] }] });
-      const p = build(d, 'Rolle\n- Python erforderlich');
-      const python = p.requirementChecks.find((c) => c.text.includes('Python'));
-      expect(python?.covered).toBe(false);
-    });
-
-    it('CompanyWithoutEmphasis_UsesSafeFallbacks', () => {
-      const bareCompany = {
-        archetype: 'default' as const,
-        label: 'Test',
-        source: 'archetype' as const,
-        confidence: 'low' as const,
-        style: { formats: [], emphasis: [], rounds: '', tips: [] },
-      };
-      const p = fallbackPrep(docs(), mandate, bareCompany, extractRequirements(jobAd), jobAd);
-      expect(p.likelyQuestions.some((q) => q.question.includes('your strength'))).toBe(true);
-      expect(p.candidateQuestions.some((q) => q.includes('technical skills'))).toBe(true);
+  describe('mergePrep', () => {
+    it('CandidatePrep_MergePrepModelReturnsEmptyRequiredSections_ThrowsUpstreamProviderError', () => {
+      expect(() =>
+        mergePrep(build(), { likelyQuestions: [], starAnswers: [], candidateQuestions: [] }),
+      ).toThrow('incomplete interview prep');
     });
   });
 
@@ -182,14 +132,6 @@ describe('candidate-prep domain', () => {
       // grounded fields untouched
       expect(merged.obligations).toEqual(base.obligations);
       expect(merged.strengths).toEqual(base.strengths);
-    });
-
-    it('EmptyLlmLists_KeepDeterministicBase', () => {
-      const base = build();
-      const merged = mergePrep(base, prepResultSchema.parse({}));
-      expect(merged.likelyQuestions).toEqual(base.likelyQuestions);
-      expect(merged.starAnswers).toEqual(base.starAnswers);
-      expect(merged.candidateQuestions).toEqual(base.candidateQuestions);
     });
   });
 });

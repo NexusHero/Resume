@@ -4,22 +4,19 @@ import {
   summaryPrompt,
   letterPrompt,
   toParagraphs,
-  fallbackSummary,
-  fallbackLetter,
 } from '../domain/document-ai.js';
 import {
   type TailorTarget,
   type TailoredApplication,
   tailorPrompt,
   tailorResultSchema,
-  fallbackTailor,
   normalizeTailored,
 } from '../domain/application-tailor.js';
 import { extractJson } from '../domain/document-parse.js';
 import { type GroundingReport, groundingSource } from '../domain/grounding.js';
 import { detectLanguage, type OutputLang } from '../domain/language.js';
 import { translatePrompt, translateResultSchema } from '../domain/document-translate.js';
-import { ValidationError } from '../domain/errors.js';
+import { ValidationError, UpstreamProviderError } from '../domain/errors.js';
 import { type DocumentTranslation } from '../domain/talent-documents.js';
 import type { LlmProviderId } from '../ports/llm-provider.js';
 import type { Clock } from '../ports/clock.js';
@@ -33,9 +30,9 @@ export interface DocumentAiSuggestion {
   text?: string;
   /** Present for a cover-letter suggestion. */
   paragraphs?: string[];
-  /** Which backend produced it — 'template' when the deterministic fallback ran. */
-  provider: LlmProviderId | 'template';
-  /** What this call cost — absent on a template result (nothing was spent). */
+  /** Which backend produced it. */
+  provider: LlmProviderId;
+  /** What this call cost. */
   usage?: CallUsage;
 }
 
@@ -80,15 +77,9 @@ export class DocumentAssistService {
       built,
     );
 
-    if (res) {
-      return action === 'summary'
-        ? { action, text: res.reply.trim(), provider: res.provider, usage: res.usage }
-        : { action, paragraphs: toParagraphs(res.reply), provider: res.provider, usage: res.usage };
-    }
-
     return action === 'summary'
-      ? { action, text: fallbackSummary(documents, lang), provider: 'template' }
-      : { action, paragraphs: fallbackLetter(documents, target, lang), provider: 'template' };
+      ? { action, text: res.reply.trim(), provider: res.provider, usage: res.usage }
+      : { action, paragraphs: toParagraphs(res.reply), provider: res.provider, usage: res.usage };
   }
 
   /**
@@ -106,7 +97,7 @@ export class DocumentAssistService {
   ): Promise<
     TailoredApplication & {
       lang: OutputLang;
-      provider: LlmProviderId | 'template';
+      provider: LlmProviderId;
       usage?: CallUsage;
       grounding: GroundingReport;
     }
@@ -120,7 +111,6 @@ export class DocumentAssistService {
       {
         schema: tailorResultSchema,
         normalize: normalizeTailored,
-        fallback: () => fallbackTailor(documents, target, target.lang),
       },
     );
 
@@ -170,11 +160,6 @@ export class DocumentAssistService {
     if (existing) return { lang: targetLang, translation: existing, created: false };
 
     const resolved = await this.runner.resolveProvider(userId);
-    if (!resolved) {
-      throw new ValidationError(
-        'Translation needs an AI provider. Add your Claude or Gemini key in Settings, then try again.',
-      );
-    }
 
     // No fallback here: a generation failure propagates rather than degrading.
     const { reply, provider, usage } = await this.runner.generateAndMeter(
@@ -187,7 +172,7 @@ export class DocumentAssistService {
 
     const parsed = translateResultSchema.safeParse(extractJson(reply));
     if (!parsed.success) {
-      throw new ValidationError('The translation could not be produced — please try again.');
+      throw new UpstreamProviderError();
     }
 
     const translation: DocumentTranslation = {

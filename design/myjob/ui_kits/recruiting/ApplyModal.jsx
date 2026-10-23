@@ -82,8 +82,10 @@ function ApplyModal({ target, onClose, onApply }) {
     setBusy(false);
   };
 
+  const aiBlocked = !!(window.aiGateBlocked && window.aiGateBlocked());
   const runAi = async () => {
     if (aiBusy) return;
+    if (window.aiGateBlocked && window.aiGateBlocked()) return;
     setAiBusy(true);
     try {
       const summarySug = await window.RecruitApi.suggestDocument(cand.id, 'summary');
@@ -96,7 +98,14 @@ function ApplyModal({ target, onClose, onApply }) {
       });
       if (letterSug && letterSug.paragraphs) setParagraphs(letterSug.paragraphs);
     } catch (e) {
-      if (window.showToast) window.showToast('KI-Anpassung fehlgeschlagen.', 'error');
+      if (window.showToast) {
+        window.showToast(
+          e && e.code === 'ai-not-configured'
+            ? 'KI nicht eingerichtet — richte einen Server-Key ein.'
+            : (e && e.message) || 'KI-Anpassung fehlgeschlagen.',
+          'error',
+        );
+      }
     }
     setAiBusy(false);
   };
@@ -219,7 +228,7 @@ function ApplyModal({ target, onClose, onApply }) {
 
             <div>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '8px' }}>KI-Assistenz</div>
-              <button onClick={runAi} disabled={aiBusy || !canPersist || loading} style={{ appearance: 'none', width: '100%', cursor: (aiBusy || !canPersist || loading) ? 'default' : 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px 14px', background: 'var(--surface-sunk)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', color: 'var(--text-heading)', fontSize: '13px', fontWeight: 500, transition: 'all .2s' }}>
+              <button onClick={runAi} disabled={aiBusy || !canPersist || loading || aiBlocked} style={{ appearance: 'none', width: '100%', cursor: (aiBusy || !canPersist || loading || aiBlocked) ? 'default' : 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px 14px', background: 'var(--surface-sunk)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', color: 'var(--text-heading)', fontSize: '13px', fontWeight: 500, transition: 'all .2s' }}>
                 <AM.Icon name="zap" size={15} style={{ color: 'var(--accent-strong)' }} />
                 {aiBusy ? 'Passe Unterlagen an…' : 'Texte für Empfänger anpassen'}
               </button>

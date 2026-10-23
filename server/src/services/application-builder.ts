@@ -1,6 +1,7 @@
 import type { ApplicationTarget } from '../domain/application-target.js';
 import type { ApplicationPayload } from '../domain/assistant.js';
 import type { TalentDocuments } from '../domain/talent-documents.js';
+import { withoutRawText } from '../domain/talent-documents.js';
 import type { DocumentAiService } from './document-ai-service.js';
 import type { DocumentService } from './document-service.js';
 import type { AttachmentService } from './attachment-service.js';
@@ -82,7 +83,7 @@ export class ApplicationBuilder {
     payload: ApplicationPayload,
   ): Promise<Buffer> {
     const documents = await this.documents.get(scope, talentId);
-    const snapshot: TalentDocuments = {
+    const snapshot: TalentDocuments = withoutRawText({
       ...documents,
       resume: { ...documents.resume, summary: payload.summary },
       letter: {
@@ -91,7 +92,7 @@ export class ApplicationBuilder {
         betreff: payload.company ? `Bewerbung als ${payload.role}` : documents.letter.betreff,
         absaetze: payload.paragraphs.length ? payload.paragraphs : documents.letter.absaetze,
       },
-    };
+    });
     return this.documents.renderDossierFromDocuments(
       scope,
       snapshot,

@@ -48,6 +48,15 @@ function AssistantView({ onChanged }) {
   const [queue, setQueue] = React.useState([]);
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState(false);
+  const [actionError, setActionError] = React.useState(null); // { text, needsSettings }
+  const aiStatus = window.useAiStatus ? window.useAiStatus() : { status: 'configured' };
+  const aiBlocked = aiStatus.status === 'not-configured';
+  const aiError = (err, fallback) => {
+    if (err && err.code === 'ai-not-configured') {
+      return { text: 'KI nicht eingerichtet — richte einen Server-Key ein.', needsSettings: true };
+    }
+    return { text: (err && err.message) || fallback, needsSettings: false };
+  };
   const [lastRun, setLastRun] = React.useState(null); // result of a manual run
 
   const load = React.useCallback(() => {
@@ -65,24 +74,35 @@ function AssistantView({ onChanged }) {
   const patch = (p) => {
     if (busy) return;
     setBusy(true);
+    setActionError(null);
     window.RecruitApi.updateAssistant(p)
       .then((r) => setSettings(r.settings))
-      .catch(() => {})
+      .catch((err) => {
+        setActionError(
+          aiError(err, 'Die Einstellung konnte nicht gespeichert werden. Bitte erneut versuchen.'),
+        );
+      })
       .finally(() => setBusy(false));
   };
   const runNow = () => {
     if (busy) return;
     setBusy(true);
     setLastRun(null);
+    setActionError(null);
     window.RecruitApi.runAssistant()
       .then((r) => { setLastRun(r); load(); if (onChanged) onChanged(); })
-      .catch(() => {})
+      .catch((err) => {
+        // Never swallow e.g. 503 ai-not-configured: the user must see why the
+        // run did not happen (ADR-0047).
+        setActionError(aiError(err, 'Der Lauf ist fehlgeschlagen. Bitte erneut versuchen.'));
+      })
       .finally(() => setBusy(false));
   };
   const resolve = (id, action) => {
+    setActionError(null);
     window.RecruitApi.resolveAssistantSuggestion(id, action)
       .then(() => { load(); if (action === 'accept' && onChanged) onChanged(); })
-      .catch(() => {});
+      .catch((err) => setActionError(aiError(err, 'Die Aktion ist fehlgeschlagen.')));
   };
 
   if (error) return <AvCard><div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Der Assistent konnte nicht geladen werden. Bitte lade die Seite neu.</div></AvCard>;
@@ -100,7 +120,7 @@ function AssistantView({ onChanged }) {
           <div style={{ flex: '1 1 320px', minWidth: 0 }}>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0 }}>CoRecruiter</h2>
             <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '4px', lineHeight: 1.55 }}>
-              Erstellt Shortlists von Kandidat:innen für aktive Mandate, markiert stockende Pipeline-Karten und
+              Erstellt Shortlists von Kandidat:innen für aktive Suchaufträge, markiert stockende Pipeline-Karten und
               leere Profile — und baut auf <strong>Autopilot</strong> vollständige Bewerbungen (maßgeschneiderter
               Lebenslauf + Anschreiben + Bewerbungsmappe) für starke Matches. Läuft im Hintergrund auf dem Server —
               auch während du abgemeldet bist — und legt alles hier zur Prüfung bereit. Er versendet nie etwas und löscht nie.
@@ -110,7 +130,13 @@ function AssistantView({ onChanged }) {
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: '0.06em', textTransform: 'uppercase', color: settings.enabled ? 'var(--positive, #1F8A5B)' : 'var(--text-soft)' }}>
               {settings.enabled ? 'An' : 'Aus'}
             </span>
-            <AV.Button variant={settings.enabled ? 'outline' : 'primary'} size="sm" disabled={busy} onClick={() => patch({ enabled: !settings.enabled })}>
+            <AV.Button
+              variant={settings.enabled ? 'outline' : 'primary'}
+              size="sm"
+              disabled={busy || (aiBlocked && settings.mode === 'autopilot')}
+              title={aiBlocked && settings.mode === 'autopilot' ? 'KI nicht eingerichtet — in den Einstellungen konfigurieren' : undefined}
+              onClick={() => patch({ enabled: !settings.enabled })}
+            >
               {settings.enabled ? 'Ausschalten' : 'Einschalten'}
             </AV.Button>
           </div>
@@ -122,7 +148,21 @@ function AssistantView({ onChanged }) {
             <div style={{ display: 'flex', gap: '4px', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-md)', padding: '4px' }}>
               <AvModePill active={settings.mode === 'suggest'} onClick={() => patch({ mode: 'suggest' })} label="Vorschlagen" hint="Alles wartet auf deine Freigabe." />
               <AvModePill active={settings.mode === 'act'} onClick={() => patch({ mode: 'act' })} label="Handeln" hint="Interne, umkehrbare Aktionen (z. B. ein Match zur Pipeline hinzufügen) werden direkt ausgeführt und als automatisch angewendet markiert. Nichts nach außen Gerichtetes läuft je allein." />
-              <AvModePill active={settings.mode === 'autopilot'} onClick={() => patch({ mode: 'autopilot' })} label="Autopilot" hint="Höchste Stufe: Bei starken Matches baut der Assistent die komplette Bewerbung — maßgeschneiderter Lebenslauf + Anschreiben in der Sprache der Anzeige + Bewerbungsmappe — und legt sie hier zur Freigabe mit einem Klick bereit. Er versendet weiterhin nie etwas." />
+              {window.AiButton ? (
+                <span style={{ flex: 1, display: 'inline-flex' }}>
+                  <window.AiButton
+                    variant={settings.mode === 'autopilot' ? 'outline' : 'ghost'}
+                    size="sm"
+                    disabled={busy}
+                    onClick={() => patch({ mode: 'autopilot' })}
+                    title="Höchste Stufe: Bei starken Matches baut der Assistent die komplette Bewerbung — maßgeschneiderter Lebenslauf + Anschreiben in der Sprache der Anzeige + Bewerbungsmappe — und legt sie hier zur Freigabe mit einem Klick bereit. Er versendet weiterhin nie etwas."
+                  >
+                    Autopilot
+                  </window.AiButton>
+                </span>
+              ) : (
+                <AvModePill active={settings.mode === 'autopilot'} onClick={() => patch({ mode: 'autopilot' })} label="Autopilot" hint="Höchste Stufe." />
+              )}
             </div>
           </div>
           <div>
@@ -136,9 +176,26 @@ function AssistantView({ onChanged }) {
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>Letzter Lauf: {fmtWhen(settings.lastRunAt)}</span>
-            <AV.Button variant="primary" size="sm" disabled={busy || !settings.enabled} iconLeft={<AV.Icon name="zap" size={14} />} onClick={runNow}>Jetzt ausführen</AV.Button>
+            {settings.mode === 'autopilot' && window.AiButton ? (
+              <window.AiButton
+                variant="primary"
+                size="sm"
+                disabled={busy || !settings.enabled}
+                iconLeft={<AV.Icon name="zap" size={14} />}
+                onClick={runNow}
+              >
+                Jetzt ausführen
+              </window.AiButton>
+            ) : (
+              <AV.Button variant="primary" size="sm" disabled={busy || !settings.enabled} iconLeft={<AV.Icon name="zap" size={14} />} onClick={runNow}>Jetzt ausführen</AV.Button>
+            )}
           </div>
         </div>
+        {aiBlocked && settings.mode === 'autopilot' && window.AiNotConfiguredHint && (
+          <div style={{ marginTop: '10px' }}>
+            <window.AiNotConfiguredHint compact live={false} />
+          </div>
+        )}
         {/* Autopilot-only: where to draw openings from, and how strong a match must be. */}
         {settings.mode === 'autopilot' && (
           <div style={{ display: 'flex', gap: '18px', marginTop: '14px', flexWrap: 'wrap', alignItems: 'flex-end', paddingTop: '14px', borderTop: '1px dashed var(--border)' }}>
@@ -146,7 +203,7 @@ function AssistantView({ onChanged }) {
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '6px' }}>Bewerben auf</div>
               <div style={{ display: 'flex', gap: '4px', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-md)', padding: '4px' }}>
                 <AvModePill active={settings.applySource === 'jobs'} onClick={() => patch({ applySource: 'jobs' })} label="Stellenanzeigen" hint="Stellen von den Jobbörsen." />
-                <AvModePill active={settings.applySource === 'mandates'} onClick={() => patch({ applySource: 'mandates' })} label="Eigene Mandate" hint="Deine aktiven Klienten-Mandate." />
+                <AvModePill active={settings.applySource === 'mandates'} onClick={() => patch({ applySource: 'mandates' })} label="Eigene Suchaufträge" hint="Deine aktiven Klienten-Suchaufträge." />
               </div>
             </div>
             <div>
@@ -159,6 +216,24 @@ function AssistantView({ onChanged }) {
             <div style={{ flex: '1 1 200px', fontSize: '11.5px', color: 'var(--text-soft)', lineHeight: 1.5 }}>
               Baut pro starkem Match eine vollständige Bewerbung (verbraucht KI-Tokens). Das Versenden bleibt dein Klick.
             </div>
+          </div>
+        )}
+        {actionError && (
+          <div role="alert" style={{ marginTop: '12px', fontFamily: 'var(--font-body)', fontSize: '12.5px', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <span>{actionError.text}</span>
+            {actionError.needsSettings && (
+              <button
+                type="button"
+                onClick={() =>
+                  window.AiNavigateSettings
+                    ? window.AiNavigateSettings()
+                    : window.dispatchEvent(new CustomEvent('myjob:navigate', { detail: { to: 'einstellungen' } }))
+                }
+                style={{ appearance: 'none', border: 'none', background: 'none', padding: 0, cursor: 'pointer', font: 'inherit', color: 'var(--accent-strong)', textDecoration: 'underline' }}
+              >
+                Einstellungen
+              </button>
+            )}
           </div>
         )}
         {lastRun && (
@@ -191,7 +266,7 @@ function AssistantView({ onChanged }) {
                   {s.kind === 'application' && s.payload && (
                     <div style={{ marginTop: '8px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', background: 'var(--surface-sunk)', padding: '10px 12px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '6px' }}>
-                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Maßgeschneidertes Paket · {String(s.payload.lang || '').toUpperCase()} · {s.payload.provider === 'template' ? 'Vorlage' : `KI · ${s.payload.provider}`}</span>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Maßgeschneidertes Paket · {String(s.payload.lang || '').toUpperCase()} · {s.payload.provider ? `KI · ${s.payload.provider}` : 'KI'}</span>
                         <a href={window.RecruitApi.assistantDossierUrl(s.id)} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 600, color: 'var(--accent-strong)', border: '1px solid var(--accent-border, var(--border-strong))', borderRadius: 'var(--radius-pill)', padding: '3px 10px' }}>Mappe herunterladen (PDF)</a>
                         {Number(s.payload.ungroundedCount) > 0 && (
                           <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--danger)' }}>⚠ {s.payload.ungroundedCount} ungeprüfte Angabe(n)</span>

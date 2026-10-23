@@ -30,9 +30,9 @@ export interface User {
   /** When the email address was confirmed via the emailed link (soft check). */
   verifiedAt?: string;
   /**
-   * The AI provider this user works with (Settings → AI models). Persisted so
-   * the choice survives restarts and is never shared across the team; absent
-   * means the server's configured default.
+   * The persisted provider choice (ADR-0011, kept by ADR-0057). It is only used
+   * when that provider has a central server key; otherwise resolution falls back
+   * to the server default / any available provider.
    */
   llmProvider?: LlmProviderId;
 }

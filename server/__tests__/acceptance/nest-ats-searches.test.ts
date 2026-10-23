@@ -14,7 +14,11 @@ import { AtsModule } from '../../src/nest/ats/ats.module.js';
 import { SearchesModule } from '../../src/nest/searches/searches.module.js';
 import { AuthGuard } from '../../src/nest/auth.guard.js';
 import { ProblemJsonFilter } from '../../src/nest/problem-json.filter.js';
-import { JOB_SOURCE, SAVED_SEARCH_REPOSITORY } from '../../src/nest/tokens.js';
+import {
+  JOB_SOURCE,
+  SAVED_SEARCH_REPOSITORY,
+  WORKSPACE_SETTINGS_STORE,
+} from '../../src/nest/tokens.js';
 import { FakeJobSource, InMemorySavedSearchRepository, noopLogger } from '../support/fakes.js';
 
 class StampUserGuard implements CanActivate {
@@ -30,6 +34,10 @@ describe('NestJS ats + searches verticals', () => {
   beforeAll(async () => {
     const fakes: Provider[] = [
       { provide: SAVED_SEARCH_REPOSITORY, useValue: new InMemorySavedSearchRepository() },
+      {
+        provide: WORKSPACE_SETTINGS_STORE,
+        useValue: { get: async () => ({ vermittlung: true }), set: async () => undefined },
+      },
     ];
     @Global()
     @Module({ providers: fakes, exports: fakes.map((p) => (p as { provide: symbol }).provide) })
@@ -48,7 +56,7 @@ describe('NestJS ats + searches verticals', () => {
 
     app = moduleRef.createNestApplication();
     app.useGlobalFilters(new ProblemJsonFilter(noopLogger));
-    await app.init();
+    await app.listen(0, '127.0.0.1');
   });
 
   afterAll(async () => {

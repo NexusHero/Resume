@@ -30,6 +30,24 @@ if (typeof globalThis.ResizeObserver === 'undefined') {
   };
 }
 
+// jsdom's localStorage depends on the document origin (opaque about:blank omits
+// it in some Node/jsdom combos). Provide a tiny in-memory stand-in so the
+// appearance tests exercise real persistence instead of crashing on `clear()`.
+if (typeof globalThis.localStorage === 'undefined') {
+  const store = new Map();
+  globalThis.localStorage = {
+    getItem: (k) => (store.has(k) ? store.get(k) : null),
+    setItem: (k, v) => store.set(k, String(v)),
+    removeItem: (k) => store.delete(k),
+    clear: () => store.clear(),
+    key: (i) => [...store.keys()][i] ?? null,
+    get length() {
+      return store.size;
+    },
+  };
+  window.localStorage = globalThis.localStorage;
+}
+
 /* Design-system stub. Every kit file starts with
    `const XX = window.MyJobDesignSystem_5611b7;` and then renders `XX.Something`.
    Rather than list every primitive, the stub is a Proxy: any accessed member is

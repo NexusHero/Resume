@@ -1,10 +1,4 @@
-import {
-  type AtsScore,
-  atsPrompt,
-  atsResultSchema,
-  fallbackAts,
-  normalizeAts,
-} from '../domain/ats-ai.js';
+import { type AtsScore, atsPrompt, atsResultSchema, normalizeAts } from '../domain/ats-ai.js';
 import type { LlmProviderId } from '../ports/llm-provider.js';
 import { type CallUsage } from '../domain/usage.js';
 import { MAX_TOKENS, type LlmFeatureRunner } from './llm-feature-runner.js';
@@ -35,7 +29,7 @@ export class AtsAiService {
     userId: string,
     talentId: string,
     jobText: string,
-  ): Promise<AtsScore & { provider: LlmProviderId | 'template'; usage?: CallUsage }> {
+  ): Promise<AtsScore & { provider: LlmProviderId; usage?: CallUsage }> {
     const documents = await this.documents.get(scope, talentId); // 404s on unknown talent
 
     const { content, provider, usage } = await this.runner.runFeature(
@@ -46,7 +40,6 @@ export class AtsAiService {
       {
         schema: atsResultSchema,
         normalize: normalizeAts,
-        fallback: () => fallbackAts(documents, jobText),
       },
     );
     return { ...content, provider, usage };

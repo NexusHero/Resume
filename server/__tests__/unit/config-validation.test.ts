@@ -9,6 +9,7 @@ const PROD_ENV: NodeJS.ProcessEnv = {
   MAIL_TRANSPORT: 'smtp',
   SMTP_HOST: 'smtp.example.com',
   APP_BASE_URL: 'https://app.example.com',
+  ANTHROPIC_API_KEY: 'sk-ant-test',
 };
 
 const check = (env: NodeJS.ProcessEnv) => checkProductionReadiness(loadConfig(env));
@@ -18,6 +19,12 @@ describe('checkProductionReadiness', () => {
     const { errors, warnings } = check(PROD_ENV);
     expect(errors).toEqual([]);
     expect(warnings).toEqual([]);
+  });
+
+  it('ConfigValidation_NoAiKey_AddsWarningNotError', () => {
+    const { errors, warnings } = check({ ...PROD_ENV, ANTHROPIC_API_KEY: '' });
+    expect(errors).toEqual([]);
+    expect(warnings.join(' ')).toMatch(/No AI key configured/);
   });
 
   it('Readiness_FilesystemStore_IsAnError', () => {

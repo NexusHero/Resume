@@ -1,30 +1,48 @@
-import { parsePrompt, extractJson, fallbackParsed } from '../domain/document-parse.js';
+import {
+  type ImportMode,
+  MAX_IMPORT_TEXT,
+  parsePrompt,
+  extractJson,
+  takeText,
+} from '../domain/document-parse.js';
 import {
   type DocumentContact,
   type ResumeContent,
   saveDocumentsSchema,
 } from '../domain/talent-documents.js';
+import { InternalError, NoTextLayerError, UpstreamProviderError } from '../domain/errors.js';
 import type { LlmProviderId } from '../ports/llm-provider.js';
 import type { PdfTextExtractor } from '../ports/pdf-text-extractor.js';
 import type { Logger } from '../ports/logger.js';
 import { type CallUsage } from '../domain/usage.js';
 import { MAX_TOKENS, errMessage, type LlmFeatureRunner } from './llm-feature-runner.js';
+import type { LlmService } from './llm-service.js';
 import type { DocumentService } from './document-service.js';
 
+/** Minimum non-whitespace characters for a PDF to count as having a text layer. */
+export const MIN_TEXT_LAYER_CHARS = 20;
+
+/** A CV parsed (or taken as text) from pasted text or an uploaded PDF. */
 export interface ParsedDocument {
   contact: DocumentContact;
   resume: ResumeContent;
-  provider: LlmProviderId | 'template';
+  /** `ai` when the model structured it, `text` for the named text-only mode. */
+  mode: ImportMode;
+  /** Present only in `ai` mode. */
+  provider?: LlmProviderId;
   usage?: CallUsage;
+  /** Text mode only: the raw text exceeded the import limit and was cut. */
+  truncated?: boolean;
 }
 
-/** A CV parsed from an uploaded PDF; `extractedChars` is 0 for a scanned PDF. */
+/** A CV parsed from an uploaded PDF; `extractedChars` is 0 for an empty text layer. */
 export interface ParsedPdfDocument extends ParsedDocument {
   extractedChars: number;
 }
 
 export interface CvParseServiceDeps {
   llmFeatureRunner: LlmFeatureRunner;
+  llmService: LlmService;
   documentService: DocumentService;
   pdfTextExtractor: PdfTextExtractor;
   logger: Logger;
@@ -33,22 +51,23 @@ export interface CvParseServiceDeps {
 /** Parse a CV (pasted text or an uploaded PDF) into the structured document model. */
 export class CvParseService {
   private readonly runner: LlmFeatureRunner;
+  private readonly llm: LlmService;
   private readonly documents: DocumentService;
   private readonly pdfText: PdfTextExtractor;
   private readonly logger: Logger;
 
   constructor(deps: CvParseServiceDeps) {
     this.runner = deps.llmFeatureRunner;
+    this.llm = deps.llmService;
     this.documents = deps.documentService;
     this.pdfText = deps.pdfTextExtractor;
     this.logger = deps.logger;
   }
 
   /**
-   * Parse a pasted CV (plain text) into our structured contact + resume model.
-   * Uses the LLM to extract JSON, validated against the documents schema; if no
-   * provider is available or the reply is unusable, the raw text is kept as the
-   * summary so nothing is lost.
+   * Import a pasted CV. The mode is chosen up front (owner decision Q2): with a
+   * server key the model structures it (`ai`), without one the full text is kept
+   * for manual take-over (`text`). There is never a fallback after a failure.
    */
   async parse(
     scope: string,
@@ -58,26 +77,43 @@ export class CvParseService {
   ): Promise<ParsedDocument> {
     await this.documents.get(scope, talentId); // 404s on unknown talent
 
-    const res = await this.runner.run(userId, 'parse', MAX_TOKENS.parse, parsePrompt(text));
-    const raw: unknown = res ? extractJson(res.reply) : null;
-    const provider: LlmProviderId | 'template' = res && raw ? res.provider : 'template';
-    const usage = res && raw ? res.usage : undefined;
+    if (!this.llm.hasAvailableProvider()) {
+      const taken = takeText(text);
+      const validated = saveDocumentsSchema.parse({ resume: taken.resume });
+      return {
+        contact: validated.contact,
+        resume: validated.resume,
+        mode: 'text',
+        ...(taken.truncated ? { truncated: true } : {}),
+      };
+    }
 
-    // Validate whatever we have (LLM JSON or fallback) through the save schema,
-    // which fills defaults for any missing/invalid field.
-    const source = (raw && typeof raw === 'object' ? raw : fallbackParsed(text)) as {
-      contact?: unknown;
-      resume?: unknown;
-    };
+    const res = await this.runner.run(
+      userId,
+      'parse',
+      MAX_TOKENS.parse,
+      parsePrompt(text.slice(0, MAX_IMPORT_TEXT)),
+    );
+    const raw: unknown = extractJson(res.reply);
+    if (!raw || typeof raw !== 'object') {
+      throw new UpstreamProviderError();
+    }
+    const source = raw as { contact?: unknown; resume?: unknown };
     const validated = saveDocumentsSchema.parse({ contact: source.contact, resume: source.resume });
-    return { contact: validated.contact, resume: validated.resume, provider, usage };
+    return {
+      contact: validated.contact,
+      resume: validated.resume,
+      mode: 'ai',
+      provider: res.provider,
+      usage: res.usage,
+    };
   }
 
   /**
-   * Parse a CV uploaded as a PDF: extract its text layer, then run the same
-   * text-parsing path. A scanned/image-only PDF has no text (`extractedChars`
-   * 0) — we return an empty structured set rather than call the LLM on nothing,
-   * so the UI can prompt the user to paste the text instead.
+   * Import a CV uploaded as a PDF: extract its text layer, then run the same
+   * path as pasted text. A PDF without a usable text layer (scanned/protected)
+   * is a 422 `no-text-layer` in both modes; the import does not silently return
+   * an empty document.
    */
   async parsePdf(
     scope: string,
@@ -87,24 +123,20 @@ export class CvParseService {
   ): Promise<ParsedPdfDocument> {
     await this.documents.get(scope, talentId); // 404s on unknown talent
 
-    let text = '';
+    let text: string;
     try {
       text = await this.pdfText.extract(pdf);
     } catch (err) {
-      this.logger.warn({ err: errMessage(err) }, 'PDF text extraction failed');
+      // A crashing extractor is a server fault, not a scanned PDF: log it and
+      // answer 500 (InternalError), never the 422 "no text layer" path (Q1).
+      this.logger.error({ err: errMessage(err) }, 'PDF text extraction failed');
+      throw new InternalError('PDF text extraction failed');
     }
 
-    if (!text.trim()) {
-      const empty = saveDocumentsSchema.parse({});
-      return {
-        contact: empty.contact,
-        resume: empty.resume,
-        provider: 'template',
-        extractedChars: 0,
-      };
-    }
+    const readable = text.replace(/\s/g, '');
+    if (readable.length < MIN_TEXT_LAYER_CHARS) throw new NoTextLayerError();
 
-    const parsed = await this.parse(scope, userId, talentId, text.slice(0, 50_000));
+    const parsed = await this.parse(scope, userId, talentId, text);
     return { ...parsed, extractedChars: text.length };
   }
 }

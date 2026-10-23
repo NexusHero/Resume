@@ -47,11 +47,25 @@ export function extractJson(raw: string): unknown | null {
   }
 }
 
+/** How a CV was imported: the named text-only mode, or structured AI parsing. */
+export type ImportMode = 'text' | 'ai';
+
+/** The import limit shared by the text mode and the PDF extractor. */
+export const MAX_IMPORT_TEXT = 50_000;
+
 /**
- * Deterministic fallback when no LLM is available or the reply is unusable:
- * drop the raw text into the summary so nothing is lost, leave the rest empty.
+ * The named text-only import ("Text übernehmen (ohne KI)"): keep the full CV
+ * text for manual take-over. No parser, no summary, no invented structure.
+ * Texts over {@link MAX_IMPORT_TEXT} are cut and reported as truncated.
  */
-export function fallbackParsed(text: string): { contact?: unknown; resume: { summary: string } } {
-  const summary = text.replace(/\s+/g, ' ').trim().slice(0, 600);
-  return { resume: { summary } };
+export function takeText(text: string): {
+  resume: { rawText: string };
+  truncated: boolean;
+} {
+  const trimmed = text.trim();
+  const truncated = trimmed.length > MAX_IMPORT_TEXT;
+  return {
+    resume: { rawText: truncated ? trimmed.slice(0, MAX_IMPORT_TEXT) : trimmed },
+    truncated,
+  };
 }

@@ -8,7 +8,7 @@ import {
   daysStale,
   suggestionKey,
 } from '../domain/assistant.js';
-import { ConflictError, NotFoundError } from '../domain/errors.js';
+import { AiNotConfiguredError, ConflictError, NotFoundError } from '../domain/errors.js';
 import type {
   AssistantSettingsStore,
   AssistantSuggestionRepository,
@@ -46,6 +46,8 @@ export interface AssistantServiceDeps {
   clock: Clock;
   idGenerator: IdGenerator;
   logger: Logger;
+  /** Central-key check: autopilot needs a provider, the other modes do not. */
+  llm: { hasAvailableProvider(): boolean };
 }
 
 /** Only clear fits are proposed — a noisy assistant gets switched off. */
@@ -82,6 +84,9 @@ export class AssistantService {
   private readonly clock: Clock;
   private readonly ids: IdGenerator;
   private readonly logger: Logger;
+  private readonly llm: AssistantServiceDeps['llm'];
+  /** One skip warning per process and scope (plan §3.3). */
+  private readonly warnedAutopilotWithoutKey = new Set<string>();
 
   constructor(deps: AssistantServiceDeps) {
     this.settingsStore = deps.assistantSettingsStore;
@@ -96,6 +101,7 @@ export class AssistantService {
     this.clock = deps.clock;
     this.ids = deps.idGenerator;
     this.logger = deps.logger;
+    this.llm = deps.llm;
   }
 
   async getSettings(scope: string): Promise<AssistantSettings> {
@@ -106,6 +112,11 @@ export class AssistantService {
     scope: string,
     input: UpdateAssistantSettingsInput,
   ): Promise<AssistantSettings> {
+    // Check the *input*, not the merged state: an existing autopilot setting
+    // without a key must still be switchable off / to suggest (plan §3.3).
+    if (input.mode === 'autopilot' && !this.llm.hasAvailableProvider()) {
+      throw new AiNotConfiguredError();
+    }
     const next = { ...(await this.getSettings(scope)), ...input };
     await this.settingsStore.set(scope, next);
     return next;
@@ -119,12 +130,26 @@ export class AssistantService {
   async runIfDue(scope: string): Promise<AssistantRunResult | null> {
     const settings = await this.getSettings(scope);
     if (!isDue(settings, this.clock.isoNow())) return null;
+    if (settings.mode === 'autopilot' && !this.llm.hasAvailableProvider()) {
+      // Skip quietly after one warning per scope: a minute-tick must not spam
+      // the log (plan §3.3, `RunIfDue_AutopilotWithoutKey_DoesNotRunEveryTick`).
+      if (!this.warnedAutopilotWithoutKey.has(scope)) {
+        this.warnedAutopilotWithoutKey.add(scope);
+        this.logger.warn({ scope }, 'assistant autopilot skipped: no AI provider is configured');
+      }
+      return null;
+    }
     return this.run(scope);
   }
 
   /** One full playbook walk. Manual runs ignore the schedule but require `enabled`. */
   async run(scope: string): Promise<AssistantRunResult> {
     const settings = await this.getSettings(scope);
+    // Autopilot builds application packets (generative). Without a key this is a
+    // real error *before* the first step: no suggestions, no `lastRunAt` update.
+    if (settings.mode === 'autopilot' && !this.llm.hasAvailableProvider()) {
+      throw new AiNotConfiguredError();
+    }
     const now = this.clock.isoNow();
     const runId = this.ids.next();
     // One suggestion per (kind, mandate, talent) — dismissed ones stay blocked

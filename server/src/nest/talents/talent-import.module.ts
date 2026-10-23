@@ -4,6 +4,7 @@ import { TalentImportService } from '../../services/talent-import-service.js';
 import type { TalentService } from '../../services/talent-service.js';
 import type { DocumentService } from '../../services/document-service.js';
 import type { DocumentAiService } from '../../services/document-ai-service.js';
+import type { AttachmentService } from '../../services/attachment-service.js';
 import type { Logger } from '../../ports/logger.js';
 import { AuthGuard } from '../auth.guard.js';
 import { AiRateLimitGuard } from '../ai-rate-limit.guard.js';
@@ -12,11 +13,13 @@ import { CurrentScope, CurrentUserId } from '../params.js';
 import { ZodValidationPipe } from '../zod-validation.pipe.js';
 import { TalentsModule } from './talents.module.js';
 import { DocumentsModule } from '../documents/documents.module.js';
+import { AttachmentsModule } from '../attachments/attachments.module.js';
 import {
   TALENT_IMPORT_SERVICE,
   TALENT_SERVICE,
   DOCUMENT_SERVICE,
   DOCUMENT_AI_SERVICE,
+  ATTACHMENT_SERVICE,
   LOGGER,
 } from '../tokens.js';
 
@@ -45,7 +48,7 @@ export class TalentImportController {
 }
 
 @Module({
-  imports: [TalentsModule, DocumentsModule],
+  imports: [TalentsModule, DocumentsModule, AttachmentsModule],
   controllers: [TalentImportController],
   providers: [
     {
@@ -54,9 +57,17 @@ export class TalentImportController {
         talentService: TalentService,
         documentService: DocumentService,
         documentAiService: DocumentAiService,
+        attachmentService: AttachmentService,
         logger: Logger,
-      ) => new TalentImportService({ talentService, documentService, documentAiService, logger }),
-      inject: [TALENT_SERVICE, DOCUMENT_SERVICE, DOCUMENT_AI_SERVICE, LOGGER],
+      ) =>
+        new TalentImportService({
+          talentService,
+          documentService,
+          documentAiService,
+          attachmentService,
+          logger,
+        }),
+      inject: [TALENT_SERVICE, DOCUMENT_SERVICE, DOCUMENT_AI_SERVICE, ATTACHMENT_SERVICE, LOGGER],
     },
   ],
   exports: [TALENT_IMPORT_SERVICE],

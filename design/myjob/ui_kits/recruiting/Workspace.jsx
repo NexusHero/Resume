@@ -2,12 +2,18 @@
 const WS = window.MyJobDesignSystem_5611b7;
 
 /* ---------- Übersicht — the recruiting desk at a glance ---------- */
-function OnboardingCard({ onNav }) {
-  const steps = [
-    { icon: 'users', nav: 'pool', title: 'Talent hinzufügen', desc: 'Pool aufbauen — Kandidat:in anlegen oder CVs importieren.' },
-    { icon: 'briefcase', nav: 'mandate', title: 'Mandat anlegen', desc: 'Eine zu besetzende Rolle öffnen und ihre Pipeline verfolgen.' },
-    { icon: 'search', nav: 'matching', title: 'Stellen finden', desc: 'Kandidat:in auf passende Stellen matchen und bewerben.' },
-  ];
+function OnboardingCard({ onNav, vermittlung }) {
+  const steps = vermittlung
+    ? [
+        { icon: 'users', nav: 'pool', title: 'Mandant hinzufügen', desc: 'Eine Person anlegen oder CVs importieren.' },
+        { icon: 'briefcase', nav: 'mandate', title: 'Suchauftrag anlegen', desc: 'Einen Suchauftrag öffnen und seine Pipeline verfolgen.' },
+        { icon: 'search', nav: 'matching', title: 'Stellen finden', desc: 'Mandanten auf passende Stellen matchen und bewerben.' },
+      ]
+    : [
+        { icon: 'users', nav: 'pool', title: 'Mandant hinzufügen', desc: 'Eine Person anlegen oder CVs importieren.' },
+        { icon: 'briefcase', nav: 'stellen', title: 'Stellen sammeln', desc: 'Stellen aus der Suche übernehmen oder einfügen.' },
+        { icon: 'columns', nav: 'bewerbungen', title: 'Bewerbungen', desc: 'Bewerbungen pro Mandant und Stelle im Blick behalten.' },
+      ];
   return (
     <WS.Card>
       <div style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 700, color: 'var(--text-heading)' }}>Leg mit deinem Desk los</div>
@@ -29,7 +35,7 @@ function OnboardingCard({ onNav }) {
   );
 }
 
-function Dashboard({ me, apps, vkpis, clients, mandates, talentCount, onNav, onOpenTalent, onOpenPipeline, onOpenMandate }) {
+function Dashboard({ me, apps, vkpis, clients, mandates, talentCount, vermittlung, onNav, onOpenTalent, onOpenPipeline, onOpenMandate }) {
   const { isMobile } = window.useViewport ? window.useViewport() : { isMobile: false };
   // The desk's applications that need progressing — interview/offer stage across
   // every candidate (this is an agency view; the recruiter places others).
@@ -46,11 +52,21 @@ function Dashboard({ me, apps, vkpis, clients, mandates, talentCount, onNav, onO
       {/* greeting — quiet, no dark bar; profile lives bottom-left in the rail */}
       <div>
         <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-heading)' }}>Hallo, {me.name.split(' ')[0]}.</div>
-        <div style={{ fontSize: '13px', color: 'var(--text-soft)', marginTop: '3px' }}>{mandates.filter((m) => m.status === 'active').length} aktive Mandate · {nextSteps.length} {nextSteps.length === 1 ? 'Bewerbung' : 'Bewerbungen'} in Interview oder Angebot.</div>
+        <div style={{ fontSize: '13px', color: 'var(--text-soft)', marginTop: '3px' }}>{vermittlung ? `${mandates.filter((m) => m.status === 'active').length} aktive Suchaufträge · ${nextSteps.length} ${nextSteps.length === 1 ? 'Bewerbung' : 'Bewerbungen'} in Interview oder Angebot.` : 'Willkommen bei myJob — dein Bewerbungsservice.'}</div>
       </div>
 
-      {firstRun && onNav && <OnboardingCard onNav={onNav} />}
+      {firstRun && onNav && <OnboardingCard onNav={onNav} vermittlung={vermittlung} />}
 
+      {!vermittlung && (
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '14px' }}>
+          {(window.computeApplicationKpis ? window.computeApplicationKpis(apps) : []).map((k, i) => (
+            <WS.StatCard key={i} {...k} />
+          ))}
+        </div>
+      )}
+
+      {vermittlung && (
+      <>
       {/* agency kpis */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '14px' }}>
         {vkpis.map((k, i) => <WS.StatCard key={i} {...k} />)}
@@ -58,7 +74,7 @@ function Dashboard({ me, apps, vkpis, clients, mandates, talentCount, onNav, onO
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px', alignItems: 'start' }}>
         {/* active mandates */}
-        <WS.Card title="Aktive Mandate" subtitle="Suchmandate mit Frist"
+        <WS.Card title="Aktive Suchaufträge" subtitle="Suchaufträge mit Frist"
           action={<WS.Button size="sm" variant="ghost" iconRight={<WS.Icon name="arrowRight" size={14} />} onClick={onOpenMandate}>Alle</WS.Button>} pad={false}>
           {topMandates.map((m) => (
             <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '13px', padding: '13px 18px', borderBottom: '1px solid var(--border)' }}>
@@ -91,6 +107,8 @@ function Dashboard({ me, apps, vkpis, clients, mandates, talentCount, onNav, onO
           {nextSteps.length === 0 && <div style={{ padding: '30px', textAlign: 'center', fontSize: '13px', color: 'var(--text-soft)' }}>Noch keine Bewerbungen in Interview oder Angebot.</div>}
         </WS.Card>
       </div>
+      </>
+      )}
     </div>
   );
 }
@@ -106,7 +124,7 @@ function TalentGrid({ talents, apps, onOpen, onAdd, onImport, importing }) {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>{talents.length} {talents.length === 1 ? 'Talent' : 'Talente'}</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>{talents.length} {talents.length === 1 ? 'Mandant' : 'Mandanten'}</span>
         <span style={{ flex: 1 }} />
         {onImport && (
           <>
@@ -114,8 +132,11 @@ function TalentGrid({ talents, apps, onOpen, onAdd, onImport, importing }) {
             <WS.Button size="sm" variant="outline" iconLeft={<WS.Icon name="upload" size={14} />} onClick={() => fileRef.current && fileRef.current.click()} disabled={importing}>{importing ? 'Importiere…' : 'CVs importieren'}</WS.Button>
           </>
         )}
-        <WS.Button size="sm" variant="outline" iconLeft={<WS.Icon name="plus" size={14} />} onClick={onAdd}>Talent hinzufügen</WS.Button>
+        <WS.Button size="sm" variant="outline" iconLeft={<WS.Icon name="plus" size={14} />} onClick={onAdd}>Mandant hinzufügen</WS.Button>
       </div>
+      {window.useAiStatus && window.useAiStatus().status === 'not-configured' && window.TextImportNotice && (
+        <window.TextImportNotice />
+      )}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
         {talents.map((t) => {
           const n = apps.filter((a) => a.talentId === t.id).length;
@@ -204,4 +225,45 @@ function Inbox({ messages, apps, talents, onOpenTalent }) {
   );
 }
 
-Object.assign(window, { Dashboard, TalentGrid, JobsView, Inbox });
+/* Tabs-mode "Mehr" destination (plan §3.6): every intermediary destination and
+   the settings surface stay reachable on a phone when the switch is on. */
+function MoreView({ onNavigate }) {
+  const entries = [
+    { id: 'mandate', label: 'Suchaufträge', desc: 'Suchaufträge und ihre Pipelines' },
+    { id: 'berichte', label: 'Performance', desc: 'Honorare, Funnel und Auslastung' },
+    { id: 'postfach', label: 'Postfach', desc: 'Nachrichten von Klienten und Unternehmen' },
+    { id: 'assistant', label: 'CoRecruiter', desc: 'Der KI-Assistent für den Desk' },
+    { id: 'einstellungen', label: 'Einstellungen', desc: 'Darstellung, KI-Anbindung und Workspace' },
+  ];
+  return (
+    <WS.Card pad={false}>
+      {entries.map((e) => (
+        <button
+          key={e.id}
+          type="button"
+          onClick={() => onNavigate(e.id)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '13px',
+            width: '100%',
+            textAlign: 'left',
+            background: 'none',
+            border: 'none',
+            borderBottom: '1px solid var(--border)',
+            padding: '16px 18px',
+            cursor: 'pointer',
+          }}
+        >
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: 'block', fontSize: '14px', fontWeight: 700, color: 'var(--text-heading)' }}>{e.label}</span>
+            <span style={{ display: 'block', fontSize: '12px', color: 'var(--text-soft)', marginTop: '2px' }}>{e.desc}</span>
+          </span>
+          <WS.Icon name="chevronRight" size={16} style={{ color: 'var(--text-soft)' }} />
+        </button>
+      ))}
+    </WS.Card>
+  );
+}
+
+Object.assign(window, { Dashboard, TalentGrid, JobsView, Inbox, MoreView });

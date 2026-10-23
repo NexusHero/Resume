@@ -62,7 +62,9 @@ The smallest safe set — boot **refuses to start** without the first two
 NODE_ENV=production                       # auto-enables Secure cookies
 STORE=sql
 DATABASE_URL=postgres://user:pass@db:5432/myjob
-APP_SECRET=<long, stable, secret>         # encrypts stored per-user API keys
+APP_SECRET=<long, stable, secret>         # signs/encrypts the auth store
+ANTHROPIC_API_KEY=<central AI key>        # optional GEMINI_API_KEY; without a key AI routes answer 503
+# ANTHROPIC_MODEL / GEMINI_MODEL are operator parameters (code default, issue #310).
 
 # Shared PDF archive (drop for a single-instance volume-backed deploy)
 PDF_ARCHIVE=s3
@@ -90,7 +92,7 @@ PDF_RENDER_CONCURRENCY=2                   # size to the instance, scale out for
 1. **Postgres** provisioned; `DATABASE_URL` set; tables are created on boot
    (`migrate()` runs idempotent `CREATE TABLE IF NOT EXISTS` + `ADD COLUMN IF NOT EXISTS`).
 2. **`APP_SECRET`** set to a strong value and **kept stable** — rotating it
-   invalidates every stored per-user API key.
+   invalidates every stored auth session (users must sign in again).
 3. **Object storage** (`PDF_ARCHIVE=s3`) for a multi-instance deploy, _or_ a
    mounted volume at `/app/archive` for a single instance.
 4. **Mail**: `MAIL_TRANSPORT=smtp` with `SMTP_*` and a public `APP_BASE_URL`, so

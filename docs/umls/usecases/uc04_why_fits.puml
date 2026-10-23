@@ -14,9 +14,9 @@ activate Ctrl
 Ctrl -> Svc : explainMatch(scope, user, tid, mandate)
 activate Svc
 Svc -> Dom : matchedForMandate(docs, mandate)\n(deterministic skill overlap)
-Svc -> Runner : runFeature('matchExplain', prompt,\n{ schema, normalize, accept: reasons>0, fallback })
+Svc -> Runner : runFeature('matchExplain', prompt,\n{ schema, normalize, accept: reasons>0 })
 Runner --> Svc : { content, provider, usage }
-note right of Runner : no key / empty reply →\ntemplate reasons from the same facts
+note right of Runner : no key → 503 ai-not-configured;\nunusable reply → 502
 Svc --> Ctrl : { reasons, provider, usage }
 deactivate Svc
 Ctrl --> Recruiter : grounded "Warum passt?" summary

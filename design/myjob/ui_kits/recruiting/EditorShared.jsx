@@ -54,7 +54,7 @@ function GroundingWarning({ grounding }) {
         <ESH.Icon name="alert" size={12} />{n} {n === 1 ? 'nicht belegte Angabe' : 'nicht belegte Angaben'}
       </div>
       <div style={{ fontSize: '12.5px', lineHeight: 1.5, color: 'var(--text-body)' }}>
-        Diese Angaben sind nicht durch Lebenslauf/Mandat gedeckt — bitte vor dem Senden prüfen:{' '}
+        Diese Angaben sind nicht durch Lebenslauf/Suchauftrag gedeckt — bitte vor dem Senden prüfen:{' '}
         {grounding.unsupported.map((u) => label(u)).join(', ')}.
       </div>
     </div>

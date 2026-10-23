@@ -1,6 +1,6 @@
 # ADR-0055 — The 2026 „Vivid" redesign + „alles ist Kandidat oder Stelle" IA restructure
 
-- **Status:** Accepted (supersedes the Blueprint-era look; continues ADR-0053 appearance theming, ADR-0025/0026/0027 responsive, ADR-0051 shell)
+- **Status:** Accepted — partially superseded by ADR-0057 (the six-destination navigation is now conditional on the workspace switch)
 - **Relates to:** ADR-0053 (light/dark token layer), ADR-0001 hexagonal core (unchanged), the myJob Design-System handoff (2026 „Vivid")
 
 ## Context

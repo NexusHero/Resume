@@ -51,13 +51,14 @@ Resolved from the environment (see `server/src/config.ts`):
 | `CORS_ORIGINS`                                              | _(empty)_                                                  | Comma-separated browser origins allowed to call the API.                                                                                |
 | `COOKIE_SECURE`                                             | _(off)_                                                    | `true` sends the session cookie Secure (HTTPS-only). Auto-on when `NODE_ENV=production`.                                                |
 | `SESSION_TTL_DAYS`                                          | `30`                                                       | Server-side session lifetime; older sessions are rejected.                                                                              |
-| `LLM_PROVIDER`                                              | `claude`                                                   | Active model provider for cover letters.                                                                                                |
-| `ANTHROPIC_API_KEY` / `GEMINI_API_KEY`                      | —                                                          | Provider keys (server-side; never in the client).                                                                                       |
+| `LLM_PROVIDER`                                              | `claude`                                                   | Default provider when both central keys are set (persisted per-user choice stays, limited to available providers).                      |
+| `ANTHROPIC_API_KEY` / `GEMINI_API_KEY`                      | —                                                          | One central key per provider (server-side; never in the client). Without any key every AI route answers `503 ai-not-configured`.        |
+| `ANTHROPIC_MODEL` / `GEMINI_MODEL`                          | _(code default)_                                           | Model id per provider. Operator parameter; the code default is handled in issue #310.                                                   |
 | `EMBEDDING_PROVIDER`                                        | `hashed`                                                   | Matching embeddings: `hashed` (offline default), `ollama` (local neural), or `openai`. Falls back to hashed on any error (ADR-0020).    |
 | `OLLAMA_URL` / `OLLAMA_EMBED_MODEL`                         | `http://localhost:11434` / `nomic-embed-text`              | Ollama server + embedding model (when `EMBEDDING_PROVIDER=ollama`).                                                                     |
 | `OPENAI_API_KEY` / `OPENAI_EMBED_MODEL` / `OPENAI_BASE_URL` | — / `text-embedding-3-small` / `https://api.openai.com/v1` | OpenAI embeddings (when `EMBEDDING_PROVIDER=openai`; without the key it stays hashed).                                                  |
 | `PLAN`                                                      | `pro`                                                      | Subscription plan: `pro` (default) leaves all AI features open; `free` gates them behind a 402 (ADR-0021).                              |
-| `APP_SECRET`                                                | _(dev)_                                                    | Secret that encrypts stored secrets (per-user API keys) at rest. **Set in production.**                                                 |
+| `APP_SECRET`                                                | _(dev)_                                                    | Secret that signs/encrypts the embedded auth store at rest. **Set in production.**                                                      |
 | `MAIL_TRANSPORT`                                            | `console`                                                  | `smtp` sends real email via nodemailer; otherwise the dev console transport logs it.                                                    |
 | `MAIL_FROM`                                                 | `myJob …`                                                  | From address on outgoing mail.                                                                                                          |
 | `APP_BASE_URL`                                              | `http://localhost:$PORT`                                   | Public origin used to build links in emails (e.g. the password-reset link).                                                             |
@@ -112,7 +113,7 @@ size it per instance and scale out for more throughput.
 
 - **Persistence:** with `STORE=sql`, everything (recruiting records,
   applications, audit events, saved searches, users, sessions, password-reset
-  tokens and the encrypted per-user API keys) lives in Postgres. The PDF archive
+  tokens and the workspace settings) lives in Postgres. The PDF archive
   is the one file-backed store left — set `PDF_ARCHIVE=s3` (ADR-0031) to move it
   to an S3-compatible bucket (AWS, Cloudflare R2, Hetzner, MinIO), so nothing is
   bound to a single machine and instances share it; otherwise mount a volume at

@@ -35,7 +35,7 @@ function FormGroup({ title, children, onAdd }) {
   );
 }
 
-function Editor({ talent, onClose, onCreateMappe }) {
+function Editor({ talent, onClose, onCreateMappe, onOpenSettings }) {
   /* ---- Identity & persistence flags first — used by every handler below.
      The pinned "me" profile has no server row, so it stays local-only. ---- */
   const talentId = talent.id;
@@ -114,7 +114,20 @@ function Editor({ talent, onClose, onCreateMappe }) {
   // A failed AI call must never be silent — the recruiter sees why it stopped
   // (missing key, Pro gate, network) instead of a button that does nothing.
   const [aiError, setAiError] = React.useState(null);
+  const [aiReady, setAiReady] = React.useState(null);
+  React.useEffect(() => {
+    let alive = true;
+    const p = window.RecruitApi && window.RecruitApi.aiConfigured
+      ? window.RecruitApi.aiConfigured()
+      : Promise.resolve(true);
+    p.then((ok) => { if (alive) setAiReady(ok); }).catch(() => { if (alive) setAiReady(false); });
+    return () => { alive = false; };
+  }, []);
   const runAI = async () => {
+    if (aiReady === false) {
+      setAiError('KI nicht eingerichtet — konfiguriere den zentralen Schlüssel in den Einstellungen.');
+      return;
+    }
     setGen(true);
     setAiError(null);
     setPending(null);
@@ -127,7 +140,11 @@ function Editor({ talent, onClose, onCreateMappe }) {
       if (s.action === 'summary') setPending({ kind: 'summary', value: s.text, provider: s.provider, usage: s.usage });
       else setPending({ kind: 'letter', value: s.paragraphs, provider: s.provider, usage: s.usage });
     } catch (e) {
-      setAiError((e && e.message) || 'Dieses Dokument konnte nicht angepasst werden. Bitte versuche es erneut.');
+      setAiError(
+        e && e.code === 'ai-not-configured'
+          ? 'KI nicht eingerichtet — richte einen Server-Key ein.'
+          : (e && e.message) || 'Dieses Dokument konnte nicht angepasst werden. Bitte versuche es erneut.',
+      );
     } finally {
       setGen(false);
     }
@@ -136,8 +153,12 @@ function Editor({ talent, onClose, onCreateMappe }) {
     if (pending && pending.kind === 'summary') setResume((s) => ({ ...s, summary: pending.value }));
     if (pending && pending.kind === 'letter') setLetter((s) => ({ ...s, absaetze: pending.value }));
     if (pending && pending.kind === 'import') {
-      if (Object.keys(pending.contact).length) setContact((s) => ({ ...s, ...pending.contact }));
-      if (pending.resume) setResume(pending.resume);
+      if (pending.mode === 'text') {
+        void acceptTextImport(pending);
+      } else {
+        if (Object.keys(pending.contact).length) setContact((s) => ({ ...s, ...pending.contact }));
+        if (pending.resume) setResume(pending.resume);
+      }
     }
     setPending(null);
   };
@@ -260,7 +281,46 @@ function Editor({ talent, onClose, onCreateMappe }) {
     Object.entries(parsed.contact || {}).forEach(([k, v]) => {
       if (typeof v === 'string' && v.trim()) contactPatch[k] = v;
     });
-    setPending({ kind: 'import', contact: contactPatch, resume: parsed.resume || null, provider: parsed.provider, usage: parsed.usage });
+    setPending({
+      kind: 'import',
+      contact: contactPatch,
+      resume: parsed.resume || null,
+      mode: parsed.mode || (parsed.provider ? 'ai' : 'text'),
+      truncated: parsed.truncated,
+      file: parsed.file || null,
+      provider: parsed.provider,
+      usage: parsed.usage,
+    });
+  };
+
+  // Text-mode import: only empty fields are filled; the PDF is uploaded only
+  // now (accept), never on preview/discard; a same-name/same-size attachment is
+  // replaced so re-imports do not pile up duplicates.
+  const acceptTextImport = async (pendingImport) => {
+    const merged = window.mergeTextImport(
+      { contact, resume },
+      { contact: pendingImport.contact || {}, resume: pendingImport.resume || {} },
+    );
+    setContact((s) => ({ ...s, ...merged.contact }));
+    setResume((s) => ({ ...merged.resume, rawText: s.rawText && !merged.resume.rawText ? s.rawText : merged.resume.rawText }));
+    if (pendingImport.file && canPersist) {
+      try {
+        const atts = await window.RecruitApi.listAttachments(talentId);
+        const bytes = Math.ceil((pendingImport.file.dataBase64.length * 3) / 4);
+        for (const att of atts || []) {
+          if (att.name === pendingImport.file.name && att.size === bytes) {
+            await window.RecruitApi.deleteAttachment(att.id).catch(() => {});
+          }
+        }
+        await window.RecruitApi.uploadAttachment(talentId, {
+          name: pendingImport.file.name,
+          contentType: 'application/pdf',
+          dataBase64: pendingImport.file.dataBase64,
+        });
+      } catch {
+        setAiError('Der Text wurde übernommen, das PDF konnte aber nicht gespeichert werden.');
+      }
+    }
   };
 
   /* ---- Translate: create the other-language variant of the documents ---- */
@@ -268,6 +328,10 @@ function Editor({ talent, onClose, onCreateMappe }) {
   const [translateMsg, setTranslateMsg] = React.useState(null);
   const runTranslate = async (lang) => {
     if (!canPersist || translating) return;
+    if (window.AiStatus && window.AiStatus.get().status === 'not-configured') {
+      setTranslateMsg({ ok: false, text: 'KI nicht eingerichtet — konfiguriere den zentralen Schlüssel in den Einstellungen.' });
+      return;
+    }
     setTranslating(lang);
     setTranslateMsg(null);
     try {
@@ -326,8 +390,12 @@ function Editor({ talent, onClose, onCreateMappe }) {
           <>
             <EdPill icon="upload" onClick={() => setModal('import')}>CV importieren</EdPill>
             <EdPill icon="search" onClick={() => setModal('ats')}>ATS-Check</EdPill>
-            <EdPill icon="briefcase" onClick={() => setModal('pitch')}>Pitch</EdPill>
-            <EdPill icon="send" onClick={() => setModal('outreach')}>Ansprache</EdPill>
+            {(!window.useWorkspaceSettings || window.useWorkspaceSettings().vermittlung) && (
+              <EdPill icon="briefcase" onClick={() => setModal('pitch')}>Pitch</EdPill>
+            )}
+            {(!window.useWorkspaceSettings || window.useWorkspaceSettings().vermittlung) && (
+              <EdPill icon="send" onClick={() => setModal('outreach')}>Ansprache</EdPill>
+            )}
             <EdPill icon="download" onClick={exportPdf} disabled={pdfBusy}>{pdfBusy ? 'PDF…' : 'PDF'}</EdPill>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>
@@ -455,6 +523,16 @@ function Editor({ talent, onClose, onCreateMappe }) {
                   <ED.Textarea rows={4} value={resume.summary} onChange={(e) => setResume((s) => ({ ...s, summary: e.target.value }))} />
                 </FormGroup>
 
+                {resume.rawText && (
+                  <FormGroup title="Importierter Text (ohne KI)">
+                    <ED.Textarea
+                      rows={5}
+                      value={resume.rawText}
+                      onChange={(e) => setResume((s) => ({ ...s, rawText: e.target.value }))}
+                    />
+                  </FormGroup>
+                )}
+
                 <FormGroup title="Berufserfahrung" onAdd={addExp}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {resume.experience.map((e, i) => (
@@ -518,7 +596,23 @@ function Editor({ talent, onClose, onCreateMappe }) {
               <ED.Icon name="eye" size={14} /> Live-Vorschau · {doc === 'lebenslauf' ? 'Lebenslauf' : 'Anschreiben'}
             </span>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button onClick={runAI} style={{ appearance: 'none', cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12.5px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-md)', padding: isMobile ? '10px 14px' : '7px 12px', minHeight: isMobile ? '44px' : undefined }}>
+              {aiReady === false && (
+                <span style={{ alignSelf: 'center' }}>
+                  {window.AiNotConfiguredHint ? (
+                    <window.AiNotConfiguredHint compact live={false} />
+                  ) : (
+                    <button
+                      type="button"
+                      role="link"
+                      onClick={() => onOpenSettings && onOpenSettings()}
+                      style={{ appearance: 'none', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--danger)' }}
+                    >
+                      KI nicht eingerichtet — in den Einstellungen konfigurieren
+                    </button>
+                  )}
+                </span>
+              )}
+              <button onClick={runAI} disabled={aiReady === false} title={aiReady === false ? 'KI nicht eingerichtet — in den Einstellungen konfigurieren' : undefined} style={{ appearance: 'none', cursor: aiReady === false ? 'default' : 'pointer', opacity: aiReady === false ? 0.5 : 1, border: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12.5px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-md)', padding: isMobile ? '10px 14px' : '7px 12px', minHeight: isMobile ? '44px' : undefined }}>
                 <ED.Icon name="zap" size={14} />KI anpassen
               </button>
               <ED.Button size="sm" variant="outline" iconLeft={<ED.Icon name="download" size={14} />} onClick={exportPdf} disabled={pdfBusy}>{pdfBusy ? 'PDF…' : 'PDF'}</ED.Button>

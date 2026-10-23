@@ -21,7 +21,7 @@ opt paste a CV (text or PDF)
   Recruiter -> DC : POST /talents/:id/documents/parse
   activate DC
   DC -> CV : parse / parsePdf(scope, user, id, text)
-  CV -> CV : LLM extract → schema-validate\n(raw text kept as summary on fallback)
+  CV -> CV : LLM extract → schema-validate\n(without a key: named text import "Text übernehmen (ohne KI)")
   CV --> DC : { contact, resume, provider }
   deactivate DC
   DC --> Recruiter : structured resume (editable)

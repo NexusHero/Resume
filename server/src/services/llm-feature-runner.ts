@@ -1,12 +1,12 @@
 import { extractJson } from '../domain/document-parse.js';
 import { type GroundingReport, checkGrounding } from '../domain/grounding.js';
+import { AiNotConfiguredError, UpstreamProviderError } from '../domain/errors.js';
 import { type CallUsage, type UsageFeature, callUsage, toUsageEvent } from '../domain/usage.js';
 import type { LlmProvider, LlmProviderId, TokenUsage } from '../ports/llm-provider.js';
-import type { ApiKeyStore } from '../ports/api-key-store.js';
-import type { UserRepository } from '../ports/user-repository.js';
 import type { UsageMeter } from '../ports/usage-meter.js';
 import type { Clock } from '../ports/clock.js';
 import type { Logger } from '../ports/logger.js';
+import type { UserRepository } from '../ports/user-repository.js';
 import type { LlmService } from './llm-service.js';
 
 /** Max output tokens per generation, sized to each feature's expected reply. */
@@ -40,10 +40,9 @@ export interface LlmRun {
   usage: CallUsage;
 }
 
-/** A provider chosen for a caller, with the key (user's own or none → server). */
+/** A provider chosen for a caller. */
 export interface ResolvedProvider {
   provider: LlmProvider;
-  apiKey?: string;
 }
 
 /** The message of a caught error, whatever its type — for structured logs. */
@@ -53,7 +52,6 @@ export function errMessage(err: unknown): string {
 
 export interface LlmFeatureRunnerDeps {
   llmService: LlmService;
-  apiKeyStore: ApiKeyStore;
   userRepository: UserRepository;
   usageMeter: UsageMeter;
   clock: Clock;
@@ -61,16 +59,16 @@ export interface LlmFeatureRunnerDeps {
 }
 
 /**
- * The shared LLM scaffold behind every AI feature with a deterministic fallback
- * (ADR-0005): resolve the caller's provider, generate, meter the spend, validate
- * a JSON reply against its schema, and attach the standard grounded envelope.
- * Extracted from the former DocumentAiService so each feature service owns only
- * its own orchestration (ADR-0022); the metering/fallback/grounding logic lives
- * here, once.
+ * The shared LLM scaffold behind every AI feature (ADR-0005, reworked by
+ * ADR-0057). Resolve the server's central provider, generate, meter the spend,
+ * validate a JSON reply against its schema. There is **no template fallback**:
+ * without a key it throws {@link AiNotConfiguredError}; a failed/unusable
+ * generation throws {@link UpstreamProviderError}. The only fallback left in the
+ * codebase is the deterministic, non-generative logic (matching, grounding,
+ * AGG, ATS-gap), which does not go through this runner.
  */
 export class LlmFeatureRunner {
   private readonly llm: LlmService;
-  private readonly keys: ApiKeyStore;
   private readonly users: UserRepository;
   private readonly usage: UsageMeter;
   private readonly clock: Clock;
@@ -78,7 +76,6 @@ export class LlmFeatureRunner {
 
   constructor(deps: LlmFeatureRunnerDeps) {
     this.llm = deps.llmService;
-    this.keys = deps.apiKeyStore;
     this.users = deps.userRepository;
     this.usage = deps.usageMeter;
     this.clock = deps.clock;
@@ -104,23 +101,19 @@ export class LlmFeatureRunner {
   }
 
   /**
-   * The provider for a caller: their persisted choice + stored key wins
-   * (ADR-0011); without a user key, a server-credentialed provider; else null.
+   * The server's active provider (central key from env, ADR-0057). A missing key
+   * is a hard error, never a template fallback.
    */
-  async resolveProvider(userId: string): Promise<ResolvedProvider | null> {
+  async resolveProvider(userId: string): Promise<ResolvedProvider> {
     const stored = (await this.users.findById(userId))?.llmProvider;
-    const currentId = stored && this.llm.get(stored) ? stored : this.llm.currentProvider();
-    const current = this.llm.get(currentId);
-    const apiKey = await this.keys.get(userId, currentId);
-    if (current && apiKey) return { provider: current, apiKey };
-    const active = this.llm.active(); // a provider with server credentials
-    return active ? { provider: active } : null;
+    const provider = this.llm.resolve(stored);
+    if (!provider) throw new AiNotConfiguredError();
+    return { provider };
   }
 
   /**
-   * Run one generation against a resolved provider (forwarding the caller's key
-   * when present) and meter its token spend. Generation failures propagate to
-   * the caller; metering swallows its own errors.
+   * Run one generation against the resolved provider and meter its token spend.
+   * A generation failure is a real upstream error (502) — not a silent fallback.
    */
   async generateAndMeter(
     userId: string,
@@ -129,73 +122,64 @@ export class LlmFeatureRunner {
     built: BuiltPrompt,
     resolved: ResolvedProvider,
   ): Promise<LlmRun> {
-    const { text, usage } = await resolved.provider.generate({
-      system: built.system,
-      prompt: built.prompt,
-      maxTokens,
-      ...(resolved.apiKey ? { apiKey: resolved.apiKey } : {}),
-    });
-    await this.meter(userId, resolved.provider.id, feature, usage);
+    let result: { text: string; usage: TokenUsage };
+    try {
+      result = await resolved.provider.generate({
+        system: built.system,
+        prompt: built.prompt,
+        maxTokens,
+      });
+    } catch (err) {
+      this.logger.warn({ feature, err: errMessage(err) }, 'llm generation failed');
+      throw new UpstreamProviderError();
+    }
+    await this.meter(userId, resolved.provider.id, feature, result.usage);
     return {
-      reply: text,
+      reply: result.text,
       provider: resolved.provider.id,
-      usage: callUsage(resolved.provider.id, usage),
+      usage: callUsage(resolved.provider.id, result.usage),
     };
   }
 
-  /**
-   * Resolve a provider, generate, meter. Returns null when no provider is
-   * available or the generation fails (logged), so the caller falls back to its
-   * deterministic template.
-   */
+  /** Resolve a provider, generate, meter. Throws on missing key / upstream failure. */
   async run(
     userId: string,
     feature: UsageFeature,
     maxTokens: number,
     built: BuiltPrompt,
-  ): Promise<LlmRun | null> {
+  ): Promise<LlmRun> {
     const resolved = await this.resolveProvider(userId);
-    if (!resolved) return null;
-    try {
-      return await this.generateAndMeter(userId, feature, maxTokens, built, resolved);
-    } catch (err) {
-      this.logger.warn({ feature, err: errMessage(err) }, 'llm generation failed, falling back');
-      return null;
-    }
+    return this.generateAndMeter(userId, feature, maxTokens, built, resolved);
   }
 
   /**
    * Validate a JSON-shaped LLM reply against its feature schema. A miss
-   * (truncated output, malformed JSON, wrong shape) is logged so the template
-   * fallback is not indistinguishable from a missing provider.
+   * (truncated output, malformed JSON, wrong shape) is an unusable upstream
+   * result — 502, never a template.
    */
   parseReply<T>(
     feature: UsageFeature,
     reply: string,
     schema: { safeParse: (value: unknown) => { success: true; data: T } | { success: false } },
-  ): T | null {
+  ): T {
     const parsed = schema.safeParse(extractJson(reply));
     if (parsed.success) return parsed.data;
     this.logger.warn(
       { feature, replyChars: reply.length },
-      'llm reply did not match the expected schema, falling back',
+      'llm reply did not match the expected schema',
     );
-    return null;
+    throw new UpstreamProviderError();
   }
 
   /**
    * The full "structured AI feature" path in one call: resolve → generate →
-   * meter → schema-validate → normalize → guard, with a deterministic fallback.
-   * Every JSON-shaped feature (ATS, explain, kit, prep, pitch, outreach, tailor)
-   * shared this exact block; it now lives here once. The caller passes only the
+   * meter → schema-validate → normalize → guard. No deterministic fallback: a
+   * missing key is 503, an unusable reply is 502. The caller passes only the
    * feature-specific pieces:
    *  - `schema`  — the reply's zod schema,
    *  - `normalize` — turns a validated reply into the feature's content type,
    *  - `accept` — an optional guard rejecting a technically-valid-but-empty
-   *    result (e.g. no reasons, no questions) so it falls back instead,
-   *  - `fallback` — the deterministic template content.
-   * Returns the content plus which backend produced it and the call usage
-   * (`provider: 'template'`, no usage, when the fallback ran).
+   *    result (e.g. no reasons, no questions) so it is reported as upstream.
    */
   async runFeature<P, T>(
     userId: string,
@@ -206,20 +190,16 @@ export class LlmFeatureRunner {
       schema: { safeParse: (value: unknown) => { success: true; data: P } | { success: false } };
       normalize: (parsed: P) => T;
       accept?: (content: T) => boolean;
-      fallback: () => T;
     },
-  ): Promise<{ content: T; provider: LlmProviderId | 'template'; usage?: CallUsage }> {
+  ): Promise<{ content: T; provider: LlmProviderId; usage?: CallUsage }> {
     const res = await this.run(userId, feature, maxTokens, built);
-    if (res) {
-      const parsed = this.parseReply(feature, res.reply, spec.schema);
-      if (parsed) {
-        const content = spec.normalize(parsed);
-        if (!spec.accept || spec.accept(content)) {
-          return { content, provider: res.provider, usage: res.usage };
-        }
-      }
+    const parsed = this.parseReply(feature, res.reply, spec.schema);
+    const content = spec.normalize(parsed);
+    if (spec.accept && !spec.accept(content)) {
+      this.logger.warn({ feature }, 'llm reply was empty after normalization');
+      throw new UpstreamProviderError();
     }
-    return { content: spec.fallback(), provider: 'template' };
+    return { content, provider: res.provider, usage: res.usage };
   }
 
   /**
@@ -232,9 +212,9 @@ export class LlmFeatureRunner {
     content: T,
     groundedText: string,
     source: string,
-    provider: LlmProviderId | 'template',
+    provider: LlmProviderId,
     usage?: CallUsage,
-  ): T & { provider: LlmProviderId | 'template'; usage?: CallUsage; grounding: GroundingReport } {
+  ): T & { provider: LlmProviderId; usage?: CallUsage; grounding: GroundingReport } {
     return { ...content, provider, usage, grounding: checkGrounding(groundedText, source) };
   }
 }

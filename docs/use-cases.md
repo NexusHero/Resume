@@ -51,7 +51,9 @@ placed-cascade, 403-on-non-admin). The higher-level runtime flows are in
 - **Actor:** Recruiter · **Requirements:** FR-33, FR-30
 - **Trigger:** the recruiter wants to justify a shortlist to the client.
 - **Flow:** request an explanation; the system produces a grounded "Warum passt?"
-  summary from CV + job evidence (deterministic fallback when no LLM key).
+  summary from CV + job evidence. Without a central AI key the route answers
+  `503 ai-not-configured` (no template explanation); the deterministic skill
+  overlap is still computed for the shortlist.
 
 ![UC-04 sequence](umls/usecases/uc04_why_fits.svg)
 

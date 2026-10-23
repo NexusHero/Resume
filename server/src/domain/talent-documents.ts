@@ -44,6 +44,12 @@ export interface ResumeContent {
   experience: ResumeExperience[];
   education: ResumeEducation[];
   skillGroups: ResumeSkillGroup[];
+  /**
+   * The raw CV text kept by the text-only import ("Text übernehmen (ohne KI)").
+   * Internal source only: exported in the GDPR export, never rendered in the
+   * Mappe/PDF, never sent in an AI prompt, cleared on anonymisation.
+   */
+  rawText: string;
 }
 
 export interface LetterContent {
@@ -113,6 +119,7 @@ const contactSchema = z.object({
 
 export const resumeSchema = z.object({
   summary: z.string().default(''),
+  rawText: z.string().max(50_000).default(''),
   experience: z
     .array(
       z.object({
@@ -183,6 +190,7 @@ export const emptyResume: ResumeContent = {
   experience: [],
   education: [],
   skillGroups: [],
+  rawText: '',
 };
 
 export const emptyLetter: LetterContent = {
@@ -209,3 +217,14 @@ export const saveDocumentsSchema = z.object({
   style: styleSchema.default(defaultStyle),
 });
 export type SaveDocumentsInput = z.infer<typeof saveDocumentsSchema>;
+
+/** A copy of the documents with the internal raw CV text blanked. */
+export function withoutRawText(documents: TalentDocuments): TalentDocuments {
+  return { ...documents, resume: { ...documents.resume, rawText: '' } };
+}
+
+/** Normalise legacy documents (no `rawText`) read straight from a repository. */
+export function normalizeDocuments(documents: TalentDocuments): TalentDocuments {
+  if (typeof documents.resume.rawText === 'string') return documents;
+  return { ...documents, resume: { ...documents.resume, rawText: '' } };
+}

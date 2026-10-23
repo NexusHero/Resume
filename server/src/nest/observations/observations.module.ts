@@ -16,6 +16,7 @@ import type { MandateRepository } from '../../ports/mandate-repository.js';
 import type { Clock } from '../../ports/clock.js';
 import type { IdGenerator } from '../../ports/id-generator.js';
 import { AuthGuard } from '../auth.guard.js';
+import { RequiresVermittlung, VermittlungGuard } from '../vermittlung.guard.js';
 import { CurrentScope } from '../params.js';
 import { ZodValidationPipe } from '../zod-validation.pipe.js';
 import {
@@ -28,7 +29,8 @@ import {
 
 /** Interview observations under /api/v1/mandates/:id/observations (ADR-0051). */
 @Controller('api/v1/mandates/:id/observations')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, VermittlungGuard)
+@RequiresVermittlung()
 export class ObservationsController {
   constructor(
     @Inject(INTERVIEW_OBSERVATION_SERVICE) private readonly service: InterviewObservationService,

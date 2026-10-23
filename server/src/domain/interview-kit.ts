@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { TalentDocuments } from './talent-documents.js';
-import { type MandateContext, documentSkills, matchedForMandate } from './match-explain.js';
+import type { MandateContext } from './match-explain.js';
 import { candidateFacts } from './candidate-facts.js';
 
 /**
@@ -54,60 +54,6 @@ export function interviewKitPrompt(
     prompt:
       `Mandate: ${mandate.role}${mandate.client ? ` at ${mandate.client}` : ''}` +
       `${mandate.location ? `, ${mandate.location}` : ''}\n\nCandidate:\n${candidateFacts(documents)}`,
-  };
-}
-
-/** Deterministic fallback: a solid generic kit from the candidate's own facts. */
-export function fallbackInterviewKit(
-  documents: TalentDocuments | null,
-  mandate: MandateContext,
-): InterviewKit {
-  const skills = documentSkills(documents);
-  const matched = matchedForMandate(documents, mandate);
-  const topSkills = (matched.length ? matched : skills).slice(0, 3);
-  const firstStation = documents?.resume.experience[0];
-
-  const questions: InterviewQuestion[] = [];
-  for (const skill of topSkills) {
-    questions.push({
-      category: 'Technical',
-      question: `Describe a project in which you used ${skill}. What was your specific role?`,
-      lookFor: 'Depth, concrete examples and personal contribution rather than general statements.',
-    });
-  }
-  if (firstStation && (firstStation.role || firstStation.company)) {
-    questions.push({
-      category: 'Experience',
-      question: `What was your biggest challenge as ${[firstStation.role, firstStation.company]
-        .filter(Boolean)
-        .join(' at ')} and how did you handle it?`,
-      lookFor: 'Problem-solving, ownership and a measurable outcome.',
-    });
-  }
-  questions.push({
-    category: 'Motivation',
-    question: `What appeals to you about the role of "${mandate.role}"${mandate.client ? ` at ${mandate.client}` : ''}?`,
-    lookFor: 'A concrete connection to the role rather than generic phrases.',
-  });
-  questions.push({
-    category: 'Culture',
-    question: 'What does a work environment look like in which you do your best work?',
-    lookFor: 'Self-awareness and fit with the team/client.',
-  });
-
-  const scorecard = [
-    ...topSkills.map((s) => `Technical depth: ${s}`),
-    `Suitability for "${mandate.role}"`,
-    'Communication & clarity',
-    'Motivation & fit',
-  ];
-
-  return {
-    focus: matched.length
-      ? `Assess technical depth in ${topSkills.join(', ')} as well as fit for the role.`
-      : `Assess basic suitability for "${mandate.role}" and motivation in detail.`,
-    questions,
-    scorecard: scorecard.slice(0, 6),
   };
 }
 

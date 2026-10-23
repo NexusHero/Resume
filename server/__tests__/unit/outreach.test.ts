@@ -1,6 +1,5 @@
 import {
   outreachPrompt,
-  fallbackOutreach,
   normalizeOutreach,
   outreachRequestSchema,
   type OutreachOptions,
@@ -110,100 +109,11 @@ describe('outreach', () => {
     expect(prompt).toContain('(not provided)');
   });
 
-  it('FallbackOutreach_CandidateEmail_HasSubjectAndBody', () => {
-    const msg = fallbackOutreach(documents, opts());
-    expect(msg.subject).toContain('C++ Engineer');
-    expect(msg.body).toContain('C++');
-    expect(msg.body.length).toBeGreaterThan(20);
-  });
-
-  it('FallbackOutreach_ClientEmail_PresentsCandidate', () => {
-    const msg = fallbackOutreach(documents, opts({ audience: 'client' }));
-    expect(msg.subject).toContain('position');
-    expect(msg.body).toContain('Max Mustermann');
-  });
-
-  it('FallbackOutreach_German_ProducesGermanCopy', () => {
-    const msg = fallbackOutreach(documents, opts(), 'de');
-    expect(msg.body).toContain('Hätten Sie diese Woche');
-    expect(msg.body).toContain('Ihr Profil als');
-    const client = fallbackOutreach(documents, opts({ audience: 'client' }), 'de');
-    expect(client.body).toContain('Sehr geehrte Damen und Herren');
-  });
-
-  it('FallbackOutreach_LinkedIn_HasNoSubject', () => {
-    const cand = fallbackOutreach(documents, opts({ channel: 'linkedin' }));
-    const client = fallbackOutreach(documents, opts({ audience: 'client', channel: 'linkedin' }));
-    expect(cand.subject).toBe('');
-    expect(client.subject).toBe('');
-    expect(cand.body.length).toBeGreaterThan(0);
-  });
-
-  it('FallbackOutreach_WithRecruiterName_SignsAllVariants', () => {
-    expect(fallbackOutreach(documents, opts({ recruiterName: 'Sara Weber' })).body).toContain(
-      'Sara Weber',
-    );
-    expect(
-      fallbackOutreach(documents, opts({ channel: 'linkedin', recruiterName: 'Sara Weber' })).body,
-    ).toContain('Sara Weber');
-    expect(
-      fallbackOutreach(documents, opts({ audience: 'client', recruiterName: 'Sara Weber' })).body,
-    ).toContain('Sara Weber');
-    expect(
-      fallbackOutreach(
-        documents,
-        opts({ audience: 'client', channel: 'linkedin', recruiterName: 'Sara Weber' }),
-      ).body,
-    ).toContain('Sara Weber');
-  });
-
-  it('FallbackOutreach_NoSkillsNoName_StillUsable', () => {
-    const bare = {
-      ...documents,
-      contact: { ...documents.contact, name: '', role: '' },
-      resume: { summary: '', experience: [], education: [], skillGroups: [] },
-    };
-    const msg = fallbackOutreach(bare, opts());
-    expect(msg.body.length).toBeGreaterThan(0);
-    // With no known role the "as <role>" phrase is dropped entirely — the
-    // message must never read "your profile as the role".
-    expect(msg.subject).toBe('An exciting role for your profile');
-    expect(msg.body).not.toContain('as the role');
-  });
-
   it('NormalizeOutreach_StripsSubjectForLinkedIn', () => {
     const email = normalizeOutreach({ subject: '  Hallo  ', body: '  Text  ' }, 'email');
     expect(email.subject).toBe('Hallo');
     expect(email.body).toBe('Text');
     const li = normalizeOutreach({ subject: 'should vanish', body: 'x' }, 'linkedin');
     expect(li.subject).toBe('');
-  });
-
-  // Sweep every audience × channel × language combination so both the English
-  // and German fallback branches are exercised.
-  it('FallbackOutreach_CoversAllAudienceChannelLangCombos', () => {
-    for (const lang of ['en', 'de'] as const) {
-      for (const audience of ['candidate', 'client'] as const) {
-        for (const channel of ['email', 'linkedin'] as const) {
-          const opts: OutreachOptions = {
-            audience,
-            channel,
-            tone: '',
-            mandateContext: '',
-            recruiterName: 'Sam Recruiter',
-          };
-          const msg = fallbackOutreach(documents, opts, lang);
-          expect(msg.body).toContain('Sam Recruiter');
-          expect(channel === 'linkedin' ? msg.subject === '' : msg.subject.length > 0).toBe(true);
-        }
-      }
-    }
-    // Also cover the no-recruiter-name branch (no signature appended).
-    const noName = fallbackOutreach(
-      documents,
-      { audience: 'client', channel: 'email', tone: '', mandateContext: '', recruiterName: '' },
-      'de',
-    );
-    expect(noName.body).not.toContain('Mit freundlichen Grüßen\n\n');
   });
 });

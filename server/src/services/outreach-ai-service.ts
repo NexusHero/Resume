@@ -2,7 +2,6 @@ import {
   type CandidatePitch,
   pitchPrompt,
   pitchResultSchema,
-  fallbackPitch,
   normalizePitch,
 } from '../domain/candidate-pitch.js';
 import {
@@ -10,7 +9,6 @@ import {
   type OutreachOptions,
   outreachPrompt,
   outreachResultSchema,
-  fallbackOutreach,
   normalizeOutreach,
 } from '../domain/outreach.js';
 import { type GroundingReport, groundingSource } from '../domain/grounding.js';
@@ -98,7 +96,7 @@ export class OutreachAiService {
     mandateContext: string,
   ): Promise<
     CandidatePitch & {
-      provider: LlmProviderId | 'template';
+      provider: LlmProviderId;
       grounding: GroundingReport;
       usage?: CallUsage;
     }
@@ -107,11 +105,7 @@ export class OutreachAiService {
     const source = groundingSource(documents, mandateContext);
     // Output language follows the job/mandate context, else the candidate's CV.
     const lang = detectLanguage(mandateContext.trim() || groundingSource(documents, ''));
-    const grounded = (
-      pitch: CandidatePitch,
-      provider: LlmProviderId | 'template',
-      usage?: CallUsage,
-    ) =>
+    const grounded = (pitch: CandidatePitch, provider: LlmProviderId, usage?: CallUsage) =>
       this.runner.withGrounding(
         pitch,
         [pitch.headline, ...pitch.paragraphs].join(' '),
@@ -129,7 +123,6 @@ export class OutreachAiService {
         schema: pitchResultSchema,
         normalize: normalizePitch,
         accept: (pitch) => Boolean(pitch.headline || pitch.paragraphs.length),
-        fallback: () => fallbackPitch(documents, mandateContext, lang),
       },
     );
     await this.logArtifact(scope, 'pitch', talentId, provider);
@@ -149,7 +142,7 @@ export class OutreachAiService {
     opts: OutreachOptions,
   ): Promise<
     OutreachMessage & {
-      provider: LlmProviderId | 'template';
+      provider: LlmProviderId;
       grounding: GroundingReport;
       usage?: CallUsage;
     }
@@ -160,11 +153,7 @@ export class OutreachAiService {
     const lang = detectLanguage(
       (opts.mandateContext ?? '').trim() || groundingSource(documents, ''),
     );
-    const grounded = (
-      message: OutreachMessage,
-      provider: LlmProviderId | 'template',
-      usage?: CallUsage,
-    ) =>
+    const grounded = (message: OutreachMessage, provider: LlmProviderId, usage?: CallUsage) =>
       this.runner.withGrounding(
         message,
         [message.subject, message.body].join(' '),
@@ -183,7 +172,6 @@ export class OutreachAiService {
         schema: outreachResultSchema,
         normalize: (parsed) => normalizeOutreach(parsed, opts.channel),
         accept: (message) => Boolean(message.body),
-        fallback: () => fallbackOutreach(documents, opts, lang),
       },
     );
     await this.logArtifact(scope, 'outreach', talentId, provider, outreachContext);

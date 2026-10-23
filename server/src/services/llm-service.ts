@@ -8,8 +8,11 @@ export interface LlmProviderInfo {
 }
 
 export interface LlmSettings {
-  current: LlmProviderId;
+  /** The provider an AI call would use for this caller, or null when none is available. */
+  current: LlmProviderId | null;
   providers: LlmProviderInfo[];
+  /** True when at least one provider has a central server key. */
+  configured: boolean;
 }
 
 export interface LlmServiceDeps {
@@ -21,10 +24,10 @@ export interface LlmServiceDeps {
 
 /**
  * The LLM provider registry: every wired provider plus the server's configured
- * default. The provider *selection* is per user and persisted on the user
- * record (Settings → AI models), so it survives restarts and is never shared
- * across the team — this service only answers "which providers exist, which
- * have server credentials, and what is the default".
+ * default. ADR-0057 keeps one central key per provider (env) and keeps the
+ * persisted per-user provider *choice* (ADR-0011, Q9), but only among providers
+ * that actually have a server key. This service answers "which providers exist,
+ * which are available, and which one would be used".
  */
 export class LlmService {
   private readonly providers: Map<LlmProviderId, LlmProvider>;
@@ -38,9 +41,35 @@ export class LlmService {
     deps.logger.debug({ default: this.currentId }, 'llm providers wired');
   }
 
-  settings(): LlmSettings {
+  /**
+   * Resolve the provider for a caller (plan §5.4): 1. the stored choice when
+   * that provider has a server key, 2. the configured default when available,
+   * 3. any other available provider (Claude first), else null.
+   */
+  resolve(preferred?: LlmProviderId | null): LlmProvider | null {
+    if (preferred) {
+      const chosen = this.providers.get(preferred);
+      if (chosen?.available) return chosen;
+    }
+    const configured = this.providers.get(this.currentId);
+    if (configured?.available) return configured;
+    const fallbackOrder: LlmProviderId[] = ['claude', 'gemini'];
+    for (const id of fallbackOrder) {
+      const provider = this.providers.get(id);
+      if (provider?.available) return provider;
+    }
+    return [...this.providers.values()].find((p) => p.available) ?? null;
+  }
+
+  /** True when at least one provider has a central server key (ADR-0057). */
+  hasAvailableProvider(): boolean {
+    return [...this.providers.values()].some((p) => p.available);
+  }
+
+  settings(preferred?: LlmProviderId | null): LlmSettings {
     return {
-      current: this.currentId,
+      current: this.resolve(preferred)?.id ?? null,
+      configured: this.hasAvailableProvider(),
       providers: [...this.providers.values()].map((p) => ({
         id: p.id,
         label: p.label,
@@ -49,19 +78,22 @@ export class LlmService {
     };
   }
 
-  /** The default provider, or null when it has no server credentials configured. */
-  active(): LlmProvider | null {
-    const provider = this.providers.get(this.currentId);
-    return provider && provider.available ? provider : null;
+  /** The provider by id, if wired (regardless of availability). */
+  get(id: LlmProviderId): LlmProvider | undefined {
+    return this.providers.get(id);
   }
 
-  /** The configured default provider id (regardless of availability). */
+  /** The server's configured default provider id (regardless of availability). */
   currentProvider(): LlmProviderId {
     return this.currentId;
   }
 
-  /** A provider by id regardless of availability — for callers supplying their own key. */
-  get(id: LlmProviderId): LlmProvider | undefined {
-    return this.providers.get(id);
+  // ---- Backwards-compatible aliases (older call sites/tests) -----------------
+  active(): LlmProvider | null {
+    return this.resolve();
+  }
+
+  isConfigured(): boolean {
+    return this.hasAvailableProvider();
   }
 }

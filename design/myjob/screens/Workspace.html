@@ -121,7 +121,7 @@ const T = window.MyJobTalents;
    never as separate top-level apps. */
 const NAV = [
   { id: 'workspace', label: 'Workspace', icon: 'home' },
-  { id: 'pool', label: 'Talent-Pool', icon: 'users' },
+  { id: 'pool', label: 'Mandanten', icon: 'users' },
   { id: 'stellen', label: 'Stellen', icon: 'briefcase' },
   { id: 'matching', label: 'Matching', icon: 'search' },
   { id: 'pipeline', label: 'Pipeline', icon: 'columns', badge: 2, demo: true },
@@ -192,7 +192,7 @@ function Workspace() {
       <div className="cap">Schnellzugriff</div>
       <div className="qa">
         <a href="Matching.html"><span className="ic"><Icon name="search" size={16} /></span>Neue Bewerbung<span className="ar"><Icon name="chevronRight" size={15} /></span></a>
-        <a href="Talent-Pool.html"><span className="ic"><Icon name="users" size={16} /></span>Talent-Pool<span className="ar"><Icon name="chevronRight" size={15} /></span></a>
+        <a href="Talent-Pool.html"><span className="ic"><Icon name="users" size={16} /></span>Mandanten<span className="ar"><Icon name="chevronRight" size={15} /></span></a>
         <a href="CV-Builder.html"><span className="ic"><Icon name="fileText" size={16} /></span>CV-Builder<span className="ar"><Icon name="chevronRight" size={15} /></span></a>
         <a href="Bewerbung-vorbereiten.html"><span className="ic"><Icon name="mail" size={16} /></span>Anschreiben & Dossier<span className="ar"><Icon name="chevronRight" size={15} /></span></a>
         <a href="Settings.html"><span className="ic"><Icon name="sliders" size={16} /></span>Einstellungen<span className="ar"><Icon name="chevronRight" size={15} /></span></a>
@@ -204,7 +204,7 @@ function Workspace() {
     <AppShell
       product="recruit" posture="rail"
       nav={NAV} active="workspace" onNav={goNav}
-      account={{ name: 'Suhay Sevinc', meta: 'Ich · +3 Talente', src: me.photo }}
+      account={{ name: 'Suhay Sevinc', meta: 'Ich · +3 Mandanten', src: me.photo }}
       title="Workspace" subtitle={dateStr}
       search searchPlaceholder="Kandidaten, Stellen, Bewerbungen …"
       actions={<Button size="sm" iconLeft={<Icon name="plus" size={15} />} style={{ borderRadius: 'var(--radius-pill)', boxShadow: 'var(--shadow-accent)' }} onClick={() => { window.location.href = 'Matching.html'; }}>Neue Bewerbung</Button>}

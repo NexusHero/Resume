@@ -8,6 +8,8 @@ import { translateRequestSchema } from '../../domain/document-translate.js';
 import type { DocumentAiService } from '../../services/document-ai-service.js';
 import { AuthGuard } from '../auth.guard.js';
 import { AiRateLimitGuard } from '../ai-rate-limit.guard.js';
+import { AiConfiguredGuard, RequiresAi } from '../ai-configured.guard.js';
+import { RequiresVermittlung, VermittlungGuard } from '../vermittlung.guard.js';
 import { PlanGuard, RequiresPlan } from '../plan.guard.js';
 import { CurrentScope, CurrentUserId } from '../params.js';
 import { ZodValidationPipe } from '../zod-validation.pipe.js';
@@ -16,17 +18,19 @@ import { DOCUMENT_AI_SERVICE } from '../tokens.js';
 /**
  * Generative document AI under /api/v1/talents/:id/documents (ADR-0051 port of
  * the DocumentController's DocumentAiService half). Every route spends LLM
- * tokens, so the whole controller is Pro-gated and AI rate-limited. Documents
- * belong to the team scope; the caller's own user id selects their personal key.
+ * tokens, so the whole controller is Pro-gated and AI rate-limited; each route
+ * additionally requires the server's central key (ADR-0057) and the Vermittlung
+ * switch where the feature is agency-only. Documents belong to the team scope.
  */
 @Controller('api/v1/talents/:id/documents')
-@UseGuards(AuthGuard, AiRateLimitGuard, PlanGuard)
+@UseGuards(AuthGuard, VermittlungGuard, AiConfiguredGuard, AiRateLimitGuard, PlanGuard)
 @RequiresPlan('pro')
 export class DocumentsAiController {
   constructor(@Inject(DOCUMENT_AI_SERVICE) private readonly ai: DocumentAiService) {}
 
   @Post('ai')
   @HttpCode(200)
+  @RequiresAi()
   async aiSuggest(
     @CurrentScope() scope: string,
     @CurrentUserId() userId: string,
@@ -65,6 +69,7 @@ export class DocumentsAiController {
 
   @Post('ats')
   @HttpCode(200)
+  @RequiresAi()
   async ats(
     @CurrentScope() scope: string,
     @CurrentUserId() userId: string,
@@ -76,6 +81,8 @@ export class DocumentsAiController {
 
   @Post('pitch')
   @HttpCode(200)
+  @RequiresVermittlung()
+  @RequiresAi()
   async pitch(
     @CurrentScope() scope: string,
     @CurrentUserId() userId: string,
@@ -88,6 +95,8 @@ export class DocumentsAiController {
 
   @Post('outreach')
   @HttpCode(200)
+  @RequiresVermittlung()
+  @RequiresAi()
   async outreach(
     @CurrentScope() scope: string,
     @CurrentUserId() userId: string,
@@ -100,6 +109,7 @@ export class DocumentsAiController {
 
   @Post('translate')
   @HttpCode(200)
+  @RequiresAi()
   async translate(
     @CurrentScope() scope: string,
     @CurrentUserId() userId: string,

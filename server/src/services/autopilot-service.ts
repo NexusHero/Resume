@@ -14,6 +14,7 @@ import {
 } from '../domain/application-target.js';
 import { jobQuerySchema } from '../domain/job.js';
 import { createMandateSchema } from '../domain/mandate.js';
+import { AiNotConfiguredError, UpstreamProviderError } from '../domain/errors.js';
 import type { AssistantSuggestionRepository } from '../ports/assistant-store.js';
 import type { MandateRepository } from '../ports/mandate-repository.js';
 import type { Clock } from '../ports/clock.js';
@@ -124,6 +125,13 @@ export class AutopilotService {
         try {
           payload = await this.builder.build(scope, scope, target, m.talentId, m.score);
         } catch (err) {
+          // A missing key / upstream failure is a real, actionable error — the
+          // owner decided `/assistant/run` must answer 503 instead of silently
+          // returning zero packets (ADR-0047, ADR-0057). Other build failures
+          // (a single malformed record) are logged and skipped as before.
+          if (err instanceof AiNotConfiguredError || err instanceof UpstreamProviderError) {
+            throw err;
+          }
           this.logger.warn(
             { targetRef: target.ref, err: err instanceof Error ? err.message : String(err) },
             'autopilot application build failed, skipping',

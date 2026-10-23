@@ -1,4 +1,5 @@
 @startuml uc14_byo_key_cost
+title Central server key — cost per user (ADR-0057)
 title UC-14 — Bring your own AI key and watch the cost (FR-31, FR-30)
 
 skinparam shadowing false

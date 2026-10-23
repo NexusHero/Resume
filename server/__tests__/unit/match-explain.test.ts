@@ -1,7 +1,6 @@
 import {
   documentSkills,
   matchedForMandate,
-  fallbackExplanation,
   explainPrompt,
   normalizeExplanation,
   explanationResultSchema,
@@ -69,23 +68,6 @@ describe('match-explain domain', () => {
     });
   });
 
-  describe('fallbackExplanation', () => {
-    it('BuildsGroundedReasonsFromOverlap', () => {
-      const matched = matchedForMandate(docs(), mandate);
-      const e = fallbackExplanation(docs(), mandate, matched);
-      expect(e.summary).toContain('Lena');
-      expect(e.reasons.length).toBeGreaterThan(0);
-      expect(e.reasons[0]).toContain('React');
-      expect(e.matchedSkills).toEqual(matched);
-    });
-
-    it('NoOverlap_StillReturnsHonestReason', () => {
-      const e = fallbackExplanation(null, mandate, []);
-      expect(e.reasons.length).toBeGreaterThan(0);
-      expect(e.summary).toContain('clarify');
-    });
-  });
-
   describe('explainPrompt', () => {
     it('IncludesMandateAndCandidateFacts', () => {
       const { system, prompt } = explainPrompt(docs(), mandate, ['React']);
@@ -104,35 +86,6 @@ describe('match-explain domain', () => {
       expect(prompt).toContain('Engineer');
       expect(prompt).not.toContain(' at '); // no client
       expect(prompt).not.toContain('Overlapping skills');
-    });
-  });
-
-  describe('fallbackExplanation edge cases', () => {
-    it('SingleSkill_UsesSingularSummary', () => {
-      const e = fallbackExplanation(docs(), mandate, ['React']);
-      expect(e.summary).toContain('1 matching skill ');
-    });
-
-    it('StationWithoutCompany_StillListsRole', () => {
-      const d = docs({
-        summary: '',
-        experience: [
-          { role: 'Lead', company: '', period: '', location: '', bullets: [], skills: [] },
-        ],
-      });
-      const e = fallbackExplanation(d, mandate, []);
-      expect(e.reasons.some((r) => r.includes('Lead'))).toBe(true);
-    });
-
-    it('StationWithoutRole_StillListsCompany', () => {
-      const d = docs({
-        summary: '',
-        experience: [
-          { role: '', company: 'Acme', period: '', location: '', bullets: [], skills: [] },
-        ],
-      });
-      const e = fallbackExplanation(d, mandate, []);
-      expect(e.reasons.some((r) => r.includes('Acme'))).toBe(true);
     });
   });
 

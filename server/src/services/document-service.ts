@@ -5,6 +5,8 @@ import {
   defaultStyle,
   emptyResume,
   emptyLetter,
+  normalizeDocuments,
+  withoutRawText,
 } from '../domain/talent-documents.js';
 import { detectLanguage } from '../domain/language.js';
 import type { OutputLang } from '../domain/language.js';
@@ -91,7 +93,7 @@ export class DocumentService {
     const subject = await this.requireSubject(ownerId, talentId);
 
     const existing = await this.docs.get(ownerId, talentId);
-    if (existing) return existing;
+    if (existing) return normalizeDocuments(existing);
 
     // No set saved yet — seed the contact from the subject, blank the rest.
     return {
@@ -240,7 +242,7 @@ export class DocumentService {
     const htmlString = documentsToHtml(merged, { letterDate: this.letterDate(merged) });
     const finalHtml =
       htmlString +
-      `\n<script id="myjob-resume-data" type="application/json">${JSON.stringify(documents)}</script>`;
+      `\n<script id="myjob-resume-data" type="application/json">${JSON.stringify(withoutRawText(documents))}</script>`;
 
     const zip = new AdmZip();
     zip.addFile('Bewerbung.pdf', pdfBuffer);

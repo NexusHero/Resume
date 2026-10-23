@@ -89,4 +89,54 @@ export class RateLimitError extends DomainError {
 export class UpstreamProviderError extends DomainError {
   readonly status = 502;
   readonly type = 'upstream-provider';
+
+  constructor(message = 'The AI provider could not produce a usable result.') {
+    super(message);
+  }
+}
+
+/**
+ * No AI provider is configured on the server (503). The product contract is
+ * "no template fallback, no silent failure": a generative route answers with a
+ * clear `ai-not-configured` problem instead of fabricating text (ADR-0057).
+ */
+export class AiNotConfiguredError extends DomainError {
+  readonly status = 503;
+  readonly type = 'ai-not-configured';
+
+  constructor(
+    message = 'No AI provider is configured on this server. Set ANTHROPIC_API_KEY or GEMINI_API_KEY.',
+  ) {
+    super(message);
+    this.name = 'AI not configured';
+  }
+}
+
+/**
+ * The uploaded PDF has no usable text layer (422). Scanned/protected files
+ * cannot be imported; the UI asks the user to paste the text instead.
+ */
+export class NoTextLayerError extends DomainError {
+  readonly status = 422;
+  readonly type = 'no-text-layer';
+
+  constructor(message = 'The PDF contains no readable text (e.g. a scan or protected file).') {
+    super(message);
+    this.name = 'No text layer';
+  }
+}
+
+/**
+ * An unexpected server-side failure (500). Used where a dependency breaks in a
+ * way the caller cannot fix — e.g. a PDF extractor crash (Q1, ADR-0057). The
+ * problem+json detail is deliberately generic; the stack is logged server-side.
+ */
+export class InternalError extends DomainError {
+  readonly status = 500;
+  readonly type = 'internal-error';
+
+  constructor(message = 'An unexpected error occurred.') {
+    super(message);
+    this.name = 'InternalError';
+  }
 }

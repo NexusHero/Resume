@@ -1,6 +1,6 @@
 # ADR-0011 — Per-user, persisted LLM provider choice
 
-- **Status:** Accepted
+- **Status:** Partially superseded by ADR-0057 (per-user API keys removed; the persisted provider choice stays, limited to providers with a central server key)
 - **Relates to:** ADR-0004, ADR-0005
 
 ## Context

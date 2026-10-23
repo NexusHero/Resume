@@ -9,10 +9,9 @@ import { SqlPlacementRepository } from '../../src/adapters/sql/sql-placement-rep
 import { SqlUserRepository } from '../../src/adapters/sql/sql-user-repository.js';
 import { SqlPasswordResetTokenStore } from '../../src/adapters/sql/sql-password-reset-token-store.js';
 import { SqlEmailVerificationTokenStore } from '../../src/adapters/sql/sql-email-verification-token-store.js';
-import { SqlApiKeyStore } from '../../src/adapters/sql/sql-api-key-store.js';
+import { SqlWorkspaceSettingsStore } from '../../src/adapters/sql/sql-workspace-settings-store.js';
 import { SqlDocumentRepository } from '../../src/adapters/sql/sql-document-repository.js';
 import { SqlAttachmentStore } from '../../src/adapters/sql/sql-attachment-store.js';
-import { SecretCipher } from '../../src/adapters/secret-cipher.js';
 import { loadConfig } from '../../src/config.js';
 import type { Application, AuditEvent } from '../../src/domain/application.js';
 import type { SavedSearch } from '../../src/domain/saved-search.js';
@@ -47,7 +46,7 @@ suite('SQL repositories (real Postgres)', () => {
 
   beforeEach(async () => {
     await pool.query(
-      'TRUNCATE applications, audit_events, saved_searches, mandates, talents, placements, talent_documents, attachments, users, password_reset_tokens, api_keys RESTART IDENTITY',
+      'TRUNCATE applications, audit_events, saved_searches, mandates, talents, placements, talent_documents, attachments, users, password_reset_tokens, api_keys, workspace_settings RESTART IDENTITY',
     );
   });
 
@@ -285,31 +284,15 @@ suite('SQL repositories (real Postgres)', () => {
     expect(await store.consume(old)).toBeNull();
   });
 
-  it('ApiKeys_EncryptedRoundTrip_OwnerScoped', async () => {
-    const cipher = new SecretCipher({ config: loadConfig({}) });
-    const store = new SqlApiKeyStore({ db, secretCipher: cipher });
-    await store.set('owner1', 'claude', 'sk-ant-secret');
-    await store.set('owner1', 'gemini', 'sk-gem');
-    await store.set('other', 'claude', 'sk-other');
-
-    expect(await store.get('owner1', 'claude')).toBe('sk-ant-secret');
-    expect(await store.get('owner2', 'claude')).toBeNull();
-    expect((await store.providersFor('owner1')).sort()).toEqual(['claude', 'gemini']);
-
-    // stored value is ciphertext, not the plaintext key
-    const raw = await pool.query('SELECT value FROM api_keys WHERE owner_id=$1 AND provider=$2', [
-      'owner1',
-      'claude',
-    ]);
-    expect(raw.rows[0].value).not.toContain('sk-ant-secret');
+  it('WorkspaceSettings_RoundTrips_OwnerScoped', async () => {
+    const store = new SqlWorkspaceSettingsStore({ db });
+    await store.set('owner1', { vermittlung: true });
+    expect(await store.get('owner1')).toEqual({ vermittlung: true });
+    expect(await store.get('owner2')).toBeNull();
 
     // upsert overwrites
-    await store.set('owner1', 'claude', 'sk-ant-new');
-    expect(await store.get('owner1', 'claude')).toBe('sk-ant-new');
-
-    expect(await store.remove('owner1', 'claude')).toBe(true);
-    expect(await store.remove('owner1', 'claude')).toBe(false);
-    expect(await store.get('owner1', 'claude')).toBeNull();
+    await store.set('owner1', { vermittlung: false });
+    expect(await store.get('owner1')).toEqual({ vermittlung: false });
   });
 
   it('Documents_RoundTrips_OwnerScopedWithCascade', async () => {
@@ -390,5 +373,57 @@ suite('SQL repositories (real Postgres)', () => {
     await store.removeForOwner('owner1');
     expect(await store.get('owner1', 'a2')).toBeNull();
     expect(await store.get('other', 'a3')).not.toBeNull(); // other owner untouched
+  });
+
+  it('SqlWorkspaceSettingsStore_SetThenGet_RoundTrips', async () => {
+    const store = new SqlWorkspaceSettingsStore({ db });
+    await store.set('ws-a', { vermittlung: true });
+    expect(await store.get('ws-a')).toEqual({ vermittlung: true });
+
+    // upsert overwrites
+    await store.set('ws-a', { vermittlung: false });
+    expect(await store.get('ws-a')).toEqual({ vermittlung: false });
+  });
+
+  it('SqlWorkspaceSettingsStore_UnknownWorkspace_ReturnsNull', async () => {
+    const store = new SqlWorkspaceSettingsStore({ db });
+    expect(await store.get('never-written')).toBeNull();
+  });
+
+  it('Migrate_LegacyRows_DeletedAndLegacyReadsSucceed', async () => {
+    await pool.query("INSERT INTO api_keys (owner_id, provider, value) VALUES ('u1','claude','x')");
+    await migrate(pool);
+
+    const count = await pool.query('SELECT count(*)::int AS n FROM api_keys');
+    expect(count.rows[0].n).toBe(0);
+    // Expand/contract: the table still exists, so an old instance can still read.
+    const read = await pool.query('SELECT * FROM api_keys');
+    expect(read.rows).toEqual([]);
+  });
+
+  it('Migrate_RunTwice_IsIdempotent', async () => {
+    await expect(migrate(pool)).resolves.toBeUndefined();
+    await expect(migrate(pool)).resolves.toBeUndefined();
+  });
+
+  it('Migrate_RunConcurrentlyFromTwoPools_BothSucceed', async () => {
+    const second = createDb(url as string);
+    try {
+      await expect(Promise.all([migrate(pool), migrate(second.pool)])).resolves.toBeDefined();
+    } finally {
+      await second.pool.end();
+    }
+  });
+
+  it('Migrate_FreshDatabase_CreatesWorkspaceSettingsTable', async () => {
+    const ws = await pool.query("SELECT to_regclass('workspace_settings') AS reg");
+    expect(ws.rows[0].reg).not.toBeNull();
+  });
+
+  it('Migrate_UsersLlmProviderColumn_IsPreserved', async () => {
+    const llm = await pool.query(
+      "SELECT column_name FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'llm_provider'",
+    );
+    expect(llm.rows).toHaveLength(1);
   });
 });

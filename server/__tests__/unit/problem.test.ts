@@ -2,7 +2,12 @@ import { jest } from '@jest/globals';
 import { z } from 'zod';
 import type { Request, Response } from 'express';
 import { errorHandler, notFound, sendProblem } from '../../src/http/problem.js';
-import { NotFoundError, ValidationError } from '../../src/domain/errors.js';
+import {
+  AiNotConfiguredError,
+  InternalError,
+  NotFoundError,
+  ValidationError,
+} from '../../src/domain/errors.js';
 import type { Logger } from '../../src/ports/logger.js';
 
 function mockRes(headersSent = false) {
@@ -70,6 +75,27 @@ describe('errorHandler', () => {
     run(new Error('boom'), res, { ...silentLogger, error });
     expect(res.statusCode).toBe(500);
     expect(error).toHaveBeenCalled();
+  });
+
+  it('MapErrorToProblem_AiNotConfiguredError_Returns503ProblemJson', () => {
+    const res = mockRes();
+    run(new AiNotConfiguredError(), res);
+    expect(res.statusCode).toBe(503);
+    expect(res.contentType).toBe('application/problem+json');
+    expect(res.body).toMatchObject({ status: 503, type: 'about:blank#ai-not-configured' });
+  });
+
+  it('MapErrorToProblem_InternalError_Returns500ProblemJson', () => {
+    const res = mockRes();
+    run(new InternalError('PDF text extraction failed'), res);
+    expect(res.statusCode).toBe(500);
+    expect(res.contentType).toBe('application/problem+json');
+    expect(res.body).toMatchObject({
+      status: 500,
+      type: 'about:blank#internal-error',
+      title: 'InternalError',
+      detail: 'PDF text extraction failed',
+    });
   });
 
   it('Handler_HeadersAlreadySent_DelegatesToNext', () => {

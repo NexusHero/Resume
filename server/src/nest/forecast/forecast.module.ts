@@ -4,6 +4,7 @@ import type { MandateRepository } from '../../ports/mandate-repository.js';
 import type { CandidacyRepository } from '../../ports/candidacy-repository.js';
 import type { StageTransitionRepository } from '../../ports/stage-transition-repository.js';
 import { AuthGuard } from '../auth.guard.js';
+import { RequiresVermittlung, VermittlungGuard } from '../vermittlung.guard.js';
 import { CurrentScope } from '../params.js';
 import {
   FORECAST_SERVICE,
@@ -14,7 +15,8 @@ import {
 
 /** Revenue forecast under /api/v1/forecast (ADR-0051 port of ForecastController). */
 @Controller('api/v1/forecast')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, VermittlungGuard)
+@RequiresVermittlung()
 export class ForecastController {
   constructor(@Inject(FORECAST_SERVICE) private readonly service: ForecastService) {}
 

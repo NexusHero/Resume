@@ -10,7 +10,6 @@
  */
 
 // --- Ports ---
-export const API_KEY_STORE = Symbol('ApiKeyStore');
 export const APPLICATION_REPOSITORY = Symbol('ApplicationRepository');
 export const ARTIFACT_LOG_REPOSITORY = Symbol('ArtifactLogRepository');
 export const ASSISTANT_SETTINGS_STORE = Symbol('AssistantSettingsStore');
@@ -49,6 +48,7 @@ export const SKILL_EXTRACTOR = Symbol('SkillExtractor');
 export const STAGE_TRANSITION_REPOSITORY = Symbol('StageTransitionRepository');
 export const TALENT_REPOSITORY = Symbol('TalentRepository');
 export const TENANT_REPOSITORY = Symbol('TenantRepository');
+export const WORKSPACE_SETTINGS_STORE = Symbol('WorkspaceSettingsStore');
 export const USAGE_METER = Symbol('UsageMeter');
 export const USER_REPOSITORY = Symbol('UserRepository');
 export const VERSIONER = Symbol('Versioner');
@@ -88,6 +88,7 @@ export const APPLICATION_SERVICE = Symbol('ApplicationService');
 export const MEMBERS_SERVICE = Symbol('MembersService');
 export const INVITE_SERVICE = Symbol('InviteService');
 export const TENANT_SERVICE = Symbol('TenantService');
+export const WORKSPACE_SETTINGS_SERVICE = Symbol('WorkspaceSettingsService');
 export const DOCUMENT_SERVICE = Symbol('DocumentService');
 export const ATTACHMENT_SERVICE = Symbol('AttachmentService');
 export const PASSWORD_RESET_SERVICE = Symbol('PasswordResetService');

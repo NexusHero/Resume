@@ -13,7 +13,12 @@ import { CoreModule } from '../../src/nest/core.module.js';
 import { MandatesModule } from '../../src/nest/mandates/mandates.module.js';
 import { AuthGuard } from '../../src/nest/auth.guard.js';
 import { ProblemJsonFilter } from '../../src/nest/problem-json.filter.js';
-import { MANDATE_REPOSITORY, CANDIDACY_REPOSITORY } from '../../src/nest/tokens.js';
+import {
+  MANDATE_REPOSITORY,
+  CANDIDACY_REPOSITORY,
+  WORKSPACE_SETTINGS_STORE,
+  WORKSPACE_SETTINGS_SERVICE,
+} from '../../src/nest/tokens.js';
 import {
   InMemoryMandateRepository,
   InMemoryCandidacyRepository,
@@ -37,6 +42,17 @@ describe('NestJS mandates vertical', () => {
     const fakes: Provider[] = [
       { provide: MANDATE_REPOSITORY, useValue: new InMemoryMandateRepository() },
       { provide: CANDIDACY_REPOSITORY, useValue: new InMemoryCandidacyRepository() },
+      {
+        provide: WORKSPACE_SETTINGS_SERVICE,
+        useValue: {
+          isVermittlungEnabled: async () => true,
+          get: async () => ({ vermittlung: true }),
+        },
+      },
+      {
+        provide: WORKSPACE_SETTINGS_STORE,
+        useValue: { get: async () => ({ vermittlung: true }), set: async () => undefined },
+      },
     ];
     @Global()
     @Module({ providers: fakes, exports: fakes.map((p) => (p as { provide: symbol }).provide) })
@@ -51,7 +67,7 @@ describe('NestJS mandates vertical', () => {
 
     app = moduleRef.createNestApplication();
     app.useGlobalFilters(new ProblemJsonFilter(noopLogger));
-    await app.init();
+    await app.listen(0, '127.0.0.1');
   });
 
   afterAll(async () => {

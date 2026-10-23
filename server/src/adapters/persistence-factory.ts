@@ -13,7 +13,7 @@ import type { PasswordResetTokenStore } from '../ports/password-reset-token-stor
 import type { EmailVerificationTokenStore } from '../ports/email-verification-token-store.js';
 import type { InviteRepository } from '../ports/invite-repository.js';
 import type { TenantRepository } from '../ports/tenant-repository.js';
-import type { ApiKeyStore } from '../ports/api-key-store.js';
+import type { WorkspaceSettingsStore } from '../ports/workspace-settings-store.js';
 import type { UsageMeter } from '../ports/usage-meter.js';
 import type { InterviewObservationRepository } from '../ports/interview-observation-repository.js';
 import type {
@@ -37,7 +37,7 @@ import { FsPasswordResetTokenStore } from './fs-password-reset-token-store.js';
 import { FsEmailVerificationTokenStore } from './fs-email-verification-token-store.js';
 import { FsInviteRepository } from './fs-invite-repository.js';
 import { FsTenantRepository } from './fs-tenant-repository.js';
-import { FsApiKeyStore } from './fs-api-key-store.js';
+import { FsWorkspaceSettingsStore } from './fs-workspace-settings-store.js';
 import { FsUsageMeter } from './fs-usage-meter.js';
 import { FsInterviewObservationRepository } from './fs-interview-observation-repository.js';
 import { FsAssistantSettingsStore, FsAssistantSuggestionRepository } from './fs-assistant-store.js';
@@ -45,7 +45,6 @@ import { FsRetentionPolicyStore } from './fs-retention-policy-store.js';
 import type { RetentionPolicyStore } from '../ports/retention-policy-store.js';
 import { FsArtifactLogRepository } from './fs-artifact-log-repository.js';
 import { FsStageTransitionRepository } from './fs-stage-transition-repository.js';
-import { SecretCipher } from './secret-cipher.js';
 import { SqlApplicationRepository } from './sql/sql-application-repository.js';
 import { SqlAuditLog } from './sql/sql-audit-log.js';
 import { SqlSavedSearchRepository } from './sql/sql-saved-search-repository.js';
@@ -60,7 +59,7 @@ import { SqlPasswordResetTokenStore } from './sql/sql-password-reset-token-store
 import { SqlEmailVerificationTokenStore } from './sql/sql-email-verification-token-store.js';
 import { SqlInviteRepository } from './sql/sql-invite-repository.js';
 import { SqlTenantRepository } from './sql/sql-tenant-repository.js';
-import { SqlApiKeyStore } from './sql/sql-api-key-store.js';
+import { SqlWorkspaceSettingsStore } from './sql/sql-workspace-settings-store.js';
 import { SqlUsageMeter } from './sql/sql-usage-meter.js';
 import { SqlInterviewObservationRepository } from './sql/sql-interview-observation-repository.js';
 import {
@@ -88,7 +87,7 @@ export interface Persistence {
   emailVerificationTokenStore: EmailVerificationTokenStore;
   inviteRepository: InviteRepository;
   tenantRepository: TenantRepository;
-  apiKeyStore: ApiKeyStore;
+  workspaceSettingsStore: WorkspaceSettingsStore;
   usageMeter: UsageMeter;
   interviewObservationRepository: InterviewObservationRepository;
   assistantSettingsStore: AssistantSettingsStore;
@@ -105,7 +104,6 @@ export interface Persistence {
  */
 export function createPersistence(deps: { config: AppConfig; clock: Clock; db?: Db }): Persistence {
   const { config, clock, db } = deps;
-  const secretCipher = new SecretCipher({ config });
   if (config.store === 'sql') {
     if (!db) throw new Error('STORE=sql requires a database connection (DATABASE_URL)');
     return {
@@ -123,7 +121,7 @@ export function createPersistence(deps: { config: AppConfig; clock: Clock; db?: 
       emailVerificationTokenStore: new SqlEmailVerificationTokenStore({ db, clock, config }),
       inviteRepository: new SqlInviteRepository({ db }),
       tenantRepository: new SqlTenantRepository({ db }),
-      apiKeyStore: new SqlApiKeyStore({ db, secretCipher }),
+      workspaceSettingsStore: new SqlWorkspaceSettingsStore({ db }),
       usageMeter: new SqlUsageMeter({ db }),
       interviewObservationRepository: new SqlInterviewObservationRepository({ db }),
       assistantSettingsStore: new SqlAssistantSettingsStore({ db }),
@@ -148,7 +146,7 @@ export function createPersistence(deps: { config: AppConfig; clock: Clock; db?: 
     emailVerificationTokenStore: new FsEmailVerificationTokenStore({ config, clock }),
     inviteRepository: new FsInviteRepository({ config }),
     tenantRepository: new FsTenantRepository({ config }),
-    apiKeyStore: new FsApiKeyStore({ config, secretCipher }),
+    workspaceSettingsStore: new FsWorkspaceSettingsStore({ config }),
     usageMeter: new FsUsageMeter({ config }),
     interviewObservationRepository: new FsInterviewObservationRepository({ config }),
     assistantSettingsStore: new FsAssistantSettingsStore({ config }),

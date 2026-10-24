@@ -8,6 +8,12 @@ import { z } from 'zod';
 export interface WorkspaceSettings {
   /** Recruiter functions are reachable. Default off. */
   vermittlung: boolean;
+  /**
+   * Whether the legacy pipeline `Application` records were migrated into the new
+   * `JobApplication`/`JobPosting` entities (AK-2.7). Set once by the boot
+   * migration; absent counts as "not yet migrated".
+   */
+  applicationsMigrated?: boolean;
 }
 
 /** A fresh workspace starts application-first. */

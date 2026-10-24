@@ -188,6 +188,8 @@ test.describe('Mobile acceptance (#202)', () => {
     const patched = await mockSession(page);
     await page.goto(KIT);
     await navigate(page, /Bewerbungen/);
+    // The frozen pipeline board is now a "Pipeline" sub-tab (Vermittlung on).
+    await page.getByRole('tab', { name: 'Pipeline' }).click();
 
     // The board is a horizontal snap-scroller wider than the viewport, but it is
     // its OWN scroll container — the body stays put (the .board-scroll element).
@@ -280,5 +282,65 @@ test('StellenViewMobile_ListAndDetail_Reachable', async ({ page }) => {
   await expect(page.locator('main')).toContainText('Nordwind Logistik AG');
   await page.getByText('Nordwind Logistik AG').first().click();
   await expect(page.locator('main')).toContainText('Full ad text.');
+  await expectNoHorizontalBodyScroll(page);
+});
+
+test('BewerbungenFlowMobile_ListAndEditor_Reachable', async ({ page }) => {
+  await mockSession(page);
+  await page.route('**/api/v1/job-applications', (route) => {
+    if (route.request().method() !== 'GET') return route.continue();
+    return route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify([
+        {
+          id: 'app-1',
+          ownerId: 'team',
+          jobPostingId: 'p1',
+          postingCompany: 'Nordwind Logistik AG',
+          postingTitle: 'Backend Engineer',
+          talentId: 't-api-1',
+          talentName: 'Tobias Wirth',
+          status: 'draft',
+          statusHistory: [{ status: 'draft', at: '2026-06-25T10:00:00.000Z' }],
+          documents: DOCUMENTS.documents,
+          createdAt: '2026-06-25T10:00:00.000Z',
+          updatedAt: '2026-06-25T10:00:00.000Z',
+        },
+      ]),
+    });
+  });
+  await page.route('**/api/v1/job-applications/app-1/documents', (route) =>
+    route.fulfill({ contentType: 'application/json', body: JSON.stringify(DOCUMENTS) }),
+  );
+  await page.route('**/api/v1/job-applications/app-1', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        jobApplication: {
+          id: 'app-1',
+          ownerId: 'team',
+          jobPostingId: 'p1',
+          postingCompany: 'Nordwind Logistik AG',
+          postingTitle: 'Backend Engineer',
+          talentId: 't-api-1',
+          talentName: 'Tobias Wirth',
+          status: 'draft',
+          statusHistory: [{ status: 'draft', at: '2026-06-25T10:00:00.000Z' }],
+          documents: DOCUMENTS.documents,
+          createdAt: '2026-06-25T10:00:00.000Z',
+          updatedAt: '2026-06-25T10:00:00.000Z',
+        },
+      }),
+    }),
+  );
+
+  await page.goto(KIT);
+  await navigate(page, /Bewerbungen/);
+  await expect(page.locator('main')).toContainText('Nordwind Logistik AG');
+  await expectNoHorizontalBodyScroll(page);
+
+  // Opening the application reaches the Bewerbungs-Editor (with the copy).
+  await page.getByText('Nordwind Logistik AG').first().click();
+  await expect(page.locator('[data-doc-hydrated="true"]')).toBeVisible();
   await expectNoHorizontalBodyScroll(page);
 });

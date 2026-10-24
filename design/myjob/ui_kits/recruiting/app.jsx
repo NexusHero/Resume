@@ -165,7 +165,7 @@ function Workspace({ user, onLogout }) {
     return () => window.removeEventListener('focus', retry);
   }, [ws.status]);
   const [openPipeline, setOpenPipeline] = React.useState(null); // mandate id whose pipeline is open
-  const [mappeFor, setMappeFor] = React.useState(null);
+  const [openApplication, setOpenApplication] = React.useState(null); // job application being edited
   const [editing, setEditing] = React.useState(null);
   // Which create form is open ('mandate' | 'talent' | 'placement' | null).
   const [formKind, setFormKind] = React.useState(null);
@@ -176,6 +176,8 @@ function Workspace({ user, onLogout }) {
   // A saved posting the caller asked to open (e.g. "Bereits gespeichert → öffnen"
   // from Matching) — handed to JobPostings once and then cleared.
   const [postingFocus, setPostingFocus] = React.useState(null);
+  // The Bewerbungen sub-view: the new list, or the frozen pipeline board (Vermittlung).
+  const [bewerbungenSub, setBewerbungenSub] = React.useState('bewerbungen');
   // Live data sources. Each tracks loading/error and never falls back to
   // fabricated sample data — a recruiter must only ever see real records.
   const listMandates = React.useCallback(() => window.RecruitApi.listMandates(), []);
@@ -183,14 +185,17 @@ function Workspace({ user, onLogout }) {
   const listPlacements = React.useCallback(() => window.RecruitApi.listPlacements(), []);
   const listApplications = React.useCallback(() => window.RecruitApi.listApplications(), []);
   const listJobPostings = React.useCallback(() => window.RecruitApi.listJobPostings(), []);
+  const listJobApplications = React.useCallback(() => window.RecruitApi.listJobApplications(), []);
   const mandatesRes = useResource(listMandates, { enabled: vermittlung });
   const talentsRes = useResource(listTalents);
   const placementsRes = useResource(listPlacements, { enabled: vermittlung });
   const applicationsRes = useResource(listApplications);
   const jobPostingsRes = useResource(listJobPostings);
+  const jobApplicationsRes = useResource(listJobApplications);
 
   const mandates = mandatesRes.data;
   const jobPostings = jobPostingsRes.data;
+  const jobApplications = jobApplicationsRes.data;
   // Rows with an undo-pending delete are hidden optimistically (#200); the real
   // DELETE fires when the snackbar times out, and "Undo" un-hides them.
   const [hiddenIds, setHiddenIds] = React.useState(() => new Set());
@@ -251,20 +256,14 @@ function Workspace({ user, onLogout }) {
   const addTalent = () => setFormKind('talent');
   const addPlacement = () => setFormKind('placement');
 
-  // Apply on a candidate's behalf from Matching: record the application (which
-  // captures the posting's company + role) and refresh the pipeline so it shows
-  // up on the Applications board.
-  const applyFromMatching = (job, talent, pdfBase64) =>
-    window.RecruitApi.applyCandidate(job, talent, pdfBase64).then((app) => {
-      applicationsRes.reload();
-      return app;
-    });
-
   // "Bereits gespeichert → öffnen" from Matching: jump to Stellen and open it.
   const openPosting = (id) => {
     setPostingFocus(id);
     setNav('stellen');
   };
+
+  // Open a job application (new or existing) in the Bewerbungs-Editor (AK-2.1/2.2).
+  const openApplicationEditor = (application) => setOpenApplication(application);
 
   // Move an application to another pipeline stage (drag or the card's dropdown),
   // then refresh so the board reflects the persisted status.
@@ -456,8 +455,8 @@ function Workspace({ user, onLogout }) {
     if (window.UndoDelete) window.UndoDelete.flush();
     setOpenTalent(null);
     setOpenPipeline(null);
+    setOpenApplication(null);
     setEditing(null);
-    setMappeFor(null);
     setFormKind(null);
     setFormPrefill(null);
     setEditRecord(null);
@@ -493,8 +492,8 @@ function Workspace({ user, onLogout }) {
       setNav('uebersicht');
       setOpenTalent(null);
       setOpenPipeline(null);
+      setOpenApplication(null);
       setEditing(null);
-      setMappeFor(null);
       setFormKind(null);
       setEditRecord(null);
     }
@@ -505,7 +504,6 @@ function Workspace({ user, onLogout }) {
   const goPipeline = (m) => setOpenPipeline(m.id);
 
   const talent = openTalent && talents.find((t) => t.id === openTalent);
-  const talentApps = (id) => apps.filter((a) => a.talentId === id);
   const editTalent = editing && talents.find((t) => t.id === editing);
 
   // a mandate's pipeline board takes over the whole canvas
@@ -525,6 +523,22 @@ function Workspace({ user, onLogout }) {
     });
   }
 
+  // The Bewerbungs-Editor takes over the whole canvas (AK-2.1).
+  if (openApplication) {
+    return renderShell({
+      active: 'bewerbungen',
+      title: `${openApplication.postingCompany} · ${openApplication.postingTitle}`,
+      subtitle: `Bewerbung für ${openApplication.talentName || 'Mandant'}`,
+      children: (
+        <window.BewerbungsEditor
+          application={openApplication}
+          onClose={() => setOpenApplication(null)}
+          onChanged={() => jobApplicationsRes.reload()}
+        />
+      ),
+    });
+  }
+
   // editor takes over the whole canvas — it lives inside a candidate profile
   if (editTalent) {
     return renderShell({
@@ -532,10 +546,7 @@ function Workspace({ user, onLogout }) {
       title: editTalent.me ? 'Meine Dokumente' : editTalent.name,
       subtitle: 'Lebenslauf & Anschreiben bearbeiten',
       children: (
-        <>
-          <window.Editor talent={editTalent} onClose={() => setEditing(null)} onCreateMappe={() => { setMappeFor(editTalent); }} onOpenSettings={() => { setEditing(null); setOpenTalent(null); setNav('einstellungen'); }} />
-          {mappeFor && <window.ApplyModal target={{ talent: mappeFor }} onClose={() => setMappeFor(null)} />}
-        </>
+        <window.Editor talent={editTalent} onClose={() => setEditing(null)} onOpenSettings={() => { setEditing(null); setOpenTalent(null); setNav('einstellungen'); }} />
       ),
     });
   }
@@ -545,7 +556,7 @@ function Workspace({ user, onLogout }) {
   if (talent) {
     title = talent.me ? 'Mein Profil' : talent.name;
     subtitle = 'Lebenslauf, Anhänge und Bewerbungen';
-    body = <window.TalentProfile talent={talent} apps={talentApps(talent.id)} onBack={back} onEdit={() => setEditing(talent.id)} onCreateMappe={() => setMappeFor(talent)} />;
+    body = <window.TalentProfile talent={talent} onBack={back} onEdit={() => setEditing(talent.id)} onOpenApplication={openApplicationEditor} />;
   } else {
     // Guard against an unknown nav key — destructuring `undefined` here would
     // white-screen the whole workspace.
@@ -573,6 +584,7 @@ function Workspace({ user, onLogout }) {
         onChanged={() => jobPostingsRes.reload()}
         focusId={postingFocus}
         onFocusConsumed={() => setPostingFocus(null)}
+        onOpenApplication={openApplicationEditor}
       />
     ));
     else if (nav === 'matching') body = (
@@ -580,16 +592,24 @@ function Workspace({ user, onLogout }) {
         talents={talents}
         mandates={vermittlung ? mandates : undefined}
         onCreateMandate={vermittlung ? mandateFromJob : undefined}
-        onApply={applyFromMatching}
         onOpenPosting={openPosting}
         onAdopted={() => jobPostingsRes.reload()}
       />
     );
-    else if (nav === 'bewerbungen') body = withState(applicationsRes, (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '100%' }}>
-        <window.PipelineBoard apps={apps} talents={talents} onOpen={goTalent} onMove={moveApplication} onDelete={deleteApplication} />
-      </div>
-    ));
+    else if (nav === 'bewerbungen') body =
+      vermittlung && bewerbungenSub === 'pipeline'
+        ? withState(applicationsRes, (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '100%' }}>
+            <window.PipelineBoard apps={apps} talents={talents} onOpen={goTalent} onMove={moveApplication} onDelete={deleteApplication} />
+          </div>
+        ))
+        : withState(jobApplicationsRes, (
+          <window.Bewerbungen
+            applications={jobApplications}
+            onOpen={openApplicationEditor}
+            onChanged={() => jobApplicationsRes.reload()}
+          />
+        ));
     else if (nav === 'einstellungen') body = <window.SettingsView user={user} onLogout={onLogout} />;
     else if (nav === 'mehr') body = <window.MoreView onNavigate={goNav} />;
     else if (vermittlung && nav === 'mandate') body = withState(mandatesRes, <window.MandateView mandates={shownMandates} onEdit={editMandate} onOpenPipeline={goPipeline} />);
@@ -614,6 +634,8 @@ function Workspace({ user, onLogout }) {
   const subTabs =
     !talent && (nav === 'stellen' || nav === 'matching')
       ? <A.Tabs tabs={[{ id: 'stellen', label: 'Gespeichert' }, { id: 'matching', label: 'Stellen finden' }]} value={nav} onChange={(id) => goNav(id)} style={{ marginBottom: '18px' }} />
+      : !talent && vermittlung && nav === 'bewerbungen'
+      ? <A.Tabs tabs={[{ id: 'bewerbungen', label: 'Bewerbungen' }, { id: 'pipeline', label: 'Pipeline' }]} value={bewerbungenSub} onChange={(id) => setBewerbungenSub(id)} style={{ marginBottom: '18px' }} />
       : !talent && vermittlung && (nav === 'berichte' || nav === 'platzierungen')
       ? <A.Tabs tabs={[{ id: 'berichte', label: 'Performance' }, { id: 'platzierungen', label: 'Platzierungen' }]} value={nav === 'platzierungen' ? 'platzierungen' : 'berichte'} onChange={(id) => setNav(id)} style={{ marginBottom: '18px' }} />
       : null;
@@ -648,7 +670,6 @@ function Workspace({ user, onLogout }) {
         )}
         {subTabs}
         {body}
-        {mappeFor && <window.ApplyModal target={{ talent: mappeFor }} onClose={() => setMappeFor(null)} />}
         {formKind && (
           <window.RecordFormModal
             kind={formKind}

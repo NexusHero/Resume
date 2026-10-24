@@ -1,6 +1,7 @@
 import type { Application, AuditEvent } from '../../domain/application.js';
 import type { SavedSearch } from '../../domain/saved-search.js';
 import type { JobPosting } from '../../domain/job-posting.js';
+import type { JobApplication, JobApplicationStatusChange } from '../../domain/job-application.js';
 import type { Mandate, MandatePriority, MandateStatus } from '../../domain/mandate.js';
 import type { Talent } from '../../domain/talent.js';
 import type { Placement, PlacementStatus } from '../../domain/placement.js';
@@ -20,6 +21,7 @@ import {
   auditEvents,
   savedSearches,
   jobPostings,
+  jobApplications,
   mandates,
   talents,
   placements,
@@ -40,6 +42,8 @@ type SavedSearchRow = typeof savedSearches.$inferSelect;
 type SavedSearchInsert = typeof savedSearches.$inferInsert;
 type JobPostingRow = typeof jobPostings.$inferSelect;
 type JobPostingInsert = typeof jobPostings.$inferInsert;
+type JobApplicationRow = typeof jobApplications.$inferSelect;
+type JobApplicationInsert = typeof jobApplications.$inferInsert;
 type MandateRow = typeof mandates.$inferSelect;
 type MandateInsert = typeof mandates.$inferInsert;
 type TalentRow = typeof talents.$inferSelect;
@@ -181,6 +185,40 @@ export function jobPostingToRow(posting: JobPosting): JobPostingInsert {
     requirements: posting.requirements,
     descriptionIncomplete: posting.descriptionIncomplete,
     createdAt: posting.createdAt,
+  };
+}
+
+export function rowToJobApplication(row: JobApplicationRow): JobApplication {
+  return {
+    id: row.id,
+    ownerId: row.ownerId,
+    jobPostingId: row.jobPostingId,
+    postingCompany: row.postingCompany,
+    postingTitle: row.postingTitle,
+    talentId: row.talentId,
+    talentName: row.talentName,
+    status: row.status as JobApplication['status'],
+    statusHistory: row.statusHistory as JobApplicationStatusChange[],
+    documents: row.documents,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export function jobApplicationToRow(application: JobApplication): JobApplicationInsert {
+  return {
+    id: application.id,
+    ownerId: application.ownerId,
+    jobPostingId: application.jobPostingId,
+    postingCompany: application.postingCompany,
+    postingTitle: application.postingTitle,
+    talentId: application.talentId,
+    talentName: application.talentName,
+    status: application.status,
+    statusHistory: application.statusHistory,
+    documents: application.documents,
+    createdAt: application.createdAt,
+    updatedAt: application.updatedAt,
   };
 }
 

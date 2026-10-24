@@ -35,12 +35,26 @@ function FormGroup({ title, children, onAdd }) {
   );
 }
 
-function Editor({ talent, onClose, onCreateMappe, onOpenSettings }) {
+/* The full bolt-on toolbar of the talent editor (ADR-0059): the application
+   editor passes a reduced `tools` set so no base-write path exists from it. */
+const DEFAULT_TOOLS = ['import', 'ats', 'pitch', 'outreach', 'translate', 'pdf', 'ai'];
+
+function Editor({ talent, onClose, onOpenSettings, getDocuments, saveDocuments, renderPreviewHtml, tools, exportPdf }) {
   /* ---- Identity & persistence flags first — used by every handler below.
      The pinned "me" profile has no server row, so it stays local-only. ---- */
   const talentId = talent.id;
   const canPersist = !!talentId && talentId !== 'me';
   const { isMobile } = window.useViewport ? window.useViewport() : { isMobile: false };
+  // Persistence + preview seam (ADR-0059): defaults are the talent-editor calls;
+  // the application editor overrides them to read/write the embedded copy.
+  const loadDocs = getDocuments || (() => window.RecruitApi.getTalentDocuments(talentId));
+  const persistDocs =
+    saveDocuments || ((payload) => window.RecruitApi.saveTalentDocuments(talentId, payload));
+  const renderPreview =
+    renderPreviewHtml ||
+    ((docs) => window.RecruitApi.previewDocumentsHtml(talentId || 'me', docs));
+  const toolset = new Set(tools ?? DEFAULT_TOOLS);
+  const hasTool = (t) => toolset.has(t);
 
   const [doc, setDoc] = React.useState('lebenslauf');
   const previewRef = React.useRef(null);
@@ -177,8 +191,7 @@ function Editor({ talent, onClose, onCreateMappe, onOpenSettings }) {
     if (!api || typeof api.previewDocumentsHtml !== 'function') return undefined;
     let cancelled = false;
     const timer = setTimeout(() => {
-      api
-        .previewDocumentsHtml(talentId || 'me', { contact, resume, letter, style: cfg })
+      renderPreview({ contact, resume, letter, style: cfg })
         .then((html) => { if (!cancelled && typeof html === 'string') setPreviewHtml(html); })
         .catch(() => { /* keep the last good preview on a transient failure */ });
     }, 300);
@@ -218,7 +231,7 @@ function Editor({ talent, onClose, onCreateMappe, onOpenSettings }) {
     setHydrated(false);
     baseline.current = null;
     if (!canPersist) { setHydrated(true); return undefined; }
-    window.RecruitApi.getTalentDocuments(talentId)
+    loadDocs()
       .then((d) => {
         if (!alive) return;
         // Apply the loaded content and flip `hydrated` in the *same* React batch
@@ -252,7 +265,7 @@ function Editor({ talent, onClose, onCreateMappe, onOpenSettings }) {
     const payload = { contact, resume, letter, style: cfg };
     pendingSave.current = { talentId, payload, serialized };
     saveTimer.current = setTimeout(() => {
-      window.RecruitApi.saveTalentDocuments(talentId, payload)
+      persistDocs(payload)
         .then(() => { baseline.current = serialized; setSaveState('saved'); })
         .catch(() => setSaveState('error'))
         .finally(() => { pendingSave.current = null; });
@@ -267,7 +280,7 @@ function Editor({ talent, onClose, onCreateMappe, onOpenSettings }) {
     const pending = pendingSave.current;
     if (!pending) return;
     pendingSave.current = null;
-    window.RecruitApi.saveTalentDocuments(pending.talentId, pending.payload).catch(() => {});
+    persistDocs(pending.payload).catch(() => {});
   }, []);
 
   const saveLabel = { saving: 'Speichere…', saved: 'Gespeichert', error: 'Nicht gespeichert' };
@@ -357,15 +370,22 @@ function Editor({ talent, onClose, onCreateMappe, onOpenSettings }) {
 
   /* ---- Export: download the resume + cover letter as a real PDF file. A bare
      window.open() was unreliable (strict CSP / PWA / native shell), so fetch the
-     bytes and save them — and surface any failure instead of doing nothing. ---- */
+     bytes and save them — and surface any failure instead of doing nothing.
+     Download seam (ADR-0059 §6.3): the talent editor exports the stored documents;
+     the application editor overrides it to render the embedded copy (via the
+     documents-body dossier-preview endpoint — no new endpoint, no base-write). ---- */
+  const runExportPdf =
+    exportPdf ||
+    ((docs, filename) =>
+      window.RecruitApi.downloadTalentDocumentsPdf(talentId, filename || `documents-${talentId}.pdf`));
   const [pdfMsg, setPdfMsg] = React.useState(null);
   const [pdfBusy, setPdfBusy] = React.useState(false);
-  const exportPdf = async () => {
+  const handleExportPdf = async () => {
     setPdfMsg(null);
     setPdfBusy(true);
     try {
       const base = (contact.name || 'documents').trim().replace(/\s+/g, '-') || 'documents';
-      await window.RecruitApi.downloadTalentDocumentsPdf(talentId, `${base}.pdf`);
+      await runExportPdf({ contact, resume, letter, style: cfg }, `${base}.pdf`);
     } catch {
       setPdfMsg('Der PDF-Download ist fehlgeschlagen. Bitte versuche es erneut.');
     }
@@ -393,31 +413,33 @@ function Editor({ talent, onClose, onCreateMappe, onOpenSettings }) {
         )}
         {canPersist && (
           <>
-            <EdPill icon="upload" onClick={() => setModal('import')}>CV importieren</EdPill>
-            <EdPill icon="search" onClick={() => setModal('ats')}>ATS-Check</EdPill>
-            {(!window.useWorkspaceSettings || window.useWorkspaceSettings().vermittlung) && (
+            {hasTool('import') && <EdPill icon="upload" onClick={() => setModal('import')}>CV importieren</EdPill>}
+            {hasTool('ats') && <EdPill icon="search" onClick={() => setModal('ats')}>ATS-Check</EdPill>}
+            {hasTool('pitch') && (!window.useWorkspaceSettings || window.useWorkspaceSettings().vermittlung) && (
               <EdPill icon="briefcase" onClick={() => setModal('pitch')}>Pitch</EdPill>
             )}
-            {(!window.useWorkspaceSettings || window.useWorkspaceSettings().vermittlung) && (
+            {hasTool('outreach') && (!window.useWorkspaceSettings || window.useWorkspaceSettings().vermittlung) && (
               <EdPill icon="send" onClick={() => setModal('outreach')}>Ansprache</EdPill>
             )}
-            <EdPill icon="download" onClick={exportPdf} disabled={pdfBusy}>{pdfBusy ? 'PDF…' : 'PDF'}</EdPill>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>
-                <ED.Icon name="globe" size={13} /> Übersetzen
+            {hasTool('pdf') && <EdPill icon="download" onClick={handleExportPdf} disabled={pdfBusy}>{pdfBusy ? 'PDF…' : 'PDF'}</EdPill>}
+            {hasTool('translate') && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>
+                  <ED.Icon name="globe" size={13} /> Übersetzen
+                </span>
+                {[['en', 'EN'], ['de', 'DE']].map(([lang, label]) => (
+                  <EdPill
+                    key={lang}
+                    onClick={() => runTranslate(lang)}
+                    disabled={!!translating}
+                    title={`Dokumente auf ${lang === 'de' ? 'Deutsch' : 'Englisch'} übersetzen`}
+                    style={{ fontWeight: 600, padding: '4px 10px', opacity: translating && translating !== lang ? 0.5 : 1 }}
+                  >
+                    {translating === lang ? '…' : label}
+                  </EdPill>
+                ))}
               </span>
-              {[['en', 'EN'], ['de', 'DE']].map(([lang, label]) => (
-                <EdPill
-                  key={lang}
-                  onClick={() => runTranslate(lang)}
-                  disabled={!!translating}
-                  title={`Dokumente auf ${lang === 'de' ? 'Deutsch' : 'Englisch'} übersetzen`}
-                  style={{ fontWeight: 600, padding: '4px 10px', opacity: translating && translating !== lang ? 0.5 : 1 }}
-                >
-                  {translating === lang ? '…' : label}
-                </EdPill>
-              ))}
-            </span>
+            )}
           </>
         )}
       </div>
@@ -615,7 +637,7 @@ function Editor({ talent, onClose, onCreateMappe, onOpenSettings }) {
               <ED.Icon name="eye" size={14} /> Live-Vorschau · {doc === 'lebenslauf' ? 'Lebenslauf' : 'Anschreiben'}
             </span>
             <div style={{ display: 'flex', gap: '8px' }}>
-              {aiReady === false && (
+              {hasTool('ai') && aiReady === false && (
                 <span style={{ alignSelf: 'center' }}>
                   {window.AiNotConfiguredHint ? (
                     <window.AiNotConfiguredHint compact live={false} />
@@ -631,11 +653,12 @@ function Editor({ talent, onClose, onCreateMappe, onOpenSettings }) {
                   )}
                 </span>
               )}
-              <button onClick={runAI} disabled={aiReady === false} title={aiReady === false ? 'KI nicht eingerichtet — in den Einstellungen konfigurieren' : undefined} style={{ appearance: 'none', cursor: aiReady === false ? 'default' : 'pointer', opacity: aiReady === false ? 0.5 : 1, border: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12.5px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-md)', padding: isMobile ? '10px 14px' : '7px 12px', minHeight: isMobile ? '44px' : undefined }}>
-                <ED.Icon name="zap" size={14} />KI anpassen
-              </button>
-              <ED.Button size="sm" variant="outline" iconLeft={<ED.Icon name="download" size={14} />} onClick={exportPdf} disabled={pdfBusy}>{pdfBusy ? 'PDF…' : 'PDF'}</ED.Button>
-              <ED.Button size="sm" variant="primary" iconRight={<ED.Icon name="arrowRight" size={14} />} onClick={onCreateMappe}>Zur Mappe</ED.Button>
+              {hasTool('ai') && (
+                <button onClick={runAI} disabled={aiReady === false} title={aiReady === false ? 'KI nicht eingerichtet — in den Einstellungen konfigurieren' : undefined} style={{ appearance: 'none', cursor: aiReady === false ? 'default' : 'pointer', opacity: aiReady === false ? 0.5 : 1, border: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12.5px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-md)', padding: isMobile ? '10px 14px' : '7px 12px', minHeight: isMobile ? '44px' : undefined }}>
+                  <ED.Icon name="zap" size={14} />KI anpassen
+                </button>
+              )}
+              {hasTool('pdf') && <ED.Button size="sm" variant="outline" iconLeft={<ED.Icon name="download" size={14} />} onClick={handleExportPdf} disabled={pdfBusy}>{pdfBusy ? 'PDF…' : 'PDF'}</ED.Button>}
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '8px 16px', borderBottom: '1px solid var(--border)', flexShrink: 0, flexWrap: 'wrap' }}>

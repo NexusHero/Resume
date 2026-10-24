@@ -223,6 +223,70 @@ export function withoutRawText(documents: TalentDocuments): TalentDocuments {
   return { ...documents, resume: { ...documents.resume, rawText: '' } };
 }
 
+/**
+ * The document copy for a job application (ADR-0059). Copies the **structured**
+ * fields (`contact`, `resume` without `rawText`, `letter`, `style`) deeply so an
+ * edit to the copy never mutates the base CV (AK-2.3). Two things are deliberately
+ * **not** copied:
+ *
+ * - `resume.rawText` — the internal raw source of the base-CV import (ADR-0057
+ *   §4): never rendered, never sent, only the AI-import's own input. Duplicating
+ *   up to 50 KB of personal raw data per application would be data-minimisation
+ *   questionable; the application works on the structured fields.
+ * - `translations` — language variants of the **base** dataset. The copy is the
+ *   single-language working copy for exactly one posting; translating stays a
+ *   base-editor concern.
+ *
+ * `ownerId`/`talentId` are kept (provenance) so every rendering/editor path that
+ * expects a `TalentDocuments` keeps working unchanged.
+ */
+export function copyDocumentsForApplication(documents: TalentDocuments): TalentDocuments {
+  const base = withoutRawText(documents);
+  const { translations: _translations, ...clean } = base;
+  void _translations;
+  return {
+    ownerId: clean.ownerId,
+    talentId: clean.talentId,
+    contact: { ...clean.contact },
+    resume: {
+      summary: clean.resume.summary,
+      experience: clean.resume.experience.map((e) => ({
+        ...e,
+        bullets: [...e.bullets],
+        skills: [...e.skills],
+      })),
+      education: clean.resume.education.map((e) => ({ ...e })),
+      skillGroups: clean.resume.skillGroups.map((g) => ({ ...g, items: [...g.items] })),
+      rawText: '',
+    },
+    letter: { ...clean.letter, absaetze: [...clean.letter.absaetze] },
+    style: { ...clean.style },
+    updatedAt: clean.updatedAt,
+  };
+}
+
+/**
+ * An empty document set for a talent that has no saved base documents yet. The
+ * `contact` block is seeded by the caller (from the talent for `create`, or blank
+ * during the legacy migration where the talent may be gone).
+ */
+export function emptyDocuments(
+  ownerId: string,
+  talentId: string,
+  contact: DocumentContact,
+  updatedAt: string,
+): TalentDocuments {
+  return {
+    ownerId,
+    talentId,
+    contact,
+    resume: { ...emptyResume },
+    letter: { ...emptyLetter },
+    style: { ...defaultStyle },
+    updatedAt,
+  };
+}
+
 /** Normalise legacy documents (no `rawText`) read straight from a repository. */
 export function normalizeDocuments(documents: TalentDocuments): TalentDocuments {
   if (typeof documents.resume.rawText === 'string') return documents;

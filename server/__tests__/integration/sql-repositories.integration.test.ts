@@ -13,10 +13,12 @@ import { SqlWorkspaceSettingsStore } from '../../src/adapters/sql/sql-workspace-
 import { SqlDocumentRepository } from '../../src/adapters/sql/sql-document-repository.js';
 import { SqlAttachmentStore } from '../../src/adapters/sql/sql-attachment-store.js';
 import { SqlJobPostingRepository } from '../../src/adapters/sql/sql-job-posting-repository.js';
+import { SqlJobApplicationRepository } from '../../src/adapters/sql/sql-job-application-repository.js';
 import { loadConfig } from '../../src/config.js';
 import type { Application, AuditEvent } from '../../src/domain/application.js';
 import type { SavedSearch } from '../../src/domain/saved-search.js';
 import type { JobPosting } from '../../src/domain/job-posting.js';
+import type { JobApplication } from '../../src/domain/job-application.js';
 import type { Mandate } from '../../src/domain/mandate.js';
 import type { Talent } from '../../src/domain/talent.js';
 import type { Placement } from '../../src/domain/placement.js';
@@ -48,7 +50,7 @@ suite('SQL repositories (real Postgres)', () => {
 
   beforeEach(async () => {
     await pool.query(
-      'TRUNCATE applications, audit_events, saved_searches, mandates, talents, placements, talent_documents, attachments, users, password_reset_tokens, api_keys, workspace_settings, job_postings RESTART IDENTITY',
+      'TRUNCATE applications, audit_events, saved_searches, mandates, talents, placements, talent_documents, attachments, users, password_reset_tokens, api_keys, workspace_settings, job_postings, job_applications RESTART IDENTITY',
     );
   });
 
@@ -138,6 +140,50 @@ suite('SQL repositories (real Postgres)', () => {
     requirements: ['Rust'],
     descriptionIncomplete: false,
     createdAt: '2026-06-25T10:00:00.000Z',
+    ...overrides,
+  });
+
+  const jobApplication = (
+    id: string,
+    ownerId = 'owner1',
+    overrides: Partial<JobApplication> = {},
+  ): JobApplication => ({
+    id,
+    ownerId,
+    jobPostingId: 'p1',
+    postingCompany: 'Acme',
+    postingTitle: 'Engineer',
+    talentId: 't1',
+    talentName: 'Ada',
+    status: 'draft',
+    statusHistory: [{ status: 'draft', at: '2026-06-25T10:00:00.000Z' }],
+    documents: {
+      ownerId,
+      talentId: 't1',
+      contact: { name: 'Ada', role: '', email: '', phone: '', location: '', linkedin: '' },
+      resume: { summary: 'S.', experience: [], education: [], skillGroups: [], rawText: '' },
+      letter: {
+        firma: '',
+        ansprechpartner: '',
+        strasse: '',
+        plzOrt: '',
+        betreff: '',
+        anrede: '',
+        absaetze: ['p'],
+        gruss: '',
+      },
+      style: {
+        template: 'classic',
+        accent: '#2A6FDB',
+        strong: '#1d4ed8',
+        onDark: '#7aa7f5',
+        font: 'var(--font-display)',
+        size: 1,
+      },
+      updatedAt: '2026-06-25T10:00:00.000Z',
+    },
+    createdAt: '2026-06-25T10:00:00.000Z',
+    updatedAt: '2026-06-25T10:00:00.000Z',
     ...overrides,
   });
 
@@ -274,6 +320,44 @@ suite('SQL repositories (real Postgres)', () => {
     const dups = await repo.list('owner1');
     expect(dups).toHaveLength(1);
     expect(dups[0]?.id).toBe('winner');
+  });
+
+  it('SqlJobApplicationRepository_List_FiltersByOwner', async () => {
+    const repo = new SqlJobApplicationRepository({ db });
+    await repo.add(jobApplication('a1', 'owner1'));
+    await repo.add(jobApplication('a2', 'owner2'));
+    expect((await repo.list('owner1')).map((a) => a.id)).toEqual(['a1']);
+    expect((await repo.list('owner1', 't1')).map((a) => a.id)).toEqual(['a1']);
+    expect(await repo.list('owner1', 'nope')).toEqual([]);
+    expect(await repo.findById('owner1', 'a2')).toBeNull();
+  });
+
+  it('SqlJobApplicationRepository_AddThenFindByPostingAndTalent_ReturnsExisting', async () => {
+    const repo = new SqlJobApplicationRepository({ db });
+    await repo.add(jobApplication('a1', 'owner1'));
+    expect(await repo.findByPostingAndTalent('owner1', 'p1', 't1')).toMatchObject({ id: 'a1' });
+    expect(await repo.findByPostingAndTalent('owner1', 'p1', 'other')).toBeNull();
+    expect(await repo.findByPostingAndTalent('owner2', 'p1', 't1')).toBeNull();
+  });
+
+  it('SqlJobApplicationRepository_TwoWorkspaces_AreIsolated', async () => {
+    const repo = new SqlJobApplicationRepository({ db });
+    // Same (posting, talent) in two workspaces → both exist, scoped reads see only their own.
+    await repo.add(jobApplication('a1', 'owner1'));
+    await repo.add(jobApplication('a2', 'owner2'));
+    expect((await repo.list('owner1')).map((a) => a.id)).toEqual(['a1']);
+    expect((await repo.list('owner2')).map((a) => a.id)).toEqual(['a2']);
+    expect(await repo.delete('owner2', 'a1')).toBe(false);
+  });
+
+  it('SqlJobApplicationRepository_ConcurrentDuplicateInsert_ReturnsExisting', async () => {
+    const repo = new SqlJobApplicationRepository({ db });
+    // Winner first; then a second add with the same (posting, talent) hits the
+    // unique index (23505) and is swallowed — the repository re-queries.
+    await repo.add(jobApplication('winner', 'owner1'));
+    await repo.add(jobApplication('loser', 'owner1'));
+    expect(await repo.list('owner1')).toHaveLength(1);
+    expect((await repo.list('owner1'))[0]?.id).toBe('winner');
   });
 
   it('Mandates_OwnerScoped_CrudRoundTrips', async () => {
@@ -534,6 +618,31 @@ suite('SQL repositories (real Postgres)', () => {
         'job_postings_owner_url_idx',
       ]),
     );
+  });
+
+  it('Migrate_FreshDatabase_CreatesJobApplicationsTableAndIndexes', async () => {
+    const table = await pool.query("SELECT to_regclass('job_applications') AS reg");
+    expect(table.rows[0].reg).not.toBeNull();
+    const indexes = await pool.query(
+      "SELECT indexname FROM pg_indexes WHERE tablename = 'job_applications'",
+    );
+    const names = indexes.rows.map((r) => r.indexname as string);
+    expect(names).toEqual(
+      expect.arrayContaining([
+        'job_applications_owner_idx',
+        'job_applications_owner_talent_idx',
+        'job_applications_owner_posting_talent_idx',
+      ]),
+    );
+  });
+
+  it('Migrate_WorkspaceSettings_ApplicationsMigratedFlag', async () => {
+    const store = new SqlWorkspaceSettingsStore({ db });
+    await store.set('ws-flag', { vermittlung: false });
+    // A fresh row carries no flag → reads back falsy (the "not yet migrated" default).
+    expect((await store.get('ws-flag'))?.applicationsMigrated).toBeFalsy();
+    await store.set('ws-flag', { vermittlung: false, applicationsMigrated: true });
+    expect((await store.get('ws-flag'))?.applicationsMigrated).toBe(true);
   });
 
   it('Migrate_SavedSearchesOwnerId_BackfillsToTeam', async () => {

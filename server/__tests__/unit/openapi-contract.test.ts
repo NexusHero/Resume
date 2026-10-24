@@ -10,6 +10,10 @@ import {
   createJobPostingSchema,
   updateJobPostingSchema,
 } from '../../src/domain/job-posting.js';
+import {
+  changeJobApplicationStatusSchema,
+  createJobApplicationSchema,
+} from '../../src/domain/job-application.js';
 import { VERMITTLER_ROUTES } from '../support/route-inventory.js';
 
 /**
@@ -72,6 +76,8 @@ const CASES: Array<[string, unknown]> = [
   ['CreateJobPostingInput', createJobPostingSchema],
   ['AdoptJobPostingInput', adoptJobPostingSchema],
   ['UpdateJobPostingInput', updateJobPostingSchema],
+  ['CreateJobApplicationInput', createJobApplicationSchema],
+  ['ChangeJobApplicationStatusInput', changeJobApplicationStatusSchema],
 ];
 
 describe('OpenAPI contract stays in sync with the zod boundary schemas', () => {
@@ -186,6 +192,61 @@ describe('Phase 1 OpenAPI contract (ADR-0058, Stellen)', () => {
     // failure and an unusable provider reply (G5 review).
     expect(block).toContain('ValidationProblem');
     expect(block).toContain('UpstreamProvider');
+  });
+});
+
+describe('Phase 2 OpenAPI contract (ADR-0059, Bewerbungen)', () => {
+  it('OpenApi_JobApplicationSchema_DocumentsEveryField', () => {
+    const props = openApiProps('JobApplication');
+    expect(props).toEqual(
+      expect.arrayContaining([
+        'id',
+        'ownerId',
+        'jobPostingId',
+        'postingCompany',
+        'postingTitle',
+        'talentId',
+        'talentName',
+        'status',
+        'statusHistory',
+        'documents',
+        'createdAt',
+        'updatedAt',
+      ]),
+    );
+    expect(SPEC).toContain('enum: [draft, sent, interview, offer, rejected]');
+  });
+
+  it('OpenApi_JobApplicationRoutes_Exist', () => {
+    for (const path of [
+      '/job-applications',
+      '/job-applications/{id}',
+      '/job-applications/{id}/documents',
+      '/job-applications/{id}/letter',
+      '/job-applications/{id}/status',
+    ]) {
+      expect(SPEC).toContain(`  ${path}:`);
+    }
+    for (const op of [
+      'listJobApplications',
+      'createJobApplication',
+      'getJobApplication',
+      'deleteJobApplication',
+      'getJobApplicationDocuments',
+      'saveJobApplicationDocuments',
+      'generateJobApplicationLetter',
+      'changeJobApplicationStatus',
+    ]) {
+      expect(SPEC).toContain(`operationId: ${op}`);
+    }
+  });
+
+  it('OpenApi_Letter_Documents503AiNotConfiguredAnd502UpstreamProvider', () => {
+    const block = operationBlock('/api/v1/job-applications/:id/letter', 'post');
+    expect(block).toContain('AiNotConfigured');
+    expect(block).toContain('UpstreamProvider');
+    expect(block).toContain('NotFound');
+    expect(block).toContain('Unauthorized');
   });
 });
 

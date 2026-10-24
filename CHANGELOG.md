@@ -42,6 +42,29 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
     and the UI shows "Bereits gespeichert → öffnen".
   - New routes under `/api/v1/job-postings` (list/create/adopt/extract/detail/
     update/delete), documented in the OpenAPI spec.
+- **Phase 2 — Bewerbung (ADR-0059).** `JobApplication` links a Stelle with a
+  Mandant and carries its own document copy and a status history:
+  - **„Bewerbung erstellen → Mandant wählen"** on a posting creates a Bewerbung
+    with a **copy** of the base CV + cover letter (the base stays byte-identical)
+    and opens the Bewerbungs-Editor.
+  - **Exactly one** Bewerbung per (Stelle, Mandant); a second attempt returns the
+    existing one (`alreadyExisting`, HTTP 200).
+  - An **Anschreiben** is generated from the **full ad text** (never skill tags),
+    with deterministic self-checks (company/title, ad language, 250–400 words,
+    ≥ 2 ad references) plus the grounding report; without a key it is
+    `503 ai-not-configured` (no template).
+  - A **status** with an append-only timestamp history (`draft → sent → interview →
+offer / rejected`, any transition allowed).
+  - **Migration of the frozen pipeline:** legacy `Application` records **with** a
+    `talentId` become a `JobPosting` (source `migrated`) + a `JobApplication`
+    (copy of the current base CV), idempotent via the `applicationsMigrated`
+    workspace flag (records without `talentId` stay frozen).
+  - New routes under `/api/v1/job-applications` (list/create/detail/documents/
+    letter/status/delete), documented in the OpenAPI spec.
+  - **PDF-Export der Kopie:** der Bewerbungs-Editor exportiert die **Kopie**
+    (nicht die Basis) über den bestehenden Documents-Body-Seam
+    (`POST /talents/:id/dossier/pdf` ohne Anhänge) — kein neuer Endpunkt, kein
+    Basis-Schreibpfad.
 
 ### Changed (breaking)
 
@@ -67,6 +90,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
   table stays for one release (a later release drops it); `users.llm_provider`
   is preserved (the provider choice stays, limited to providers with a server
   key).
+- **The "Bewerbungen" nav now shows the new Bewerbung list** (not the old
+  pipeline board). The frozen `PipelineBoard` is reachable only under
+  `vermittlung` as the "Pipeline" sub-tab. The TalentProfile "Bewerbungen" tab
+  shows the new `JobApplication`s (not the pipeline `Application`s).
 
 ### Changed
 
@@ -80,6 +107,22 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
   `api_keys` **rows** but keeps the table (expand/contract, `DROP TABLE` follows
   in a later release). The persisted per-user provider choice
   (`users.llm_provider`) is kept, limited to providers with a server key.
+
+### Removed
+
+- **`ApplyModal`** (AK-2.8). The unified "Bewerbung erfassen" modal is gone —
+  there is now only the Bewerbungs-Editor, which reuses the existing Editor
+  components. The "Zur Mappe", "Bewerbungsmappe erstellen" and "Neue Mappe"
+  affordances are removed (the Mappe is Phase 4).
+- **The matching "X bewerben"/"Bewerben" path and `applyCandidate`** (ADR-0059,
+  Q7). Applying on a candidate's behalf from Matching is removed and replaced by
+  "Stelle übernehmen → Bewerbung erstellen"; the frozen `/applications` backend
+  and Pipeline board stay untouched.
+- **The "verknüpft mit Bewerbung"-badge block** on the TalentProfile attachments
+  tab (ADR-0059 §3.4). The linkage never had a data source — the frozen
+  `Application` entity does not persist attachment ids and the new `JobApplication`
+  deliberately does not copy attachments; the attachment selection for the Mappe
+  is Phase 4.
 
 ### Fixed
 

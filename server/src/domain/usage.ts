@@ -14,6 +14,7 @@ export const USAGE_FEATURES = [
   'candidatePrep', // candidate-facing interview preparation pack
   'translate', // translate a talent's documents into another language
   'postingExtract', // extract the structured fields of a pasted/URL job posting
+  'applicationLetter', // generate an Anschreiben from a saved posting's full ad text
 ] as const;
 export type UsageFeature = (typeof USAGE_FEATURES)[number];
 

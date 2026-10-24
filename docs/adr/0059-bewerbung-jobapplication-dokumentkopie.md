@@ -25,14 +25,14 @@ ADR-0057 **eingefroren** und gehört hinter den `vermittlung`-Schalter.
 Beide Konzepte kollidieren im Namen „Bewerbung“/„Application“, sind aber fachlich
 verschieden:
 
-| | Altes `Application` (Pipeline) | Neues „Bewerbung“ (Hauptweg) |
-|---|---|---|
-| Bezug | Firma + Position als Freitext, kein Stellenbezug | verweist auf `JobPosting` **und** `Talent` |
-| Daten | Einreichung + archivierte PDF | **Dokument-Kopie** (CV + Anschreiben) als Arbeitskopie |
-| Status | `sent/screening/interview/offer/hired/rejected` (Board-Stadien) | `draft/sent/interview/offer/rejected` (Entwurf → versendet → Gespräch → Zusage/Absage) |
-| Verlauf | `AuditEvent` + Git-Commits | Zeitstempel-`statusHistory` auf dem Datensatz |
-| Sichtbarkeit | hinter `vermittlung` | immer (Hauptweg) |
-| Lebenszyklus | eingefroren | wird in Phase 3/4 erweitert (Magic Pen, Mappe) |
+|              | Altes `Application` (Pipeline)                                  | Neues „Bewerbung“ (Hauptweg)                                                           |
+| ------------ | --------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Bezug        | Firma + Position als Freitext, kein Stellenbezug                | verweist auf `JobPosting` **und** `Talent`                                             |
+| Daten        | Einreichung + archivierte PDF                                   | **Dokument-Kopie** (CV + Anschreiben) als Arbeitskopie                                 |
+| Status       | `sent/screening/interview/offer/hired/rejected` (Board-Stadien) | `draft/sent/interview/offer/rejected` (Entwurf → versendet → Gespräch → Zusage/Absage) |
+| Verlauf      | `AuditEvent` + Git-Commits                                      | Zeitstempel-`statusHistory` auf dem Datensatz                                          |
+| Sichtbarkeit | hinter `vermittlung`                                            | immer (Hauptweg)                                                                       |
+| Lebenszyklus | eingefroren                                                     | wird in Phase 3/4 erweitert (Magic Pen, Mappe)                                         |
 
 ## Decision
 
@@ -58,7 +58,7 @@ verschieden:
    Store. Ein Bewerbungs-Datensatz ist damit **ein** Aggregate mit **einem**
    idempotenten Schreibpfad; Löschen der Bewerbung löscht die Kopie automatisch, und
    die Unabhängigkeit (AK-2.3) ist eine Ein-Zeilen-Zusicherung (`a1.documents !==
-   a2.documents !== basis`). Verworfen: ein zweiter `DocumentRepository`-artiger
+a2.documents !== basis`). Verworfen: ein zweiter `DocumentRepository`-artiger
    Port, der das Kopieren/On-Cascade-Löschen über zwei Stores verteilt hätte, ohne
    Produktwert.
 
@@ -82,7 +82,7 @@ verschieden:
    prüft vor dem Anlegen (Service-Check, wie ADR-0058) und liefert bei Treffer die
    bestehende Bewerbung mit `alreadyExisting: true` (HTTP 200, UI „Bewerbung öffnen“).
    Postgres bekommt einen **partiellen Unique-Index `(owner_id, job_posting_id,
-   talent_id)`** als Race-Rückhalt; der sql-Adapter fängt `23505` und re-queried
+talent_id)`** als Race-Rückhalt; der sql-Adapter fängt `23505` und re-queried
    (Muster `SqlJobPostingRepository`). Der fs-Adapter hat nur den Service-Check und
    serialisiert Schreibzugriffe über eine In-Process-Mutex.
 

@@ -79,6 +79,8 @@ export interface AppConfig {
   mail: MailConfig;
   /** Where saved job postings live (fs store). */
   jobPostingsFile: string;
+  /** Where job applications live (fs store). */
+  jobApplicationsFile: string;
   /** Resource limits for the SSRF-guarded user-URL fetch (Q5). */
   jobFetch: JobFetchConfig;
 }
@@ -302,6 +304,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     historyFile: path.join(storeDir, 'history.jsonl'),
     savedSearchesFile: path.join(storeDir, 'saved-searches.json'),
     jobPostingsFile: path.join(storeDir, 'job-postings.json'),
+    jobApplicationsFile: path.join(storeDir, 'job-applications.json'),
     mandatesFile: path.join(storeDir, 'mandates.json'),
     talentsFile: path.join(storeDir, 'talents.json'),
     placementsFile: path.join(storeDir, 'placements.json'),

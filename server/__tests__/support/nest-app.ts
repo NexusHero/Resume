@@ -29,6 +29,7 @@ import {
   JOB_SOURCE,
   APPLICATION_REPOSITORY,
   JOB_POSTING_REPOSITORY,
+  JOB_APPLICATION_REPOSITORY,
   PAGE_FETCHER,
   AUDIT_LOG,
   PDF_ARCHIVE,
@@ -69,6 +70,7 @@ import {
 import {
   InMemoryApplicationRepository,
   InMemoryJobPostingRepository,
+  InMemoryJobApplicationRepository,
   InMemoryArtifactLogRepository,
   InMemoryAssistantSettingsStore,
   InMemoryAssistantSuggestionRepository,
@@ -177,6 +179,7 @@ export async function makeNestApp(
   const fakes: Provider[] = [
     { provide: APPLICATION_REPOSITORY, useValue: new InMemoryApplicationRepository() },
     { provide: JOB_POSTING_REPOSITORY, useValue: new InMemoryJobPostingRepository() },
+    { provide: JOB_APPLICATION_REPOSITORY, useValue: new InMemoryJobApplicationRepository() },
     { provide: PAGE_FETCHER, useValue: opts.pageFetcher ?? new FakePageFetcher() },
     { provide: AUDIT_LOG, useValue: new InMemoryAuditLog() },
     { provide: PDF_ARCHIVE, useValue: new InMemoryPdfArchive() },

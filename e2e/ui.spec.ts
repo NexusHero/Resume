@@ -313,110 +313,6 @@ test.describe('UI acceptance — the suite renders in German', () => {
     expect(puts.some((b) => b.includes('E2E-MARKER-NAME'))).toBe(true);
   });
 
-  test('Recruiting_Mappe_UploadsAttachmentAndLists', async ({ page }) => {
-    await page.route('**/api/v1/auth/me', (route) =>
-      route.fulfill({
-        contentType: 'application/json',
-        body: JSON.stringify({ user: { id: 'user1', email: 'me@example.de' } }),
-      }),
-    );
-    await page.route('**/api/v1/talents', (route) => {
-      if (route.request().method() !== 'GET') return route.continue();
-      return route.fulfill({
-        contentType: 'application/json',
-        body: JSON.stringify([
-          {
-            id: 't-api-1',
-            name: 'Tobias Wirth',
-            role: 'Staff Engineer',
-            headline: '',
-            location: 'Hamburg',
-            email: '',
-            phone: '',
-            availability: '',
-            salary: '',
-            skills: [],
-            createdAt: '2026-06-25T10:00:00.000Z',
-            updatedAt: '2026-06-25T10:00:00.000Z',
-          },
-        ]),
-      });
-    });
-    await page.route('**/api/v1/talents/t-api-1/documents', (route) => {
-      const body = {
-        documents: {
-          contact: {
-            name: 'Tobias Wirth',
-            role: '',
-            email: '',
-            phone: '',
-            location: '',
-            linkedin: '',
-          },
-          resume: { summary: '', experience: [], education: [], skillGroups: [] },
-          letter: {
-            firma: '',
-            ansprechpartner: '',
-            strasse: '',
-            plzOrt: '',
-            betreff: '',
-            anrede: '',
-            absaetze: [''],
-            gruss: '',
-          },
-          style: {
-            template: 'classic',
-            accent: '#2A6FDB',
-            strong: '#1d4ed8',
-            onDark: '#7aa7f5',
-            font: 'var(--font-display)',
-            size: 1,
-          },
-          updatedAt: '2026-06-25T10:00:00.000Z',
-        },
-      };
-      return route.fulfill({ contentType: 'application/json', body: JSON.stringify(body) });
-    });
-    await page.route('**/api/v1/talents/t-api-1/attachments', (route) => {
-      if (route.request().method() === 'GET') {
-        return route.fulfill({ contentType: 'application/json', body: JSON.stringify([]) });
-      }
-      return route.fulfill({
-        contentType: 'application/json',
-        body: JSON.stringify({
-          attachment: {
-            id: 'att-1',
-            name: 'Zeugnis.pdf',
-            contentType: 'application/pdf',
-            size: 2048,
-            talentId: 't-api-1',
-          },
-        }),
-      });
-    });
-
-    await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
-    await page
-      .locator('nav')
-      .getByRole('button', { name: /Mandanten/ })
-      .click();
-    await page.getByText('Tobias Wirth').first().click({ force: true });
-    await page
-      .getByRole('button', { name: /Lebenslauf anlegen|Lebenslauf bearbeiten/ })
-      .first()
-      .click();
-    await page.getByRole('button', { name: /Zur Mappe/ }).click();
-    // upload a PDF via the hidden file input in the Mappe modal (the editor
-    // also carries the resume-photo file input, so scope by accept type)
-    await page.locator('input[type="file"][accept="application/pdf"]').setInputFiles({
-      name: 'Zeugnis.pdf',
-      mimeType: 'application/pdf',
-      buffer: Buffer.from('%PDF-1.4 test'),
-    });
-    // the uploaded attachment now appears in the dossier contents
-    await expect(page.getByText('Zeugnis.pdf')).toBeVisible({ timeout: 10000 });
-  });
-
   test('Recruiting_Mandates_RenderFromApiGroupedByClient', async ({ page }) => {
     // Stub the live mandates endpoint with a client/role not in the sample, so a
     // pass proves MandateView grouped and rendered API data.
@@ -789,135 +685,6 @@ test.describe('UI acceptance — the suite renders in German', () => {
     await expect(page.getByRole('heading', { name: 'Willkommen zurück' })).toBeVisible({
       timeout: 15000,
     });
-  });
-
-  test('Recruiting_ApplyFromMatching_ShowsUpInThePipeline', async ({ page }) => {
-    // End-to-end: search the live job boards, apply on the pinned "me"
-    // candidate's behalf to one specific company's posting, then confirm the
-    // application actually lands on the Pipeline board with that company and
-    // role — the seam from ADR-0046/0048 that had no e2e coverage.
-    const applications: Record<string, unknown>[] = [];
-    await page.route('**/api/v1/jobs', (route) => {
-      if (route.request().method() !== 'GET') return route.continue();
-      return route.fulfill({
-        contentType: 'application/json',
-        body: JSON.stringify({
-          top: [
-            {
-              id: 'j-nordwind-1',
-              role: 'Backend Engineer',
-              company: 'Nordwind Logistik AG',
-              city: 'Hamburg',
-              country: 'DE',
-              source: 'Arbeitnow',
-              mode: 'Vollzeit',
-              salary: '',
-              posted: '2026-07-01',
-              url: 'https://example.de/jobs/j-nordwind-1',
-              skills: ['Go', 'Kubernetes'],
-            },
-            {
-              id: 'j-acme-1',
-              role: 'Frontend Developer',
-              company: 'Acme Corp',
-              city: 'Berlin',
-              country: 'DE',
-              source: 'Arbeitnow',
-              mode: 'Vollzeit',
-              salary: '',
-              posted: '2026-07-01',
-              url: 'https://example.de/jobs/j-acme-1',
-              skills: ['React'],
-            },
-          ],
-          more: [],
-          liveSourcesDown: false,
-        }),
-      });
-    });
-    await page.route('**/api/v1/applications', (route) => {
-      const req = route.request();
-      if (req.method() === 'POST') {
-        const body = JSON.parse(req.postData() || '{}');
-        const created = {
-          id: 'app-new-1',
-          company: body.company,
-          position: body.position,
-          talentId: body.talentId || null,
-          talentName: body.talentName || '',
-          status: body.status || 'sent',
-          score: null,
-          date: '2026-07-01',
-          source: body.source || '',
-        };
-        applications.push(created);
-        return route.fulfill({
-          status: 201,
-          contentType: 'application/json',
-          body: JSON.stringify({ application: created }),
-        });
-      }
-      return route.fulfill({ contentType: 'application/json', body: JSON.stringify(applications) });
-    });
-    await page.route('**/api/v1/talents', (route) => {
-      if (route.request().method() !== 'GET') return route.continue();
-      return route.fulfill({ contentType: 'application/json', body: JSON.stringify([]) });
-    });
-    await page.route('**/api/v1/mandates', (route) => {
-      if (route.request().method() !== 'GET') return route.continue();
-      return route.fulfill({ contentType: 'application/json', body: JSON.stringify([]) });
-    });
-    // ApplyModal loads the candidate's documents/attachments before letting the
-    // recruiter submit; the pinned "me" candidate has none of either.
-    await page.route('**/api/v1/talents/user1/documents', (route) =>
-      route.fulfill({ status: 404, contentType: 'application/json', body: JSON.stringify({}) }),
-    );
-    await page.route('**/api/v1/talents/user1/attachments', (route) => {
-      if (route.request().method() !== 'GET') return route.continue();
-      return route.fulfill({ contentType: 'application/json', body: JSON.stringify([]) });
-    });
-    await page.route('**/api/v1/auth/me', (route) =>
-      route.fulfill({
-        contentType: 'application/json',
-        body: JSON.stringify({ user: { id: 'user1', email: 'nora@example.de' } }),
-      }),
-    );
-    await page.route('**/api/v1/job-postings', (route) => {
-      if (route.request().method() !== 'GET') return route.continue();
-      return route.fulfill({ contentType: 'application/json', body: JSON.stringify([]) });
-    });
-    await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
-
-    // Stellen opens the saved-postings list; the portal search is the "Stellen
-    // finden" sub-tab.
-    await page
-      .locator('nav')
-      .getByRole('button', { name: /^Stellen$/ })
-      .click();
-    await page.getByRole('tab', { name: 'Stellen finden' }).click();
-    await page.getByRole('button', { name: 'Manuell' }).click();
-
-    // Search narrows the live postings down to the one specific company.
-    await page.getByPlaceholder(/Stelle suchen/).fill('Nordwind');
-    await expect(page.locator('main')).toContainText('Nordwind Logistik AG');
-    await expect(page.locator('main')).not.toContainText('Acme Corp');
-
-    // "Bewerben" opens the ApplyModal (ZIP download + HTML parsing); submitting
-    // there is what actually records the application.
-    await page.getByRole('button', { name: /Nora bewerben/ }).click();
-    const modal = page.getByRole('dialog', { name: 'Bewerbung vorbereiten' });
-    await expect(modal).toBeVisible();
-    await modal.getByRole('button', { name: 'Im System speichern' }).click();
-    await expect(modal).toBeHidden();
-    await expect(page.getByRole('button', { name: /Beworben · Nora/ })).toBeVisible();
-
-    // The application is recorded and shows up on the Bewerbungen board.
-    await page
-      .locator('nav')
-      .getByRole('button', { name: /^Bewerbungen$/ })
-      .click();
-    await expect(page.locator('main')).toContainText('Nordwind Logistik AG');
-    await expect(page.locator('main')).toContainText('Backend Engineer');
   });
 
   // --- Phase 0 (ADR-0057): the workspace switch + central-key UX -----------
@@ -1694,5 +1461,351 @@ test.describe('Stellen (Phase 1)', () => {
     // Undo restores it.
     await page.getByRole('button', { name: 'Rückgängig' }).click();
     await expect(page.locator('main')).toContainText('Nordwind Logistik AG');
+  });
+});
+
+test.describe('Bewerbungen (Phase 2)', () => {
+  const KIT = '/design/myjob/ui_kits/recruiting/dist/index.html';
+
+  const POSTING = {
+    id: 'p1',
+    ownerId: 'team',
+    source: 'text',
+    company: 'Nordwind Logistik AG',
+    title: 'Backend Engineer',
+    location: 'Hamburg',
+    country: 'DE',
+    description: 'We need distributed systems and Kubernetes experience.',
+    requirements: ['Go'],
+    descriptionIncomplete: false,
+    createdAt: '2026-06-25T10:00:00.000Z',
+  };
+
+  const TALENT = {
+    id: 't-api-1',
+    name: 'Tobias Wirth',
+    role: 'Staff Engineer',
+    headline: '',
+    location: 'Hamburg',
+    email: 'tobias@example.de',
+    phone: '',
+    availability: '',
+    salary: '',
+    skills: [],
+  };
+
+  const BASE_DOCS = {
+    contact: {
+      name: 'Tobias Wirth (Basis)',
+      role: 'Staff Engineer',
+      email: '',
+      phone: '',
+      location: '',
+      linkedin: '',
+    },
+    resume: {
+      summary: 'Basis summary.',
+      experience: [],
+      education: [],
+      skillGroups: [],
+      rawText: 'BASIS-RAW',
+    },
+    letter: {
+      firma: '',
+      ansprechpartner: '',
+      strasse: '',
+      plzOrt: '',
+      betreff: '',
+      anrede: '',
+      absaetze: [''],
+      gruss: '',
+    },
+    style: {
+      accent: '#2A6FDB',
+      strong: '#1d4ed8',
+      onDark: '#7aa7f5',
+      font: 'var(--font-display)',
+      size: 1,
+    },
+  };
+
+  const application = (id: string, status = 'draft') => ({
+    id,
+    ownerId: 'team',
+    jobPostingId: 'p1',
+    postingCompany: POSTING.company,
+    postingTitle: POSTING.title,
+    talentId: TALENT.id,
+    talentName: TALENT.name,
+    status,
+    statusHistory: [{ status, at: '2026-06-25T10:00:00.000Z' }],
+    documents: {
+      ...BASE_DOCS,
+      contact: { ...BASE_DOCS.contact, name: 'Tobias Wirth' },
+      resume: { ...BASE_DOCS.resume, rawText: '' },
+    },
+    createdAt: '2026-06-25T10:00:00.000Z',
+    updatedAt: '2026-06-25T10:00:00.000Z',
+  });
+
+  /**
+   * Mock the Bewerbungen flow with an in-memory store that survives page.reload()
+   * (the closures outlive the navigation). `basePuts` records any write to the
+   * talent's base documents so tests can assert the copy never touches the base.
+   */
+  async function mockBewerbungen(
+    page: import('@playwright/test').Page,
+    opts: { vermittlung: boolean },
+  ) {
+    const state = {
+      applications: [] as ReturnType<typeof application>[],
+      basePuts: [] as string[],
+    };
+    await page.route('**/api/v1/settings/workspace', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ vermittlung: opts.vermittlung }),
+      }),
+    );
+    await page.route('**/api/v1/settings/llm', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ configured: true, providers: [{ id: 'claude', available: true }] }),
+      }),
+    );
+    await page.route('**/api/v1/auth/me', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id: 'user1', email: 'nora@example.de' } }),
+      }),
+    );
+    await page.route('**/api/v1/auth/providers', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ google: false, linkedin: false }),
+      }),
+    );
+    await page.route('**/api/v1/talents', (route) => {
+      if (route.request().method() !== 'GET') return route.continue();
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify([TALENT]) });
+    });
+    await page.route('**/api/v1/talents/t-api-1/documents', (route) => {
+      if (route.request().method() === 'PUT') state.basePuts.push(route.request().postData() || '');
+      return route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ documents: BASE_DOCS }),
+      });
+    });
+    await page.route('**/api/v1/job-postings', (route) => {
+      if (route.request().method() !== 'GET') return route.continue();
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify([POSTING]) });
+    });
+    await page.route('**/api/v1/job-applications', (route) => {
+      const req = route.request();
+      if (req.method() === 'POST') {
+        const body = JSON.parse(req.postData() || '{}');
+        const existing = state.applications.find(
+          (a) => a.jobPostingId === body.jobPostingId && a.talentId === body.talentId,
+        );
+        if (existing) {
+          return route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ jobApplication: existing, alreadyExisting: true }),
+          });
+        }
+        const created = application(`app-${state.applications.length + 1}`);
+        state.applications.push(created);
+        return route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ jobApplication: created, alreadyExisting: false }),
+        });
+      }
+      return route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify(state.applications),
+      });
+    });
+    await page.route('**/api/v1/job-applications/*/documents', (route) => {
+      const id = route.request().url().split('/job-applications/')[1].split('/')[0];
+      const app = state.applications.find((a) => a.id === id);
+      const body = { documents: (app && app.documents) || application('x').documents };
+      if (route.request().method() === 'PUT') {
+        const put = JSON.parse(route.request().postData() || '{}');
+        return route.fulfill({
+          contentType: 'application/json',
+          body: JSON.stringify({ documents: put }),
+        });
+      }
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify(body) });
+    });
+    await page.route('**/api/v1/job-applications/*/status', (route) => {
+      const id = route.request().url().split('/job-applications/')[1].split('/')[0];
+      const body = JSON.parse(route.request().postData() || '{}');
+      const app = state.applications.find((a) => a.id === id) || application(id);
+      const updated = {
+        ...app,
+        status: body.status,
+        statusHistory: [
+          ...app.statusHistory,
+          { status: body.status, at: '2026-06-25T11:00:00.000Z' },
+        ],
+      };
+      // Persist the change back into the in-memory store (which survives
+      // page.reload()) — otherwise the list re-renders the stale "Entwurf" after
+      // the reload and the assertion can only check the company, not the status.
+      const idx = state.applications.findIndex((a) => a.id === id);
+      if (idx >= 0) state.applications[idx] = updated;
+      else state.applications.push(updated);
+      return route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ jobApplication: updated }),
+      });
+    });
+    await page.route('**/api/v1/job-applications/*/letter', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          letter: {
+            paragraphs: [
+              'I apply to Nordwind Logistik AG as Backend Engineer with distributed systems experience.',
+            ],
+            provider: 'claude',
+            usage: { inputTokens: 10, outputTokens: 20, costUsd: 0.0001 },
+            grounding: { grounded: true, unsupported: [] },
+            checks: {
+              mentionsCompany: true,
+              mentionsTitle: true,
+              wordCount: 12,
+              references: 2,
+              inAdLanguage: true,
+            },
+          },
+        }),
+      }),
+    );
+    await page.route('**/api/v1/job-applications/*', (route) => {
+      const id = route.request().url().split('/job-applications/')[1];
+      const app = state.applications.find((a) => a.id === id);
+      if (!app) return route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+      return route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ jobApplication: app }),
+      });
+    });
+    return state;
+  }
+
+  async function openPosting(page: import('@playwright/test').Page) {
+    await page.goto(KIT);
+    await page
+      .locator('nav')
+      .getByRole('button', { name: /^Stellen$/ })
+      .click();
+    await page.getByText('Nordwind Logistik AG').first().click();
+  }
+
+  test('BewerbungenFlow_CreateFromPosting_OpensEditorWithCopy', async ({ page }) => {
+    const state = await mockBewerbungen(page, { vermittlung: true });
+    await openPosting(page);
+
+    await page.getByRole('button', { name: 'Bewerbung erstellen' }).click();
+    await page.getByRole('button', { name: /Tobias Wirth/ }).click();
+
+    // The Bewerbungs-Editor opened with the copy hydrated (AK-2.1).
+    await expect(page.locator('[data-doc-hydrated="true"]')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Entwurf' })).toBeVisible();
+
+    // Reload, then the list shows exactly one application (AK-2.2).
+    await page.reload();
+    await page
+      .locator('nav')
+      .getByRole('button', { name: /^Bewerbungen$/ })
+      .click();
+    await expect(page.locator('main')).toContainText('Nordwind Logistik AG');
+    await expect(page.locator('main')).toContainText('Backend Engineer');
+    expect(state.applications).toHaveLength(1);
+  });
+
+  test('BewerbungenFlow_DuplicateCreate_OpensExisting', async ({ page }) => {
+    const state = await mockBewerbungen(page, { vermittlung: true });
+    await openPosting(page);
+
+    await page.getByRole('button', { name: 'Bewerbung erstellen' }).click();
+    await page.getByRole('button', { name: /Tobias Wirth/ }).click();
+    await expect(page.locator('[data-doc-hydrated="true"]')).toBeVisible();
+
+    // Second attempt opens the existing application, no second record (AK-2.2).
+    await openPosting(page);
+    await page.getByRole('button', { name: 'Bewerbung erstellen' }).click();
+    await page.getByRole('button', { name: /Tobias Wirth/ }).click();
+    await expect(page.locator('[data-doc-hydrated="true"]')).toBeVisible();
+    expect(state.applications).toHaveLength(1);
+  });
+
+  test('BewerbungenFlow_EditCopy_BaseUnchanged', async ({ page }) => {
+    const state = await mockBewerbungen(page, { vermittlung: true });
+    await openPosting(page);
+    await page.getByRole('button', { name: 'Bewerbung erstellen' }).click();
+    await page.getByRole('button', { name: /Tobias Wirth/ }).click();
+    await expect(page.locator('[data-doc-hydrated="true"]')).toBeVisible();
+
+    // Edit the copy's contact name (the editor autosaves to the application copy).
+    await page.getByLabel('Name').fill('Tobias Wirth (angepasst)');
+
+    // The copy was written via the application-documents endpoint, never the base.
+    await expect.poll(() => state.basePuts.length).toBe(0);
+  });
+
+  test('BewerbungenFlow_GenerateLetter_MockProvider_ShowsStagedSuggestion', async ({ page }) => {
+    await mockBewerbungen(page, { vermittlung: true });
+    await openPosting(page);
+    await page.getByRole('button', { name: 'Bewerbung erstellen' }).click();
+    await page.getByRole('button', { name: /Tobias Wirth/ }).click();
+    await expect(page.locator('[data-doc-hydrated="true"]')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Anschreiben generieren' }).click();
+    await expect(page.getByText('Anschreiben-Vorschlag · noch nicht übernommen')).toBeVisible();
+    await expect(page.getByText(/distributed systems/)).toBeVisible();
+  });
+
+  test('BewerbungenFlow_ChangeStatus_PersistsAfterReload', async ({ page }) => {
+    const state = await mockBewerbungen(page, { vermittlung: true });
+    await openPosting(page);
+    await page.getByRole('button', { name: 'Bewerbung erstellen' }).click();
+    await page.getByRole('button', { name: /Tobias Wirth/ }).click();
+    await expect(page.locator('[data-doc-hydrated="true"]')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Versendet' }).click();
+    expect(state.applications[0]).toBeDefined();
+
+    await page.reload();
+    await page
+      .locator('nav')
+      .getByRole('button', { name: /^Bewerbungen$/ })
+      .click();
+    await expect(page.locator('main')).toContainText('Nordwind Logistik AG');
+    // The changed status survived the reload (the mock persisted it) and the
+    // list badge shows "Versendet" rather than the initial "Entwurf".
+    await expect(page.locator('main')).toContainText('Versendet');
+  });
+
+  test('BewerbungenFlow_PipelineSubTab_OnlyVisibleWhenVermittlungOn', async ({ page }) => {
+    await mockBewerbungen(page, { vermittlung: false });
+    await page.goto(KIT);
+    await page
+      .locator('nav')
+      .getByRole('button', { name: /^Bewerbungen$/ })
+      .click();
+    await expect(page.getByRole('tab', { name: 'Pipeline' })).toHaveCount(0);
+
+    await mockBewerbungen(page, { vermittlung: true });
+    await page.reload();
+    await page
+      .locator('nav')
+      .getByRole('button', { name: /^Bewerbungen$/ })
+      .click();
+    await expect(page.getByRole('tab', { name: 'Pipeline' })).toBeVisible();
   });
 });

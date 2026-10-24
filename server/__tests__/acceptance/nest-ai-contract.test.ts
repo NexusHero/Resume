@@ -21,6 +21,7 @@ const BODY: Record<string, unknown> = {
   K10: undefined,
   K11: { mode: 'autopilot' },
   K12: { text: 'We are hiring a Senior C++ Engineer in Berlin.' },
+  K13: {},
 };
 
 const CONDITIONAL = new Set(['K10', 'K11']);
@@ -28,6 +29,7 @@ const CONDITIONAL = new Set(['K10', 'K11']);
 interface Ids {
   talent: string;
   mandate: string;
+  jobApplication: string;
 }
 
 async function boot(opts: {
@@ -48,14 +50,26 @@ async function boot(opts: {
   const mandate = await agent
     .post('/api/v1/mandates')
     .send({ client: 'Helio', role: 'Engineer', location: 'Berlin', jobText: 'React' });
+  // K13 (the letter route) needs a real application: seed a posting + application.
+  const posting = await agent
+    .post('/api/v1/job-postings')
+    .send({ source: 'text', company: 'Helio', title: 'Engineer', description: 'We hire.' });
+  const application = await agent
+    .post('/api/v1/job-applications')
+    .send({ jobPostingId: posting.body.jobPosting.id, talentId: talent.body.talent.id });
   return {
     app,
     agent,
-    ids: { talent: talent.body.talent.id, mandate: mandate.body.mandate.id },
+    ids: {
+      talent: talent.body.talent.id,
+      mandate: mandate.body.mandate.id,
+      jobApplication: application.body.jobApplication.id,
+    },
   };
 }
 
 const realPath = (path: string, ids: Ids) => {
+  if (path.startsWith('/api/v1/job-applications/')) return path.replace(':id', ids.jobApplication);
   const withTalent = path.startsWith('/api/v1/talents/')
     ? path.replace(':id', ids.talent)
     : path.replace(':id', ids.mandate);
@@ -113,7 +127,13 @@ describe('AI route contract (AK-0.5)', () => {
     const mandate = await agent
       .post('/api/v1/mandates')
       .send({ client: 'Helio', role: 'Engineer', location: 'Berlin', jobText: 'React' });
-    const ids = { talent: talent.body.talent.id, mandate: mandate.body.mandate.id };
+    const ids = {
+      talent: talent.body.talent.id,
+      mandate: mandate.body.mandate.id,
+      // The letter route is gated by the AI guard, which fires before the handler
+      // reaches the (non-existent) application, so a placeholder id suffices here.
+      jobApplication: 'na',
+    };
     for (const route of AI_ROUTES) await hit(agent, route, ids);
     expect(provider.calls).toBe(0);
   });
@@ -186,7 +206,18 @@ describe('AI route contract (AK-0.5)', () => {
     const mandate = await agent
       .post('/api/v1/mandates')
       .send({ client: 'Helio', role: 'Engineer', location: 'Berlin', jobText: 'React' });
-    const ids = { talent: talent.body.talent.id, mandate: mandate.body.mandate.id };
+    // K13 needs a real application so the letter service reaches the (failing) provider.
+    const posting = await agent
+      .post('/api/v1/job-postings')
+      .send({ source: 'text', company: 'Helio', title: 'Engineer', description: 'We hire.' });
+    const application = await agent
+      .post('/api/v1/job-applications')
+      .send({ jobPostingId: posting.body.jobPosting.id, talentId: talent.body.talent.id });
+    const ids = {
+      talent: talent.body.talent.id,
+      mandate: mandate.body.mandate.id,
+      jobApplication: application.body.jobApplication.id,
+    };
     for (const route of AI_ROUTES.filter((r) => !CONDITIONAL.has(r.id))) {
       const res = await hit(agent, route, ids);
       expect({ id: route.id, status: res.status }).toEqual({ id: route.id, status: 502 });

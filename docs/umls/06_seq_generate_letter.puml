@@ -1,0 +1,50 @@
+@startuml 06_seq_generate_letter
+title Anschreiben generieren (voller Anzeigentext, Grounding + Checks) — FR-84/85, ADR-0059
+
+skinparam shadowing false
+autonumber
+
+actor Recruiter
+participant "JobApplicationsController" as Ctrl
+participant "AiConfiguredGuard\n(RequiresAi)" as Guard
+participant "ApplicationLetterService" as Svc
+participant "JobApplicationRepository" as AppRepo
+participant "JobPostingRepository" as PostingRepo
+participant "LlmFeatureRunner" as Runner
+participant "LlmProvider\n(Anthropic | Gemini)" as Llm
+
+Recruiter -> Ctrl : POST /job-applications/:id/letter
+activate Ctrl
+Ctrl -> Guard : canActivate (no central key?)
+Guard --> Ctrl : key missing → AiNotConfiguredError (503) | ok
+Ctrl -> Svc : generate(scope, userId, applicationId)
+activate Svc
+Svc -> AppRepo : findById(scope, applicationId)
+AppRepo --> Svc : application (documents copy + snapshots postingCompany/postingTitle) | null
+alt not found
+  Svc --> Ctrl : NotFoundError → 404
+else found
+  Svc -> PostingRepo : findById(scope, jobPostingId) — lazy
+  PostingRepo --> Svc : posting | null
+  Svc -> Svc : adText = posting?.description ?? ''\nlang = detectLanguage(adText, 'de')
+  Svc -> Svc : applicationLetterPrompt(adText, documents, lang)\n(full ad text as untrusted data, structured facts via withoutRawText)
+  Svc -> Runner : runFeature(userId, 'applicationLetter', ...)
+  activate Runner
+  Runner -> Llm : generate(system, prompt, maxTokens)
+  Llm --> Runner : text | throw
+  alt upstream failure / unusable reply
+    Runner --> Svc : UpstreamProviderError → 502
+  else ok
+    Runner --> Svc : { content (paragraphs), provider, usage }
+  end
+  deactivate Runner
+  Svc -> Svc : checkApplicationLetter(content, { company, title, lang, adText })\n→ mentionsCompany/mentionsTitle/wordCount/references/inAdLanguage
+  Svc -> Runner : withGrounding(paragraphs, groundingSource(documents))
+  Runner --> Svc : { paragraphs, provider, usage, grounding }
+  Svc --> Ctrl : { letter: { paragraphs, provider, usage, grounding, checks } }
+  Ctrl --> Recruiter : 200 → Editor-Vorschlag (AK-2.4/2.5)
+end
+deactivate Svc
+deactivate Ctrl
+
+@enduml

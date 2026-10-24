@@ -21,18 +21,19 @@ package "Application (services)" {
   [AI feature services\n(document-assist, cv-parse, ats-ai,\noutreach-ai, match-ai) +\nDocumentAiService facade] as AiSvc
   [recruiting services\n(talent, mandate, candidacy,\nplacement, match, forecast,\nretention, members, usage)] as RecSvc
   [job-posting services\n(job-posting CRUD/adopt + dedup,\njob-posting-extract)] as JobPostingSvc
+  [job-application services\n(create/copy/status/delete,\napplication-letter)] as JobAppSvc
   [auth services\n(auth, password reset,\nemail verification, account\n+ personal-data registry)] as AuthSvc
   [LlmService\n(provider registry + default)] as LlmSvc
 }
 
 package "Domain (pure, no I/O)" {
-  [recruiting model\n(talent, mandate, candidacy,\nplacement, user, usage,\njob-posting, saved-search)] as Model
+  [recruiting model\n(talent, mandate, candidacy,\nplacement, user, usage,\njob-posting, job-application,\nsaved-search)] as Model
   [AI domain\n(prompts + fallbacks + schemas,\ngrounding, skill-semantics/-taxonomy,\ncompany-archetype, candidate-prep,\nlanguage, agg-check)] as AiDomain
   [errors] as DomainErrors
 }
 
 package "Ports" {
-  interface "repositories\n(user, talent, mandate, candidacy,\nplacement, documents, observations,\njob-posting, saved-search)" as Repos
+  interface "repositories\n(user, talent, mandate, candidacy,\nplacement, documents, observations,\njob-posting, job-application,\nsaved-search)" as Repos
   interface LlmProvider
   interface "ApiKeyStore /\nUsageMeter" as Keys
   interface "AuthEngine / Mailer" as AuthPorts
@@ -60,6 +61,7 @@ Ctrl --> AiSvc
 Ctrl --> RecSvc
 Ctrl --> AuthSvc
 Ctrl --> JobPostingSvc
+Ctrl --> JobAppSvc
 AiSvc --> Runner
 Runner --> LlmSvc
 Runner --> Keys
@@ -72,8 +74,11 @@ AuthSvc --> Repos
 JobPostingSvc --> Repos
 JobPostingSvc --> JobSource
 JobPostingSvc --> PageFetcher
+JobAppSvc --> Repos
+JobAppSvc --> Runner
 RecSvc ..> DomainErrors
 JobPostingSvc ..> DomainErrors
+JobAppSvc ..> DomainErrors
 AiSvc --> PdfPorts
 RecSvc --> JobSource
 LlmSvc --> LlmProvider

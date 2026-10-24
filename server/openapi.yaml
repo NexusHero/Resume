@@ -1709,6 +1709,177 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
 
+  /job-applications:
+    get:
+      tags: [Job applications]
+      summary: List job applications (optionally filtered by talent, newest first)
+      operationId: listJobApplications
+      security:
+        - cookieSession: []
+      parameters:
+        - name: talentId
+          in: query
+          required: false
+          schema: { type: string }
+          description: Only the applications of this talent.
+      responses:
+        '200':
+          description: The caller's applications.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/JobApplication' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Job applications]
+      summary: Create an application (idempotent per posting + talent)
+      operationId: createJobApplication
+      security:
+        - cookieSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateJobApplicationInput' }
+      responses:
+        '201':
+          description: Created — a new application carrying a copy of the base documents.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JobApplicationCreateResult' }
+        '200':
+          description: An application for this posting + talent already existed — returns it.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JobApplicationCreateResult' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /job-applications/{id}:
+    get:
+      tags: [Job applications]
+      summary: One application (with its document copy and status history)
+      operationId: getJobApplication
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses:
+        '200':
+          description: The application.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobApplication: { $ref: '#/components/schemas/JobApplication' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Job applications]
+      summary: Delete an application (and its embedded copy)
+      operationId: deleteJobApplication
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses:
+        '204': { description: Deleted. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /job-applications/{id}/documents:
+    get:
+      tags: [Job applications]
+      summary: The application's document copy
+      operationId: getJobApplicationDocuments
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses:
+        '200':
+          description: The copy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  documents: { $ref: '#/components/schemas/TalentDocuments' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Job applications]
+      summary: Save the document copy (the server strips rawText/translations)
+      operationId: saveJobApplicationDocuments
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TalentDocuments' }
+      responses:
+        '200':
+          description: The saved copy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  documents: { $ref: '#/components/schemas/TalentDocuments' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /job-applications/{id}/letter:
+    post:
+      tags: [Job applications]
+      summary: Generate an Anschreiben from the posting's full ad text
+      operationId: generateJobApplicationLetter
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses:
+        '200':
+          description: The generated letter with provider, usage, grounding and checks.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  letter: { $ref: '#/components/schemas/ApplicationLetterResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '502': { $ref: '#/components/responses/UpstreamProvider' }
+        '503': { $ref: '#/components/responses/AiNotConfigured' }
+
+  /job-applications/{id}/status:
+    post:
+      tags: [Job applications]
+      summary: Change the application's status (appends a history entry)
+      operationId: changeJobApplicationStatus
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ChangeJobApplicationStatusInput' }
+      responses:
+        '200':
+          description: The updated application.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobApplication: { $ref: '#/components/schemas/JobApplication' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
   /members:
     get:
       tags: [Team]
@@ -2826,6 +2997,23 @@ components:
             status: 502
             detail: 'Could not fetch the posting (redirect-limit).'
 
+    UpstreamProvider:
+      description: The AI provider could not produce a usable result. `type` is `about:blank#upstream-provider`.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+          example:
+            type: about:blank#upstream-provider
+            title: UpstreamProviderError
+            status: 502
+            detail: The AI provider could not produce a usable result.
+
+    AlreadyExisting:
+      description: The resource already existed (idempotent create) — returns the existing one.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/JobApplicationCreateResult' }
+
   schemas:
     Problem:
       type: object
@@ -3301,6 +3489,73 @@ components:
         description: { type: string }
         source: { type: string, enum: [text, url] }
         url: { type: string, format: uri }
+
+    JobApplication:
+      type: object
+      description: A Bewerbung (Stelle × Mandant) with its own document copy and status history (ADR-0059).
+      properties:
+        id: { type: string }
+        ownerId: { type: string, description: The owning workspace scope. }
+        jobPostingId:
+          type: string
+          description: Soft reference to the posting (no cascade — deleting the posting leaves this intact).
+        postingCompany: { type: string, description: Snapshot of the posting's company. }
+        postingTitle: { type: string, description: Snapshot of the posting's title. }
+        talentId: { type: string }
+        talentName: { type: string, description: Name snapshot for display after anonymisation. }
+        status: { $ref: '#/components/schemas/JobApplicationStatus' }
+        statusHistory: { type: array, items: { $ref: '#/components/schemas/StatusHistoryEntry' } }
+        documents: { $ref: '#/components/schemas/TalentDocuments' }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+
+    JobApplicationStatus:
+      type: string
+      enum: [draft, sent, interview, offer, rejected]
+
+    StatusHistoryEntry:
+      type: object
+      properties:
+        status: { $ref: '#/components/schemas/JobApplicationStatus' }
+        at: { type: string, description: ISO 8601 timestamp of the change. }
+
+    JobApplicationCreateResult:
+      type: object
+      properties:
+        jobApplication: { $ref: '#/components/schemas/JobApplication' }
+        alreadyExisting:
+          type: boolean
+          description: True when an application for this posting + talent already existed.
+
+    CreateJobApplicationInput:
+      type: object
+      required: [jobPostingId, talentId]
+      properties:
+        jobPostingId: { type: string }
+        talentId: { type: string }
+
+    ChangeJobApplicationStatusInput:
+      type: object
+      required: [status]
+      properties:
+        status: { $ref: '#/components/schemas/JobApplicationStatus' }
+
+    ApplicationLetterResult:
+      type: object
+      description: A generated Anschreiben with its provider, call usage, grounding self-check and formal quality checks.
+      properties:
+        paragraphs: { type: array, items: { type: string } }
+        provider: { $ref: '#/components/schemas/ProviderId' }
+        usage: { $ref: '#/components/schemas/CallUsage' }
+        grounding: { $ref: '#/components/schemas/Grounding' }
+        checks:
+          type: object
+          properties:
+            mentionsCompany: { type: boolean }
+            mentionsTitle: { type: boolean }
+            wordCount: { type: integer }
+            references: { type: integer }
+            inAdLanguage: { type: boolean }
 
     LlmSettings:
       type: object

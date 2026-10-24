@@ -15,6 +15,7 @@ function emptyApi(vermittlung) {
     listPlacements: vi.fn(empty),
     listApplications: vi.fn(empty),
     listJobPostings: vi.fn(empty),
+    listJobApplications: vi.fn(empty),
     getTalentDocuments: vi.fn().mockResolvedValue(null),
   };
 }

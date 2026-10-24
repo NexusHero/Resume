@@ -2,6 +2,14 @@
    Resume (editable CV) · Attachments (linkable docs) · Applications. */
 const TP = window.MyJobDesignSystem_5611b7;
 
+const APP_STATUS_META = {
+  draft: { label: 'Entwurf', color: 'var(--text-soft)' },
+  sent: { label: 'Versendet', color: 'var(--accent-strong)' },
+  interview: { label: 'Gespräch', color: 'var(--warning-strong, #8a6d00)' },
+  offer: { label: 'Zusage', color: 'var(--positive, #1F8A5B)' },
+  rejected: { label: 'Absage', color: 'var(--danger)' },
+};
+
 /* A titled block in the dark CV sidebar. */
 function CvSideSection({ title, children }) {
   return (
@@ -44,7 +52,7 @@ function CvMainHeading({ icon, title, onEdit }) {
 }
 
 /* ---- Lebenslauf tab ---- */
-function ResumeTab({ talent, onEdit, onCreateMappe }) {
+function ResumeTab({ talent, onEdit }) {
   const { isMobile } = window.useViewport ? window.useViewport() : { isMobile: false };
   const r = talent.resume;
   if (!r) {
@@ -148,7 +156,6 @@ function ResumeTab({ talent, onEdit, onCreateMappe }) {
         <TP.Card>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '10px' }}>Lebenslauf</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <TP.Button variant="primary" block iconLeft={<TP.Icon name="send" size={15} />} onClick={onCreateMappe}>Bewerbungsmappe erstellen</TP.Button>
             <TP.Button variant="outline" block iconLeft={<TP.Icon name="edit" size={15} />} onClick={onEdit}>Lebenslauf bearbeiten</TP.Button>
             <TP.Button variant="ghost" block iconLeft={<TP.Icon name="download" size={15} />}>Als PDF exportieren</TP.Button>
           </div>
@@ -172,8 +179,16 @@ function ResumeTab({ talent, onEdit, onCreateMappe }) {
   );
 }
 
-/* ---- Anhänge tab — documents that link to applications ---- */
-function AttachmentsTab({ talent, apps, onUploaded }) {
+/* ---- Anhänge tab — documents stored per talent (ADR-0057). ----
+   NOTE (Phase 2): the former "verknüpft mit Bewerbung X" badge block is removed
+   deliberately. It had no data source: the frozen pipeline `Application` entity
+   never persisted attachment ids (`attachments` only exists transiently on the
+   `build` input), `mapApplication` drops it, and the new `JobApplication`
+   deliberately does NOT copy attachments (ADR-0059 §3.4 — attachments stay
+   talent-bound; the attachment selection for the Bewerbungsmappe is Phase 4).
+   Re-feeding the old `apps` prop would restore a permanently-empty "nicht
+   verknüpft" marker, so the badge column is gone until Phase 4 wires the map. */
+function AttachmentsTab({ talent, onUploaded }) {
   const [uploading, setUploading] = React.useState(false);
   const [error, setError] = React.useState(null);
   const upload = (file) => {
@@ -195,7 +210,6 @@ function AttachmentsTab({ talent, apps, onUploaded }) {
     reader.onerror = () => { setUploading(false); setError('Datei konnte nicht gelesen werden.'); };
     reader.readAsDataURL(file);
   };
-  const usage = (atId) => apps.filter((a) => (a.attachments || []).includes(atId));
   return (
     <TP.Card pad={false}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--border)' }}>
@@ -216,51 +230,62 @@ function AttachmentsTab({ talent, apps, onUploaded }) {
       {talent.attachments.length === 0 && (
         <div style={{ padding: '40px', textAlign: 'center', fontSize: '13px', color: 'var(--text-soft)' }}>Noch keine Anhänge.</div>
       )}
-      {talent.attachments.map((a) => {
-        const used = usage(a.id);
-        return (
-          <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 18px', borderBottom: '1px solid var(--border)' }}>
-            <span style={{ width: '38px', height: '38px', flexShrink: 0, borderRadius: 'var(--radius-md)', background: 'var(--accent-soft)', color: 'var(--accent-strong)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><TP.Icon name="fileText" size={18} /></span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-heading)' }}>{a.name}<span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--accent-strong)', marginLeft: '8px' }}>{a.tag}</span></div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', marginTop: '1px' }}>{a.sub}</div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
-              {used.length === 0
-                ? <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>nicht verknüpft</span>
-                : used.map((u) => <TP.Badge key={u.id} variant="subtle" size="sm" icon={<TP.Icon name="paperclip" size={10} />}>{u.company.split(' ')[0]}</TP.Badge>)}
-            </div>
-            <TP.IconButton icon="more" label="Mehr" variant="ghost" size="sm" />
+      {talent.attachments.map((a) => (
+        <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 18px', borderBottom: '1px solid var(--border)' }}>
+          <span style={{ width: '38px', height: '38px', flexShrink: 0, borderRadius: 'var(--radius-md)', background: 'var(--accent-soft)', color: 'var(--accent-strong)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><TP.Icon name="fileText" size={18} /></span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-heading)' }}>{a.name}<span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--accent-strong)', marginLeft: '8px' }}>{a.tag}</span></div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', marginTop: '1px' }}>{a.sub}</div>
           </div>
-        );
-      })}
+          <TP.IconButton icon="more" label="Mehr" variant="ghost" size="sm" />
+        </div>
+      ))}
     </TP.Card>
   );
 }
 
 /* ---- Bewerbungen tab ---- */
-function TalentApplications({ apps, onCreateMappe }) {
+function TalentApplications({ talentId, onOpenApplication }) {
+  const [apps, setApps] = React.useState(null); // null = loading
+  const [error, setError] = React.useState(false);
+  const load = React.useCallback(() => {
+    window.RecruitApi.listJobApplications(talentId)
+      .then((list) => {
+        setApps(Array.isArray(list) ? list : []);
+        setError(false);
+      })
+      .catch(() => {
+        setApps([]);
+        setError(true);
+      });
+  }, [talentId]);
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  if (apps === null) return <window.LoadingState />;
+  if (error) return <window.ErrorState onRetry={load} />;
+
   return (
-    <TP.Card pad={false} title="Bewerbungen" subtitle="Alle Mappen für diesen Mandanten"
-      action={<TP.Button size="sm" variant="primary" iconLeft={<TP.Icon name="plus" size={14} />} onClick={onCreateMappe}>Neue Mappe</TP.Button>}>
-      {apps.length === 0 && <div style={{ padding: '40px', textAlign: 'center', fontSize: '13px', color: 'var(--text-soft)' }}>Noch keine Bewerbungen.</div>}
-      {apps.map((a) => (
-        <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 18px', borderBottom: '1px solid var(--border)' }}>
-          <TP.EntityTile type="company" name={a.company} size="md" />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: '14.5px', fontWeight: 700, color: 'var(--text-heading)' }}>{a.company}</div>
-            <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '1px' }}>{a.role} · {a.location}</div>
+    <TP.Card pad={false} title="Bewerbungen" subtitle="Alle Bewerbungen dieses Mandanten">
+      {apps.length === 0 && (
+        <div style={{ padding: '40px', textAlign: 'center', fontSize: '13px', color: 'var(--text-soft)' }}>Noch keine Bewerbungen.</div>
+      )}
+      {apps.map((a) => {
+        const meta = APP_STATUS_META[a.status] || APP_STATUS_META.draft;
+        return (
+          <div key={a.id} onClick={() => onOpenApplication && onOpenApplication(a)} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 18px', borderBottom: '1px solid var(--border)', cursor: onOpenApplication ? 'pointer' : 'default' }}>
+            <TP.EntityTile type="company" name={a.postingCompany} size="md" />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: '14.5px', fontWeight: 700, color: 'var(--text-heading)' }}>{a.postingCompany}</div>
+              <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '1px' }}>{a.postingTitle}</div>
+            </div>
+            <span style={{ display: 'inline-block', fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: meta.color, background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '3px 9px' }}>
+              {meta.label}
+            </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            {a.anschreiben && <TP.Badge variant="subtle" size="sm" icon={<TP.Icon name="fileText" size={10} />}>Anschreiben</TP.Badge>}
-            <TP.Badge variant="subtle" size="sm" icon={<TP.Icon name="paperclip" size={10} />}>{(a.attachments || []).length}</TP.Badge>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '5px', width: '150px' }}>
-            <TP.StatusBadge status={a.status} size="sm" />
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>{a.next}</span>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </TP.Card>
   );
 }
@@ -282,7 +307,7 @@ function toAttachmentRow(a) {
   return { id: a.id, name: a.name, tag: '', sub: `${kb} KB` };
 }
 
-function TalentProfile({ talent, apps, onBack, onEdit, onCreateMappe }) {
+function TalentProfile({ talent, onBack, onEdit, onOpenApplication }) {
   const [tab, setTab] = React.useState('lebenslauf');
   // The profile shows the talent's REAL saved documents and attachments from
   // the API — the list row only carries basic fields. A failed fetch (e.g. the
@@ -319,7 +344,7 @@ function TalentProfile({ talent, apps, onBack, onEdit, onCreateMappe }) {
   const tabs = [
     { id: 'lebenslauf', label: 'Lebenslauf' },
     { id: 'anhaenge', label: 'Anhänge', count: view.attachments.length },
-    { id: 'bewerbungen', label: 'Bewerbungen', count: apps.length },
+    { id: 'bewerbungen', label: 'Bewerbungen' },
   ];
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
@@ -350,9 +375,9 @@ function TalentProfile({ talent, apps, onBack, onEdit, onCreateMappe }) {
 
       <TP.Tabs value={tab} onChange={setTab} tabs={tabs} />
 
-      {tab === 'lebenslauf' && <ResumeTab talent={view} onEdit={onEdit} onCreateMappe={onCreateMappe} />}
-      {tab === 'anhaenge' && <AttachmentsTab talent={view} apps={apps} onUploaded={reloadAttachments} />}
-      {tab === 'bewerbungen' && <TalentApplications apps={apps} onCreateMappe={onCreateMappe} />}
+      {tab === 'lebenslauf' && <ResumeTab talent={view} onEdit={onEdit} />}
+      {tab === 'anhaenge' && <AttachmentsTab talent={view} onUploaded={reloadAttachments} />}
+      {tab === 'bewerbungen' && <TalentApplications talentId={talent.id} onOpenApplication={onOpenApplication} />}
     </div>
   );
 }

@@ -22,9 +22,20 @@ const BODY: Record<string, unknown> = {
   K11: { mode: 'autopilot' },
   K12: { text: 'We are hiring a Senior C++ Engineer in Berlin.' },
   K13: {},
+  K14: {},
+  K15: {},
+  // K16 addresses a station by index; the 503 families never reach validation.
+  K16: { experienceIndex: 0 },
+  K17: {},
+  K18: {},
 };
 
 const CONDITIONAL = new Set(['K10', 'K11']);
+
+/** The Magic-Pen routes (K14–K18) are exercised by the dedicated acceptance suite,
+ *  not the generic 502 family — `pen/all` answers `allSettled` error slots (200),
+ *  not a whole-request 502 (ADR-0060 §4.3). */
+const PEN_ROUTES = new Set(['K14', 'K15', 'K16', 'K17', 'K18']);
 
 interface Ids {
   talent: string;
@@ -91,7 +102,7 @@ describe('AI route contract (AK-0.5)', () => {
     await closeNestApps();
   });
 
-  it('AiRoute_NoKeyConfigured_Returns503AiNotConfigured (K01–K11)', async () => {
+  it('AiRoute_NoKeyConfigured_Returns503AiNotConfigured (K01–K18)', async () => {
     const { agent, ids } = await boot({ available: false });
     for (const route of AI_ROUTES) {
       const res = await hit(agent, route, ids);
@@ -101,7 +112,7 @@ describe('AI route contract (AK-0.5)', () => {
     }
   });
 
-  it('AiRoute_NoKeyConfigured_ResponseContainsNoGeneratedText (K01–K11)', async () => {
+  it('AiRoute_NoKeyConfigured_ResponseContainsNoGeneratedText (K01–K18)', async () => {
     const { agent, ids } = await boot({ available: false });
     for (const route of AI_ROUTES) {
       const res = await hit(agent, route, ids);
@@ -112,7 +123,7 @@ describe('AI route contract (AK-0.5)', () => {
     }
   });
 
-  it('AiRoute_NoKeyConfigured_NeverCallsAProvider (K01–K11)', async () => {
+  it('AiRoute_NoKeyConfigured_NeverCallsAProvider (K01–K18)', async () => {
     const provider = new FakeLlmProvider('claude', false, 'unused');
     const app = await makeNestApp(loadConfig({}), {
       vermittlung: true,
@@ -138,7 +149,7 @@ describe('AI route contract (AK-0.5)', () => {
     expect(provider.calls).toBe(0);
   });
 
-  it('AiRoute_NoLoginAndNoKey_Returns401 (K01–K11)', async () => {
+  it('AiRoute_NoLoginAndNoKey_Returns401 (K01–K18)', async () => {
     const { app, ids } = await boot({ available: false });
     for (const route of AI_ROUTES) {
       const res = await hit(request(app), route, ids);
@@ -146,7 +157,7 @@ describe('AI route contract (AK-0.5)', () => {
     }
   });
 
-  it('AiRoute_NoKeyAndInvalidBody_Returns503 (K01–K09)', async () => {
+  it('AiRoute_NoKeyAndInvalidBody_Returns503 (non-conditional)', async () => {
     const { agent, ids } = await boot({ available: false });
     for (const route of AI_ROUTES.filter((r) => !CONDITIONAL.has(r.id))) {
       const res = await hit(agent, route, ids, { nonsense: true });
@@ -154,7 +165,7 @@ describe('AI route contract (AK-0.5)', () => {
     }
   });
 
-  it('AiRoute_NoKeyAndFreePlan_Returns503Before402 (K01–K09)', async () => {
+  it('AiRoute_NoKeyAndFreePlan_Returns503Before402 (non-conditional)', async () => {
     const { agent, ids } = await boot({ available: false, plan: 'free' });
     for (const route of AI_ROUTES.filter((r) => !CONDITIONAL.has(r.id))) {
       const res = await hit(agent, route, ids);
@@ -194,7 +205,7 @@ describe('AI route contract (AK-0.5)', () => {
     }
   });
 
-  it('AiRoute_ProviderThrows_Returns502UpstreamProvider (K01–K09)', async () => {
+  it('AiRoute_ProviderThrows_Returns502UpstreamProvider (K01–K13)', async () => {
     const provider = new FakeLlmProvider('claude', true, 'unused');
     provider.failWith = new Error('upstream down');
     const app = await makeNestApp(loadConfig({}), { vermittlung: true, llmProviders: [provider] });
@@ -218,7 +229,7 @@ describe('AI route contract (AK-0.5)', () => {
       mandate: mandate.body.mandate.id,
       jobApplication: application.body.jobApplication.id,
     };
-    for (const route of AI_ROUTES.filter((r) => !CONDITIONAL.has(r.id))) {
+    for (const route of AI_ROUTES.filter((r) => !CONDITIONAL.has(r.id) && !PEN_ROUTES.has(r.id))) {
       const res = await hit(agent, route, ids);
       expect({ id: route.id, status: res.status }).toEqual({ id: route.id, status: 502 });
       expect(res.body.type).toBe('about:blank#upstream-provider');

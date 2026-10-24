@@ -1,0 +1,45 @@
+@startuml 06_seq_magic_pen_all
+title Magic Pen „Alles anpassen" (Fan-out, allSettled) — FR-93/94, ADR-0060
+
+skinparam shadowing false
+autonumber
+
+actor Recruiter
+participant "JobApplicationsController" as Ctrl
+participant "AiConfiguredGuard\n(RequiresAi)" as Guard
+participant "MagicPenService" as Svc
+participant "JobApplicationRepository" as AppRepo
+participant "ApplicationLetterService" as LetterSvc
+participant "LlmFeatureRunner" as Runner
+
+Recruiter -> Ctrl : POST /job-applications/:id/pen/all
+activate Ctrl
+Ctrl -> Guard : canActivate (no central key?)
+Guard --> Ctrl : key missing → AiNotConfiguredError (503) | ok
+Ctrl -> Svc : rewriteAll(scope, userId, applicationId)
+activate Svc
+Svc -> AppRepo : findById(scope, applicationId)
+AppRepo --> Svc : application (documents copy) | null
+alt not found
+  Svc --> Ctrl : NotFoundError → 404
+else found
+  Svc -> Svc : tasks = headline + summary\n+ experienceBullets (one per station, N = experience.length)\n+ skills + letter slot
+  Svc -> Runner : runFeature('penHeadline' …) [parallel]
+  Svc -> Runner : runFeature('penSummary' …) [parallel]
+  loop each station i ∈ [0, N)
+    Svc -> Runner : runFeature('penExperienceBullets', experienceIndex=i) [parallel]
+  end
+  Svc -> Runner : runFeature('penSkills' …) [parallel]
+  Svc -> LetterSvc : generate(…) — letter slot (reuses applicationLetter, grounds against the COPY)
+  LetterSvc --> Svc : { paragraphs, provider, usage, grounding, checks }
+  Svc -> Svc : Promise.allSettled(tasks)\n→ each section metered individually (AK-3.6)
+  alt a section failed
+    Svc -> Svc : failed section → { error: { type, detail } } slot\n(no whole-request 500)
+  end
+  Svc --> Ctrl : { sections: PenAllEntry[] }\n(one PenSuggestion per station + headline/summary/skills + letter)
+  Ctrl --> Recruiter : 200 → client-side fan-out drives per-section progress + abort
+end
+deactivate Svc
+deactivate Ctrl
+
+@enduml

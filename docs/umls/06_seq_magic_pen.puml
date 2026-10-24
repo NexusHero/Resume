@@ -1,0 +1,57 @@
+@startuml 06_seq_magic_pen
+title Magic Pen (Abschnitt) — grounded against the base CV — FR-89/90/92, ADR-0060
+
+skinparam shadowing false
+autonumber
+
+actor Recruiter
+participant "JobApplicationsController" as Ctrl
+participant "AiConfiguredGuard\n(RequiresAi)" as Guard
+participant "MagicPenService" as Svc
+participant "JobApplicationRepository" as AppRepo
+participant "DocumentRepository" as DocRepo
+participant "JobPostingRepository" as PostingRepo
+participant "LlmFeatureRunner" as Runner
+participant "LlmProvider\n(Anthropic | Gemini)" as Llm
+
+Recruiter -> Ctrl : POST /job-applications/:id/pen/{section}
+activate Ctrl
+Ctrl -> Guard : canActivate (no central key?)
+Guard --> Ctrl : key missing → AiNotConfiguredError (503) | ok
+Ctrl -> Svc : rewriteSection(scope, userId, applicationId, section, { experienceIndex? })
+activate Svc
+Svc -> AppRepo : findById(scope, applicationId)
+AppRepo --> Svc : application (documents copy) | null
+alt not found
+  Svc --> Ctrl : NotFoundError → 404
+else found
+  alt section = experienceBullets & index ≥ experience.length
+    Svc --> Ctrl : ValidationError → 400
+  else ok
+    Svc -> DocRepo : get(scope, talentId) — base CV
+    DocRepo --> Svc : baseDocuments | null
+    Svc -> Svc : groundingDocs = base ?? copy\n(ADR-0060: ground against the BASE CV, not the copy)
+    Svc -> PostingRepo : findById(scope, jobPostingId) — lazy
+    PostingRepo --> Svc : posting | null
+    Svc -> Svc : adText = posting?.description ?? ''\nlang = detectLanguage(adText, 'de')
+    Svc -> Svc : penPrompt(section, { adText, documents: copy, experienceIndex, lang })\n(full ad text as untrusted data, immutable facts as closed context)
+    Svc -> Runner : runFeature(userId, 'penHeadline|penSummary|penExperienceBullets|penSkills', ...)
+    activate Runner
+    Runner -> Llm : generate(system, prompt, maxTokens)
+    Llm --> Runner : text | throw
+    alt upstream failure / empty reply
+      Runner --> Svc : UpstreamProviderError → 502
+    else ok
+      Runner --> Svc : { content, provider, usage }
+    end
+    deactivate Runner
+    Svc -> Runner : withGrounding(content, groundingSource(groundingDocs))
+    Runner --> Svc : grounding report (marks unsupported, never discards)
+    Svc --> Ctrl : { suggestion: { section, before, after, provider, usage, grounding } }
+    Ctrl --> Recruiter : 200 → Editor before/after diff (AK-3.1/3.2/3.4)
+  end
+end
+deactivate Svc
+deactivate Ctrl
+
+@enduml

@@ -37,6 +37,135 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
     return () => { alive = false; };
   }, []);
 
+  /* Magic Pen handlers (ADR-0060): passed to the Editor as its `pen` seam. Each
+     calls the per-section route; acceptance happens inside the Editor's local
+     form state (→ the existing autosave on the copy). */
+  const pen = {
+    headline: () => window.RecruitApi.penHeadline(app.id),
+    summary: () => window.RecruitApi.penSummary(app.id),
+    experience: (index) => window.RecruitApi.penExperience(app.id, index),
+    skills: () => window.RecruitApi.penSkills(app.id),
+  };
+
+  /* "Alles anpassen" (AK-3.5): a client-side fan-out over the section routes so
+     the UI can show per-section progress and be aborted. */
+  const [allTiles, setAllTiles] = React.useState(null); // null | tile[]
+  const allAbortRef = React.useRef(null);
+  // Which finished tile is in the "Trotzdem übernehmen" confirm step (OQ6): the
+  // fan-out tiles use the same grounding gate as the per-section path.
+  const [confirmingTile, setConfirmingTile] = React.useState(null); // { key, index } | null
+
+  const tileViolation = (t) =>
+    !!(t && t.suggestion && t.suggestion.grounding && !t.suggestion.grounding.grounded);
+  const tileDiffKind = (key) =>
+    key === 'skills' ? 'skills' : key === 'experience' ? 'array' : 'text';
+  const isConfirming = (t) =>
+    !!confirmingTile && confirmingTile.key === t.key && confirmingTile.index === t.index;
+
+  const penCall = (key, index, signal) => {
+    if (key === 'headline') return window.RecruitApi.penHeadline(app.id, signal);
+    if (key === 'summary') return window.RecruitApi.penSummary(app.id, signal);
+    if (key === 'experience') return window.RecruitApi.penExperience(app.id, index, signal);
+    return window.RecruitApi.penSkills(app.id, signal);
+  };
+
+  const runAll = async () => {
+    if (aiReady === false) {
+      setLetterError('KI nicht eingerichtet — konfiguriere den zentralen Schlüssel in den Einstellungen.');
+      return;
+    }
+    const controller = new AbortController();
+    allAbortRef.current = controller;
+    setConfirmingTile(null);
+    const stations = (app.documents && app.documents.resume && app.documents.resume.experience) || [];
+    const tiles = [
+      { key: 'headline', label: 'Headline' },
+      { key: 'summary', label: 'Profil' },
+      ...stations.map((_, i) => ({ key: 'experience', index: i, label: `Station ${i + 1}` })),
+      { key: 'skills', label: 'Skills' },
+    ];
+    setAllTiles(tiles.map((t) => ({ ...t, status: 'running' })));
+
+    const settled = await Promise.allSettled(
+      tiles.map((t) =>
+        penCall(t.key, t.index, controller.signal).then(
+          (suggestion) => ({ key: t.key, index: t.index, suggestion }),
+          (error) => ({ key: t.key, index: t.index, error }),
+        ),
+      ),
+    );
+
+    if (controller.signal.aborted) {
+      setAllTiles((prev) =>
+        prev.map((t) => (t.status === 'running' ? { ...t, status: 'aborted' } : t)),
+      );
+      return;
+    }
+    setAllTiles((prev) =>
+      prev.map((t) => {
+        const r = settled.find(
+          (res) => res.status === 'fulfilled' && res.value.key === t.key && res.value.index === t.index,
+        );
+        if (r && r.value.suggestion) return { ...t, status: 'done', suggestion: r.value.suggestion };
+        const detail = r && r.value.error ? (r.value.error.message || 'Fehler') : 'Fehler';
+        return { ...t, status: 'error', error: detail };
+      }),
+    );
+  };
+
+  const abortAll = () => {
+    if (allAbortRef.current) allAbortRef.current.abort();
+    setAllTiles((prev) =>
+      prev ? prev.map((t) => (t.status === 'running' ? { ...t, status: 'aborted' } : t)) : null,
+    );
+  };
+
+  const acceptAllTile = async (tile) => {
+    if (!tile.suggestion) return;
+    const docs = { ...app.documents };
+    const resume = { ...docs.resume };
+    if (tile.key === 'headline') docs.contact = { ...docs.contact, role: tile.suggestion.after };
+    else if (tile.key === 'summary') resume.summary = tile.suggestion.after;
+    else if (tile.key === 'experience') {
+      const exp = [...resume.experience];
+      exp[tile.index] = { ...exp[tile.index], bullets: tile.suggestion.after };
+      resume.experience = exp;
+    } else if (tile.key === 'skills') resume.skillGroups = tile.suggestion.after;
+    docs.resume = resume;
+    try {
+      const saved = await window.RecruitApi.saveJobApplicationDocuments(app.id, docs);
+      setApp((a) => ({ ...a, documents: saved }));
+      setAllTiles((prev) => prev.map((t) => (t === tile ? { ...t, status: 'applied' } : t)));
+      setConfirmingTile(null);
+      setReloadToken((n) => n + 1);
+      if (onChanged) onChanged();
+    } catch {
+      setLetterError('Der Abschnitt konnte nicht übernommen werden.');
+    }
+  };
+
+  // The single gate (OQ6): a violating tile first asks for an explicit
+  // "Trotzdem übernehmen" confirmation; only the second click writes the copy.
+  const handleTileAccept = (tile) => {
+    if (tileViolation(tile) && !isConfirming(tile)) {
+      setConfirmingTile({ key: tile.key, index: tile.index });
+      return;
+    }
+    void acceptAllTile(tile);
+  };
+
+  const allRunning = allTiles && allTiles.some((t) => t.status === 'running');
+  const allStatusLabel = (status) =>
+    status === 'running'
+      ? 'läuft …'
+      : status === 'done'
+        ? 'fertig'
+        : status === 'applied'
+          ? 'übernommen'
+          : status === 'aborted'
+            ? 'abgebrochen'
+            : 'fehler';
+
   const changeStatus = async (status) => {
     if (statusBusy || status === app.status) return;
     setStatusBusy(true);
@@ -133,7 +262,56 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
         <button onClick={generateLetter} disabled={letterBusy} title={aiReady === false ? 'KI nicht eingerichtet' : undefined} style={{ appearance: 'none', cursor: letterBusy ? 'default' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid var(--accent-border)', background: 'var(--accent-soft)', color: 'var(--accent-strong)', borderRadius: 'var(--radius-pill)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '6px 12px' }}>
           <BE.Icon name="zap" size={13} /> {letterBusy ? 'Erstelle …' : 'Anschreiben generieren'}
         </button>
+        <button onClick={runAll} disabled={!!allRunning || aiReady === false} title={aiReady === false ? 'KI nicht eingerichtet' : 'Alle Abschnitte mit KI anpassen'} style={{ appearance: 'none', cursor: allRunning || aiReady === false ? 'default' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid var(--accent-border)', background: 'var(--accent-soft)', color: 'var(--accent-strong)', borderRadius: 'var(--radius-pill)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '6px 12px' }}>
+          <BE.Icon name="edit" size={13} /> {allRunning ? 'Passe an …' : 'Alles für diese Stelle anpassen'}
+        </button>
       </div>
+
+      {allTiles && (
+        <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', overflow: 'hidden', alignSelf: 'stretch' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '8px 12px', background: 'var(--accent-soft)', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 600, color: 'var(--accent-strong)' }}>
+            <BE.Icon name="edit" size={12} />Alles anpassen
+            {allRunning && (
+              <button onClick={abortAll} style={{ marginLeft: 'auto', appearance: 'none', cursor: 'pointer', border: '1px solid var(--border-strong)', background: 'transparent', color: 'var(--text-muted)', borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 500, padding: '3px 10px' }}>Abbrechen</button>
+            )}
+          </div>
+          {allTiles.map((t, i) => (
+            <div key={i} style={{ padding: '10px 13px', borderTop: '1px solid var(--border)', fontSize: '12.5px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontWeight: 600, color: 'var(--text-heading)' }}>{t.label}</span>
+                <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-mono)', fontSize: '11px', color: t.status === 'error' ? 'var(--danger)' : t.status === 'done' ? 'var(--positive, #1F8A5B)' : 'var(--text-muted)' }}>
+                  {allStatusLabel(t.status)}
+                </span>
+              </div>
+              {t.status === 'done' && (
+                <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <window.EditorDiff
+                    kind={tileDiffKind(t.key)}
+                    before={t.suggestion.before}
+                    after={t.suggestion.after}
+                    unsupported={t.suggestion.grounding && t.suggestion.grounding.unsupported}
+                  />
+                  {tileViolation(t) && <window.GroundingWarning grounding={t.suggestion.grounding} />}
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    {isConfirming(t) ? (
+                      <>
+                        <button data-testid={`all-confirm-${t.key}${t.index != null ? `-${t.index}` : ''}`} onClick={() => acceptAllTile(t)} style={{ appearance: 'none', cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-sm)', padding: '5px 11px' }}>
+                          <BE.Icon name="check" size={13} />Trotzdem übernehmen
+                        </button>
+                        <button onClick={() => setConfirmingTile(null)} style={{ appearance: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-sm)', padding: '5px 11px' }}>Abbrechen</button>
+                      </>
+                    ) : (
+                      <button data-testid={`all-accept-${t.key}${t.index != null ? `-${t.index}` : ''}`} onClick={() => handleTileAccept(t)} style={{ appearance: 'none', cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-sm)', padding: '5px 11px' }}>
+                        <BE.Icon name="check" size={13} />Übernehmen
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       {aiReady === false && (
         <div role="status" style={{ alignSelf: 'flex-start', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--danger)', background: 'var(--danger-soft)', border: '1px solid var(--danger)', borderRadius: 'var(--radius-md)', padding: '6px 12px' }}>
@@ -206,6 +384,7 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
         renderPreviewHtml={(docs) => window.RecruitApi.previewDocumentsHtml(app.talentId || 'me', docs)}
         tools={['pdf']}
         exportPdf={exportCopyPdf}
+        pen={pen}
       />
     </div>
   );

@@ -65,6 +65,26 @@ offer / rejected`, any transition allowed).
     (nicht die Basis) über den bestehenden Documents-Body-Seam
     (`POST /talents/:id/dossier/pdf` ohne Anhänge) — kein neuer Endpunkt, kein
     Basis-Schreibpfad.
+- **Phase 3 — Magic Pen (ADR-0060).** Per-section AI tailoring of the Bewerbung
+  **copy** (headline, summary, each experience station, skills; the letter reuses
+  the existing generator), grounded against the **base CV**:
+  - **A pen action per section** with a **before/after diff** (rendered in the
+    browser via `diff`/jsdiff) and Übernehmen / Verwerfen / Neu. **Nothing is
+    written without an explicit accept** — acceptance is the existing autosave on
+    the copy, never the base CV.
+  - **„Alles für diese Stelle anpassen"** runs the sections in parallel with
+    per-section progress and a global **Abbrechen**, then yields an aggregated,
+    individually acceptable diff; `POST /pen/all` returns the same aggregate in
+    one request (for the agent).
+  - **Grounding widened to `year`/`degree`** (ADR-0060 §4): four-digit years not
+    covered by a base period and known degree tokens not evidenced by a base
+    education entry are flagged; the source now carries `experience[].period` and
+    `education` (degree + period). Violations are **marked** (highlight +
+    `GroundingWarning`) and need an explicit „Trotzdem übernehmen" confirmation.
+  - Five new KI routes (`pen/headline`, `pen/summary`, `pen/experience`,
+    `pen/skills`, `pen/all`), all `@RequiresAi()` (503 without a key) +
+    `AiRateLimitGuard`, no `VermittlungGuard`/`PlanGuard`; every call is metered
+    (`penHeadline`/`penSummary`/`penExperienceBullets`/`penSkills`).
 
 ### Changed (breaking)
 
@@ -97,6 +117,10 @@ offer / rejected`, any transition allowed).
 
 ### Changed
 
+- **The AI-route drift guard now counts 18 routes** (K14–K18 added: the five
+  `pen/*` routes). The OpenAPI contract documents `PenSection`/`PenAllSection`/
+  `PenSuggestion`/`PenLetterSuggestion`/`PenAllResult` (a `oneOf`/discriminator
+  union over `section`) and `PenExperienceInput`.
 - **Removed the deterministic template fallback** for user-visible AI
   generation (ADR-0057): a failed/unusable upstream call is now `502`, a
   missing key `503`. Deterministic non-generative helpers (offline matching,

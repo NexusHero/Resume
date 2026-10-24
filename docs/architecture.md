@@ -203,10 +203,18 @@ The Phase-2 entity follows the same layer chain as Stellen (ADR-0058):
   `application-letter-service.ts` (lazy-loads `JobPosting.description`, detects
   the ad language with a `'de'` default, and wraps the `LlmFeatureRunner` result
   with `grounding` + `checks`); `legacy-application-migration.ts` (boot migration
-  of the frozen pipeline, idempotent via `WorkspaceSettings.applicationsMigrated`).
-- **Nest** — `job-applications/job-applications.module.ts` (eight routes;
-  `AuthGuard, AiConfiguredGuard` on the class, `@RequiresAi()` + method
-  `AiRateLimitGuard` only on `/letter`; no `VermittlungGuard`).
+  of the frozen pipeline, idempotent via `WorkspaceSettings.applicationsMigrated`);
+  **`magic-pen-service.ts`** (Phase 3, ADR-0060: per-section rewrite of the copy,
+  grounding against the **base CV** via `documentRepository.get`, `rewriteAll`
+  fanned out with `allSettled`, never persists — acceptance is the existing
+  `PUT /documents` autosave).
+- **Domain** — **`magic-pen.ts`** (the section catalogue, per-section reply
+  schemas, `penPrompt` with the ad text as untrusted data + the immutable facts
+  as a closed context, and `normalizePen`/`penAccept`).
+- **Nest** — `job-applications/job-applications.module.ts` (eight routes +
+  the five `pen/*` routes; `AuthGuard, AiConfiguredGuard` on the class,
+  `@RequiresAi()` + method `AiRateLimitGuard` only on `/letter` and the `pen/*`
+  routes; no `VermittlungGuard`, no `PlanGuard`).
 
 The snapshots `postingCompany`/`postingTitle` keep a Bewerbung fully displayable
 and editable after its posting is deleted (soft `jobPostingId`, no cascade); only
@@ -307,6 +315,22 @@ to an honest `references: 0`; the result carries `provider`, `usage`, a
 
 ![Anschreiben generieren sequence](umls/06_seq_generate_letter.svg)
 
+**Magic Pen (Abschnitt)** (FR-89/90/92, ADR-0060) — a per-section rewrite of the
+copy: load the base CV as the grounding source (falling back to the copy when the
+tenant is gone), build a structurally-anchored prompt over the full ad text, run
+one metered generation, and return a before/after suggestion whose grounding
+marks (never discards) unsupported claims:
+
+![Magic Pen Abschnitt sequence](umls/06_seq_magic_pen.svg)
+
+**Magic Pen „Alles anpassen"** (FR-93/94, ADR-0060) — the server-side `POST
+/pen/all` fan-out (one `PenSuggestion` per station + headline/summary/skills +
+the letter slot) with `allSettled`, so a failed section becomes an error slot and
+the rest stay usable; the UI drives the human view client-side for real per-section
+progress + abort:
+
+![Magic Pen Alles anpassen sequence](umls/06_seq_magic_pen_all.svg)
+
 ### Traceability matrix
 
 The requirement catalogue ([requirements.md](requirements.md)) lists FR → module.
@@ -326,6 +350,8 @@ in [`docs/umls/`](umls).
 | FR-78               | `job-posting-extract-service`, `ssrf-fetch` | [Stelle per URL einfügen (SSRF)](umls/06_seq_insert_url.puml)             | 0058                |
 | FR-81, FR-82, FR-83 | `job-application-service`, `document-repo`  | [Bewerbung erstellen (mit Kopie)](umls/06_seq_create_application.puml)    | 0059                |
 | FR-84, FR-85        | `application-letter-service`, `llm-runner`  | [Anschreiben generieren](umls/06_seq_generate_letter.puml)                | 0059                |
+| FR-89, FR-90, FR-92 | `magic-pen-service`, `grounding`            | [Magic Pen (Abschnitt)](umls/06_seq_magic_pen.puml)                       | 0060                |
+| FR-93, FR-94        | `magic-pen-service`, `rewriteAll`           | [Magic Pen „Alles anpassen"](umls/06_seq_magic_pen_all.puml)              | 0060                |
 | FR-12, FR-13, FR-14 | `candidacy-service`, `placement-service`    | Pipeline → placement (§6, prose)                                          | 0010                |
 | FR-61               | `retention-service`                         | Retention report + anonymise sweep (§6 companion, ADR-0018)               | 0018                |
 
@@ -557,25 +583,26 @@ watching). If you are scanning for current exposure, read §11.2.
 
 ## 12. Glossary
 
-| Term              | Meaning                                                                                                   |
-| ----------------- | --------------------------------------------------------------------------------------------------------- |
-| **Mandant**       | The applicant the product helps (code `Talent`); has a base CV that is never mutated by a Bewerbung.      |
-| **Suchauftrag**   | A client's search assignment (code `Mandate`; fee, deadline, job ad).                                     |
-| **Workspace**     | The tenant / working area (code `Tenant`); hosts the per-workspace `vermittlung` switch.                  |
-| **Vermittlung**   | The opt-in intermediary mode (Suchaufträge, Pipeline, Platzierungen, Performance, Postfach, CoRecruiter). |
-| Stelle            | A saved job ad with its full display text (Phase 1).                                                      |
-| Bewerbung         | A Stelle × Mandant with its own copy of CV + cover letter (Phase 2); code `JobApplication`.               |
-| Candidacy         | A mandant's presence on a Suchauftrag's pipeline, at some stage.                                          |
-| Placement         | A booked candidacy with its fee.                                                                          |
-| Grounding         | Deterministic check that generated claims are supported by the CV + Suchauftrag.                          |
-| Archetype         | Curated baseline company knowledge, used until real observations exist.                                   |
-| Observation       | A first-party record of a real interview, feeding future prep (the flywheel).                             |
-| Auflagen          | Employer conditions/requirements surfaced for candidate prep.                                             |
-| Bewerbungsmappe   | Application bundle: cover letter + CV + attachments merged into one PDF.                                  |
-| Team scope        | The ownership boundary that makes recruiting data shared across a team.                                   |
-| Provider badge    | UI label showing which AI backend produced a result (`AI · <provider>` + tokens/cost); no template badge. |
-| Call usage        | Per-generation payload (`inputTokens`, `outputTokens`, `costUsd` estimate) on LLM-backed responses.       |
-| AI not configured | The honest `503 ai-not-configured` state when no central key is set; the UI says "KI nicht eingerichtet". |
+| Term              | Meaning                                                                                                                                                                                                                                                                                      |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Mandant**       | The applicant the product helps (code `Talent`); has a base CV that is never mutated by a Bewerbung.                                                                                                                                                                                         |
+| **Suchauftrag**   | A client's search assignment (code `Mandate`; fee, deadline, job ad).                                                                                                                                                                                                                        |
+| **Workspace**     | The tenant / working area (code `Tenant`); hosts the per-workspace `vermittlung` switch.                                                                                                                                                                                                     |
+| **Vermittlung**   | The opt-in intermediary mode (Suchaufträge, Pipeline, Platzierungen, Performance, Postfach, CoRecruiter).                                                                                                                                                                                    |
+| Stelle            | A saved job ad with its full display text (Phase 1).                                                                                                                                                                                                                                         |
+| Bewerbung         | A Stelle × Mandant with its own copy of CV + cover letter (Phase 2); code `JobApplication`.                                                                                                                                                                                                  |
+| Magic Pen         | Per-section AI tailoring of a Bewerbung's **copy** (headline, summary, each station, skills; the letter reuses the existing generator). Grounded against the **base CV**, not the copy; distinct from the base editor's "KI anpassen" (`suggestDocument`) and the frozen `tailorForMandate`. |
+| Candidacy         | A mandant's presence on a Suchauftrag's pipeline, at some stage.                                                                                                                                                                                                                             |
+| Placement         | A booked candidacy with its fee.                                                                                                                                                                                                                                                             |
+| Grounding         | Deterministic check that generated claims are supported by the CV + Suchauftrag.                                                                                                                                                                                                             |
+| Archetype         | Curated baseline company knowledge, used until real observations exist.                                                                                                                                                                                                                      |
+| Observation       | A first-party record of a real interview, feeding future prep (the flywheel).                                                                                                                                                                                                                |
+| Auflagen          | Employer conditions/requirements surfaced for candidate prep.                                                                                                                                                                                                                                |
+| Bewerbungsmappe   | Application bundle: cover letter + CV + attachments merged into one PDF.                                                                                                                                                                                                                     |
+| Team scope        | The ownership boundary that makes recruiting data shared across a team.                                                                                                                                                                                                                      |
+| Provider badge    | UI label showing which AI backend produced a result (`AI · <provider>` + tokens/cost); no template badge.                                                                                                                                                                                    |
+| Call usage        | Per-generation payload (`inputTokens`, `outputTokens`, `costUsd` estimate) on LLM-backed responses.                                                                                                                                                                                          |
+| AI not configured | The honest `503 ai-not-configured` state when no central key is set; the UI says "KI nicht eingerichtet".                                                                                                                                                                                    |
 
 Two different code concepts share the English name "application": the **frozen
 pipeline `Application`** (`domain/application.ts`, route `/applications`, board

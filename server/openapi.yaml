@@ -1854,6 +1854,124 @@ paths:
         '502': { $ref: '#/components/responses/UpstreamProvider' }
         '503': { $ref: '#/components/responses/AiNotConfigured' }
 
+  /job-applications/{id}/pen/headline:
+    post:
+      tags: [Job applications]
+      summary: Magic Pen — rewrite the copy's headline (contact.role)
+      operationId: penHeadline
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses:
+        '200':
+          description: The before/after suggestion with provider, usage and grounding.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  suggestion: { $ref: '#/components/schemas/PenSuggestion' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '502': { $ref: '#/components/responses/UpstreamProvider' }
+        '503': { $ref: '#/components/responses/AiNotConfigured' }
+
+  /job-applications/{id}/pen/summary:
+    post:
+      tags: [Job applications]
+      summary: Magic Pen — rewrite the copy's profile summary
+      operationId: penSummary
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses:
+        '200':
+          description: The before/after suggestion with provider, usage and grounding.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  suggestion: { $ref: '#/components/schemas/PenSuggestion' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '502': { $ref: '#/components/responses/UpstreamProvider' }
+        '503': { $ref: '#/components/responses/AiNotConfigured' }
+
+  /job-applications/{id}/pen/experience:
+    post:
+      tags: [Job applications]
+      summary: Magic Pen — rewrite one experience station's bullets (by index)
+      operationId: penExperience
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PenExperienceInput' }
+      responses:
+        '200':
+          description: The before/after suggestion for the addressed station.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  suggestion: { $ref: '#/components/schemas/PenSuggestion' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '502': { $ref: '#/components/responses/UpstreamProvider' }
+        '503': { $ref: '#/components/responses/AiNotConfigured' }
+
+  /job-applications/{id}/pen/skills:
+    post:
+      tags: [Job applications]
+      summary: Magic Pen — reorder/rephrase the copy's skill groups
+      operationId: penSkills
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses:
+        '200':
+          description: The before/after suggestion with provider, usage and grounding.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  suggestion: { $ref: '#/components/schemas/PenSuggestion' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '502': { $ref: '#/components/responses/UpstreamProvider' }
+        '503': { $ref: '#/components/responses/AiNotConfigured' }
+
+  /job-applications/{id}/pen/all:
+    post:
+      tags: [Job applications]
+      summary: Magic Pen — fan out all sections (per station) plus the letter slot
+      description: |
+        Aggregates the four CV sections (one entry per experience station), the
+        skills and headline/summary suggestions, and the letter slot. A failed
+        section is reported as an `{ error: { type, detail } }` slot; the rest
+        survive (no whole-request 500).
+      operationId: penAll
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses:
+        '200':
+          description: The aggregate suggestions.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PenAllResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '502': { $ref: '#/components/responses/UpstreamProvider' }
+        '503': { $ref: '#/components/responses/AiNotConfigured' }
+
   /job-applications/{id}/status:
     post:
       tags: [Job applications]
@@ -3099,7 +3217,7 @@ components:
           items:
             type: object
             properties:
-              kind: { type: string, enum: [number, skill] }
+              kind: { type: string, enum: [number, skill, year, degree] }
               text: { type: string }
 
     Talent:
@@ -3556,6 +3674,108 @@ components:
             wordCount: { type: integer }
             references: { type: integer }
             inAdLanguage: { type: boolean }
+
+    PenSection:
+      type: string
+      description: The four CV sections the Magic Pen rewrites.
+      enum: [headline, summary, experienceBullets, skills]
+
+    PenAllSection:
+      type: string
+      description: The sections `pen/all` aggregates — the four CV sections plus the letter slot.
+      enum: [headline, summary, experienceBullets, skills, letter]
+
+    PenExperienceInput:
+      type: object
+      required: [experienceIndex]
+      properties:
+        experienceIndex:
+          type: integer
+          minimum: 0
+          description: The zero-based index of the experience station to rewrite.
+
+    PenSuggestion:
+      type: object
+      description: A per-section before/after suggestion (never persisted).
+      properties:
+        section: { $ref: '#/components/schemas/PenSection' }
+        before:
+          description: The copy value at request time (string, string[] or skill groups).
+          oneOf:
+            - { type: string }
+            - { type: array, items: { type: string } }
+            - { type: array, items: { type: object, additionalProperties: true } }
+        after:
+          description: The generated value (string, string[] or skill groups).
+          oneOf:
+            - { type: string }
+            - { type: array, items: { type: string } }
+            - { type: array, items: { type: object, additionalProperties: true } }
+        experienceIndex:
+          type: integer
+          description: Only for experienceBullets — which station this rewrites.
+        station:
+          type: object
+          description: The immutable station context (role/company/period).
+          properties:
+            role: { type: string }
+            company: { type: string }
+            period: { type: string }
+        provider: { $ref: '#/components/schemas/ProviderId' }
+        usage: { $ref: '#/components/schemas/CallUsage' }
+        grounding: { $ref: '#/components/schemas/Grounding' }
+
+    PenLetterSuggestion:
+      type: object
+      description: The letter slot of `pen/all` (reuses the application-letter generation).
+      properties:
+        section: { type: string, enum: [letter] }
+        before: { type: array, items: { type: string } }
+        after: { type: array, items: { type: string } }
+        provider: { $ref: '#/components/schemas/ProviderId' }
+        usage: { $ref: '#/components/schemas/CallUsage' }
+        grounding: { $ref: '#/components/schemas/Grounding' }
+        checks:
+          type: object
+          properties:
+            mentionsCompany: { type: boolean }
+            mentionsTitle: { type: boolean }
+            wordCount: { type: integer }
+            references: { type: integer }
+            inAdLanguage: { type: boolean }
+
+    PenAllErrorSlot:
+      type: object
+      description: A failed section of `pen/all`, reported as an error slot instead of a 500.
+      properties:
+        error:
+          type: object
+          properties:
+            type: { type: string }
+            detail: { type: string }
+
+    PenAllEntry:
+      description: One aggregate entry — a section suggestion, the letter slot, or an error slot.
+      oneOf:
+        - $ref: '#/components/schemas/PenSuggestion'
+        - $ref: '#/components/schemas/PenLetterSuggestion'
+        - $ref: '#/components/schemas/PenAllErrorSlot'
+      discriminator:
+        propertyName: section
+        mapping:
+          headline: '#/components/schemas/PenSuggestion'
+          summary: '#/components/schemas/PenSuggestion'
+          experienceBullets: '#/components/schemas/PenSuggestion'
+          skills: '#/components/schemas/PenSuggestion'
+          letter: '#/components/schemas/PenLetterSuggestion'
+
+    PenAllResult:
+      type: object
+      description: The aggregate of `POST /pen/all` — one entry per station + headline/summary/skills + letter.
+      properties:
+        sections:
+          type: array
+          items: { $ref: '#/components/schemas/PenAllEntry' }
 
     LlmSettings:
       type: object

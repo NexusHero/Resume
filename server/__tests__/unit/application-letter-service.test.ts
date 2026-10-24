@@ -122,4 +122,26 @@ describe('ApplicationLetterService.generate', () => {
     });
     expect(result.letter.checks.references).toBeGreaterThanOrEqual(2);
   });
+
+  it('ApplicationLetterService_Grounding_StillGroundedAfterSourceExtension', async () => {
+    // Regression (ADR-0060 §2.1): groundingSource now also carries periods and
+    // education, so a letter whose year/degree are evidenced by the base stays
+    // grounded — the extension must never turn supported facts into warnings.
+    const reply =
+      '{"paragraphs":["Since 2016 I have worked at Acme. I hold a Bachelor of Science."]}';
+    const provider = new FakeLlmProvider('claude', true, reply);
+    const { applications, postings, service } = makeService(provider);
+    const app = application('a1');
+    app.documents.resume.experience = [
+      { role: 'Dev', company: 'Acme', period: '2014–2018', location: '', bullets: [], skills: [] },
+    ];
+    app.documents.resume.education = [
+      { degree: 'Bachelor of Science', school: 'TU', period: '2010–2014', note: '' },
+    ];
+    await applications.add(app);
+    await postings.add(posting('p1', 'We need a Rust engineer.'));
+
+    const result = await service.generate('team', 'u1', 'a1');
+    expect(result.letter.grounding).toMatchObject({ grounded: true });
+  });
 });

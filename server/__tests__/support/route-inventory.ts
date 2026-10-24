@@ -237,7 +237,7 @@ export const VERMITTLER_ROUTES: RouteSpec[] = [
   },
 ];
 
-/** The 11 generative AI routes (plan §5.1): 503 without a central key. */
+/** The 18 generative AI routes (plan §5.1): 503 without a central key. */
 export const AI_ROUTES: RouteSpec[] = [
   {
     id: 'K01',
@@ -312,6 +312,36 @@ export const AI_ROUTES: RouteSpec[] = [
     id: 'K13',
     method: 'POST',
     path: '/api/v1/job-applications/:id/letter',
+    controller: 'job-applications/job-applications.module.ts',
+  },
+  {
+    id: 'K14',
+    method: 'POST',
+    path: '/api/v1/job-applications/:id/pen/headline',
+    controller: 'job-applications/job-applications.module.ts',
+  },
+  {
+    id: 'K15',
+    method: 'POST',
+    path: '/api/v1/job-applications/:id/pen/summary',
+    controller: 'job-applications/job-applications.module.ts',
+  },
+  {
+    id: 'K16',
+    method: 'POST',
+    path: '/api/v1/job-applications/:id/pen/experience',
+    controller: 'job-applications/job-applications.module.ts',
+  },
+  {
+    id: 'K17',
+    method: 'POST',
+    path: '/api/v1/job-applications/:id/pen/skills',
+    controller: 'job-applications/job-applications.module.ts',
+  },
+  {
+    id: 'K18',
+    method: 'POST',
+    path: '/api/v1/job-applications/:id/pen/all',
     controller: 'job-applications/job-applications.module.ts',
   },
 ];

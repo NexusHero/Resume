@@ -36,6 +36,7 @@ import './TalentProfile.jsx';
 import './EditorShared.jsx';
 import './EditorDocs.jsx';
 import './EditorModals.jsx';
+import './EditorDiff.jsx'; // window.EditorDiff — Magic-Pen before/after diff renderer (jsdiff)
 import './import-merge.js'; // window.mergeTextImport — text-import merge (ADR-0057)
 import './Editor.jsx';
 

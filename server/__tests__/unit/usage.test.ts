@@ -6,6 +6,7 @@ import {
   type UsageEvent,
   buildAuditTrail,
   auditTrailToCsv,
+  USAGE_FEATURES,
 } from '../../src/domain/usage.js';
 import { UsageService } from '../../src/services/usage-service.js';
 import { InMemoryUsageMeter } from '../support/fakes.js';
@@ -21,6 +22,12 @@ const ev = (over: Partial<UsageEvent> = {}): UsageEvent => ({
 });
 
 describe('usage domain', () => {
+  it('UsageFeatures_IncludePenFeatures', () => {
+    expect(USAGE_FEATURES).toEqual(
+      expect.arrayContaining(['penHeadline', 'penSummary', 'penExperienceBullets', 'penSkills']),
+    );
+  });
+
   describe('estimateCost', () => {
     it('PricesClaudeInputAndOutputPerMillion', () => {
       // 1M input @ $3 + 1M output @ $15 = $18

@@ -250,6 +250,66 @@ describe('Phase 2 OpenAPI contract (ADR-0059, Bewerbungen)', () => {
   });
 });
 
+describe('Phase 3 OpenAPI contract (ADR-0060, Magic Pen)', () => {
+  it('OpenApi_PenSuggestionSchema_DocumentsBeforeAfterGrounding', () => {
+    const props = openApiProps('PenSuggestion');
+    expect(props).toEqual(
+      expect.arrayContaining([
+        'section',
+        'before',
+        'after',
+        'experienceIndex',
+        'station',
+        'provider',
+        'usage',
+        'grounding',
+      ]),
+    );
+  });
+
+  it('OpenApi_PenLetterSlotSchema_Exists', () => {
+    expect(openApiProps('PenLetterSuggestion')).toEqual(
+      expect.arrayContaining([
+        'section',
+        'before',
+        'after',
+        'provider',
+        'usage',
+        'grounding',
+        'checks',
+      ]),
+    );
+    expect(openApiProps('PenAllResult')).toEqual(expect.arrayContaining(['sections']));
+    // The aggregate is a oneOf/discriminator union over `section`.
+    expect(SPEC).toContain('PenAllEntry');
+    expect(SPEC).toContain('propertyName: section');
+    expect(SPEC).toContain('PenAllErrorSlot');
+  });
+
+  it('OpenApi_PenRoutes_Exist', () => {
+    for (const path of [
+      '/job-applications/{id}/pen/headline',
+      '/job-applications/{id}/pen/summary',
+      '/job-applications/{id}/pen/experience',
+      '/job-applications/{id}/pen/skills',
+      '/job-applications/{id}/pen/all',
+    ]) {
+      expect(SPEC).toContain(`  ${path}:`);
+    }
+    for (const op of ['penHeadline', 'penSummary', 'penExperience', 'penSkills', 'penAll']) {
+      expect(SPEC).toContain(`operationId: ${op}`);
+    }
+  });
+
+  it('OpenApi_Pen_Documents503AiNotConfiguredAnd502UpstreamProvider', () => {
+    const block = operationBlock('/api/v1/job-applications/:id/pen/headline', 'post');
+    expect(block).toContain('AiNotConfigured');
+    expect(block).toContain('UpstreamProvider');
+    expect(block).toContain('NotFound');
+    expect(block).toContain('Unauthorized');
+  });
+});
+
 /** One operation block (`path` + method) from the hand-written spec. */
 function operationBlock(path: string, method: string): string {
   const lines = SPEC.split('\n');

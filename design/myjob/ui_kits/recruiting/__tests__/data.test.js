@@ -247,3 +247,40 @@ describe('RecruitApi — job application endpoints', () => {
   });
 });
 
+describe('RecruitApi — Magic Pen endpoints', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('RecruitApi_PenMethods_UseCorrectEndpoints', async () => {
+    const calls = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url, init) => {
+        calls.push({ url: String(url), method: (init && init.method) || 'GET' });
+        return new Response(
+          JSON.stringify({ configured: true, suggestion: { section: 'summary' }, sections: [] }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        );
+      }),
+    );
+    window.RecruitApi.invalidateAiStatus();
+
+    await window.RecruitApi.penHeadline('a1');
+    expect(calls.find((c) => c.url.endsWith('/job-applications/a1/pen/headline') && c.method === 'POST')).toBeTruthy();
+
+    await window.RecruitApi.penSummary('a1');
+    expect(calls.find((c) => c.url.endsWith('/job-applications/a1/pen/summary') && c.method === 'POST')).toBeTruthy();
+
+    await window.RecruitApi.penExperience('a1', 2);
+    const exp = calls.find((c) => c.url.endsWith('/job-applications/a1/pen/experience') && c.method === 'POST');
+    expect(exp).toBeTruthy();
+
+    await window.RecruitApi.penSkills('a1');
+    expect(calls.find((c) => c.url.endsWith('/job-applications/a1/pen/skills') && c.method === 'POST')).toBeTruthy();
+
+    await window.RecruitApi.penAll('a1');
+    expect(calls.find((c) => c.url.endsWith('/job-applications/a1/pen/all') && c.method === 'POST')).toBeTruthy();
+  });
+});
+

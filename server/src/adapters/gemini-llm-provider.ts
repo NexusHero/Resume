@@ -5,6 +5,13 @@ import type {
   LlmProvider,
   LlmProviderId,
 } from '../ports/llm-provider.js';
+import type {
+  AgentLlmProvider,
+  AgentMessagePart,
+  AgentTool,
+  AgentTurnEvent,
+  AgentTurnInput,
+} from '../ports/agent-llm-provider.js';
 import type { HttpFetch } from '../ports/http-fetch.js';
 
 const BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
@@ -15,16 +22,70 @@ export interface GeminiConfig {
 }
 
 interface GeminiResponse {
-  candidates?: { content?: { parts?: { text?: string }[] } }[];
+  candidates?: {
+    content?: {
+      parts?: Array<{ text?: string; functionCall?: { name: string; args: unknown } }>;
+    };
+    finishReason?: string;
+  }[];
   usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number };
 }
 
+/** Gemini's `functionResponse.response` wants an object; our tool result is a
+    serialised JSON string, so parse it back (fall back to a string payload). */
+function responseValue(content: string): unknown {
+  try {
+    return JSON.parse(content);
+  } catch {
+    return { result: content };
+  }
+}
+
+/** Map a normalised agent history part to a Gemini `contents` entry. */
+function geminiContent(part: AgentMessagePart): Record<string, unknown> {
+  if (part.role === 'user') {
+    const parts: unknown[] = [];
+    if (part.text !== undefined) parts.push({ text: part.text });
+    for (const tr of part.toolResults ?? []) {
+      parts.push({ functionResponse: { name: tr.name, response: responseValue(tr.content) } });
+    }
+    return { role: 'user', parts };
+  }
+  const parts: unknown[] = [];
+  if (part.text !== undefined) parts.push({ text: part.text });
+  for (const tc of part.toolCalls ?? []) {
+    parts.push({ functionCall: { name: tc.name, args: tc.input } });
+  }
+  return { role: 'model', parts };
+}
+
+/** Map the agent tool registry to Gemini's `functionDeclarations`. */
+function geminiTools(tools: AgentTool[]): Record<string, unknown> | undefined {
+  if (tools.length === 0) return undefined;
+  return {
+    tools: [
+      {
+        functionDeclarations: tools.map((t) => ({
+          name: t.name,
+          description: t.description,
+          parameters: t.inputSchema,
+        })),
+      },
+    ],
+  };
+}
+
+let geminiToolSeq = 0;
+
 /**
  * Gemini via Google's Generative Language API (`:generateContent`). Same shape
- * as {@link AnthropicLlmProvider} so the two are interchangeable behind the LLM
- * service; raw HTTP over the {@link HttpFetch} port keeps it unit-testable.
+ * as {@link AnthropicLlmProvider} for the single-shot `generate`; the agentic
+ * `streamAgentTurn` is a **non-streaming round** (Owner Q1): one
+ * `generateContent` call whose reply is emitted as exactly one `text-delta` (or
+ * one `tool-use`) then `done`. No SSE, no `streamGenerateContent` — the
+ * `AsyncIterable` contract is identical, only the delta count is one.
  */
-export class GeminiLlmProvider implements LlmProvider {
+export class GeminiLlmProvider implements LlmProvider, AgentLlmProvider {
   readonly id: LlmProviderId = 'gemini';
   readonly label = 'Gemini (Google)';
   private readonly http: HttpFetch;
@@ -42,32 +103,17 @@ export class GeminiLlmProvider implements LlmProvider {
   }
 
   async generate(input: LlmGenerateInput): Promise<LlmGenerateResult> {
-    const url = `${BASE}/${encodeURIComponent(this.model)}:generateContent?key=${encodeURIComponent(this.apiKey)}`;
+    const url = this.url();
     const res = await this.http(url, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         ...(input.system ? { systemInstruction: { parts: [{ text: input.system }] } } : {}),
         contents: [{ role: 'user', parts: [{ text: input.prompt }] }],
-        generationConfig: {
-          maxOutputTokens: input.maxTokens ?? 1024,
-          // Gemini 2.5 spends "thinking" tokens inside maxOutputTokens; with
-          // our tight budgets that truncates the visible reply (and breaks
-          // JSON parsing). These are short, structured tasks — disable it.
-          thinkingConfig: { thinkingBudget: 0 },
-        },
+        generationConfig: this.generationConfig(input.maxTokens),
       }),
     });
-    if (res.status === 400 || res.status === 401 || res.status === 403) {
-      throw new UpstreamProviderError(
-        'Google rejected the API key — check it under Settings → AI models & API keys.',
-      );
-    }
-    if (!res.ok) {
-      throw new UpstreamProviderError(
-        `The Gemini API responded with ${res.status} — try again in a moment.`,
-      );
-    }
+    this.throwOnHttpError(res.status, res.ok);
     const body = (await res.json()) as GeminiResponse;
     const text = (body.candidates?.[0]?.content?.parts ?? [])
       .map((p) => p.text ?? '')
@@ -82,4 +128,83 @@ export class GeminiLlmProvider implements LlmProvider {
       },
     };
   }
+
+  async *streamAgentTurn(input: AgentTurnInput): AsyncIterable<AgentTurnEvent> {
+    const res = await this.http(this.url(), {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        ...(input.system ? { systemInstruction: { parts: [{ text: input.system }] } } : {}),
+        contents: input.messages.map(geminiContent),
+        ...geminiTools(input.tools),
+        generationConfig: this.generationConfig(input.maxTokens),
+      }),
+      signal: input.signal,
+    });
+    this.throwOnHttpError(res.status, res.ok);
+    const body = (await res.json()) as GeminiResponse;
+
+    const candidate = body.candidates?.[0];
+    const parts = candidate?.content?.parts ?? [];
+    const functionCall = parts.find((p) => p.functionCall)?.functionCall;
+    const text = parts
+      .map((p) => p.text ?? '')
+      .join('')
+      .trim();
+
+    if (functionCall) {
+      yield {
+        kind: 'tool-use',
+        id: `toolu_gemini_${++geminiToolSeq}`,
+        name: functionCall.name,
+        input: functionCall.args,
+      };
+    } else if (text !== '') {
+      yield { kind: 'text-delta', text };
+    }
+
+    yield {
+      kind: 'done',
+      stopReason: normalizeFinishReason(candidate?.finishReason),
+      usage: {
+        inputTokens: body.usageMetadata?.promptTokenCount ?? 0,
+        outputTokens: body.usageMetadata?.candidatesTokenCount ?? 0,
+      },
+    };
+  }
+
+  private url(): string {
+    return `${BASE}/${encodeURIComponent(this.model)}:generateContent?key=${encodeURIComponent(this.apiKey)}`;
+  }
+
+  private generationConfig(maxTokens: number | undefined): Record<string, unknown> {
+    return {
+      maxOutputTokens: maxTokens ?? 1024,
+      // Gemini 2.5 spends "thinking" tokens inside maxOutputTokens; with our
+      // tight budgets that truncates the visible reply (and breaks JSON parsing).
+      // These are short, structured tasks — disable it.
+      thinkingConfig: { thinkingBudget: 0 },
+    };
+  }
+
+  private throwOnHttpError(status: number, ok: boolean): void {
+    if (status === 400 || status === 401 || status === 403) {
+      throw new UpstreamProviderError(
+        'Google rejected the API key — check it under Settings → AI models & API keys.',
+      );
+    }
+    if (!ok) {
+      throw new UpstreamProviderError(
+        `The Gemini API responded with ${status} — try again in a moment.`,
+      );
+    }
+  }
+}
+
+type StopReason = 'end_turn' | 'tool_use' | 'max_tokens';
+
+function normalizeFinishReason(reason: string | undefined): StopReason {
+  if (reason === 'FUNCTION_CALL') return 'tool_use';
+  if (reason === 'MAX_TOKENS') return 'max_tokens';
+  return 'end_turn';
 }

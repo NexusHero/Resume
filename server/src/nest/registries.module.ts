@@ -17,6 +17,7 @@ import type { PlacementRepository } from '../ports/placement-repository.js';
 import type { ApplicationRepository } from '../ports/application-repository.js';
 import type { InterviewObservationRepository } from '../ports/interview-observation-repository.js';
 import type { ArtifactLogRepository } from '../ports/artifact-log-repository.js';
+import type { ChatSessionRepository } from '../ports/chat-session-repository.js';
 import type { Clock } from '../ports/clock.js';
 import {
   TALENT_DATA_PURGERS,
@@ -36,6 +37,7 @@ import {
   APPLICATION_REPOSITORY,
   INTERVIEW_OBSERVATION_REPOSITORY,
   ARTIFACT_LOG_REPOSITORY,
+  CHAT_SESSION_REPOSITORY,
   CLOCK,
 } from './tokens.js';
 
@@ -107,6 +109,7 @@ import {
         passwordResetTokenStore: PasswordResetTokenStore,
         emailVerificationTokenStore: EmailVerificationTokenStore,
         usageMeter: UsageMeter,
+        chatSessionRepository: ChatSessionRepository,
       ): UserErasureStep[] => [
         {
           // Better-Auth owns credentials + sessions (ADR-0043): erase the account
@@ -126,6 +129,7 @@ import {
           erase: (userId) => emailVerificationTokenStore.destroyForUser(userId),
         },
         { label: 'usage', erase: (userId) => usageMeter.removeForUser(userId) },
+        { label: 'chat-sessions', erase: (userId) => chatSessionRepository.removeForUser(userId) },
       ],
       inject: [
         USER_REPOSITORY,
@@ -133,6 +137,7 @@ import {
         PASSWORD_RESET_TOKEN_STORE,
         EMAIL_VERIFICATION_TOKEN_STORE,
         USAGE_METER,
+        CHAT_SESSION_REPOSITORY,
       ],
     },
     {
@@ -146,6 +151,7 @@ import {
         applicationRepository: ApplicationRepository,
         interviewObservationRepository: InterviewObservationRepository,
         artifactLogRepository: ArtifactLogRepository,
+        chatSessionRepository: ChatSessionRepository,
       ): UserExportSection[] => [
         {
           key: 'account',
@@ -166,6 +172,10 @@ import {
           key: 'artifactLogs',
           collect: (_userId, scope) => artifactLogRepository.list(scope),
         },
+        {
+          key: 'chatSessions',
+          collect: (userId, scope) => chatSessionRepository.list(scope, userId),
+        },
       ],
       inject: [
         USER_REPOSITORY,
@@ -175,6 +185,7 @@ import {
         APPLICATION_REPOSITORY,
         INTERVIEW_OBSERVATION_REPOSITORY,
         ARTIFACT_LOG_REPOSITORY,
+        CHAT_SESSION_REPOSITORY,
       ],
     },
   ],

@@ -1,0 +1,41 @@
+@startuml 06_seq_agent_abort_limit
+title Chat-Agent: Abort / Limit — FR-101/104, ADR-0062
+
+skinparam shadowing false
+autonumber
+
+actor Recruiter
+participant "AgentController" as Ctrl
+participant "ChatAgentService" as Agent
+participant "ChatSessionRepository\n(fs | sql)" as Repo
+
+Recruiter -> Ctrl : POST /agent/chat/{id}/abort (oder Stream schließen)
+activate Ctrl
+Ctrl -> Agent : abort(scope, userId, id)
+Agent -> Agent : AbortController.abort()
+
+note over Agent
+  AbortSignal beendet die laufende Provider-Runde;
+  die akkumulierte Runde bleibt als letzter Eintrag erhalten (Q5).
+end note
+
+Agent -> Repo : update (status: aborted + system-Note)
+Agent --> Ctrl : SSE `aborted`
+Ctrl --> Recruiter : 200 { status: 'aborted' }
+deactivate Ctrl
+
+Recruiter -> Ctrl : POST /agent/chat { message } (Limit-fall)
+activate Ctrl
+Ctrl -> Agent : run(scope, userId, session, emit)
+loop bis Budget erschöpft (steps/apps/tokens/time)
+  Agent -> Agent : Schritte++ / Entwürfe++ / Tokens summieren
+  alt Limit erreicht (z.B. AGENT_MAX_STEPS)
+    Agent -> Agent : summarizeRun(drafts) — deterministisch, kein 2. LLM-Call
+    Agent -> Repo : update (status: limit-reached + system-Note)
+    Agent --> Ctrl : SSE `drafts` + `usage` + `limit` { reason, summary } + `done`
+  end
+end
+Ctrl --> Recruiter : Stream endet
+deactivate Ctrl
+
+@enduml

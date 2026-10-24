@@ -1,7 +1,7 @@
 import { resilientFetch } from '../../src/adapters/resilient-fetch.js';
 import type { HttpFetch, HttpResponse } from '../../src/ports/http-fetch.js';
 
-const ok: HttpResponse = { ok: true, status: 200, json: async () => ({ data: [] }) };
+const ok: HttpResponse = { ok: true, status: 200, json: async () => ({ data: [] }), body: null };
 const noSleep = async () => {};
 
 describe('resilientFetch', () => {

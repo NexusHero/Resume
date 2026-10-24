@@ -70,6 +70,13 @@ import type { AssistantSettings, AssistantSuggestion } from '../../src/domain/as
 import type { ArtifactLog } from '../../src/domain/artifact.js';
 import type { ArtifactLogRepository } from '../../src/ports/artifact-log-repository.js';
 import type { InterviewObservation } from '../../src/domain/interview-observation.js';
+import type { ChatSession } from '../../src/domain/chat-agent.js';
+import type { ChatSessionRepository } from '../../src/ports/chat-session-repository.js';
+import type { AgentLlmProvider, AgentTurnEvent } from '../../src/ports/agent-llm-provider.js';
+import { FakeAgentLlmProvider } from '../../src/adapters/agent-fake-provider.js';
+
+export { FakeAgentLlmProvider };
+export type { AgentLlmProvider, AgentTurnEvent };
 
 export class InMemoryApplicationRepository implements ApplicationRepository {
   apps: Application[] = [];
@@ -942,4 +949,78 @@ export class FakeAuthEngine implements AuthEngine {
     this.sessions.set(token, email);
     return token;
   }
+}
+
+/** In-memory chat-session repository — `(ownerId, userId)`-scoped like the real stores. */
+export class InMemoryChatSessionRepository implements ChatSessionRepository {
+  sessions: ChatSession[] = [];
+  async list(ownerId: string, userId: string): Promise<ChatSession[]> {
+    return this.sessions
+      .filter((s) => s.ownerId === ownerId && s.userId === userId)
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+      .map((s) => ({ ...s, messages: [...s.messages] }));
+  }
+  async findById(ownerId: string, userId: string, id: string): Promise<ChatSession | null> {
+    const found = this.sessions.find(
+      (s) => s.id === id && s.ownerId === ownerId && s.userId === userId,
+    );
+    return found ? { ...found, messages: [...found.messages] } : null;
+  }
+  async add(session: ChatSession): Promise<void> {
+    this.sessions.push({ ...session, messages: [...session.messages] });
+  }
+  async update(ownerId: string, userId: string, session: ChatSession): Promise<void> {
+    const i = this.sessions.findIndex(
+      (s) => s.id === session.id && s.ownerId === ownerId && s.userId === userId,
+    );
+    const copy = { ...session, messages: [...session.messages] };
+    if (i < 0) this.sessions.push(copy);
+    else this.sessions[i] = copy;
+  }
+  async delete(ownerId: string, userId: string, id: string): Promise<boolean> {
+    const before = this.sessions.length;
+    this.sessions = this.sessions.filter(
+      (s) => !(s.id === id && s.ownerId === ownerId && s.userId === userId),
+    );
+    return this.sessions.length < before;
+  }
+  async removeForUser(userId: string): Promise<void> {
+    this.sessions = this.sessions.filter((s) => s.userId !== userId);
+  }
+  async sweepRunning(at: string): Promise<number> {
+    let swept = 0;
+    this.sessions = this.sessions.map((s) => {
+      if (s.status !== 'running') return s;
+      swept += 1;
+      return {
+        ...s,
+        status: 'aborted',
+        messages: [
+          ...s.messages,
+          { role: 'system', text: 'Lauf durch Neustart abgebrochen.', createdAt: at },
+        ],
+        updatedAt: at,
+      };
+    });
+    return swept;
+  }
+}
+
+/** An HttpFetch whose `body` streams a recorded SSE fixture string. */
+export function sseHttpFetch(events: string): {
+  http: import('../../src/ports/http-fetch.js').HttpFetch;
+} {
+  const encoder = new TextEncoder();
+  const http: import('../../src/ports/http-fetch.js').HttpFetch = async () => ({
+    ok: true,
+    status: 200,
+    json: async () => ({}),
+    body: new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(encoder.encode(events));
+        controller.close();
+      },
+    }),
+  });
+  return { http };
 }

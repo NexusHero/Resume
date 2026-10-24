@@ -340,6 +340,6 @@ export class JobApplicationsController {
       ],
     },
   ],
-  exports: [JOB_APPLICATION_SERVICE, APPLICATION_LETTER_SERVICE],
+  exports: [JOB_APPLICATION_SERVICE, APPLICATION_LETTER_SERVICE, MAGIC_PEN_SERVICE],
 })
 export class JobApplicationsModule {}

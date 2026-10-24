@@ -6,7 +6,12 @@ import { loadConfig, type AppConfig } from '../../src/config.js';
 import type { HttpFetch } from '../../src/ports/http-fetch.js';
 import { noopLogger } from '../support/fakes.js';
 
-const noHttp: HttpFetch = async () => ({ ok: true, status: 200, json: async () => ({}) });
+const noHttp: HttpFetch = async () => ({
+  ok: true,
+  status: 200,
+  json: async () => ({}),
+  body: null,
+});
 
 function build(env: NodeJS.ProcessEnv): AppConfig {
   return loadConfig(env);

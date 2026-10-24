@@ -13,7 +13,7 @@ function fakeHttp(
   const calls: { url: string; headers?: Record<string, string> }[] = [];
   const http: HttpFetch = async (url, init) => {
     calls.push({ url, headers: init?.headers });
-    return { ok: opts.ok ?? true, status: opts.status ?? 200, json: async () => body };
+    return { ok: opts.ok ?? true, status: opts.status ?? 200, json: async () => body, body: null };
   };
   return { http, calls };
 }

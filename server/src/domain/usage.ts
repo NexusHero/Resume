@@ -19,6 +19,7 @@ export const USAGE_FEATURES = [
   'penSummary', // Magic Pen: rewrite the copy's profile summary
   'penExperienceBullets', // Magic Pen: rewrite one experience station's bullets
   'penSkills', // Magic Pen: reorder/rephrase the copy's skill groups
+  'agentChat', // Chat-Agent: one provider round of the tool-use loop (ADR-0062 §9)
 ] as const;
 export type UsageFeature = (typeof USAGE_FEATURES)[number];
 

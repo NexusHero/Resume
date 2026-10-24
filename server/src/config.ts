@@ -81,8 +81,26 @@ export interface AppConfig {
   jobPostingsFile: string;
   /** Where job applications live (fs store). */
   jobApplicationsFile: string;
+  /** Where chat-agent sessions live (fs store). */
+  chatSessionsFile: string;
   /** Resource limits for the SSRF-guarded user-URL fetch (Q5). */
   jobFetch: JobFetchConfig;
+  /** Chat-Agent run budgets + the dev-only fake switch (ADR-0062, §3.4/§3.6). */
+  agent: AgentConfig;
+}
+
+/** Chat-Agent budgets per run (AK-5.3) plus the `AGENT_FAKE` raw flag. */
+export interface AgentConfig {
+  /** Tool-calls per run (default 25). */
+  maxSteps: number;
+  /** New application drafts per run (default 5). */
+  maxApplications: number;
+  /** Combined token budget per run (default 100000). */
+  maxTokens: number;
+  /** Wall-clock budget per run in ms (default 120000). */
+  maxTimeMs: number;
+  /** Raw `AGENT_FAKE === '1'` — the DI gate additionally requires non-production. */
+  fake: boolean;
 }
 
 /** Limits for fetching a user-supplied posting URL (ADR-0058 §5, Q5). */
@@ -305,6 +323,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     savedSearchesFile: path.join(storeDir, 'saved-searches.json'),
     jobPostingsFile: path.join(storeDir, 'job-postings.json'),
     jobApplicationsFile: path.join(storeDir, 'job-applications.json'),
+    chatSessionsFile: path.join(storeDir, 'chat-sessions.json'),
     mandatesFile: path.join(storeDir, 'mandates.json'),
     talentsFile: path.join(storeDir, 'talents.json'),
     placementsFile: path.join(storeDir, 'placements.json'),
@@ -396,6 +415,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       maxBytes: nonNegOrDefault(env.JOB_FETCH_MAX_BYTES, 1_000_000),
       timeoutMs: nonNegOrDefault(env.JOB_FETCH_TIMEOUT_MS, 10_000),
       maxRedirects: nonNegOrDefault(env.JOB_FETCH_MAX_REDIRECTS, 5),
+    },
+    agent: {
+      maxSteps: Math.max(1, Number(env.AGENT_MAX_STEPS) || 25),
+      maxApplications: Math.max(1, Number(env.AGENT_MAX_APPLICATIONS) || 5),
+      maxTokens: Math.max(1, Number(env.AGENT_MAX_TOKENS) || 100_000),
+      maxTimeMs: Math.max(1, Number(env.AGENT_MAX_TIME_MS) || 120_000),
+      fake: env.AGENT_FAKE === '1',
     },
     selfServeTenants: env.SELF_SERVE_TENANTS === 'true',
     superAdminEmails: (env.SUPER_ADMIN_EMAIL ?? '')

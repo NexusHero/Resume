@@ -80,7 +80,7 @@ Drei Kräfte entscheiden die Architektur:
    Embeddings (Owner Q4; Entscheidungsbaum im Plan §5).
 5. **Draft-Semantik.** Der Agent **persistiert** in die `draft`-Kopie, damit Entwürfe
    „UI-identisch zu manuell erstellten“ sind (AK-5.1): `create_application` → `status:
-   'draft'` + Dokument-Kopie; `generate_letter`/`tailor_*` schreiben über
+'draft'` + Dokument-Kopie; `generate_letter`/`tailor_*` schreiben über
    `saveDocuments` in die **Kopie**. Ein Grounding-Flag (ADR-0060/0009) wird **nie**
    ungeprüft übernommen (AK-3.4): der betroffene Abschnitt wird **nicht** persistiert,
    die Warnung geht ehrlich in den Chat. Verboten und daher **kein** Tool: Versand,

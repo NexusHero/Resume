@@ -22,19 +22,21 @@ package "Application (services)" {
   [recruiting services\n(talent, mandate, candidacy,\nplacement, match, forecast,\nretention, members, usage)] as RecSvc
   [job-posting services\n(job-posting CRUD/adopt + dedup,\njob-posting-extract)] as JobPostingSvc
   [job-application services\n(create/copy/status/delete,\napplication-letter,\nmagic-pen rewriteSection/rewriteAll,\ndossier (PDF + streaming ZIP via yazl),\nattachment selection + freeze)] as JobAppSvc
+  [chat-agent services\n(ChatAgentService tool-use loop +\nAgentToolService (9 thin wrappers),\nbudgets, incremental persist,\nrunning-recovery)] as AgentSvc
   [auth services\n(auth, password reset,\nemail verification, account\n+ personal-data registry)] as AuthSvc
   [LlmService\n(provider registry + default)] as LlmSvc
 }
 
 package "Domain (pure, no I/O)" {
-  [recruiting model\n(talent, mandate, candidacy,\nplacement, user, usage,\njob-posting, job-application,\nsaved-search)] as Model
+  [recruiting model\n(talent, mandate, candidacy,\nplacement, user, usage,\njob-posting, job-application,\nchat-agent (ChatSession),\nsaved-search)] as Model
   [AI domain\n(prompts + fallbacks + schemas,\ngrounding (number/skill/year/degree),\nskill-semantics/-taxonomy, magic-pen,\ncompany-archetype, candidate-prep,\nlanguage, agg-check)] as AiDomain
   [errors] as DomainErrors
 }
 
 package "Ports" {
-  interface "repositories\n(user, talent, mandate, candidacy,\nplacement, documents, observations,\njob-posting, job-application,\nsaved-search)" as Repos
+  interface "repositories\n(user, talent, mandate, candidacy,\nplacement, documents, observations,\njob-posting, job-application,\nchat-session,\nsaved-search)" as Repos
   interface LlmProvider
+  interface "AgentLlmProvider\n(streamAgentTurn)" as AgentLlmPort
   interface "ApiKeyStore /\nUsageMeter" as Keys
   interface "AuthEngine / Mailer" as AuthPorts
   interface "PdfRenderer / PdfMerger /\nPdfTextExtractor" as PdfPorts
@@ -44,7 +46,7 @@ package "Ports" {
 
 package "Adapters" {
   [fs-* (default)\nsql/* (Postgres)] as StoreAdapters
-  [AnthropicLlmProvider\nGeminiLlmProvider] as LlmAdapters
+  [AnthropicLlmProvider\nGeminiLlmProvider\n(+ FakeAgentLlmProvider dev)] as LlmAdapters
   [Better-Auth engine (SQLite) - secret cipher\nSMTP/console mailer] as AuthAdapters
   [Puppeteer renderer - pdf-lib merger\npdfjs text extractor] as PdfAdapters
   [arbeitnow - bundesagentur - adzuna\n+ offline sample (composite)] as JobAdapters
@@ -62,6 +64,7 @@ Ctrl --> RecSvc
 Ctrl --> AuthSvc
 Ctrl --> JobPostingSvc
 Ctrl --> JobAppSvc
+Ctrl --> AgentSvc
 AiSvc --> Runner
 Runner --> LlmSvc
 Runner --> Keys
@@ -77,6 +80,11 @@ JobPostingSvc --> PageFetcher
 JobAppSvc --> Repos
 JobAppSvc --> Runner
 JobAppSvc --> AiDomain
+AgentSvc --> AgentLlmPort
+AgentSvc --> Repos
+AgentSvc ..> RecSvc
+AgentSvc ..> JobPostingSvc
+AgentSvc ..> JobAppSvc
 RecSvc ..> DomainErrors
 JobPostingSvc ..> DomainErrors
 JobAppSvc ..> DomainErrors
@@ -87,6 +95,7 @@ LlmSvc --> LlmProvider
 
 StoreAdapters ..|> Repos
 LlmAdapters ..|> LlmProvider
+LlmAdapters ..|> AgentLlmPort
 AuthAdapters ..|> AuthPorts
 PdfAdapters ..|> PdfPorts
 JobAdapters ..|> JobSource

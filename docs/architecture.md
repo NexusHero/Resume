@@ -632,6 +632,43 @@ watching). If you are scanning for current exposure, read §11.2.
   (ADR-0030). Ports without a second adapter yet are a known, bounded follow-up, not a claim
   that one is missing.
 
+## Chat-Agent (Phase 5, ADR-0062)
+
+A **server-side tool-use loop** makes the application main path chat-operable: a user message
+runs a provider round, the model emits text and/or tool calls, the loop dispatches those calls
+through the same Phase 1–4 services the UI uses, and the result is a streamed chat with visible
+tool steps and links to the created **drafts**.
+
+- **Provider-neutral streaming port.** The single-shot `LlmProvider` stays untouched; a new
+  `AgentLlmProvider.streamAgentTurn(input): AsyncIterable<AgentTurnEvent>` models one agentic
+  round as normalised `text-delta` / `tool-use` / `done` events. `AnthropicLlmProvider` streams
+  token-by-token over SSE; `GeminiLlmProvider` emits exactly one `text-delta` (or `tool-use`) per
+  round (Owner Q1) — the loop and the `AsyncIterable` contract are identical. No provider SDK:
+  both adapters talk raw HTTP over the injectable `HttpFetch` port, whose `HttpResponse` gained a
+  `body: ReadableStream | null` accessor (the only change to an existing port).
+- **The loop (`ChatAgentService`, decorator-free).** It replays the persisted transcript as
+  provider-neutral history, streams provider events to the controller, dispatches tools through
+  `AgentToolService` (nine thin wrappers), enforces per-run budgets (max steps / new application
+  drafts / tokens / wall-clock), meters one `agentChat` row per round, and persists **incrementally
+  per step** (Owner Q5) so an abort leaves an honest partial transcript.
+- **Draft-only.** The nine tools (`search_jobs`, `save_job`, `list_mandanten`, `assess_fit`,
+  `create_application`, `list_applications`, `generate_letter`, `tailor_section`, `tailor_all`) are
+  closed over the allowed services; there is **no** tool for send/delete/status-change/unfreeze/
+  attachments. Grounding-flagged letter/section suggestions are never auto-persisted (AK-3.4).
+- **`ChatSession` persistence.** One embedded `messages` JSON array per session (no separate
+  store), workspace + **user** scoped (`(ownerId, userId)` on every access), fs + sql with ISO-8601
+  `text` timestamps. A boot sweep idempotently marks orphaned `running` sessions `aborted`;
+  DSGVO export/erase include the sessions.
+- **SSE contract (`POST /agent/chat`).** `session` → `text`* → `tool-call`/`tool-result`/`tool-error`*
+  → `drafts` → `usage` → `done`/`limit`/`aborted`/`error`. Guard failures (401/503/429) and a foreign
+  `sessionId` (404) answer problem+json **before** the first byte; later failures stream as `error`.
+  The route carries `AuthGuard → AiConfiguredGuard → AiRateLimitGuard` (no `VermittlungGuard`/`PlanGuard`)
+  and is route K19 in the drift guard.
+- **Honesty & safety.** Tool results are wrapped in `<untrusted-data>` before returning to the model
+  (injection defence); tool errors return `{ isError: true }` so the agent answers honestly instead of
+  inventing (ADR-0047); a provider failure ends the run as an `error` event. The dev-only
+  `FakeAgentLlmProvider` is wired only under `AGENT_FAKE === '1'` **and** `NODE_ENV !== 'production'`.
+
 ## 12. Glossary
 
 | Term              | Meaning                                                                                                                                                                                                                                                                                      |
@@ -654,6 +691,8 @@ watching). If you are scanning for current exposure, read §11.2.
 | Provider badge    | UI label showing which AI backend produced a result (`AI · <provider>` + tokens/cost); no template badge.                                                                                                                                                                                    |
 | Call usage        | Per-generation payload (`inputTokens`, `outputTokens`, `costUsd` estimate) on LLM-backed responses.                                                                                                                                                                                          |
 | AI not configured | The honest `503 ai-not-configured` state when no central key is set; the UI says "KI nicht eingerichtet".                                                                                                                                                                                    |
+| Agent (Chat)      | The Phase-5 chat agent: a server-side tool-use loop over the Phase 1–4 services that creates only `draft` applications; surfaces as the always-visible topbar action.                                                                                                                        |
+| AgentLlmProvider  | The provider-neutral streaming port (`streamAgentTurn` → `AsyncIterable<text-delta                                                                                                                                                                                                           | tool-use | done>`) behind the agent loop; additive to the single-shot `LlmProvider`. |
 
 Two different code concepts share the English name "application": the **frozen
 pipeline `Application`** (`domain/application.ts`, route `/applications`, board

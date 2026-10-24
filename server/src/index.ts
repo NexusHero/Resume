@@ -45,6 +45,7 @@ import {
   WORKSPACE_SETTINGS_STORE,
   ID_GENERATOR,
   CLOCK,
+  CHAT_AGENT_SERVICE,
 } from './nest/tokens.js';
 import type { AuthEngine } from './ports/auth-engine.js';
 import type { PdfRenderer } from './ports/pdf-renderer.js';
@@ -55,6 +56,7 @@ import type { DocumentRepository } from './ports/document-repository.js';
 import type { WorkspaceSettingsStore } from './ports/workspace-settings-store.js';
 import type { IdGenerator } from './ports/id-generator.js';
 import type { Clock } from './ports/clock.js';
+import type { ChatAgentService } from './services/chat-agent-service.js';
 
 async function main(): Promise<void> {
   const config = loadConfig();
@@ -220,6 +222,21 @@ async function main(): Promise<void> {
       );
     });
   }
+
+  // Running-Recovery (ADR-0062 §3.5): sweep any `running` chat session left by a
+  // crash to `aborted` + a system note, once per boot, idempotent.
+  await app
+    .get<ChatAgentService>(CHAT_AGENT_SERVICE)
+    .sweepRunning()
+    .then((n) => {
+      if (n > 0) logger.info({ n }, 'swept orphaned running chat sessions to aborted');
+    })
+    .catch((err: unknown) => {
+      logger.warn(
+        { err: err instanceof Error ? err.message : String(err) },
+        'chat-session running sweep failed',
+      );
+    });
 
   // Löschfristen-Automatik: an hourly sweep anonymizes candidates past the
   // deletion deadline — but only for teams whose policy opts in (checked each

@@ -37,6 +37,10 @@ const CONDITIONAL = new Set(['K10', 'K11']);
  *  not a whole-request 502 (ADR-0060 §4.3). */
 const PEN_ROUTES = new Set(['K14', 'K15', 'K16', 'K17', 'K18']);
 
+/** The chat-agent route (K19) streams provider errors as SSE `error` events, not
+ *  a whole-request 502 — the single-shot 502 family does not apply to it. */
+const SSE_ROUTES = new Set(['K19']);
+
 interface Ids {
   talent: string;
   mandate: string;
@@ -229,7 +233,9 @@ describe('AI route contract (AK-0.5)', () => {
       mandate: mandate.body.mandate.id,
       jobApplication: application.body.jobApplication.id,
     };
-    for (const route of AI_ROUTES.filter((r) => !CONDITIONAL.has(r.id) && !PEN_ROUTES.has(r.id))) {
+    for (const route of AI_ROUTES.filter(
+      (r) => !CONDITIONAL.has(r.id) && !PEN_ROUTES.has(r.id) && !SSE_ROUTES.has(r.id),
+    )) {
       const res = await hit(agent, route, ids);
       expect({ id: route.id, status: res.status }).toEqual({ id: route.id, status: 502 });
       expect(res.body.type).toBe('about:blank#upstream-provider');

@@ -26,7 +26,7 @@ function fakeHttp(
   const calls: { url: string; init?: unknown }[] = [];
   const http: HttpFetch = async (url, init) => {
     calls.push({ url, init });
-    return { ok: opts.ok ?? true, status: opts.status ?? 200, json: async () => body };
+    return { ok: opts.ok ?? true, status: opts.status ?? 200, json: async () => body, body: null };
   };
   return { http, calls };
 }

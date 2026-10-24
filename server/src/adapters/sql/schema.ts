@@ -1,4 +1,13 @@
-import { pgTable, text, serial, integer, jsonb, boolean, primaryKey } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  text,
+  serial,
+  integer,
+  jsonb,
+  boolean,
+  primaryKey,
+  index,
+} from 'drizzle-orm/pg-core';
 import type {
   DocumentContact,
   ResumeContent,
@@ -11,6 +20,7 @@ import type { AssistantSettings } from '../../domain/assistant.js';
 import type { RetentionPolicy } from '../../domain/retention.js';
 import type { WorkspaceSettings } from '../../domain/workspace-settings.js';
 import type { JobApplicationStatusChange } from '../../domain/job-application.js';
+import type { ChatMessage, ChatRunUsage } from '../../domain/chat-agent.js';
 
 /** Registered accounts (mirrors domain `User`). */
 export const users = pgTable('users', {
@@ -318,3 +328,26 @@ export const jobApplications = pgTable('job_applications', {
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 });
+
+/** Chat-agent sessions (mirror domain `ChatSession`, ADR-0062). Workspace + user scoped. */
+export const chatSessions = pgTable(
+  'chat_sessions',
+  {
+    id: text('id').primaryKey(),
+    ownerId: text('owner_id').notNull(),
+    userId: text('user_id').notNull(),
+    title: text('title'),
+    messages: jsonb('messages').$type<ChatMessage[]>().notNull(),
+    status: text('status').notNull(),
+    usage: jsonb('usage').$type<ChatRunUsage>().notNull(),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => ({
+    ownerUserUpdated: index('chat_sessions_owner_user_updated').on(
+      t.ownerId,
+      t.userId,
+      t.updatedAt,
+    ),
+  }),
+);

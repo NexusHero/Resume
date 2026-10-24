@@ -508,3 +508,62 @@ test('BewerbungenFlowMobile_MappeReachable', async ({ page }) => {
   await expect(page.getByTestId('mappe-zip')).toBeVisible();
   await expectNoHorizontalBodyScroll(page);
 });
+
+test.describe('Chat-Agent mobile (Phase 5)', () => {
+  const SSE = [
+    'event: session',
+    'data: {"sessionId":"s1"}',
+    '',
+    'event: text',
+    'data: {"delta":"Fertig."}',
+    '',
+    'event: done',
+    '',
+  ].join('\n');
+
+  test('AgentFlowMobile_ChatPanelReachable', async ({ page }) => {
+    await page.route('**/api/v1/settings/workspace', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ vermittlung: false }),
+      }),
+    );
+    await page.route('**/api/v1/settings/llm', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          configured: true,
+          current: 'claude',
+          providers: [{ id: 'claude', available: true }],
+        }),
+      }),
+    );
+    await page.route('**/api/v1/auth/me', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id: 'user1', email: 'me@example.de', roles: ['admin'] } }),
+      }),
+    );
+    for (const path of ['talents', 'job-postings', 'job-applications']) {
+      await page.route(`**/api/v1/${path}`, (route) =>
+        route.request().method() === 'GET'
+          ? route.fulfill({ contentType: 'application/json', body: JSON.stringify([]) })
+          : route.continue(),
+      );
+    }
+    await page.route('**/api/v1/agent/chat', (route) => {
+      if (route.request().method() === 'POST') {
+        return route.fulfill({ contentType: 'text/event-stream', body: SSE });
+      }
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify([]) });
+    });
+
+    await page.goto(KIT);
+    // The agent action is an icon-only button (aria-label) on the narrow app bar.
+    await page.getByRole('button', { name: 'Agent' }).click();
+    await expect(page.getByTestId('chat-panel')).toBeVisible();
+    await page.getByTestId('chat-input').fill('Hallo');
+    await page.getByTestId('chat-send').click();
+    await expect(page.getByTestId('chat-messages')).toContainText('Fertig.');
+  });
+});

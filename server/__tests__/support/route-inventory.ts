@@ -344,6 +344,12 @@ export const AI_ROUTES: RouteSpec[] = [
     path: '/api/v1/job-applications/:id/pen/all',
     controller: 'job-applications/job-applications.module.ts',
   },
+  {
+    id: 'K19',
+    method: 'POST',
+    path: '/api/v1/agent/chat',
+    controller: 'agent/agent.module.ts',
+  },
 ];
 
 /** The 3 CV import routes: the named text mode works without a key. */

@@ -183,6 +183,19 @@ async function runMigrationDdl(client: { query: Pool['query'] }): Promise<void> 
     -- simultaneous inserts.
     CREATE UNIQUE INDEX IF NOT EXISTS job_applications_owner_posting_talent_idx
       ON job_applications (owner_id, job_posting_id, talent_id);
+    CREATE TABLE IF NOT EXISTS chat_sessions (
+      id text PRIMARY KEY,
+      owner_id text NOT NULL,
+      user_id text NOT NULL,
+      title text,
+      messages jsonb NOT NULL DEFAULT '[]',
+      status text NOT NULL DEFAULT 'done',
+      usage jsonb NOT NULL DEFAULT '{"inputTokens":0,"outputTokens":0,"costUsd":0}',
+      created_at text NOT NULL,
+      updated_at text NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS chat_sessions_owner_user_updated
+      ON chat_sessions (owner_id, user_id, updated_at DESC);
     CREATE TABLE IF NOT EXISTS mandates (
       id text PRIMARY KEY,
       owner_id text NOT NULL,

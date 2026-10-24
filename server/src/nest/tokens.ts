@@ -32,6 +32,8 @@ export const JOB_SOURCE = Symbol('JobSource');
 export const JOB_POSTING_REPOSITORY = Symbol('JobPostingRepository');
 export const JOB_APPLICATION_REPOSITORY = Symbol('JobApplicationRepository');
 export const LLM_PROVIDER = Symbol('LlmProvider');
+export const AGENT_LLM_PROVIDER = Symbol('AgentLlmProvider');
+export const CHAT_SESSION_REPOSITORY = Symbol('ChatSessionRepository');
 export const LOGGER = Symbol('Logger');
 export const MAILER = Symbol('Mailer');
 export const MANDATE_REPOSITORY = Symbol('MandateRepository');
@@ -117,3 +119,13 @@ export const JOB_APPLICATION_SERVICE = Symbol('JobApplicationService');
 export const JOB_APPLICATION_DOSSIER_SERVICE = Symbol('JobApplicationDossierService');
 export const APPLICATION_LETTER_SERVICE = Symbol('ApplicationLetterService');
 export const MAGIC_PEN_SERVICE = Symbol('MagicPenService');
+export const AGENT_TOOL_SERVICE = Symbol('AgentToolService');
+export const CHAT_AGENT_SERVICE = Symbol('ChatAgentService');
+/**
+ * Lets a module opt its generative routes into the dev-only `AGENT_FAKE` gate:
+ * the `AiConfiguredGuard` then allows a route through when `agentFakeEnabled`
+ * (AGENT_FAKE=1 AND non-production) even without a central key. Only
+ * `AgentModule` provides `true`; every other of the 18 AI routes stays 503
+ * without a key, regardless of `AGENT_FAKE`.
+ */
+export const AI_CONFIGURED_ALLOWS_DEV_FAKE = Symbol('AiConfiguredAllowsDevFake');

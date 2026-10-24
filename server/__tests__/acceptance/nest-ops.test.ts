@@ -50,6 +50,7 @@ import {
   EMAIL_VERIFICATION_TOKEN_STORE,
   USAGE_METER,
   RATE_LIMITER,
+  CHAT_SESSION_REPOSITORY,
 } from '../../src/nest/tokens.js';
 import { InMemoryRateLimiter } from '../../src/adapters/in-memory-rate-limiter.js';
 import {
@@ -71,6 +72,7 @@ import {
   InMemoryPasswordResetTokenStore,
   InMemoryEmailVerificationTokenStore,
   InMemoryUsageMeter,
+  InMemoryChatSessionRepository,
   FakeAuthEngine,
   FakeJobSource,
   FakePdfRenderer,
@@ -142,6 +144,7 @@ describe('NestJS ops verticals (match, artifacts, retention, account, assistant)
       },
       { provide: USAGE_METER, useValue: new InMemoryUsageMeter() },
       { provide: RATE_LIMITER, useValue: new InMemoryRateLimiter() },
+      { provide: CHAT_SESSION_REPOSITORY, useValue: new InMemoryChatSessionRepository() },
     ];
     @Global()
     @Module({ providers: fakes, exports: fakes.map((p) => (p as { provide: symbol }).provide) })

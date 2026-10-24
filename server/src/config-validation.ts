@@ -45,6 +45,12 @@ export function checkProductionReadiness(config: AppConfig): ReadinessReport {
     );
   }
 
+  if (config.agent.fake) {
+    warnings.push(
+      'AGENT_FAKE is set: the deterministic fake chat agent is wired instead of a real provider. It is disabled in production but must not be set in a real deployment.',
+    );
+  }
+
   if (config.mail.transport !== 'smtp') {
     warnings.push(
       'MAIL_TRANSPORT is not "smtp": password-reset and email-verification links are only logged, not delivered.',

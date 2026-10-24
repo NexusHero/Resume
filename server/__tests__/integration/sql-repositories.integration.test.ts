@@ -14,11 +14,13 @@ import { SqlDocumentRepository } from '../../src/adapters/sql/sql-document-repos
 import { SqlAttachmentStore } from '../../src/adapters/sql/sql-attachment-store.js';
 import { SqlJobPostingRepository } from '../../src/adapters/sql/sql-job-posting-repository.js';
 import { SqlJobApplicationRepository } from '../../src/adapters/sql/sql-job-application-repository.js';
+import { SqlChatSessionRepository } from '../../src/adapters/sql/sql-chat-session-repository.js';
 import { loadConfig } from '../../src/config.js';
 import type { Application, AuditEvent } from '../../src/domain/application.js';
 import type { SavedSearch } from '../../src/domain/saved-search.js';
 import type { JobPosting } from '../../src/domain/job-posting.js';
 import type { JobApplication } from '../../src/domain/job-application.js';
+import type { ChatSession } from '../../src/domain/chat-agent.js';
 import type { Mandate } from '../../src/domain/mandate.js';
 import type { Talent } from '../../src/domain/talent.js';
 import type { Placement } from '../../src/domain/placement.js';
@@ -50,7 +52,7 @@ suite('SQL repositories (real Postgres)', () => {
 
   beforeEach(async () => {
     await pool.query(
-      'TRUNCATE applications, audit_events, saved_searches, mandates, talents, placements, talent_documents, attachments, users, password_reset_tokens, api_keys, workspace_settings, job_postings, job_applications RESTART IDENTITY',
+      'TRUNCATE applications, audit_events, saved_searches, mandates, talents, placements, talent_documents, attachments, users, password_reset_tokens, api_keys, workspace_settings, job_postings, job_applications, chat_sessions RESTART IDENTITY',
     );
   });
 
@@ -693,5 +695,78 @@ suite('SQL repositories (real Postgres)', () => {
       "SELECT column_name FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'llm_provider'",
     );
     expect(llm.rows).toHaveLength(1);
+  });
+
+  const chatSession = (
+    id: string,
+    userId = 'u1',
+    ownerId = 'owner1',
+    over: Partial<ChatSession> = {},
+  ): ChatSession => ({
+    id,
+    ownerId,
+    userId,
+    messages: [{ role: 'user', text: 'hi', createdAt: '2026-06-25T10:00:00.000Z' }],
+    status: 'done',
+    usage: { inputTokens: 0, outputTokens: 0, costUsd: 0 },
+    createdAt: '2026-06-25T10:00:00.000Z',
+    updatedAt: '2026-06-25T10:00:00.000Z',
+    ...over,
+  });
+
+  it('SqlChatSessionRepository_AddThenList_RoundTrips', async () => {
+    const repo = new SqlChatSessionRepository({ db });
+    await repo.add(chatSession('s1', 'u1'));
+    await repo.add(chatSession('s2', 'u2'));
+    expect((await repo.list('owner1', 'u1')).map((s) => s.id)).toEqual(['s1']);
+    expect((await repo.list('owner1', 'u2')).map((s) => s.id)).toEqual(['s2']);
+    const read = await repo.findById('owner1', 'u1', 's1');
+    expect(read).toMatchObject({ id: 's1', status: 'done' });
+    expect(read?.messages).toHaveLength(1);
+  });
+
+  it('SqlChatSessionRepository_FindByIdOtherUser_ReturnsNull', async () => {
+    const repo = new SqlChatSessionRepository({ db });
+    await repo.add(chatSession('s1', 'u1'));
+    expect(await repo.findById('owner1', 'u2', 's1')).toBeNull();
+    expect(await repo.findById('other', 'u1', 's1')).toBeNull();
+  });
+
+  it('SqlChatSessionRepository_DeleteOtherUser_Noop', async () => {
+    const repo = new SqlChatSessionRepository({ db });
+    await repo.add(chatSession('s1', 'u1'));
+    expect(await repo.delete('owner1', 'u2', 's1')).toBe(false);
+    expect(await repo.findById('owner1', 'u1', 's1')).not.toBeNull();
+    expect(await repo.delete('owner1', 'u1', 's1')).toBe(true);
+    expect(await repo.findById('owner1', 'u1', 's1')).toBeNull();
+  });
+
+  it('SqlChatSessionRepository_SweepRunning_MarksAbortedIdempotently', async () => {
+    const repo = new SqlChatSessionRepository({ db });
+    await repo.add(chatSession('s1', 'u1', 'owner1', { status: 'running' }));
+    await repo.add(chatSession('s2', 'u1', 'owner1', { status: 'done' }));
+    expect(await repo.sweepRunning('now')).toBe(1);
+    expect((await repo.findById('owner1', 'u1', 's1'))?.status).toBe('aborted');
+    expect((await repo.findById('owner1', 'u1', 's2'))?.status).toBe('done');
+    expect(await repo.sweepRunning('later')).toBe(0);
+  });
+
+  it('Migrate_ChatSessionsTable_CreatesIdempotently', async () => {
+    const table = await pool.query("SELECT to_regclass('chat_sessions') AS reg");
+    expect(table.rows[0].reg).not.toBeNull();
+    const columns = await pool.query(
+      "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'chat_sessions' AND column_name IN ('created_at','updated_at')",
+    );
+    // The DDL uses `text` timestamps (ISO-8601), not `timestamptz` (Minor 1).
+    expect(columns.rows).toEqual(
+      expect.arrayContaining([
+        { column_name: 'created_at', data_type: 'text' },
+        { column_name: 'updated_at', data_type: 'text' },
+      ]),
+    );
+    const indexes = await pool.query(
+      "SELECT indexname FROM pg_indexes WHERE tablename = 'chat_sessions'",
+    );
+    expect(indexes.rows.map((r) => r.indexname)).toContain('chat_sessions_owner_user_updated');
   });
 });

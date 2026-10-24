@@ -291,6 +291,49 @@ describe('Phase 4 OpenAPI contract (ADR-0061, Abschluss)', () => {
   });
 });
 
+describe('Phase 5 OpenAPI contract (ADR-0062, Chat-Agent)', () => {
+  it('OpenApi_AgentChatRoute_Exists', () => {
+    for (const path of ['/agent/chat', '/agent/chat/{id}', '/agent/chat/{id}/abort']) {
+      expect(SPEC).toContain(`  ${path}:`);
+    }
+    for (const op of [
+      'agentChat',
+      'listChatSessions',
+      'getChatSession',
+      'deleteChatSession',
+      'abortChatRun',
+    ]) {
+      expect(SPEC).toContain(`operationId: ${op}`);
+    }
+  });
+
+  it('OpenApi_AgentChat_503AiNotConfigured', () => {
+    const block = operationBlock('/api/v1/agent/chat', 'post');
+    expect(block).toContain('AiNotConfigured');
+    expect(block).toContain('RateLimited');
+    expect(block).toContain('text/event-stream');
+  });
+
+  it('OpenApi_ChatSession_Schema', () => {
+    const props = openApiProps('ChatSession');
+    expect(props).toEqual(
+      expect.arrayContaining([
+        'id',
+        'ownerId',
+        'userId',
+        'title',
+        'messages',
+        'status',
+        'usage',
+        'createdAt',
+        'updatedAt',
+      ]),
+    );
+    expect(SPEC).toContain('enum: [running, done, aborted, limit-reached, error]');
+    expect(SPEC).toContain('ChatMessage');
+  });
+});
+
 describe('Phase 3 OpenAPI contract (ADR-0060, Magic Pen)', () => {
   it('OpenApi_PenSuggestionSchema_DocumentsBeforeAfterGrounding', () => {
     const props = openApiProps('PenSuggestion');

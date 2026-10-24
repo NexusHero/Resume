@@ -1,0 +1,59 @@
+@startuml 06_seq_agent_run
+title Chat-Agent: Lauf mit Tool-Schritten (SSE) — FR-99/103, ADR-0062
+
+skinparam shadowing false
+autonumber
+
+actor Recruiter
+participant "AgentController" as Ctrl
+participant "ChatAgentService" as Agent
+participant "AgentLlmProvider\n(Anthropic | Gemini)" as Llm
+participant "AgentToolService" as Tools
+participant "ChatSessionRepository\n(fs | sql)" as Repo
+
+Recruiter -> Ctrl : POST /agent/chat { sessionId?, message }
+activate Ctrl
+Ctrl -> Agent : prepare(scope, userId, input)
+activate Agent
+Agent -> Repo : findById / add + append user message
+Repo --> Agent : session (status: running)
+Agent --> Ctrl : session
+deactivate Agent
+Ctrl --> Recruiter : SSE `session` { sessionId }
+
+loop provider round (bis end_turn / Limit / Abort)
+  Ctrl -> Agent : run(scope, userId, session, emit)
+  Agent -> Llm : streamAgentTurn({ system, messages, tools, signal })
+  activate Llm
+  Llm --> Agent : text-delta*  (SSE / eine Runde bei Gemini)
+  Agent --> Ctrl : SSE `text` { delta }
+  Llm --> Agent : tool-use { id, name, input }
+  Agent --> Ctrl : SSE `tool-call` { name, args }
+  Llm --> Agent : done { stopReason: tool_use, usage }
+  deactivate Llm
+  Agent -> Agent : usage += ev.usage ; meter('agentChat') je Runde
+
+  alt stopReason == tool_use
+    Agent -> Repo : update (assistant turn + tool calls) — inkrementell (Q5)
+    loop jeder Tool-Call
+      Agent -> Tools : dispatch(scope, userId, name, input)
+      activate Tools
+      Tools --> Agent : result | wirft
+      deactivate Tools
+      alt ok
+        Agent --> Ctrl : SSE `tool-result` { name, ok: true }
+      else Fehler (ADR-0047)
+        Agent --> Ctrl : SSE `tool-error` { name, detail }
+      end
+      Agent -> Repo : update (toolResult) — inkrementell (Q5)
+    end
+  end
+end
+
+Agent --> Ctrl : SSE `drafts` + `usage`
+Agent -> Repo : update (status: done)
+Agent --> Ctrl : SSE `done`
+Ctrl --> Recruiter : Stream endet
+deactivate Ctrl
+
+@enduml

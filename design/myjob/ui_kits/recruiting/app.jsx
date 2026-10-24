@@ -178,6 +178,8 @@ function Workspace({ user, onLogout }) {
   const [postingFocus, setPostingFocus] = React.useState(null);
   // The Bewerbungen sub-view: the new list, or the frozen pipeline board (Vermittlung).
   const [bewerbungenSub, setBewerbungenSub] = React.useState('bewerbungen');
+  // The Chat-Agent panel (ADR-0062) — a slide-over/sheet, not a nav destination.
+  const [agentOpen, setAgentOpen] = React.useState(false);
   // Server-side status filter (AK-4.6); re-fetch on change.
   const [applicationStatus, setApplicationStatus] = React.useState(undefined);
   // Live data sources. Each tracks loading/error and never falls back to
@@ -648,10 +650,29 @@ function Workspace({ user, onLogout }) {
       : null;
   // The phone app bar is narrow: show only the per-view primary action there;
   // CoRecruiter stays a desktop topbar action so the bar never overflows.
-  const actions = talent ? null : isMobile ? (
-    primaryAction
+  // The Agent (Chat) is a main-path companion (ADR-0062 §6.7): always visible,
+  // NOT vermittlung-gated, rendered before the primary action, icon-only on
+  // mobile so the narrow bar does not overflow.
+  const agentAction = (
+    <A.Button
+      variant="ghost"
+      size="sm"
+      iconLeft={<A.Icon name="message" size={15} />}
+      aria-label="Agent"
+      data-testid="agent-action"
+      onClick={() => setAgentOpen(true)}
+    >
+      {isMobile ? null : 'Agent'}
+    </A.Button>
+  );
+  const actions = talent ? null : agentOpen ? null : isMobile ? (
+    <>
+      {agentAction}
+      {primaryAction}
+    </>
   ) : (
     <>
+      {agentAction}
       {vermittlung && nav !== 'assistant' && (
         <A.Button variant="ghost" size="sm" iconLeft={<A.Icon name="zap" size={15} />} onClick={() => setNav('assistant')}>CoRecruiter</A.Button>
       )}
@@ -693,6 +714,56 @@ function Workspace({ user, onLogout }) {
             onSubmit={(values) => submitEdit(editRecord, values)}
             onDelete={editRecord.kind === 'placement' ? () => deleteRecord(editRecord) : undefined}
           />
+        )}
+        {agentOpen && (
+          <div
+            data-testid="agent-panel"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 1000,
+              background: 'rgba(0,0,0,0.35)',
+              display: 'flex',
+              justifyContent: isMobile ? 'stretch' : 'flex-end',
+            }}
+            onClick={() => setAgentOpen(false)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: isMobile ? '100%' : '420px',
+                height: '100%',
+                background: 'var(--surface-raised, #fff)',
+                padding: '16px',
+                boxSizing: 'border-box',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700 }}>Agent</span>
+                <button
+                  type="button"
+                  data-testid="agent-close"
+                  onClick={() => setAgentOpen(false)}
+                  style={{ cursor: 'pointer', background: 'none', border: 'none', color: 'var(--text-soft)', fontSize: '18px' }}
+                >
+                  ×
+                </button>
+              </div>
+              <window.ChatPanel
+                onClose={() => setAgentOpen(false)}
+                onOpenApplication={(draft) => {
+                  setAgentOpen(false);
+                  // The draft link carries { jobApplicationId, … }; fetch the full
+                  // application and open the Bewerbungs-Editor (AK-5.6).
+                  window.RecruitApi.getJobApplication(draft.jobApplicationId)
+                    .then(openApplicationEditor)
+                    .catch(() => {});
+                }}
+              />
+            </div>
+          </div>
         )}
       </>
     ),

@@ -829,6 +829,77 @@ const RecruitApi = {
     if (!res.ok) throw new Error(`Could not delete application (${res.status})`);
   },
 
+  // --- Chat-Agent (ADR-0062): an SSE stream over the tool-use loop ---
+  // `agentChat` POSTs a message and streams the run's events; `onEvent` receives
+  // `{ name, data }` for session/text/tool-call/tool-result/tool-error/usage/
+  // limit/drafts/done/error/aborted. The `signal` aborts the underlying fetch.
+  async agentChat({ sessionId, message }, onEvent, signal) {
+    await requireAi();
+    const res = await fetch(`${RECRUIT_API_BASE}/agent/chat`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ ...(sessionId ? { sessionId } : {}), message }),
+      signal,
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      if (res.status === 503 && window.AiStatus) window.AiStatus.refresh();
+      throw _apiError(res.status, body);
+    }
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let name = 'message';
+    let data = '';
+    const dispatch = () => {
+      if (name === 'message' && data === '') return;
+      onEvent({ name, ...(data !== '' ? { data: JSON.parse(data) } : {}) });
+      name = 'message';
+      data = '';
+    };
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let nl;
+      while ((nl = buffer.indexOf('\n')) !== -1) {
+        const line = buffer.slice(0, nl).replace(/\r$/, '');
+        buffer = buffer.slice(nl + 1);
+        if (line.startsWith('event:')) {
+          name = line.slice(6).trim();
+        } else if (line.startsWith('data:')) {
+          data += line.slice(5).trimStart();
+        } else if (line === '') {
+          dispatch();
+        }
+      }
+    }
+    dispatch();
+  },
+  async agentListSessions() {
+    const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/agent/chat`));
+    return Array.isArray(data) ? data : [];
+  },
+  async agentGetSession(id) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/agent/chat/${encodeURIComponent(id)}`),
+    );
+    return data.session;
+  },
+  async agentDeleteSession(id) {
+    const res = await fetch(`${RECRUIT_API_BASE}/agent/chat/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) throw new Error(`Could not delete chat session (${res.status})`);
+  },
+  async agentAbort(id) {
+    const res = await fetch(`${RECRUIT_API_BASE}/agent/chat/${encodeURIComponent(id)}/abort`, {
+      method: 'POST',
+    });
+    if (!res.ok) throw new Error(`Could not abort chat run (${res.status})`);
+    return res.json();
+  },
+
   // --- Recruiting pipeline (candidacies) ---
   async mandateCandidacies(mandateId) {
     const data = await _jsonOrThrow(

@@ -1,7 +1,7 @@
 import { circuitBreaker, CircuitOpenError } from '../../src/adapters/circuit-breaker.js';
 import type { HttpFetch, HttpResponse } from '../../src/ports/http-fetch.js';
 
-const ok: HttpResponse = { ok: true, status: 200, json: async () => ({ data: [] }) };
+const ok: HttpResponse = { ok: true, status: 200, json: async () => ({ data: [] }), body: null };
 
 /** A controllable clock so tests can jump past resetTimeoutMs without waiting. */
 function fakeClock(start = 0) {

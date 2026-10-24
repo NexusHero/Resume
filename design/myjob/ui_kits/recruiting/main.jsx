@@ -47,6 +47,7 @@ import './JobPostings.jsx';
 import './Bewerbungen.jsx';
 import './BewerbungsEditor.jsx';
 import './AssistantView.jsx';
+import './ChatPanel.jsx';
 import './SettingsView.jsx';
 import './Login.jsx';
 import './app.jsx';

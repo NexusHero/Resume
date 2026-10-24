@@ -14,6 +14,7 @@ import type { LlmProvider } from '../../src/ports/llm-provider.js';
 import type { PageFetcher } from '../../src/ports/page-fetcher.js';
 import type { JobSource } from '../../src/ports/job-source.js';
 import type { PdfRenderer } from '../../src/ports/pdf-renderer.js';
+import type { AgentLlmProvider } from '../../src/ports/agent-llm-provider.js';
 import type { AssistantSettings } from '../../src/domain/assistant.js';
 import { AnthropicLlmProvider } from '../../src/adapters/anthropic-llm-provider.js';
 import { GeminiLlmProvider } from '../../src/adapters/gemini-llm-provider.js';
@@ -67,6 +68,8 @@ import {
   EMBEDDING_PROVIDER,
   LLM_SERVICE,
   RATE_LIMITER,
+  AGENT_LLM_PROVIDER,
+  CHAT_SESSION_REPOSITORY,
 } from '../../src/nest/tokens.js';
 import {
   InMemoryApplicationRepository,
@@ -97,6 +100,8 @@ import {
   FakePageFetcher,
   InMemoryStageTransitionRepository,
   InMemoryRetentionPolicyStore,
+  InMemoryChatSessionRepository,
+  FakeAgentLlmProvider,
   FakeAuthEngine,
   FakePdfRenderer,
   FakePdfMerger,
@@ -139,6 +144,10 @@ export interface NestTestAppOptions {
   pageFetcher?: PageFetcher;
   /** Override the job source (default: FakeJobSource). */
   jobSource?: JobSource;
+  /** Override the agent LLM provider (default: none — 503 unless a key is set). */
+  agentLlmProvider?: AgentLlmProvider;
+  /** Override the chat-session repository (e.g. to pre-seed a running session). */
+  chatSessionRepository?: InMemoryChatSessionRepository;
 }
 
 const openApps: INestApplication[] = [];
@@ -241,6 +250,10 @@ export async function makeNestApp(
     { provide: EMBEDDING_PROVIDER, useValue: new HashedEmbeddingProvider() },
     { provide: LLM_SERVICE, useValue: llmService },
     { provide: RATE_LIMITER, useValue: new InMemoryRateLimiter() },
+    {
+      provide: CHAT_SESSION_REPOSITORY,
+      useValue: opts.chatSessionRepository ?? new InMemoryChatSessionRepository(),
+    },
   ];
 
   @Global()
@@ -262,6 +275,11 @@ export async function makeNestApp(
     // Replace JobsModule's own JOB_SOURCE (createJobSource → live boards).
     .overrideProvider(JOB_SOURCE)
     .useValue(opts.jobSource ?? new FakeJobSource())
+    // The agent module binds its own AGENT_LLM_PROVIDER factory (real providers);
+    // tests override it with a scripted fake (or a no-op default that the
+    // `@RequiresAi` guard blocks anyway when no key is configured).
+    .overrideProvider(AGENT_LLM_PROVIDER)
+    .useValue(opts.agentLlmProvider ?? new FakeAgentLlmProvider([]))
     .compile();
 
   const app = moduleRef.createNestApplication<NestExpressApplication>({

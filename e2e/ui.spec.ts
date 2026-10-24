@@ -2314,3 +2314,121 @@ test.describe('Bewerbungen (Phase 4)', () => {
     await expect.poll(() => state.unfreezePuts.length).toBeGreaterThan(0);
   });
 });
+
+test.describe('Chat-Agent (Phase 5)', () => {
+  const KIT = '/design/myjob/ui_kits/recruiting/dist/index.html';
+  const SSE = [
+    'event: session',
+    'data: {"sessionId":"s1"}',
+    '',
+    'event: text',
+    'data: {"delta":"Ich lege eine Bewerbung an."}',
+    '',
+    'event: tool-call',
+    'data: {"name":"create_application","args":{"jobPostingId":"p1","talentId":"t1"}}',
+    '',
+    'event: tool-result',
+    'data: {"name":"create_application","ok":true}',
+    '',
+    'event: drafts',
+    'data: [{"jobApplicationId":"a1","postingCompany":"Acme Corp","postingTitle":"Backend Engineer"}]',
+    '',
+    'event: usage',
+    'data: {"inputTokens":12,"outputTokens":30,"costUsd":0.0004}',
+    '',
+    'event: done',
+    '',
+  ].join('\n');
+
+  async function mockShell(
+    page: import('@playwright/test').Page,
+    opts: { vermittlung?: boolean } = {},
+  ) {
+    await page.route('**/api/v1/settings/workspace', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ vermittlung: opts.vermittlung ?? false }),
+      }),
+    );
+    await page.route('**/api/v1/settings/llm', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          configured: true,
+          current: 'claude',
+          providers: [{ id: 'claude', available: true }],
+        }),
+      }),
+    );
+    await page.route('**/api/v1/auth/me', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id: 'user1', email: 'me@example.de', roles: ['admin'] } }),
+      }),
+    );
+    for (const path of ['talents', 'job-postings', 'job-applications']) {
+      await page.route(`**/api/v1/${path}`, (route) =>
+        route.request().method() === 'GET'
+          ? route.fulfill({ contentType: 'application/json', body: JSON.stringify([]) })
+          : route.continue(),
+      );
+    }
+  }
+
+  test('AgentFlow_SendMessage_StreamsAndShowsToolSteps', async ({ page }) => {
+    await mockShell(page);
+    await page.route('**/api/v1/agent/chat', (route) => {
+      if (route.request().method() === 'POST') {
+        return route.fulfill({ contentType: 'text/event-stream', body: SSE });
+      }
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify([]) });
+    });
+
+    await page.goto(KIT);
+    // The Agent action is a main-path companion: visible even with vermittlung off.
+    await page.getByRole('button', { name: 'Agent' }).click();
+    await expect(page.getByTestId('chat-panel')).toBeVisible();
+    await page.getByTestId('chat-input').fill('Erstelle eine Bewerbung');
+    await page.getByTestId('chat-send').click();
+
+    await expect(page.getByTestId('chat-messages')).toContainText('Ich lege eine Bewerbung an.');
+    await expect(page.getByTestId('chat-messages')).toContainText('Bewerbung anlegen');
+    await expect(page.getByTestId('usage-footer')).toBeVisible();
+  });
+
+  test('AgentFlow_DraftLink_OpensBewerbungsEditor', async ({ page }) => {
+    await mockShell(page);
+    await page.route('**/api/v1/agent/chat', (route) => {
+      if (route.request().method() === 'POST') {
+        return route.fulfill({ contentType: 'text/event-stream', body: SSE });
+      }
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify([]) });
+    });
+    await page.route('**/api/v1/job-applications/a1', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          jobApplication: {
+            id: 'a1',
+            postingCompany: 'Acme Corp',
+            postingTitle: 'Backend Engineer',
+            talentName: 'Tobias Wirth',
+            status: 'draft',
+            documents: {},
+          },
+        }),
+      }),
+    );
+
+    await page.goto(KIT);
+    await page.getByRole('button', { name: 'Agent' }).click();
+    await page.getByTestId('chat-input').fill('Erstelle eine Bewerbung');
+    await page.getByTestId('chat-send').click();
+
+    await expect(page.getByTestId('draft-link')).toBeVisible();
+    await page.getByTestId('draft-link').click();
+    // The panel closes and the Bewerbungs-Editor opens for the fetched application.
+    await expect(page.getByTestId('agent-panel')).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Acme Corp · Backend Engineer' })).toBeVisible();
+  });
+});

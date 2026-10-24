@@ -2,6 +2,7 @@ import type { AppConfig } from '../config.js';
 import type { ApplicationRepository } from '../ports/application-repository.js';
 import type { JobPostingRepository } from '../ports/job-posting-repository.js';
 import type { JobApplicationRepository } from '../ports/job-application-repository.js';
+import type { ChatSessionRepository } from '../ports/chat-session-repository.js';
 import type { AuditLog } from '../ports/audit-log.js';
 import type { SavedSearchRepository } from '../ports/saved-search-repository.js';
 import type { MandateRepository } from '../ports/mandate-repository.js';
@@ -28,6 +29,7 @@ import type { Clock } from '../ports/clock.js';
 import { FsApplicationRepository } from './fs-application-repository.js';
 import { FsJobPostingRepository } from './fs-job-posting-repository.js';
 import { FsJobApplicationRepository } from './fs-job-application-repository.js';
+import { FsChatSessionRepository } from './fs-chat-session-repository.js';
 import { FsAuditLog } from './fs-audit-log.js';
 import { FsSavedSearchRepository } from './fs-saved-search-repository.js';
 import { FsMandateRepository } from './fs-mandate-repository.js';
@@ -52,6 +54,7 @@ import { FsStageTransitionRepository } from './fs-stage-transition-repository.js
 import { SqlApplicationRepository } from './sql/sql-application-repository.js';
 import { SqlJobPostingRepository } from './sql/sql-job-posting-repository.js';
 import { SqlJobApplicationRepository } from './sql/sql-job-application-repository.js';
+import { SqlChatSessionRepository } from './sql/sql-chat-session-repository.js';
 import { SqlAuditLog } from './sql/sql-audit-log.js';
 import { SqlSavedSearchRepository } from './sql/sql-saved-search-repository.js';
 import { SqlMandateRepository } from './sql/sql-mandate-repository.js';
@@ -82,6 +85,7 @@ export interface Persistence {
   applicationRepository: ApplicationRepository;
   jobPostingRepository: JobPostingRepository;
   jobApplicationRepository: JobApplicationRepository;
+  chatSessionRepository: ChatSessionRepository;
   auditLog: AuditLog;
   savedSearchRepository: SavedSearchRepository;
   mandateRepository: MandateRepository;
@@ -118,6 +122,7 @@ export function createPersistence(deps: { config: AppConfig; clock: Clock; db?: 
       applicationRepository: new SqlApplicationRepository({ db }),
       jobPostingRepository: new SqlJobPostingRepository({ db }),
       jobApplicationRepository: new SqlJobApplicationRepository({ db }),
+      chatSessionRepository: new SqlChatSessionRepository({ db }),
       auditLog: new SqlAuditLog({ db }),
       savedSearchRepository: new SqlSavedSearchRepository({ db }),
       mandateRepository: new SqlMandateRepository({ db }),
@@ -145,6 +150,7 @@ export function createPersistence(deps: { config: AppConfig; clock: Clock; db?: 
     applicationRepository: new FsApplicationRepository({ config }),
     jobPostingRepository: new FsJobPostingRepository({ config }),
     jobApplicationRepository: new FsJobApplicationRepository({ config }),
+    chatSessionRepository: new FsChatSessionRepository({ config }),
     auditLog: new FsAuditLog({ config }),
     savedSearchRepository: new FsSavedSearchRepository({ config }),
     mandateRepository: new FsMandateRepository({ config }),

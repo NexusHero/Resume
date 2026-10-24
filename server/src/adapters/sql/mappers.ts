@@ -2,6 +2,7 @@ import type { Application, AuditEvent } from '../../domain/application.js';
 import type { SavedSearch } from '../../domain/saved-search.js';
 import type { JobPosting } from '../../domain/job-posting.js';
 import type { JobApplication, JobApplicationStatusChange } from '../../domain/job-application.js';
+import type { ChatMessage, ChatSession, ChatRunUsage } from '../../domain/chat-agent.js';
 import type { Mandate, MandatePriority, MandateStatus } from '../../domain/mandate.js';
 import type { Talent } from '../../domain/talent.js';
 import type { Placement, PlacementStatus } from '../../domain/placement.js';
@@ -22,6 +23,7 @@ import {
   savedSearches,
   jobPostings,
   jobApplications,
+  chatSessions,
   mandates,
   talents,
   placements,
@@ -44,6 +46,8 @@ type JobPostingRow = typeof jobPostings.$inferSelect;
 type JobPostingInsert = typeof jobPostings.$inferInsert;
 type JobApplicationRow = typeof jobApplications.$inferSelect;
 type JobApplicationInsert = typeof jobApplications.$inferInsert;
+type ChatSessionRow = typeof chatSessions.$inferSelect;
+type ChatSessionInsert = typeof chatSessions.$inferInsert;
 type MandateRow = typeof mandates.$inferSelect;
 type MandateInsert = typeof mandates.$inferInsert;
 type TalentRow = typeof talents.$inferSelect;
@@ -223,6 +227,34 @@ export function jobApplicationToRow(application: JobApplication): JobApplication
     selectedAttachmentIds: application.selectedAttachmentIds,
     createdAt: application.createdAt,
     updatedAt: application.updatedAt,
+  };
+}
+
+export function rowToChatSession(row: ChatSessionRow): ChatSession {
+  return {
+    id: row.id,
+    ownerId: row.ownerId,
+    userId: row.userId,
+    ...(row.title ? { title: row.title } : {}),
+    messages: (row.messages ?? []) as ChatMessage[],
+    status: row.status as ChatSession['status'],
+    usage: row.usage ?? { inputTokens: 0, outputTokens: 0, costUsd: 0 },
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export function chatSessionToRow(session: ChatSession): ChatSessionInsert {
+  return {
+    id: session.id,
+    ownerId: session.ownerId,
+    userId: session.userId,
+    title: session.title ?? null,
+    messages: session.messages as ChatMessage[],
+    status: session.status,
+    usage: session.usage as ChatRunUsage,
+    createdAt: session.createdAt,
+    updatedAt: session.updatedAt,
   };
 }
 

@@ -311,3 +311,75 @@ describe('RecruitApi — Magic Pen endpoints', () => {
   });
 });
 
+describe('RecruitApi — Chat-Agent (ADR-0062)', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  function sseResponse(sse) {
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode(sse));
+        controller.close();
+      },
+    });
+    return new Response(stream, { status: 200, headers: { 'content-type': 'text/event-stream' } });
+  }
+
+  it('RecruitApi_AgentChat_ParsesSseEvents', async () => {
+    const sse =
+      'event: session\ndata: {"sessionId":"s1"}\n\n' +
+      'event: text\ndata: {"delta":"Hallo "}\n\n' +
+      'event: text\ndata: {"delta":"Welt"}\n\n' +
+      'event: done\n\n';
+    const calls = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url) => {
+        calls.push(String(url));
+        if (String(url).includes('/settings/llm')) {
+          return new Response(JSON.stringify({ configured: true, current: 'claude' }), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          });
+        }
+        return sseResponse(sse);
+      }),
+    );
+    window.RecruitApi.invalidateAiStatus();
+
+    const events = [];
+    await window.RecruitApi.agentChat({ message: 'Hi' }, (ev) => events.push(ev));
+    expect(events.map((e) => e.name)).toEqual(['session', 'text', 'text', 'done']);
+    expect(events[1].data).toEqual({ delta: 'Hallo ' });
+    expect(calls.some((u) => u.includes('/agent/chat'))).toBe(true);
+  });
+
+  it('RecruitApi_AgentMethods_UseCorrectEndpoints', async () => {
+    const calls = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url, init) => {
+        calls.push({ url: String(url), method: (init && init.method) || 'GET' });
+        return new Response(JSON.stringify({ session: { id: 's1' }, status: 'aborted' }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }),
+    );
+
+    await window.RecruitApi.agentListSessions();
+    expect(calls.find((c) => c.url.endsWith('/agent/chat') && c.method === 'GET')).toBeTruthy();
+
+    await window.RecruitApi.agentGetSession('s1');
+    expect(calls.find((c) => c.url.endsWith('/agent/chat/s1') && c.method === 'GET')).toBeTruthy();
+
+    await window.RecruitApi.agentDeleteSession('s1');
+    expect(calls.find((c) => c.url.endsWith('/agent/chat/s1') && c.method === 'DELETE')).toBeTruthy();
+
+    await window.RecruitApi.agentAbort('s1');
+    expect(calls.find((c) => c.url.endsWith('/agent/chat/s1/abort') && c.method === 'POST')).toBeTruthy();
+  });
+});
+
+

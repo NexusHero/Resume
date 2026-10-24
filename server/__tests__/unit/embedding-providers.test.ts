@@ -19,6 +19,7 @@ function stubFetch(reply: { ok?: boolean; status?: number; json?: unknown; throw
       ok: reply.ok ?? true,
       status: reply.status ?? 200,
       json: async () => reply.json,
+      body: null,
     };
     return res;
   };
@@ -138,7 +139,12 @@ describe('createEmbeddingProvider', () => {
     openai: { apiKey: '', model: 'text-embedding-3-small', baseUrl: 'https://api.openai.com/v1' },
     timeoutMs: 1000,
   };
-  const httpFetch: HttpFetch = async () => ({ ok: true, status: 200, json: async () => ({}) });
+  const httpFetch: HttpFetch = async () => ({
+    ok: true,
+    status: 200,
+    json: async () => ({}),
+    body: null,
+  });
   const make = (config: EmbeddingConfig) =>
     createEmbeddingProvider({ config, logger: noopLogger, httpFetch });
 

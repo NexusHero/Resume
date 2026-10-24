@@ -52,6 +52,8 @@ tags:
     description: Saved job postings ("Stellen") — adopt from search, paste text, or fetch a URL (SSRF-guarded)
   - name: Assistant
     description: The in-process agent — settings, manual runs, and the reviewable suggestion queue
+  - name: Agent
+    description: The chat agent — a streamed tool-use loop over the saved postings, pool and applications (drafts only)
   - name: Artifacts
     description: The outcome loop — generated AI artifacts and what became of them
   - name: Mail
@@ -3042,6 +3044,105 @@ paths:
         '503': { $ref: '#/components/responses/AiNotConfigured' }
         '502': { $ref: '#/components/responses/UpstreamProblem' }
 
+  /agent/chat:
+    post:
+      tags: [Agent]
+      summary: Run (or continue) a chat-agent turn over the tool-use loop
+      description: |
+        Streams an agent run over Server-Sent Events (`text/event-stream`). The
+        first event is `session` (`{ sessionId }`), then `text` deltas, `tool-call`
+        / `tool-result` / `tool-error`, a `drafts` list, `usage`, and a terminal
+        `done` / `limit` / `aborted` / `error`. Without a central AI key the route
+        answers `503` **before** the first SSE byte; a foreign `sessionId` answers
+        `404` before streaming. The agent only ever creates `draft` applications —
+        it cannot send, delete, change status or unfreeze.
+      operationId: agentChat
+      security:
+        - cookieSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateChatSessionInput' }
+      responses:
+        '200':
+          description: The streamed agent run (Server-Sent Events).
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: An `event:`/`data:` SSE stream (see the endpoint description).
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { $ref: '#/components/responses/AiNotConfigured' }
+    get:
+      tags: [Agent]
+      summary: List the caller's chat sessions (metadata)
+      operationId: listChatSessions
+      security:
+        - cookieSession: []
+      responses:
+        '200':
+          description: The caller's sessions, newest first.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ChatSessionMeta' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /agent/chat/{id}:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    get:
+      tags: [Agent]
+      summary: Get one chat session's full transcript
+      operationId: getChatSession
+      security:
+        - cookieSession: []
+      responses:
+        '200':
+          description: The session with its full message transcript.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session: { $ref: '#/components/schemas/ChatSession' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Agent]
+      summary: Delete one chat session
+      operationId: deleteChatSession
+      security:
+        - cookieSession: []
+      responses:
+        '204': { description: Deleted. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /agent/chat/{id}/abort:
+    post:
+      tags: [Agent]
+      summary: Abort a running chat-agent run (idempotent)
+      operationId: abortChatRun
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses:
+        '200':
+          description: The run was aborted (or no run was active).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, enum: [aborted] }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
 components:
   securitySchemes:
     cookieSession:
@@ -3724,6 +3825,62 @@ components:
     JobApplicationStatus:
       type: string
       enum: [draft, sent, interview, offer, rejected]
+
+    CreateChatSessionInput:
+      type: object
+      required: [message]
+      properties:
+        sessionId: { type: string, description: Continue an existing session. }
+        message: { type: string, minLength: 1 }
+
+    ChatMessage:
+      type: object
+      description: One persisted chat message — user/assistant prose, a tool step, or a tool outcome.
+      properties:
+        role: { type: string, enum: [user, assistant, tool, system] }
+        text: { type: string }
+        toolCall:
+          type: object
+          properties:
+            id: { type: string }
+            name: { type: string }
+            args: { type: object, additionalProperties: true }
+        toolResult:
+          type: object
+          properties:
+            toolCallId: { type: string }
+            name: { type: string }
+            content: { type: string }
+            isError: { type: boolean }
+        createdAt: { type: string, format: date-time }
+
+    ChatSession:
+      type: object
+      description: A persisted, per-user chat session (workspace + user scoped, ADR-0062).
+      properties:
+        id: { type: string }
+        ownerId: { type: string, description: The owning workspace scope. }
+        userId: { type: string, description: The owning user. }
+        title: { type: string }
+        messages: { type: array, items: { $ref: '#/components/schemas/ChatMessage' } }
+        status: { type: string, enum: [running, done, aborted, limit-reached, error] }
+        usage:
+          type: object
+          properties:
+            inputTokens: { type: integer }
+            outputTokens: { type: integer }
+            costUsd: { type: number }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    ChatSessionMeta:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        status: { type: string, enum: [running, done, aborted, limit-reached, error] }
+        updatedAt: { type: string, format: date-time }
+        messageCount: { type: integer }
 
     StatusHistoryEntry:
       type: object

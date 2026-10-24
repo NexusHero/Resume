@@ -29,6 +29,7 @@ import {
   APPLICATION_REPOSITORY,
   INTERVIEW_OBSERVATION_REPOSITORY,
   ARTIFACT_LOG_REPOSITORY,
+  CHAT_SESSION_REPOSITORY,
 } from '../../src/nest/tokens.js';
 import {
   InMemoryTalentRepository,
@@ -69,6 +70,7 @@ describe('NestJS talents vertical', () => {
         APPLICATION_REPOSITORY,
         INTERVIEW_OBSERVATION_REPOSITORY,
         ARTIFACT_LOG_REPOSITORY,
+        CHAT_SESSION_REPOSITORY,
       ].map((t) => ({ provide: t, useValue: {} })),
     ];
     @Global()

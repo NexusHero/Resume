@@ -107,6 +107,31 @@ offer / rejected`, any transition allowed).
   - **Server-seitiger Statusfilter** `GET /job-applications?status=` (fs + sql,
     ein Wert, kein Multi-Select) und eine Segmented-UI in der Liste **und** im
     Mandanten-Tab.
+- **Phase 5 — Chat-Agent (ADR-0062).** Der Bewerbungs-Hauptweg ist per Chat
+  bedienbar: ein serverseitiger Agent führt eine Tool-Use-Schleife über dieselben
+  Services wie die UI aus und legt **nur Entwürfe** an:
+  - Ein neuer, provider-neutraler Streaming-Port **`AgentLlmProvider`**
+    (`streamAgentTurn → AsyncIterable<text-delta|tool-use|done>`, ohne SDK);
+    `AnthropicLlmProvider` streamt token-genau (SSE), `GeminiLlmProvider` liefert
+    **eine Runde pro Provider-Aufruf** (kein Streaming). `HttpFetch.HttpResponse`
+    erhält einen `body`-Stream-Zugriff (die einzige Erweiterung eines bestehenden
+    Ports).
+  - **9 dünne Tool-Wrapper** (`search_jobs`, `save_job`, `list_mandanten`,
+    `assess_fit`, `create_application`, `list_applications`, `generate_letter`,
+    `tailor_section`, `tailor_all`) über die Phase-1–4-Services; verbotene
+    Aktionen (Versand, Löschen, Statuswechsel, `unfreeze`, Anhänge) sind **kein**
+    Tool; Grounding-geflaggte Abschnitte werden nie auto-übernommen.
+  - **SSE-Chat** (`POST /agent/chat` als `text/event-stream`) mit Tool-Schritt-Chips,
+    Links auf die Entwürfe, Abort (`POST /agent/chat/{id}/abort`), Usage/Kosten-Footer
+    und einem ehrlichen Gemini-Hinweis „Antwort erscheint pro Runde".
+  - **Persistierte, löschbare `ChatSession`** (fs + sql, `(ownerId, userId)`-gebunden,
+    `text`-ISO-8601-Timestamps), Teil von DSGVO-Export und -Löschung; ein Abbruch
+    hinterlässt ein ehrliches Teil-Transkript; verwaiste `running`-Sessions werden
+    beim Boot idempotent abgebrochen.
+  - **Limits je Lauf** (`AGENT_MAX_STEPS`/`AGENT_MAX_APPLICATIONS`/`AGENT_MAX_TOKENS`/
+    `AGENT_MAX_TIME_MS`) mit deterministischer Zusammenfassung; Metering
+    `agentChat` je Provider-Runde. Dev-only `FakeAgentLlmProvider` nur hinter
+    `AGENT_FAKE=1` **und** `NODE_ENV!=='production'`.
 
 ### Changed (breaking)
 
@@ -139,6 +164,14 @@ offer / rejected`, any transition allowed).
 
 ### Changed
 
+- **The AI-route drift guard now counts 19 routes** (K19 added: `POST /agent/chat`).
+  `A02`–`A05` (`GET`/`DELETE`/`abort` on `/agent/chat`) are deterministic and not in
+  `AI_ROUTES`. The guard order for A01 is `AuthGuard → AiConfiguredGuard →
+AiRateLimitGuard` (no `VermittlungGuard`/`PlanGuard`).
+- **`HttpFetch.HttpResponse` gained `body: ReadableStream | null`** (the web
+  `Response` form) for the agent's SSE streaming; `nodeFetch`/`resilientFetch`
+  already pass it through — the only change to an existing port.
+- **`USAGE_FEATURES` gained `agentChat`** (one meter row per provider round, Q3).
 - **`RecruitApi.listJobApplications` now takes an options object** instead of a
   positional `talentId`: `listJobApplications({ talentId?, status? } = {})`. Both
   callers (`app.jsx`, `TalentProfile.jsx`) are updated in the same PR (RI6).

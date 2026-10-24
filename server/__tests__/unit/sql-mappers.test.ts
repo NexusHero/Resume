@@ -29,6 +29,8 @@ import {
   artifactLogToRow,
   rowToStageTransition,
   stageTransitionToRow,
+  rowToChatSession,
+  chatSessionToRow,
 } from '../../src/adapters/sql/mappers.js';
 import type { Application, AuditEvent } from '../../src/domain/application.js';
 import type { SavedSearch } from '../../src/domain/saved-search.js';
@@ -41,6 +43,7 @@ import type { Candidacy } from '../../src/domain/candidacy.js';
 import type { User } from '../../src/domain/user.js';
 import type { TalentDocuments } from '../../src/domain/talent-documents.js';
 import type { Attachment } from '../../src/domain/attachment.js';
+import type { ChatSession } from '../../src/domain/chat-agent.js';
 
 describe('application mappers', () => {
   it('Application_RoundTrips_PreservingNullAndUndefined', () => {
@@ -585,6 +588,58 @@ describe('stage transition mappers', () => {
     expect(rowToStageTransition(stageTransitionToRow(move) as never)).toEqual(move);
     const entry = { ...move, id: 's2', from: null, to: 'sourced' as const };
     expect(rowToStageTransition(stageTransitionToRow(entry) as never)).toEqual(entry);
+  });
+});
+
+describe('chat-session mappers', () => {
+  it('ChatSessionToRow_RoundTripsMessagesAndUsage', () => {
+    const session: ChatSession = {
+      id: 's1',
+      ownerId: 'team',
+      userId: 'u1',
+      title: 'Hallo',
+      messages: [
+        { role: 'user', text: 'hi', createdAt: '2026-06-25T10:00:00.000Z' },
+        {
+          role: 'assistant',
+          toolCall: { id: 'c1', name: 'search_jobs', args: { q: 'rust' } },
+          createdAt: '2026-06-25T10:00:01.000Z',
+        },
+        {
+          role: 'tool',
+          toolResult: { toolCallId: 'c1', name: 'search_jobs', content: '[]', isError: false },
+          createdAt: '2026-06-25T10:00:02.000Z',
+        },
+      ],
+      status: 'done',
+      usage: { inputTokens: 10, outputTokens: 20, costUsd: 0.0001 },
+      createdAt: '2026-06-25T10:00:00.000Z',
+      updatedAt: '2026-06-25T10:00:02.000Z',
+    };
+    const row = chatSessionToRow(session);
+    expect(row.title).toBe('Hallo');
+    expect(row.messages).toEqual(session.messages);
+    expect(row.usage).toEqual(session.usage);
+    expect(rowToChatSession(row as Required<typeof row>)).toEqual(session);
+  });
+
+  it('RowToChatSession_NullMessages_DefaultsEmpty', () => {
+    const row = chatSessionToRow({
+      id: 's2',
+      ownerId: 'team',
+      userId: 'u1',
+      messages: [],
+      status: 'done',
+      usage: { inputTokens: 0, outputTokens: 0, costUsd: 0 },
+      createdAt: 'x',
+      updatedAt: 'y',
+    });
+    const back = rowToChatSession({
+      ...(row as Required<typeof row>),
+      messages: null as unknown as never,
+    });
+    expect(back.messages).toEqual([]);
+    expect(back.title).toBeUndefined();
   });
 });
 

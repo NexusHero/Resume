@@ -192,7 +192,13 @@ describe('RecruitApi — job application endpoints', () => {
 
   it('RecruitApi_JobApplicationMethods_UseCorrectEndpoints', async () => {
     const calls = [];
-    vi.stubGlobal(
+    // jsdom ships no URL.createObjectURL; the download seam (saveBlob) needs one.
+    const origCreate = URL.createObjectURL;
+    const origRevoke = URL.revokeObjectURL;
+    URL.createObjectURL = () => 'blob:mock';
+    URL.revokeObjectURL = () => {};
+    try {
+      vi.stubGlobal(
       'fetch',
       vi.fn(async (url, init) => {
         calls.push({ url: String(url), method: (init && init.method) || 'GET' });
@@ -210,24 +216,41 @@ describe('RecruitApi — job application endpoints', () => {
     );
     window.RecruitApi.invalidateAiStatus();
 
-    await window.RecruitApi.listJobApplications('t1');
-    expect(calls[0].url).toContain('/job-applications?talentId=t1');
-    expect(calls[0].method).toBe('GET');
+    await window.RecruitApi.listJobApplications({ talentId: 't1' });
+    expect(calls.some((c) => c.url.includes('/job-applications?talentId=t1') && c.method === 'GET')).toBe(true);
+
+    await window.RecruitApi.listJobApplications({ status: 'sent' });
+    expect(calls.some((c) => c.url.includes('/job-applications?status=sent'))).toBe(true);
+
+    await window.RecruitApi.listJobApplications();
+    expect(calls.some((c) => c.url.endsWith('/job-applications') && c.method === 'GET')).toBe(true);
 
     await window.RecruitApi.createJobApplication({ jobPostingId: 'p1', talentId: 't1' });
-    expect(calls[1].url.endsWith('/job-applications')).toBe(true);
-    expect(calls[1].method).toBe('POST');
+    const createCall = calls.find(
+      (c) => c.url.endsWith('/job-applications') && c.method === 'POST',
+    );
+    expect(createCall).toBeTruthy();
 
     await window.RecruitApi.getJobApplication('a1');
-    expect(calls[2].url).toContain('/job-applications/a1');
+    expect(calls.some((c) => c.url.includes('/job-applications/a1') && c.method === 'GET')).toBe(true);
 
     await window.RecruitApi.getJobApplicationDocuments('a1');
-    expect(calls[3].url).toContain('/job-applications/a1/documents');
-    expect(calls[3].method).toBe('GET');
+    expect(calls.some((c) => c.url.includes('/job-applications/a1/documents') && c.method === 'GET')).toBe(true);
 
     await window.RecruitApi.saveJobApplicationDocuments('a1', {});
-    expect(calls[4].url).toContain('/job-applications/a1/documents');
-    expect(calls[4].method).toBe('PUT');
+    expect(calls.some((c) => c.url.includes('/job-applications/a1/documents') && c.method === 'PUT')).toBe(true);
+
+    await window.RecruitApi.saveJobApplicationDocuments('a1', {}, true);
+    expect(calls.some((c) => c.url.includes('/job-applications/a1/documents?unfreeze=1') && c.method === 'PUT')).toBe(true);
+
+    await window.RecruitApi.updateJobApplicationAttachments('a1', ['att1']);
+    expect(calls.some((c) => c.url.includes('/job-applications/a1/attachments') && c.method === 'PUT')).toBe(true);
+
+    await window.RecruitApi.downloadJobApplicationDossierPdf('a1');
+    expect(calls.some((c) => c.url.includes('/job-applications/a1/dossier/pdf'))).toBe(true);
+
+    await window.RecruitApi.downloadJobApplicationDossierZip('a1');
+    expect(calls.some((c) => c.url.includes('/job-applications/a1/dossier/zip'))).toBe(true);
 
     await window.RecruitApi.generateJobApplicationLetter('a1');
     const letterCall = calls.find((c) => c.url.endsWith('/job-applications/a1/letter'));
@@ -244,6 +267,10 @@ describe('RecruitApi — job application endpoints', () => {
       (c) => c.url.endsWith('/job-applications/a1') && c.method === 'DELETE',
     );
     expect(deleteCall).toBeTruthy();
+    } finally {
+      URL.createObjectURL = origCreate;
+      URL.revokeObjectURL = origRevoke;
+    }
   });
 });
 

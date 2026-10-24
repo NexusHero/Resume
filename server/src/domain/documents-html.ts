@@ -37,6 +37,12 @@ function cssValue(value: unknown): string {
 export interface DocumentsHtmlOptions {
   /** Pre-formatted letter date ("Zürich, 2.7.2026" carries the locale). */
   letterDate?: string;
+  /**
+   * Section order. Default `resume-first` (CV → Anschreiben) keeps the base
+   * export and the editor preview unchanged; the Bewerbungsmappe passes
+   * `letter-first` so the dossier reads Anschreiben → CV (AK-4.1, ADR-0061 §4).
+   */
+  order?: 'resume-first' | 'letter-first';
 }
 
 export function documentsToHtml(
@@ -134,6 +140,13 @@ export function documentsToHtml(
 
   const letterSection = `<section id="doc-letter" class="page cl">${letterInner}</section>`;
 
+  // Only the Mappe flips the order (ADR-0061 §4); base export and editor preview
+  // keep CV → Anschreiben.
+  const body =
+    options.order === 'letter-first'
+      ? `${letterSection}\n  ${resumeSection}`
+      : `${resumeSection}\n  ${letterSection}`;
+
   // Template-specific overrides layered on top of the shared base styles.
   const templateCss =
     template === 'modern'
@@ -194,8 +207,7 @@ export function documentsToHtml(
 </style>
 </head>
 <body class="tpl-${template}">
-  ${resumeSection}
-  ${letterSection}
+  ${body}
 </body>
 </html>`;
 }
@@ -500,6 +512,20 @@ function inkDocument(documents: TalentDocuments, options: DocumentsHtmlOptions):
     .ink-sec-head { break-inside: avoid; break-after: avoid; }
   }`;
 
+  const resumeSection = `<section id="doc-resume" class="ink-page">
+    <div class="ink-layout">
+      ${sidebar}
+      ${mainCol}
+    </div>
+  </section>`;
+
+  // Only the Mappe flips the order (ADR-0061 §4); the ink base export and the
+  // editor preview keep CV → Anschreiben.
+  const body =
+    options.order === 'letter-first'
+      ? `${letterSection}\n  ${resumeSection}`
+      : `${resumeSection}\n  ${letterSection}`;
+
   return `<!DOCTYPE html>
 <html lang="de">
 <head>
@@ -508,13 +534,7 @@ function inkDocument(documents: TalentDocuments, options: DocumentsHtmlOptions):
 </head>
 <body class="tpl-ink">
   <div class="ink-print-band" aria-hidden="true"></div>
-  <section id="doc-resume" class="ink-page">
-    <div class="ink-layout">
-      ${sidebar}
-      ${mainCol}
-    </div>
-  </section>
-  ${letterSection}
+  ${body}
 </body>
 </html>`;
 }

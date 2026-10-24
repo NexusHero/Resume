@@ -1,5 +1,5 @@
 import { and, eq } from 'drizzle-orm';
-import type { JobApplication } from '../../domain/job-application.js';
+import type { JobApplication, JobApplicationStatus } from '../../domain/job-application.js';
 import type { JobApplicationRepository } from '../../ports/job-application-repository.js';
 import type { Db } from './db.js';
 import { jobApplications } from './schema.js';
@@ -19,9 +19,14 @@ export class SqlJobApplicationRepository implements JobApplicationRepository {
     this.db = deps.db;
   }
 
-  async list(ownerId: string, talentId?: string): Promise<JobApplication[]> {
+  async list(
+    ownerId: string,
+    talentId?: string,
+    status?: JobApplicationStatus,
+  ): Promise<JobApplication[]> {
     const conds = [eq(jobApplications.ownerId, ownerId)];
     if (talentId !== undefined) conds.push(eq(jobApplications.talentId, talentId));
+    if (status !== undefined) conds.push(eq(jobApplications.status, status));
     const rows = await this.db
       .select()
       .from(jobApplications)

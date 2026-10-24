@@ -43,6 +43,27 @@ describe('FsJobApplicationRepository', () => {
     expect(await repo.list('team', 'nope')).toEqual([]);
   });
 
+  it('FsJobApplicationRepository_List_FiltersByStatus', async () => {
+    const repo = new FsJobApplicationRepository({ config: tmpConfig() });
+    await repo.add(application('a1', 'team', { status: 'draft' }));
+    await repo.add(application('a2', 'team', { status: 'sent' }));
+    expect((await repo.list('team', undefined, 'sent')).map((a) => a.id)).toEqual(['a2']);
+    expect(await repo.list('team', undefined, 'offer')).toEqual([]);
+  });
+
+  it('FsJobApplicationRepository_MissingSelectedAttachmentIds_DefaultsToEmptyArray', async () => {
+    const config = tmpConfig();
+    await fs.mkdir(path.dirname(config.jobApplicationsFile), { recursive: true });
+    // A legacy record without the field (written before Phase 4) reads as [].
+    const legacy = application('a1');
+    const { selectedAttachmentIds: _dropped, ...withoutField } = legacy;
+    void _dropped;
+    await fs.writeFile(config.jobApplicationsFile, JSON.stringify([withoutField]));
+    const repo = new FsJobApplicationRepository({ config });
+    const read = await repo.findById('team', 'a1');
+    expect(read?.selectedAttachmentIds).toEqual([]);
+  });
+
   it('FsJobApplicationRepository_FindByPostingAndTalent_ReturnsExisting', async () => {
     const repo = new FsJobApplicationRepository({ config: tmpConfig() });
     await repo.add(application('a1'));

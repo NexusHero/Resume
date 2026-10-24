@@ -12,7 +12,16 @@ const STATUS_META = {
   rejected: { label: 'Absage', color: 'var(--danger)' },
 };
 
-function Bewerbungen({ applications = [], onOpen, onChanged }) {
+const STATUS_FILTERS = [
+  { value: undefined, label: 'Alle' },
+  { value: 'draft', label: 'Entwurf' },
+  { value: 'sent', label: 'Versendet' },
+  { value: 'interview', label: 'Gespräch' },
+  { value: 'offer', label: 'Zusage' },
+  { value: 'rejected', label: 'Absage' },
+];
+
+function Bewerbungen({ applications = [], onOpen, onChanged, status, onStatusChange }) {
   const [query, setQuery] = React.useState('');
   const [hiddenIds, setHiddenIds] = React.useState(() => new Set());
 
@@ -52,10 +61,36 @@ function Bewerbungen({ applications = [], onOpen, onChanged }) {
     });
   };
 
-  const status = STATUS_META.draft;
+  const fallbackMeta = STATUS_META.draft;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <div style={{ display: 'flex', gap: '4px', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-md)', padding: '4px', alignSelf: 'flex-start', flexWrap: 'wrap' }}>
+        {STATUS_FILTERS.map((f) => (
+          <button
+            key={f.label}
+            data-testid={`status-filter-${f.label}`}
+            aria-pressed={status === f.value}
+            onClick={() => onStatusChange && onStatusChange(f.value)}
+            style={{
+              border: 'none',
+              cursor: 'pointer',
+              borderRadius: 'var(--radius-sm)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '12px',
+              fontWeight: 600,
+              padding: '5px 12px',
+              minHeight: '32px',
+              background: status === f.value ? 'var(--surface-card)' : 'transparent',
+              color: status === f.value ? 'var(--text-heading)' : 'var(--text-soft)',
+              boxShadow: status === f.value ? 'var(--shadow-xs)' : 'none',
+            }}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
       <label style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface-card)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', padding: '0 12px', flex: 1, minWidth: 0 }}>
         <BW.Icon name="search" size={15} style={{ color: 'var(--text-soft)' }} />
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Bewerbungen durchsuchen …" aria-label="Bewerbungen durchsuchen" style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-heading)', padding: '10px 0' }} />
@@ -68,7 +103,7 @@ function Bewerbungen({ applications = [], onOpen, onChanged }) {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
           {visible.map((a) => {
-            const meta = STATUS_META[a.status] || status;
+            const meta = STATUS_META[a.status] || fallbackMeta;
             return (
               <BW.Card key={a.id} style={{ cursor: 'pointer' }} onClick={() => onOpen && onOpen(a)}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px' }}>

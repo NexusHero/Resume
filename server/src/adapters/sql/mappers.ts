@@ -200,6 +200,9 @@ export function rowToJobApplication(row: JobApplicationRow): JobApplication {
     status: row.status as JobApplication['status'],
     statusHistory: row.statusHistory as JobApplicationStatusChange[],
     documents: row.documents,
+    selectedAttachmentIds: Array.isArray(row.selectedAttachmentIds)
+      ? row.selectedAttachmentIds
+      : [],
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -217,6 +220,7 @@ export function jobApplicationToRow(application: JobApplication): JobApplication
     status: application.status,
     statusHistory: application.statusHistory,
     documents: application.documents,
+    selectedAttachmentIds: application.selectedAttachmentIds,
     createdAt: application.createdAt,
     updatedAt: application.updatedAt,
   };

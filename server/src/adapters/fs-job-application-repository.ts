@@ -26,7 +26,15 @@ export class FsJobApplicationRepository implements JobApplicationRepository {
     try {
       const raw = await fs.readFile(this.file, 'utf8');
       const data = JSON.parse(raw);
-      return Array.isArray(data) ? (data as JobApplication[]) : [];
+      if (!Array.isArray(data)) return [];
+      // Backward-compatible (ADR-0061): records written before the attachment
+      // selection existed read as `selectedAttachmentIds: []`.
+      return (data as JobApplication[]).map((a) => ({
+        ...a,
+        selectedAttachmentIds: Array.isArray(a.selectedAttachmentIds)
+          ? a.selectedAttachmentIds
+          : [],
+      }));
     } catch {
       return [];
     }
@@ -42,10 +50,17 @@ export class FsJobApplicationRepository implements JobApplicationRepository {
     return run;
   }
 
-  async list(ownerId: string, talentId?: string): Promise<JobApplication[]> {
+  async list(
+    ownerId: string,
+    talentId?: string,
+    status?: JobApplication['status'],
+  ): Promise<JobApplication[]> {
     const all = await this.readAll();
     return all.filter(
-      (a) => a.ownerId === ownerId && (talentId === undefined || a.talentId === talentId),
+      (a) =>
+        a.ownerId === ownerId &&
+        (talentId === undefined || a.talentId === talentId) &&
+        (status === undefined || a.status === status),
     );
   }
 

@@ -199,7 +199,9 @@ The Phase-2 entity follows the same layer chain as Stellen (ADR-0058):
   `(owner_id, job_posting_id, talent_id)` with a `23505` re-query as the race backstop).
 - **Services** — `job-application-service.ts` (idempotent `create` with the
   snapshot seeding and the document copy; `changeStatus` appends a timestamped
-  history entry; `saveDocuments` strips `rawText`/`translations` server-side);
+  history entry; `saveDocuments` strips `rawText`/`translations` server-side and
+  — Phase 4 — enforces the **freeze** with `saveAttachments` and an optional
+  `?unfreeze=1` note-dedup);
   `application-letter-service.ts` (lazy-loads `JobPosting.description`, detects
   the ad language with a `'de'` default, and wraps the `LlmFeatureRunner` result
   with `grounding` + `checks`); `legacy-application-migration.ts` (boot migration
@@ -207,7 +209,13 @@ The Phase-2 entity follows the same layer chain as Stellen (ADR-0058):
   **`magic-pen-service.ts`** (Phase 3, ADR-0060: per-section rewrite of the copy,
   grounding against the **base CV** via `documentRepository.get`, `rewriteAll`
   fanned out with `allSettled`, never persists — acceptance is the existing
-  `PUT /documents` autosave).
+  `PUT /documents` autosave);
+  **`job-application-dossier-service.ts`** (Phase 4, ADR-0061: renders the
+  Bewerbungsmappe **from the copy** via the reused
+  `DocumentService.renderDossierFromDocuments` in `order:'letter-first'`, with
+  the selected PDF attachments appended (OQ1) and the recipient fallback
+  `recipientForMappe`; the ZIP is **streamed** with `yazl` — no in-memory whole-ZIP,
+  no re-import HTML, eager validation before the stream, abort on `res.on('close')`).
 - **Domain** — **`magic-pen.ts`** (the section catalogue, per-section reply
   schemas, `penPrompt` with the ad text as untrusted data + the immutable facts
   as a closed context, and `normalizePen`/`penAccept`).
@@ -219,6 +227,33 @@ The Phase-2 entity follows the same layer chain as Stellen (ADR-0058):
 The snapshots `postingCompany`/`postingTitle` keep a Bewerbung fully displayable
 and editable after its posting is deleted (soft `jobPostingId`, no cascade); only
 the full ad text is loaded lazily for letter generation (§6 runtime flow).
+
+### Bewerbungsmappe (`JobApplicationDossierService`) slice (Phase 4, ADR-0061)
+
+The dossier is **read-only against the copy** — the base CV is never read or
+written by it (AK-2.3 invariant holds). The assembly reuses the established
+`renderDossierFromDocuments` (the same call `ApplicationBuilder.renderDossier`
+composes) with an additive `order:'letter-first'` so the merged PDF reads
+**Anschreiben → CV → selected PDF attachments**. Two differences from the
+talent dossier:
+
+- **Recipient fallback (OQ2)** — `recipientForMappe` (pure, `domain/job-application.ts`)
+  substitutes `postingCompany` as the letter's company **only** when
+  `letter.firma` is empty/whitespace; a non-empty `firma` is never overwritten.
+- **Streaming ZIP (OQ4)** — the ZIP is built with `yazl` (`ZipFile.outputStream`
+  piped straight into the HTTP response, chunked, no `Content-Length`): `Bewerbung.pdf`
+  (the merged PDF, attachments included) plus each selected attachment as its own
+  file (original name, deduplicated). Validation is **eager** (unknown/foreign
+  attachment → 404, non-PDF → 400) before `end()`, so a half-written stream never
+  escapes; a client disconnect destroys the stream via `res.on('close')`.
+
+The attachment selection is **persisted** on the application
+(`selectedAttachmentIds`, fs JSON array + `jsonb` column, additive `DEFAULT '[]'`
+migration), PDF-only (OQ3), with the reference CV manual-only/never preselected.
+From status `sent` the documents and the selection are **frozen** (409 `frozen`
+without `?unfreeze=1`; the confirmation appends one noted history entry per
+status phase). The status filter (`GET /job-applications?status=`) is a
+**server-side** filter on both adapters.
 
 ## 6. Runtime View
 
@@ -331,6 +366,20 @@ progress + abort:
 
 ![Magic Pen Alles anpassen sequence](umls/06_seq_magic_pen_all.svg)
 
+**Bewerbungsmappe herunterladen (PDF/ZIP aus der Kopie)** (FR-95/96, ADR-0061) —
+render the merged PDF from the application's **copy** (letter-first, attachments
+included) with the recipient fallback; the ZIP is streamed via `yazl` (chunked, no
+Content-Length), and unknown/foreign/non-PDF attachments fail **before** the stream:
+
+![Bewerbungsmappe herunterladen sequence](umls/06_seq_mappe_download.svg)
+
+**Einfrier-Bestätigung (ab „versendet")** (FR-97, ADR-0061) — a document/attachment
+save on a non-draft application answers 409 `frozen`; the editor confirms once
+(`unfrozen` merker) and resends with `?unfreeze=1`, which appends one noted history
+entry per status phase:
+
+![Einfrier-Bestätigung sequence](umls/06_seq_einfrieren.svg)
+
 ### Traceability matrix
 
 The requirement catalogue ([requirements.md](requirements.md)) lists FR → module.
@@ -339,24 +388,26 @@ sequence diagram** → ADR — so a reviewer can walk from a requirement to the
 behaviour that realises it, not just the file that holds it. Sequence sources are
 in [`docs/umls/`](umls).
 
-| Requirement         | Feature / module                            | Runtime flow (sequence)                                                   | ADR                 |
-| ------------------- | ------------------------------------------- | ------------------------------------------------------------------------- | ------------------- |
-| FR-30, FR-31, FR-38 | AI services + `LlmFeatureRunner`            | [AI generation w/ central key + metering](umls/06_seq_ai_generation.puml) | 0009, 0057          |
-| FR-01               | `auth-service`, `session-store`             | [Login + session, suspension-checked](umls/06_seq_login.puml)             | 0004, 0038          |
-| FR-04 (onboarding)  | `invite-service`, `auth-service`            | [Invite → accept onboarding](umls/06_seq_invite_accept.puml)              | 0035                |
-| FR-30, FR-32, FR-42 | `assistant-service`, `application-builder`  | [CoRecruiter autopilot](umls/06_seq_autopilot.puml)                       | 0013, 0019          |
-| FR-60               | `account-service` + personal-data registry  | [DSGVO erase via registry](umls/06_seq_account_erase.puml)                | 0004 · security §10 |
-| FR-75, FR-76, FR-79 | `job-posting-service`, `job-source`         | [Stelle übernehmen (adopt)](umls/06_seq_adopt_posting.puml)               | 0058                |
-| FR-78               | `job-posting-extract-service`, `ssrf-fetch` | [Stelle per URL einfügen (SSRF)](umls/06_seq_insert_url.puml)             | 0058                |
-| FR-81, FR-82, FR-83 | `job-application-service`, `document-repo`  | [Bewerbung erstellen (mit Kopie)](umls/06_seq_create_application.puml)    | 0059                |
-| FR-84, FR-85        | `application-letter-service`, `llm-runner`  | [Anschreiben generieren](umls/06_seq_generate_letter.puml)                | 0059                |
-| FR-89, FR-90, FR-92 | `magic-pen-service`, `grounding`            | [Magic Pen (Abschnitt)](umls/06_seq_magic_pen.puml)                       | 0060                |
-| FR-93, FR-94        | `magic-pen-service`, `rewriteAll`           | [Magic Pen „Alles anpassen"](umls/06_seq_magic_pen_all.puml)              | 0060                |
-| FR-12, FR-13, FR-14 | `candidacy-service`, `placement-service`    | Pipeline → placement (§6, prose)                                          | 0010                |
-| FR-61               | `retention-service`                         | Retention report + anonymise sweep (§6 companion, ADR-0018)               | 0018                |
+| Requirement         | Feature / module                            | Runtime flow (sequence)                                                    | ADR                 |
+| ------------------- | ------------------------------------------- | -------------------------------------------------------------------------- | ------------------- |
+| FR-30, FR-31, FR-38 | AI services + `LlmFeatureRunner`            | [AI generation w/ central key + metering](umls/06_seq_ai_generation.puml)  | 0009, 0057          |
+| FR-01               | `auth-service`, `session-store`             | [Login + session, suspension-checked](umls/06_seq_login.puml)              | 0004, 0038          |
+| FR-04 (onboarding)  | `invite-service`, `auth-service`            | [Invite → accept onboarding](umls/06_seq_invite_accept.puml)               | 0035                |
+| FR-30, FR-32, FR-42 | `assistant-service`, `application-builder`  | [CoRecruiter autopilot](umls/06_seq_autopilot.puml)                        | 0013, 0019          |
+| FR-60               | `account-service` + personal-data registry  | [DSGVO erase via registry](umls/06_seq_account_erase.puml)                 | 0004 · security §10 |
+| FR-75, FR-76, FR-79 | `job-posting-service`, `job-source`         | [Stelle übernehmen (adopt)](umls/06_seq_adopt_posting.puml)                | 0058                |
+| FR-78               | `job-posting-extract-service`, `ssrf-fetch` | [Stelle per URL einfügen (SSRF)](umls/06_seq_insert_url.puml)              | 0058                |
+| FR-81, FR-82, FR-83 | `job-application-service`, `document-repo`  | [Bewerbung erstellen (mit Kopie)](umls/06_seq_create_application.puml)     | 0059                |
+| FR-84, FR-85        | `application-letter-service`, `llm-runner`  | [Anschreiben generieren](umls/06_seq_generate_letter.puml)                 | 0059                |
+| FR-89, FR-90, FR-92 | `magic-pen-service`, `grounding`            | [Magic Pen (Abschnitt)](umls/06_seq_magic_pen.puml)                        | 0060                |
+| FR-93, FR-94        | `magic-pen-service`, `rewriteAll`           | [Magic Pen „Alles anpassen"](umls/06_seq_magic_pen_all.puml)               | 0060                |
+| FR-95, FR-96        | `job-application-dossier-service`, `yazl`   | [Bewerbungsmappe herunterladen (PDF/ZIP)](umls/06_seq_mappe_download.puml) | 0061                |
+| FR-97               | `job-application-service` (freeze)          | [Einfrier-Bestätigung](umls/06_seq_einfrieren.puml)                        | 0061                |
+| FR-12, FR-13, FR-14 | `candidacy-service`, `placement-service`    | Pipeline → placement (§6, prose)                                           | 0010                |
+| FR-61               | `retention-service`                         | Retention report + anonymise sweep (§6 companion, ADR-0018)                | 0018                |
 
 Rows without a sequence diagram are single-collaborator flows adequately covered
-by prose; the five diagrammed flows are the multi-actor / multi-branch ones where
+by prose; the diagrammed flows are the multi-actor / multi-branch ones where
 a picture earns its place.
 
 ## 7. Deployment View

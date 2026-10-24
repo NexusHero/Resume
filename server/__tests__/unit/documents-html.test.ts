@@ -274,3 +274,49 @@ describe('documentsToHtml', () => {
     expect(html).toContain('@page { size: A4; margin: 20mm 18mm; }');
   });
 });
+
+describe('documentsToHtml order option (AK-4.1)', () => {
+  it('DocumentsToHtml_LetterFirstOrder_RendersLetterBeforeResume', () => {
+    const html = documentsToHtml(documents, { order: 'letter-first' });
+    expect(html.indexOf('id="doc-letter"')).toBeLessThan(html.indexOf('id="doc-resume"'));
+  });
+
+  it('DocumentsToHtml_DefaultOrder_RendersResumeBeforeLetter', () => {
+    // Regression: the base export keeps CV → Anschreiben (ADR-0061 §4).
+    const html = documentsToHtml(documents);
+    expect(html.indexOf('id="doc-resume"')).toBeLessThan(html.indexOf('id="doc-letter"'));
+  });
+
+  it('InkDocument_LetterFirstOrder_RendersLetterBeforeResume', () => {
+    const ink = { ...documents, style: { ...documents.style, template: 'ink' as const } };
+    const html = documentsToHtml(ink, { order: 'letter-first' });
+    expect(html.indexOf('id="doc-letter"')).toBeLessThan(html.indexOf('id="doc-resume"'));
+    expect(html).toContain('id="doc-resume"');
+  });
+
+  it('InkDocument_DefaultOrder_RendersResumeBeforeLetter', () => {
+    const ink = { ...documents, style: { ...documents.style, template: 'ink' as const } };
+    const html = documentsToHtml(ink);
+    expect(html.indexOf('id="doc-resume"')).toBeLessThan(html.indexOf('id="doc-letter"'));
+  });
+});
+
+describe('Mappe renders the adapted copy, not the base (AK-4.2)', () => {
+  it('Mappe_ExtractedText_ContainsAdaptedNotBase', () => {
+    // The copy carries a Magic-Pen-adapted summary; the base-only marker lives in
+    // `rawText` (the copy blanks it, ADR-0059) and must never reach the Mappe.
+    const copy = {
+      ...documents,
+      resume: {
+        ...documents.resume,
+        summary: 'ANGEPASSTER PROFILTEXT 9999',
+        rawText: 'BASIS-NUR-MARKER-0001',
+      },
+    };
+    const html = documentsToHtml(copy, { order: 'letter-first' });
+    expect(html).toContain('ANGEPASSTER PROFILTEXT 9999');
+    expect(html).not.toContain('BASIS-NUR-MARKER-0001');
+    // Letter first (the Mappe order).
+    expect(html.indexOf('id="doc-letter"')).toBeLessThan(html.indexOf('id="doc-resume"'));
+  });
+});

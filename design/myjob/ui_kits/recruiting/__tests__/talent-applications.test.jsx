@@ -39,6 +39,7 @@ const application = {
     letter: { firma: '', ansprechpartner: '', strasse: '', plzOrt: '', betreff: '', anrede: '', absaetze: [''], gruss: '' },
     style: { accent: '#2A6FDB', strong: '#1d4ed8', onDark: '#7aa7f5', font: 'var(--font-display)', size: 1 },
   },
+  selectedAttachmentIds: [],
   createdAt: '2026-06-25T10:00:00.000Z',
   updatedAt: '2026-06-25T10:00:00.000Z',
 };
@@ -75,7 +76,7 @@ describe('Talent profile — Bewerbungen tab (Minor B)', () => {
     await waitFor(() => expect(screen.queryByText('Lädt…')).not.toBeInTheDocument());
     await userEvent.click(screen.getByText('Bewerbungen'));
 
-    await waitFor(() => expect(window.RecruitApi.listJobApplications).toHaveBeenCalledWith('t1'));
+    await waitFor(() => expect(window.RecruitApi.listJobApplications).toHaveBeenCalledWith(expect.objectContaining({ talentId: 't1' })));
     await waitFor(() => expect(screen.getByText('Aurora Systems')).toBeInTheDocument());
     expect(screen.getByText('Senior C++ Engineer')).toBeInTheDocument();
   });
@@ -87,5 +88,53 @@ describe('Talent profile — Bewerbungen tab (Minor B)', () => {
 
     await waitFor(() => expect(screen.getByText('Aurora Systems')).toBeInTheDocument());
     expect(screen.queryByText('Neue Mappe')).not.toBeInTheDocument();
+  });
+
+  it('TalentApplications_StatusFilter_CallsListWithStatus', async () => {
+    render(<TalentProfile talent={talent} onBack={vi.fn()} onEdit={vi.fn()} />);
+    await waitFor(() => expect(screen.queryByText('Lädt…')).not.toBeInTheDocument());
+    await userEvent.click(screen.getByText('Bewerbungen'));
+    await waitFor(() => expect(screen.getByText('Aurora Systems')).toBeInTheDocument());
+
+    await userEvent.click(screen.getByTestId('talent-status-filter-Versendet'));
+    await waitFor(() =>
+      expect(window.RecruitApi.listJobApplications).toHaveBeenCalledWith(
+        expect.objectContaining({ talentId: 't1', status: 'sent' }),
+      ),
+    );
+  });
+
+  it('AttachmentsTab_ShowsLinkedApplications', async () => {
+    window.RecruitApi.listJobApplications.mockResolvedValue([
+      { ...application, selectedAttachmentIds: ['att1'] },
+    ]);
+    window.RecruitApi.listAttachments.mockResolvedValue([
+      { id: 'att1', name: 'Zeugnis.pdf', contentType: 'application/pdf', size: 1024 },
+    ]);
+    render(<TalentProfile talent={talent} onBack={vi.fn()} onEdit={vi.fn()} />);
+    await waitFor(() => expect(screen.queryByText('Lädt…')).not.toBeInTheDocument());
+    await userEvent.click(screen.getByText('Anhänge'));
+
+    await waitFor(() =>
+      expect(screen.getByText(/verknüpft mit Aurora Systems · Senior C\+\+ Engineer/)).toBeInTheDocument(),
+    );
+  });
+
+  it('AttachmentsTab_LinkOpensApplication', async () => {
+    window.RecruitApi.listJobApplications.mockResolvedValue([
+      { ...application, selectedAttachmentIds: ['att1'] },
+    ]);
+    window.RecruitApi.listAttachments.mockResolvedValue([
+      { id: 'att1', name: 'Zeugnis.pdf', contentType: 'application/pdf', size: 1024 },
+    ]);
+    const onOpenApplication = vi.fn();
+    render(
+      <TalentProfile talent={talent} onBack={vi.fn()} onEdit={vi.fn()} onOpenApplication={onOpenApplication} />,
+    );
+    await waitFor(() => expect(screen.queryByText('Lädt…')).not.toBeInTheDocument());
+    await userEvent.click(screen.getByText('Anhänge'));
+
+    await userEvent.click(await screen.findByTestId('attachment-link-att1'));
+    await waitFor(() => expect(onOpenApplication).toHaveBeenCalled());
   });
 });

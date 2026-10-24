@@ -1712,7 +1712,7 @@ paths:
   /job-applications:
     get:
       tags: [Job applications]
-      summary: List job applications (optionally filtered by talent, newest first)
+      summary: List job applications (optionally filtered by talent/status, newest first)
       operationId: listJobApplications
       security:
         - cookieSession: []
@@ -1722,6 +1722,11 @@ paths:
           required: false
           schema: { type: string }
           description: Only the applications of this talent.
+        - name: status
+          in: query
+          required: false
+          schema: { $ref: '#/components/schemas/JobApplicationStatus' }
+          description: Only the applications in this status (server-side filter).
       responses:
         '200':
           description: The caller's applications.
@@ -1730,6 +1735,7 @@ paths:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/JobApplication' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
         '401': { $ref: '#/components/responses/Unauthorized' }
     post:
       tags: [Job applications]
@@ -1813,7 +1819,13 @@ paths:
       operationId: saveJobApplicationDocuments
       security:
         - cookieSession: []
-      parameters: [{ $ref: '#/components/parameters/id' }]
+      parameters:
+        - $ref: '#/components/parameters/id'
+        - name: unfreeze
+          in: query
+          required: false
+          schema: { type: string, enum: ['1'] }
+          description: Confirm an edit of a frozen (non-draft) application; appends a noted history entry.
       requestBody:
         required: true
         content:
@@ -1829,6 +1841,74 @@ paths:
                 properties:
                   documents: { $ref: '#/components/schemas/TalentDocuments' }
         '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Frozen' }
+
+  /job-applications/{id}/attachments:
+    put:
+      tags: [Job applications]
+      summary: Save the PDF-only attachment selection for the Bewerbungsmappe
+      operationId: saveJobApplicationAttachments
+      security:
+        - cookieSession: []
+      parameters:
+        - $ref: '#/components/parameters/id'
+        - name: unfreeze
+          in: query
+          required: false
+          schema: { type: string, enum: ['1'] }
+          description: Confirm an edit of a frozen (non-draft) application.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateJobApplicationAttachmentsInput' }
+      responses:
+        '200':
+          description: The updated application.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobApplication: { $ref: '#/components/schemas/JobApplication' }
+        '400': { $ref: '#/components/responses/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Frozen' }
+
+  /job-applications/{id}/dossier/pdf:
+    get:
+      tags: [Job applications]
+      summary: Render the Bewerbungsmappe (Anschreiben → CV → selected attachments) as one PDF
+      operationId: renderJobApplicationDossierPdf
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses:
+        '200':
+          description: The merged PDF.
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /job-applications/{id}/dossier/zip:
+    get:
+      tags: [Job applications]
+      summary: Stream the Bewerbungsmappe as a ZIP (Bewerbung.pdf + selected attachments)
+      operationId: renderJobApplicationDossierZip
+      security:
+        - cookieSession: []
+      parameters: [{ $ref: '#/components/parameters/id' }]
+      responses:
+        '200':
+          description: The streamed ZIP (chunked, no Content-Length).
+          content:
+            application/zip:
+              schema: { type: string, format: binary }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
 
@@ -3038,6 +3118,16 @@ components:
             title: Not Found
             status: 404
             detail: Talent tal_9Qz not found
+    Frozen:
+      description: The application is frozen (status is not draft) and needs an explicit `?unfreeze=1` confirmation. `type` is `about:blank#frozen`.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+          example:
+            type: about:blank#frozen
+            title: Frozen
+            status: 409
+            detail: Diese Bewerbung ist versendet und eingefroren. Bestätige die Änderung, um fortzufahren.
     RateLimited:
       description: Too many attempts — try again later.
       content:
@@ -3624,6 +3714,10 @@ components:
         status: { $ref: '#/components/schemas/JobApplicationStatus' }
         statusHistory: { type: array, items: { $ref: '#/components/schemas/StatusHistoryEntry' } }
         documents: { $ref: '#/components/schemas/TalentDocuments' }
+        selectedAttachmentIds:
+          type: array
+          items: { type: string }
+          description: The PDF-only attachments selected for the Bewerbungsmappe (never the reference CV by default).
         createdAt: { type: string }
         updatedAt: { type: string }
 
@@ -3636,6 +3730,9 @@ components:
       properties:
         status: { $ref: '#/components/schemas/JobApplicationStatus' }
         at: { type: string, description: ISO 8601 timestamp of the change. }
+        note:
+          type: string
+          description: Set only when a frozen application was force-edited (AK-4.5).
 
     JobApplicationCreateResult:
       type: object
@@ -3657,6 +3754,16 @@ components:
       required: [status]
       properties:
         status: { $ref: '#/components/schemas/JobApplicationStatus' }
+
+    UpdateJobApplicationAttachmentsInput:
+      type: object
+      required: [attachmentIds]
+      properties:
+        attachmentIds:
+          type: array
+          maxItems: 50
+          items: { type: string, minLength: 1 }
+          description: The PDF attachment ids selected for the Bewerbungsmappe.
 
     ApplicationLetterResult:
       type: object

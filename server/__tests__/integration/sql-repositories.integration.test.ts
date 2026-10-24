@@ -182,6 +182,7 @@ suite('SQL repositories (real Postgres)', () => {
       },
       updatedAt: '2026-06-25T10:00:00.000Z',
     },
+    selectedAttachmentIds: [],
     createdAt: '2026-06-25T10:00:00.000Z',
     updatedAt: '2026-06-25T10:00:00.000Z',
     ...overrides,
@@ -330,6 +331,36 @@ suite('SQL repositories (real Postgres)', () => {
     expect((await repo.list('owner1', 't1')).map((a) => a.id)).toEqual(['a1']);
     expect(await repo.list('owner1', 'nope')).toEqual([]);
     expect(await repo.findById('owner1', 'a2')).toBeNull();
+  });
+
+  it('SqlJobApplicationRepository_List_FiltersByStatus', async () => {
+    const repo = new SqlJobApplicationRepository({ db });
+    await repo.add(jobApplication('a1', 'owner1', { status: 'draft' }));
+    await repo.add(jobApplication('a2', 'owner1', { status: 'sent', jobPostingId: 'p2' }));
+    expect((await repo.list('owner1', undefined, 'sent')).map((a) => a.id)).toEqual(['a2']);
+    expect(await repo.list('owner1', undefined, 'offer')).toEqual([]);
+  });
+
+  it('SqlJobApplicationRepository_SelectedAttachmentIds_RoundTrips', async () => {
+    const repo = new SqlJobApplicationRepository({ db });
+    await repo.add(jobApplication('a1', 'owner1', { selectedAttachmentIds: ['att1', 'att2'] }));
+    const read = await repo.findById('owner1', 'a1');
+    expect(read?.selectedAttachmentIds).toEqual(['att1', 'att2']);
+  });
+
+  it('Migrate_SelectedAttachmentIdsColumn_BackfillsEmptyArrayAndIsIdempotent', async () => {
+    // A pre-Phase-4 row written without the column gets the DEFAULT '[]' backfill.
+    await pool.query(
+      `INSERT INTO job_applications
+         (id, owner_id, job_posting_id, posting_company, posting_title, talent_id, talent_name, status, status_history, documents, created_at, updated_at)
+       VALUES
+         ('legacy', 'owner1', 'p1', 'Acme', 'Engineer', 't1', 'Ada', 'draft', '[]'::jsonb, '{}'::jsonb, 'now', 'now')`,
+    );
+    await migrate(pool);
+    const row = await pool.query(
+      "SELECT selected_attachment_ids FROM job_applications WHERE id = 'legacy'",
+    );
+    expect(row.rows[0].selected_attachment_ids).toEqual([]);
   });
 
   it('SqlJobApplicationRepository_AddThenFindByPostingAndTalent_ReturnsExisting', async () => {

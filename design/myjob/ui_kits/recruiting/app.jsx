@@ -178,6 +178,8 @@ function Workspace({ user, onLogout }) {
   const [postingFocus, setPostingFocus] = React.useState(null);
   // The Bewerbungen sub-view: the new list, or the frozen pipeline board (Vermittlung).
   const [bewerbungenSub, setBewerbungenSub] = React.useState('bewerbungen');
+  // Server-side status filter (AK-4.6); re-fetch on change.
+  const [applicationStatus, setApplicationStatus] = React.useState(undefined);
   // Live data sources. Each tracks loading/error and never falls back to
   // fabricated sample data — a recruiter must only ever see real records.
   const listMandates = React.useCallback(() => window.RecruitApi.listMandates(), []);
@@ -185,7 +187,10 @@ function Workspace({ user, onLogout }) {
   const listPlacements = React.useCallback(() => window.RecruitApi.listPlacements(), []);
   const listApplications = React.useCallback(() => window.RecruitApi.listApplications(), []);
   const listJobPostings = React.useCallback(() => window.RecruitApi.listJobPostings(), []);
-  const listJobApplications = React.useCallback(() => window.RecruitApi.listJobApplications(), []);
+  const listJobApplications = React.useCallback(
+    () => window.RecruitApi.listJobApplications({ status: applicationStatus }),
+    [applicationStatus],
+  );
   const mandatesRes = useResource(listMandates, { enabled: vermittlung });
   const talentsRes = useResource(listTalents);
   const placementsRes = useResource(listPlacements, { enabled: vermittlung });
@@ -608,6 +613,8 @@ function Workspace({ user, onLogout }) {
             applications={jobApplications}
             onOpen={openApplicationEditor}
             onChanged={() => jobApplicationsRes.reload()}
+            status={applicationStatus}
+            onStatusChange={setApplicationStatus}
           />
         ));
     else if (nav === 'einstellungen') body = <window.SettingsView user={user} onLogout={onLogout} />;

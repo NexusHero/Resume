@@ -20,6 +20,8 @@ export type JobApplicationStatus = (typeof JOB_APPLICATION_STATUSES)[number];
 export interface JobApplicationStatusChange {
   status: JobApplicationStatus;
   at: string; // ISO 8601
+  /** Only set when a frozen application was force-edited (AK-4.5). */
+  note?: string;
 }
 
 export interface JobApplication {
@@ -41,6 +43,8 @@ export interface JobApplication {
   statusHistory: JobApplicationStatusChange[];
   /** The document copy (`resume.rawText = ''`, no `translations`). */
   documents: TalentDocuments;
+  /** The user-chosen attachments (talent-bound). The reference CV is never preselected. */
+  selectedAttachmentIds: string[];
   createdAt: string; // ISO 8601
   updatedAt: string; // ISO 8601
 }
@@ -72,8 +76,22 @@ export const changeJobApplicationStatusSchema = z
 export type ChangeJobApplicationStatusInput = z.infer<typeof changeJobApplicationStatusSchema>;
 
 /** GET /api/v1/job-applications query parameters. */
-export const jobApplicationQuerySchema = z.object({ talentId: z.string().optional() });
+export const jobApplicationQuerySchema = z.object({
+  talentId: z.string().optional(),
+  status: jobApplicationStatusSchema.optional(),
+});
 export type JobApplicationQuery = z.infer<typeof jobApplicationQuerySchema>;
+
+/**
+ * PUT /api/v1/job-applications/:id/attachments — the PDF-only attachment selection
+ * (OQ3, ADR-0061). An empty selection is valid (Mappe = letter + CV only).
+ */
+export const updateJobApplicationAttachmentsSchema = z
+  .object({ attachmentIds: z.array(z.string().min(1, 'attachmentIds must be strings')).max(50) })
+  .strict();
+export type UpdateJobApplicationAttachmentsInput = z.infer<
+  typeof updateJobApplicationAttachmentsSchema
+>;
 
 /**
  * Legacy pipeline `Application` status → new `JobApplication` status (AK-2.7,
@@ -96,12 +114,27 @@ export function mapLegacyStatus(status: string): JobApplicationStatus {
 
 /**
  * Append a status change with its timestamp (the history is append-only; the
- * service also keeps `status` in sync with the last entry).
+ * service also keeps `status` in sync with the last entry). The optional `note`
+ * marks a force-edit of a frozen application (AK-4.5).
  */
 export function appendStatusChange(
   history: JobApplicationStatusChange[],
   status: JobApplicationStatus,
   at: string,
+  note?: string,
 ): JobApplicationStatusChange[] {
-  return [...history, { status, at }];
+  return [...history, note === undefined ? { status, at } : { status, at, note }];
+}
+
+/**
+ * The dossier recipient for a job application (OQ2, ADR-0061): **only** when the
+ * copy's `letter.firma` is empty/whitespace is the posting's `postingCompany`
+ * used as the recipient company, so an otherwise-unaddressed Mappe still carries
+ * an addressee. A non-empty `firma` is never overwritten (a deliberately worded
+ * address stays authoritative).
+ */
+export function recipientForMappe(application: JobApplication): { company?: string } {
+  const firma = application.documents.letter.firma;
+  if (firma && firma.trim()) return {};
+  return { company: application.postingCompany };
 }

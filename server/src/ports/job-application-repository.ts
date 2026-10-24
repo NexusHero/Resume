@@ -1,4 +1,4 @@
-import type { JobApplication } from '../domain/job-application.js';
+import type { JobApplication, JobApplicationStatus } from '../domain/job-application.js';
 
 /**
  * Persistence of job applications ("Bewerbungen"), scoped by owning workspace
@@ -7,7 +7,11 @@ import type { JobApplication } from '../domain/job-application.js';
  * the record itself.
  */
 export interface JobApplicationRepository {
-  list(ownerId: string, talentId?: string): Promise<JobApplication[]>;
+  list(
+    ownerId: string,
+    talentId?: string,
+    status?: JobApplicationStatus,
+  ): Promise<JobApplication[]>;
   findById(ownerId: string, id: string): Promise<JobApplication | null>;
   /**
    * The single application for `(posting, talent)` within `ownerId` — `null`

@@ -314,6 +314,7 @@ export const jobApplications = pgTable('job_applications', {
   status: text('status').notNull(),
   statusHistory: jsonb('status_history').$type<JobApplicationStatusChange[]>().notNull(),
   documents: jsonb('documents').$type<TalentDocuments>().notNull(),
+  selectedAttachmentIds: jsonb('selected_attachment_ids').$type<string[]>().notNull(),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 });

@@ -21,7 +21,7 @@ package "Application (services)" {
   [AI feature services\n(document-assist, cv-parse, ats-ai,\noutreach-ai, match-ai) +\nDocumentAiService facade] as AiSvc
   [recruiting services\n(talent, mandate, candidacy,\nplacement, match, forecast,\nretention, members, usage)] as RecSvc
   [job-posting services\n(job-posting CRUD/adopt + dedup,\njob-posting-extract)] as JobPostingSvc
-  [job-application services\n(create/copy/status/delete,\napplication-letter,\nmagic-pen rewriteSection/rewriteAll)] as JobAppSvc
+  [job-application services\n(create/copy/status/delete,\napplication-letter,\nmagic-pen rewriteSection/rewriteAll,\ndossier (PDF + streaming ZIP via yazl),\nattachment selection + freeze)] as JobAppSvc
   [auth services\n(auth, password reset,\nemail verification, account\n+ personal-data registry)] as AuthSvc
   [LlmService\n(provider registry + default)] as LlmSvc
 }
@@ -81,6 +81,7 @@ RecSvc ..> DomainErrors
 JobPostingSvc ..> DomainErrors
 JobAppSvc ..> DomainErrors
 AiSvc --> PdfPorts
+JobAppSvc --> PdfPorts
 RecSvc --> JobSource
 LlmSvc --> LlmProvider
 

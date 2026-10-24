@@ -1970,3 +1970,347 @@ test.describe('Bewerbungen (Phase 2)', () => {
     });
   });
 });
+
+test.describe('Bewerbungen (Phase 4)', () => {
+  const KIT = '/design/myjob/ui_kits/recruiting/dist/index.html';
+
+  const POSTING = {
+    id: 'p1',
+    ownerId: 'team',
+    source: 'text',
+    company: 'Nordwind Logistik AG',
+    title: 'Backend Engineer',
+    location: 'Hamburg',
+    country: 'DE',
+    description: 'We need distributed systems and Kubernetes experience.',
+    requirements: ['Go'],
+    descriptionIncomplete: false,
+    createdAt: '2026-06-25T10:00:00.000Z',
+  };
+
+  const TALENT = {
+    id: 't-api-1',
+    name: 'Tobias Wirth',
+    role: 'Staff Engineer',
+    headline: '',
+    location: 'Hamburg',
+    email: 'tobias@example.de',
+    phone: '',
+    availability: '',
+    salary: '',
+    skills: [],
+  };
+
+  const DOCS = {
+    contact: {
+      name: 'Tobias Wirth',
+      role: 'Staff Engineer',
+      email: '',
+      phone: '',
+      location: '',
+      linkedin: '',
+    },
+    resume: { summary: 'Basis.', experience: [], education: [], skillGroups: [], rawText: '' },
+    letter: {
+      firma: '',
+      ansprechpartner: '',
+      strasse: '',
+      plzOrt: '',
+      betreff: '',
+      anrede: '',
+      absaetze: [''],
+      gruss: '',
+    },
+    style: {
+      accent: '#2A6FDB',
+      strong: '#1d4ed8',
+      onDark: '#7aa7f5',
+      font: 'var(--font-display)',
+      size: 1,
+    },
+  };
+
+  const application = (id: string, status = 'draft', selected = []) => ({
+    id,
+    ownerId: 'team',
+    jobPostingId: 'p1',
+    postingCompany: POSTING.company,
+    postingTitle: POSTING.title,
+    talentId: TALENT.id,
+    talentName: TALENT.name,
+    status,
+    statusHistory: [{ status, at: '2026-06-25T10:00:00.000Z' }],
+    documents: { ...DOCS, contact: { ...DOCS.contact, name: 'Tobias Wirth' } },
+    selectedAttachmentIds: selected,
+    createdAt: '2026-06-25T10:00:00.000Z',
+    updatedAt: '2026-06-25T10:00:00.000Z',
+  });
+
+  const ATTACHMENTS = [
+    {
+      id: 'att1',
+      ownerId: 'team',
+      talentId: TALENT.id,
+      name: 'Zeugnis.pdf',
+      contentType: 'application/pdf',
+      size: 1024,
+      createdAt: '2026-06-25T10:00:00.000Z',
+    },
+    {
+      id: 'att2',
+      ownerId: 'team',
+      talentId: TALENT.id,
+      name: 'Referenz.pdf',
+      contentType: 'application/pdf',
+      size: 2048,
+      createdAt: '2026-06-25T10:00:00.000Z',
+    },
+    {
+      id: 'img1',
+      ownerId: 'team',
+      talentId: TALENT.id,
+      name: 'portrait.png',
+      contentType: 'image/png',
+      size: 512,
+      createdAt: '2026-06-25T10:00:00.000Z',
+    },
+  ];
+
+  async function mockPhase4(
+    page: import('@playwright/test').Page,
+    apps: ReturnType<typeof application>[],
+  ) {
+    const state = {
+      apps,
+      attachmentPuts: [] as string[],
+      unfreezePuts: [] as string[],
+      dossierPdfFetches: 0,
+      dossierZipFetches: 0,
+    };
+    await page.route('**/api/v1/settings/workspace', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ vermittlung: true }),
+      }),
+    );
+    await page.route('**/api/v1/settings/llm', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ configured: true, providers: [{ id: 'claude', available: true }] }),
+      }),
+    );
+    await page.route('**/api/v1/auth/me', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id: 'user1', email: 'nora@example.de' } }),
+      }),
+    );
+    await page.route('**/api/v1/auth/providers', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ google: false, linkedin: false }),
+      }),
+    );
+    await page.route('**/api/v1/talents', (route) =>
+      route.fulfill({ contentType: 'application/json', body: JSON.stringify([TALENT]) }),
+    );
+    await page.route('**/api/v1/talents/t-api-1/documents', (route) =>
+      route.fulfill({ contentType: 'application/json', body: JSON.stringify({ documents: DOCS }) }),
+    );
+    await page.route('**/api/v1/talents/t-api-1/attachments', (route) =>
+      route.fulfill({ contentType: 'application/json', body: JSON.stringify(ATTACHMENTS) }),
+    );
+    await page.route('**/api/v1/job-postings', (route) =>
+      route.fulfill({ contentType: 'application/json', body: JSON.stringify([POSTING]) }),
+    );
+    // Status filter is server-side: parse ?status= and return the matching apps.
+    await page.route('**/api/v1/job-applications*', (route) => {
+      const req = route.request();
+      if (req.method() !== 'GET') return route.continue();
+      const url = new URL(req.url());
+      const status = url.searchParams.get('status');
+      const list = status ? state.apps.filter((a) => a.status === status) : state.apps;
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify(list) });
+    });
+    await page.route('**/api/v1/job-applications/*/documents*', (route) => {
+      const id = route.request().url().split('/job-applications/')[1].split('/')[0];
+      const app = state.apps.find((a) => a.id === id) || application(id);
+      if (route.request().method() === 'PUT') {
+        const url = new URL(route.request().url());
+        if (app.status !== 'draft' && url.searchParams.get('unfreeze') !== '1') {
+          return route.fulfill({
+            status: 409,
+            contentType: 'application/problem+json',
+            body: JSON.stringify({
+              type: 'about:blank#frozen',
+              title: 'Frozen',
+              status: 409,
+              detail: 'frozen',
+            }),
+          });
+        }
+        state.unfreezePuts.push(route.request().postData() || '');
+        return route.fulfill({
+          contentType: 'application/json',
+          body: JSON.stringify({ documents: JSON.parse(route.request().postData() || '{}') }),
+        });
+      }
+      return route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ documents: app.documents }),
+      });
+    });
+    await page.route('**/api/v1/job-applications/*/attachments*', (route) => {
+      const id = route.request().url().split('/job-applications/')[1].split('/')[0];
+      const app = state.apps.find((a) => a.id === id) || application(id);
+      if (route.request().method() === 'PUT') {
+        const url = new URL(route.request().url());
+        if (app.status !== 'draft' && url.searchParams.get('unfreeze') !== '1') {
+          return route.fulfill({
+            status: 409,
+            contentType: 'application/problem+json',
+            body: JSON.stringify({
+              type: 'about:blank#frozen',
+              title: 'Frozen',
+              status: 409,
+              detail: 'frozen',
+            }),
+          });
+        }
+        const { attachmentIds } = JSON.parse(route.request().postData() || '{}');
+        state.attachmentPuts.push(JSON.stringify(attachmentIds));
+        return route.fulfill({
+          contentType: 'application/json',
+          body: JSON.stringify({
+            jobApplication: { ...app, selectedAttachmentIds: attachmentIds },
+          }),
+        });
+      }
+      return route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
+    await page.route('**/api/v1/job-applications/*/dossier/pdf', (route) => {
+      state.dossierPdfFetches += 1;
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/pdf',
+        headers: {
+          'content-disposition':
+            'attachment; filename="Bewerbung_Tobias_Wirth_Nordwind_Logistik_AG.pdf"',
+        },
+        body: '%PDF-1.4 dossier',
+      });
+    });
+    await page.route('**/api/v1/job-applications/*/dossier/zip', (route) => {
+      state.dossierZipFetches += 1;
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/zip',
+        headers: {
+          'content-disposition':
+            'attachment; filename="Bewerbung_Tobias_Wirth_Nordwind_Logistik_AG.zip"',
+        },
+        body: 'PKdossier',
+      });
+    });
+    await page.route('**/api/v1/job-applications/*/status', (route) => {
+      const id = route.request().url().split('/job-applications/')[1].split('/')[0];
+      const body = JSON.parse(route.request().postData() || '{}');
+      const app = state.apps.find((a) => a.id === id) || application(id);
+      const updated = {
+        ...app,
+        status: body.status,
+        statusHistory: [
+          ...app.statusHistory,
+          { status: body.status, at: '2026-06-25T11:00:00.000Z' },
+        ],
+      };
+      const idx = state.apps.findIndex((a) => a.id === id);
+      if (idx >= 0) state.apps[idx] = updated;
+      else state.apps.push(updated);
+      return route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ jobApplication: updated }),
+      });
+    });
+    await page.route('**/api/v1/job-applications/*', (route) => {
+      const id = route.request().url().split('/job-applications/')[1];
+      const app = state.apps.find((a) => a.id === id);
+      if (!app) return route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+      return route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ jobApplication: app }),
+      });
+    });
+    return state;
+  }
+
+  async function openApplication(page: import('@playwright/test').Page) {
+    await page.goto(KIT);
+    await page
+      .locator('nav')
+      .getByRole('button', { name: /^Bewerbungen$/ })
+      .click();
+    await page.getByText('Nordwind Logistik AG').first().click();
+    await expect(page.locator('[data-doc-hydrated="true"]')).toBeVisible();
+  }
+
+  test('BewerbungenFlow_SelectAttachments_DownloadMappe', async ({ page }) => {
+    const state = await mockPhase4(page, [application('app-1')]);
+    await openApplication(page);
+
+    // The non-PDF attachment is never offered (OQ3).
+    await expect(page.getByText('Zeugnis.pdf')).toBeVisible();
+    await expect(page.getByText('Referenz.pdf')).toBeVisible();
+    await expect(page.getByText('portrait.png')).toHaveCount(0);
+
+    await page.getByTestId('attachment-att1').check();
+    await page.getByTestId('attachments-save').click();
+    await expect.poll(() => state.attachmentPuts.length).toBe(1);
+    expect(state.attachmentPuts[0]).toContain('att1');
+
+    await page.getByTestId('mappe-pdf').click();
+    await expect.poll(() => state.dossierPdfFetches).toBe(1);
+    await page.getByTestId('mappe-zip').click();
+    await expect.poll(() => state.dossierZipFetches).toBe(1);
+  });
+
+  test('BewerbungenFlow_FilterByStatus_ShowsOnlySelected', async ({ page }) => {
+    const app1 = application('app-1', 'draft');
+    const app2 = { ...application('app-2', 'sent'), postingTitle: 'Frontend Engineer' };
+    await mockPhase4(page, [app1, app2]);
+    await page.goto(KIT);
+    await page
+      .locator('nav')
+      .getByRole('button', { name: /^Bewerbungen$/ })
+      .click();
+    await expect(page.locator('main')).toContainText('Backend Engineer');
+    await expect(page.locator('main')).toContainText('Frontend Engineer');
+
+    // Server-side filter: only the "Versendet" application survives.
+    await page.getByTestId('status-filter-Versendet').click();
+    await expect(page.locator('main')).toContainText('Frontend Engineer');
+    await expect(page.locator('main')).not.toContainText('Backend Engineer');
+
+    // The sent application's status survives a reload (persisted server-side).
+    await page.reload();
+    await page
+      .locator('nav')
+      .getByRole('button', { name: /^Bewerbungen$/ })
+      .click();
+    await expect(page.locator('main')).toContainText('Frontend Engineer');
+    await expect(page.locator('main')).toContainText('Versendet');
+  });
+
+  test('BewerbungenFlow_FrozenEdit_ConfirmsUnfreeze', async ({ page }) => {
+    const state = await mockPhase4(page, [application('app-1', 'sent')]);
+    await openApplication(page);
+
+    // Editing the frozen copy triggers a 409 → the freeze dialog appears.
+    await page.getByLabel('Name').fill('Tobias Wirth (geändert)');
+    await expect(page.getByTestId('unfreeze-confirm')).toBeVisible({ timeout: 5000 });
+    await page.getByTestId('unfreeze-confirm').click();
+
+    // The confirmation resends with ?unfreeze=1 (recorded by the mock).
+    await expect.poll(() => state.unfreezePuts.length).toBeGreaterThan(0);
+  });
+});

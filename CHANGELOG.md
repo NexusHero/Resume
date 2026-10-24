@@ -85,6 +85,28 @@ offer / rejected`, any transition allowed).
     `pen/skills`, `pen/all`), all `@RequiresAi()` (503 without a key) +
     `AiRateLimitGuard`, no `VermittlungGuard`/`PlanGuard`; every call is metered
     (`penHeadline`/`penSummary`/`penExperienceBullets`/`penSkills`).
+- **Phase 4 — Abschluss (ADR-0061).** Die Bewerbungsmappe, das Einfrieren und die
+  Status-Übersicht schließen den Bewerbungs-Hauptweg ab:
+  - **Bewerbungsmappe aus der Kopie** als PDF (`GET …/dossier/pdf`) und als
+    **gestreamtes ZIP** (`GET …/dossier/zip`, `yazl`, chunked ohne `Content-Length`):
+    Reihenfolge Anschreiben → CV → gewählte Anhänge (ZIP-PDF enthält die Anhänge
+    **mit**, OQ1); der Dateiname lautet `Bewerbung_<Mandant>_<Firma>.{pdf,zip}`.
+    Die Assembly re-used `DocumentService.renderDossierFromDocuments` mit einer
+    additiven `order:'letter-first'`-Option (Basis-Export und Editor-Vorschau
+    bleiben CV → Anschreiben). Bei leerem `letter.firma` setzt `recipientForMappe`
+    `postingCompany` als Empfänger ein (OQ2).
+  - **Persistierte PDF-only Anhang-Auswahl** (`JobApplication.selectedAttachmentIds`,
+    fs JSON-Array + `jsonb`-Spalte, additive `DEFAULT '[]'`-Migration); der
+    Referenz-CV ist manuell wählbar, nie vorausgewählt. Die „verknüpft mit
+    Bewerbung"-Verknüpfung im Anhang-Tab wird daraus abgeleitet (OQ5).
+  - **Einfrieren ab „versendet"** (AK-4.5): `PUT …/documents` und
+    `PUT …/attachments` antworten ohne `?unfreeze=1` mit **409 `frozen`**; die
+    Bestätigung hängt einen `note`-Eintrag an die `statusHistory` (ein Eintrag pro
+    Status-Phase, kein Autosave-Spam). Der Editor bestätigt einmal pro Session
+    (Variante (a), `unfrozen`-Merker).
+  - **Server-seitiger Statusfilter** `GET /job-applications?status=` (fs + sql,
+    ein Wert, kein Multi-Select) und eine Segmented-UI in der Liste **und** im
+    Mandanten-Tab.
 
 ### Changed (breaking)
 
@@ -117,6 +139,9 @@ offer / rejected`, any transition allowed).
 
 ### Changed
 
+- **`RecruitApi.listJobApplications` now takes an options object** instead of a
+  positional `talentId`: `listJobApplications({ talentId?, status? } = {})`. Both
+  callers (`app.jsx`, `TalentProfile.jsx`) are updated in the same PR (RI6).
 - **The AI-route drift guard now counts 18 routes** (K14–K18 added: the five
   `pen/*` routes). The OpenAPI contract documents `PenSection`/`PenAllSection`/
   `PenSuggestion`/`PenLetterSuggestion`/`PenAllResult` (a `oneOf`/discriminator

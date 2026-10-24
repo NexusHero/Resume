@@ -27,6 +27,34 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
   // (e.g. an accepted generated letter) instead of holding stale form state.
   const [reloadToken, setReloadToken] = React.useState(0);
 
+  // ---- Bewerbungsmappe (ADR-0061): attachment selection + downloads + freeze ----
+  const [attachments, setAttachments] = React.useState(null); // null = loading
+  const [selectedIds, setSelectedIds] = React.useState(() =>
+    Array.isArray(application.selectedAttachmentIds) ? application.selectedAttachmentIds : [],
+  );
+  const [attachmentsBusy, setAttachmentsBusy] = React.useState(false);
+  const [attachmentError, setAttachmentError] = React.useState(null);
+  const [dossierBusy, setDossierBusy] = React.useState(null); // 'pdf' | 'zip' | null
+  // Variante (a) (AK-4.5): one unfreeze confirmation per editor session.
+  const [unfrozen, setUnfrozen] = React.useState(false);
+  const [freezePrompt, setFreezePrompt] = React.useState(null); // { kind, payload } | null
+
+  React.useEffect(() => {
+    let alive = true;
+    setAttachments(null);
+    const p = window.RecruitApi && window.RecruitApi.listAttachments
+      ? window.RecruitApi.listAttachments(app.talentId).catch(() => [])
+      : Promise.resolve([]);
+    p.then((list) => {
+      if (!alive) return;
+      // PDF-only selection (OQ3); the reference CV stays visible but never preselected.
+      setAttachments(
+        (Array.isArray(list) ? list : []).filter((a) => a.contentType === 'application/pdf'),
+      );
+    });
+    return () => { alive = false; };
+  }, [app.talentId]);
+
   React.useEffect(() => {
     let alive = true;
     const p =
@@ -247,6 +275,85 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
     await window.RecruitApi.saveBlob(blob, filename);
   };
 
+  /* ---- Einfrier-Bestätigung (AK-4.5, Variante (a)) ---- */
+  const handleFrozen = (kind, payload) => {
+    setFreezePrompt({ kind, payload });
+  };
+
+  const rejectUnfreeze = () => {
+    setFreezePrompt(null);
+    // Ablehnung: kein `unfreeze`; der Editor lädt die persistierte Kopie neu.
+    setReloadToken((n) => n + 1);
+  };
+
+  const confirmUnfreeze = async () => {
+    const prompt = freezePrompt;
+    setFreezePrompt(null);
+    if (!prompt) return;
+    // Der Merker bleibt bis zum Schließen des Editors — ein Dialog pro Session.
+    setUnfrozen(true);
+    try {
+      if (prompt.kind === 'documents') {
+        const saved = await window.RecruitApi.saveJobApplicationDocuments(app.id, prompt.payload, true);
+        setApp((a) => ({ ...a, documents: saved }));
+        setReloadToken((n) => n + 1);
+        if (onChanged) onChanged();
+      } else if (prompt.kind === 'attachments') {
+        const updated = await window.RecruitApi.updateJobApplicationAttachments(app.id, prompt.payload, true);
+        setApp(updated);
+        if (onChanged) onChanged();
+      }
+    } catch {
+      /* das Status-Pill bleibt auf dem persistierten Wert */
+    }
+  };
+
+  // The persistence seam: while the application is frozen and not yet confirmed,
+  // a save answers 409 → hold the payload and ask; after confirmation every
+  // subsequent save sends `?unfreeze=1` automatically (one dialog per session).
+  const saveDocumentsSeam = async (docs) => {
+    try {
+      return await window.RecruitApi.saveJobApplicationDocuments(app.id, docs, unfrozen);
+    } catch (e) {
+      if (e && e.code === 'frozen') handleFrozen('documents', docs);
+      throw e;
+    }
+  };
+
+  const saveAttachments = async () => {
+    setAttachmentsBusy(true);
+    setAttachmentError(null);
+    try {
+      const updated = await window.RecruitApi.updateJobApplicationAttachments(
+        app.id,
+        selectedIds,
+        unfrozen,
+      );
+      setApp(updated);
+      if (onChanged) onChanged();
+    } catch (e) {
+      if (e && e.code === 'frozen') handleFrozen('attachments', selectedIds);
+      else setAttachmentError((e && e.message) || 'Die Anhänge konnten nicht gespeichert werden.');
+    } finally {
+      setAttachmentsBusy(false);
+    }
+  };
+
+  const toggleAttachment = (id) =>
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
+  const downloadMappe = async (kind) => {
+    setDossierBusy(kind);
+    try {
+      if (kind === 'pdf') await window.RecruitApi.downloadJobApplicationDossierPdf(app.id);
+      else await window.RecruitApi.downloadJobApplicationDossierZip(app.id);
+    } catch (e) {
+      setAttachmentError((e && e.message) || 'Die Mappe konnte nicht erstellt werden.');
+    } finally {
+      setDossierBusy(null);
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: isMobile ? 'auto' : '100%', gap: '14px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
@@ -345,6 +452,69 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
         ))}
       </div>
 
+      {/* Bewerbungsmappe (ADR-0061): downloads + PDF-only attachment selection. */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignSelf: 'stretch', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '12px 13px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 600, color: 'var(--text-soft)' }}>Bewerbungsmappe</span>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button onClick={() => downloadMappe('pdf')} disabled={dossierBusy !== null} data-testid="mappe-pdf" style={{ appearance: 'none', cursor: dossierBusy ? 'default' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid var(--accent-border)', background: 'var(--accent-soft)', color: 'var(--accent-strong)', borderRadius: 'var(--radius-pill)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '6px 12px', minHeight: isMobile ? '44px' : undefined }}>
+              <BE.Icon name="download" size={13} /> Mappe als PDF
+            </button>
+            <button onClick={() => downloadMappe('zip')} disabled={dossierBusy !== null} data-testid="mappe-zip" style={{ appearance: 'none', cursor: dossierBusy ? 'default' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid var(--accent-border)', background: 'var(--accent-soft)', color: 'var(--accent-strong)', borderRadius: 'var(--radius-pill)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '6px 12px', minHeight: isMobile ? '44px' : undefined }}>
+              <BE.Icon name="download" size={13} /> Mappe als ZIP
+            </button>
+          </div>
+        </div>
+        <div style={{ fontSize: '12.5px', color: 'var(--text-soft)' }}>Anhänge (nur PDF) für die Mappe auswählen:</div>
+        {attachments === null ? (
+          <div style={{ fontSize: '12px', color: 'var(--text-soft)' }}>Lädt …</div>
+        ) : attachments.length === 0 ? (
+          <div style={{ fontSize: '12px', color: 'var(--text-soft)' }}>Keine PDF-Anhänge vorhanden.</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {attachments.map((a) => {
+              const isReference = a.name === (window.ORIGINAL_CV_ATTACHMENT_NAME || '');
+              return (
+                <label key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '9px', fontSize: '12.5px', color: 'var(--text-heading)', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    data-testid={`attachment-${a.id}`}
+                    checked={selectedIds.includes(a.id)}
+                    onChange={() => toggleAttachment(a.id)}
+                  />
+                  <span style={{ flex: 1 }}>{a.name}</span>
+                  {isReference && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-soft)' }}>Referenz</span>}
+                </label>
+              );
+            })}
+            <button onClick={saveAttachments} disabled={attachmentsBusy} data-testid="attachments-save" style={{ alignSelf: 'flex-start', appearance: 'none', cursor: attachmentsBusy ? 'default' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-sm)', padding: '5px 11px', minHeight: isMobile ? '44px' : undefined }}>
+              <BE.Icon name="check" size={13} />Anhänge speichern
+            </button>
+          </div>
+        )}
+      </div>
+
+      {attachmentError && (
+        <div role="alert" style={{ alignSelf: 'flex-start', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--danger)', background: 'var(--danger-soft)', border: '1px solid var(--danger)', borderRadius: 'var(--radius-md)', padding: '6px 12px' }}>
+          {attachmentError}
+        </div>
+      )}
+
+      {freezePrompt && (
+        <div role="dialog" aria-modal="true" aria-label="Eingefrorene Bewerbung ändern" style={{ alignSelf: 'stretch', border: '1px solid var(--warning-strong, #8a6d00)', borderRadius: 'var(--radius-md)', background: 'var(--warning-soft, #fff8e1)', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ fontSize: '13px', color: 'var(--text-heading)', fontWeight: 600 }}>Diese Bewerbung ist versendet — wirklich ändern?</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-soft)' }}>Die Änderung wird im Verlauf vermerkt.</div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button data-testid="unfreeze-confirm" onClick={confirmUnfreeze} style={{ appearance: 'none', cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-sm)', padding: '6px 12px', minHeight: isMobile ? '44px' : undefined }}>
+              <BE.Icon name="check" size={13} />Ändern
+            </button>
+            <button data-testid="unfreeze-cancel" onClick={rejectUnfreeze} style={{ appearance: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-sm)', padding: '6px 12px', minHeight: isMobile ? '44px' : undefined }}>
+              <BE.Icon name="x" size={13} />Abbrechen
+            </button>
+          </div>
+        </div>
+      )}
+
       {letterError && (
         <div role="alert" style={{ alignSelf: 'flex-start', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--danger)', background: 'var(--danger-soft)', border: '1px solid var(--danger)', borderRadius: 'var(--radius-md)', padding: '6px 12px' }}>
           {letterError}
@@ -380,7 +550,7 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
         onClose={onClose}
         onOpenSettings={onClose}
         getDocuments={() => window.RecruitApi.getJobApplicationDocuments(app.id)}
-        saveDocuments={(docs) => window.RecruitApi.saveJobApplicationDocuments(app.id, docs)}
+        saveDocuments={saveDocumentsSeam}
         renderPreviewHtml={(docs) => window.RecruitApi.previewDocumentsHtml(app.talentId || 'me', docs)}
         tools={['pdf']}
         exportPdf={exportCopyPdf}

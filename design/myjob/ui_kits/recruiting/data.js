@@ -66,6 +66,20 @@ async function _downloadPdf(url, filename) {
   _saveBlob(await res.blob(), filename);
 }
 
+/* The server sends `Content-Disposition: attachment; filename="…"`; read it so
+   the saved file keeps the slugified name, falling back to a caller-supplied one. */
+function _filenameFromDisposition(disposition, fallback) {
+  const m = /filename="?([^";]+)"?/i.exec(disposition || '');
+  return m && m[1] ? m[1] : fallback;
+}
+
+/* Fetch a binary download, taking its name from Content-Disposition (the Mappe). */
+async function _downloadBinary(url, fallback) {
+  const res = await fetch(url, { credentials: 'same-origin' });
+  if (!res.ok) throw _apiError(res.status, await res.json().catch(() => ({})));
+  _saveBlob(await res.blob(), _filenameFromDisposition(res.headers.get('content-disposition'), fallback));
+}
+
 function _apiError(status, body) {
   const code = String((body && body.type) || '').split('#').pop() || `http-${status}`;
   const err = new Error((body && body.detail) || `API ${status}`);
@@ -666,9 +680,14 @@ const RecruitApi = {
   },
 
   // --- Job applications ("Bewerbungen", ADR-0059) ---
-  async listJobApplications(talentId) {
-    const q = talentId ? `?talentId=${encodeURIComponent(talentId)}` : '';
-    const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/job-applications${q}`));
+  async listJobApplications({ talentId, status } = {}) {
+    const qs = new URLSearchParams();
+    if (talentId) qs.set('talentId', talentId);
+    if (status) qs.set('status', status);
+    const q = qs.toString();
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/job-applications${q ? `?${q}` : ''}`),
+    );
     return Array.isArray(data) ? data : [];
   },
   async getJobApplication(id) {
@@ -693,15 +712,42 @@ const RecruitApi = {
     );
     return data.documents;
   },
-  async saveJobApplicationDocuments(id, documents) {
+  async saveJobApplicationDocuments(id, documents, unfreeze = false) {
+    const q = unfreeze ? '?unfreeze=1' : '';
     const data = await _jsonOrThrow(
-      await fetch(`${RECRUIT_API_BASE}/job-applications/${encodeURIComponent(id)}/documents`, {
+      await fetch(`${RECRUIT_API_BASE}/job-applications/${encodeURIComponent(id)}/documents${q}`, {
         method: 'PUT',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(documents),
       }),
     );
     return data.documents;
+  },
+  // Save the PDF-only attachment selection for the Bewerbungsmappe (ADR-0061).
+  async updateJobApplicationAttachments(id, attachmentIds, unfreeze = false) {
+    const q = unfreeze ? '?unfreeze=1' : '';
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/job-applications/${encodeURIComponent(id)}/attachments${q}`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ attachmentIds }),
+      }),
+    );
+    return data.jobApplication;
+  },
+  // Download the Bewerbungsmappe as one merged PDF (Anschreiben → CV → Anhänge).
+  async downloadJobApplicationDossierPdf(id) {
+    await _downloadBinary(
+      `${RECRUIT_API_BASE}/job-applications/${encodeURIComponent(id)}/dossier/pdf`,
+      `Bewerbung_${id}.pdf`,
+    );
+  },
+  // Download the Bewerbungsmappe as a streamed ZIP (Bewerbung.pdf + attachments).
+  async downloadJobApplicationDossierZip(id) {
+    await _downloadBinary(
+      `${RECRUIT_API_BASE}/job-applications/${encodeURIComponent(id)}/dossier/zip`,
+      `Bewerbung_${id}.zip`,
+    );
   },
   async generateJobApplicationLetter(id) {
     await requireAi();

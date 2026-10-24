@@ -18,13 +18,16 @@ import {
   changeJobApplicationStatusSchema,
   createJobApplicationSchema,
   jobApplicationQuerySchema,
+  updateJobApplicationAttachmentsSchema,
   updateJobApplicationDocumentsSchema,
   type ChangeJobApplicationStatusInput,
   type CreateJobApplicationInput,
   type JobApplicationQuery,
+  type UpdateJobApplicationAttachmentsInput,
   type UpdateJobApplicationDocumentsInput,
 } from '../../domain/job-application.js';
 import { JobApplicationService } from '../../services/job-application-service.js';
+import { JobApplicationDossierService } from '../../services/job-application-dossier-service.js';
 import { ApplicationLetterService } from '../../services/application-letter-service.js';
 import { MagicPenService } from '../../services/magic-pen-service.js';
 import { penExperienceSchema, type PenExperienceInput } from '../../domain/magic-pen.js';
@@ -33,6 +36,8 @@ import type { JobApplicationRepository } from '../../ports/job-application-repos
 import type { JobPostingRepository } from '../../ports/job-posting-repository.js';
 import type { TalentRepository } from '../../ports/talent-repository.js';
 import type { DocumentRepository } from '../../ports/document-repository.js';
+import type { AttachmentStore } from '../../ports/attachment-store.js';
+import type { DocumentService } from '../../services/document-service.js';
 import type { Clock } from '../../ports/clock.js';
 import type { IdGenerator } from '../../ports/id-generator.js';
 import { AuthGuard } from '../auth.guard.js';
@@ -40,13 +45,17 @@ import { AiConfiguredGuard, RequiresAi } from '../ai-configured.guard.js';
 import { AiRateLimitGuard } from '../ai-rate-limit.guard.js';
 import { CurrentScope, CurrentUserId } from '../params.js';
 import { ZodValidationPipe } from '../zod-validation.pipe.js';
+import { DocumentsModule } from '../documents/documents.module.js';
 import {
   APPLICATION_LETTER_SERVICE,
   JOB_APPLICATION_SERVICE,
+  JOB_APPLICATION_DOSSIER_SERVICE,
   JOB_APPLICATION_REPOSITORY,
   JOB_POSTING_REPOSITORY,
   TALENT_REPOSITORY,
   DOCUMENT_REPOSITORY,
+  DOCUMENT_SERVICE,
+  ATTACHMENT_STORE,
   LLM_FEATURE_RUNNER,
   CLOCK,
   ID_GENERATOR,
@@ -65,6 +74,8 @@ import {
 export class JobApplicationsController {
   constructor(
     @Inject(JOB_APPLICATION_SERVICE) private readonly service: JobApplicationService,
+    @Inject(JOB_APPLICATION_DOSSIER_SERVICE)
+    private readonly dossier: JobApplicationDossierService,
     @Inject(APPLICATION_LETTER_SERVICE) private readonly letterService: ApplicationLetterService,
     @Inject(MAGIC_PEN_SERVICE) private readonly magicPen: MagicPenService,
   ) {}
@@ -74,7 +85,7 @@ export class JobApplicationsController {
     @CurrentScope() scope: string,
     @Query(new ZodValidationPipe(jobApplicationQuerySchema)) query: JobApplicationQuery,
   ) {
-    return this.service.list(scope, query.talentId);
+    return this.service.list(scope, query.talentId, query.status);
   }
 
   @Get(':id')
@@ -104,8 +115,46 @@ export class JobApplicationsController {
     @Param('id') id: string,
     @Body(new ZodValidationPipe(updateJobApplicationDocumentsSchema))
     input: UpdateJobApplicationDocumentsInput,
+    @Query('unfreeze') unfreeze?: string,
   ) {
-    return { documents: await this.service.saveDocuments(scope, id, input) };
+    return { documents: await this.service.saveDocuments(scope, id, input, unfreeze === '1') };
+  }
+
+  @Put(':id/attachments')
+  async saveAttachments(
+    @CurrentScope() scope: string,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(updateJobApplicationAttachmentsSchema))
+    input: UpdateJobApplicationAttachmentsInput,
+    @Query('unfreeze') unfreeze?: string,
+  ) {
+    return {
+      jobApplication: await this.service.saveAttachments(
+        scope,
+        id,
+        input.attachmentIds,
+        unfreeze === '1',
+      ),
+    };
+  }
+
+  @Get(':id/dossier/pdf')
+  async dossierPdf(@CurrentScope() scope: string, @Param('id') id: string, @Res() res: Response) {
+    const { buffer, filename } = await this.dossier.renderPdf(scope, id);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(buffer);
+  }
+
+  @Get(':id/dossier/zip')
+  async dossierZip(@CurrentScope() scope: string, @Param('id') id: string, @Res() res: Response) {
+    const { stream, filename } = await this.dossier.renderZip(scope, id);
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    // Streaming (OQ4): no Content-Length (chunked), abort on client disconnect.
+    stream.pipe(res);
+    res.on('close', () => stream.destroy());
+    stream.on('error', (err: Error) => res.destroy(err));
   }
 
   @Post(':id/letter')
@@ -205,6 +254,7 @@ export class JobApplicationsController {
 
 /** Job-applications feature slice (ADR-0051): services wired via useFactory. */
 @Module({
+  imports: [DocumentsModule],
   controllers: [JobApplicationsController],
   providers: [
     {
@@ -214,6 +264,7 @@ export class JobApplicationsController {
         jobPostingRepository: JobPostingRepository,
         talentRepository: TalentRepository,
         documentRepository: DocumentRepository,
+        attachmentStore: AttachmentStore,
         clock: Clock,
         idGenerator: IdGenerator,
       ) =>
@@ -222,6 +273,7 @@ export class JobApplicationsController {
           jobPostingRepository,
           talentRepository,
           documentRepository,
+          attachmentStore,
           clock,
           idGenerator,
         }),
@@ -230,9 +282,24 @@ export class JobApplicationsController {
         JOB_POSTING_REPOSITORY,
         TALENT_REPOSITORY,
         DOCUMENT_REPOSITORY,
+        ATTACHMENT_STORE,
         CLOCK,
         ID_GENERATOR,
       ],
+    },
+    {
+      provide: JOB_APPLICATION_DOSSIER_SERVICE,
+      useFactory: (
+        jobApplicationRepository: JobApplicationRepository,
+        attachmentStore: AttachmentStore,
+        documentService: DocumentService,
+      ) =>
+        new JobApplicationDossierService({
+          jobApplicationRepository,
+          attachmentStore,
+          documentService,
+        }),
+      inject: [JOB_APPLICATION_REPOSITORY, ATTACHMENT_STORE, DOCUMENT_SERVICE],
     },
     {
       provide: APPLICATION_LETTER_SERVICE,

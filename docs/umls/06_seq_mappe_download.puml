@@ -1,0 +1,50 @@
+@startuml 06_seq_mappe_download
+title Bewerbungsmappe herunterladen (PDF/ZIP aus der Kopie) — FR-95/96, ADR-0061
+
+skinparam shadowing false
+autonumber
+
+actor Recruiter
+participant "JobApplicationsController" as Ctrl
+participant "JobApplicationDossierService" as Svc
+participant "JobApplicationRepository" as AppRepo
+participant "AttachmentStore" as AttStore
+participant "DocumentService\n(renderDossierFromDocuments)" as DocSvc
+
+Recruiter -> Ctrl : GET /job-applications/:id/dossier/pdf\n(oder /zip)
+activate Ctrl
+Ctrl -> Svc : renderPdf(scope, id) | renderZip(scope, id)
+activate Svc
+Svc -> AppRepo : findById(scope, id)
+AppRepo --> Svc : application (documents copy + selectedAttachmentIds) | null
+alt unbekannt / Kopie fehlt
+  Svc --> Ctrl : NotFoundError → 404
+else gefunden
+  loop jede selectedAttachmentIds
+    Svc -> AttStore : get(scope, attachmentId)
+    AttStore --> Svc : { attachment, bytes } | null
+    alt fremd/fremder Mandant
+      Svc --> Ctrl : NotFoundError('Anhang') → 404
+    else contentType ≠ application/pdf
+      Svc --> Ctrl : ValidationError → 400
+    end
+  end
+  Svc -> Svc : recipient = recipientForMappe(application)\n(nur bei leerem letter.firma → postingCompany)
+  Svc -> DocSvc : renderDossierFromDocuments(scope, copy, recipient,\nselectedAttachmentIds, order='letter-first')
+  activate DocSvc
+  DocSvc --> Svc : mergedPdf (Anschreiben → CV → Anhänge, OQ1)
+  deactivate DocSvc
+  alt ZIP
+    Svc -> Svc : yazl: addBuffer('Bewerbung.pdf') + Anhänge (dedupliziert) → end()
+    Svc --> Ctrl : { stream: outputStream, filename }
+    Ctrl -> Ctrl : Content-Type: application/zip\nContent-Disposition: attachment (kein Content-Length)\noutputStream.pipe(res); res.on('close') → destroy
+  else PDF
+    Svc --> Ctrl : { buffer, filename }
+    Ctrl -> Ctrl : Content-Type: application/pdf\nContent-Disposition: attachment
+  end
+  Ctrl --> Recruiter : 200 → Dateiname Bewerbung_<Mandant>_<Firma>.{pdf,zip}
+end
+deactivate Svc
+deactivate Ctrl
+
+@enduml

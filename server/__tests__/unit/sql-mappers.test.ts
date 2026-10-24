@@ -238,13 +238,97 @@ describe('job-application mappers', () => {
         },
         updatedAt: '2026-06-25T11:00:00.000Z',
       },
+      selectedAttachmentIds: [],
       createdAt: '2026-06-25T10:00:00.000Z',
       updatedAt: '2026-06-25T11:00:00.000Z',
     };
     const row = jobApplicationToRow(application);
     expect(row.statusHistory).toEqual(application.statusHistory);
     expect(row.documents).toEqual(application.documents);
+    expect(row.selectedAttachmentIds).toEqual([]);
     expect(rowToJobApplication(row as Required<typeof row>)).toEqual(application);
+  });
+
+  it('JobApplicationToRow_RoundTripsSelectedAttachmentIds', () => {
+    const application: JobApplication = {
+      id: 'a2',
+      ownerId: 'team',
+      jobPostingId: 'p1',
+      postingCompany: 'Acme',
+      postingTitle: 'Engineer',
+      talentId: 't1',
+      talentName: 'Ada',
+      status: 'draft',
+      statusHistory: [{ status: 'draft', at: '2026-06-25T10:00:00.000Z' }],
+      documents: {
+        ownerId: 'team',
+        talentId: 't1',
+        contact: { name: 'Ada', role: '', email: '', phone: '', location: '', linkedin: '' },
+        resume: { summary: '', experience: [], education: [], skillGroups: [], rawText: '' },
+        letter: {
+          firma: '',
+          ansprechpartner: '',
+          strasse: '',
+          plzOrt: '',
+          betreff: '',
+          anrede: '',
+          absaetze: [],
+          gruss: '',
+        },
+        style: { template: 'classic', accent: '', strong: '', onDark: '', font: '', size: 1 },
+        updatedAt: '2026-06-25T10:00:00.000Z',
+      },
+      selectedAttachmentIds: ['att1', 'att2'],
+      createdAt: '2026-06-25T10:00:00.000Z',
+      updatedAt: '2026-06-25T10:00:00.000Z',
+    };
+    const row = jobApplicationToRow(application);
+    expect(row.selectedAttachmentIds).toEqual(['att1', 'att2']);
+    expect(rowToJobApplication(row as Required<typeof row>).selectedAttachmentIds).toEqual([
+      'att1',
+      'att2',
+    ]);
+  });
+
+  it('RowToJobApplication_NullSelectedAttachmentIds_DefaultsEmpty', () => {
+    const application = jobApplicationToRow({
+      id: 'a3',
+      ownerId: 'team',
+      jobPostingId: 'p1',
+      postingCompany: 'Acme',
+      postingTitle: 'Engineer',
+      talentId: 't1',
+      talentName: 'Ada',
+      status: 'draft',
+      statusHistory: [{ status: 'draft', at: '2026-06-25T10:00:00.000Z' }],
+      documents: {
+        ownerId: 'team',
+        talentId: 't1',
+        contact: { name: 'Ada', role: '', email: '', phone: '', location: '', linkedin: '' },
+        resume: { summary: '', experience: [], education: [], skillGroups: [], rawText: '' },
+        letter: {
+          firma: '',
+          ansprechpartner: '',
+          strasse: '',
+          plzOrt: '',
+          betreff: '',
+          anrede: '',
+          absaetze: [],
+          gruss: '',
+        },
+        style: { template: 'classic', accent: '', strong: '', onDark: '', font: '', size: 1 },
+        updatedAt: '2026-06-25T10:00:00.000Z',
+      },
+      selectedAttachmentIds: [],
+      createdAt: '2026-06-25T10:00:00.000Z',
+      updatedAt: '2026-06-25T10:00:00.000Z',
+    });
+    // A row read back from a legacy column with null should default to [].
+    const back = rowToJobApplication({
+      ...(application as Required<typeof application>),
+      selectedAttachmentIds: null as unknown as string[],
+    });
+    expect(back.selectedAttachmentIds).toEqual([]);
   });
 });
 

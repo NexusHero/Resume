@@ -93,9 +93,9 @@ function findRoute(spec: RouteSpec): ActualRoute | undefined {
 }
 
 describe('Route inventory drift guard (plan §5.3/§6.1)', () => {
-  it('RouteInventory_CountsAre37VermittlerAnd12AiAnd3TextImportRoutes', () => {
+  it('RouteInventory_CountsAre37VermittlerAnd13AiAnd3TextImportRoutes', () => {
     expect(VERMITTLER_ROUTES).toHaveLength(37);
-    expect(AI_ROUTES).toHaveLength(12);
+    expect(AI_ROUTES).toHaveLength(13);
     expect(TEXT_IMPORT_ROUTES).toHaveLength(3);
     expect(new Set(VERMITTLER_ROUTES.map((r) => r.id)).size).toBe(37);
     expect(new Set(ROUTES.map((r) => `${r.method} ${r.path}`)).size).toBe(ROUTES.length);

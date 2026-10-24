@@ -1,6 +1,7 @@
 import { createPersistence } from '../../src/adapters/persistence-factory.js';
 import { FsApplicationRepository } from '../../src/adapters/fs-application-repository.js';
 import { FsJobPostingRepository } from '../../src/adapters/fs-job-posting-repository.js';
+import { FsJobApplicationRepository } from '../../src/adapters/fs-job-application-repository.js';
 import { FsMandateRepository } from '../../src/adapters/fs-mandate-repository.js';
 import { FsTalentRepository } from '../../src/adapters/fs-talent-repository.js';
 import { FsPlacementRepository } from '../../src/adapters/fs-placement-repository.js';
@@ -10,6 +11,7 @@ import { FsUserRepository } from '../../src/adapters/fs-user-repository.js';
 import { FsPasswordResetTokenStore } from '../../src/adapters/fs-password-reset-token-store.js';
 import { SqlApplicationRepository } from '../../src/adapters/sql/sql-application-repository.js';
 import { SqlJobPostingRepository } from '../../src/adapters/sql/sql-job-posting-repository.js';
+import { SqlJobApplicationRepository } from '../../src/adapters/sql/sql-job-application-repository.js';
 import { SqlSavedSearchRepository } from '../../src/adapters/sql/sql-saved-search-repository.js';
 import { SqlMandateRepository } from '../../src/adapters/sql/sql-mandate-repository.js';
 import { SqlTalentRepository } from '../../src/adapters/sql/sql-talent-repository.js';
@@ -32,6 +34,7 @@ describe('createPersistence', () => {
     const p = createPersistence({ config: loadConfig({}), clock });
     expect(p.applicationRepository).toBeInstanceOf(FsApplicationRepository);
     expect(p.jobPostingRepository).toBeInstanceOf(FsJobPostingRepository);
+    expect(p.jobApplicationRepository).toBeInstanceOf(FsJobApplicationRepository);
     expect(p.mandateRepository).toBeInstanceOf(FsMandateRepository);
     expect(p.talentRepository).toBeInstanceOf(FsTalentRepository);
     expect(p.placementRepository).toBeInstanceOf(FsPlacementRepository);
@@ -46,6 +49,7 @@ describe('createPersistence', () => {
     const p = createPersistence({ config: loadConfig({ STORE: 'sql' }), clock, db: fakeDb });
     expect(p.applicationRepository).toBeInstanceOf(SqlApplicationRepository);
     expect(p.jobPostingRepository).toBeInstanceOf(SqlJobPostingRepository);
+    expect(p.jobApplicationRepository).toBeInstanceOf(SqlJobApplicationRepository);
     expect(p.savedSearchRepository).toBeInstanceOf(SqlSavedSearchRepository);
     expect(p.mandateRepository).toBeInstanceOf(SqlMandateRepository);
     expect(p.talentRepository).toBeInstanceOf(SqlTalentRepository);

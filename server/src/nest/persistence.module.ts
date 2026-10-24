@@ -10,6 +10,7 @@ import {
   PERSISTENCE,
   APPLICATION_REPOSITORY,
   JOB_POSTING_REPOSITORY,
+  JOB_APPLICATION_REPOSITORY,
   ARTIFACT_LOG_REPOSITORY,
   ASSISTANT_SETTINGS_STORE,
   ASSISTANT_SUGGESTION_REPOSITORY,
@@ -37,6 +38,7 @@ import {
 const REPO_BINDINGS: ReadonlyArray<[symbol, keyof Persistence]> = [
   [APPLICATION_REPOSITORY, 'applicationRepository'],
   [JOB_POSTING_REPOSITORY, 'jobPostingRepository'],
+  [JOB_APPLICATION_REPOSITORY, 'jobApplicationRepository'],
   [AUDIT_LOG, 'auditLog'],
   [SAVED_SEARCH_REPOSITORY, 'savedSearchRepository'],
   [MANDATE_REPOSITORY, 'mandateRepository'],

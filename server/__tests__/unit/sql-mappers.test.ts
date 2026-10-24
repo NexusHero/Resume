@@ -7,6 +7,8 @@ import {
   savedSearchToRow,
   rowToJobPosting,
   jobPostingToRow,
+  rowToJobApplication,
+  jobApplicationToRow,
   rowToMandate,
   mandateToRow,
   rowToTalent,
@@ -31,6 +33,7 @@ import {
 import type { Application, AuditEvent } from '../../src/domain/application.js';
 import type { SavedSearch } from '../../src/domain/saved-search.js';
 import type { JobPosting } from '../../src/domain/job-posting.js';
+import type { JobApplication } from '../../src/domain/job-application.js';
 import type { Mandate } from '../../src/domain/mandate.js';
 import type { Talent } from '../../src/domain/talent.js';
 import type { Placement } from '../../src/domain/placement.js';
@@ -192,6 +195,56 @@ describe('job-posting mappers', () => {
     expect(back.descriptionIncomplete).toBe(false);
     expect('sourceId' in back ? back.sourceId : undefined).toBeUndefined();
     expect('url' in back ? back.url : undefined).toBeUndefined();
+  });
+});
+
+describe('job-application mappers', () => {
+  it('JobApplicationToRow_RoundTrips', () => {
+    const application: JobApplication = {
+      id: 'a1',
+      ownerId: 'team',
+      jobPostingId: 'p1',
+      postingCompany: 'Acme',
+      postingTitle: 'Engineer',
+      talentId: 't1',
+      talentName: 'Ada',
+      status: 'sent',
+      statusHistory: [
+        { status: 'draft', at: '2026-06-25T10:00:00.000Z' },
+        { status: 'sent', at: '2026-06-25T11:00:00.000Z' },
+      ],
+      documents: {
+        ownerId: 'team',
+        talentId: 't1',
+        contact: { name: 'Ada', role: '', email: '', phone: '', location: '', linkedin: '' },
+        resume: { summary: 'S.', experience: [], education: [], skillGroups: [], rawText: '' },
+        letter: {
+          firma: '',
+          ansprechpartner: '',
+          strasse: '',
+          plzOrt: '',
+          betreff: '',
+          anrede: '',
+          absaetze: ['p'],
+          gruss: '',
+        },
+        style: {
+          template: 'classic',
+          accent: '#2A6FDB',
+          strong: '#1d4ed8',
+          onDark: '#7aa7f5',
+          font: 'var(--font-display)',
+          size: 1,
+        },
+        updatedAt: '2026-06-25T11:00:00.000Z',
+      },
+      createdAt: '2026-06-25T10:00:00.000Z',
+      updatedAt: '2026-06-25T11:00:00.000Z',
+    };
+    const row = jobApplicationToRow(application);
+    expect(row.statusHistory).toEqual(application.statusHistory);
+    expect(row.documents).toEqual(application.documents);
+    expect(rowToJobApplication(row as Required<typeof row>)).toEqual(application);
   });
 });
 

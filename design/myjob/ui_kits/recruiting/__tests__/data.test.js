@@ -185,3 +185,65 @@ describe('RecruitApi — job posting endpoints', () => {
   });
 });
 
+describe('RecruitApi — job application endpoints', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('RecruitApi_JobApplicationMethods_UseCorrectEndpoints', async () => {
+    const calls = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url, init) => {
+        calls.push({ url: String(url), method: (init && init.method) || 'GET' });
+        return new Response(
+          JSON.stringify({
+            configured: true,
+            jobApplication: { id: 'a1' },
+            alreadyExisting: false,
+            documents: {},
+            letter: { paragraphs: ['p'] },
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        );
+      }),
+    );
+    window.RecruitApi.invalidateAiStatus();
+
+    await window.RecruitApi.listJobApplications('t1');
+    expect(calls[0].url).toContain('/job-applications?talentId=t1');
+    expect(calls[0].method).toBe('GET');
+
+    await window.RecruitApi.createJobApplication({ jobPostingId: 'p1', talentId: 't1' });
+    expect(calls[1].url.endsWith('/job-applications')).toBe(true);
+    expect(calls[1].method).toBe('POST');
+
+    await window.RecruitApi.getJobApplication('a1');
+    expect(calls[2].url).toContain('/job-applications/a1');
+
+    await window.RecruitApi.getJobApplicationDocuments('a1');
+    expect(calls[3].url).toContain('/job-applications/a1/documents');
+    expect(calls[3].method).toBe('GET');
+
+    await window.RecruitApi.saveJobApplicationDocuments('a1', {});
+    expect(calls[4].url).toContain('/job-applications/a1/documents');
+    expect(calls[4].method).toBe('PUT');
+
+    await window.RecruitApi.generateJobApplicationLetter('a1');
+    const letterCall = calls.find((c) => c.url.endsWith('/job-applications/a1/letter'));
+    expect(letterCall).toBeTruthy();
+    expect(letterCall.method).toBe('POST');
+
+    await window.RecruitApi.changeJobApplicationStatus('a1', 'sent');
+    const statusCall = calls.find((c) => c.url.endsWith('/job-applications/a1/status'));
+    expect(statusCall).toBeTruthy();
+    expect(statusCall.method).toBe('POST');
+
+    await window.RecruitApi.deleteJobApplication('a1');
+    const deleteCall = calls.find(
+      (c) => c.url.endsWith('/job-applications/a1') && c.method === 'DELETE',
+    );
+    expect(deleteCall).toBeTruthy();
+  });
+});
+

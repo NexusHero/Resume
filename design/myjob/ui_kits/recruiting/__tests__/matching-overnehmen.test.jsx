@@ -7,7 +7,6 @@ let Matching;
 
 beforeAll(async () => {
   await import('../DataStates.jsx');
-  await import('../ApplyModal.jsx');
   await import('../Matching.jsx');
   Matching = window.Matching;
 });

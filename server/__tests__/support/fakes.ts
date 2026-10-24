@@ -2,6 +2,8 @@ import type { Application, AuditEvent } from '../../src/domain/application.js';
 import type { ApplicationRepository } from '../../src/ports/application-repository.js';
 import type { JobPosting } from '../../src/domain/job-posting.js';
 import type { JobPostingRepository } from '../../src/ports/job-posting-repository.js';
+import type { JobApplication } from '../../src/domain/job-application.js';
+import type { JobApplicationRepository } from '../../src/ports/job-application-repository.js';
 import type { JobPostingDetail } from '../../src/domain/job.js';
 import type { PageFetcher } from '../../src/ports/page-fetcher.js';
 import { NoTextError, PostingFetchError, SsrfBlockedError } from '../../src/domain/errors.js';
@@ -312,6 +314,44 @@ export class InMemoryJobPostingRepository implements JobPostingRepository {
     const before = this.postings.length;
     this.postings = this.postings.filter((p) => !(p.id === id && p.ownerId === ownerId));
     return this.postings.length < before;
+  }
+}
+
+export class InMemoryJobApplicationRepository implements JobApplicationRepository {
+  applications: JobApplication[] = [];
+  async list(ownerId: string, talentId?: string): Promise<JobApplication[]> {
+    return this.applications
+      .filter((a) => a.ownerId === ownerId && (talentId === undefined || a.talentId === talentId))
+      .map((a) => ({ ...a, documents: { ...a.documents } }));
+  }
+  async findById(ownerId: string, id: string): Promise<JobApplication | null> {
+    return this.applications.find((a) => a.id === id && a.ownerId === ownerId) ?? null;
+  }
+  async findByPostingAndTalent(
+    ownerId: string,
+    jobPostingId: string,
+    talentId: string,
+  ): Promise<JobApplication | null> {
+    return (
+      this.applications.find(
+        (a) => a.ownerId === ownerId && a.jobPostingId === jobPostingId && a.talentId === talentId,
+      ) ?? null
+    );
+  }
+  async add(application: JobApplication): Promise<void> {
+    this.applications.push(application);
+  }
+  async update(application: JobApplication): Promise<void> {
+    const i = this.applications.findIndex(
+      (a) => a.id === application.id && a.ownerId === application.ownerId,
+    );
+    if (i < 0) this.applications.push(application);
+    else this.applications[i] = application;
+  }
+  async delete(ownerId: string, id: string): Promise<boolean> {
+    const before = this.applications.length;
+    this.applications = this.applications.filter((a) => !(a.id === id && a.ownerId === ownerId));
+    return this.applications.length < before;
   }
 }
 

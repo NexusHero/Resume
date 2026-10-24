@@ -3,7 +3,7 @@
    CSP / installed PWA / native shell, so nothing downloaded. The fix fetches the
    bytes and saves a file, and surfaces any failure. */
 import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 let Editor;
@@ -55,5 +55,19 @@ describe('Editor — PDF export', () => {
     await userEvent.click(screen.getAllByText('PDF')[0]);
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent('Der PDF-Download ist fehlgeschlagen. Bitte versuche es erneut.');
+  });
+
+  it('Pdf_ExportPdfOverride_ReceivesCurrentDocumentsAndFilename', async () => {
+    const exportPdf = vi.fn().mockResolvedValue(undefined);
+    render(<Editor talent={talent} onClose={vi.fn()} onCreateMappe={vi.fn()} exportPdf={exportPdf} />);
+    await userEvent.click(screen.getAllByText('PDF')[0]);
+    await waitFor(() => expect(exportPdf).toHaveBeenCalled());
+    const [docs, filename] = exportPdf.mock.calls[0];
+    expect(docs).toHaveProperty('contact');
+    expect(docs).toHaveProperty('resume');
+    expect(docs).toHaveProperty('letter');
+    expect(docs).toHaveProperty('style');
+    expect(filename).toBe('Ada-Lovelace.pdf');
+    expect(window.RecruitApi.downloadTalentDocumentsPdf).not.toHaveBeenCalled();
   });
 });

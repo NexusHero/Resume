@@ -1,0 +1,54 @@
+@startuml 06_seq_create_application
+title Bewerbung erstellen (Stelle × Mandant, mit Dokument-Kopie) — FR-81/82/83, ADR-0059
+
+skinparam shadowing false
+autonumber
+
+actor Recruiter
+participant "JobApplicationsController" as Ctrl
+participant "JobApplicationService" as Svc
+participant "JobPostingRepository" as PostingRepo
+participant "TalentRepository" as TalentRepo
+participant "JobApplicationRepository\n(fs | sql)" as AppRepo
+participant "DocumentRepository" as DocRepo
+
+Recruiter -> Ctrl : POST /job-applications { jobPostingId, talentId }
+activate Ctrl
+Ctrl -> Svc : create(ownerId, input)
+activate Svc
+Svc -> PostingRepo : findById(ownerId, jobPostingId)
+PostingRepo --> Svc : posting | null
+alt not found
+  Svc --> Ctrl : NotFoundError("Stelle unbekannt") → 404
+else found
+  Svc -> TalentRepo : findById(ownerId, talentId)
+  TalentRepo --> Svc : talent | null
+  alt not found
+    Svc --> Ctrl : NotFoundError("Mandant unbekannt") → 404
+  else found
+    Svc -> AppRepo : findByPostingAndTalent(ownerId, jobPostingId, talentId)
+    AppRepo --> Svc : existing | null
+    alt existing (dedup hit)
+      Svc --> Ctrl : { jobApplication: existing, alreadyExisting: true }
+      Ctrl --> Recruiter : 200 → Bewerbung öffnen (AK-2.2)
+    else new
+      Svc -> DocRepo : get(ownerId, talentId)
+      DocRepo --> Svc : base | null
+      alt base present
+        Svc -> Svc : copyDocumentsForApplication(base)\n(resume.rawText = '', no translations, deep copy)
+      else no base
+        Svc -> Svc : emptyDocuments(...) — contact seeded from talent
+      end
+      Svc -> Svc : seed snapshots postingCompany/postingTitle/talentName,\nstatus = draft, statusHistory = [{ draft, at }], updatedAt = createdAt
+      Svc -> AppRepo : add(application)
+      Svc -> AppRepo : findByPostingAndTalent(...) — race backstop (sql 23505)
+      AppRepo --> Svc : winner | null
+      Svc --> Ctrl : { jobApplication, alreadyExisting: false }
+      Ctrl --> Recruiter : 201 → Bewerbungs-Editor öffnet (AK-2.1)
+    end
+  end
+end
+deactivate Svc
+deactivate Ctrl
+
+@enduml

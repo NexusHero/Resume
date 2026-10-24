@@ -547,29 +547,6 @@ const RecruitApi = {
     const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/applications`));
     return Array.isArray(data) ? data.map(mapApplication) : [];
   },
-  /* Apply on a candidate's behalf from Matching: record an application that
-     carries the posting's company + role, so it lands in the Applications
-     pipeline and the company data is captured on the submission. */
-  async applyCandidate(job, talent, pdfBase64 = null) {
-    const body = {
-      company: job.company || '',
-      position: job.title || '',
-      reference: job.url || '',
-      source: 'matching',
-      status: 'sent',
-      talentName: (talent && talent.name) || '',
-    };
-    if (talent && talent.id && talent.id !== 'me') body.talentId = talent.id;
-    if (pdfBase64) body.pdfBase64 = pdfBase64;
-    const data = await _jsonOrThrow(
-      await fetch(`${RECRUIT_API_BASE}/applications`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(body),
-      }),
-    );
-    return mapApplication(data.application);
-  },
   /* Move an application to another pipeline stage — the board's drag/dropdown.
      Maps the board stage back to a domain status and PATCHes it. */
   async updateApplicationStage(id, stage) {
@@ -686,6 +663,70 @@ const RecruitApi = {
       method: 'DELETE',
     });
     if (!res.ok) throw new Error(`Could not delete posting (${res.status})`);
+  },
+
+  // --- Job applications ("Bewerbungen", ADR-0059) ---
+  async listJobApplications(talentId) {
+    const q = talentId ? `?talentId=${encodeURIComponent(talentId)}` : '';
+    const data = await _jsonOrThrow(await fetch(`${RECRUIT_API_BASE}/job-applications${q}`));
+    return Array.isArray(data) ? data : [];
+  },
+  async getJobApplication(id) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/job-applications/${encodeURIComponent(id)}`),
+    );
+    return data.jobApplication;
+  },
+  // Create an application for (posting, talent). Returns { jobApplication, alreadyExisting }.
+  async createJobApplication({ jobPostingId, talentId }) {
+    return _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/job-applications`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ jobPostingId, talentId }),
+      }),
+    );
+  },
+  async getJobApplicationDocuments(id) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/job-applications/${encodeURIComponent(id)}/documents`),
+    );
+    return data.documents;
+  },
+  async saveJobApplicationDocuments(id, documents) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/job-applications/${encodeURIComponent(id)}/documents`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(documents),
+      }),
+    );
+    return data.documents;
+  },
+  async generateJobApplicationLetter(id) {
+    await requireAi();
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/job-applications/${encodeURIComponent(id)}/letter`, {
+        method: 'POST',
+      }),
+    );
+    return data.letter;
+  },
+  async changeJobApplicationStatus(id, status) {
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/job-applications/${encodeURIComponent(id)}/status`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ status }),
+      }),
+    );
+    return data.jobApplication;
+  },
+  async deleteJobApplication(id) {
+    const res = await fetch(`${RECRUIT_API_BASE}/job-applications/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) throw new Error(`Could not delete application (${res.status})`);
   },
 
   // --- Recruiting pipeline (candidacies) ---
@@ -933,6 +974,13 @@ const RecruitApi = {
      window.open() can silently fail. Rejects on error so the UI can react. */
   async downloadTalentDocumentsPdf(talentId, filename) {
     await _downloadPdf(this.talentDocumentsPdfUrl(talentId), filename || `documents-${talentId}.pdf`);
+  },
+  /* Save an in-memory blob (e.g. a dossier PDF the editor rendered from a
+     documents body) as a real file — the same reliable "Save as…" path as the
+     fetch-based downloads above, shared by the editor's export seam (ADR-0059). */
+  async saveBlob(blob, filename) {
+    _saveBlob(blob, filename);
+    return blob;
   },
   talentDossierPdfUrl(talentId, recipient = {}) {
     const q = new URLSearchParams();

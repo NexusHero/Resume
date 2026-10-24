@@ -10,6 +10,7 @@ import type { Role } from '../../domain/user.js';
 import type { AssistantSettings } from '../../domain/assistant.js';
 import type { RetentionPolicy } from '../../domain/retention.js';
 import type { WorkspaceSettings } from '../../domain/workspace-settings.js';
+import type { JobApplicationStatusChange } from '../../domain/job-application.js';
 
 /** Registered accounts (mirrors domain `User`). */
 export const users = pgTable('users', {
@@ -299,4 +300,20 @@ export const jobPostings = pgTable('job_postings', {
   requirements: jsonb('requirements').$type<string[]>().notNull(),
   descriptionIncomplete: boolean('description_incomplete').notNull().default(false),
   createdAt: text('created_at').notNull(),
+});
+
+/** Job applications ("Bewerbungen", mirror domain `JobApplication`). Workspace-scoped. */
+export const jobApplications = pgTable('job_applications', {
+  id: text('id').primaryKey(),
+  ownerId: text('owner_id').notNull(),
+  jobPostingId: text('job_posting_id').notNull(),
+  postingCompany: text('posting_company').notNull(),
+  postingTitle: text('posting_title').notNull(),
+  talentId: text('talent_id').notNull(),
+  talentName: text('talent_name').notNull(),
+  status: text('status').notNull(),
+  statusHistory: jsonb('status_history').$type<JobApplicationStatusChange[]>().notNull(),
+  documents: jsonb('documents').$type<TalentDocuments>().notNull(),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
 });

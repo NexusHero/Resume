@@ -27,6 +27,8 @@ export const MAX_TOKENS = {
   candidatePrep: 2000,
   // Posting extraction returns five short fields; 600 leaves ample headroom.
   postingExtract: 600,
+  // A 250–400 word cover letter plus greeting/closing; 900 leaves headroom.
+  applicationLetter: 900,
 } as const;
 
 /** A prompt pair produced by one of the domain prompt builders. */

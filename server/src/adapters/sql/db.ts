@@ -161,6 +161,27 @@ async function runMigrationDdl(client: { query: Pool['query'] }): Promise<void> 
       ON job_postings (owner_id, source, source_id) WHERE source_id IS NOT NULL;
     CREATE UNIQUE INDEX IF NOT EXISTS job_postings_owner_url_idx
       ON job_postings (owner_id, url) WHERE url IS NOT NULL;
+    CREATE TABLE IF NOT EXISTS job_applications (
+      id text PRIMARY KEY,
+      owner_id text NOT NULL,
+      job_posting_id text NOT NULL,
+      posting_company text NOT NULL,
+      posting_title text NOT NULL,
+      talent_id text NOT NULL,
+      talent_name text NOT NULL,
+      status text NOT NULL,
+      status_history jsonb NOT NULL,
+      documents jsonb NOT NULL,
+      created_at text NOT NULL,
+      updated_at text NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS job_applications_owner_idx ON job_applications (owner_id);
+    CREATE INDEX IF NOT EXISTS job_applications_owner_talent_idx ON job_applications (owner_id, talent_id);
+    -- Race backstop (ADR-0059): exactly one application per (posting, talent)
+    -- within a workspace; the service check is authoritative, this catches two
+    -- simultaneous inserts.
+    CREATE UNIQUE INDEX IF NOT EXISTS job_applications_owner_posting_talent_idx
+      ON job_applications (owner_id, job_posting_id, talent_id);
     CREATE TABLE IF NOT EXISTS mandates (
       id text PRIMARY KEY,
       owner_id text NOT NULL,

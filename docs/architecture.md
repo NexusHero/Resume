@@ -180,6 +180,38 @@ The composition root (`nest/app.module.ts` + the global core/persistence/infra
 modules) is the single place that knows which adapter implements each port — see
 ADR-0051 for the token/module discipline this demands.
 
+### Bewerbung (`JobApplication`) slice
+
+The Phase-2 entity follows the same layer chain as Stellen (ADR-0058):
+
+- **Domain** — `domain/job-application.ts` (the `JobApplication` model, status
+  vocabulary `draft/sent/interview/offer/rejected`, the append-only
+  `statusHistory`, and the create/status/query zod schemas); `domain/talent-documents.ts`
+  (`copyDocumentsForApplication` — a deep copy with `resume.rawText` blanked and
+  `translations` dropped, so the base CV stays byte-identical, AK-2.3);
+  `domain/application-letter.ts` (the prompt builder over the full ad text and the
+  pure `checkApplicationLetter`).
+- **Ports** — `ports/job-application-repository.ts` (`list`, `findById`,
+  `findByPostingAndTalent`, `add`, `update`, `delete`).
+- **Adapters** — `fs-job-application-repository.ts` (JSON array in
+  `archive/bewerbungen/job-applications.json`, in-process mutex) and
+  `sql/sql-job-application-repository.ts` (Drizzle; a partial unique index on
+  `(owner_id, job_posting_id, talent_id)` with a `23505` re-query as the race backstop).
+- **Services** — `job-application-service.ts` (idempotent `create` with the
+  snapshot seeding and the document copy; `changeStatus` appends a timestamped
+  history entry; `saveDocuments` strips `rawText`/`translations` server-side);
+  `application-letter-service.ts` (lazy-loads `JobPosting.description`, detects
+  the ad language with a `'de'` default, and wraps the `LlmFeatureRunner` result
+  with `grounding` + `checks`); `legacy-application-migration.ts` (boot migration
+  of the frozen pipeline, idempotent via `WorkspaceSettings.applicationsMigrated`).
+- **Nest** — `job-applications/job-applications.module.ts` (eight routes;
+  `AuthGuard, AiConfiguredGuard` on the class, `@RequiresAi()` + method
+  `AiRateLimitGuard` only on `/letter`; no `VermittlungGuard`).
+
+The snapshots `postingCompany`/`postingTitle` keep a Bewerbung fully displayable
+and editable after its posting is deleted (soft `jobPostingId`, no cascade); only
+the full ad text is loaded lazily for letter generation (§6 runtime flow).
+
 ## 6. Runtime View
 
 > Each flow is tagged with the requirements and decisions it realises, so the
@@ -259,6 +291,22 @@ login/JS-only page):
 
 ![Stelle per URL sequence](umls/06_seq_insert_url.svg)
 
+**Bewerbung erstellen (Stelle × Mandant, mit Kopie)** (FR-81/82/83, ADR-0059) —
+create a `JobApplication` that snapshots the posting's company/title, seeds a
+`draft` status with its first history entry, and embeds a **copy** of the base
+documents (`resume.rawText` blanked, no `translations`); the idempotent create and
+the sql race backstop guarantee exactly one per `(posting, talent)`:
+
+![Bewerbung erstellen sequence](umls/06_seq_create_application.svg)
+
+**Anschreiben generieren (voller Anzeigentext)** (FR-84/85, ADR-0059) — the letter
+is built from the posting's **full `description`** (as untrusted data) plus the
+structured copy facts, lazy-loading the description so a deleted posting degrades
+to an honest `references: 0`; the result carries `provider`, `usage`, a
+`grounding` report and the deterministic `checks`:
+
+![Anschreiben generieren sequence](umls/06_seq_generate_letter.svg)
+
 ### Traceability matrix
 
 The requirement catalogue ([requirements.md](requirements.md)) lists FR → module.
@@ -276,6 +324,8 @@ in [`docs/umls/`](umls).
 | FR-60               | `account-service` + personal-data registry  | [DSGVO erase via registry](umls/06_seq_account_erase.puml)                | 0004 · security §10 |
 | FR-75, FR-76, FR-79 | `job-posting-service`, `job-source`         | [Stelle übernehmen (adopt)](umls/06_seq_adopt_posting.puml)               | 0058                |
 | FR-78               | `job-posting-extract-service`, `ssrf-fetch` | [Stelle per URL einfügen (SSRF)](umls/06_seq_insert_url.puml)             | 0058                |
+| FR-81, FR-82, FR-83 | `job-application-service`, `document-repo`  | [Bewerbung erstellen (mit Kopie)](umls/06_seq_create_application.puml)    | 0059                |
+| FR-84, FR-85        | `application-letter-service`, `llm-runner`  | [Anschreiben generieren](umls/06_seq_generate_letter.puml)                | 0059                |
 | FR-12, FR-13, FR-14 | `candidacy-service`, `placement-service`    | Pipeline → placement (§6, prose)                                          | 0010                |
 | FR-61               | `retention-service`                         | Retention report + anonymise sweep (§6 companion, ADR-0018)               | 0018                |
 
@@ -493,7 +543,7 @@ watching). If you are scanning for current exposure, read §11.2.
   Play Store; the repo carries the web-side wiring (`capacitor.config.ts`, `cap:*` scripts),
   while generating the native projects and building/submitting them is a manual dev-machine
   step (no Android SDK/Xcode in CI) — see [native-app.md](native-app.md).
-- OpenAPI covers the full surface (101 operations, 1:1 with the routes) but is hand-kept,
+- OpenAPI covers the full surface (109 operations, 1:1 with the routes) but is hand-kept,
   not generated from zod (ADR-0012). Two guards now bound the drift: a **contract test**
   (`openapi-contract.test.ts`) fails CI when a field added to a zod request schema is missing
   from the spec, and the **docs guard** (`npm run docs:check`) fails on a broken diagram/link/
@@ -514,7 +564,7 @@ watching). If you are scanning for current exposure, read §11.2.
 | **Workspace**     | The tenant / working area (code `Tenant`); hosts the per-workspace `vermittlung` switch.                  |
 | **Vermittlung**   | The opt-in intermediary mode (Suchaufträge, Pipeline, Platzierungen, Performance, Postfach, CoRecruiter). |
 | Stelle            | A saved job ad with its full display text (Phase 1).                                                      |
-| Bewerbung         | A Stelle × Mandant with its own copy of CV + cover letter (Phase 2).                                      |
+| Bewerbung         | A Stelle × Mandant with its own copy of CV + cover letter (Phase 2); code `JobApplication`.               |
 | Candidacy         | A mandant's presence on a Suchauftrag's pipeline, at some stage.                                          |
 | Placement         | A booked candidacy with its fee.                                                                          |
 | Grounding         | Deterministic check that generated claims are supported by the CV + Suchauftrag.                          |
@@ -526,3 +576,10 @@ watching). If you are scanning for current exposure, read §11.2.
 | Provider badge    | UI label showing which AI backend produced a result (`AI · <provider>` + tokens/cost); no template badge. |
 | Call usage        | Per-generation payload (`inputTokens`, `outputTokens`, `costUsd` estimate) on LLM-backed responses.       |
 | AI not configured | The honest `503 ai-not-configured` state when no central key is set; the UI says "KI nicht eingerichtet". |
+
+Two different code concepts share the English name "application": the **frozen
+pipeline `Application`** (`domain/application.ts`, route `/applications`, board
+stages `sent/screening/…`, ADR-0046/0048 — reachable only under `vermittlung`)
+and the **new `JobApplication`** (UI "Bewerbung", this slice, ADR-0059). They are
+kept separate on purpose (ADR-0059): the migration (AK-2.7) reads the former and
+writes only the latter.

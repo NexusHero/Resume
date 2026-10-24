@@ -21,6 +21,7 @@ import {
   runReplySyncTick,
 } from './services/scheduler-ticks.js';
 import type { WorkspaceSettingsService } from './services/workspace-settings-service.js';
+import { runLegacyApplicationMigration } from './services/legacy-application-migration.js';
 import type { MandateRepository } from './ports/mandate-repository.js';
 import type { PlacementRepository } from './ports/placement-repository.js';
 import { AppModule } from './nest/app.module.js';
@@ -37,9 +38,23 @@ import {
   PLACEMENT_REPOSITORY,
   AUTH_ENGINE,
   PDF_RENDERER,
+  APPLICATION_REPOSITORY,
+  JOB_POSTING_REPOSITORY,
+  JOB_APPLICATION_REPOSITORY,
+  DOCUMENT_REPOSITORY,
+  WORKSPACE_SETTINGS_STORE,
+  ID_GENERATOR,
+  CLOCK,
 } from './nest/tokens.js';
 import type { AuthEngine } from './ports/auth-engine.js';
 import type { PdfRenderer } from './ports/pdf-renderer.js';
+import type { ApplicationRepository } from './ports/application-repository.js';
+import type { JobPostingRepository } from './ports/job-posting-repository.js';
+import type { JobApplicationRepository } from './ports/job-application-repository.js';
+import type { DocumentRepository } from './ports/document-repository.js';
+import type { WorkspaceSettingsStore } from './ports/workspace-settings-store.js';
+import type { IdGenerator } from './ports/id-generator.js';
+import type { Clock } from './ports/clock.js';
 
 async function main(): Promise<void> {
   const config = loadConfig();
@@ -184,6 +199,27 @@ async function main(): Promise<void> {
       'hidden recruiter data check failed',
     );
   });
+
+  // Legacy pipeline `Application` → `JobApplication`/`JobPosting` (AK-2.7): an
+  // additive, idempotent boot migration per workspace. A failure is logged and
+  // never fatal — the next boot retries (the per-row steps are idempotent).
+  for (const scope of await tenantScopes()) {
+    await runLegacyApplicationMigration(scope, {
+      applicationRepository: app.get<ApplicationRepository>(APPLICATION_REPOSITORY),
+      jobPostingRepository: app.get<JobPostingRepository>(JOB_POSTING_REPOSITORY),
+      jobApplicationRepository: app.get<JobApplicationRepository>(JOB_APPLICATION_REPOSITORY),
+      documentRepository: app.get<DocumentRepository>(DOCUMENT_REPOSITORY),
+      workspaceSettingsStore: app.get<WorkspaceSettingsStore>(WORKSPACE_SETTINGS_STORE),
+      idGenerator: app.get<IdGenerator>(ID_GENERATOR),
+      clock: app.get<Clock>(CLOCK),
+      logger,
+    }).catch((err: unknown) => {
+      logger.warn(
+        { err: err instanceof Error ? err.message : String(err), scope },
+        'legacy application migration failed',
+      );
+    });
+  }
 
   // Löschfristen-Automatik: an hourly sweep anonymizes candidates past the
   // deletion deadline — but only for teams whose policy opts in (checked each

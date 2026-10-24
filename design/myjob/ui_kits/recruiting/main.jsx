@@ -43,7 +43,8 @@ import './ConfirmDialog.jsx'; // window.ConfirmDialog — designed confirm for i
 import './RecordFormModal.jsx';
 import './Matching.jsx';
 import './JobPostings.jsx';
-import './ApplyModal.jsx';
+import './Bewerbungen.jsx';
+import './BewerbungsEditor.jsx';
 import './AssistantView.jsx';
 import './SettingsView.jsx';
 import './Login.jsx';

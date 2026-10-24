@@ -186,10 +186,75 @@ function InsertDialog({ onClose, onSaved }) {
   );
 }
 
+/* ---------- Mandant-Picker: "Bewerbung erstellen" → Mandant wählen ---------- */
+function MandantPicker({ posting, onClose, onOpenApplication }) {
+  const [talents, setTalents] = React.useState(null); // null = loading
+  const [busy, setBusy] = React.useState(false);
+  const [error, setError] = React.useState(null);
+
+  React.useEffect(() => {
+    let alive = true;
+    window.RecruitApi.listTalents()
+      .then((list) => { if (alive) setTalents(Array.isArray(list) ? list : []); })
+      .catch(() => { if (alive) setTalents([]); });
+    return () => { alive = false; };
+  }, []);
+
+  const pick = async (talent) => {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await window.RecruitApi.createJobApplication({
+        jobPostingId: posting.id,
+        talentId: talent.id,
+      });
+      // New (alreadyExisting: false) or existing (true) → open the editor (AK-2.2).
+      onOpenApplication(result.jobApplication);
+    } catch (e) {
+      setError((e && e.message) || 'Die Bewerbung konnte nicht erstellt werden.');
+      setBusy(false);
+    }
+  };
+
+  return (
+    <window.ModalShell title="Bewerbung erstellen" subtitle={`${posting.company} · ${posting.title} — Mandant:in wählen`} onClose={onClose}>
+      {talents === null ? (
+        <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-soft)' }}>Lade Mandanten…</div>
+      ) : talents.length === 0 ? (
+        <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-soft)' }}>
+          Noch keine Mandanten angelegt. Lege zuerst unter „Mandanten“ einen Mandanten an.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {talents.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => pick(t)}
+              disabled={busy}
+              style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: busy ? 'default' : 'pointer', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', borderRadius: 'var(--radius-md)', padding: '10px 13px', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-heading)', textAlign: 'left' }}
+            >
+              <A.Avatar name={t.name} src={t.src} size="xs" />
+              <span style={{ flex: 1 }}>{t.name}</span>
+              {t.role && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>{t.role}</span>}
+            </button>
+          ))}
+        </div>
+      )}
+      {error && (
+        <div role="alert" style={{ marginTop: '12px', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--danger)', background: 'var(--danger-soft, rgba(200,50,50,0.08))', fontSize: '12.5px', color: 'var(--danger)' }}>
+          {error}
+        </div>
+      )}
+    </window.ModalShell>
+  );
+}
+
 /* ---------- Detailansicht (voller Text, "Text ergänzen", löschen) ---------- */
-function Detail({ posting, onBack, onDeleted, onChanged }) {
+function Detail({ posting, onBack, onDeleted, onChanged, onOpenApplication }) {
   const [editing, setEditing] = React.useState(false);
   const [description, setDescription] = React.useState(posting.description);
+  const [pickingMandant, setPickingMandant] = React.useState(false);
 
   const saveText = async () => {
     await window.RecruitApi.updateJobPosting(posting.id, { description });
@@ -220,6 +285,12 @@ function Detail({ posting, onBack, onDeleted, onChanged }) {
 
         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '20px', fontWeight: 700, color: 'var(--text-heading)', margin: '8px 0 4px', letterSpacing: '-0.01em' }}>{posting.title}</h2>
         <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{posting.company}</div>
+
+        <div style={{ display: 'flex', gap: '8px', margin: '14px 0', flexWrap: 'wrap', alignItems: 'center' }}>
+          <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="send" size={15} />} onClick={() => setPickingMandant(true)}>
+            Bewerbung erstellen
+          </A.Button>
+        </div>
 
         <div style={{ display: 'flex', gap: '8px', margin: '14px 0', flexWrap: 'wrap' }}>
           {posting.location && <A.MetaPill icon="pin">{posting.location}</A.MetaPill>}
@@ -259,12 +330,22 @@ function Detail({ posting, onBack, onDeleted, onChanged }) {
           )}
         </div>
       </div>
+      {pickingMandant && (
+        <MandantPicker
+          posting={posting}
+          onClose={() => setPickingMandant(false)}
+          onOpenApplication={(application) => {
+            setPickingMandant(false);
+            if (onOpenApplication) onOpenApplication(application);
+          }}
+        />
+      )}
     </A.Card>
   );
 }
 
 /* ---------- Liste ---------- */
-function JobPostings({ postings = [], onSearch, onChanged, focusId, onFocusConsumed }) {
+function JobPostings({ postings = [], onSearch, onChanged, focusId, onFocusConsumed, onOpenApplication }) {
   const [query, setQuery] = React.useState('');
   const [selectedId, setSelectedId] = React.useState(null);
   const [insertOpen, setInsertOpen] = React.useState(false);
@@ -309,6 +390,7 @@ function JobPostings({ postings = [], onSearch, onChanged, focusId, onFocusConsu
         posting={selected}
         onBack={() => setSelectedId(null)}
         onChanged={() => onChanged && onChanged()}
+        onOpenApplication={onOpenApplication}
         onDeleted={(posting) => {
           setHiddenIds((s) => new Set(s).add(posting.id));
           setSelectedId(null);

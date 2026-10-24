@@ -16,25 +16,16 @@ function mtSkills(cand, job) {
   return job.req.map((name) => ({ name, met: have.includes(name.toLowerCase()) }));
 }
 
-function Matching({ talents, mandates = [], onCreateMandate, onApply, onOpenPosting, onAdopted }) {
+function Matching({ talents, mandates = [], onCreateMandate, onOpenPosting, onAdopted }) {
   const [mode, setMode] = React.useState('auto');
   const [candId, setCandId] = React.useState((talents.find((t) => t.me) || talents[0]).id);
   const [country, setCountry] = React.useState('ALL');
   const [source, setSource] = React.useState('All');
   const [query, setQuery] = React.useState('');
-  // Per-job apply state: 'busy' | 'done' | 'error' (absent = idle).
-  const [applyState, setApplyState] = React.useState({});
-  // The target for the ApplyModal: { job, cand }
-  const [applyTarget, setApplyTarget] = React.useState(null);
   // Per-job adopt state: 'busy' | 'done' | 'already' | 'error' (absent = idle).
   const [adoptState, setAdoptState] = React.useState({});
   // For 'already': the id of the existing posting, so "öffnen" can navigate.
   const [adoptSavedId, setAdoptSavedId] = React.useState({});
-
-  // Board-independent "apply to a role": company + role typed directly or
-  // prefilled from one of the recruiter's own mandates. This makes applying a
-  // candidate possible even when no live posting is loaded (offline / board down).
-  const [manual, setManual] = React.useState({ company: '', role: '', location: '' });
 
   // Live postings — loaded once; the search box filters client-side so typing
   // stays instant (the boards are already merged server-side).
@@ -62,35 +53,6 @@ function Matching({ talents, mandates = [], onCreateMandate, onApply, onOpenPost
   }, [load]);
 
   const cand = talents.find((t) => t.id === candId) || talents[0];
-  
-  // Confirmed apply from the modal (updates local state so the button shows 'Beworben')
-  const handleApplyConfirm = async (job, cand, pdfBase64) => {
-    if (!onApply) return;
-    const key = job.id === 'manual' ? `${cand.id}:manual` : `${cand.id}:${job.id}`;
-    setApplyState((s) => ({ ...s, [key]: 'busy' }));
-    try {
-      await Promise.resolve(onApply(job, cand, pdfBase64));
-      setApplyState((s) => {
-        const next = { ...s, [key]: 'done' };
-        if (job.id === 'manual') next['manual-dirty'] = false;
-        return next;
-      });
-    } catch (e) {
-      setApplyState((s) => ({ ...s, [key]: 'error' }));
-      throw e;
-    }
-  };
-
-  // Open the ApplyModal for a posting.
-  const apply = (job) => {
-    setApplyTarget({ job, cand });
-  };
-  // Open the ApplyModal for a typed/mandate-derived role.
-  const applyManual = () => {
-    if (!onApply) return;
-    const job = { id: 'manual', company: manual.company.trim(), title: manual.role.trim(), location: manual.location?.trim() || '', url: '' };
-    setApplyTarget({ job, cand });
-  };
 
   // "Stelle übernehmen" (AK-1.1) — save a live search result without AI. The
   // search row carries the source id (`job.id`) and the URL; the server dedups.
@@ -183,43 +145,6 @@ function Matching({ talents, mandates = [], onCreateMandate, onApply, onOpenPost
         })}
       </div>
 
-      {mode === 'manual' && onApply && (() => {
-        const key = `${cand.id}:manual`;
-        const st = applyState[key];
-        const ready = manual.company.trim() && manual.role.trim();
-        const inp = { flex: 1, minWidth: 0, border: '1px solid var(--border-strong)', outline: 'none', background: 'var(--surface-card)', borderRadius: 'var(--radius-md)', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-heading)', padding: '9px 11px' };
-        return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '18px', padding: '14px', border: '1px solid var(--accent-border)', background: 'var(--accent-soft)', borderRadius: 'var(--radius-lg)' }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--accent-strong)' }}>{cand.name.split(' ')[0]} stellvertretend bewerben</div>
-            <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '-4px' }}>Stelle eingeben oder einen deiner Suchaufträge wählen — keine Live-Stelle nötig.</div>
-            {mandates.length > 0 && (
-              <select
-                aria-label="Aus einem Suchauftrag vorbefüllen"
-                value=""
-                onChange={(e) => { const m = mandates.find((x) => x.id === e.target.value); if (m) setManual({ company: m.client || '', role: m.role || '' }); }}
-                style={{ ...inp, cursor: 'pointer' }}
-              >
-                <option value="">Aus einem deiner Suchaufträge…</option>
-                {mandates.map((m) => <option key={m.id} value={m.id}>{m.role} · {m.client}</option>)}
-              </select>
-            )}
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              <input value={manual.company} onChange={(e) => setManual((s) => ({ ...s, company: e.target.value }))} placeholder="Unternehmen" aria-label="Unternehmen" style={inp} />
-              <input value={manual.role} onChange={(e) => setManual((s) => ({ ...s, role: e.target.value }))} placeholder="Stelle" aria-label="Stelle" style={inp} />
-              <input value={manual.location || ''} onChange={(e) => setManual((s) => ({ ...s, location: e.target.value }))} placeholder="Ort" aria-label="Ort" style={inp} />
-              <button
-                onClick={applyManual}
-                disabled={!ready || st === 'busy'}
-                style={{ appearance: 'none', cursor: !ready || st === 'busy' ? 'default' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'var(--accent)', border: 'none', borderRadius: 'var(--radius-md)', color: 'var(--accent-contrast)', fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600, padding: '9px 15px', opacity: !ready ? 0.5 : 1 }}
-              >
-                <MT.Icon name={st === 'done' ? 'check' : 'plus'} size={14} />
-                {st === 'busy' ? 'Bewerbung läuft…' : st === 'done' ? 'Beworben' : st === 'error' ? 'Erneut versuchen' : 'Bewerben'}
-              </button>
-            </div>
-          </div>
-        );
-      })()}
-
       {mode === 'manual' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '18px' }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface-card)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', padding: '0 12px' }}>
@@ -275,25 +200,6 @@ function Matching({ talents, mandates = [], onCreateMandate, onApply, onOpenPost
                       </button>
                     );
                   })()}
-                  {onApply && (() => {
-                    const aState = applyState[`${cand.id}:${job.id}`];
-                    const label =
-                      aState === 'busy' ? 'Bewerbung läuft…'
-                      : aState === 'done' ? `Beworben · ${cand.name.split(' ')[0]}`
-                      : aState === 'error' ? 'Erneut bewerben'
-                      : `${cand.name.split(' ')[0]} bewerben`;
-                    const done = aState === 'done';
-                    return (
-                      <button
-                        onClick={() => apply(job)}
-                        disabled={aState === 'busy' || done}
-                        title={`${cand.name} stellvertretend auf diese Stelle bewerben — legt eine Bewerbung mit den Angaben des Unternehmens an`}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: aState === 'busy' || done ? 'default' : 'pointer', appearance: 'none', background: done ? 'var(--surface-sunk)' : 'var(--accent-soft)', border: `1px solid ${done ? 'var(--border-strong)' : 'var(--accent-border)'}`, borderRadius: 'var(--radius-pill)', color: done ? 'var(--text-soft)' : 'var(--accent-strong)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '4px 11px' }}
-                      >
-                        <MT.Icon name={done ? 'check' : 'plus'} size={12} /> {label}
-                      </button>
-                    );
-                  })()}
                   {onCreateMandate && (
                     <button
                       onClick={() => onCreateMandate(job)}
@@ -312,17 +218,6 @@ function Matching({ talents, mandates = [], onCreateMandate, onApply, onOpenPost
           <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-soft)', border: '1px dashed var(--border-strong)', borderRadius: 'var(--radius-lg)' }}>Keine Treffer.</div>
         )}
       </div>
-
-      {applyTarget && (() => {
-        const Modal = window.ApplyModal;
-        return (
-          <Modal
-            target={applyTarget}
-            onClose={() => setApplyTarget(null)}
-            onApply={handleApplyConfirm}
-          />
-        );
-      })()}
     </div>
   );
 }

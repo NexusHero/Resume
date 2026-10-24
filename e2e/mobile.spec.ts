@@ -344,3 +344,86 @@ test('BewerbungenFlowMobile_ListAndEditor_Reachable', async ({ page }) => {
   await expect(page.locator('[data-doc-hydrated="true"]')).toBeVisible();
   await expectNoHorizontalBodyScroll(page);
 });
+
+test('MagicPenFlowMobile_PenReachable', async ({ page }) => {
+  await mockSession(page);
+  await page.route('**/api/v1/settings/llm', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({ configured: true, providers: [{ id: 'claude', available: true }] }),
+    }),
+  );
+  await page.route('**/api/v1/job-applications', (route) => {
+    if (route.request().method() !== 'GET') return route.continue();
+    return route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify([
+        {
+          id: 'app-1',
+          ownerId: 'team',
+          jobPostingId: 'p1',
+          postingCompany: 'Nordwind Logistik AG',
+          postingTitle: 'Backend Engineer',
+          talentId: 't-api-1',
+          talentName: 'Tobias Wirth',
+          status: 'draft',
+          statusHistory: [{ status: 'draft', at: '2026-06-25T10:00:00.000Z' }],
+          documents: DOCUMENTS.documents,
+          createdAt: '2026-06-25T10:00:00.000Z',
+          updatedAt: '2026-06-25T10:00:00.000Z',
+        },
+      ]),
+    });
+  });
+  await page.route('**/api/v1/job-applications/app-1/documents', (route) =>
+    route.fulfill({ contentType: 'application/json', body: JSON.stringify(DOCUMENTS) }),
+  );
+  await page.route('**/api/v1/job-applications/app-1', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        jobApplication: {
+          id: 'app-1',
+          ownerId: 'team',
+          jobPostingId: 'p1',
+          postingCompany: 'Nordwind Logistik AG',
+          postingTitle: 'Backend Engineer',
+          talentId: 't-api-1',
+          talentName: 'Tobias Wirth',
+          status: 'draft',
+          statusHistory: [{ status: 'draft', at: '2026-06-25T10:00:00.000Z' }],
+          documents: DOCUMENTS.documents,
+          createdAt: '2026-06-25T10:00:00.000Z',
+          updatedAt: '2026-06-25T10:00:00.000Z',
+        },
+      }),
+    }),
+  );
+  await page.route('**/api/v1/job-applications/*/pen/summary', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        suggestion: {
+          section: 'summary',
+          before: 'Old',
+          after: 'Tuned',
+          provider: 'claude',
+          usage: { inputTokens: 1, outputTokens: 1, costUsd: 0 },
+          grounding: { grounded: true, unsupported: [] },
+        },
+      }),
+    }),
+  );
+
+  await page.goto(KIT);
+  await navigate(page, /Bewerbungen/);
+  await page.getByText('Nordwind Logistik AG').first().click();
+  await expect(page.locator('[data-doc-hydrated="true"]')).toBeVisible();
+
+  // The Magic-Pen button is reachable at 393 px and drives the diff.
+  await expect(page.getByTestId('pen-summary')).toBeVisible();
+  await expectNoHorizontalBodyScroll(page);
+
+  await page.getByTestId('pen-summary').click();
+  await expect(page.getByText('Vorschlag · noch nicht übernommen')).toBeVisible();
+});

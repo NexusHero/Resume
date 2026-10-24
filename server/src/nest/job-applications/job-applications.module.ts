@@ -26,6 +26,8 @@ import {
 } from '../../domain/job-application.js';
 import { JobApplicationService } from '../../services/job-application-service.js';
 import { ApplicationLetterService } from '../../services/application-letter-service.js';
+import { MagicPenService } from '../../services/magic-pen-service.js';
+import { penExperienceSchema, type PenExperienceInput } from '../../domain/magic-pen.js';
 import type { LlmFeatureRunner } from '../../services/llm-feature-runner.js';
 import type { JobApplicationRepository } from '../../ports/job-application-repository.js';
 import type { JobPostingRepository } from '../../ports/job-posting-repository.js';
@@ -48,6 +50,7 @@ import {
   LLM_FEATURE_RUNNER,
   CLOCK,
   ID_GENERATOR,
+  MAGIC_PEN_SERVICE,
 } from '../tokens.js';
 
 /**
@@ -63,6 +66,7 @@ export class JobApplicationsController {
   constructor(
     @Inject(JOB_APPLICATION_SERVICE) private readonly service: JobApplicationService,
     @Inject(APPLICATION_LETTER_SERVICE) private readonly letterService: ApplicationLetterService,
+    @Inject(MAGIC_PEN_SERVICE) private readonly magicPen: MagicPenService,
   ) {}
 
   @Get()
@@ -114,6 +118,71 @@ export class JobApplicationsController {
     @Param('id') id: string,
   ) {
     return this.letterService.generate(scope, userId, id);
+  }
+
+  @Post(':id/pen/headline')
+  @HttpCode(200)
+  @RequiresAi()
+  @UseGuards(AiRateLimitGuard)
+  async penHeadline(
+    @CurrentScope() scope: string,
+    @CurrentUserId() userId: string,
+    @Param('id') id: string,
+  ) {
+    return { suggestion: await this.magicPen.rewriteSection(scope, userId, id, 'headline') };
+  }
+
+  @Post(':id/pen/summary')
+  @HttpCode(200)
+  @RequiresAi()
+  @UseGuards(AiRateLimitGuard)
+  async penSummary(
+    @CurrentScope() scope: string,
+    @CurrentUserId() userId: string,
+    @Param('id') id: string,
+  ) {
+    return { suggestion: await this.magicPen.rewriteSection(scope, userId, id, 'summary') };
+  }
+
+  @Post(':id/pen/experience')
+  @HttpCode(200)
+  @RequiresAi()
+  @UseGuards(AiRateLimitGuard)
+  async penExperience(
+    @CurrentScope() scope: string,
+    @CurrentUserId() userId: string,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(penExperienceSchema)) input: PenExperienceInput,
+  ) {
+    return {
+      suggestion: await this.magicPen.rewriteSection(scope, userId, id, 'experienceBullets', {
+        experienceIndex: input.experienceIndex,
+      }),
+    };
+  }
+
+  @Post(':id/pen/skills')
+  @HttpCode(200)
+  @RequiresAi()
+  @UseGuards(AiRateLimitGuard)
+  async penSkills(
+    @CurrentScope() scope: string,
+    @CurrentUserId() userId: string,
+    @Param('id') id: string,
+  ) {
+    return { suggestion: await this.magicPen.rewriteSection(scope, userId, id, 'skills') };
+  }
+
+  @Post(':id/pen/all')
+  @HttpCode(200)
+  @RequiresAi()
+  @UseGuards(AiRateLimitGuard)
+  async penAll(
+    @CurrentScope() scope: string,
+    @CurrentUserId() userId: string,
+    @Param('id') id: string,
+  ) {
+    return this.magicPen.rewriteAll(scope, userId, id);
   }
 
   @Post(':id/status')
@@ -178,6 +247,30 @@ export class JobApplicationsController {
           jobPostingRepository,
         }),
       inject: [LLM_FEATURE_RUNNER, JOB_APPLICATION_REPOSITORY, JOB_POSTING_REPOSITORY],
+    },
+    {
+      provide: MAGIC_PEN_SERVICE,
+      useFactory: (
+        llmFeatureRunner: LlmFeatureRunner,
+        jobApplicationRepository: JobApplicationRepository,
+        jobPostingRepository: JobPostingRepository,
+        documentRepository: DocumentRepository,
+        applicationLetterService: ApplicationLetterService,
+      ) =>
+        new MagicPenService({
+          llmFeatureRunner,
+          jobApplicationRepository,
+          jobPostingRepository,
+          documentRepository,
+          applicationLetterService,
+        }),
+      inject: [
+        LLM_FEATURE_RUNNER,
+        JOB_APPLICATION_REPOSITORY,
+        JOB_POSTING_REPOSITORY,
+        DOCUMENT_REPOSITORY,
+        APPLICATION_LETTER_SERVICE,
+      ],
     },
   ],
   exports: [JOB_APPLICATION_SERVICE, APPLICATION_LETTER_SERVICE],

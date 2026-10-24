@@ -22,13 +22,17 @@ const ED_ACCENTS = [
   { accent: '#7C3AED', strong: '#6d28d9', onDark: '#c4b5fd' },
 ];
 
-/* A titled block in the form column, with an optional add action. */
-function FormGroup({ title, children, onAdd }) {
+/* A titled block in the form column, with an optional add action and/or a
+   leading section action (the Magic-Pen button). */
+function FormGroup({ title, children, onAdd, action }) {
   return (
     <div style={{ marginBottom: '22px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '11px' }}>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>{title}</span>
-        {onAdd && <ED.IconButton icon="plus" label="Hinzufügen" variant="ghost" size="sm" onClick={onAdd} />}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          {action}
+          {onAdd && <ED.IconButton icon="plus" label="Hinzufügen" variant="ghost" size="sm" onClick={onAdd} />}
+        </div>
       </div>
       {children}
     </div>
@@ -39,7 +43,7 @@ function FormGroup({ title, children, onAdd }) {
    editor passes a reduced `tools` set so no base-write path exists from it. */
 const DEFAULT_TOOLS = ['import', 'ats', 'pitch', 'outreach', 'translate', 'pdf', 'ai'];
 
-function Editor({ talent, onClose, onOpenSettings, getDocuments, saveDocuments, renderPreviewHtml, tools, exportPdf }) {
+function Editor({ talent, onClose, onOpenSettings, getDocuments, saveDocuments, renderPreviewHtml, tools, exportPdf, pen }) {
   /* ---- Identity & persistence flags first — used by every handler below.
      The pinned "me" profile has no server row, so it stays local-only. ---- */
   const talentId = talent.id;
@@ -177,6 +181,86 @@ function Editor({ talent, onClose, onOpenSettings, getDocuments, saveDocuments, 
     setPending(null);
   };
   const cancelAI = () => { setPending(null); setAiError(null); };
+
+  /* ---- Magic Pen (ADR-0060): per-section rewrite of the copy. The `pen` prop
+     is absent in the talent editor (no base-write path); the application editor
+     passes handlers that call the per-section routes. A suggestion is staged as
+     a before/after diff and only written on "Übernehmen" — the existing autosave
+     then persists the copy (never the base CV). ---- */
+  const [penPending, setPenPending] = React.useState(null); // { key, index, suggestion }
+  const [penBusy, setPenBusy] = React.useState(null); // { key, index } while running
+  const [penError, setPenError] = React.useState(null);
+  const [penConfirm, setPenConfirm] = React.useState(false);
+  const hasPen = (key) => !!(pen && typeof pen[key] === 'function');
+
+  const runPen = async (key, index) => {
+    if (!hasPen(key)) return;
+    if (aiReady === false) {
+      setPenError('KI nicht eingerichtet — konfiguriere den zentralen Schlüssel in den Einstellungen.');
+      return;
+    }
+    setPenBusy({ key, index });
+    setPenError(null);
+    setPenPending(null);
+    setPenConfirm(false);
+    try {
+      const suggestion = await pen[key](index);
+      setPenPending({ key, index, suggestion });
+    } catch (e) {
+      setPenError(
+        e && e.code === 'ai-not-configured'
+          ? 'KI nicht eingerichtet — richte einen Server-Key ein.'
+          : (e && e.message) || 'Dieser Abschnitt konnte nicht angepasst werden. Bitte versuche es erneut.',
+      );
+    } finally {
+      setPenBusy(null);
+    }
+  };
+
+  // Writing a suggestion only touches the copy's local form state → autosave.
+  const applyPen = () => {
+    const { key, index, suggestion } = penPending || {};
+    if (!suggestion) return;
+    if (key === 'headline') setContact((s) => ({ ...s, role: suggestion.after }));
+    else if (key === 'summary') setResume((s) => ({ ...s, summary: suggestion.after }));
+    else if (key === 'experience')
+      setResume((s) => {
+        const e = [...s.experience];
+        e[index] = { ...e[index], bullets: suggestion.after };
+        return { ...s, experience: e };
+      });
+    else if (key === 'skills') setResume((s) => ({ ...s, skillGroups: suggestion.after }));
+    setPenPending(null);
+    setPenConfirm(false);
+  };
+
+  const discardPen = () => { setPenPending(null); setPenConfirm(false); };
+
+  const penViolation =
+    penPending && penPending.suggestion.grounding && !penPending.suggestion.grounding.grounded;
+
+  // The per-section diff `kind` derives from the suggestion's own section value.
+  const penDiffKind = (section) =>
+    section === 'skills' ? 'skills' : section === 'experienceBullets' ? 'array' : 'text';
+
+  const penButton = (key, index, label) => {
+    if (!hasPen(key)) return null;
+    const busy = penBusy && penBusy.key === key && penBusy.index === index;
+    return (
+      <button
+        type="button"
+        onClick={() => runPen(key, index)}
+        disabled={aiReady === false || !!busy}
+        aria-label={label}
+        data-testid={index == null ? `pen-${key}` : `pen-${key}-${index}`}
+        title={aiReady === false ? 'KI nicht eingerichtet' : label}
+        style={{ appearance: 'none', border: '1px solid var(--border-strong)', background: 'transparent', borderRadius: 'var(--radius-sm)', cursor: aiReady === false || busy ? 'default' : 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '26px', height: '26px', color: 'var(--text-soft)', opacity: aiReady === false || busy ? 0.5 : 1 }}
+      >
+        <ED.Icon name={busy ? 'clock' : 'edit'} size={13} />
+      </button>
+    );
+  };
+
 
   /* live CV customization: template, accent colour, font family, size */
   const [cfg, setCfg] = React.useState({ template: 'classic', accent: '#2A6FDB', strong: '#1d4ed8', onDark: '#7aa7f5', font: 'var(--font-display)', size: 1 });
@@ -535,8 +619,52 @@ function Editor({ talent, onClose, onOpenSettings, getDocuments, saveDocuments, 
                 )}
               </div>
             )}
+            {penError && !penBusy && (
+              <div role="alert" style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', border: '1px solid var(--danger)', background: 'var(--danger-soft)', borderRadius: 'var(--radius-md)', padding: '10px 13px', marginBottom: '16px', fontSize: '12.5px', color: 'var(--danger)' }}>
+                <ED.Icon name="alertTriangle" size={14} style={{ flexShrink: 0, marginTop: '1px' }} />
+                <div style={{ flex: 1 }}>{penError}</div>
+              </div>
+            )}
+            {penPending && (
+              <div style={{ border: '1px dashed var(--accent-border)', borderRadius: 'var(--radius-md)', overflow: 'hidden', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '8px 12px', background: 'var(--accent-soft)', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 600, color: 'var(--accent-strong)' }}>
+                  <ED.Icon name="edit" size={12} />Vorschlag · noch nicht übernommen
+                  {penPending.suggestion.provider && (
+                    <span style={{ marginLeft: 'auto' }}><window.ProviderBadge provider={penPending.suggestion.provider} usage={penPending.suggestion.usage} /></span>
+                  )}
+                </div>
+                <div style={{ padding: '12px 13px' }}>
+                  <window.EditorDiff
+                    kind={penDiffKind(penPending.suggestion.section)}
+                    before={penPending.suggestion.before}
+                    after={penPending.suggestion.after}
+                    unsupported={penPending.suggestion.grounding && penPending.suggestion.grounding.unsupported}
+                  />
+                  {penViolation && <window.GroundingWarning grounding={penPending.suggestion.grounding} />}
+                  {penConfirm && (
+                    <div role="alert" style={{ marginTop: '10px', border: '1px solid var(--warning-border, #e6b800)', background: 'var(--warning-soft, rgba(230,184,0,0.10))', borderRadius: 'var(--radius-md)', padding: '8px 11px', fontSize: '12.5px', color: 'var(--text-body)' }}>
+                      Dieser Vorschlag enthält nicht belegte Angaben. Trotzdem übernehmen?
+                    </div>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: '8px', padding: '10px 13px', borderTop: '1px solid var(--border)', background: 'var(--surface-subtle)' }}>
+                  {penViolation && penConfirm ? (
+                    <>
+                      <button onClick={applyPen} style={{ appearance: 'none', cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-sm)', padding: '6px 12px' }}><ED.Icon name="check" size={13} />Trotzdem übernehmen</button>
+                      <button onClick={() => setPenConfirm(false)} style={{ appearance: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-sm)', padding: '6px 12px' }}>Abbrechen</button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => (penViolation ? setPenConfirm(true) : applyPen())} style={{ appearance: 'none', cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-sm)', padding: '6px 12px' }}><ED.Icon name="check" size={13} />Übernehmen</button>
+                      <button onClick={discardPen} style={{ appearance: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-sm)', padding: '6px 12px' }}><ED.Icon name="x" size={13} />Verwerfen</button>
+                      <button onClick={() => runPen(penPending.key, penPending.index)} style={{ appearance: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-sm)', padding: '6px 12px' }}><ED.Icon name="clock" size={13} />Neu</button>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
             {/* shared contact */}
-            <FormGroup title="Kontakt / Kopfzeile">
+            <FormGroup title="Kontakt / Kopfzeile" action={penButton('headline', undefined, 'Headline anpassen')}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <ED.Input label="Name" value={contact.name} onChange={(e) => setC('name', e.target.value)} wrapStyle={{ gridColumn: '1 / -1' }} />
                 <ED.Input label="Position" value={contact.role} onChange={(e) => setC('role', e.target.value)} wrapStyle={{ gridColumn: '1 / -1' }} />
@@ -560,7 +688,7 @@ function Editor({ talent, onClose, onOpenSettings, getDocuments, saveDocuments, 
 
             {doc === 'lebenslauf' ? (
               <>
-                <FormGroup title="Kurzprofil">
+                <FormGroup title="Kurzprofil" action={penButton('summary', undefined, 'Profil anpassen')}>
                   <ED.Textarea rows={4} value={resume.summary} onChange={(e) => setResume((s) => ({ ...s, summary: e.target.value }))} />
                 </FormGroup>
 
@@ -578,7 +706,8 @@ function Editor({ talent, onClose, onOpenSettings, getDocuments, saveDocuments, 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {resume.experience.map((e, i) => (
                       <div key={i} style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '12px', background: 'var(--surface-subtle)', display: 'flex', flexDirection: 'column', gap: '9px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '-4px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '6px', marginBottom: '-4px' }}>
+                          {penButton('experience', i, 'Station anpassen')}
                           <ED.IconButton icon="trash" label="Entfernen" variant="ghost" size="sm" onClick={() => delExp(i)} />
                         </div>
                         <ED.Input label="Position" value={e.role} onChange={(ev) => setExp(i, 'role', ev.target.value)} />
@@ -589,6 +718,20 @@ function Editor({ talent, onClose, onOpenSettings, getDocuments, saveDocuments, 
                         <ED.Textarea label="Aufgaben (eine pro Zeile)" rows={3} value={e.bullets.join('\n')} onChange={(ev) => setExp(i, 'bullets', ev.target.value.split('\n'))} />
                       </div>
                     ))}
+                  </div>
+                </FormGroup>
+
+                <FormGroup title="Skills" action={penButton('skills', undefined, 'Skills anpassen')}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {(resume.skillGroups || []).map((g, i) => (
+                      <div key={i} style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '12px', background: 'var(--surface-subtle)' }}>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '6px' }}>{g.label || 'Skills'}</div>
+                        <div style={{ fontSize: '12.5px', color: 'var(--text-soft)' }}>{(g.items || []).join(', ')}</div>
+                      </div>
+                    ))}
+                    {(!resume.skillGroups || resume.skillGroups.length === 0) && (
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic' }}>Keine Skills hinterlegt.</div>
+                    )}
                   </div>
                 </FormGroup>
 

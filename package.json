@@ -81,6 +81,7 @@
     "@types/swagger-ui-dist": "^3.30.6",
     "@vitest/coverage-v8": "^4.1.9",
     "axe-core": "^4.12.1",
+    "diff": "^9.0.0",
     "eslint": "^10.6.0",
     "globals": "^17.7.0",
     "jest": "^30.4.2",

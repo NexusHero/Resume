@@ -115,3 +115,4 @@ export const JOB_POSTING_SERVICE = Symbol('JobPostingService');
 export const JOB_POSTING_EXTRACT_SERVICE = Symbol('JobPostingExtractService');
 export const JOB_APPLICATION_SERVICE = Symbol('JobApplicationService');
 export const APPLICATION_LETTER_SERVICE = Symbol('ApplicationLetterService');
+export const MAGIC_PEN_SERVICE = Symbol('MagicPenService');

@@ -1505,7 +1505,16 @@ test.describe('Bewerbungen (Phase 2)', () => {
     },
     resume: {
       summary: 'Basis summary.',
-      experience: [],
+      experience: [
+        {
+          role: 'Backend Engineer',
+          company: 'Acme',
+          period: '2018–2022',
+          location: '',
+          bullets: ['Built APIs'],
+          skills: [],
+        },
+      ],
       education: [],
       skillGroups: [],
       rawText: 'BASIS-RAW',
@@ -1560,6 +1569,7 @@ test.describe('Bewerbungen (Phase 2)', () => {
     const state = {
       applications: [] as ReturnType<typeof application>[],
       basePuts: [] as string[],
+      copyPuts: [] as string[],
     };
     await page.route('**/api/v1/settings/workspace', (route) =>
       route.fulfill({
@@ -1632,6 +1642,7 @@ test.describe('Bewerbungen (Phase 2)', () => {
       const app = state.applications.find((a) => a.id === id);
       const body = { documents: (app && app.documents) || application('x').documents };
       if (route.request().method() === 'PUT') {
+        state.copyPuts.push(route.request().postData() || '');
         const put = JSON.parse(route.request().postData() || '{}');
         return route.fulfill({
           contentType: 'application/json',
@@ -1682,6 +1693,44 @@ test.describe('Bewerbungen (Phase 2)', () => {
               inAdLanguage: true,
             },
           },
+        }),
+      }),
+    );
+    const penSuggestion = (section: string, over: Record<string, unknown> = {}) => ({
+      section,
+      before:
+        section === 'experienceBullets'
+          ? ['Built APIs']
+          : section === 'skills'
+            ? [{ label: 'Sprachen', items: ['Go'] }]
+            : 'Old',
+      after:
+        section === 'experienceBullets'
+          ? ['Built resilient APIs']
+          : section === 'skills'
+            ? [{ label: 'Sprachen', items: ['Go', 'Rust'] }]
+            : 'Tuned',
+      provider: 'claude',
+      usage: { inputTokens: 10, outputTokens: 20, costUsd: 0.0001 },
+      grounding: { grounded: true, unsupported: [] },
+      ...over,
+    });
+    for (const section of ['headline', 'summary', 'skills']) {
+      await page.route(`**/api/v1/job-applications/*/pen/${section}`, (route) =>
+        route.fulfill({
+          contentType: 'application/json',
+          body: JSON.stringify({ suggestion: penSuggestion(section) }),
+        }),
+      );
+    }
+    await page.route('**/api/v1/job-applications/*/pen/experience', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          suggestion: penSuggestion('experienceBullets', {
+            experienceIndex: 0,
+            station: { role: 'Backend Engineer', company: 'Acme', period: '2018–2022' },
+          }),
         }),
       }),
     );
@@ -1807,5 +1856,117 @@ test.describe('Bewerbungen (Phase 2)', () => {
       .getByRole('button', { name: /^Bewerbungen$/ })
       .click();
     await expect(page.getByRole('tab', { name: 'Pipeline' })).toBeVisible();
+  });
+
+  test.describe('Magic Pen (Phase 3)', () => {
+    async function openApplication(page: import('@playwright/test').Page) {
+      await openPosting(page);
+      await page.getByRole('button', { name: 'Bewerbung erstellen' }).click();
+      await page.getByRole('button', { name: /Tobias Wirth/ }).click();
+      await expect(page.locator('[data-doc-hydrated="true"]')).toBeVisible();
+    }
+
+    test('MagicPenFlow_PerSection_ShowsDiffAndAcceptWritesCopy', async ({ page }) => {
+      const state = await mockBewerbungen(page, { vermittlung: true });
+      await openApplication(page);
+
+      await page.getByTestId('pen-summary').click();
+      await expect(page.getByText('Vorschlag · noch nicht übernommen')).toBeVisible();
+      // The before/after diff marks the change (the browser-side jsdiff renderer).
+      await expect(page.locator('[data-testid="editor-diff"] ins').first()).toBeVisible();
+
+      await page.getByRole('button', { name: 'Übernehmen' }).click();
+      await expect.poll(() => state.copyPuts.length).toBeGreaterThan(0);
+      // Accept writes only the copy, never the base CV (AK-2.3/3.1).
+      expect(state.basePuts).toHaveLength(0);
+    });
+
+    test('MagicPenFlow_BaseUnchanged_AfterAccept', async ({ page }) => {
+      const state = await mockBewerbungen(page, { vermittlung: true });
+      await openApplication(page);
+
+      await page.getByTestId('pen-summary').click();
+      await expect(page.getByText('Vorschlag · noch nicht übernommen')).toBeVisible();
+      await page.getByRole('button', { name: 'Übernehmen' }).click();
+
+      // The base CV stays byte-identical: no write to the talent documents route.
+      expect(state.basePuts).toHaveLength(0);
+    });
+
+    test('MagicPenFlow_GroundingWarning_BlocksUnreviewedAccept', async ({ page }) => {
+      await mockBewerbungen(page, { vermittlung: true });
+      await page.route('**/api/v1/job-applications/*/pen/summary', (route) =>
+        route.fulfill({
+          contentType: 'application/json',
+          body: JSON.stringify({
+            suggestion: {
+              section: 'summary',
+              before: 'Old',
+              after: 'I use Kubernetes.',
+              provider: 'claude',
+              usage: { inputTokens: 10, outputTokens: 20, costUsd: 0.0001 },
+              grounding: { grounded: false, unsupported: [{ kind: 'skill', text: 'Kubernetes' }] },
+            },
+          }),
+        }),
+      );
+      await openApplication(page);
+
+      await page.getByTestId('pen-summary').click();
+      await expect(page.getByText(/nicht belegte Angabe/)).toBeVisible();
+
+      await page.getByRole('button', { name: 'Übernehmen' }).click();
+      // The explicit "Trotzdem übernehmen" confirm appears (AK-3.4).
+      await expect(page.getByRole('button', { name: 'Trotzdem übernehmen' })).toBeVisible();
+    });
+
+    test('MagicPenFlow_AllesAnpassen_ShowsProgressAndAggregatedDiff', async ({ page }) => {
+      const state = await mockBewerbungen(page, { vermittlung: true });
+      await openApplication(page);
+
+      await page.getByRole('button', { name: 'Alles für diese Stelle anpassen' }).click();
+      // The aggregate tiles render with per-section accept buttons (AK-3.5).
+      await expect(page.getByText('Alles anpassen')).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Übernehmen' }).first()).toBeVisible();
+
+      // Accept one section individually → the copy is written (never the base).
+      // `.evaluate` bypasses the sticky app banner that can cover the tile row.
+      await page
+        .getByRole('button', { name: 'Übernehmen' })
+        .first()
+        .evaluate((el) => (el as HTMLButtonElement).click());
+      await expect.poll(() => state.copyPuts.length).toBeGreaterThan(0);
+      expect(state.basePuts).toHaveLength(0);
+    });
+
+    test('MagicPenFlow_AllesAnpassen_TileGrounding_RequiresConfirm', async ({ page }) => {
+      await mockBewerbungen(page, { vermittlung: true });
+      // One fan-out section (Profil) violates grounding.
+      await page.route('**/api/v1/job-applications/*/pen/summary', (route) =>
+        route.fulfill({
+          contentType: 'application/json',
+          body: JSON.stringify({
+            suggestion: {
+              section: 'summary',
+              before: 'Old',
+              after: 'I use Kubernetes.',
+              provider: 'claude',
+              usage: { inputTokens: 10, outputTokens: 20, costUsd: 0.0001 },
+              grounding: { grounded: false, unsupported: [{ kind: 'skill', text: 'Kubernetes' }] },
+            },
+          }),
+        }),
+      );
+      await openApplication(page);
+
+      await page.getByRole('button', { name: 'Alles für diese Stelle anpassen' }).click();
+      await expect(page.getByText(/nicht belegte Angabe/)).toBeVisible();
+
+      // The violating tile's accept requires the explicit confirm step (OQ6).
+      await page
+        .getByTestId('all-accept-summary')
+        .evaluate((el) => (el as HTMLButtonElement).click());
+      await expect(page.getByText('Trotzdem übernehmen')).toBeVisible();
+    });
   });
 });

@@ -15,7 +15,7 @@ unberührt.
 Zwei Kräfte, die die naive Lösung („bestehenden `tailorForMandate`/`suggest`
 auf die Kopie zeigen lassen“) falsch machen:
 
-1. **Die Kopie ist keine Faktenquelle.** Sie ist eine *Arbeitsfassung*: Der Nutzer
+1. **Die Kopie ist keine Faktenquelle.** Sie ist eine _Arbeitsfassung_: Der Nutzer
    kann sie manuell editieren oder einen früheren Vorschlag übernommen haben. Eine
    dort bereits eingeschleppte erfundene Firma/Zahl/Skill würde als „grounded“
    durchgehen, sobald der Grounding-Check gegen die Kopie läuft (heute:
@@ -25,7 +25,7 @@ auf die Kopie zeigen lassen“) falsch machen:
    **Basis-CV** laufen, nicht gegen die Kopie. (Der Anschreiben-Slot ist bewusst
    die Ausnahme, siehe Decision 2/5.)
 2. **AK-3.2/3.3 verlangen mehr als ADR-0009 leistet.** ADR-0009 fängt bewusst nur
-   zwei hochsignifikante Claim-Arten: *Zahlen mit Einheit* und *bekannte Skills*.
+   zwei hochsignifikante Claim-Arten: _Zahlen mit Einheit_ und _bekannte Skills_.
    AK-3.2 verbietet explizit auch das Erfinden von **Arbeitgebern, Daten, Titeln und
    Abschlüssen**; AK-3.3 misst gegen das echte Modell „0 durchgelassene erfundene
    Arbeitgeber, Daten oder Abschlüsse“. Der bestehende `checkGrounding` kann diese
@@ -59,7 +59,7 @@ auf die Kopie zeigen lassen“) falsch machen:
    bekommt die **unveränderlichen Basis-Fakten** als geschlossenen Kontext (für
    `experienceBullets` die Station `role`/`company`/`period`; für `headline`/
    `summary` die Rollen/Firmen/Ausbildungen; für `skills` die vorhandenen Skills)
-   und die Anweisung, nur den *editierbaren* Anteil umzuformulieren. Erfindungen
+   und die Anweisung, nur den _editierbaren_ Anteil umzuformulieren. Erfindungen
    werden damit gar nicht erst nahegelegt, und die Verletzung ist deterministisch
    erkennbar.
 
@@ -73,18 +73,18 @@ auf die Kopie zeigen lassen“) falsch machen:
    - `degree` — bekannte Abschluss-Tokens (Bachelor, Master, Diplom, MBA, Dr., PhD,
      M.Sc., B.Sc., „Ausbildung“, „Studium“, …), die in keiner `education.degree` des
      Basis-CV belegt sind.
-   Arbeitgeber-/Titel-Erfindungen werden primär durch die strukturelle Verankerung
-   (Punkt 3) verhindert; zusätzlich prüft die nächtliche AK-3.3-Suite gegen das
-   echte Modell und stimmt bei Bedarf nach. Eine weitergehende `employer`-Erkennung
-   bleibt bewusst außen vor (ADR-0009: generische Entity-Erkennung ist im Deutschen
-   reines Rauschen) und ist eine mögliche, lokal revidierbare Vertiefung.
+     Arbeitgeber-/Titel-Erfindungen werden primär durch die strukturelle Verankerung
+     (Punkt 3) verhindert; zusätzlich prüft die nächtliche AK-3.3-Suite gegen das
+     echte Modell und stimmt bei Bedarf nach. Eine weitergehende `employer`-Erkennung
+     bleibt bewusst außen vor (ADR-0009: generische Entity-Erkennung ist im Deutschen
+     reines Rauschen) und ist eine mögliche, lokal revidierbare Vertiefung.
 
 5. **Der Abschnitt „Anschreiben“ nutzt das bestehende `applicationLetter` weiter**
    (ADR-0059, FR-84/85): voller Anzeigentext und formale Checks
    (`checkApplicationLetter`) sind bereits vorhanden. **Der Letter groundet gegen die
    Kopie, nicht gegen den Basis-CV** (Status quo aus Phase 2,
    `groundingSource(application.documents)`): das Anschreiben entsteht aus der
-   *Arbeitsfassung*, die der Nutzer bereits für genau diese Stelle editiert hat —
+   _Arbeitsfassung_, die der Nutzer bereits für genau diese Stelle editiert hat —
    eine dort getroffene Formulierung ist legitimer Teil der Arbeitsfassung und kein
    „erfundener Fakt“, der gegen den Basis-CV zu prüfen wäre. Der Basis-CV enthält
    ohnehin **kein** Anschreiben als Faktenkanon (nur das Kopie-`letter` ist die

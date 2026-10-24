@@ -712,6 +712,60 @@ const RecruitApi = {
     );
     return data.letter;
   },
+  async penHeadline(id, signal) {
+    await requireAi();
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/job-applications/${encodeURIComponent(id)}/pen/headline`, {
+        method: 'POST',
+        signal,
+      }),
+    );
+    return data.suggestion;
+  },
+  async penSummary(id, signal) {
+    await requireAi();
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/job-applications/${encodeURIComponent(id)}/pen/summary`, {
+        method: 'POST',
+        signal,
+      }),
+    );
+    return data.suggestion;
+  },
+  async penExperience(id, experienceIndex, signal) {
+    await requireAi();
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/job-applications/${encodeURIComponent(id)}/pen/experience`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ experienceIndex }),
+        signal,
+      }),
+    );
+    return data.suggestion;
+  },
+  async penSkills(id, signal) {
+    await requireAi();
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/job-applications/${encodeURIComponent(id)}/pen/skills`, {
+        method: 'POST',
+        signal,
+      }),
+    );
+    return data.suggestion;
+  },
+  // `penAll` is the single-request aggregate for the Phase-5 agent; the Phase-3
+  // UI fächert clientseitig auf und ruft diese Methode nicht auf.
+  async penAll(id, signal) {
+    await requireAi();
+    const data = await _jsonOrThrow(
+      await fetch(`${RECRUIT_API_BASE}/job-applications/${encodeURIComponent(id)}/pen/all`, {
+        method: 'POST',
+        signal,
+      }),
+    );
+    return data.sections;
+  },
   async changeJobApplicationStatus(id, status) {
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/job-applications/${encodeURIComponent(id)}/status`, {

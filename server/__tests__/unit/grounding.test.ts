@@ -93,5 +93,90 @@ describe('grounding', () => {
       const r = checkGrounding('Quote von 50 % erreicht.', 'Ergebnis: 50 % Steigerung.');
       expect(r.grounded).toBe(true);
     });
+
+    it('CheckGrounding_FabricatedYear_Flagged', () => {
+      const src = groundingSource(
+        docs({
+          experience: [
+            {
+              role: 'Dev',
+              company: 'Acme',
+              period: '2014–2018',
+              location: '',
+              bullets: [],
+              skills: [],
+            },
+          ],
+        }),
+      );
+      const r = checkGrounding('Seit 2019 im Unternehmen tätig.', src);
+      expect(r.unsupported.some((u) => u.kind === 'year' && u.text === '2019')).toBe(true);
+    });
+
+    it('CheckGrounding_YearInsideBasePeriodRange_NotFlagged', () => {
+      const src = groundingSource(
+        docs({
+          experience: [
+            {
+              role: 'Dev',
+              company: 'Acme',
+              period: '2014–2018',
+              location: '',
+              bullets: [],
+              skills: [],
+            },
+          ],
+        }),
+      );
+      const r = checkGrounding('Zwischen 2016 und 2017 verantwortlich.', src);
+      expect(r.unsupported.filter((u) => u.kind === 'year')).toEqual([]);
+    });
+
+    it('CheckGrounding_YearInOversizedRange_Flagged', () => {
+      // A range wider than 50 years only evidences its endpoints (defensive cap).
+      const src = groundingSource(
+        docs({
+          experience: [
+            {
+              role: 'Dev',
+              company: 'Acme',
+              period: '1900–2099',
+              location: '',
+              bullets: [],
+              skills: [],
+            },
+          ],
+        }),
+      );
+      const r = checkGrounding('Started in 1950.', src);
+      expect(r.unsupported.some((u) => u.kind === 'year' && u.text === '1950')).toBe(true);
+    });
+
+    it('CheckGrounding_FabricatedDegree_Flagged', () => {
+      const src = groundingSource(
+        docs({
+          education: [{ degree: 'Bachelor of Science', school: 'TU', period: '2010', note: '' }],
+        }),
+      );
+      const r = checkGrounding('Abschluss: Master of Science.', src);
+      expect(r.unsupported.some((u) => u.kind === 'degree' && u.text === 'Master')).toBe(true);
+    });
+
+    it('CheckGrounding_DegreeEvidencedByBase_NotFlagged', () => {
+      const src = groundingSource(
+        docs({
+          education: [{ degree: 'Bachelor of Science', school: 'TU', period: '2010', note: '' }],
+        }),
+      );
+      const r = checkGrounding('Abschluss: Bachelor of Science.', src);
+      expect(r.unsupported.filter((u) => u.kind === 'degree')).toEqual([]);
+    });
+
+    it('CheckGrounding_ExistingNumberAndSkill_StillPass', () => {
+      const src = groundingSource(docs());
+      const r = checkGrounding('7 Jahre Erfahrung mit React.', src);
+      expect(r.grounded).toBe(true);
+      expect(r.unsupported).toEqual([]);
+    });
   });
 });

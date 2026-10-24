@@ -29,6 +29,14 @@ export const MAX_TOKENS = {
   postingExtract: 600,
   // A 250–400 word cover letter plus greeting/closing; 900 leaves headroom.
   applicationLetter: 900,
+  // Magic Pen: a single professional headline is a one-liner; 80 is ample.
+  penHeadline: 80,
+  // Magic Pen: a profile summary is 2–3 sentences; 400 leaves comfortable headroom.
+  penSummary: 400,
+  // Magic Pen: one station's bullet list (usually 3–6 bullets) fits in 600.
+  penExperienceBullets: 600,
+  // Magic Pen: the full re-grouped skill list (labels + items) fits in 600.
+  penSkills: 600,
 } as const;
 
 /** A prompt pair produced by one of the domain prompt builders. */

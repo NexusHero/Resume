@@ -1,0 +1,52 @@
+@startuml 06_seq_einfrieren
+title Einfrier-Bestätigung (Dokument-/Anhang-Save ab „versendet") — FR-97, ADR-0061
+
+skinparam shadowing false
+autonumber
+
+actor Recruiter
+participant "BewerbungsEditor\n(unfrozen-Merker)" as UI
+participant "JobApplicationsController" as Ctrl
+participant "JobApplicationService" as Svc
+participant "JobApplicationRepository" as AppRepo
+
+Recruiter -> UI : Editor bearbeitet die Kopie (Autosave) bzw. Anhänge speichern
+activate UI
+UI -> Ctrl : PUT /job-applications/:id/documents\n(oder /attachments) — ohne unfreeze
+activate Ctrl
+Ctrl -> Svc : saveDocuments(scope, id, input, unfreeze=false)
+activate Svc
+Svc -> AppRepo : findById(scope, id)
+AppRepo --> Svc : application (status ≠ 'draft')
+alt status !== 'draft' && !unfreeze
+  Svc --> Ctrl : FrozenError → 409 frozen
+  deactivate Svc
+  Ctrl --> UI : 409 problem+json (type frozen)
+  UI -> UI : hält den Payload zurück,\nzeigt Bestätigungs-Dialog
+  alt Ablehnung
+    UI -> UI : unfrozen bleibt false, Payload verworfen,\nEditor lädt die persistierte Kopie neu
+  else Bestätigung
+    UI -> UI : setUnfrozen(true)
+    UI -> Ctrl : PUT …?unfreeze=1 (zurückgehaltener Payload)
+    activate Ctrl
+    Ctrl -> Svc : saveDocuments(…, unfreeze=true)
+    activate Svc
+    Svc -> Svc : Note-Dedup: letzter History-Eintrag ohne note\n→ append { status, at, note: '…nach Einfrieren geändert' }
+    Svc -> AppRepo : update(application + documents/Anhänge + updatedAt)
+    AppRepo --> Svc : ok
+    Svc --> Ctrl : { documents } | { jobApplication }
+    deactivate Svc
+    Ctrl --> UI : 200
+    deactivate Ctrl
+  end
+else status === 'draft'
+  Svc -> AppRepo : update(…)
+  Svc --> Ctrl : { documents } | { jobApplication }
+  deactivate Svc
+  Ctrl --> UI : 200
+  deactivate Ctrl
+end
+UI --> Recruiter : Folge-Saves derselben Session senden automatisch ?unfreeze=1
+deactivate UI
+
+@enduml

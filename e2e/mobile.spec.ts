@@ -427,3 +427,84 @@ test('MagicPenFlowMobile_PenReachable', async ({ page }) => {
   await page.getByTestId('pen-summary').click();
   await expect(page.getByText('Vorschlag · noch nicht übernommen')).toBeVisible();
 });
+
+test('BewerbungenFlowMobile_MappeReachable', async ({ page }) => {
+  await mockSession(page);
+  await page.route('**/api/v1/job-applications', (route) => {
+    if (route.request().method() !== 'GET') return route.continue();
+    return route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify([
+        {
+          id: 'app-1',
+          ownerId: 'team',
+          jobPostingId: 'p1',
+          postingCompany: 'Nordwind Logistik AG',
+          postingTitle: 'Backend Engineer',
+          talentId: 't-api-1',
+          talentName: 'Tobias Wirth',
+          status: 'draft',
+          statusHistory: [{ status: 'draft', at: '2026-06-25T10:00:00.000Z' }],
+          documents: DOCUMENTS.documents,
+          selectedAttachmentIds: [],
+          createdAt: '2026-06-25T10:00:00.000Z',
+          updatedAt: '2026-06-25T10:00:00.000Z',
+        },
+      ]),
+    });
+  });
+  await page.route('**/api/v1/talents/t-api-1/attachments', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify([
+        {
+          id: 'att1',
+          ownerId: 'team',
+          talentId: 't-api-1',
+          name: 'Zeugnis.pdf',
+          contentType: 'application/pdf',
+          size: 1024,
+          createdAt: '2026-06-25T10:00:00.000Z',
+        },
+      ]),
+    }),
+  );
+  await page.route('**/api/v1/job-applications/app-1/documents', (route) =>
+    route.fulfill({ contentType: 'application/json', body: JSON.stringify(DOCUMENTS) }),
+  );
+  await page.route('**/api/v1/job-applications/app-1', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        jobApplication: {
+          id: 'app-1',
+          ownerId: 'team',
+          jobPostingId: 'p1',
+          postingCompany: 'Nordwind Logistik AG',
+          postingTitle: 'Backend Engineer',
+          talentId: 't-api-1',
+          talentName: 'Tobias Wirth',
+          status: 'draft',
+          statusHistory: [{ status: 'draft', at: '2026-06-25T10:00:00.000Z' }],
+          documents: DOCUMENTS.documents,
+          selectedAttachmentIds: [],
+          createdAt: '2026-06-25T10:00:00.000Z',
+          updatedAt: '2026-06-25T10:00:00.000Z',
+        },
+      }),
+    }),
+  );
+  await page.route('**/api/v1/job-applications/app-1/dossier/pdf', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/pdf', body: '%PDF-1.4' }),
+  );
+
+  await page.goto(KIT);
+  await navigate(page, /Bewerbungen/);
+  await page.getByText('Nordwind Logistik AG').first().click();
+  await expect(page.locator('[data-doc-hydrated="true"]')).toBeVisible();
+
+  // The Bewerbungsmappe download buttons are reachable at 393 px.
+  await expect(page.getByTestId('mappe-pdf')).toBeVisible();
+  await expect(page.getByTestId('mappe-zip')).toBeVisible();
+  await expectNoHorizontalBodyScroll(page);
+});

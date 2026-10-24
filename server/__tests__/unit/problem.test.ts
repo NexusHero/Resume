@@ -5,6 +5,7 @@ import { errorHandler, notFound, sendProblem } from '../../src/http/problem.js';
 import { ProblemJsonFilter } from '../../src/nest/problem-json.filter.js';
 import {
   AiNotConfiguredError,
+  FrozenError,
   InternalError,
   NoTextError,
   NotFoundError,
@@ -159,6 +160,13 @@ describe('errorHandler', () => {
       expect(res.body).toMatchObject({ status: 502, type: 'about:blank#posting-fetch' });
       expect(res.body.detail).toContain(reason);
     }
+  });
+
+  it('MapErrorToProblem_FrozenError_409Frozen', () => {
+    const res = mockRes();
+    run(new FrozenError(), res);
+    expect(res.statusCode).toBe(409);
+    expect(res.body).toMatchObject({ status: 409, type: 'about:blank#frozen', title: 'Frozen' });
   });
 
   it('Handler_HeadersAlreadySent_DelegatesToNext', () => {

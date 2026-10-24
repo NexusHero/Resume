@@ -13,6 +13,7 @@ import {
 import {
   changeJobApplicationStatusSchema,
   createJobApplicationSchema,
+  updateJobApplicationAttachmentsSchema,
 } from '../../src/domain/job-application.js';
 import { VERMITTLER_ROUTES } from '../support/route-inventory.js';
 
@@ -78,6 +79,7 @@ const CASES: Array<[string, unknown]> = [
   ['UpdateJobPostingInput', updateJobPostingSchema],
   ['CreateJobApplicationInput', createJobApplicationSchema],
   ['ChangeJobApplicationStatusInput', changeJobApplicationStatusSchema],
+  ['UpdateJobApplicationAttachmentsInput', updateJobApplicationAttachmentsSchema],
 ];
 
 describe('OpenAPI contract stays in sync with the zod boundary schemas', () => {
@@ -247,6 +249,45 @@ describe('Phase 2 OpenAPI contract (ADR-0059, Bewerbungen)', () => {
     expect(block).toContain('UpstreamProvider');
     expect(block).toContain('NotFound');
     expect(block).toContain('Unauthorized');
+  });
+});
+
+describe('Phase 4 OpenAPI contract (ADR-0061, Abschluss)', () => {
+  it('OpenApi_JobApplication_SelectedAttachmentIdsField', () => {
+    const props = openApiProps('JobApplication');
+    expect(props).toContain('selectedAttachmentIds');
+  });
+
+  it('OpenApi_JobApplicationsList_StatusQueryParam', () => {
+    const block = operationBlock('/api/v1/job-applications', 'get');
+    expect(block).toContain('name: status');
+    expect(block).toContain('JobApplicationStatus');
+  });
+
+  it('OpenApi_JobApplicationDossierRoutes_Exist', () => {
+    for (const path of [
+      '/job-applications/{id}/attachments',
+      '/job-applications/{id}/dossier/pdf',
+      '/job-applications/{id}/dossier/zip',
+    ]) {
+      expect(SPEC).toContain(`  ${path}:`);
+    }
+    for (const op of [
+      'saveJobApplicationAttachments',
+      'renderJobApplicationDossierPdf',
+      'renderJobApplicationDossierZip',
+    ]) {
+      expect(SPEC).toContain(`operationId: ${op}`);
+    }
+  });
+
+  it('OpenApi_Frozen_409', () => {
+    expect(SPEC).toContain('Frozen');
+    expect(SPEC).toContain('about:blank#frozen');
+    // The documents PUT documents the `unfreeze` query + 409.
+    const block = operationBlock('/api/v1/job-applications/:id/documents', 'put');
+    expect(block).toContain('name: unfreeze');
+    expect(block).toContain('Frozen');
   });
 });
 

@@ -319,9 +319,18 @@ export class InMemoryJobPostingRepository implements JobPostingRepository {
 
 export class InMemoryJobApplicationRepository implements JobApplicationRepository {
   applications: JobApplication[] = [];
-  async list(ownerId: string, talentId?: string): Promise<JobApplication[]> {
+  async list(
+    ownerId: string,
+    talentId?: string,
+    status?: JobApplication['status'],
+  ): Promise<JobApplication[]> {
     return this.applications
-      .filter((a) => a.ownerId === ownerId && (talentId === undefined || a.talentId === talentId))
+      .filter(
+        (a) =>
+          a.ownerId === ownerId &&
+          (talentId === undefined || a.talentId === talentId) &&
+          (status === undefined || a.status === status),
+      )
       .map((a) => ({ ...a, documents: { ...a.documents } }));
   }
   async findById(ownerId: string, id: string): Promise<JobApplication | null> {

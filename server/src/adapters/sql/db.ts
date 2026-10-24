@@ -175,6 +175,7 @@ async function runMigrationDdl(client: { query: Pool['query'] }): Promise<void> 
       created_at text NOT NULL,
       updated_at text NOT NULL
     );
+    ALTER TABLE job_applications ADD COLUMN IF NOT EXISTS selected_attachment_ids jsonb NOT NULL DEFAULT '[]';
     CREATE INDEX IF NOT EXISTS job_applications_owner_idx ON job_applications (owner_id);
     CREATE INDEX IF NOT EXISTS job_applications_owner_talent_idx ON job_applications (owner_id, talent_id);
     -- Race backstop (ADR-0059): exactly one application per (posting, talent)

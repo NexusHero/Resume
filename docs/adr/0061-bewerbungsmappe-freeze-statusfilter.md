@@ -98,8 +98,11 @@ Kopie zeigen lassen“) falsch machen:
    an (das Feld `JobApplicationStatusChange` bekommt ein optionales `note`; die
    Invariante `status === at(-1).status` bleibt, weil sich der Status nicht ändert).
    **Note-Dedup:** der Eintrag wird nur angehängt, wenn der letzte `statusHistory`-
-   Eintrag noch keinen `note` trägt — ein Eintrag pro Bestätigung/Status-Phase, kein
-   Spam durch debounced Autosave. **UI-Variante (a):** die Bestätigung gilt für die
+   Eintrag **nicht bereits denselben** `note` trägt — ein Eintrag pro
+   **Bestätigungstyp** und Status-Phase, kein Spam durch debounced Autosave.
+   Zwei unterschiedliche erzwungene Änderungen (Dokumente **und** Anhänge) nach
+   „versendet“ ergeben zwei unterscheidbare Einträge; Wiederholungen desselben
+   Typs bleiben dedupliziert. **UI-Variante (a):** die Bestätigung gilt für die
    **Editor-Session** — ein `unfrozen`-Merker lässt alle Folge-Saves desselben Editors
    `?unfreeze=1` senden (ein Dialog pro Session; Ablehnung verwirft und sendet kein
    `unfreeze`). Zurücksetzen auf „Entwurf“ (ein normaler, im Verlauf verzeichneter
@@ -140,7 +143,7 @@ Kopie zeigen lassen“) falsch machen:
   oder geschrieben — die AK-2.3-Invariante gilt weiter.
 - `selectedAttachmentIds` ist ein weiteres eingebettetes `jsonb`/JSON-Feld; die
   Migration ist additiv (fs: Lesen defaultet auf `[]`; sql: `ADD COLUMN IF NOT EXISTS
-  ... jsonb NOT NULL DEFAULT '[]'`). Kein FK — die Validierung „Anhang gehört zum
+... jsonb NOT NULL DEFAULT '[]'`). Kein FK — die Validierung „Anhang gehört zum
   Mandanten“ ist eine Service-Prüfung (Muster ADR-0059: keine Fremdschlüssel im Schema).
 - Das Einfrieren macht den Versand ehrlich: nach „versendet“ ist die Mappe
   (Dokumente + Anhang-Auswahl) nur noch bewusst und verzeichnet änderbar. Kosten: ein

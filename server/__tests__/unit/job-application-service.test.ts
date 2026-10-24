@@ -1,5 +1,5 @@
 import { JobApplicationService } from '../../src/services/job-application-service.js';
-import { NotFoundError } from '../../src/domain/errors.js';
+import { FrozenError, NotFoundError, ValidationError } from '../../src/domain/errors.js';
 import type { JobApplication } from '../../src/domain/job-application.js';
 import type { JobPosting } from '../../src/domain/job-posting.js';
 import type { Talent } from '../../src/domain/talent.js';
@@ -11,6 +11,7 @@ import {
 } from '../../src/domain/talent-documents.js';
 import {
   FixedClock,
+  InMemoryAttachmentStore,
   InMemoryDocumentRepository,
   InMemoryJobApplicationRepository,
   InMemoryJobPostingRepository,
@@ -82,16 +83,18 @@ function makeService() {
   const talents = new InMemoryTalentRepository();
   const applications = new InMemoryJobApplicationRepository();
   const documents = new InMemoryDocumentRepository();
+  const attachments = new InMemoryAttachmentStore();
   const clock = new FixedClock();
   const service = new JobApplicationService({
     jobApplicationRepository: applications,
     jobPostingRepository: postings,
     talentRepository: talents,
     documentRepository: documents,
+    attachmentStore: attachments,
     clock,
     idGenerator: new SequenceIdGenerator('app'),
   });
-  return { postings, talents, applications, documents, clock, service };
+  return { postings, talents, applications, documents, attachments, clock, service };
 }
 
 describe('JobApplicationService.create', () => {
@@ -303,5 +306,197 @@ describe('JobApplicationService.list', () => {
     expect(all).toHaveLength(2);
     const forT1 = await service.list('team', 't1');
     expect(forT1.map((a) => a.talentId)).toEqual(['t1']);
+  });
+
+  it('JobApplicationService_List_FiltersByStatus', async () => {
+    const { postings, talents, service } = makeService();
+    await postings.add(posting('p1'));
+    await postings.add(posting('p2', 'team', { company: 'Other', title: 'Other' }));
+    await talents.add(talent('t1'));
+    await talents.add(talent('t2'));
+    const a1 = (await service.create('team', { jobPostingId: 'p1', talentId: 't1' }))
+      .jobApplication;
+    await service.create('team', { jobPostingId: 'p2', talentId: 't2' });
+    await service.changeStatus('team', a1.id, 'sent');
+
+    expect((await service.list('team', undefined, 'sent')).map((a) => a.id)).toEqual([a1.id]);
+    expect(await service.list('team', undefined, 'offer')).toEqual([]);
+  });
+});
+
+describe('JobApplicationService freeze (AK-4.5)', () => {
+  const docsInput = (app: JobApplication) => ({
+    contact: app.documents.contact,
+    resume: app.documents.resume,
+    letter: app.documents.letter,
+    style: app.documents.style,
+  });
+
+  it('JobApplicationService_SaveDocuments_Draft_NotFrozen', async () => {
+    const { postings, talents, service } = makeService();
+    await postings.add(posting('p1'));
+    await talents.add(talent('t1'));
+    const app = (await service.create('team', { jobPostingId: 'p1', talentId: 't1' }))
+      .jobApplication;
+    await expect(service.saveDocuments('team', app.id, docsInput(app))).resolves.toBeTruthy();
+  });
+
+  it('JobApplicationService_SaveDocuments_Frozen_ThrowsFrozenWithoutUnfreeze', async () => {
+    const { postings, talents, service } = makeService();
+    await postings.add(posting('p1'));
+    await talents.add(talent('t1'));
+    const app = (await service.create('team', { jobPostingId: 'p1', talentId: 't1' }))
+      .jobApplication;
+    await service.changeStatus('team', app.id, 'sent');
+    await expect(service.saveDocuments('team', app.id, docsInput(app))).rejects.toBeInstanceOf(
+      FrozenError,
+    );
+  });
+
+  it('JobApplicationService_SaveDocuments_FrozenWithUnfreeze_AppendsNotedHistoryEntry', async () => {
+    const { postings, talents, service } = makeService();
+    await postings.add(posting('p1'));
+    await talents.add(talent('t1'));
+    const app = (await service.create('team', { jobPostingId: 'p1', talentId: 't1' }))
+      .jobApplication;
+    await service.changeStatus('team', app.id, 'sent');
+
+    await service.saveDocuments('team', app.id, docsInput(app), true);
+    const after = await service.get('team', app.id);
+    expect(after.statusHistory).toHaveLength(3);
+    const last = after.statusHistory[after.statusHistory.length - 1];
+    expect(last.note).toBe('Dokumente nach Einfrieren geändert');
+    expect(last.status).toBe('sent');
+  });
+
+  it('JobApplicationService_SaveDocuments_Frozen_MultipleUnfreezeSaves_SingleNote', async () => {
+    const { postings, talents, service } = makeService();
+    await postings.add(posting('p1'));
+    await talents.add(talent('t1'));
+    const app = (await service.create('team', { jobPostingId: 'p1', talentId: 't1' }))
+      .jobApplication;
+    await service.changeStatus('team', app.id, 'sent');
+
+    // Several forced saves of the same kind in the same status phase → exactly
+    // one note (no autosave spam).
+    await service.saveDocuments('team', app.id, docsInput(app), true);
+    await service.saveDocuments('team', app.id, docsInput(app), true);
+    await service.saveDocuments('team', app.id, docsInput(app), true);
+    const after = await service.get('team', app.id);
+    expect(after.statusHistory.filter((e) => e.note)).toHaveLength(1);
+  });
+
+  it('JobApplicationService_SaveDocuments_Frozen_UnfreezeDocumentsThenAttachments_TwoDistinctNotes', async () => {
+    const { postings, talents, attachments, service } = makeService();
+    await postings.add(posting('p1'));
+    await talents.add(talent('t1'));
+    const app = (await service.create('team', { jobPostingId: 'p1', talentId: 't1' }))
+      .jobApplication;
+    await attachments.add(
+      {
+        id: 'att1',
+        ownerId: 'team',
+        talentId: 't1',
+        name: 'Zeugnis.pdf',
+        contentType: 'application/pdf',
+        size: 5,
+        createdAt: '2026-06-25T10:00:00.000Z',
+      },
+      Buffer.from('%PDF-'),
+    );
+    await service.changeStatus('team', app.id, 'sent');
+
+    // Two *different* forced edits after "sent" → two distinguishable notes.
+    await service.saveDocuments('team', app.id, docsInput(app), true);
+    await service.saveAttachments('team', app.id, ['att1'], true);
+    const after = await service.get('team', app.id);
+    const notes = after.statusHistory.filter((e) => e.note).map((e) => e.note);
+    expect(notes).toEqual([
+      'Dokumente nach Einfrieren geändert',
+      'Anhänge nach Einfrieren geändert',
+    ]);
+  });
+
+  it('JobApplicationService_SaveAttachments_UpdatesSelectionAndBumpsUpdatedAt', async () => {
+    const { postings, talents, attachments, service } = makeService();
+    await postings.add(posting('p1'));
+    await talents.add(talent('t1'));
+    const app = (await service.create('team', { jobPostingId: 'p1', talentId: 't1' }))
+      .jobApplication;
+    await attachments.add(
+      {
+        id: 'att1',
+        ownerId: 'team',
+        talentId: 't1',
+        name: 'Zeugnis.pdf',
+        contentType: 'application/pdf',
+        size: 5,
+        createdAt: '2026-06-25T10:00:00.000Z',
+      },
+      Buffer.from('%PDF-'),
+    );
+
+    const updated = await service.saveAttachments('team', app.id, ['att1']);
+    expect(updated.selectedAttachmentIds).toEqual(['att1']);
+    expect(updated.updatedAt).toBe('2026-06-25T10:00:00.000Z');
+    expect((await service.get('team', app.id)).selectedAttachmentIds).toEqual(['att1']);
+  });
+
+  it('JobApplicationService_SaveAttachments_ForeignTalentAttachment_ThrowsNotFound', async () => {
+    const { postings, talents, attachments, service } = makeService();
+    await postings.add(posting('p1'));
+    await talents.add(talent('t1'));
+    await talents.add(talent('t2'));
+    const app = (await service.create('team', { jobPostingId: 'p1', talentId: 't1' }))
+      .jobApplication;
+    // An attachment that belongs to another talent (foreign) must not be selectable.
+    await attachments.add(
+      {
+        id: 'foreign',
+        ownerId: 'team',
+        talentId: 't2',
+        name: 'x.pdf',
+        contentType: 'application/pdf',
+        size: 5,
+        createdAt: '2026-06-25T10:00:00.000Z',
+      },
+      Buffer.from('%PDF-'),
+    );
+    await expect(service.saveAttachments('team', app.id, ['foreign'])).rejects.toBeInstanceOf(
+      NotFoundError,
+    );
+  });
+
+  it('JobApplicationService_SaveAttachments_NonPdfAttachment_ThrowsValidation', async () => {
+    const { postings, talents, attachments, service } = makeService();
+    await postings.add(posting('p1'));
+    await talents.add(talent('t1'));
+    const app = (await service.create('team', { jobPostingId: 'p1', talentId: 't1' }))
+      .jobApplication;
+    await attachments.add(
+      {
+        id: 'img',
+        ownerId: 'team',
+        talentId: 't1',
+        name: 'portrait.png',
+        contentType: 'image/png',
+        size: 5,
+        createdAt: '2026-06-25T10:00:00.000Z',
+      },
+      Buffer.from('PNG'),
+    );
+    await expect(service.saveAttachments('team', app.id, ['img'])).rejects.toBeInstanceOf(
+      ValidationError,
+    );
+  });
+
+  it('JobApplicationService_SaveAttachments_Frozen_ThrowsFrozenWithoutUnfreeze', async () => {
+    const { postings, talents, service } = makeService();
+    await postings.add(posting('p1'));
+    await talents.add(talent('t1'));
+    const app = (await service.create('team', { jobPostingId: 'p1', talentId: 't1' }))
+      .jobApplication;
+    await service.changeStatus('team', app.id, 'sent');
+    await expect(service.saveAttachments('team', app.id, [])).rejects.toBeInstanceOf(FrozenError);
   });
 });

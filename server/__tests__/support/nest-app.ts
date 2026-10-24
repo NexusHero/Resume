@@ -13,6 +13,7 @@ import { LlmService } from '../../src/services/llm-service.js';
 import type { LlmProvider } from '../../src/ports/llm-provider.js';
 import type { PageFetcher } from '../../src/ports/page-fetcher.js';
 import type { JobSource } from '../../src/ports/job-source.js';
+import type { PdfRenderer } from '../../src/ports/pdf-renderer.js';
 import type { AssistantSettings } from '../../src/domain/assistant.js';
 import { AnthropicLlmProvider } from '../../src/adapters/anthropic-llm-provider.js';
 import { GeminiLlmProvider } from '../../src/adapters/gemini-llm-provider.js';
@@ -123,6 +124,12 @@ export interface NestTestAppOptions {
   assistantSettings?: Partial<AssistantSettings>;
   /** Text the fake PDF extractor returns (or an error it throws). */
   pdfText?: string | Error;
+  /** Override the PDF renderer (e.g. to inspect the rendered HTML). */
+  pdfRenderer?: PdfRenderer;
+  /** Override the job-application repository (e.g. to pre-seed a foreign selection). */
+  jobApplicationRepository?: InMemoryJobApplicationRepository;
+  /** Override the attachment store (e.g. to pre-seed attachments). */
+  attachmentStore?: InMemoryAttachmentStore;
   /**
    * Seed the workspace's `vermittlung` switch. Defaults to **false** (production
    * default). Agency-slice tests opt in with `{ vermittlung: true }`.
@@ -179,7 +186,10 @@ export async function makeNestApp(
   const fakes: Provider[] = [
     { provide: APPLICATION_REPOSITORY, useValue: new InMemoryApplicationRepository() },
     { provide: JOB_POSTING_REPOSITORY, useValue: new InMemoryJobPostingRepository() },
-    { provide: JOB_APPLICATION_REPOSITORY, useValue: new InMemoryJobApplicationRepository() },
+    {
+      provide: JOB_APPLICATION_REPOSITORY,
+      useValue: opts.jobApplicationRepository ?? new InMemoryJobApplicationRepository(),
+    },
     { provide: PAGE_FETCHER, useValue: opts.pageFetcher ?? new FakePageFetcher() },
     { provide: AUDIT_LOG, useValue: new InMemoryAuditLog() },
     { provide: PDF_ARCHIVE, useValue: new InMemoryPdfArchive() },
@@ -189,7 +199,7 @@ export async function makeNestApp(
     { provide: PLACEMENT_REPOSITORY, useValue: new InMemoryPlacementRepository() },
     { provide: CANDIDACY_REPOSITORY, useValue: new InMemoryCandidacyRepository() },
     { provide: DOCUMENT_REPOSITORY, useValue: new InMemoryDocumentRepository() },
-    { provide: ATTACHMENT_STORE, useValue: new InMemoryAttachmentStore() },
+    { provide: ATTACHMENT_STORE, useValue: opts.attachmentStore ?? new InMemoryAttachmentStore() },
     { provide: USER_REPOSITORY, useValue: new InMemoryUserRepository() },
     {
       provide: PASSWORD_RESET_TOKEN_STORE,
@@ -219,7 +229,7 @@ export async function makeNestApp(
     { provide: AUTH_ENGINE, useValue: new FakeAuthEngine() },
     { provide: MAILER, useValue: opts.mailer ?? new RecordingMailer() },
     { provide: INBOX_SOURCE, useValue: opts.inboxSource ?? new FakeInboxSource() },
-    { provide: PDF_RENDERER, useValue: new FakePdfRenderer() },
+    { provide: PDF_RENDERER, useValue: opts.pdfRenderer ?? new FakePdfRenderer() },
     { provide: PDF_MERGER, useValue: new FakePdfMerger() },
     {
       provide: PDF_TEXT_EXTRACTOR,

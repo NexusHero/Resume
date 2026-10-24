@@ -82,8 +82,9 @@ describe('Bewerbungen — Liste', () => {
     );
     expect(screen.getByText('Senior C++ Engineer')).toBeInTheDocument();
     expect(screen.getByText('Backend Dev')).toBeInTheDocument();
-    expect(screen.getByText('Entwurf')).toBeInTheDocument();
-    expect(screen.getByText('Versendet')).toBeInTheDocument();
+    // The status labels render both in the status filter and as card badges.
+    expect(screen.getAllByText('Entwurf').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Versendet').length).toBeGreaterThan(0);
   });
 
   it('BewerbungenList_Search_FiltersClientSide', async () => {
@@ -116,6 +117,21 @@ describe('Bewerbungen — Liste', () => {
     render(<Bewerbungen applications={[application()]} />);
     expect(screen.getByText('Aurora Systems')).toBeInTheDocument();
     expect(screen.getByText('Senior C++ Engineer')).toBeInTheDocument();
+  });
+
+  it('BewerbungenList_StatusFilter_CallsOnStatusChange', async () => {
+    const onStatusChange = vi.fn();
+    render(<Bewerbungen applications={[]} onStatusChange={onStatusChange} />);
+    await userEvent.click(screen.getByTestId('status-filter-Versendet'));
+    expect(onStatusChange).toHaveBeenCalledWith('sent');
+    await userEvent.click(screen.getByTestId('status-filter-Alle'));
+    expect(onStatusChange).toHaveBeenCalledWith(undefined);
+  });
+
+  it('BewerbungenList_StatusFilter_ShowsOnlySelectedStatus', () => {
+    render(<Bewerbungen applications={[application()]} status="sent" />);
+    expect(screen.getByTestId('status-filter-Versendet').getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByTestId('status-filter-Entwurf').getAttribute('aria-pressed')).toBe('false');
   });
 });
 
@@ -161,6 +177,10 @@ describe('Bewerbungs-Editor', () => {
       previewDocumentsHtml: vi.fn().mockResolvedValue('<html></html>'),
       talentDossierPreviewPdf: vi.fn().mockResolvedValue(new Blob(['%PDF-1.4'], { type: 'application/pdf' })),
       saveBlob: vi.fn().mockResolvedValue(undefined),
+      listAttachments: vi.fn().mockResolvedValue([]),
+      updateJobApplicationAttachments: vi.fn().mockResolvedValue(application()),
+      downloadJobApplicationDossierPdf: vi.fn().mockResolvedValue(undefined),
+      downloadJobApplicationDossierZip: vi.fn().mockResolvedValue(undefined),
     };
   });
 
@@ -209,5 +229,134 @@ describe('Bewerbungs-Editor', () => {
     expect(docs.letter).toBeTruthy();
     expect(recipient).toBeTruthy();
     await waitFor(() => expect(window.RecruitApi.saveBlob).toHaveBeenCalled());
+  });
+});
+
+describe('Bewerbungs-Editor — Mappe & Anhänge (Phase 4)', () => {
+  const att = (id, name, contentType = 'application/pdf') => ({
+    id,
+    ownerId: 'team',
+    talentId: 't1',
+    name,
+    contentType,
+    size: 5,
+    createdAt: '2026-06-25T10:00:00.000Z',
+  });
+
+  beforeEach(() => {
+    window.RecruitApi = {
+      aiConfigured: vi.fn().mockResolvedValue(true),
+      getJobApplicationDocuments: vi.fn().mockResolvedValue(documents),
+      saveJobApplicationDocuments: vi.fn().mockResolvedValue(documents),
+      changeJobApplicationStatus: vi.fn().mockResolvedValue(application({ status: 'sent' })),
+      generateJobApplicationLetter: vi.fn().mockResolvedValue({ paragraphs: ['p'], provider: 'claude' }),
+      previewDocumentsHtml: vi.fn().mockResolvedValue('<html></html>'),
+      talentDossierPreviewPdf: vi.fn().mockResolvedValue(new Blob(['%PDF-1.4'], { type: 'application/pdf' })),
+      saveBlob: vi.fn().mockResolvedValue(undefined),
+      listAttachments: vi.fn().mockResolvedValue([]),
+      updateJobApplicationAttachments: vi.fn().mockResolvedValue(application()),
+      downloadJobApplicationDossierPdf: vi.fn().mockResolvedValue(undefined),
+      downloadJobApplicationDossierZip: vi.fn().mockResolvedValue(undefined),
+    };
+  });
+
+  it('BewerbungsEditor_AttachmentSelection_ListsPdfAttachmentsOnly', async () => {
+    window.RecruitApi.listAttachments.mockResolvedValue([
+      att('pdf1', 'Zeugnis.pdf'),
+      att('png1', 'portrait.png', 'image/png'),
+    ]);
+    render(<BewerbungsEditor application={application()} onClose={vi.fn()} />);
+    await waitFor(() => expect(screen.getByTestId('attachment-pdf1')).toBeInTheDocument());
+    expect(screen.getByText('Zeugnis.pdf')).toBeInTheDocument();
+    expect(screen.queryByText('portrait.png')).not.toBeInTheDocument();
+  });
+
+  it('BewerbungsEditor_AttachmentSelection_ReferenceAttachment_ManuallySelectableNotPreselected', async () => {
+    window.RecruitApi.listAttachments.mockResolvedValue([
+      att('ref1', 'Original-Lebenslauf (Import).pdf'),
+    ]);
+    render(<BewerbungsEditor application={application()} onClose={vi.fn()} />);
+    const checkbox = await screen.findByTestId('attachment-ref1');
+    // Visible and manually selectable, but never preselected (default []).
+    expect(checkbox).toBeInTheDocument();
+    expect(checkbox.checked).toBe(false);
+  });
+
+  it('BewerbungsEditor_AttachmentSelection_Save_CallsUpdateAttachments', async () => {
+    window.RecruitApi.listAttachments.mockResolvedValue([att('pdf1', 'Zeugnis.pdf')]);
+    render(<BewerbungsEditor application={application()} onClose={vi.fn()} />);
+    await userEvent.click(await screen.findByTestId('attachment-pdf1'));
+    await userEvent.click(screen.getByTestId('attachments-save'));
+    await waitFor(() =>
+      expect(window.RecruitApi.updateJobApplicationAttachments).toHaveBeenCalledWith(
+        'a1',
+        ['pdf1'],
+        false,
+      ),
+    );
+  });
+
+  it('BewerbungsEditor_DownloadMappe_CallsDossierDownload', async () => {
+    render(<BewerbungsEditor application={application()} onClose={vi.fn()} />);
+    await userEvent.click(screen.getByTestId('mappe-pdf'));
+    await waitFor(() =>
+      expect(window.RecruitApi.downloadJobApplicationDossierPdf).toHaveBeenCalledWith('a1'),
+    );
+    await userEvent.click(screen.getByTestId('mappe-zip'));
+    await waitFor(() =>
+      expect(window.RecruitApi.downloadJobApplicationDossierZip).toHaveBeenCalledWith('a1'),
+    );
+  });
+
+  it('BewerbungsEditor_Frozen_Save_ShowsConfirmAndResendsWithUnfreeze', async () => {
+    window.RecruitApi.listAttachments.mockResolvedValue([att('pdf1', 'Zeugnis.pdf')]);
+    window.RecruitApi.updateJobApplicationAttachments
+      .mockRejectedValueOnce(Object.assign(new Error('frozen'), { code: 'frozen' }))
+      .mockResolvedValue(application({ status: 'sent' }));
+    render(<BewerbungsEditor application={application({ status: 'sent' })} onClose={vi.fn()} />);
+
+    await screen.findByTestId('attachment-pdf1');
+    await userEvent.click(screen.getByTestId('attachments-save'));
+    await waitFor(() => expect(screen.getByTestId('unfreeze-confirm')).toBeInTheDocument());
+
+    await userEvent.click(screen.getByTestId('unfreeze-confirm'));
+    await waitFor(() =>
+      expect(window.RecruitApi.updateJobApplicationAttachments).toHaveBeenLastCalledWith(
+        'a1',
+        [],
+        true,
+      ),
+    );
+  });
+
+  it('BewerbungsEditor_Frozen_MultipleSaves_SingleConfirm', async () => {
+    window.RecruitApi.listAttachments.mockResolvedValue([att('pdf1', 'Zeugnis.pdf')]);
+    window.RecruitApi.updateJobApplicationAttachments
+      .mockRejectedValueOnce(Object.assign(new Error('frozen'), { code: 'frozen' }))
+      .mockResolvedValue(application({ status: 'sent' }));
+    render(<BewerbungsEditor application={application({ status: 'sent' })} onClose={vi.fn()} />);
+
+    await screen.findByTestId('attachment-pdf1');
+    // First save → 409 → confirm → resends with unfreeze.
+    await userEvent.click(screen.getByTestId('attachments-save'));
+    await userEvent.click(await screen.findByTestId('unfreeze-confirm'));
+    await waitFor(() =>
+      expect(window.RecruitApi.updateJobApplicationAttachments).toHaveBeenLastCalledWith(
+        'a1',
+        [],
+        true,
+      ),
+    );
+
+    // A second save in the same session auto-sends `unfreeze` (no dialog).
+    await userEvent.click(screen.getByTestId('attachments-save'));
+    await waitFor(() =>
+      expect(window.RecruitApi.updateJobApplicationAttachments).toHaveBeenLastCalledWith(
+        'a1',
+        [],
+        true,
+      ),
+    );
+    expect(screen.queryByTestId('unfreeze-confirm')).not.toBeInTheDocument();
   });
 });

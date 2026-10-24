@@ -256,12 +256,18 @@ export class DocumentService {
    * the same assembly as {@link renderDossierPdf} but from arbitrary content,
    * so the auto-apply agent can render a tailored snapshot without persisting
    * it over the candidate's stored documents (ADR-0019).
+   *
+   * `order` is an additive option (ADR-0061 §4): the Bewerbungsmappe passes
+   * `'letter-first'` so the merged PDF reads Anschreiben → CV; every existing
+   * caller (base dossier, editor re-import ZIP, auto-apply) keeps the default
+   * `'resume-first'`.
    */
   async renderDossierFromDocuments(
     ownerId: string,
     documents: TalentDocuments,
     recipient: DossierRecipient,
     attachmentIds: string[] = [],
+    order: 'resume-first' | 'letter-first' = 'resume-first',
   ): Promise<Buffer> {
     const merged: TalentDocuments = {
       ...documents,
@@ -275,7 +281,7 @@ export class DocumentService {
       },
     };
     const mainPdf = await this.pdf.renderHtml(
-      documentsToHtml(merged, { letterDate: this.letterDate(merged) }),
+      documentsToHtml(merged, { letterDate: this.letterDate(merged), order }),
     );
     if (!attachmentIds.length) return mainPdf;
 

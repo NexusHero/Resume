@@ -10,6 +10,15 @@ const APP_STATUS_META = {
   rejected: { label: 'Absage', color: 'var(--danger)' },
 };
 
+const TALENT_STATUS_FILTERS = [
+  { value: undefined, label: 'Alle' },
+  { value: 'draft', label: 'Entwurf' },
+  { value: 'sent', label: 'Versendet' },
+  { value: 'interview', label: 'Gespräch' },
+  { value: 'offer', label: 'Zusage' },
+  { value: 'rejected', label: 'Absage' },
+];
+
 /* A titled block in the dark CV sidebar. */
 function CvSideSection({ title, children }) {
   return (
@@ -180,15 +189,11 @@ function ResumeTab({ talent, onEdit }) {
 }
 
 /* ---- Anhänge tab — documents stored per talent (ADR-0057). ----
-   NOTE (Phase 2): the former "verknüpft mit Bewerbung X" badge block is removed
-   deliberately. It had no data source: the frozen pipeline `Application` entity
-   never persisted attachment ids (`attachments` only exists transiently on the
-   `build` input), `mapApplication` drops it, and the new `JobApplication`
-   deliberately does NOT copy attachments (ADR-0059 §3.4 — attachments stay
-   talent-bound; the attachment selection for the Bewerbungsmappe is Phase 4).
-   Re-feeding the old `apps` prop would restore a permanently-empty "nicht
-   verknüpft" marker, so the badge column is gone until Phase 4 wires the map. */
-function AttachmentsTab({ talent, onUploaded }) {
+   `links` is the derived map `attachmentId → [{ id, postingCompany, postingTitle }]`
+   (OQ5, ADR-0061): every job application whose `selectedAttachmentIds` contains
+   the attachment. Each row shows a clickable "verknüpft mit <Firma · Titel>"
+   badge that opens the application. */
+function AttachmentsTab({ talent, onUploaded, links = {}, onOpenApplication }) {
   const [uploading, setUploading] = React.useState(false);
   const [error, setError] = React.useState(null);
   const upload = (file) => {
@@ -230,16 +235,29 @@ function AttachmentsTab({ talent, onUploaded }) {
       {talent.attachments.length === 0 && (
         <div style={{ padding: '40px', textAlign: 'center', fontSize: '13px', color: 'var(--text-soft)' }}>Noch keine Anhänge.</div>
       )}
-      {talent.attachments.map((a) => (
-        <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 18px', borderBottom: '1px solid var(--border)' }}>
-          <span style={{ width: '38px', height: '38px', flexShrink: 0, borderRadius: 'var(--radius-md)', background: 'var(--accent-soft)', color: 'var(--accent-strong)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><TP.Icon name="fileText" size={18} /></span>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-heading)' }}>{a.name}<span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--accent-strong)', marginLeft: '8px' }}>{a.tag}</span></div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', marginTop: '1px' }}>{a.sub}</div>
+      {talent.attachments.map((a) => {
+        const linked = links[a.id] || [];
+        return (
+          <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 18px', borderBottom: '1px solid var(--border)' }}>
+            <span style={{ width: '38px', height: '38px', flexShrink: 0, borderRadius: 'var(--radius-md)', background: 'var(--accent-soft)', color: 'var(--accent-strong)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><TP.Icon name="fileText" size={18} /></span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-heading)' }}>{a.name}<span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--accent-strong)', marginLeft: '8px' }}>{a.tag}</span></div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', marginTop: '1px' }}>{a.sub}</div>
+              {linked.map((app) => (
+                <button
+                  key={app.id}
+                  data-testid={`attachment-link-${a.id}`}
+                  onClick={() => onOpenApplication && onOpenApplication(app)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', marginTop: '6px', appearance: 'none', cursor: onOpenApplication ? 'pointer' : 'default', border: '1px solid var(--border)', background: 'var(--surface-sunk)', color: 'var(--accent-strong)', borderRadius: 'var(--radius-pill)', fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 600, padding: '3px 9px' }}
+                >
+                  verknüpft mit {app.postingCompany}{app.postingTitle ? ` · ${app.postingTitle}` : ''}
+                </button>
+              ))}
+            </div>
+            <TP.IconButton icon="more" label="Mehr" variant="ghost" size="sm" />
           </div>
-          <TP.IconButton icon="more" label="Mehr" variant="ghost" size="sm" />
-        </div>
-      ))}
+        );
+      })}
     </TP.Card>
   );
 }
@@ -248,8 +266,9 @@ function AttachmentsTab({ talent, onUploaded }) {
 function TalentApplications({ talentId, onOpenApplication }) {
   const [apps, setApps] = React.useState(null); // null = loading
   const [error, setError] = React.useState(false);
+  const [status, setStatus] = React.useState(undefined);
   const load = React.useCallback(() => {
-    window.RecruitApi.listJobApplications(talentId)
+    window.RecruitApi.listJobApplications({ talentId, status })
       .then((list) => {
         setApps(Array.isArray(list) ? list : []);
         setError(false);
@@ -258,7 +277,7 @@ function TalentApplications({ talentId, onOpenApplication }) {
         setApps([]);
         setError(true);
       });
-  }, [talentId]);
+  }, [talentId, status]);
   React.useEffect(() => {
     load();
   }, [load]);
@@ -268,6 +287,29 @@ function TalentApplications({ talentId, onOpenApplication }) {
 
   return (
     <TP.Card pad={false} title="Bewerbungen" subtitle="Alle Bewerbungen dieses Mandanten">
+      <div style={{ display: 'flex', gap: '4px', padding: '10px 14px', flexWrap: 'wrap', borderBottom: '1px solid var(--border)' }}>
+        {TALENT_STATUS_FILTERS.map((f) => (
+          <button
+            key={f.label}
+            data-testid={`talent-status-filter-${f.label}`}
+            aria-pressed={status === f.value}
+            onClick={() => setStatus(f.value)}
+            style={{
+              border: 'none',
+              cursor: 'pointer',
+              borderRadius: 'var(--radius-sm)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '11px',
+              fontWeight: 600,
+              padding: '4px 10px',
+              background: status === f.value ? 'var(--surface-card)' : 'transparent',
+              color: status === f.value ? 'var(--text-heading)' : 'var(--text-soft)',
+            }}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
       {apps.length === 0 && (
         <div style={{ padding: '40px', textAlign: 'center', fontSize: '13px', color: 'var(--text-soft)' }}>Noch keine Bewerbungen.</div>
       )}
@@ -320,8 +362,10 @@ function TalentProfile({ talent, onBack, onEdit, onOpenApplication }) {
     Promise.all([
       window.RecruitApi.getTalentDocuments(talent.id).catch(() => null),
       window.RecruitApi.listAttachments(talent.id).catch(() => []),
-    ]).then(([docs, attachments]) => {
-      if (alive) setLoaded({ docs, attachments });
+      // The applications of this talent also feed the attachment-link map (OQ5).
+      window.RecruitApi.listJobApplications({ talentId: talent.id }).catch(() => []),
+    ]).then(([docs, attachments, applications]) => {
+      if (alive) setLoaded({ docs, attachments, applications });
     });
     return () => {
       alive = false;
@@ -340,6 +384,15 @@ function TalentProfile({ talent, onBack, onEdit, onOpenApplication }) {
     ? loaded.attachments.map(toAttachmentRow)
     : talent.attachments || [];
   const view = { ...talent, resume, attachments };
+
+  // attachmentId → the applications that selected it (derived view, ADR-0061 OQ5).
+  const attachmentLinks = {};
+  for (const app of loaded.applications || []) {
+    const ids = Array.isArray(app.selectedAttachmentIds) ? app.selectedAttachmentIds : [];
+    for (const aid of ids) {
+      (attachmentLinks[aid] || (attachmentLinks[aid] = [])).push(app);
+    }
+  }
 
   const tabs = [
     { id: 'lebenslauf', label: 'Lebenslauf' },
@@ -376,7 +429,7 @@ function TalentProfile({ talent, onBack, onEdit, onOpenApplication }) {
       <TP.Tabs value={tab} onChange={setTab} tabs={tabs} />
 
       {tab === 'lebenslauf' && <ResumeTab talent={view} onEdit={onEdit} />}
-      {tab === 'anhaenge' && <AttachmentsTab talent={view} onUploaded={reloadAttachments} />}
+      {tab === 'anhaenge' && <AttachmentsTab talent={view} onUploaded={reloadAttachments} links={attachmentLinks} onOpenApplication={onOpenApplication} />}
       {tab === 'bewerbungen' && <TalentApplications talentId={talent.id} onOpenApplication={onOpenApplication} />}
     </div>
   );

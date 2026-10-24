@@ -94,6 +94,7 @@ describe('TalentProfile — responsive CV', () => {
     window.RecruitApi = {
       getTalentDocuments: vi.fn().mockResolvedValue(null),
       listAttachments: vi.fn().mockResolvedValue([]),
+      listJobApplications: vi.fn().mockResolvedValue([]),
     };
   });
 

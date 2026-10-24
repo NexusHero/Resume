@@ -134,6 +134,7 @@ export async function runLegacyApplicationMigration(
       status,
       statusHistory: [{ status, at: createdAt }],
       documents,
+      selectedAttachmentIds: [],
       createdAt,
       updatedAt: createdAt,
     };

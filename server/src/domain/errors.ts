@@ -39,6 +39,23 @@ export class ConflictError extends DomainError {
   }
 }
 
+/**
+ * A write was attempted on a frozen job application (AK-4.5, ADR-0061): once
+ * `status !== 'draft'` the documents and attachment selection are read-only
+ * unless the caller confirms with `?unfreeze=1`.
+ */
+export class FrozenError extends DomainError {
+  readonly status = 409;
+  readonly type = 'frozen';
+
+  constructor(
+    message = 'Diese Bewerbung ist versendet und eingefroren. Bestätige die Änderung, um fortzufahren.',
+  ) {
+    super(message);
+    this.name = 'Frozen';
+  }
+}
+
 /** The caller is authenticated but lacks permission for the action (403). */
 export class ForbiddenError extends DomainError {
   readonly status = 403;

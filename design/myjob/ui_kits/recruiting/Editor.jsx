@@ -133,6 +133,9 @@ function Editor({ talent, onClose, onOpenSettings, getDocuments, saveDocuments, 
   // (missing key, Pro gate, network) instead of a button that does nothing.
   const [aiError, setAiError] = React.useState(null);
   const [aiReady, setAiReady] = React.useState(null);
+  const consent = window.useAiConsent
+    ? window.useAiConsent()
+    : { guard: (f) => f, dialog: null, rejected: false };
   React.useEffect(() => {
     let alive = true;
     const p = window.RecruitApi && window.RecruitApi.aiConfigured
@@ -141,7 +144,7 @@ function Editor({ talent, onClose, onOpenSettings, getDocuments, saveDocuments, 
     p.then((ok) => { if (alive) setAiReady(ok); }).catch(() => { if (alive) setAiReady(false); });
     return () => { alive = false; };
   }, []);
-  const runAI = async () => {
+  const runAI = consent.guard(async () => {
     if (aiReady === false) {
       setAiError('KI nicht eingerichtet — konfiguriere den zentralen Schlüssel in den Einstellungen.');
       return;
@@ -166,7 +169,7 @@ function Editor({ talent, onClose, onOpenSettings, getDocuments, saveDocuments, 
     } finally {
       setGen(false);
     }
-  };
+  });
   const acceptAI = () => {
     if (pending && pending.kind === 'summary') setResume((s) => ({ ...s, summary: pending.value }));
     if (pending && pending.kind === 'letter') setLetter((s) => ({ ...s, absaetze: pending.value }));
@@ -193,7 +196,7 @@ function Editor({ talent, onClose, onOpenSettings, getDocuments, saveDocuments, 
   const [penConfirm, setPenConfirm] = React.useState(false);
   const hasPen = (key) => !!(pen && typeof pen[key] === 'function');
 
-  const runPen = async (key, index) => {
+  const runPen = consent.guard(async (key, index) => {
     if (!hasPen(key)) return;
     if (aiReady === false) {
       setPenError('KI nicht eingerichtet — konfiguriere den zentralen Schlüssel in den Einstellungen.');
@@ -215,7 +218,7 @@ function Editor({ talent, onClose, onOpenSettings, getDocuments, saveDocuments, 
     } finally {
       setPenBusy(null);
     }
-  };
+  });
 
   // Writing a suggestion only touches the copy's local form state → autosave.
   const applyPen = () => {
@@ -485,6 +488,12 @@ function Editor({ talent, onClose, onOpenSettings, getDocuments, saveDocuments, 
 
   return (
     <div data-doc-hydrated={canPersist ? (hydrated ? 'true' : 'false') : 'na'} style={{ display: 'flex', flexDirection: 'column', height: isMobile ? 'auto' : '100%', gap: '14px' }}>
+      {consent.dialog}
+      {consent.rejected && !consent.dialog && (
+        <div role="status" style={{ alignSelf: 'flex-start', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '6px 12px' }}>
+          KI-Aktion abgebrochen — ohne Einwilligung wird nichts übermittelt.
+        </div>
+      )}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: isMobile ? 'wrap' : 'nowrap', alignSelf: isMobile ? 'stretch' : 'flex-start' }}>
         <button onClick={onClose} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)', padding: 0 }}>
           <ED.Icon name="arrowLeft" size={14} /> Zurück zum Profil

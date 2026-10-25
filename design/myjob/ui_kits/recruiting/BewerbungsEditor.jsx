@@ -26,6 +26,10 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
   // Bumping this remounts the Editor so it re-loads the copy after a change
   // (e.g. an accepted generated letter) instead of holding stale form state.
   const [reloadToken, setReloadToken] = React.useState(0);
+  // AI consent gate (ADR-0063): every generative action here runs through it.
+  const consent = window.useAiConsent
+    ? window.useAiConsent()
+    : { guard: (f) => f, dialog: null, rejected: false };
 
   // ---- Bewerbungsmappe (ADR-0061): attachment selection + downloads + freeze ----
   const [attachments, setAttachments] = React.useState(null); // null = loading
@@ -69,10 +73,10 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
      calls the per-section route; acceptance happens inside the Editor's local
      form state (→ the existing autosave on the copy). */
   const pen = {
-    headline: () => window.RecruitApi.penHeadline(app.id),
-    summary: () => window.RecruitApi.penSummary(app.id),
-    experience: (index) => window.RecruitApi.penExperience(app.id, index),
-    skills: () => window.RecruitApi.penSkills(app.id),
+    headline: consent.guard(() => window.RecruitApi.penHeadline(app.id)),
+    summary: consent.guard(() => window.RecruitApi.penSummary(app.id)),
+    experience: consent.guard((index) => window.RecruitApi.penExperience(app.id, index)),
+    skills: consent.guard(() => window.RecruitApi.penSkills(app.id)),
   };
 
   /* "Alles anpassen" (AK-3.5): a client-side fan-out over the section routes so
@@ -97,7 +101,7 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
     return window.RecruitApi.penSkills(app.id, signal);
   };
 
-  const runAll = async () => {
+  const runAll = consent.guard(async () => {
     if (aiReady === false) {
       setLetterError('KI nicht eingerichtet — konfiguriere den zentralen Schlüssel in den Einstellungen.');
       return;
@@ -139,7 +143,7 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
         return { ...t, status: 'error', error: detail };
       }),
     );
-  };
+  });
 
   const abortAll = () => {
     if (allAbortRef.current) allAbortRef.current.abort();
@@ -208,7 +212,7 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
     }
   };
 
-  const generateLetter = async () => {
+  const generateLetter = consent.guard(async () => {
     if (aiReady === false) {
       setLetterError('KI nicht eingerichtet — konfiguriere den zentralen Schlüssel in den Einstellungen.');
       return;
@@ -228,7 +232,7 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
     } finally {
       setLetterBusy(false);
     }
-  };
+  });
 
   const acceptLetter = async () => {
     if (!letterSuggestion) return;
@@ -356,6 +360,12 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: isMobile ? 'auto' : '100%', gap: '14px' }}>
+      {consent.dialog}
+      {consent.rejected && !consent.dialog && (
+        <div role="status" style={{ alignSelf: 'flex-start', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '6px 12px' }}>
+          KI-Aktion abgebrochen — ohne Einwilligung wird nichts übermittelt.
+        </div>
+      )}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
         <button onClick={onClose} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)', padding: 0 }}>
           <BE.Icon name="arrowLeft" size={14} /> Zurück zu den Bewerbungen

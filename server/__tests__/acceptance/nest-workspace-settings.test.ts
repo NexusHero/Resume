@@ -57,7 +57,7 @@ describe('NestJS workspace settings (ADR-0057)', () => {
     asUser(['recruiter']);
     const res = await request(app.getHttpServer()).get('/api/v1/settings/workspace');
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ vermittlung: false });
+    expect(res.body).toEqual({ vermittlung: false, aiConsent: false });
   });
 
   it('WorkspaceSettings_PatchAsAdmin_SetsVermittlung', async () => {
@@ -66,10 +66,31 @@ describe('NestJS workspace settings (ADR-0057)', () => {
       .patch('/api/v1/settings/workspace')
       .send({ vermittlung: true });
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ vermittlung: true });
+    expect(res.body).toEqual({ vermittlung: true, aiConsent: false });
 
     const read = await request(app.getHttpServer()).get('/api/v1/settings/workspace');
-    expect(read.body).toEqual({ vermittlung: true });
+    expect(read.body).toEqual({ vermittlung: true, aiConsent: false });
+  });
+
+  it('WorkspaceSettings_PatchAsAdmin_SetsAiConsent', async () => {
+    asUser(['admin'], 'consent-a');
+    const res = await request(app.getHttpServer())
+      .patch('/api/v1/settings/workspace')
+      .send({ aiConsent: true });
+    expect(res.status).toBe(200);
+    expect(res.body.aiConsent).toBe(true);
+
+    const read = await request(app.getHttpServer()).get('/api/v1/settings/workspace');
+    expect(read.body.aiConsent).toBe(true);
+  });
+
+  it('WorkspaceSettings_PatchAiConsentAsRecruiter_Returns403', async () => {
+    asUser(['recruiter'], 'consent-b');
+    const res = await request(app.getHttpServer())
+      .patch('/api/v1/settings/workspace')
+      .send({ aiConsent: true });
+    expect(res.status).toBe(403);
+    expect(res.headers['content-type']).toMatch(/application\/problem\+json/);
   });
 
   it('WorkspaceSettings_PatchAsRecruiter_Returns403', async () => {
@@ -98,6 +119,6 @@ describe('NestJS workspace settings (ADR-0057)', () => {
 
     asUser(['admin'], 'workspace-b');
     const res = await request(app.getHttpServer()).get('/api/v1/settings/workspace');
-    expect(res.body).toEqual({ vermittlung: false });
+    expect(res.body).toEqual({ vermittlung: false, aiConsent: false });
   });
 });

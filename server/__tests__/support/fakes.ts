@@ -780,10 +780,16 @@ export class FakeLlmProvider implements LlmProvider {
 }
 
 /** A workspace settings store + service, switched on/off for every scope. */
-export function fakeWorkspaceSettings(opts: { vermittlung: boolean }): {
+export function fakeWorkspaceSettings(opts: {
+  vermittlung: boolean;
+  /** AI consent (ADR-0063). Defaults to granted so AI-route tests stay green;
+   *  consent-specific tests pass `false` and grant via PATCH/`grantAiConsent`. */
+  aiConsent?: boolean;
+}): {
   store: InMemoryWorkspaceSettingsStore;
   service: WorkspaceSettingsService;
 } {
+  const aiConsent = opts.aiConsent ?? true;
   const store = new InMemoryWorkspaceSettingsStore();
   const service = new WorkspaceSettingsService({ workspaceSettingsStore: store });
   const scopes = new Set<string>();
@@ -792,12 +798,21 @@ export function fakeWorkspaceSettings(opts: { vermittlung: boolean }): {
     store.rows.set(scope, settings);
   };
   // Pre-seed the default team and make unknown scopes answer the same value.
-  void store.set('team', { vermittlung: opts.vermittlung });
+  void store.set('team', { vermittlung: opts.vermittlung, aiConsent });
   const originalGet = store.get.bind(store);
   store.get = async (scope: string): Promise<WorkspaceSettings | null> =>
-    (await originalGet(scope)) ?? { vermittlung: opts.vermittlung };
+    (await originalGet(scope)) ?? { vermittlung: opts.vermittlung, aiConsent };
   void scopes;
   return { store, service };
+}
+
+/** Grant the AI consent for a scope (ADR-0063 seed helper for acceptance tests). */
+export async function grantAiConsent(
+  store: InMemoryWorkspaceSettingsStore,
+  scope: string,
+): Promise<void> {
+  const current = (await store.get(scope)) ?? { vermittlung: false, aiConsent: false };
+  await store.set(scope, { ...current, aiConsent: true });
 }
 
 /** A real LlmService over a single fake provider. */

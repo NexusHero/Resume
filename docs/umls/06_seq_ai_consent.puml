@@ -1,0 +1,48 @@
+@startuml 06_seq_ai_consent
+title KI-Einwilligung vor der ersten Übermittlung — Guard-Kette (FR-105/106, ADR-0063)
+
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+autonumber
+
+actor Recruiter
+participant "Controller" as Ctrl
+participant "AuthGuard" as Auth
+participant "VermittlungGuard\n(vermittler-KI only)" as Verm
+participant "AiConfiguredGuard" as Conf
+participant "AiConsentGuard" as Consent
+participant "AI service" as Svc
+
+Recruiter -> Ctrl : POST /job-applications/:id/letter
+activate Ctrl
+Ctrl -> Auth : currentScope(req)
+Auth --> Ctrl : scope (tenant)
+activate Consent
+Ctrl -> Verm : canActivate() [vermittler-KI only]
+Verm --> Ctrl : 404 not-enabled when switch off (else allow)
+Ctrl -> Conf : canActivate()
+alt no central key
+  Conf --> Ctrl : AiNotConfiguredError
+  Ctrl --> Recruiter : 503 ai-not-configured
+else key configured
+  Conf --> Ctrl : allow
+  Ctrl -> Consent : canActivate() — @RequiresAiConsent()
+  alt WorkspaceSettings.aiConsent === false
+    Consent --> Ctrl : AiConsentRequiredError
+    Ctrl --> Recruiter : 403 ai-consent-required\n(UI öffnet den Einwilligungs-Dialog)
+  else aiConsent === true
+    Consent --> Ctrl : allow
+    Ctrl -> Svc : generate(scope, …) — Übermittlung an den Anbieter
+    Svc --> Ctrl : { …provider, usage }
+    Ctrl --> Recruiter : 200
+  end
+end
+deactivate Consent
+deactivate Ctrl
+
+note over Recruiter, Svc
+  T01–T03 (CV-Import) tragen keinen Guard: der CvParseService prüft consent nur
+  im AI-Modus (llm.hasAvailableProvider()); ohne Key läuft die Text-Übernahme.
+end note
+
+@enduml

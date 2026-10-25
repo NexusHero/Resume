@@ -669,6 +669,58 @@ tool steps and links to the created **drafts**.
   inventing (ADR-0047); a provider failure ends the run as an `error` event. The dev-only
   `FakeAgentLlmProvider` is wired only under `AGENT_FAKE === '1'` **and** `NODE_ENV !== 'production'`.
 
+## KI-Einwilligung (Phase 6, ADR-0063)
+
+The main path transmits CV and ad text to a central provider, so the workspace operator must **consent
+once** before the first transmission — enforced on the server, mirrored in the UI.
+
+- **Data model.** `WorkspaceSettings.aiConsent: boolean` (default `false`, no grandfathering) lives in
+  the existing scope-keyed `WorkspaceSettingsStore` (fs JSON + sql `jsonb`); no new table, no migration.
+  `withDefaults` defaults legacy records without the field to `false`.
+- **Server gate.** A marker-based `AiConsentGuard` (`@RequiresAiConsent()`, pattern `AiConfiguredGuard`/
+  `VermittlungGuard`) runs on every generative route and throws `AiConsentRequiredError` (403,
+  `ai-consent-required`) without consent. Guard order per route family (§3.2): `Auth → [VermittlungGuard
+404 on Vermittler-KI] → AiConfiguredGuard (503) → AiConsentGuard (403) → AiRateLimitGuard (429) →
+PlanGuard (402)`. The Vermittler-KI routes (documents-ai `pitch`/`outreach`, match-ai K06–K08,
+  assistant K10/K11) keep `VermittlungGuard` **before** `AiConfiguredGuard`, so with the switch off they
+  answer **404, not 403** (AK-0.2 intact).
+- **Conditional CV import.** `parse`/`parse-pdf`/`import` (T01–T03) carry **no** guard; the
+  `CvParseService` checks consent **only** when a provider is available (`llm.hasAvailableProvider()`).
+  Without a key the named text take-over runs unchanged (no transmission, no consent).
+- **Admin-only.** `PATCH /settings/workspace { aiConsent }` goes through the existing Role-Authorizer
+  (`@Can('workspace','configure')`) — a non-admin gets 403. The UI shows „Bitte deinen Workspace-Admin
+  um Freigabe" instead of the dialog.
+- **Drift guards.** `route-inventory.ts` adds `AI_CONSENT_ROUTES` (K01–K19) and
+  `AI_CONSENT_CONDITIONAL` (`T01`,`T02`,`T03`, disjoint). Tests: every `AI_ROUTES` id is in
+  `AI_CONSENT_ROUTES`, the two sets are disjoint, every non-conditional AI route carries the consent
+  marker, and the acceptance `AiConsent_*` suite proves 403 (with consent), 503-before-403 (no key) and
+  404-before-403 (Vermittlung off).
+
+![AI consent sequence](umls/06_seq_ai_consent.svg)
+
+## Klick-Audit (Phase 6, AK-6.2)
+
+`e2e/button-audit.spec.ts` enumerates the eight main-path views (Vermittlung **off**, mocked API,
+`serviceWorkers: 'block'`) and, for every visible `button`/`[role=button]`, applies the rule
+**`disabled` with `title`/`aria-label` — or declared in the per-view audit map — or a click produces a
+visible effect** (navigation, dialog, toast, status/DOM change, download/tracked fetch). A declarative
+audit map is the drift barrier: a new button without a declared effect (and without `disabled`+`title`)
+fails the test. Views are checked **empty and populated**; dialogs are closed with `Escape`; destructive
+actions run against a disposable in-memory mock. Each view also runs an **axe** scan
+(`ButtonAudit_AllViews_AxeNoViolations`) and a console/pageerror collector
+(`ButtonAudit_AllViews_NoConsoleErrors`).
+
+![Button audit sequence](umls/06_seq_button_audit.svg)
+
+## Demo-Seeding (Phase 6, AK-6.6)
+
+`npm run seed:demo` composes the **same persistence layer** the app uses (`createPersistence` from
+`persistence-factory.ts`, `STORE`/`DATABASE_URL`-aware) and upserts three synthetic, idempotent records
+with fixed ids: `demo-mandant-1` (Mandant), `demo-stelle-1` (Stelle), `demo-bewerbung-1` (Bewerbung,
+`draft`). The synthesis rules live as code (`server/src/demo-seed.ts`): no real PII, clearly fictional
+markers (`demo-`/`Beispiel`). `aiConsent` stays **unset** by default (the consent is demonstrated as a
+real step); `--with-consent` presets it to `true`.
+
 ## 12. Glossary
 
 | Term              | Meaning                                                                                                                                                                                                                                                                                      |

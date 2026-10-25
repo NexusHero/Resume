@@ -121,7 +121,8 @@ async function makeApp(opts: { configured: boolean; vermittlung: boolean }) {
       provide: WORKSPACE_SETTINGS_SERVICE,
       useValue: {
         isVermittlungEnabled: async () => opts.vermittlung,
-        get: async () => ({ vermittlung: opts.vermittlung }),
+        isAiConsentGranted: async () => true,
+        get: async () => ({ vermittlung: opts.vermittlung, aiConsent: true }),
       },
     },
     { provide: USAGE_METER, useValue: new InMemoryUsageMeter() },

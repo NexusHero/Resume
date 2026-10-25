@@ -41,6 +41,7 @@ import type { TalentRepository } from '../../ports/talent-repository.js';
 import type { DocumentRepository } from '../../ports/document-repository.js';
 import { AuthGuard } from '../auth.guard.js';
 import { AiConfiguredGuard, RequiresAi } from '../ai-configured.guard.js';
+import { AiConsentGuard, RequiresAiConsent } from '../ai-consent.guard.js';
 import { AiRateLimitGuard } from '../ai-rate-limit.guard.js';
 import { CurrentScope, CurrentUserId } from '../params.js';
 import { ZodValidationPipe } from '../zod-validation.pipe.js';
@@ -88,7 +89,7 @@ function sse(event: ChatAgentEvent): string {
  * deterministic and read/write the per-user `ChatSession` store.
  */
 @Controller('api/v1/agent')
-@UseGuards(AuthGuard, AiConfiguredGuard)
+@UseGuards(AuthGuard, AiConfiguredGuard, AiConsentGuard)
 export class AgentController {
   constructor(
     @Inject(CHAT_AGENT_SERVICE) private readonly service: ChatAgentService,
@@ -98,6 +99,7 @@ export class AgentController {
   @Post('chat')
   @HttpCode(200)
   @RequiresAi()
+  @RequiresAiConsent()
   @UseGuards(AiRateLimitGuard)
   async chat(
     @CurrentScope() scope: string,

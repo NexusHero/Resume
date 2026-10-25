@@ -96,11 +96,14 @@ function AiSetupCard() {
   );
 }
 
-/* The per-workspace intermediary switch (ADR-0057) — admin-only. */
+/* The per-workspace intermediary switch (ADR-0057) + AI consent (ADR-0063) —
+   admin-only. */
 function WorkspaceSettingsCard() {
   const [isAdmin, setIsAdmin] = React.useState(null);
   const [vermittlung, setVermittlung] = React.useState(false);
+  const [aiConsent, setAiConsent] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
+  const [consentBusy, setConsentBusy] = React.useState(false);
   const [error, setError] = React.useState('');
 
   React.useEffect(() => {
@@ -113,7 +116,11 @@ function WorkspaceSettingsCard() {
       })
       .catch(() => { if (alive) setIsAdmin(false); });
     window.RecruitApi.getWorkspaceSettings()
-      .then((s) => { if (alive) setVermittlung(!!(s && s.vermittlung)); })
+      .then((s) => {
+        if (!alive) return;
+        setVermittlung(!!(s && s.vermittlung));
+        setAiConsent(!!(s && s.aiConsent));
+      })
       .catch(() => {});
     return () => { alive = false; };
   }, []);
@@ -135,6 +142,19 @@ function WorkspaceSettingsCard() {
       .finally(() => setBusy(false));
   };
 
+  const revokeConsent = () => {
+    if (!isAdmin || consentBusy) return;
+    setConsentBusy(true);
+    setError('');
+    window.RecruitApi.updateWorkspaceSettings({ aiConsent: false })
+      .then((s) => {
+        setAiConsent(!!(s && s.aiConsent));
+        if (window.WorkspaceSettings) window.WorkspaceSettings.refresh();
+      })
+      .catch(() => setError('Die Einwilligung konnte nicht widerrufen werden.'))
+      .finally(() => setConsentBusy(false));
+  };
+
   if (isAdmin === false) return null; // admin-only
 
   return (
@@ -145,6 +165,33 @@ function WorkspaceSettingsCard() {
         <input type="checkbox" checked={vermittlung} onChange={toggle} disabled={!isAdmin || busy} aria-label="Vermittlung aktivieren" />
         Vermittlung aktivieren
       </label>
+
+      <div style={{ marginTop: '22px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 600, color: 'var(--text-soft)' }}>KI-Einwilligung (EU AI Act)</div>
+        <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '6px', lineHeight: 1.55 }}>
+          Die Einwilligung erlaubt die Übermittlung von Lebenslauf und Anzeigentext an den
+          konfigurierten KI-Anbieter. Sie gilt für diesen Workspace, wird im KI-Audit-Trail
+          protokolliert und kann hier jederzeit widerrufen werden.
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
+          <span role="status" data-testid="ai-consent-state" style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', fontSize: '13px', fontWeight: 600, color: aiConsent ? 'var(--positive, #1F8A5B)' : 'var(--text-muted)' }}>
+            <SV.Icon name={aiConsent ? 'check' : 'x'} size={14} />
+            {aiConsent ? 'Einwilligung erteilt' : 'Keine Einwilligung'}
+          </span>
+          {aiConsent && (
+            <button
+              type="button"
+              data-testid="ai-consent-revoke"
+              onClick={revokeConsent}
+              disabled={consentBusy}
+              style={{ cursor: consentBusy ? 'default' : 'pointer', border: '1px solid var(--danger)', background: 'none', color: 'var(--danger)', borderRadius: 'var(--radius-pill)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '4px 12px' }}
+            >
+              {consentBusy ? 'Widerrufe …' : 'Einwilligung widerrufen'}
+            </button>
+          )}
+        </div>
+      </div>
+
       {error && <div role="alert" style={{ fontSize: '12.5px', color: 'var(--danger)', marginTop: '8px' }}>{error}</div>}
     </div>
   );
@@ -876,7 +923,14 @@ function ProfileCard({ user }) {
           aria-label="Dein Name"
           style={{ flex: 1, minWidth: '200px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', background: 'var(--surface-card)', fontFamily: 'var(--font-body)', fontSize: '13.5px', color: 'var(--text-heading)', padding: '10px 12px', outline: 'none' }}
         />
-        <SV.Button size="sm" disabled={!loaded || state === 'saving' || !name.trim()} onClick={save}>Speichern</SV.Button>
+        <SV.Button
+          size="sm"
+          disabled={!loaded || state === 'saving' || !name.trim()}
+          title={!loaded ? 'Wird geladen …' : !name.trim() ? 'Bitte zuerst einen Namen eingeben.' : undefined}
+          onClick={save}
+        >
+          Speichern
+        </SV.Button>
         {state !== 'idle' && <span role="status" style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: state === 'error' ? 'var(--danger)' : 'var(--text-soft)' }}>{label[state]}</span>}
       </div>
     </div>

@@ -429,3 +429,30 @@ describe('OpenAPI: every intermediary operation has one documented 404', () => {
     expect(problems).toEqual([]);
   });
 });
+
+describe('Phase 6 OpenAPI contract (ADR-0063, AI consent)', () => {
+  it('OpenApi_WorkspaceSettings_DocumentsAiConsent', () => {
+    expect(openApiProps('WorkspaceSettings')).toContain('aiConsent');
+    expect(SPEC).toContain('required: [vermittlung, aiConsent]');
+  });
+
+  it('OpenApi_AiConsentRequired_403ComponentExists', () => {
+    expect(SPEC).toContain('AiConsentRequired');
+    expect(SPEC).toContain('about:blank#ai-consent-required');
+  });
+
+  it('OpenApi_GenerativeRoutes_Document403AiConsentRequired', () => {
+    // The main-path generative routes carry the 403 consent response next to
+    // their 503 ai-not-configured response.
+    for (const path of [
+      '/api/v1/cover-letter',
+      '/api/v1/job-postings/extract',
+      '/api/v1/job-applications/:id/letter',
+      '/api/v1/job-applications/:id/pen/headline',
+      '/api/v1/agent/chat',
+    ]) {
+      const block = operationBlock(path, 'post');
+      expect(block).toContain('AiConsentRequired');
+    }
+  });
+});

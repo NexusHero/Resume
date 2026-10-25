@@ -90,6 +90,23 @@ docker compose up --build      # app on Postgres at http://localhost:4178
 See **[docs/deployment.md](docs/deployment.md)** for configuration (`STORE`, `DATABASE_URL`,
 `CORS_ORIGINS`, `COOKIE_SECURE`, `SESSION_TTL_DAYS`, LLM keys, …).
 
+### Vorzeigbar in 10 Minuten
+
+Der komplette Goldene Pfad — vom Demo-Mandanten bis zur versendeten Bewerbung — auf einer
+echten Instanz, ohne tote Buttons und ohne Konsolen-Fehler:
+
+1. **Instanz starten** — `docker compose up --build` (oder das Image mit der Prod-ENV aus
+   [docs/deployment.md](docs/deployment.md): `STORE=sql`, `DATABASE_URL`, `APP_SECRET`,
+   `NODE_ENV=production`, `ANTHROPIC_API_KEY`/`GEMINI_API_KEY`).
+2. **Einloggen** — Workspace anlegen und den KI-Schlüssel prüfen (Einstellungen → KI-Anbindung).
+3. **Demo-Seed** — `npm run seed:demo` legt einen Demo-Mandanten, eine Demo-Stelle und eine
+   Demo-Bewerbung aus **synthetischen** Daten an (kein echtes PII; idempotent).
+4. **Einwilligung erteilen** — der Dialog erscheint bei der ersten KI-Aktion
+   (EU-AI-Act-konform, widerrufbar in den Einstellungen).
+5. **Goldenen Pfad durchlaufen** (Mandant → Stelle → Bewerbung → Anschreiben → Magic Pen →
+   Mappe → „versendet") — in unter 5 Minuten, fehlerfrei. `--with-consent` überspringt den
+   Dialog für einen reinen Golden-Path ohne Einwilligungsschritt.
+
 ## Feature highlights
 
 - **CoRecruiter agent** — one agent, three gears (Suggest → Act → **Autopilot**). It

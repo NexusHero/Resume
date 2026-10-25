@@ -8,7 +8,12 @@ import {
   daysStale,
   suggestionKey,
 } from '../domain/assistant.js';
-import { AiNotConfiguredError, ConflictError, NotFoundError } from '../domain/errors.js';
+import {
+  AiNotConfiguredError,
+  AiConsentRequiredError,
+  ConflictError,
+  NotFoundError,
+} from '../domain/errors.js';
 import type {
   AssistantSettingsStore,
   AssistantSuggestionRepository,
@@ -50,6 +55,8 @@ export interface AssistantServiceDeps {
   logger: Logger;
   /** Central-key check: autopilot needs a provider, the other modes do not. */
   llm: { hasAvailableProvider(): boolean };
+  /** Consent check (ADR-0063): autopilot transmits CV/ad text, so it needs consent. */
+  workspaceSettings: { isAiConsentGranted(scope: string): Promise<boolean> };
 }
 
 /** Only clear fits are proposed — a noisy assistant gets switched off. */
@@ -87,6 +94,7 @@ export class AssistantService {
   private readonly ids: IdGenerator;
   private readonly logger: Logger;
   private readonly llm: AssistantServiceDeps['llm'];
+  private readonly workspaceSettings: AssistantServiceDeps['workspaceSettings'];
   /** One skip warning per process and scope (plan §3.3). */
   private readonly warnedAutopilotWithoutKey = new Set<string>();
 
@@ -104,6 +112,7 @@ export class AssistantService {
     this.ids = deps.idGenerator;
     this.logger = deps.logger;
     this.llm = deps.llm;
+    this.workspaceSettings = deps.workspaceSettings;
   }
 
   async getSettings(scope: string): Promise<AssistantSettings> {
@@ -118,6 +127,9 @@ export class AssistantService {
     // without a key must still be switchable off / to suggest (plan §3.3).
     if (input.mode === 'autopilot' && !this.llm.hasAvailableProvider()) {
       throw new AiNotConfiguredError();
+    }
+    if (input.mode === 'autopilot' && !(await this.workspaceSettings.isAiConsentGranted(scope))) {
+      throw new AiConsentRequiredError();
     }
     const next = { ...(await this.getSettings(scope)), ...input };
     await this.settingsStore.set(scope, next);
@@ -151,6 +163,12 @@ export class AssistantService {
     // real error *before* the first step: no suggestions, no `lastRunAt` update.
     if (settings.mode === 'autopilot' && !this.llm.hasAvailableProvider()) {
       throw new AiNotConfiguredError();
+    }
+    if (
+      settings.mode === 'autopilot' &&
+      !(await this.workspaceSettings.isAiConsentGranted(scope))
+    ) {
+      throw new AiConsentRequiredError();
     }
     const now = this.clock.isoNow();
     const runId = this.ids.next();

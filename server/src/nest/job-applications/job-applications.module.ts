@@ -42,6 +42,7 @@ import type { Clock } from '../../ports/clock.js';
 import type { IdGenerator } from '../../ports/id-generator.js';
 import { AuthGuard } from '../auth.guard.js';
 import { AiConfiguredGuard, RequiresAi } from '../ai-configured.guard.js';
+import { AiConsentGuard, RequiresAiConsent } from '../ai-consent.guard.js';
 import { AiRateLimitGuard } from '../ai-rate-limit.guard.js';
 import { CurrentScope, CurrentUserId } from '../params.js';
 import { ZodValidationPipe } from '../zod-validation.pipe.js';
@@ -70,7 +71,7 @@ import {
  * `/letter` carries); `AiRateLimitGuard` is a method guard on `/letter` only.
  */
 @Controller('api/v1/job-applications')
-@UseGuards(AuthGuard, AiConfiguredGuard)
+@UseGuards(AuthGuard, AiConfiguredGuard, AiConsentGuard)
 export class JobApplicationsController {
   constructor(
     @Inject(JOB_APPLICATION_SERVICE) private readonly service: JobApplicationService,
@@ -160,6 +161,7 @@ export class JobApplicationsController {
   @Post(':id/letter')
   @HttpCode(200)
   @RequiresAi()
+  @RequiresAiConsent()
   @UseGuards(AiRateLimitGuard)
   async letter(
     @CurrentScope() scope: string,
@@ -172,6 +174,7 @@ export class JobApplicationsController {
   @Post(':id/pen/headline')
   @HttpCode(200)
   @RequiresAi()
+  @RequiresAiConsent()
   @UseGuards(AiRateLimitGuard)
   async penHeadline(
     @CurrentScope() scope: string,
@@ -184,6 +187,7 @@ export class JobApplicationsController {
   @Post(':id/pen/summary')
   @HttpCode(200)
   @RequiresAi()
+  @RequiresAiConsent()
   @UseGuards(AiRateLimitGuard)
   async penSummary(
     @CurrentScope() scope: string,
@@ -196,6 +200,7 @@ export class JobApplicationsController {
   @Post(':id/pen/experience')
   @HttpCode(200)
   @RequiresAi()
+  @RequiresAiConsent()
   @UseGuards(AiRateLimitGuard)
   async penExperience(
     @CurrentScope() scope: string,
@@ -213,6 +218,7 @@ export class JobApplicationsController {
   @Post(':id/pen/skills')
   @HttpCode(200)
   @RequiresAi()
+  @RequiresAiConsent()
   @UseGuards(AiRateLimitGuard)
   async penSkills(
     @CurrentScope() scope: string,
@@ -225,6 +231,7 @@ export class JobApplicationsController {
   @Post(':id/pen/all')
   @HttpCode(200)
   @RequiresAi()
+  @RequiresAiConsent()
   @UseGuards(AiRateLimitGuard)
   async penAll(
     @CurrentScope() scope: string,

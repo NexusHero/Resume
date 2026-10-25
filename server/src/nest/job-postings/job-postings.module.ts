@@ -38,6 +38,7 @@ import type { IdGenerator } from '../../ports/id-generator.js';
 import { CompositeJobSource } from '../../adapters/composite-job-source.js';
 import { AuthGuard } from '../auth.guard.js';
 import { AiConfiguredGuard, RequiresAi } from '../ai-configured.guard.js';
+import { AiConsentGuard, RequiresAiConsent } from '../ai-consent.guard.js';
 import { AiRateLimitGuard } from '../ai-rate-limit.guard.js';
 import { CurrentScope, CurrentUserId } from '../params.js';
 import { ZodValidationPipe } from '../zod-validation.pipe.js';
@@ -61,7 +62,7 @@ import {
  * `/extract` carries); `AiRateLimitGuard` is a method guard on `/extract` only.
  */
 @Controller('api/v1/job-postings')
-@UseGuards(AuthGuard, AiConfiguredGuard)
+@UseGuards(AuthGuard, AiConfiguredGuard, AiConsentGuard)
 export class JobPostingsController {
   constructor(
     @Inject(JOB_POSTING_SERVICE) private readonly service: JobPostingService,
@@ -94,6 +95,7 @@ export class JobPostingsController {
   @Post('extract')
   @HttpCode(200)
   @RequiresAi()
+  @RequiresAiConsent()
   @UseGuards(AiRateLimitGuard)
   async extract(
     @CurrentUserId() userId: string,

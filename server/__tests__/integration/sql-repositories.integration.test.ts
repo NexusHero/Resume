@@ -503,13 +503,21 @@ suite('SQL repositories (real Postgres)', () => {
 
   it('WorkspaceSettings_RoundTrips_OwnerScoped', async () => {
     const store = new SqlWorkspaceSettingsStore({ db });
-    await store.set('owner1', { vermittlung: true });
-    expect(await store.get('owner1')).toEqual({ vermittlung: true });
+    await store.set('owner1', { vermittlung: true, aiConsent: false });
+    expect(await store.get('owner1')).toEqual({ vermittlung: true, aiConsent: false });
     expect(await store.get('owner2')).toBeNull();
 
     // upsert overwrites
-    await store.set('owner1', { vermittlung: false });
-    expect(await store.get('owner1')).toEqual({ vermittlung: false });
+    await store.set('owner1', { vermittlung: false, aiConsent: false });
+    expect(await store.get('owner1')).toEqual({ vermittlung: false, aiConsent: false });
+  });
+
+  it('SqlWorkspaceSettings_AiConsent_RoundTrips', async () => {
+    const store = new SqlWorkspaceSettingsStore({ db });
+    await store.set('consent-a', { vermittlung: false, aiConsent: true });
+    expect((await store.get('consent-a'))?.aiConsent).toBe(true);
+    await store.set('consent-a', { vermittlung: false, aiConsent: false });
+    expect((await store.get('consent-a'))?.aiConsent).toBe(false);
   });
 
   it('Documents_RoundTrips_OwnerScopedWithCascade', async () => {
@@ -594,12 +602,12 @@ suite('SQL repositories (real Postgres)', () => {
 
   it('SqlWorkspaceSettingsStore_SetThenGet_RoundTrips', async () => {
     const store = new SqlWorkspaceSettingsStore({ db });
-    await store.set('ws-a', { vermittlung: true });
-    expect(await store.get('ws-a')).toEqual({ vermittlung: true });
+    await store.set('ws-a', { vermittlung: true, aiConsent: false });
+    expect(await store.get('ws-a')).toEqual({ vermittlung: true, aiConsent: false });
 
     // upsert overwrites
-    await store.set('ws-a', { vermittlung: false });
-    expect(await store.get('ws-a')).toEqual({ vermittlung: false });
+    await store.set('ws-a', { vermittlung: false, aiConsent: false });
+    expect(await store.get('ws-a')).toEqual({ vermittlung: false, aiConsent: false });
   });
 
   it('SqlWorkspaceSettingsStore_UnknownWorkspace_ReturnsNull', async () => {

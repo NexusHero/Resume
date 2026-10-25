@@ -9,28 +9,44 @@ describe('WorkspaceSettingsService', () => {
 
   it('WorkspaceSettingsService_NoStoredSettings_ReturnsVermittlungOff', async () => {
     const { service } = build();
-    expect(await service.get('team')).toEqual({ vermittlung: false });
+    expect(await service.get('team')).toEqual({ vermittlung: false, aiConsent: false });
     expect(await service.isVermittlungEnabled('team')).toBe(false);
+    expect(await service.isAiConsentGranted('team')).toBe(false);
   });
 
   it('WorkspaceSettingsService_UpdateVermittlung_PersistsAndReturnsNewState', async () => {
     const { service, store } = build();
-    expect(await service.update('team', { vermittlung: true })).toEqual({ vermittlung: true });
-    expect(await store.get('team')).toEqual({ vermittlung: true });
-    expect(await service.update('team', { vermittlung: false })).toEqual({ vermittlung: false });
+    expect(await service.update('team', { vermittlung: true })).toEqual({
+      vermittlung: true,
+      aiConsent: false,
+    });
+    expect(await store.get('team')).toEqual({ vermittlung: true, aiConsent: false });
+    expect(await service.update('team', { vermittlung: false })).toEqual({
+      vermittlung: false,
+      aiConsent: false,
+    });
   });
 
   it('WorkspaceSettingsService_UpdateInOneWorkspace_DoesNotAffectAnother', async () => {
     const { service } = build();
     await service.update('a', { vermittlung: true });
-    expect(await service.get('b')).toEqual({ vermittlung: false });
+    expect(await service.get('b')).toEqual({ vermittlung: false, aiConsent: false });
   });
 
   it('WorkspaceSettingsService_StoredPartialObject_MergesDefaults', async () => {
     const store = new InMemoryWorkspaceSettingsStore();
     await store.set('team', {} as never);
     const { service } = build(store);
-    expect(await service.get('team')).toEqual({ vermittlung: false });
+    expect(await service.get('team')).toEqual({ vermittlung: false, aiConsent: false });
+  });
+
+  it('WorkspaceSettingsService_GrantAiConsent_SetsFlagAndIsRevocable', async () => {
+    const { service } = build();
+    expect(await service.isAiConsentGranted('team')).toBe(false);
+    await service.grantAiConsent('team');
+    expect(await service.isAiConsentGranted('team')).toBe(true);
+    await service.revokeAiConsent('team');
+    expect(await service.isAiConsentGranted('team')).toBe(false);
   });
 
   it('WorkspaceSettingsService_FilterVermittlungEnabled_KeepsOnlyEnabledScopes', async () => {

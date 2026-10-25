@@ -69,7 +69,9 @@ import {
   CLOCK,
   ID_GENERATOR,
   LOGGER,
+  WORKSPACE_SETTINGS_SERVICE,
 } from '../tokens.js';
+import type { WorkspaceSettingsService } from '../../services/workspace-settings-service.js';
 
 /**
  * The assistant's HTTP surface (ADR-0051 port of AssistantController, all
@@ -232,6 +234,7 @@ export class AssistantController {
         idGenerator: IdGenerator,
         logger: Logger,
         llm: LlmService,
+        workspaceSettings: WorkspaceSettingsService,
       ) =>
         new AssistantService({
           assistantSettingsStore,
@@ -247,6 +250,7 @@ export class AssistantController {
           idGenerator,
           logger,
           llm,
+          workspaceSettings,
         }),
       inject: [
         ASSISTANT_SETTINGS_STORE,
@@ -262,6 +266,7 @@ export class AssistantController {
         ID_GENERATOR,
         LOGGER,
         LLM_SERVICE,
+        WORKSPACE_SETTINGS_SERVICE,
       ],
     },
   ],

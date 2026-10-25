@@ -53,7 +53,7 @@ Drei Kräfte entscheiden die Form:
    Guard auf der Klasse, er liest den gestempelten Scope (`currentScope`) und fragt
    `WorkspaceSettingsService.isAiConsentGranted(scope)`. Ohne Einwilligung wirft er
    `AiConsentRequiredError` (neuer `DomainError`, Status **403**, `type
-   'ai-consent-required'`, Name `AiConsentRequired`).
+'ai-consent-required'`, Name `AiConsentRequired`).
 
    **403 statt 409:** 403 „authentifiziert, aber für diese Aktion nicht
    zugelassen" passt semantisch (die Übermittlung ist nicht erlaubt, bis
@@ -63,14 +63,17 @@ Drei Kräfte entscheiden die Form:
    Route **existiert** — sie ist nur (noch) nicht freigegeben.
 
 3. **Guard-Reihenfolge: `Auth → [VermittlungGuard 404 auf Vermittler-KI-Routen] →
-   AiConfiguredGuard (503) → AiConsentGuard (403) → AiRateLimitGuard (429) →
-   PlanGuard (402)`.** Der fehlende Key (503) ist die operational grundlegendere
+AiConfiguredGuard (503) → AiConsentGuard (403) → AiRateLimitGuard (429) →
+PlanGuard (402)`.** Der fehlende Key (503) ist die operational grundlegendere
    Blocker-Meldung und bleibt **vor** der Einwilligungs-Prüfung; erst wenn ein Key
    da ist, wird die Einwilligung relevant. Beide laufen vor dem Rate-Limit. Die
-   **Vermittler-KI-Routen** (K01–K08, K10/K11) tragen `VermittlungGuard` **vor**
+   **Vermittler-KI-Routen** (`documents-ai` K03/K04 `pitch`/`outreach`, `match-ai`
+   K06–K08, `assistant` K10/K11) tragen `VermittlungGuard` **vor**
    `AiConfiguredGuard` und antworten bei ausgeschalteter Vermittlung weiterhin mit
    **404** (AK-0.2 bleibt intakt, 404 **vor** 403); die **Hauptweg-KI-Routen**
-   (K09, K12–K19) haben keinen `VermittlungGuard`. Der Consent-Guard trägt den
+   (K01 `documents/ai`, K02 `ats`, K05 `translate`, K09, K12–K19) haben keinen
+   `VermittlungGuard` — K01/K02/K05 sind Hauptweg-Dokument-KI („KI anpassen",
+   ATS, Übersetzen), keine Vermittler-Routen. Der Consent-Guard trägt den
    Marker `@RequiresAi()` **zusätzlich** zu `@RequiresAiConsent()` auf denselben
    Methoden: die 19 generativen Routen K01–K19 sind dieselbe Menge.
 
@@ -94,7 +97,7 @@ Drei Kräfte entscheiden die Form:
    `aiConsent` über `GET /settings/workspace` (dieselbe Quelle wie `vermittlung`,
    nie aus dem Login) und setzt es über `PATCH /settings/workspace`. Die
    Einwilligung ist **admin-gated** (Owner-Entscheidung, verbindlich): `PATCH
-   /settings/workspace` mit `aiConsent` läuft durch denselben Role-Authorizer wie
+/settings/workspace` mit `aiConsent` läuft durch denselben Role-Authorizer wie
    der `vermittlung`-Toggle — ein Nicht-Admin, der es setzen will, erhält **403**
    (`forbidden`), und in der UI erscheint statt des Konsens-Dialogs der Hinweis
    „Bitte deinen Workspace-Admin um Freigabe". Die Anzeige eines

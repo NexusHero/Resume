@@ -91,7 +91,7 @@ async function mockSession(page: Page): Promise<string[]> {
   await page.route('**/api/v1/settings/workspace', (route) =>
     route.fulfill({
       contentType: 'application/json',
-      body: JSON.stringify({ vermittlung: true }),
+      body: JSON.stringify({ vermittlung: true, aiConsent: true }),
     }),
   );
   await page.route('**/api/v1/auth/me', (route) =>
@@ -216,7 +216,7 @@ test('MobileNav_FreshWorkspace_ShowsOnlyFiveDestinations', async ({ page }) => {
   await page.route('**/api/v1/settings/workspace', (route) =>
     route.fulfill({
       contentType: 'application/json',
-      body: JSON.stringify({ vermittlung: false }),
+      body: JSON.stringify({ vermittlung: false, aiConsent: true }),
     }),
   );
   await page.goto(KIT);
@@ -525,7 +525,7 @@ test.describe('Chat-Agent mobile (Phase 5)', () => {
     await page.route('**/api/v1/settings/workspace', (route) =>
       route.fulfill({
         contentType: 'application/json',
-        body: JSON.stringify({ vermittlung: false }),
+        body: JSON.stringify({ vermittlung: false, aiConsent: true }),
       }),
     );
     await page.route('**/api/v1/settings/llm', (route) =>

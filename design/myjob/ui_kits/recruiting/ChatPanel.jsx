@@ -30,6 +30,9 @@
     const [error, setError] = React.useState(null);
     const [drafts, setDrafts] = React.useState([]);
     const abortRef = React.useRef(null);
+    const consent = window.useAiConsent
+      ? window.useAiConsent()
+      : { guard: (f) => f, dialog: null, rejected: false };
 
     const aiStatus = window.useAiStatus ? window.useAiStatus() : { provider: null };
     const isGemini = aiStatus.provider === 'gemini';
@@ -52,7 +55,7 @@
         return next;
       });
 
-    const send = async () => {
+    const send = consent.guard(async () => {
       const message = input.trim();
       if (!message || running) return;
       setInput('');
@@ -124,7 +127,7 @@
         abortRef.current = null;
         reloadSessions();
       }
-    };
+    });
 
     const abort = () => {
       if (abortRef.current) abortRef.current.abort();
@@ -184,6 +187,7 @@
           minHeight: 0,
         }}
       >
+        {consent.dialog}
         {sessions.length > 0 && (
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
             {sessions.map((s) => (

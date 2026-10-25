@@ -11,7 +11,7 @@ A small REST API sits behind it all.
 [![CI](https://github.com/NexusHero/Resume/actions/workflows/ci.yml/badge.svg)](https://github.com/NexusHero/Resume/actions/workflows/ci.yml)
 ![Node](https://img.shields.io/badge/node-%E2%89%A524-339933?logo=node.js&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-1070%2B%20·%2090%25%20coverage-success)
+![Tests](https://img.shields.io/badge/tests-1836%2B%20·%2097%25%20coverage-success)
 ![Built with AI](https://img.shields.io/badge/built%20with-Claude%20Code-d97706)
 
 [**📖 API reference (Swagger UI)**](https://nexushero.github.io/Resume/)
@@ -41,12 +41,22 @@ A recruiting product (**myJob**) plus the personal job-application toolkit it gr
   out), never sends anything out on its own, and never overwrites a candidate's real CV.
 - **AI assistance** — skill **matching** (local embeddings, hybrid) against a mandate, an
   explainable "why this candidate", **interview kits**, **candidate prep**, client
-  **pitch** + **outreach**, ATS gap analysis and an AGG check — every LLM feature has a
-  deterministic fallback, a **grounding self-check**, and per-call **cost/token** display.
-- **First-party moats** — an **outcome loop** (which drafts actually get replies, template
-  vs AI), a **learned revenue forecast** (stage probabilities from your own resolved
+  **pitch** + **outreach**, ATS gap analysis and an AGG check. Deterministic offline
+  features (matching, AGG, ATS gap) run without a key; generative features require a
+  configured workspace key **and** an explicit AI consent (503/403 otherwise — no silent
+  template fallbacks), with a **grounding self-check** and per-call **cost/token** display.
+- **First-party moats** — an **outcome loop** (which drafts actually get replies,
+  provider-labeled), a **learned revenue forecast** (stage probabilities from your own resolved
   pipeline), **email integration** (send outreach + IMAP reply detection that closes the
   loop), and **compliance automation** (KI-Audit-Trail, Löschfristen-Automatik, AGG rewrite).
+- **Bewerbungsservice (Hauptweg)** — the application-first flow: **Stellen** übernehmen
+  oder einfügen (per Text/URL, SSRF-gehärtet, Duplikate erkannt), **Bewerbung** = Stelle ×
+  Mandant mit eigener Dokument-Kopie (der Basis-CV bleibt unberührt), **KI-Anschreiben** aus
+  dem vollen Anzeigentext, **Magic Pen** für jeden Abschnitt (Vorher/Nachher mit
+  Grounding-Check — Erfundenes wird markiert), **Bewerbungsmappe** als PDF/ZIP aus der
+  angepassten Kopie, Status-Lebenszyklus bis „versendet", und ein **Chat-Agent**, der den
+  ganzen Weg als **Entwürfe** vorbereitet (versendet nie selbst). Generative KI läuft erst
+  nach einer expliziten **KI-Einwilligung** je Workspace (EU-AI-Act, widerrufbar).
 - **Documents** — an interactive **CV** (EN/DE, accent themes, PDF export), a **cover
   letter**, and a **Bewerbungsmappe** builder.
 - **REST API** — a TypeScript, hexagonal Node/Express backend (Zod, problem+json),
@@ -106,6 +116,16 @@ echten Instanz, ohne tote Buttons und ohne Konsolen-Fehler:
 5. **Goldenen Pfad durchlaufen** (Mandant → Stelle → Bewerbung → Anschreiben → Magic Pen →
    Mappe → „versendet") — in unter 5 Minuten, fehlerfrei. `--with-consent` überspringt den
    Dialog für einen reinen Golden-Path ohne Einwilligungsschritt.
+
+## Screenshots
+
+| Workspace                                                                                     | Stellen                                                                         | Bewerbungs-Editor                                                                        | Magic Pen & Einwilligung                                                                |
+| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| <img src="docs/images/bewerbungsservice-workspace.png" width="320" alt="Workspace-Übersicht"> | <img src="docs/images/bewerbungsservice-stellen.png" width="320" alt="Stellen"> | <img src="docs/images/bewerbungsservice-editor.png" width="320" alt="Bewerbungs-Editor"> | <img src="docs/images/bewerbungsservice-consent.png" width="320" alt="KI-Einwilligung"> |
+
+| Bewerbungen                                                                             | Chat-Agent                                                                       | Einstellungen                                                                               | Login                                                                       |
+| --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| <img src="docs/images/bewerbungsservice-bewerbungen.png" width="320" alt="Bewerbungen"> | <img src="docs/images/bewerbungsservice-agent.png" width="320" alt="Chat-Agent"> | <img src="docs/images/bewerbungsservice-einstellungen.png" width="320" alt="Einstellungen"> | <img src="docs/images/bewerbungsservice-login.png" width="320" alt="Login"> |
 
 ## Feature highlights
 

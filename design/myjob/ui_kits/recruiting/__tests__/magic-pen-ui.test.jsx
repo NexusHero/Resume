@@ -104,7 +104,7 @@ describe('Bewerbungs-Editor — Magic Pen (per section)', () => {
     await waitFor(() => expect(screen.getByTestId('pen-summary')).toBeInTheDocument());
     await userEvent.click(screen.getByTestId('pen-summary'));
 
-    await waitFor(() => expect(screen.getByText(/Vorschlag · noch nicht übernommen/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/Suggestion · not applied yet/)).toBeInTheDocument());
     expect(window.RecruitApi.penSummary).toHaveBeenCalledWith('a1');
   });
 
@@ -112,9 +112,9 @@ describe('Bewerbungs-Editor — Magic Pen (per section)', () => {
     render(<BewerbungsEditor application={application()} onClose={vi.fn()} />);
     await waitFor(() => expect(screen.getByTestId('pen-summary')).toBeInTheDocument());
     await userEvent.click(screen.getByTestId('pen-summary'));
-    await waitFor(() => expect(screen.getByText(/Vorschlag · noch nicht übernommen/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/Suggestion · not applied yet/)).toBeInTheDocument());
 
-    await userEvent.click(screen.getByRole('button', { name: /Übernehmen/ }));
+    await userEvent.click(screen.getByRole('button', { name: /Apply/ }));
 
     await waitFor(() =>
       expect(window.RecruitApi.saveJobApplicationDocuments).toHaveBeenCalled(),
@@ -128,11 +128,11 @@ describe('Bewerbungs-Editor — Magic Pen (per section)', () => {
     render(<BewerbungsEditor application={application()} onClose={vi.fn()} />);
     await waitFor(() => expect(screen.getByTestId('pen-summary')).toBeInTheDocument());
     await userEvent.click(screen.getByTestId('pen-summary'));
-    await waitFor(() => expect(screen.getByText(/Vorschlag · noch nicht übernommen/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/Suggestion · not applied yet/)).toBeInTheDocument());
 
-    await userEvent.click(screen.getByRole('button', { name: /Verwerfen/ }));
+    await userEvent.click(screen.getByRole('button', { name: /Discard/ }));
 
-    await waitFor(() => expect(screen.queryByText(/Vorschlag · noch nicht übernommen/)).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText(/Suggestion · not applied yet/)).not.toBeInTheDocument());
     expect(window.RecruitApi.saveJobApplicationDocuments).not.toHaveBeenCalled();
   });
 
@@ -143,18 +143,18 @@ describe('Bewerbungs-Editor — Magic Pen (per section)', () => {
     render(<BewerbungsEditor application={application()} onClose={vi.fn()} />);
     await waitFor(() => expect(screen.getByTestId('pen-summary')).toBeInTheDocument());
     await userEvent.click(screen.getByTestId('pen-summary'));
-    await waitFor(() => expect(screen.getByText(/nicht belegte Angabe/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/unsupported claim/)).toBeInTheDocument());
 
-    await userEvent.click(screen.getByRole('button', { name: /Übernehmen/ }));
+    await userEvent.click(screen.getByRole('button', { name: /Apply/ }));
     // Confirm step appears before the copy is written.
-    await waitFor(() => expect(screen.getByRole('button', { name: /Trotzdem übernehmen/ })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('button', { name: /Apply anyway/ })).toBeInTheDocument());
     expect(window.RecruitApi.saveJobApplicationDocuments).not.toHaveBeenCalled();
   });
 
   it('BewerbungsEditor_Pen_NoAiKey_ShowsNotConfiguredAndSendsNoRequest', async () => {
     window.RecruitApi.aiConfigured.mockResolvedValue(false);
     render(<BewerbungsEditor application={application()} onClose={vi.fn()} />);
-    await waitFor(() => expect(screen.getByText(/KI nicht eingerichtet/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/AI not configured/)).toBeInTheDocument());
     await userEvent.click(screen.getByTestId('pen-summary'));
 
     expect(window.RecruitApi.penSummary).not.toHaveBeenCalled();
@@ -174,7 +174,7 @@ describe('Talent-Editor — kein Magic Pen', () => {
         tools={['pdf', 'ai']}
       />,
     );
-    await waitFor(() => expect(screen.getByText('Kurzprofil')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Summary')).toBeInTheDocument());
     expect(screen.queryByTestId('pen-headline')).not.toBeInTheDocument();
     expect(screen.queryByTestId('pen-summary')).not.toBeInTheDocument();
     expect(screen.queryByTestId('pen-skills')).not.toBeInTheDocument();
@@ -184,25 +184,25 @@ describe('Talent-Editor — kein Magic Pen', () => {
 describe('Bewerbungs-Editor — Alles anpassen (AK-3.5)', () => {
   it('BewerbungsEditor_AllesAnpassen_FansOutAndShowsPerSectionProgress', async () => {
     render(<BewerbungsEditor application={application()} onClose={vi.fn()} />);
-    await waitFor(() => expect(screen.getByText('Alles für diese Stelle anpassen')).toBeInTheDocument());
-    await userEvent.click(screen.getByText('Alles für diese Stelle anpassen'));
+    await waitFor(() => expect(screen.getByText('Adjust everything for this job')).toBeInTheDocument());
+    await userEvent.click(screen.getByText('Adjust everything for this job'));
 
     await waitFor(() => expect(window.RecruitApi.penHeadline).toHaveBeenCalled());
     expect(window.RecruitApi.penSummary).toHaveBeenCalled();
     expect(window.RecruitApi.penExperience).toHaveBeenCalledWith('a1', 0, expect.anything());
     expect(window.RecruitApi.penSkills).toHaveBeenCalled();
 
-    await waitFor(() => expect(screen.getAllByText('fertig').length).toBeGreaterThanOrEqual(4));
+    await waitFor(() => expect(screen.getAllByText('done').length).toBeGreaterThanOrEqual(4));
   });
 
   it('BewerbungsEditor_AllesAnpassen_AggregatedDiff_IndividualAccept', async () => {
     render(<BewerbungsEditor application={application()} onClose={vi.fn()} />);
-    await waitFor(() => expect(screen.getByText('Alles für diese Stelle anpassen')).toBeInTheDocument());
-    await userEvent.click(screen.getByText('Alles für diese Stelle anpassen'));
+    await waitFor(() => expect(screen.getByText('Adjust everything for this job')).toBeInTheDocument());
+    await userEvent.click(screen.getByText('Adjust everything for this job'));
 
-    await waitFor(() => expect(screen.getAllByRole('button', { name: /Übernehmen/ }).length).toBeGreaterThanOrEqual(4));
+    await waitFor(() => expect(screen.getAllByRole('button', { name: /Apply/ }).length).toBeGreaterThanOrEqual(4));
     // Accept just one tile (the headline) — the others stay pending.
-    const first = screen.getAllByRole('button', { name: /Übernehmen/ })[0];
+    const first = screen.getAllByRole('button', { name: /Apply/ })[0];
     await userEvent.click(first);
     await waitFor(() => expect(window.RecruitApi.saveJobApplicationDocuments).toHaveBeenCalled());
   });
@@ -215,19 +215,19 @@ describe('Bewerbungs-Editor — Alles anpassen (AK-3.5)', () => {
     window.RecruitApi.penSkills.mockReturnValue(new Promise(() => {}));
 
     render(<BewerbungsEditor application={application()} onClose={vi.fn()} />);
-    await waitFor(() => expect(screen.getByText('Alles für diese Stelle anpassen')).toBeInTheDocument());
-    await userEvent.click(screen.getByText('Alles für diese Stelle anpassen'));
+    await waitFor(() => expect(screen.getByText('Adjust everything for this job')).toBeInTheDocument());
+    await userEvent.click(screen.getByText('Adjust everything for this job'));
 
-    await waitFor(() => expect(screen.getByRole('button', { name: /Abbrechen/ })).toBeInTheDocument());
-    await userEvent.click(screen.getByRole('button', { name: /Abbrechen/ }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /Cancel/ })).toBeInTheDocument());
+    await userEvent.click(screen.getByRole('button', { name: /Cancel/ }));
 
-    await waitFor(() => expect(screen.getAllByText('abgebrochen').length).toBeGreaterThanOrEqual(4));
+    await waitFor(() => expect(screen.getAllByText('aborted').length).toBeGreaterThanOrEqual(4));
     expect(window.RecruitApi.saveJobApplicationDocuments).not.toHaveBeenCalled();
   });
 
   it('BewerbungsEditor_AllesAnpassen_TileWithGroundingViolation_RequiresConfirm', async () => {
     // One fan-out tile (Profil) violates grounding; its accept must go through
-    // the same two-step "Trotzdem übernehmen" gate as the per-section path (OQ6).
+    // the same two-step "Apply anyway" gate as the per-section path (OQ6).
     window.RecruitApi.penSummary.mockResolvedValue(
       suggestion({
         section: 'summary',
@@ -236,13 +236,13 @@ describe('Bewerbungs-Editor — Alles anpassen (AK-3.5)', () => {
       }),
     );
     render(<BewerbungsEditor application={application()} onClose={vi.fn()} />);
-    await waitFor(() => expect(screen.getByText('Alles für diese Stelle anpassen')).toBeInTheDocument());
-    await userEvent.click(screen.getByText('Alles für diese Stelle anpassen'));
+    await waitFor(() => expect(screen.getByText('Adjust everything for this job')).toBeInTheDocument());
+    await userEvent.click(screen.getByText('Adjust everything for this job'));
 
     // The violating tile shows the GroundingWarning (diff + unsupported highlight).
-    await waitFor(() => expect(screen.getByText(/nicht belegte Angabe/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/unsupported claim/)).toBeInTheDocument());
 
-    // First "Übernehmen" does NOT write; it reveals the "Trotzdem übernehmen" step.
+    // First "Apply" does NOT write; it reveals the "Apply anyway" step.
     await userEvent.click(screen.getByTestId('all-accept-summary'));
     await waitFor(() => expect(screen.getByTestId('all-confirm-summary')).toBeInTheDocument());
     expect(window.RecruitApi.saveJobApplicationDocuments).not.toHaveBeenCalled();

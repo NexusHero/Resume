@@ -5,20 +5,20 @@
 const BW = window.MyJobDesignSystem_5611b7;
 
 const STATUS_META = {
-  draft: { label: 'Entwurf', color: 'var(--text-soft)' },
-  sent: { label: 'Versendet', color: 'var(--accent-strong)' },
-  interview: { label: 'Gespräch', color: 'var(--warning-strong, #8a6d00)' },
-  offer: { label: 'Zusage', color: 'var(--positive, #1F8A5B)' },
-  rejected: { label: 'Absage', color: 'var(--danger)' },
+  draft: { label: 'Draft', color: 'var(--text-soft)' },
+  sent: { label: 'Sent', color: 'var(--accent-strong)' },
+  interview: { label: 'Interview', color: 'var(--warning-strong, #8a6d00)' },
+  offer: { label: 'Offer', color: 'var(--positive, #1F8A5B)' },
+  rejected: { label: 'Rejected', color: 'var(--danger)' },
 };
 
 const STATUS_FILTERS = [
-  { value: undefined, label: 'Alle' },
-  { value: 'draft', label: 'Entwurf' },
-  { value: 'sent', label: 'Versendet' },
-  { value: 'interview', label: 'Gespräch' },
-  { value: 'offer', label: 'Zusage' },
-  { value: 'rejected', label: 'Absage' },
+  { value: undefined, label: 'All' },
+  { value: 'draft', label: 'Draft' },
+  { value: 'sent', label: 'Sent' },
+  { value: 'interview', label: 'Interview' },
+  { value: 'offer', label: 'Offer' },
+  { value: 'rejected', label: 'Rejected' },
 ];
 
 function Bewerbungen({ applications = [], onOpen, onChanged, status, onStatusChange }) {
@@ -48,7 +48,7 @@ function Bewerbungen({ applications = [], onOpen, onChanged, status, onStatusCha
   const remove = (app) => {
     setHiddenIds((s) => new Set(s).add(app.id));
     window.UndoDelete.schedule({
-      label: `Bewerbung${app.postingCompany ? ` bei ${app.postingCompany}` : ''} entfernt`,
+      label: `Application${app.postingCompany ? ` at ${app.postingCompany}` : ''} removed`,
       commit: () =>
         window.RecruitApi.deleteJobApplication(app.id)
           .then(() => onChanged && onChanged())
@@ -93,12 +93,12 @@ function Bewerbungen({ applications = [], onOpen, onChanged, status, onStatusCha
 
       <label style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface-card)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', padding: '0 12px', flex: 1, minWidth: 0 }}>
         <BW.Icon name="search" size={15} style={{ color: 'var(--text-soft)' }} />
-        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Bewerbungen durchsuchen …" aria-label="Bewerbungen durchsuchen" style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-heading)', padding: '10px 0' }} />
+        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search applications …" aria-label="Search applications" style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-heading)', padding: '10px 0' }} />
       </label>
 
       {visible.length === 0 ? (
         <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-soft)', border: '1px dashed var(--border-strong)', borderRadius: 'var(--radius-lg)' }}>
-          {applications.length === 0 ? 'Noch keine Bewerbungen.' : 'Keine Treffer.'}
+          {applications.length === 0 ? 'No applications yet.' : 'No matches.'}
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
@@ -111,10 +111,10 @@ function Bewerbungen({ applications = [], onOpen, onChanged, status, onStatusCha
                     <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>{a.postingTitle}</h3>
                     <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '3px' }}>{a.postingCompany}</div>
                   </div>
-                  <BW.IconButton icon="trash" label="Löschen" aria-label="Löschen" variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); remove(a); }} />
+                  <BW.IconButton icon="trash" label="Delete" aria-label="Delete" variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); remove(a); }} />
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', margin: '14px 0 0' }}>
-                  <span style={{ fontSize: '12px', color: 'var(--text-soft)' }}>für {a.talentName}</span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-soft)' }}>for {a.talentName}</span>
                   <span style={{ display: 'inline-block', fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: meta.color, background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '3px 9px' }}>
                     {meta.label}
                   </span>

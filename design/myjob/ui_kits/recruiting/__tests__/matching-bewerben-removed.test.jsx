@@ -1,5 +1,5 @@
 /* AK-2.8 / Aufrufstelle 4 — the Matching "X bewerben"/"Bewerben" apply path is
-   removed (replaced by "Stelle übernehmen → Bewerbung erstellen"). */
+   removed (replaced by "Adopt job → Create application"). */
 import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 
@@ -37,12 +37,12 @@ describe('Matching — Bewerben path removed (AK-2.8)', () => {
 
   it('Matching_NoBewerbenButton', async () => {
     render(<Matching talents={talents} />);
-    await screen.findByText('Auto · Skill-Match');
+    await screen.findByText('Auto · skill match');
 
     // No "X bewerben" button on the card, no manual "Bewerben" / "stellvertretend bewerben".
     expect(screen.queryByText(/ bewerben$/)).not.toBeInTheDocument();
     expect(screen.queryByText(/stellvertretend bewerben/)).not.toBeInTheDocument();
-    // "Stelle übernehmen" remains.
-    await waitFor(() => expect(screen.getByText('Stelle übernehmen')).toBeInTheDocument());
+    // "Adopt job" remains.
+    await waitFor(() => expect(screen.getByText('Adopt job')).toBeInTheDocument());
   });
 });

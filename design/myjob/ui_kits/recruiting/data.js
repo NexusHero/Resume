@@ -5,10 +5,10 @@
 
 /* Fixed name of the imported original CV — mirrored from the server
    (domain/talent-documents.ts). It is a reference attachment only. */
-const ORIGINAL_CV_ATTACHMENT_NAME = 'Original-Lebenslauf (Import).pdf';
+const ORIGINAL_CV_ATTACHMENT_NAME = 'Original CV (import).pdf';
 
 const STAGES_ORDER = ['new', 'review', 'interview', 'offer', 'hired'];
-const STAGE_LABELS = { new: 'Neu', review: 'Sichtung', interview: 'Interview', offer: 'Angebot', hired: 'Eingestellt', rejected: 'Absage' };
+const STAGE_LABELS = { new: 'New', review: 'Review', interview: 'Interview', offer: 'Offer', hired: 'Hired', rejected: 'Rejected' };
 
 /* Backend application status → the board's pipeline stage. The domain uses
    sent/screening/…; the board columns are new/review/interview/offer/hired. */
@@ -134,7 +134,7 @@ async function aiConfigured() {
 }
 
 const AI_NOT_CONFIGURED =
-  'KI nicht eingerichtet — konfiguriere ANTHROPIC_API_KEY (oder GEMINI_API_KEY) in den Server-Umgebungsvariablen.';
+  'AI is not configured — set ANTHROPIC_API_KEY (or GEMINI_API_KEY) in the server environment variables.';
 
 /** Refuse an AI call before sending it when the server has no key. */
 async function requireAi() {
@@ -145,7 +145,7 @@ async function requireAi() {
 /* AI consent (ADR-0063). The workspace operator must consent before CV/ad text
    leaves the workspace. The UI dialog gates before the first request; this is
    the defense-in-depth client check (the server 403 is the real gate). */
-const AI_CONSENT_REQUIRED = 'KI-Verarbeitung wurde für diesen Workspace noch nicht freigegeben.';
+const AI_CONSENT_REQUIRED = 'AI processing has not been approved for this workspace yet.';
 function aiConsentGranted() {
   const ws = window.WorkspaceSettings ? window.WorkspaceSettings.get() : { aiConsent: false };
   // Unknown/error state: do not hard-block — the server decides 403/200.
@@ -754,18 +754,18 @@ const RecruitApi = {
     );
     return data.jobApplication;
   },
-  // Download the Bewerbungsmappe as one merged PDF (Anschreiben → CV → Anhänge).
+  // Download the application dossier as one merged PDF (cover letter → CV → attachments).
   async downloadJobApplicationDossierPdf(id) {
     await _downloadBinary(
       `${RECRUIT_API_BASE}/job-applications/${encodeURIComponent(id)}/dossier/pdf`,
-      `Bewerbung_${id}.pdf`,
+      `Application_${id}.pdf`,
     );
   },
-  // Download the Bewerbungsmappe as a streamed ZIP (Bewerbung.pdf + attachments).
+  // Download the application dossier as a streamed ZIP (Application.pdf + attachments).
   async downloadJobApplicationDossierZip(id) {
     await _downloadBinary(
       `${RECRUIT_API_BASE}/job-applications/${encodeURIComponent(id)}/dossier/zip`,
-      `Bewerbung_${id}.zip`,
+      `Application_${id}.zip`,
     );
   },
   async generateJobApplicationLetter(id) {
@@ -1379,10 +1379,10 @@ function computeVermittlerKpis(mandates, talents, placements) {
   const active = ms.filter((m) => m.status === 'active').length;
   const fees = ps.reduce((a, p) => a + parseFeeAmount(p.fee), 0);
   return [
-    { label: 'Aktive Suchaufträge', value: String(active), icon: 'briefcase' },
-    { label: 'Mandanten im Pool', value: String(ts.length), icon: 'users' },
-    { label: 'Platzierungen', value: String(ps.length), icon: 'award' },
-    { label: 'Honorar', value: formatFeeSum(fees), icon: 'trend' },
+    { label: 'Active mandates', value: String(active), icon: 'briefcase' },
+    { label: 'Candidates in pool', value: String(ts.length), icon: 'users' },
+    { label: 'Placements', value: String(ps.length), icon: 'award' },
+    { label: 'Fee', value: formatFeeSum(fees), icon: 'trend' },
   ];
 }
 
@@ -1409,10 +1409,10 @@ function computeApplicationKpis(apps) {
   const list = Array.isArray(apps) ? apps : [];
   const count = (statuses) => list.filter((a) => statuses.includes(a.status)).length;
   return [
-    { label: 'Gesendet', value: String(count(['sent', 'new'])), icon: 'send' },
+    { label: 'Sent', value: String(count(['sent', 'new'])), icon: 'send' },
     { label: 'Interview', value: String(count(['interview'])), icon: 'users' },
-    { label: 'Angebot', value: String(count(['offer'])), icon: 'check' },
-    { label: 'Eingestellt', value: String(count(['hired', 'placed'])), icon: 'briefcase' },
+    { label: 'Offer', value: String(count(['offer'])), icon: 'check' },
+    { label: 'Hired', value: String(count(['hired', 'placed'])), icon: 'briefcase' },
   ];
 }
 

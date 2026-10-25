@@ -38,7 +38,7 @@ describe('PipelineBoard', () => {
 
   it('EmptyApps_RendersEmptyColumns', () => {
     render(<PipelineBoard apps={[]} talents={[]} onOpen={() => {}} />);
-    expect(screen.getAllByText('leer').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Empty').length).toBeGreaterThan(0);
   });
 
   it('ReadOnly_NoHandlers_HidesStageControlAndDelete', () => {

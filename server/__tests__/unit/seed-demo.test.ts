@@ -57,7 +57,7 @@ describe('demo seed (AK-6.6)', () => {
     const hits = DEMO_PII_DENYLIST.filter((forbidden) => blob.includes(forbidden.toLowerCase()));
     expect(hits).toEqual([]);
     // Clearly fictional markers are present.
-    expect(blob).toContain('beispiel');
+    expect(blob).toContain('example');
     expect(blob).toContain('demo-');
   });
 

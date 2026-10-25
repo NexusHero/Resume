@@ -170,8 +170,8 @@ describe('JobApplicationDossierService.renderZip', () => {
     const zip = new AdmZip(await collect(stream));
     const names = zip.getEntries().map((e) => e.entryName);
     // Merged PDF first, then the selected attachments in selection order.
-    expect(names).toEqual(['Bewerbung.pdf', 'Zeugnis.pdf', 'Referenz.pdf']);
-    expect(zip.getEntry('Bewerbung.pdf')?.getData().toString()).toBe('%PDF-merged');
+    expect(names).toEqual(['Application.pdf', 'Zeugnis.pdf', 'Referenz.pdf']);
+    expect(zip.getEntry('Application.pdf')?.getData().toString()).toBe('%PDF-merged');
   });
 
   it('JobApplicationDossierService_RenderZip_DeduplicatesNames', async () => {
@@ -255,22 +255,22 @@ describe('JobApplicationDossierService.renderZip', () => {
     expect(resDestroy).toHaveBeenCalledWith(boom);
   });
 
-  it('JobApplicationDossierService_Filename_SlugifiesMandantAndFirma', async () => {
+  it('JobApplicationDossierService_Filename_SlugifiesCandidateAndCompany', async () => {
     const { repo, service } = makeService();
     await repo.add(
       application({ talentName: 'Ada Lovelace', postingCompany: 'Nordwind Logistik AG' }),
     );
     const pdf = await service.renderPdf('team', 'a1');
-    expect(pdf.filename).toBe('Bewerbung_Ada_Lovelace_Nordwind_Logistik_AG.pdf');
+    expect(pdf.filename).toBe('Application_Ada_Lovelace_Nordwind_Logistik_AG.pdf');
     const zip = await service.renderZip('team', 'a1');
-    expect(zip.filename).toBe('Bewerbung_Ada_Lovelace_Nordwind_Logistik_AG.zip');
+    expect(zip.filename).toBe('Application_Ada_Lovelace_Nordwind_Logistik_AG.zip');
   });
 
   it('JobApplicationDossierService_Filename_StripsIllegalCharsAndFallsBack', async () => {
     const { repo, service } = makeService();
     await repo.add(application({ talentName: 'Ada/Ne:y', postingCompany: '' }));
     const pdf = await service.renderPdf('team', 'a1');
-    // postingCompany is empty → fallback "Firma"; "/" and ":" stripped.
-    expect(pdf.filename).toBe('Bewerbung_AdaNey_Firma.pdf');
+    // postingCompany is empty → fallback "Company"; "/" and ":" stripped.
+    expect(pdf.filename).toBe('Application_AdaNey_Company.pdf');
   });
 });

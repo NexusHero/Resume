@@ -1,4 +1,4 @@
-/* Matching — "Stelle übernehmen" (AK-1.1/1.6). */
+/* Matching — "Adopt job" (AK-1.1/1.6). */
 import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -24,7 +24,7 @@ const job = {
   req: ['C++', 'Rust'],
 };
 
-describe('Matching — Stelle übernehmen', () => {
+describe('Matching — Adopt job', () => {
   beforeEach(() => {
     window.RecruitApi = {
       searchJobs: vi.fn().mockResolvedValue({ jobs: [job], liveDown: false }),
@@ -38,8 +38,8 @@ describe('Matching — Stelle übernehmen', () => {
     const onAdopted = vi.fn();
     render(<Matching talents={talents} onAdopted={onAdopted} />);
 
-    await waitFor(() => expect(screen.getByText('Stelle übernehmen')).toBeInTheDocument());
-    await userEvent.click(screen.getByText('Stelle übernehmen'));
+    await waitFor(() => expect(screen.getByText('Adopt job')).toBeInTheDocument());
+    await userEvent.click(screen.getByText('Adopt job'));
 
     await waitFor(() => expect(window.RecruitApi.adoptJobPosting).toHaveBeenCalledTimes(1));
     expect(window.RecruitApi.adoptJobPosting.mock.calls[0][0]).toMatchObject({
@@ -50,7 +50,7 @@ describe('Matching — Stelle übernehmen', () => {
       requirements: ['C++', 'Rust'],
     });
 
-    await waitFor(() => expect(screen.getByText('Übernommen')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Adopted')).toBeInTheDocument());
     expect(onAdopted).toHaveBeenCalledTimes(1);
   });
 
@@ -62,11 +62,11 @@ describe('Matching — Stelle übernehmen', () => {
     const onOpenPosting = vi.fn();
     render(<Matching talents={talents} onOpenPosting={onOpenPosting} />);
 
-    await waitFor(() => expect(screen.getByText('Stelle übernehmen')).toBeInTheDocument());
-    await userEvent.click(screen.getByText('Stelle übernehmen'));
+    await waitFor(() => expect(screen.getByText('Adopt job')).toBeInTheDocument());
+    await userEvent.click(screen.getByText('Adopt job'));
 
-    await waitFor(() => expect(screen.getByText('Bereits gespeichert → öffnen')).toBeInTheDocument());
-    await userEvent.click(screen.getByText('Bereits gespeichert → öffnen'));
+    await waitFor(() => expect(screen.getByText('Already saved → open')).toBeInTheDocument());
+    await userEvent.click(screen.getByText('Already saved → open'));
 
     expect(onOpenPosting).toHaveBeenCalledWith('p1');
   });

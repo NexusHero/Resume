@@ -44,14 +44,14 @@ export class FakeAgentLlmProvider implements AgentLlmProvider {
  */
 export const DEFAULT_AGENT_FAKE_TRANSCRIPT: AgentTurnEvent[][] = [
   [
-    { kind: 'text-delta', text: 'Ich sehe mir deine Mandanten an.' },
+    { kind: 'text-delta', text: 'Let me look at your candidates.' },
     { kind: 'tool-use', id: 'toolu_fake_1', name: 'list_mandanten', input: {} },
     { kind: 'done', stopReason: 'tool_use', usage: { inputTokens: 12, outputTokens: 30 } },
   ],
   [
     {
       kind: 'text-delta',
-      text: 'Das habe ich für dich vorbereitet — die Entwürfe findest du in der Übersicht.',
+      text: 'I have prepared this for you — you can find the drafts in the overview.',
     },
     { kind: 'done', stopReason: 'end_turn', usage: { inputTokens: 40, outputTokens: 25 } },
   ],

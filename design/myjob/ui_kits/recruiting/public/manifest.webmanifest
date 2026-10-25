@@ -1,7 +1,7 @@
 {
-  "name": "myJob — Bewerbungsservice",
+  "name": "myJob — Application service",
   "short_name": "myJob",
-  "description": "Mandanten, Stellen und Bewerbungen — CV und Anschreiben pro Stelle anpassen und die Bewerbungsmappe herunterladen.",
+  "description": "Candidates, jobs and applications — tailor a CV and cover letter per job and download the application dossier.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

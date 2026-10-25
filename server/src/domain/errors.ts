@@ -48,9 +48,7 @@ export class FrozenError extends DomainError {
   readonly status = 409;
   readonly type = 'frozen';
 
-  constructor(
-    message = 'Diese Bewerbung ist versendet und eingefroren. Bestätige die Änderung, um fortzufahren.',
-  ) {
+  constructor(message = 'This application is sent and frozen. Confirm the change to continue.') {
     super(message);
     this.name = 'Frozen';
   }
@@ -139,7 +137,7 @@ export class AiConsentRequiredError extends DomainError {
   readonly status = 403;
   readonly type = 'ai-consent-required';
 
-  constructor(message = 'AI-Verarbeitung wurde für diesen Workspace noch nicht freigegeben.') {
+  constructor(message = 'AI processing has not been approved for this workspace yet.') {
     super(message);
     this.name = 'AiConsentRequired';
   }

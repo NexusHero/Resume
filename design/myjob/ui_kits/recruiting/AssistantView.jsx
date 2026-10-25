@@ -11,13 +11,13 @@ const AV_KIND_LABELS = {
   'follow-up': 'Follow-up',
   'data-gap': 'Data gap',
   application: 'Application',
-  'autopilot-error': 'Fehlgeschlagen',
+  'autopilot-error': 'Failed',
 };
 const AV_STATUS_LABELS = {
-  accepted: 'angenommen',
-  dismissed: 'verworfen',
-  'auto-applied': 'automatisch angewendet',
-  autoApplied: 'automatisch angewendet',
+  accepted: 'accepted',
+  dismissed: 'dismissed',
+  'auto-applied': 'auto-applied',
+  autoApplied: 'auto-applied',
 };
 const AV_KIND_COLORS = {
   'shortlist-add': 'var(--accent-strong)',
@@ -55,7 +55,7 @@ function AssistantView({ onChanged }) {
   const aiBlocked = aiStatus.status === 'not-configured';
   const aiError = (err, fallback) => {
     if (err && err.code === 'ai-not-configured') {
-      return { text: 'KI nicht eingerichtet — richte einen Server-Key ein.', needsSettings: true };
+      return { text: 'AI not configured — set up a server key.', needsSettings: true };
     }
     return { text: (err && err.message) || fallback, needsSettings: false };
   };
@@ -81,7 +81,7 @@ function AssistantView({ onChanged }) {
       .then((r) => setSettings(r.settings))
       .catch((err) => {
         setActionError(
-          aiError(err, 'Die Einstellung konnte nicht gespeichert werden. Bitte erneut versuchen.'),
+          aiError(err, 'The setting could not be saved. Please try again.'),
         );
       })
       .finally(() => setBusy(false));
@@ -96,7 +96,7 @@ function AssistantView({ onChanged }) {
       .catch((err) => {
         // Never swallow e.g. 503 ai-not-configured: the user must see why the
         // run did not happen (ADR-0047).
-        setActionError(aiError(err, 'Der Lauf ist fehlgeschlagen. Bitte erneut versuchen.'));
+        setActionError(aiError(err, 'The run failed. Please try again.'));
       })
       .finally(() => setBusy(false));
   };
@@ -104,15 +104,15 @@ function AssistantView({ onChanged }) {
     setActionError(null);
     window.RecruitApi.resolveAssistantSuggestion(id, action)
       .then(() => { load(); if (action === 'accept' && onChanged) onChanged(); })
-      .catch((err) => setActionError(aiError(err, 'Die Aktion ist fehlgeschlagen.')));
+      .catch((err) => setActionError(aiError(err, 'The action failed.')));
   };
 
-  if (error) return <AvCard><div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Der Assistent konnte nicht geladen werden. Bitte lade die Seite neu.</div></AvCard>;
-  if (settings === null) return <AvCard><div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Lädt…</div></AvCard>;
+  if (error) return <AvCard><div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>The assistant could not be loaded. Please reload the page.</div></AvCard>;
+  if (settings === null) return <AvCard><div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Loading…</div></AvCard>;
 
   const proposed = queue.filter((s) => s.status === 'proposed');
   const resolved = queue.filter((s) => s.status !== 'proposed').slice(0, 12);
-  const fmtWhen = (iso) => (iso ? new Date(iso).toLocaleString('en-GB') : 'nie');
+  const fmtWhen = (iso) => (iso ? new Date(iso).toLocaleString('en-GB') : 'never');
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -122,34 +122,34 @@ function AssistantView({ onChanged }) {
           <div style={{ flex: '1 1 320px', minWidth: 0 }}>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0 }}>CoRecruiter</h2>
             <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '4px', lineHeight: 1.55 }}>
-              Erstellt Shortlists von Kandidat:innen für aktive Suchaufträge, markiert stockende Pipeline-Karten und
-              leere Profile — und baut auf <strong>Autopilot</strong> vollständige Bewerbungen (maßgeschneiderter
-              Lebenslauf + Anschreiben + Bewerbungsmappe) für starke Matches. Läuft im Hintergrund auf dem Server —
-              auch während du abgemeldet bist — und legt alles hier zur Prüfung bereit. Er versendet nie etwas und löscht nie.
+              Creates shortlists of candidates for active mandates, flags stalled pipeline cards and
+              empty profiles — and on <strong>Autopilot</strong> builds complete applications (tailored
+              CV + cover letter + application dossier) for strong matches. Runs in the background on the server —
+              even while you are signed out — and stages everything here for review. It never sends anything and never deletes.
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', letterSpacing: '0.06em', textTransform: 'uppercase', color: settings.enabled ? 'var(--positive, #1F8A5B)' : 'var(--text-soft)' }}>
-              {settings.enabled ? 'An' : 'Aus'}
+              {settings.enabled ? 'On' : 'Off'}
             </span>
             <AV.Button
               variant={settings.enabled ? 'outline' : 'primary'}
               size="sm"
               disabled={busy || (aiBlocked && settings.mode === 'autopilot')}
-              title={aiBlocked && settings.mode === 'autopilot' ? 'KI nicht eingerichtet — in den Einstellungen konfigurieren' : undefined}
+              title={aiBlocked && settings.mode === 'autopilot' ? 'AI not configured — configure in Settings' : undefined}
               onClick={() => patch({ enabled: !settings.enabled })}
             >
-              {settings.enabled ? 'Ausschalten' : 'Einschalten'}
+              {settings.enabled ? 'Turn off' : 'Turn on'}
             </AV.Button>
           </div>
         </div>
 
         <div style={{ display: 'flex', gap: '18px', marginTop: '16px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div style={{ flex: '0 1 300px' }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '6px' }}>Autonomie</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '6px' }}>Autonomy</div>
             <div style={{ display: 'flex', gap: '4px', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-md)', padding: '4px' }}>
-              <AvModePill active={settings.mode === 'suggest'} onClick={() => patch({ mode: 'suggest' })} label="Vorschlagen" hint="Alles wartet auf deine Freigabe." />
-              <AvModePill active={settings.mode === 'act'} onClick={() => patch({ mode: 'act' })} label="Handeln" hint="Interne, umkehrbare Aktionen (z. B. ein Match zur Pipeline hinzufügen) werden direkt ausgeführt und als automatisch angewendet markiert. Nichts nach außen Gerichtetes läuft je allein." />
+              <AvModePill active={settings.mode === 'suggest'} onClick={() => patch({ mode: 'suggest' })} label="Suggest" hint="Everything waits for your approval." />
+              <AvModePill active={settings.mode === 'act'} onClick={() => patch({ mode: 'act' })} label="Act" hint="Internal, reversible actions (e.g. adding a match to the pipeline) are applied directly and marked as auto-applied. Nothing outward-facing ever runs alone." />
               {window.AiButton ? (
                 <span style={{ flex: 1, display: 'inline-flex' }}>
                   <window.AiButton
@@ -157,27 +157,27 @@ function AssistantView({ onChanged }) {
                     size="sm"
                     disabled={busy}
                     onClick={() => patch({ mode: 'autopilot' })}
-                    title="Höchste Stufe: Bei starken Matches baut der Assistent die komplette Bewerbung — maßgeschneiderter Lebenslauf + Anschreiben in der Sprache der Anzeige + Bewerbungsmappe — und legt sie hier zur Freigabe mit einem Klick bereit. Er versendet weiterhin nie etwas."
+                    title="Highest level: for strong matches the assistant builds the complete application — tailored CV + cover letter in the ad language + application dossier — and stages it here for one-click approval. It still never sends anything."
                   >
                     Autopilot
                   </window.AiButton>
                 </span>
               ) : (
-                <AvModePill active={settings.mode === 'autopilot'} onClick={() => patch({ mode: 'autopilot' })} label="Autopilot" hint="Höchste Stufe." />
+                <AvModePill active={settings.mode === 'autopilot'} onClick={() => patch({ mode: 'autopilot' })} label="Autopilot" hint="Highest level." />
               )}
             </div>
           </div>
           <div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '6px' }}>Alle</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '6px' }}>Every</div>
             <select value={settings.intervalMinutes} disabled={busy} onChange={(e) => patch({ intervalMinutes: Number(e.target.value) })} style={{ padding: '8px 10px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', color: 'var(--text-heading)', fontFamily: 'var(--font-mono)', fontSize: '12px' }}>
-              <option value={15}>15 Min.</option>
-              <option value={60}>Stunde</option>
-              <option value={240}>4 Stunden</option>
-              <option value={1440}>Tag</option>
+              <option value={15}>15 min.</option>
+              <option value={60}>Hour</option>
+              <option value={240}>4 hours</option>
+              <option value={1440}>Day</option>
             </select>
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>Letzter Lauf: {fmtWhen(settings.lastRunAt)}</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>Last run: {fmtWhen(settings.lastRunAt)}</span>
             {settings.mode === 'autopilot' && window.AiButton ? (
               <window.AiButton
                 variant="primary"
@@ -186,10 +186,10 @@ function AssistantView({ onChanged }) {
                 iconLeft={<AV.Icon name="zap" size={14} />}
                 onClick={runNow}
               >
-                Jetzt ausführen
+                Run now
               </window.AiButton>
             ) : (
-              <AV.Button variant="primary" size="sm" disabled={busy || !settings.enabled} iconLeft={<AV.Icon name="zap" size={14} />} onClick={runNow}>Jetzt ausführen</AV.Button>
+              <AV.Button variant="primary" size="sm" disabled={busy || !settings.enabled} iconLeft={<AV.Icon name="zap" size={14} />} onClick={runNow}>Run now</AV.Button>
             )}
           </div>
         </div>
@@ -202,21 +202,21 @@ function AssistantView({ onChanged }) {
         {settings.mode === 'autopilot' && (
           <div style={{ display: 'flex', gap: '18px', marginTop: '14px', flexWrap: 'wrap', alignItems: 'flex-end', paddingTop: '14px', borderTop: '1px dashed var(--border)' }}>
             <div style={{ flex: '0 1 260px' }}>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '6px' }}>Bewerben auf</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '6px' }}>Apply to</div>
               <div style={{ display: 'flex', gap: '4px', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-md)', padding: '4px' }}>
-                <AvModePill active={settings.applySource === 'jobs'} onClick={() => patch({ applySource: 'jobs' })} label="Stellenanzeigen" hint="Stellen von den Jobbörsen." />
-                <AvModePill active={settings.applySource === 'mandates'} onClick={() => patch({ applySource: 'mandates' })} label="Eigene Suchaufträge" hint="Deine aktiven Klienten-Suchaufträge." />
+                <AvModePill active={settings.applySource === 'jobs'} onClick={() => patch({ applySource: 'jobs' })} label="Job postings" hint="Jobs from the job boards." />
+                <AvModePill active={settings.applySource === 'mandates'} onClick={() => patch({ applySource: 'mandates' })} label="Own mandates" hint="Your active client mandates." />
               </div>
             </div>
             <div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '6px' }}>Min. Match</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '6px' }}>Min. match</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <input type="number" min="0" max="100" value={settings.minApplyScore} disabled={busy} onChange={(e) => patch({ minApplyScore: Math.max(0, Math.min(100, Number(e.target.value))) })} style={{ width: '64px', padding: '7px 9px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', color: 'var(--text-heading)', fontFamily: 'var(--font-mono)', fontSize: '12px' }} />
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>/ 100</span>
               </div>
             </div>
             <div style={{ flex: '1 1 200px', fontSize: '11.5px', color: 'var(--text-soft)', lineHeight: 1.5 }}>
-              Baut pro starkem Match eine vollständige Bewerbung (verbraucht KI-Tokens). Das Versenden bleibt dein Klick.
+              Builds a complete application per strong match (uses AI tokens). Sending stays your click.
             </div>
           </div>
         )}
@@ -233,16 +233,16 @@ function AssistantView({ onChanged }) {
                 }
                 style={{ appearance: 'none', border: 'none', background: 'none', padding: 0, cursor: 'pointer', font: 'inherit', color: 'var(--accent-strong)', textDecoration: 'underline' }}
               >
-                Einstellungen
+                Settings
               </button>
             )}
           </div>
         )}
         {lastRun && (
           <div role="status" style={{ marginTop: '12px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: lastRun.failures ? 'var(--warning-strong, #8a6d00)' : 'var(--positive, #1F8A5B)' }}>
-            Lauf abgeschlossen — {lastRun.proposed} vorgeschlagen
-            {lastRun.failures ? `, ${lastRun.failures} fehlgeschlagen` : ''}
-            {lastRun.applied ? `, ${lastRun.applied} automatisch angewendet` : ''}.
+            Run finished — {lastRun.proposed} proposed
+            {lastRun.failures ? `, ${lastRun.failures} failed` : ''}
+            {lastRun.applied ? `, ${lastRun.applied} auto-applied` : ''}.
           </div>
         )}
       </AvCard>
@@ -250,12 +250,12 @@ function AssistantView({ onChanged }) {
       {/* Review queue */}
       <AvCard>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
-          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '15px', fontWeight: 700, color: 'var(--text-heading)', margin: 0 }}>Zu deiner Prüfung</h3>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>{proposed.length} offen · {counts.accepted || 0} angenommen · {counts.autoApplied || 0} automatisch angewendet · {counts.dismissed || 0} verworfen</span>
+          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '15px', fontWeight: 700, color: 'var(--text-heading)', margin: 0 }}>For your review</h3>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>{proposed.length} open · {counts.accepted || 0} accepted · {counts.autoApplied || 0} auto-applied · {counts.dismissed || 0} dismissed</span>
         </div>
         {proposed.length === 0 ? (
           <div style={{ padding: '22px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>
-            {settings.enabled ? 'Nichts offen — der Assistent hat keine neue Arbeit gefunden.' : 'Der Assistent ist aus. Schalte ihn ein, dann bereitet er hier Vorschläge vor.'}
+            {settings.enabled ? 'Nothing open — the assistant found no new work.' : 'The assistant is off. Turn it on and it will prepare suggestions here.'}
           </div>
         ) : (
           <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column' }}>
@@ -270,14 +270,14 @@ function AssistantView({ onChanged }) {
                   {s.kind === 'application' && s.payload && (
                     <div style={{ marginTop: '8px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', background: 'var(--surface-sunk)', padding: '10px 12px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '6px' }}>
-                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Maßgeschneidertes Paket · {String(s.payload.lang || '').toUpperCase()} · {s.payload.provider ? `KI · ${s.payload.provider}` : 'KI'}</span>
-                        <a href={window.RecruitApi.assistantDossierUrl(s.id)} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 600, color: 'var(--accent-strong)', border: '1px solid var(--accent-border, var(--border-strong))', borderRadius: 'var(--radius-pill)', padding: '3px 10px' }}>Mappe herunterladen (PDF)</a>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Tailored package · {String(s.payload.lang || '').toUpperCase()} · {s.payload.provider ? `AI · ${s.payload.provider}` : 'AI'}</span>
+                        <a href={window.RecruitApi.assistantDossierUrl(s.id)} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', fontFamily: 'var(--font-mono)', fontSize: '10.5px', fontWeight: 600, color: 'var(--accent-strong)', border: '1px solid var(--accent-border, var(--border-strong))', borderRadius: 'var(--radius-pill)', padding: '3px 10px' }}>Download dossier (PDF)</a>
                         {Number(s.payload.ungroundedCount) > 0 && (
-                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--danger)' }}>⚠ {s.payload.ungroundedCount} ungeprüfte Angabe(n)</span>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--danger)' }}>⚠ {s.payload.ungroundedCount} unsupported claim(s)</span>
                         )}
                       </div>
                       {s.payload.summary && (
-                        <div style={{ fontSize: '12px', color: 'var(--text-body)', lineHeight: 1.5, marginBottom: '6px' }}><strong style={{ color: 'var(--text-heading)' }}>Zusammenfassung:</strong> {s.payload.summary}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-body)', lineHeight: 1.5, marginBottom: '6px' }}><strong style={{ color: 'var(--text-heading)' }}>Summary:</strong> {s.payload.summary}</div>
                       )}
                       {Array.isArray(s.payload.paragraphs) && s.payload.paragraphs.map((p, i) => (
                         <div key={i} style={{ fontSize: '12px', color: 'var(--text-soft)', lineHeight: 1.5, marginTop: i ? '4px' : 0 }}>{p}</div>
@@ -287,9 +287,9 @@ function AssistantView({ onChanged }) {
                 </div>
                 <div style={{ flexShrink: 0, display: 'flex', gap: '8px', justifyContent: isMobile ? 'flex-end' : 'flex-start' }}>
                   {s.kind !== 'autopilot-error' && (
-                    <AV.Button variant="primary" size="sm" onClick={() => resolve(s.id, 'accept')}>{s.kind === 'application' ? 'Freigeben' : 'Annehmen'}</AV.Button>
+                    <AV.Button variant="primary" size="sm" onClick={() => resolve(s.id, 'accept')}>{s.kind === 'application' ? 'Approve' : 'Accept'}</AV.Button>
                   )}
-                  <AV.Button variant="ghost" size="sm" onClick={() => resolve(s.id, 'dismiss')}>{s.kind === 'autopilot-error' ? 'Schließen' : 'Verwerfen'}</AV.Button>
+                  <AV.Button variant="ghost" size="sm" onClick={() => resolve(s.id, 'dismiss')}>{s.kind === 'autopilot-error' ? 'Close' : 'Dismiss'}</AV.Button>
                 </div>
               </div>
             ))}
@@ -300,7 +300,7 @@ function AssistantView({ onChanged }) {
       {/* Recent activity — what the assistant did (incl. auto-applied) */}
       {resolved.length > 0 && (
         <AvCard>
-          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '15px', fontWeight: 700, color: 'var(--text-heading)', margin: 0 }}>Letzte Aktivität</h3>
+          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '15px', fontWeight: 700, color: 'var(--text-heading)', margin: 0 }}>Recent activity</h3>
           <div style={{ marginTop: '8px' }}>
             {resolved.map((s) => (
               <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>

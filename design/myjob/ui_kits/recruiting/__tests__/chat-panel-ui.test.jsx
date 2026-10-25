@@ -59,7 +59,7 @@ describe('ChatPanel', () => {
     window.RecruitApi = mockApi();
     window.useAiStatus = () => ({ provider: 'gemini' });
     const { getByTestId } = render(<ChatPanel onClose={() => {}} onOpenApplication={() => {}} />);
-    expect(getByTestId('gemini-hint').textContent).toContain('pro Runde');
+    expect(getByTestId('gemini-hint').textContent).toContain('per round');
   });
 
   it('ChatPanel_ShowsToolStepChipsWithLinks', async () => {
@@ -81,7 +81,7 @@ describe('ChatPanel', () => {
     );
     fireEvent.change(getByTestId('chat-input'), { target: { value: 'Hi' } });
     fireEvent.click(getByTestId('chat-send'));
-    await waitFor(() => expect(getByTestId('chat-messages').textContent).toContain('Bewerbung anlegen'));
+    await waitFor(() => expect(getByTestId('chat-messages').textContent).toContain('Create application'));
     fireEvent.click(getByTestId('draft-link'));
     expect(onOpenApplication).toHaveBeenCalledWith({
       jobApplicationId: 'a1',
@@ -118,7 +118,7 @@ describe('ChatPanel', () => {
     const events = [
       {
         name: 'limit',
-        data: { reason: 'steps', summary: '2 Bewerbungs-Entwürfe erstellt: Acme – Engineer.' },
+        data: { reason: 'steps', summary: '2 application drafts erstellt: Acme – Engineer.' },
       },
       { name: 'done' },
     ];
@@ -128,7 +128,7 @@ describe('ChatPanel', () => {
     fireEvent.change(getByTestId('chat-input'), { target: { value: 'Hi' } });
     fireEvent.click(getByTestId('chat-send'));
     await waitFor(() =>
-      expect(getByTestId('limit-summary').textContent).toContain('2 Bewerbungs-Entwürfe'),
+      expect(getByTestId('limit-summary').textContent).toContain('2 application drafts'),
     );
   });
 

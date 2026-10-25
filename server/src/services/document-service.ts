@@ -160,7 +160,7 @@ export class DocumentService {
    * language (a German Anschreiben gets a German date), mirroring the preview.
    */
   private letterDate(documents: TalentDocuments): string {
-    const lang = detectLanguage(`${documents.letter.anrede} ${documents.letter.gruss}`, 'de');
+    const lang = detectLanguage(`${documents.letter.anrede} ${documents.letter.gruss}`);
     const date = new Date(this.clock.isoNow()).toLocaleDateString(
       lang === 'de' ? 'de-DE' : 'en-GB',
     );

@@ -1,4 +1,4 @@
-/* Stellen UI — JobPostings list/detail/insert (AK-1.1/1.5/1.6/1.7). */
+/* Jobs UI — JobPostings list/detail/insert (AK-1.1/1.5/1.6/1.7). */
 import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -56,7 +56,7 @@ describe('JobPostings — list & detail', () => {
     render(
       <JobPostings postings={[posting(), posting({ id: 'p2', title: 'Frontend Dev', company: 'Globex' })]} />,
     );
-    await userEvent.type(screen.getByLabelText('Stellen durchsuchen'), 'frontend');
+    await userEvent.type(screen.getByLabelText('Search jobs'), 'frontend');
     expect(screen.queryByText('Senior C++ Engineer')).not.toBeInTheDocument();
     expect(screen.getByText('Frontend Dev')).toBeInTheDocument();
   });
@@ -70,18 +70,18 @@ describe('JobPostings — list & detail', () => {
   it('JobPostingsDetail_Incomplete_ShowsTextErgaenzen', async () => {
     render(<JobPostings postings={[posting({ description: '', descriptionIncomplete: true })]} />);
     await userEvent.click(screen.getByText('Senior C++ Engineer'));
-    expect(screen.getByText('Text ergänzen')).toBeInTheDocument();
+    expect(screen.getByText('Add text')).toBeInTheDocument();
   });
 
   it('JobPostingsList_Delete_ShowsUndoAndRestores', async () => {
     const onChanged = vi.fn();
     render(<JobPostings postings={[posting()]} onChanged={onChanged} />);
     await userEvent.click(screen.getByText('Senior C++ Engineer'));
-    await userEvent.click(screen.getByRole('button', { name: 'Löschen' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Delete' }));
 
     expect(window.UndoDelete.schedule).toHaveBeenCalledTimes(1);
     const action = window.UndoDelete.schedule.mock.calls[0][0];
-    expect(action.label).toContain('entfernt');
+    expect(action.label).toContain('removed');
 
     // Undo restores the hidden row.
     action.restore();
@@ -90,7 +90,7 @@ describe('JobPostings — list & detail', () => {
   });
 });
 
-describe('JobPostings — Stelle einfügen', () => {
+describe('JobPostings — Add job posting', () => {
   it('InsertDialog_TextPath_ShowsEditablePreviewBeforeSave', async () => {
     window.RecruitApi.extractJobPosting.mockResolvedValue({
       company: 'Acme',
@@ -102,23 +102,23 @@ describe('JobPostings — Stelle einfügen', () => {
       source: 'text',
     });
     render(<JobPostings postings={[]} />);
-    await userEvent.click(screen.getByText('Stelle einfügen'));
-    await userEvent.type(screen.getByLabelText('Anzeigentext'), 'A long ad text.');
-    await userEvent.click(screen.getByText('Felder extrahieren'));
+    await userEvent.click(screen.getByText('Add job posting'));
+    await userEvent.type(screen.getByLabelText('Posting text'), 'A long ad text.');
+    await userEvent.click(screen.getByText('Extract fields'));
 
-    await waitFor(() => expect(screen.getByLabelText('Unternehmen')).toBeInTheDocument());
-    expect(screen.getByLabelText('Unternehmen').value).toBe('Acme');
-    expect(screen.getByLabelText('Stelle').value).toBe('Backend Engineer');
+    await waitFor(() => expect(screen.getByLabelText('Company')).toBeInTheDocument());
+    expect(screen.getByLabelText('Company').value).toBe('Acme');
+    expect(screen.getByLabelText('Job title').value).toBe('Backend Engineer');
   });
 
   it('InsertDialog_NoAiKey_ShowsNotConfiguredAndSendsNoRequest', async () => {
     window.RecruitApi.aiConfigured.mockResolvedValue(false);
     render(<JobPostings postings={[]} />);
-    await userEvent.click(screen.getByText('Stelle einfügen'));
-    await userEvent.type(screen.getByLabelText('Anzeigentext'), 'Some text.');
-    await userEvent.click(screen.getByText('Felder extrahieren'));
+    await userEvent.click(screen.getByText('Add job posting'));
+    await userEvent.type(screen.getByLabelText('Posting text'), 'Some text.');
+    await userEvent.click(screen.getByText('Extract fields'));
 
-    await waitFor(() => expect(screen.getByText(/KI nicht eingerichtet/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/AI not configured/)).toBeInTheDocument());
     expect(window.RecruitApi.extractJobPosting).not.toHaveBeenCalled();
   });
 
@@ -127,12 +127,12 @@ describe('JobPostings — Stelle einfügen', () => {
       codeError('ssrf-blocked', 'The URL targets a network address that is not allowed.'),
     );
     render(<JobPostings postings={[]} />);
-    await userEvent.click(screen.getByText('Stelle einfügen'));
-    await userEvent.click(screen.getByText('Von URL'));
-    await userEvent.type(screen.getByLabelText('URL der Stellenanzeige'), 'http://10.0.0.1/');
-    await userEvent.click(screen.getByText('Felder extrahieren'));
+    await userEvent.click(screen.getByText('Add job posting'));
+    await userEvent.click(screen.getByText('From URL'));
+    await userEvent.type(screen.getByLabelText('Job posting URL'), 'http://10.0.0.1/');
+    await userEvent.click(screen.getByText('Extract fields'));
 
-    await waitFor(() => expect(screen.getByText(/nicht erlaubt/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/not allowed/)).toBeInTheDocument());
   });
 
   it('InsertDialog_UrlPath_NoText_ShowsBitteAnzeigentextEinfuegen', async () => {
@@ -140,13 +140,13 @@ describe('JobPostings — Stelle einfügen', () => {
       codeError('no-text', 'The page contains no usable posting text.'),
     );
     render(<JobPostings postings={[]} />);
-    await userEvent.click(screen.getByText('Stelle einfügen'));
-    await userEvent.click(screen.getByText('Von URL'));
-    await userEvent.type(screen.getByLabelText('URL der Stellenanzeige'), 'https://login.example.com/');
-    await userEvent.click(screen.getByText('Felder extrahieren'));
+    await userEvent.click(screen.getByText('Add job posting'));
+    await userEvent.click(screen.getByText('From URL'));
+    await userEvent.type(screen.getByLabelText('Job posting URL'), 'https://login.example.com/');
+    await userEvent.click(screen.getByText('Extract fields'));
 
     await waitFor(() =>
-      expect(screen.getByText(/Bitte Anzeigentext einfügen/)).toBeInTheDocument(),
+      expect(screen.getByText(/Please paste the posting text/)).toBeInTheDocument(),
     );
   });
 });

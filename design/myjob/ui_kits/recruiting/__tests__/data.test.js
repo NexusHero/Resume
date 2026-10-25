@@ -26,11 +26,11 @@ describe('computeVermittlerKpis', () => {
 
     const [active, pool, placed, fees] = computeVermittlerKpis(mandates, talents, placements);
 
-    expect(active).toMatchObject({ label: 'Aktive Suchaufträge', value: '2' });
-    expect(pool).toMatchObject({ label: 'Mandanten im Pool', value: '4' });
-    expect(placed).toMatchObject({ label: 'Platzierungen', value: '2' });
+    expect(active).toMatchObject({ label: 'Active mandates', value: '2' });
+    expect(pool).toMatchObject({ label: 'Candidates in pool', value: '4' });
+    expect(placed).toMatchObject({ label: 'Placements', value: '2' });
     // 12000 + 8000 = 20000 → compact "20 T€"
-    expect(fees).toMatchObject({ label: 'Honorar', value: '20 T€' });
+    expect(fees).toMatchObject({ label: 'Fee', value: '20 T€' });
   });
 
   it('ComputeKpis_FeesBelowOneThousand_FormatsInEuroNotThousands', () => {
@@ -72,7 +72,7 @@ describe('RecruitApi AI status cache', () => {
 
   it('AiConfigured_AfterSettingsObservedStatus_RefetchesNewStatus', async () => {
     // Regression (G5): the cache was permanent, so after a server restart with a
-    // key added the editor kept saying "KI nicht eingerichtet" until reload.
+    // key added the editor kept saying "AI not configured" until reload.
     let available = false;
     vi.stubGlobal(
       'fetch',

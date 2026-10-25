@@ -15,7 +15,7 @@ import { DEFAULT_WORKSPACE_SETTINGS } from './domain/workspace-settings.js';
  * light: it composes the same persistence ports the app uses (fs or sql via
  * `persistence-factory.ts`), so the seed is fs/sql-symmetric and idempotent.
  *
- * All data is **synthetically fictional** (no real PII, `demo-`/`Beispiel`
+ * All data is **synthetically fictional** (no real PII, `demo-`/`Example`
  * markers): §6.2 verboten — never real names, emails, phones, addresses or
  * companies. `aiConsent` stays unset by default (OQ4); `--with-consent` presets
  * it to `true` for a consent-free golden path.
@@ -31,10 +31,10 @@ const ISO = '2026-06-25T10:00:00.000Z';
 export function demoTalent(): Omit<Talent, 'ownerId'> {
   return {
     id: DEMO_TALENT_ID,
-    name: 'Max Mustermann',
+    name: 'Jamie Carter',
     role: 'Software Engineer',
     headline: 'M.Sc. Software Engineer',
-    location: 'Musterstadt',
+    location: 'Springfield',
     email: 'demo-mandant@example.invalid',
     phone: '',
     availability: '',
@@ -50,13 +50,13 @@ export function demoPosting(): Omit<JobPosting, 'ownerId'> {
   return {
     id: DEMO_POSTING_ID,
     source: 'text',
-    company: 'Beispiel GmbH',
+    company: 'Example Ltd.',
     title: 'Senior Software Engineer',
     location: 'Berlin',
     country: 'DE',
     description:
-      'Synthetische Demo-Anzeige. Die Beispiel GmbH sucht eine:n Senior Software ' +
-      'Engineer für verteilte Systeme mit TypeScript, Node.js und PostgreSQL.',
+      'Synthetic demo posting. Example Ltd. is looking for a Senior Software ' +
+      'Engineer for distributed systems with TypeScript, Node.js and PostgreSQL.',
     requirements: ['TypeScript', 'Node.js', 'PostgreSQL'],
     descriptionIncomplete: false,
     createdAt: ISO,
@@ -69,7 +69,7 @@ export function demoDocuments(ownerId: string): TalentDocuments {
     ownerId,
     DEMO_TALENT_ID,
     {
-      name: 'Max Mustermann',
+      name: 'Jamie Carter',
       role: 'Software Engineer',
       email: '',
       phone: '',
@@ -79,14 +79,14 @@ export function demoDocuments(ownerId: string): TalentDocuments {
     ISO,
   );
   docs.resume = {
-    summary: 'Synthetisches Demo-Profil — Software Engineer mit Fokus auf Backend.',
+    summary: 'Synthetic demo profile — Software Engineer with a focus on backend.',
     experience: [
       {
         role: 'Software Engineer',
-        company: 'Beispiel GmbH',
+        company: 'Example Ltd.',
         period: '2021—2026',
-        location: 'Musterstadt',
-        bullets: ['Wartung verteilter Backend-Dienste'],
+        location: 'Springfield',
+        bullets: ['Maintaining distributed backend services'],
         skills: ['TypeScript', 'Node.js'],
       },
     ],
@@ -103,10 +103,10 @@ export function demoApplication(ownerId: string): JobApplication {
     id: DEMO_APPLICATION_ID,
     ownerId,
     jobPostingId: DEMO_POSTING_ID,
-    postingCompany: 'Beispiel GmbH',
+    postingCompany: 'Example Ltd.',
     postingTitle: 'Senior Software Engineer',
     talentId: DEMO_TALENT_ID,
-    talentName: 'Max Mustermann',
+    talentName: 'Jamie Carter',
     status: 'draft',
     statusHistory: [{ status: 'draft', at: ISO }],
     documents: demoDocuments(ownerId),

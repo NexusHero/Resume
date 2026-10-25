@@ -262,6 +262,61 @@ describe('documentsToHtml', () => {
     expect(html).not.toContain('<h2>Experience</h2>');
   });
 
+  it('UsesEnglishSectionHeadingsForAnEnglishLetter', () => {
+    // Phase 7 (ADR-0064, OQ-2): the CV section headings follow the document
+    // language. An English cover letter → English headings.
+    const english: TalentDocuments = {
+      ...documents,
+      letter: {
+        ...documents.letter,
+        anrede: 'Dear Sir or Madam,',
+        gruss: 'Kind regards',
+        betreff: 'Application as Designer',
+        absaetze: ['First paragraph.', 'Second paragraph.'],
+      },
+    };
+    const html = documentsToHtml(english);
+    expect(html).toContain('<h2>Profile</h2>');
+    expect(html).toContain('<h2>Professional experience</h2>');
+    expect(html).toContain('<h2>Education</h2>');
+    expect(html).toContain('<h2>Skills</h2>');
+    expect(html).not.toContain('<h2>Profil</h2>');
+    expect(html).not.toContain('<h2>Berufserfahrung</h2>');
+  });
+
+  it('UsesEnglishSectionHeadingsForTheInkTemplate', () => {
+    const english: TalentDocuments = {
+      ...documents,
+      style: { ...documents.style, template: 'ink' as const },
+      letter: {
+        ...documents.letter,
+        anrede: 'Dear Sir or Madam,',
+        gruss: 'Kind regards',
+        betreff: 'Application as Designer',
+        absaetze: ['First paragraph.'],
+      },
+    };
+    const html = documentsToHtml(english);
+    expect(html).toContain('>About me</');
+    expect(html).toContain('<h2>Profile</h2>');
+    expect(html).toContain('>Contact</h2>');
+    expect(html).toContain('>Skills</h2>');
+    expect(html).not.toContain('Über mich');
+    expect(html).not.toContain('Kenntnisse');
+  });
+
+  it('DefaultsToEnglishHeadingsWithoutLanguageSignal', () => {
+    // Phase 7: a document without a language signal (empty letter) defaults to
+    // English headings.
+    const bare: TalentDocuments = {
+      ...documents,
+      letter: { ...documents.letter, anrede: '', gruss: '', betreff: '', absaetze: [] },
+    };
+    const html = documentsToHtml(bare);
+    expect(html).toContain('<h2>Profile</h2>');
+    expect(html).not.toContain('<h2>Profil</h2>');
+  });
+
   it('CarriesPageAnchorsAndScreenSheetSoThePreviewMatchesTheExport', () => {
     const html = documentsToHtml(documents);
     // The editor scrolls to these anchors; the @media screen sheet gives the

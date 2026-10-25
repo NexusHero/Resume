@@ -199,9 +199,9 @@ export const emptyLetter: LetterContent = {
   strasse: '',
   plzOrt: '',
   betreff: '',
-  anrede: 'Sehr geehrte Damen und Herren,',
+  anrede: 'Dear Sir or Madam,',
   absaetze: [''],
-  gruss: 'Mit freundlichen Grüßen',
+  gruss: 'Kind regards',
 };
 
 /**

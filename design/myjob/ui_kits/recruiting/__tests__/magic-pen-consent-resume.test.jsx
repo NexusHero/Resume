@@ -118,7 +118,7 @@ describe('Bewerbungs-Editor — Magic Pen consent resume (Regression)', () => {
     await userEvent.click(screen.getByTestId('ai-consent-accept'));
 
     await waitFor(() => expect(window.RecruitApi.penSummary).toHaveBeenCalledWith('a1'));
-    await waitFor(() => expect(screen.getByText(/Vorschlag · noch nicht übernommen/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/Suggestion · not applied yet/)).toBeInTheDocument());
     // The suggestion diff (before/after) is actually rendered.
     expect(screen.getByTestId('editor-diff')).toBeInTheDocument();
   });

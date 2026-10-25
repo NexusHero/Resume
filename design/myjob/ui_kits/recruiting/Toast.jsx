@@ -41,7 +41,7 @@ function Toast() {
       <button
         type="button"
         onClick={dismiss}
-        aria-label="Schließen"
+        aria-label="Close"
         style={{
           flexShrink: 0, cursor: 'pointer', appearance: 'none', background: 'none', border: 'none',
           color: 'var(--accent-on-dark)', fontSize: '18px', lineHeight: 1, padding: isMobile ? '11px' : '2px',

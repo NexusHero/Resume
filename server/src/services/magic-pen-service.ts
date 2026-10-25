@@ -77,7 +77,7 @@ export class MagicPenService {
     const groundingDocs = base ?? copy;
     const posting = await this.postings.findById(scope, application.jobPostingId);
     const adText = posting?.description ?? '';
-    return { application, copy, groundingDocs, adText, lang: detectLanguage(adText, 'de') };
+    return { application, copy, groundingDocs, adText, lang: detectLanguage(adText) };
   }
 
   /** The copy field a section maps to (its "before" value). */

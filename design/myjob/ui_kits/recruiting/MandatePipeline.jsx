@@ -112,7 +112,7 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
   const removeCard = (card) => {
     setCards((cs) => cs.filter((c) => c.id !== card.id));
     window.UndoDelete.schedule({
-      label: `${card.talent ? card.talent.name : 'Kandidat:in'} aus der Pipeline entfernt`,
+      label: `${card.talent ? card.talent.name : 'candidate'} removed from the pipeline`,
       commit: () => window.RecruitApi.removeCandidacy(card.id).catch(() => load()),
       restore: () => setCards((cs) => (cs.some((c) => c.id === card.id) ? cs : [...cs, card])),
     });
@@ -122,12 +122,12 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '14px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <button onClick={onBack} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)', padding: 0 }}>
-          <MP.Icon name="arrowLeft" size={14} /> Zurück zu Suchaufträgen
+          <MP.Icon name="arrowLeft" size={14} /> Back to mandates
         </button>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
-          <MP.Button variant="outline" size="sm" iconLeft={<MP.Icon name="users" size={15} />} onClick={() => setKnowledgeOpen(true)}>Firmenwissen</MP.Button>
-          <MP.Button variant="outline" size="sm" iconLeft={<MP.Icon name="zap" size={15} />} onClick={() => setMatching(true)}>Passende finden</MP.Button>
-          <MP.Button variant="primary" size="sm" iconLeft={<MP.Icon name="plus" size={15} />} onClick={() => setAdding(true)}>Kandidat:in hinzufügen</MP.Button>
+          <MP.Button variant="outline" size="sm" iconLeft={<MP.Icon name="users" size={15} />} onClick={() => setKnowledgeOpen(true)}>Company knowledge</MP.Button>
+          <MP.Button variant="outline" size="sm" iconLeft={<MP.Icon name="zap" size={15} />} onClick={() => setMatching(true)}>Find matches</MP.Button>
+          <MP.Button variant="primary" size="sm" iconLeft={<MP.Icon name="plus" size={15} />} onClick={() => setAdding(true)}>Add candidate</MP.Button>
         </div>
       </div>
 
@@ -138,12 +138,12 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
 
       {error && (
         <div style={{ border: '1px solid var(--danger)', borderRadius: 'var(--radius-md)', padding: '16px', color: 'var(--danger)', fontSize: '13px' }}>
-          Pipeline konnte nicht geladen werden. <button onClick={load} style={{ background: 'none', border: 'none', color: 'var(--accent-strong)', cursor: 'pointer', textDecoration: 'underline' }}>Erneut versuchen</button>
+          Could not load the pipeline. <button onClick={load} style={{ background: 'none', border: 'none', color: 'var(--accent-strong)', cursor: 'pointer', textDecoration: 'underline' }}>Try again</button>
         </div>
       )}
 
       {!error && cards === null && (
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-soft)', padding: '20px' }}>Lädt…</div>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-soft)', padding: '20px' }}>Loading…</div>
       )}
 
       {!error && cards !== null && (

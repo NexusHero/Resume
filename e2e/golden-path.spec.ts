@@ -372,41 +372,41 @@ async function mockGoldenPath(page: Page) {
 async function createMandant(page: Page) {
   await page
     .locator('nav')
-    .getByRole('button', { name: /Mandanten/ })
+    .getByRole('button', { name: /Candidates/ })
     .click();
-  await page.getByRole('button', { name: 'Mandant hinzufügen' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Mandant hinzufügen' });
+  await page.getByRole('button', { name: 'Add candidate' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Add candidate' });
   await dialog.getByLabel('Name').fill('Tobias Wirth');
-  await dialog.getByRole('button', { name: 'Mandant hinzufügen' }).click();
+  await dialog.getByRole('button', { name: 'Add candidate' }).click();
   await expect(page.locator('main')).toContainText('Tobias Wirth');
 }
 
 async function insertStelle(page: Page) {
-  // Step 2 via "Stelle einfügen per Text" (the plan §5.2 explicitly allows this
-  // as the alternative to "Stelle übernehmen"). The Portal-Suche ("Stelle
+  // Step 2 via "Add job posting per Text" (the plan §5.2 explicitly allows this
+  // as the alternative to "Adopt job"). The Portal-Suche ("Stelle
   // übernehmen") is the recruiter Matching surface and not part of the
   // application-first main path that this spec walks.
   await page
     .locator('nav')
-    .getByRole('button', { name: /^Stellen$/ })
+    .getByRole('button', { name: /^Jobs$/ })
     .click();
-  await page.getByRole('button', { name: 'Stelle einfügen' }).click();
+  await page.getByRole('button', { name: 'Add job posting' }).click();
   await page
-    .getByLabel('Anzeigentext')
+    .getByLabel('Posting text')
     .fill('We need distributed systems and Kubernetes experience.');
-  await page.getByRole('button', { name: 'Felder extrahieren' }).click();
-  await expect(page.getByLabel('Unternehmen')).toHaveValue('Nordwind Logistik AG');
-  await page.getByRole('button', { name: 'Speichern' }).click();
+  await page.getByRole('button', { name: 'Extract fields' }).click();
+  await expect(page.getByLabel('Company')).toHaveValue('Nordwind Logistik AG');
+  await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.locator('main')).toContainText('Nordwind Logistik AG');
 }
 
 async function createBewerbung(page: Page) {
   await page
     .locator('nav')
-    .getByRole('button', { name: /^Stellen$/ })
+    .getByRole('button', { name: /^Jobs$/ })
     .click();
   await page.getByText('Nordwind Logistik AG').first().click();
-  await page.getByRole('button', { name: 'Bewerbung erstellen' }).click();
+  await page.getByRole('button', { name: 'Create application' }).click();
   await page.getByRole('button', { name: /Tobias Wirth/ }).click();
   await expect(page.locator('[data-doc-hydrated="true"]')).toBeVisible();
 }
@@ -418,22 +418,22 @@ test.describe('Golden path (AK-6.1)', () => {
 
     // 1. Mandant anlegen
     await createMandant(page);
-    // 2. Stelle einfügen per Text
+    // 2. Add job posting per Text
     await insertStelle(page);
-    // 3. Bewerbung erstellen
+    // 3. Create application
     await createBewerbung(page);
-    // 4. KI-Anschreiben → Übernehmen
-    await page.getByRole('button', { name: 'Anschreiben generieren' }).click();
-    await expect(page.getByText('Anschreiben-Vorschlag · noch nicht übernommen')).toBeVisible();
+    // 4. KI-Anschreiben → Apply
+    await page.getByRole('button', { name: 'Generate cover letter' }).click();
+    await expect(page.getByText('Cover letter suggestion · not applied yet')).toBeVisible();
     await page
-      .getByRole('button', { name: 'Übernehmen' })
+      .getByRole('button', { name: 'Apply' })
       .first()
       .evaluate((el) => (el as HTMLButtonElement).click());
     // 5. CV per Magic Pen (Profil)
     await page.getByTestId('pen-summary').click();
-    await expect(page.getByText('Vorschlag · noch nicht übernommen')).toBeVisible();
+    await expect(page.getByText('Suggestion · not applied yet')).toBeVisible();
     await page
-      .getByRole('button', { name: 'Übernehmen' })
+      .getByRole('button', { name: 'Apply' })
       .first()
       .evaluate((el) => (el as HTMLButtonElement).click());
     // 6. Mappe herunterladen (Anhang wählen + PDF)
@@ -442,15 +442,15 @@ test.describe('Golden path (AK-6.1)', () => {
     await page.getByTestId('mappe-pdf').click();
     await expect.poll(() => state.dossierFetches).toBe(1);
     // 7. Status „versendet"
-    await page.getByRole('button', { name: 'Versendet' }).click();
+    await page.getByRole('button', { name: 'Sent' }).click();
     await expect.poll(() => state.statusPosts).toContain('sent');
     await page.reload();
     await page
       .locator('nav')
-      .getByRole('button', { name: /^Bewerbungen$/ })
+      .getByRole('button', { name: /^Applications$/ })
       .click();
     await expect(page.locator('main')).toContainText('Nordwind Logistik AG');
-    await expect(page.locator('main')).toContainText('Versendet');
+    await expect(page.locator('main')).toContainText('Sent');
     expect(state.letterFetches).toBe(1);
     expect(state.penFetches).toBe(1);
   });
@@ -462,12 +462,12 @@ test.describe('Golden path (AK-6.1)', () => {
     await createMandant(page);
     await insertStelle(page);
     await createBewerbung(page);
-    await page.getByRole('button', { name: 'Anschreiben generieren' }).click();
-    await expect(page.getByText('Anschreiben-Vorschlag · noch nicht übernommen')).toBeVisible();
-    await page.getByRole('button', { name: 'Übernehmen' }).first().click();
+    await page.getByRole('button', { name: 'Generate cover letter' }).click();
+    await expect(page.getByText('Cover letter suggestion · not applied yet')).toBeVisible();
+    await page.getByRole('button', { name: 'Apply' }).first().click();
     await page.getByTestId('pen-summary').click();
-    await page.getByRole('button', { name: 'Übernehmen' }).click();
-    await page.getByRole('button', { name: 'Versendet' }).click();
+    await page.getByRole('button', { name: 'Apply' }).click();
+    await page.getByRole('button', { name: 'Sent' }).click();
     await expect.poll(() => state.statusPosts).toContain('sent');
   });
 
@@ -515,7 +515,7 @@ test.describe('Golden path (AK-6.1)', () => {
 
     await page.goto(KIT);
     await page.getByRole('button', { name: 'Agent' }).click();
-    await page.getByTestId('chat-input').fill('Erstelle eine Bewerbung');
+    await page.getByTestId('chat-input').fill('Create an application');
     await page.getByTestId('chat-send').click();
     await expect(page.getByTestId('draft-link')).toBeVisible();
     await page.getByTestId('draft-link').click();

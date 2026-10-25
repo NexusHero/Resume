@@ -1,17 +1,17 @@
 <div align="center">
 
-# myJob — Bewerbungsservice
+# myJob — Application service
 
-**Apply better.** A Mandant turns their own CV and a job ad into a tailored
-Bewerbung — interactive CV, cover letter and Bewerbungsmappe included. Agency
-teams can switch the intermediary features (Suchaufträge, Pipeline,
-Platzierungen) on per Workspace; the application flow stays the primary path.
+**Apply better.** A candidate turns their own CV and a job ad into a tailored
+application — interactive CV, cover letter and application dossier included. Agency
+teams can switch the intermediary features (mandates, pipeline,
+placements) on per workspace; the application flow stays the primary path.
 A small REST API sits behind it all.
 
 [![CI](https://github.com/NexusHero/Resume/actions/workflows/ci.yml/badge.svg)](https://github.com/NexusHero/Resume/actions/workflows/ci.yml)
 ![Node](https://img.shields.io/badge/node-%E2%89%A524-339933?logo=node.js&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-1836%2B%20·%2097%25%20coverage-success)
+![Tests](https://img.shields.io/badge/tests-1843%20·%2097%25%20statements%20·%2090%25%20branches-success)
 ![Built with AI](https://img.shields.io/badge/built%20with-Claude%20Code-d97706)
 
 [**📖 API reference (Swagger UI)**](https://nexushero.github.io/Resume/)
@@ -30,13 +30,13 @@ no third-party viewer, unlike the old Petstore-hosted link this replaces).
 A recruiting product (**myJob**) plus the personal job-application toolkit it grew out of:
 
 - **myJob Workspace** — an ATS for recruiters/agencies: **mandates** per client (fee &
-  deadline), a **talent pool**, a candidacy **pipeline**, **placements**, a dashboard and
+  deadline), a **candidate pool**, a candidacy **pipeline**, **placements**, a dashboard and
   reports. Multi-user, authenticated, **team-scoped**, with GDPR export/erasure/retention
   built in.
 - **CoRecruiter** — the AI agent that works the desk beside you, with one autonomy scale:
   **Suggest** (stages everything for review) → **Act** (applies internal reversible actions
   itself) → **Autopilot** (builds complete applications — CV tailored to the ad, cover
-  letter in the ad's language, Bewerbungsmappe with certificates — for strong matches, ready
+  letter in the ad's language, application dossier with certificates — for strong matches, ready
   for one-click approval). It runs on the server on a schedule (also while you are signed
   out), never sends anything out on its own, and never overwrites a candidate's real CV.
 - **AI assistance** — skill **matching** (local embeddings, hybrid) against a mandate, an
@@ -48,17 +48,17 @@ A recruiting product (**myJob**) plus the personal job-application toolkit it gr
 - **First-party moats** — an **outcome loop** (which drafts actually get replies,
   provider-labeled), a **learned revenue forecast** (stage probabilities from your own resolved
   pipeline), **email integration** (send outreach + IMAP reply detection that closes the
-  loop), and **compliance automation** (KI-Audit-Trail, Löschfristen-Automatik, AGG rewrite).
-- **Bewerbungsservice (Hauptweg)** — the application-first flow: **Stellen** übernehmen
-  oder einfügen (per Text/URL, SSRF-gehärtet, Duplikate erkannt), **Bewerbung** = Stelle ×
-  Mandant mit eigener Dokument-Kopie (der Basis-CV bleibt unberührt), **KI-Anschreiben** aus
-  dem vollen Anzeigentext, **Magic Pen** für jeden Abschnitt (Vorher/Nachher mit
-  Grounding-Check — Erfundenes wird markiert), **Bewerbungsmappe** als PDF/ZIP aus der
-  angepassten Kopie, Status-Lebenszyklus bis „versendet", und ein **Chat-Agent**, der den
-  ganzen Weg als **Entwürfe** vorbereitet (versendet nie selbst). Generative KI läuft erst
-  nach einer expliziten **KI-Einwilligung** je Workspace (EU-AI-Act, widerrufbar).
+  loop), and **compliance automation** (AI audit trail, retention automation, AGG rewrite).
+- **Application service (main path)** — the application-first flow: **adopt** job postings
+  or paste them (via text/URL, SSRF-hardened, duplicates detected), **application** = job ×
+  candidate with its own document copy (the base CV stays untouched), **AI cover letter** from
+  the full ad text, **Magic Pen** for every section (before/after with a
+  grounding check — fabrication is flagged), **application dossier** as PDF/ZIP from the
+  adapted copy, a status lifecycle up to "sent", and a **chat agent** that prepares the
+  whole path as **drafts** (never sends itself). Generative AI runs only after an explicit
+  **AI consent** per workspace (EU AI Act, revocable).
 - **Documents** — an interactive **CV** (EN/DE, accent themes, PDF export), a **cover
-  letter**, and a **Bewerbungsmappe** builder.
+  letter**, and an **application dossier** builder.
 - **REST API** — a TypeScript, hexagonal Node/Express backend (Zod, problem+json),
   file-backed by default or Postgres via `STORE=sql`.
 
@@ -100,50 +100,50 @@ docker compose up --build      # app on Postgres at http://localhost:4178
 See **[docs/deployment.md](docs/deployment.md)** for configuration (`STORE`, `DATABASE_URL`,
 `CORS_ORIGINS`, `COOKIE_SECURE`, `SESSION_TTL_DAYS`, LLM keys, …).
 
-### Vorzeigbar in 10 Minuten
+### Ready to demo in 10 minutes
 
-Der komplette Goldene Pfad — vom Demo-Mandanten bis zur versendeten Bewerbung — auf einer
-echten Instanz, ohne tote Buttons und ohne Konsolen-Fehler:
+The complete golden path — from the demo candidate to the sent application — on a real
+instance, without dead buttons and without console errors:
 
-1. **Instanz starten** — `docker compose up --build` (oder das Image mit der Prod-ENV aus
+1. **Start the instance** — `docker compose up --build` (or the image with the prod env from
    [docs/deployment.md](docs/deployment.md): `STORE=sql`, `DATABASE_URL`, `APP_SECRET`,
    `NODE_ENV=production`, `ANTHROPIC_API_KEY`/`GEMINI_API_KEY`).
-2. **Einloggen** — Workspace anlegen und den KI-Schlüssel prüfen (Einstellungen → KI-Anbindung).
-3. **Demo-Seed** — `npm run seed:demo` legt einen Demo-Mandanten, eine Demo-Stelle und eine
-   Demo-Bewerbung aus **synthetischen** Daten an (kein echtes PII; idempotent).
-4. **Einwilligung erteilen** — der Dialog erscheint bei der ersten KI-Aktion
-   (EU-AI-Act-konform, widerrufbar in den Einstellungen).
-5. **Goldenen Pfad durchlaufen** (Mandant → Stelle → Bewerbung → Anschreiben → Magic Pen →
-   Mappe → „versendet") — in unter 5 Minuten, fehlerfrei. `--with-consent` überspringt den
-   Dialog für einen reinen Golden-Path ohne Einwilligungsschritt.
+2. **Sign in** — create a workspace and check the AI key (Settings → AI connection).
+3. **Demo seed** — `npm run seed:demo` creates a demo candidate, a demo job posting and a
+   demo application from **synthetic** data (no real PII; idempotent).
+4. **Grant consent** — the dialog appears on the first AI action (EU AI Act-compliant,
+   revocable in Settings).
+5. **Walk the golden path** (candidate → job → application → cover letter → Magic Pen →
+   dossier → "sent") — in under 5 minutes, error-free. `--with-consent` skips the dialog for
+   a pure golden path without a consent step.
 
 ## Screenshots
 
-| Workspace                                                                                     | Stellen                                                                         | Bewerbungs-Editor                                                                        | Magic Pen & Einwilligung                                                                |
-| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| <img src="docs/images/bewerbungsservice-workspace.png" width="320" alt="Workspace-Übersicht"> | <img src="docs/images/bewerbungsservice-stellen.png" width="320" alt="Stellen"> | <img src="docs/images/bewerbungsservice-editor.png" width="320" alt="Bewerbungs-Editor"> | <img src="docs/images/bewerbungsservice-consent.png" width="320" alt="KI-Einwilligung"> |
+| Workspace                                                                                    | Jobs                                                                         | Application editor                                                                        | Magic Pen & consent                                                                |
+| -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| <img src="docs/images/bewerbungsservice-workspace.png" width="320" alt="Workspace overview"> | <img src="docs/images/bewerbungsservice-stellen.png" width="320" alt="Jobs"> | <img src="docs/images/bewerbungsservice-editor.png" width="320" alt="Application editor"> | <img src="docs/images/bewerbungsservice-consent.png" width="320" alt="AI consent"> |
 
-| Bewerbungen                                                                             | Chat-Agent                                                                       | Einstellungen                                                                               | Login                                                                       |
-| --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| <img src="docs/images/bewerbungsservice-bewerbungen.png" width="320" alt="Bewerbungen"> | <img src="docs/images/bewerbungsservice-agent.png" width="320" alt="Chat-Agent"> | <img src="docs/images/bewerbungsservice-einstellungen.png" width="320" alt="Einstellungen"> | <img src="docs/images/bewerbungsservice-login.png" width="320" alt="Login"> |
+| Applications                                                                             | Chat agent                                                                       | Settings                                                                               | Login                                                                       |
+| ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| <img src="docs/images/bewerbungsservice-bewerbungen.png" width="320" alt="Applications"> | <img src="docs/images/bewerbungsservice-agent.png" width="320" alt="Chat agent"> | <img src="docs/images/bewerbungsservice-einstellungen.png" width="320" alt="Settings"> | <img src="docs/images/bewerbungsservice-login.png" width="320" alt="Login"> |
 
 ## Feature highlights
 
 - **CoRecruiter agent** — one agent, three gears (Suggest → Act → **Autopilot**). It
   shortlists pool candidates for active mandates, flags stalled pipeline cards and empty
   profiles, and on Autopilot builds the whole application for a strong match — tailored CV +
-  cover letter in the ad's language + Bewerbungsmappe with certificates — and stages it for
-  one-click approval, with a "Download Mappe" preview and a grounding warning. A single
+  cover letter in the ad's language + application dossier with certificates — and stages it for
+  one-click approval, with a "Download dossier" preview and a grounding warning. A single
   **source** switch aims it at the job postings received from the boards or at your own
   mandates. Runs server-side on a schedule; sending stays your click ([ADR-0019](docs/adr/0019-autopilot-auto-apply-agent.md)).
-- **Recruiting core** — create/edit mandates, talents, candidacies and placements through
+- **Recruiting core** — create/edit mandates, candidates, candidacies and placements through
   real forms; a candidacy **pipeline** (reaching `placed` books a placement), dashboard
   KPIs, a revenue **forecast** and fee-per-client reports computed from your live data.
 - **Matching v2 (hybrid, offline)** — rank the pool against a mandate by skill fit (skills
   canonicalised to a taxonomy) blended with **local embedding** similarity between the ad
-  and each profile, so fit in the bullets counts too — deterministic, no network, DSGVO-safe.
+  and each profile, so fit in the bullets counts too — deterministic, no network, GDPR-safe.
 - **AI prep & explanations** — explain _why_ a candidate fits, generate **interview kits**
-  and a **candidate prep kit** (gaps, employer Auflagen, STAR prompts) tailored from the job
+  and a **candidate prep kit** (gaps, employer obligations, STAR prompts) tailored from the job
   ad + a company archetype and real interview observations captured on the desk.
 - **AI pitch & outreach, grounded** — draft a client pitch and first-contact outreach
   (candidate/client, email/LinkedIn); a **grounding self-check** flags any claim the CV +
@@ -159,13 +159,13 @@ echten Instanz, ohne tote Buttons und ohne Konsolen-Fehler:
 - **Auth, teams & RBAC** — email/password accounts, opaque httpOnly sessions with
   server-side expiry + `Secure` cookies, **team-scoped** recruiting data and admin role
   management. Per-user, encrypted LLM keys with per-feature **usage metering**.
-- **GDPR/DSGVO & compliance automation** — one-click **data export** (JSON) and **account
-  erasure**; a retention report + **Löschfristen-Automatik** (a deletion deadline with an
-  opt-in background anonymise sweep); a **KI-Audit-Trail** CSV of every AI call; and an
+- **GDPR & compliance automation** — one-click **data export** (JSON) and **account
+  erasure**; a retention report + **retention automation** (a deletion deadline with an
+  opt-in background anonymise sweep); an **AI audit trail** CSV of every AI call; and an
   **AGG writing aid** that rewrites a flagged job ad into a neutral draft. First-party data
   only — no scraping. See the [EU AI Act brief](docs/eu-ai-act.md) for how these map to the
   Act's transparency and human-oversight obligations for recruiting AI.
-- **AI cover letters** — `POST /api/v1/cover-letter` writes a tailored Anschreiben via
+- **AI cover letters** — `POST /api/v1/cover-letter` writes a tailored cover letter via
   one central server key (`ANTHROPIC_API_KEY`, optionally `GEMINI_API_KEY`). Without a
   key every generative route answers `503 ai-not-configured`; there is no template
   fallback that impersonates AI.
@@ -214,7 +214,7 @@ on GitHub.
 
 ```
 server/                    ← REST API + static server (TypeScript, hexagonal)
-                              (root `/` opens straight into the Workspace)
+                               (root `/` opens straight into the Workspace)
 design/
   documents/ui_kits/       ← CV · cover-letter print templates (behind PDF export)
   myjob/ui_kits/
@@ -240,23 +240,23 @@ for browsing without running the server ([ADR-0044](docs/adr/0044-github-pages-a
 | ----------------------------------------------------------------- | ---------------------------------------------------------- |
 | `POST /auth/register` · `/auth/login`                             | create / sign in to an account                             |
 | `GET·POST·PATCH·DELETE /mandates`                                 | client search mandates (team-scoped)                       |
-| `GET·POST·PATCH·DELETE /talents`                                  | the talent pool                                            |
+| `GET·POST·PATCH·DELETE /talents`                                  | the candidate pool                                         |
 | `POST /mandates/:id/match`                                        | rank the pool against the mandate by skill fit             |
 | `… /mandates/:id/candidacies` · `PATCH /candidacies`              | the candidacy pipeline (→ placement on `placed`)           |
 | `GET·POST·PATCH·DELETE /placements` · `GET /forecast`             | booked placements + fees · revenue forecast                |
 | `POST /talents/:id/documents/pitch` · `…/outreach`                | AI client pitch · outreach (grounded)                      |
-| `POST /mandates/:id/candidates/:tid/prep`                         | candidate prep kit (gaps · Auflagen · STAR)                |
+| `POST /mandates/:id/candidates/:tid/prep`                         | candidate prep kit (gaps · obligations · STAR)             |
 | `… /mandates/:id/observations`                                    | capture interview observations (the flywheel)              |
 | `GET·PUT /assistant` · `POST /assistant/run`                      | CoRecruiter settings (gear, source) · run the playbook now |
-| `GET /assistant/suggestions` · `…/:id/accept`·`/dossier.pdf`      | the review queue · approve · download a staged Mappe       |
+| `GET /assistant/suggestions` · `…/:id/accept`·`/dossier.pdf`      | the review queue · approve · download a staged dossier     |
 | `GET /artifacts` · `/artifacts/stats` · `…/:id/outcome`           | the outcome loop — artifacts, reply rates, stamp a fate    |
 | `POST /talents/:id/outreach/send` · `POST /mail/sync-replies`     | send outreach by email · IMAP reply detection              |
 | `GET /account/export` · `DELETE /account`                         | GDPR data export / account erasure                         |
-| `GET·PUT /retention/policy` · `POST /retention/anonymize-overdue` | Löschfristen policy · bulk anonymise overdue               |
-| `GET /settings/usage/audit.csv` · `POST /compliance/agg-rewrite`  | KI-Audit-Trail export · AGG neutral rewrite                |
+| `GET·PUT /retention/policy` · `POST /retention/anonymize-overdue` | retention policy · bulk anonymise overdue                  |
+| `GET /settings/usage/audit.csv` · `POST /compliance/agg-rewrite`  | AI audit trail export · AGG neutral rewrite                |
 | `GET /members` · `PATCH /members/:id/roles`                       | team members · RBAC role management (admin)                |
 | `GET /jobs` · `POST /ats` · `POST /compliance/agg-check`          | job search · ATS gap · AGG compliance check                |
-| `POST /cover-letter` · `GET /settings/llm`                        | AI Anschreiben · server AI status ("KI eingerichtet")      |
+| `POST /cover-letter` · `GET /settings/llm`                        | AI cover letter · server AI status ("AI configured")       |
 | `GET·PATCH /settings/workspace`                                   | read · admin-only switch `vermittlung` (agency mode)       |
 
 ## npm scripts

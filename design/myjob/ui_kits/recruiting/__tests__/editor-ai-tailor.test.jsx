@@ -46,10 +46,10 @@ describe('Editor — AI tailor', () => {
     );
     render(<Editor talent={talent} onClose={vi.fn()} onCreateMappe={vi.fn()} />);
 
-    await userEvent.click(screen.getByText('KI anpassen'));
+    await userEvent.click(screen.getByText('Adapt with AI'));
 
     const alert = await screen.findByRole('alert');
-    expect(alert).toHaveTextContent('KI-Anpassung fehlgeschlagen');
+    expect(alert).toHaveTextContent('AI adaptation failed');
     expect(alert).toHaveTextContent('This is a Pro feature. Upgrade to unlock it.');
     expect(window.RecruitApi.suggestDocument).toHaveBeenCalledWith('t1', 'summary', {});
   });
@@ -62,10 +62,10 @@ describe('Editor — AI tailor', () => {
     });
     render(<Editor talent={talent} onClose={vi.fn()} onCreateMappe={vi.fn()} />);
 
-    await userEvent.click(screen.getByText('KI anpassen'));
+    await userEvent.click(screen.getByText('Adapt with AI'));
 
     await waitFor(() => expect(screen.getByText('A crisp tailored summary.')).toBeInTheDocument());
-    expect(screen.getByText('KI · claude')).toBeInTheDocument();
+    expect(screen.getByText('AI · claude')).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
@@ -81,7 +81,7 @@ describe('Editor — AI tailor', () => {
       />,
     );
 
-    const link = await screen.findByRole('link', { name: /KI nicht eingerichtet/ });
+    const link = await screen.findByRole('link', { name: /AI not configured/ });
     await userEvent.click(link);
 
     expect(onOpenSettings).toHaveBeenCalledTimes(1);

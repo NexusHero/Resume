@@ -19,12 +19,12 @@ const EDM_FIELD = { width: '100%', padding: '11px 13px', borderRadius: 'var(--ra
 function importErrorMessage(err) {
   const code = err && err.code;
   if (code === 'no-text-layer') {
-    return 'Das PDF enthält keinen lesbaren Text (z. B. Scan oder geschützt). Bitte Text einfügen.';
+    return 'The PDF contains no readable text (e.g. a scan or protected file). Please paste the text.';
   }
   if (code === 'upstream-provider' || (err && err.status === 502)) {
-    return 'KI-Anbieter nicht erreichbar. Bitte erneut versuchen.';
+    return 'AI provider unreachable. Please try again.';
   }
-  return 'Der Import ist fehlgeschlagen. Bitte erneut versuchen oder den Text einfügen.';
+  return 'The import failed. Please try again or paste the text.';
 }
 
 /* ---- Import: paste a CV or upload a PDF; without a key it keeps the full text ---- */
@@ -88,25 +88,25 @@ function ImportCvModal({ talentId, onParsed, onClose }) {
   };
 
   return (
-    <EdmModalShell title="CV importieren" subtitle="PDF/HTML hochladen oder den Lebenslauf-Text einfügen — die KI übernimmt Kurzprofil, Berufserfahrung und Skills in den Editor." onClose={onClose} scroll={false}>
+    <EdmModalShell title="Import CV" subtitle="Upload a PDF/HTML or paste the CV text — AI fills the summary, experience and skills into the editor." onClose={onClose} scroll={false}>
       <input ref={pdfInputRef} type="file" accept=".pdf,.html" onChange={runImportFile} style={{ display: 'none' }} />
       {window.useAiStatus && window.useAiStatus().status === 'not-configured' && window.TextImportNotice && (
         <div style={{ marginBottom: '10px' }}><window.TextImportNotice /></div>
       )}
       <div style={{ marginBottom: '12px' }}>
         <button onClick={() => pdfInputRef.current && pdfInputRef.current.click()} disabled={parsing} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'none', border: '1px dashed var(--border-strong)', borderRadius: 'var(--radius-md)', cursor: parsing ? 'default' : 'pointer', fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-soft)', padding: '10px 16px', width: '100%', justifyContent: 'center' }}>
-          <EDM.Icon name="upload" size={14} /> {parsing ? 'Lese…' : 'PDF / HTML hochladen'}
+          <EDM.Icon name="upload" size={14} /> {parsing ? 'Reading…' : 'Upload PDF / HTML'}
         </button>
       </div>
-      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'center', margin: '0 0 10px' }}>oder Text einfügen</div>
-      <textarea value={importText} onChange={(e) => setImportText(e.target.value)} rows={9} placeholder="CV-Text hier einfügen…" style={{ ...EDM_FIELD, resize: 'vertical' }} />
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'center', margin: '0 0 10px' }}>or paste text</div>
+      <textarea value={importText} onChange={(e) => setImportText(e.target.value)} rows={9} placeholder="Paste CV text here…" style={{ ...EDM_FIELD, resize: 'vertical' }} />
       {aiBlocked && window.AiNotConfiguredHint && (
         <div style={{ marginTop: '10px' }}><window.AiNotConfiguredHint compact /></div>
       )}
       {importHint && <div style={{ marginTop: '10px', fontSize: '12px', color: 'var(--danger)' }}>{importHint}</div>}
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '14px' }}>
-        <EDM.Button variant="ghost" onClick={onClose}>Abbrechen</EDM.Button>
-        <EDM.Button variant="primary" disabled={parsing || !importText.trim()} onClick={runImport}>{parsing ? 'Analysiere…' : 'Analysieren & übernehmen'}</EDM.Button>
+        <EDM.Button variant="ghost" onClick={onClose}>Cancel</EDM.Button>
+        <EDM.Button variant="primary" disabled={parsing || !importText.trim()} onClick={runImport}>{parsing ? 'Analyzing…' : 'Analyze & apply'}</EDM.Button>
       </div>
     </EdmModalShell>
   );
@@ -122,7 +122,7 @@ function AtsModal({ talentId, onClose }) {
   const runAts = async () => {
     if (!jobText.trim() || !talentId) return;
     if (window.AiStatus && window.AiStatus.get().status === 'not-configured') {
-      setAtsError('KI nicht eingerichtet — konfiguriere den zentralen Schlüssel in den Einstellungen.');
+      setAtsError('AI not configured — configure the central key in Settings.');
       return;
     }
     setScoring(true);
@@ -131,17 +131,17 @@ function AtsModal({ talentId, onClose }) {
       setAts(await window.RecruitApi.atsScore(talentId, jobText));
     } catch {
       // A failed score used to leave the modal silent (no result, no message).
-      setAtsError('Der ATS-Abgleich ist fehlgeschlagen. Bitte versuche es erneut.');
+      setAtsError('The ATS check failed. Please try again.');
     }
     setScoring(false);
   };
 
   return (
-    <EdmModalShell title="ATS-Abgleich" subtitle="Stellenanzeige einfügen — die KI bewertet diesen Lebenslauf dagegen und schlägt Verbesserungen vor." onClose={onClose}>
-      <textarea value={jobText} onChange={(e) => setJobText(e.target.value)} rows={7} placeholder="Stellenbeschreibung einfügen…" style={{ ...EDM_FIELD, resize: 'vertical' }} />
+    <EdmModalShell title="ATS check" subtitle="Paste a job posting — AI scores this CV against it and suggests improvements." onClose={onClose}>
+      <textarea value={jobText} onChange={(e) => setJobText(e.target.value)} rows={7} placeholder="Paste job description…" style={{ ...EDM_FIELD, resize: 'vertical' }} />
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
-        <EDM.Button variant="ghost" onClick={onClose}>Schließen</EDM.Button>
-        <EDM.Button variant="primary" disabled={scoring || !jobText.trim()} onClick={runAts}>{scoring ? 'Analysiere…' : 'Analysieren'}</EDM.Button>
+        <EDM.Button variant="ghost" onClick={onClose}>Close</EDM.Button>
+        <EDM.Button variant="primary" disabled={scoring || !jobText.trim()} onClick={runAts}>{scoring ? 'Analyzing…' : 'Analyze'}</EDM.Button>
       </div>
       {aiBlocked && window.AiNotConfiguredHint && (
         <div style={{ marginTop: '10px' }}><window.AiNotConfiguredHint compact /></div>
@@ -151,18 +151,18 @@ function AtsModal({ talentId, onClose }) {
         <div style={{ marginTop: '18px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
             <span style={{ fontFamily: 'var(--font-display)', fontSize: '30px', fontWeight: 700, color: ats.score >= 75 ? 'var(--positive, #1F8A5B)' : ats.score >= 50 ? 'var(--accent-strong)' : 'var(--danger)' }}>{ats.score}</span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>/ 100 Übereinstimmung</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>/ 100 match</span>
             <span style={{ marginLeft: 'auto' }}><EdmProviderBadge provider={ats.provider} usage={ats.usage} /></span>
           </div>
           {ats.matched && ats.matched.length > 0 && (
             <div style={{ marginTop: '10px' }}>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '5px' }}>Vorhanden</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '5px' }}>Present</div>
               <div>{ats.matched.map((m, i) => <span key={i} style={{ display: 'inline-block', background: 'var(--accent-soft)', color: 'var(--accent-strong)', borderRadius: '4px', padding: '2px 8px', margin: '0 5px 5px 0', fontSize: '12px' }}>{m}</span>)}</div>
             </div>
           )}
           {ats.missing && ats.missing.length > 0 && (
             <div style={{ marginTop: '8px' }}>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '5px' }}>Fehlend</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '5px' }}>Missing</div>
               <div>{ats.missing.map((m, i) => <span key={i} style={{ display: 'inline-block', background: 'var(--danger-soft)', color: 'var(--danger)', borderRadius: '4px', padding: '2px 8px', margin: '0 5px 5px 0', fontSize: '12px' }}>{m}</span>)}</div>
             </div>
           )}
@@ -193,7 +193,7 @@ function PitchModal({ talentId, onClose }) {
     } catch {
       // Keep the modal open and say what happened; a silent failure looked like
       // a no-op button.
-      setPitchError('Der Pitch konnte nicht erstellt werden. Bitte versuche es erneut.');
+      setPitchError('The pitch could not be created. Please try again.');
     }
     setPitching(false);
   };
@@ -212,11 +212,11 @@ function PitchModal({ talentId, onClose }) {
   };
 
   return (
-    <EdmModalShell title="Kandidat:in-Pitch" subtitle="Ein kurzes „Warum diese:r Kandidat:in“-Profil für die Präsentation beim Kunden. Suchauftrag/Rolle für einen zugeschnittenen Pitch ergänzen (optional)." onClose={onClose}>
-      <textarea value={mandateContext} onChange={(e) => setMandateContext(e.target.value)} rows={5} placeholder="Suchauftrag / Rollenkontext (optional)…" style={{ ...EDM_FIELD, resize: 'vertical' }} />
+    <EdmModalShell title="Candidate pitch" subtitle="A short 'why this candidate' profile to present to the client. Add the mandate/role for a tailored pitch (optional)." onClose={onClose}>
+      <textarea value={mandateContext} onChange={(e) => setMandateContext(e.target.value)} rows={5} placeholder="Mandate / role context (optional)…" style={{ ...EDM_FIELD, resize: 'vertical' }} />
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
-        <EDM.Button variant="ghost" onClick={onClose}>Schließen</EDM.Button>
-        <EDM.Button variant="primary" disabled={pitching} onClick={runPitch}>{pitching ? 'Entwerfe…' : pitch ? 'Neu generieren' : 'Generieren'}</EDM.Button>
+        <EDM.Button variant="ghost" onClick={onClose}>Close</EDM.Button>
+        <EDM.Button variant="primary" disabled={pitching} onClick={runPitch}>{pitching ? 'Drafting…' : pitch ? 'Regenerate' : 'Generate'}</EDM.Button>
       </div>
       {pitchError && <div role="alert" style={{ marginTop: '10px', fontSize: '12px', color: 'var(--danger)' }}>{pitchError}</div>}
       {pitch && (
@@ -225,7 +225,7 @@ function PitchModal({ talentId, onClose }) {
             <div style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 700, color: 'var(--text-heading)' }}>{pitch.headline}</div>
             <span style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
               <EdmProviderBadge provider={pitch.provider} usage={pitch.usage} />
-              <EdmPillButton icon={pitchCopied ? 'check' : 'fileText'} onClick={copyPitch}>{pitchCopied ? 'Kopiert' : 'Kopieren'}</EdmPillButton>
+              <EdmPillButton icon={pitchCopied ? 'check' : 'fileText'} onClick={copyPitch}>{pitchCopied ? 'Copied' : 'Copy'}</EdmPillButton>
             </span>
           </div>
           {pitch.paragraphs.map((p, i) => (
@@ -304,13 +304,13 @@ function OutreachModal({ talentId, defaultEmail, onClose }) {
       loadLoop(); // the generation was logged for the outcome loop
     } catch {
       // A failed draft stays visible as an explicit message, never as a no-op.
-      setOutError('Die Ansprache konnte nicht entworfen werden. Bitte versuche es erneut.');
+      setOutError('The outreach message could not be drafted. Please try again.');
     }
     setOutBusy(false);
   };
   const copyOutreach = async () => {
     if (!outMsg) return;
-    const text = [outMsg.subject && `Betreff: ${outMsg.subject}`, outMsg.body]
+    const text = [outMsg.subject && `Subject: ${outMsg.subject}`, outMsg.body]
       .filter(Boolean)
       .join('\n\n');
     try {
@@ -326,7 +326,7 @@ function OutreachModal({ talentId, defaultEmail, onClose }) {
     setSendState('sending');
     try {
       await window.RecruitApi.sendOutreach(talentId, {
-        subject: outMsg.subject || 'Ihre nächste Rolle',
+        subject: outMsg.subject || 'Your next role',
         body: outMsg.body,
       });
       setSendState('sent');
@@ -336,13 +336,13 @@ function OutreachModal({ talentId, defaultEmail, onClose }) {
     }
   };
   const checkReplies = async () => {
-    setSyncNote('Prüfe…');
+    setSyncNote('Checking…');
     try {
       const res = await window.RecruitApi.syncMailReplies();
-      setSyncNote(res.replies > 0 ? `${res.replies} ${res.replies === 1 ? 'Antwort' : 'Antworten'} gefunden` : 'Keine neuen Antworten');
+      setSyncNote(res.replies > 0 ? `${res.replies} ${res.replies === 1 ? 'reply' : 'replies'} found` : 'No new replies');
       loadLoop();
     } catch {
-      setSyncNote('Prüfung fehlgeschlagen');
+      setSyncNote('Check failed');
     }
     setTimeout(() => setSyncNote(''), 4000);
   };
@@ -363,22 +363,22 @@ function OutreachModal({ talentId, defaultEmail, onClose }) {
   );
 
   return (
-    <EdmModalShell title="Ansprache-Nachricht" subtitle="Erstkontakt-Nachricht entwerfen — an die:den Kandidat:in (Sourcing) oder an eine:n Kund:in (Kandidat:in vorstellen), als E-Mail oder LinkedIn-DM." subtitleGap="14px" onClose={onClose}>
+    <EdmModalShell title="Outreach message" subtitle="Draft a first-contact message — to the candidate (sourcing) or to a client (introduce a candidate), as an email or LinkedIn DM." subtitleGap="14px" onClose={onClose}>
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
         <div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '5px' }}>An</div>
-          {toggle(<>{pill(outAudience === 'candidate', () => setOutAudience('candidate'), 'Kandidat:in')}{pill(outAudience === 'client', () => setOutAudience('client'), 'Kund:in')}</>)}
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '5px' }}>To</div>
+          {toggle(<>{pill(outAudience === 'candidate', () => setOutAudience('candidate'), 'Candidate')}{pill(outAudience === 'client', () => setOutAudience('client'), 'Client')}</>)}
         </div>
         <div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '5px' }}>Kanal</div>
-          {toggle(<>{pill(outChannel === 'email', () => setOutChannel('email'), 'E-Mail')}{pill(outChannel === 'linkedin', () => setOutChannel('linkedin'), 'LinkedIn')}</>)}
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '5px' }}>Channel</div>
+          {toggle(<>{pill(outChannel === 'email', () => setOutChannel('email'), 'Email')}{pill(outChannel === 'linkedin', () => setOutChannel('linkedin'), 'LinkedIn')}</>)}
         </div>
       </div>
-      <input value={outTone} onChange={(e) => setOutTone(e.target.value)} placeholder='Ton (optional), z. B. locker („Du“) oder förmlich („Sie“)' style={{ ...EDM_FIELD, padding: '9px 12px', marginBottom: '10px' }} />
-      <textarea value={outContext} onChange={(e) => setOutContext(e.target.value)} rows={4} placeholder="Suchauftrag / Rollenkontext (optional)…" style={{ ...EDM_FIELD, resize: 'vertical' }} />
+      <input value={outTone} onChange={(e) => setOutTone(e.target.value)} placeholder='Tone (optional), e.g. casual or formal' style={{ ...EDM_FIELD, padding: '9px 12px', marginBottom: '10px' }} />
+      <textarea value={outContext} onChange={(e) => setOutContext(e.target.value)} rows={4} placeholder="Mandate / role context (optional)…" style={{ ...EDM_FIELD, resize: 'vertical' }} />
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
-        <EDM.Button variant="ghost" onClick={onClose}>Schließen</EDM.Button>
-        <EDM.Button variant="primary" disabled={outBusy} onClick={runOutreach}>{outBusy ? 'Entwerfe…' : outMsg ? 'Neu generieren' : 'Generieren'}</EDM.Button>
+        <EDM.Button variant="ghost" onClick={onClose}>Close</EDM.Button>
+        <EDM.Button variant="primary" disabled={outBusy} onClick={runOutreach}>{outBusy ? 'Drafting…' : outMsg ? 'Regenerate' : 'Generate'}</EDM.Button>
       </div>
       {outError && <div role="alert" style={{ marginTop: '10px', fontSize: '12px', color: 'var(--danger)' }}>{outError}</div>}
       {outMsg && (
@@ -387,16 +387,16 @@ function OutreachModal({ talentId, defaultEmail, onClose }) {
             <EdmProviderBadge provider={outMsg.provider} usage={outMsg.usage} />
             {outChannel === 'email' && outAudience === 'candidate' && defaultEmail && (
               <EdmPillButton icon={sendState === 'sent' ? 'check' : 'send'} onClick={sendOutreachMail}>
-                {sendState === 'sending' ? 'Sende…' : sendState === 'sent' ? `An ${defaultEmail} gesendet` : sendState === 'error' ? 'Senden fehlgeschlagen — erneut versuchen' : 'E-Mail senden'}
+                {sendState === 'sending' ? 'Sending…' : sendState === 'sent' ? `Sent to ${defaultEmail}` : sendState === 'error' ? 'Sending failed — try again' : 'Send email'}
               </EdmPillButton>
             )}
             {outChannel === 'email' && (
-              <EdmPillButton icon="send" onClick={openOutreachMail}>In E-Mail öffnen</EdmPillButton>
+              <EdmPillButton icon="send" onClick={openOutreachMail}>Open in email</EdmPillButton>
             )}
-            <EdmPillButton icon={outCopied ? 'check' : 'fileText'} onClick={copyOutreach}>{outCopied ? 'Kopiert' : 'Kopieren'}</EdmPillButton>
+            <EdmPillButton icon={outCopied ? 'check' : 'fileText'} onClick={copyOutreach}>{outCopied ? 'Copied' : 'Copy'}</EdmPillButton>
           </div>
           {outMsg.subject && (
-            <div style={{ fontSize: '13px', color: 'var(--text-heading)', marginBottom: '8px' }}><strong>Betreff:</strong> {outMsg.subject}</div>
+            <div style={{ fontSize: '13px', color: 'var(--text-heading)', marginBottom: '8px' }}><strong>Subject:</strong> {outMsg.subject}</div>
           )}
           <div style={{ whiteSpace: 'pre-wrap', fontSize: '13px', lineHeight: 1.55, color: 'var(--text-body)' }}>{outMsg.body}</div>
           <EdmGroundingWarning grounding={outMsg.grounding} />
@@ -408,16 +408,16 @@ function OutreachModal({ talentId, defaultEmail, onClose }) {
       {(history.length > 0 || (replyRate && replyRate.replyRate !== null)) && (
         <div style={{ marginTop: '18px', borderTop: '1px solid var(--border)', paddingTop: '14px' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Ergebnis-Schleife</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Outcome loop</span>
             {replyRate && replyRate.replyRate !== null && (
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>
-                Dein Desk: {replyRate.replied + replyRate.converted} von {replyRate.replied + replyRate.noReply + replyRate.converted} abgeschlossenen Ansprachen erhielten eine Antwort ({replyRate.replyRate}%)
+                Your desk: {replyRate.replied + replyRate.converted} of {replyRate.replied + replyRate.noReply + replyRate.converted} completed outreach messages received a reply ({replyRate.replyRate}%)
               </span>
             )}
             {mailStatus && mailStatus.replySync && (
               <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
                 {syncNote && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-muted)' }}>{syncNote}</span>}
-                <EdmPillButton onClick={checkReplies}>Antworten prüfen</EdmPillButton>
+                <EdmPillButton onClick={checkReplies}>Check replies</EdmPillButton>
               </span>
             )}
           </div>
@@ -429,8 +429,8 @@ function OutreachModal({ talentId, defaultEmail, onClose }) {
               <span style={{ marginLeft: 'auto', display: 'inline-flex', gap: '6px' }}>
                 {a.outcome === 'pending' ? (
                   <>
-                    <EdmPillButton onClick={() => stampOutcome(a.id, 'replied')}>Geantwortet</EdmPillButton>
-                    <EdmPillButton onClick={() => stampOutcome(a.id, 'no-reply')}>Keine Antwort</EdmPillButton>
+                    <EdmPillButton onClick={() => stampOutcome(a.id, 'replied')}>Replied</EdmPillButton>
+                    <EdmPillButton onClick={() => stampOutcome(a.id, 'no-reply')}>No reply</EdmPillButton>
                   </>
                 ) : (
                   <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: a.outcome === 'no-reply' ? 'var(--text-muted)' : 'var(--positive, #1F8A5B)' }}>{a.outcome}</span>

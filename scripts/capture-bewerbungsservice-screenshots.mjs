@@ -45,7 +45,7 @@ try {
     });
     const page = await ctx.newPage();
     await page.goto(APP);
-    await page.getByRole('button', { name: 'Anmelden' }).first().waitFor({ timeout: 20000 });
+    await page.getByRole('button', { name: 'Sign in' }).first().waitFor({ timeout: 20000 });
     await page.waitForTimeout(1200);
     await page.screenshot({ path: path.join(OUT, 'bewerbungsservice-login.png') });
     await ctx.close();
@@ -87,7 +87,7 @@ try {
   await page.waitForTimeout(800);
   await shot('bewerbungsservice-workspace.png');
 
-  await openView('Stellen');
+  await openView('Jobs');
   await shot('bewerbungsservice-stellen.png');
 
   // Chat agent (AGENT_FAKE drives a deterministic script).
@@ -95,14 +95,14 @@ try {
   await page.getByTestId('agent-action').click();
   await page.getByTestId('agent-panel').waitFor({ timeout: 15000 });
   const input = page.getByTestId('chat-input');
-  await input.fill('Bereite eine Bewerbung für Max Mustermann vor');
+  await input.fill('Prepare an application for Jamie Carter');
   await page.getByTestId('chat-send').click();
   await page.waitForTimeout(6000);
   await shot('bewerbungsservice-agent.png');
   await page.getByTestId('agent-close').click();
   await page.waitForTimeout(600);
 
-  await openView('Bewerbungen');
+  await openView('Applications');
   await shot('bewerbungsservice-bewerbungen.png');
 
   // Editor: open the seeded draft application.
@@ -124,7 +124,7 @@ try {
   // Reload back to the Workspace shell (session cookie persists), then settings.
   await page.goto(APP);
   await page.getByRole('button', { name: 'Workspace' }).first().waitFor({ timeout: 30000 });
-  await openView('Einstellungen');
+  await openView('Settings');
   await shot('bewerbungsservice-einstellungen.png');
 
   await ctx.close();

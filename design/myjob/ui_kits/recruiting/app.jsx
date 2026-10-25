@@ -2,37 +2,37 @@
 const A = window.MyJobDesignSystem_5611b7;
 
 const TITLES = {
-  uebersicht: ['Workspace', 'Was heute deine Aufmerksamkeit braucht'],
-  mandate: ['Suchaufträge', 'Deine Suchaufträge — Stellen, Fristen, Honorar'],
-  pool: ['Mandanten', 'Die Personen, die du beim Bewerben begleitest'],
-  matching: ['Stellensuche & Matching', 'Passende Rollen finden'],
-  stellen: ['Stellen', 'Gespeicherte Stellenanzeigen'],
-  bewerbungen: ['Bewerbungen', 'Deine Bewerbungen im Überblick'],
-  mehr: ['Mehr', 'Vermittler-Funktionen und Einstellungen'],
-  platzierungen: ['Platzierungen', 'Gebuchte Platzierungen und Honorare'],
-  berichte: ['Performance', 'Honorare, Funnel und Auslastung'],
-  assistant: ['CoRecruiter', 'Dein KI-Assistent — bereitet den Desk vor, du entscheidest'],
-  postfach: ['Postfach', 'Nachrichten von Klienten und Unternehmen'],
-  einstellungen: ['Einstellungen', 'Darstellung, KI & Workspace'],
+  uebersicht: ['Workspace', 'What needs your attention today'],
+  mandate: ['Mandates', 'Your mandates — roles, deadlines, fee'],
+  pool: ['Candidates', 'The people you support through their applications'],
+  matching: ['Job search & Matching', 'Find roles that fit'],
+  stellen: ['Jobs', 'Saved job postings'],
+  bewerbungen: ['Applications', 'Your applications at a glance'],
+  mehr: ['More', 'Agency features and settings'],
+  platzierungen: ['Placements', 'Booked placements and fees'],
+  berichte: ['Performance', 'Fees, funnel and utilization'],
+  assistant: ['CoRecruiter', 'Your AI assistant — prepares the desk, you decide'],
+  postfach: ['Inbox', 'Messages from clients and companies'],
+  einstellungen: ['Settings', 'Appearance, AI & Workspace'],
 };
 
 /* The application-first rail (ADR-0057). The intermediary features are appended
    only when the workspace switch `vermittlung` is on. */
 const BASE_NAV = [
   { id: 'uebersicht', label: 'Workspace', icon: 'home' },
-  { id: 'pool', label: 'Mandanten', icon: 'users' },
-  { id: 'stellen', label: 'Stellen', icon: 'briefcase' },
-  { id: 'bewerbungen', label: 'Bewerbungen', icon: 'columns' },
+  { id: 'pool', label: 'Candidates', icon: 'users' },
+  { id: 'stellen', label: 'Jobs', icon: 'briefcase' },
+  { id: 'bewerbungen', label: 'Applications', icon: 'columns' },
 ];
 
 const VERMITTLER_NAV = [
-  { id: 'mandate', label: 'Suchaufträge', icon: 'briefcase' },
+  { id: 'mandate', label: 'Mandates', icon: 'briefcase' },
   { id: 'berichte', label: 'Performance', icon: 'trend' },
-  { id: 'postfach', label: 'Postfach', icon: 'inbox' },
+  { id: 'postfach', label: 'Inbox', icon: 'inbox' },
 ];
 
-const SETTINGS_NAV = { id: '__settings', label: 'Einstellungen', icon: 'sliders' };
-const MORE_NAV = { id: 'mehr', label: 'Mehr', icon: 'grid' };
+const SETTINGS_NAV = { id: '__settings', label: 'Settings', icon: 'sliders' };
+const MORE_NAV = { id: 'mehr', label: 'More', icon: 'grid' };
 
 /* Which primary destination lights up for a given app state — sub-views
    (Matching, Placements, a profile/editor) highlight their parent. */
@@ -284,7 +284,7 @@ function Workspace({ user, onLogout }) {
   const deleteApplication = (id, company) => {
     hideRow(id);
     window.UndoDelete.schedule({
-      label: `Bewerbung${company ? ` bei ${company}` : ''} entfernt`,
+      label: `Application${company ? ` at ${company}` : ''} removed`,
       commit: () =>
         window.RecruitApi.deleteApplication(id)
           .then(() => applicationsRes.reload())
@@ -333,11 +333,11 @@ function Workspace({ user, onLogout }) {
       const ok = results.filter((r) => r.ok).length;
       const failed = results.length - ok;
       window.showToast(
-        `${ok} Lebenslauf${ok === 1 ? '' : 'läufe'} importiert${failed ? `, ${failed} fehlgeschlagen` : ''}.`,
+        `${ok} CV${ok === 1 ? '' : 's'} imported${failed ? `, ${failed} failed` : ''}.`,
         failed ? 'error' : 'info',
       );
     } catch {
-      window.showToast('CV-Import fehlgeschlagen. Bitte erneut versuchen.', 'error');
+      window.showToast('CV import failed. Please try again.', 'error');
     }
     setImporting(false);
   };
@@ -381,7 +381,7 @@ function Workspace({ user, onLogout }) {
     if (kind === 'placement') {
       hideRow(id);
       window.UndoDelete.schedule({
-        label: 'Platzierung entfernt',
+        label: 'Placement removed',
         commit: () =>
           window.RecruitApi.deletePlacement(id)
             .then(placementsRes.reload)
@@ -437,7 +437,7 @@ function Workspace({ user, onLogout }) {
   // tab bar on a phone. Settings + account live at the rail foot; the assistant
   // is a topbar action, not a destination. The intermediary destinations only
   // appear when the workspace switch is on (ADR-0057).
-  const account = { name: (me && me.name) || 'Me', src: me && me.src, meta: `Me · +${Math.max(0, talents.length - 1)} Mandanten` };
+  const account = { name: (me && me.name) || 'Me', src: me && me.src, meta: `Me · +${Math.max(0, talents.length - 1)} candidates` };
   // Navigation spec (plan §3.6): the rail carries four destinations + the
   // settings foot; the tab bar shows exactly five — settings when the switch is
   // off, a "Mehr" tab (which lists every intermediary destination) when on.
@@ -480,11 +480,11 @@ function Workspace({ user, onLogout }) {
       active={active}
       onNav={shellNav}
       account={account}
-      settingsLabel="Einstellungen"
+      settingsLabel="Settings"
       title={t}
       subtitle={s}
       search={showSearch}
-      searchPlaceholder="Mandanten, Firmen, Rollen …"
+      searchPlaceholder="Candidates, companies, roles …"
       searchValue={search}
       onSearch={setSearch}
       actions={a}
@@ -535,7 +535,7 @@ function Workspace({ user, onLogout }) {
     return renderShell({
       active: 'bewerbungen',
       title: `${openApplication.postingCompany} · ${openApplication.postingTitle}`,
-      subtitle: `Bewerbung für ${openApplication.talentName || 'Mandant'}`,
+      subtitle: `Application for ${openApplication.talentName || 'Candidate'}`,
       children: (
         <window.BewerbungsEditor
           application={openApplication}
@@ -550,8 +550,8 @@ function Workspace({ user, onLogout }) {
   if (editTalent) {
     return renderShell({
       active: 'pool',
-      title: editTalent.me ? 'Meine Dokumente' : editTalent.name,
-      subtitle: 'Lebenslauf & Anschreiben bearbeiten',
+      title: editTalent.me ? 'My documents' : editTalent.name,
+      subtitle: 'Edit CV & cover letter',
       children: (
         <window.Editor talent={editTalent} onClose={() => setEditing(null)} onOpenSettings={() => { setEditing(null); setOpenTalent(null); setNav('einstellungen'); }} />
       ),
@@ -561,8 +561,8 @@ function Workspace({ user, onLogout }) {
   // a talent profile takes over the whole canvas regardless of nav
   let title, subtitle, body;
   if (talent) {
-    title = talent.me ? 'Mein Profil' : talent.name;
-    subtitle = 'Lebenslauf, Anhänge und Bewerbungen';
+    title = talent.me ? 'My profile' : talent.name;
+    subtitle = 'CV, attachments and applications';
     body = <window.TalentProfile talent={talent} onBack={back} onEdit={() => setEditing(talent.id)} onOpenApplication={openApplicationEditor} />;
   } else {
     // Guard against an unknown nav key — destructuring `undefined` here would
@@ -626,7 +626,7 @@ function Workspace({ user, onLogout }) {
     else if (vermittlung && nav === 'assistant') body = <window.AssistantView onChanged={() => { mandatesRes.reload(); }} />;
     else if (vermittlung && nav === 'berichte') body = <window.ReportsView clients={reportClients} mandates={mandates} placements={placements} apps={apps} kpis={vkpis} />;
     else if (vermittlung && nav === 'postfach') body = <window.Inbox messages={messages} apps={apps} talents={talents} onOpenTalent={goTalent} />;
-    else body = <PlaceholderView title="Nicht verfügbar" text="Diese Ansicht ist in diesem Workspace nicht aktiviert." />;
+    else body = <PlaceholderView title="Not available" text="This view is not enabled in this workspace." />;
   }
 
   // Topbar actions: a per-view primary (create) for the intermediary views, and
@@ -634,19 +634,19 @@ function Workspace({ user, onLogout }) {
   // when the workspace switch is on (ADR-0057).
   const primaryAction =
     (!talent && vermittlung && nav === 'mandate')
-      ? <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="plus" size={15} />} onClick={addMandate}>Neuer Suchauftrag</A.Button>
+      ? <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="plus" size={15} />} onClick={addMandate}>New mandate</A.Button>
       : (!talent && vermittlung && nav === 'platzierungen')
-      ? <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="plus" size={15} />} onClick={addPlacement}>Platzierung</A.Button>
+      ? <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="plus" size={15} />} onClick={addPlacement}>Placement</A.Button>
       : null;
   // The folded-in destinations are proper sub-tabs of their parent view —
   // Matching under Suchaufträge (Stellensuche), Platzierungen under Performance.
   const subTabs =
     !talent && (nav === 'stellen' || nav === 'matching')
-      ? <A.Tabs tabs={[{ id: 'stellen', label: 'Gespeichert' }, { id: 'matching', label: 'Stellen finden' }]} value={nav} onChange={(id) => goNav(id)} style={{ marginBottom: '18px' }} />
+      ? <A.Tabs tabs={[{ id: 'stellen', label: 'Saved' }, { id: 'matching', label: 'Find jobs' }]} value={nav} onChange={(id) => goNav(id)} style={{ marginBottom: '18px' }} />
       : !talent && vermittlung && nav === 'bewerbungen'
-      ? <A.Tabs tabs={[{ id: 'bewerbungen', label: 'Bewerbungen' }, { id: 'pipeline', label: 'Pipeline' }]} value={bewerbungenSub} onChange={(id) => setBewerbungenSub(id)} style={{ marginBottom: '18px' }} />
+      ? <A.Tabs tabs={[{ id: 'bewerbungen', label: 'Applications' }, { id: 'pipeline', label: 'Pipeline' }]} value={bewerbungenSub} onChange={(id) => setBewerbungenSub(id)} style={{ marginBottom: '18px' }} />
       : !talent && vermittlung && (nav === 'berichte' || nav === 'platzierungen')
-      ? <A.Tabs tabs={[{ id: 'berichte', label: 'Performance' }, { id: 'platzierungen', label: 'Platzierungen' }]} value={nav === 'platzierungen' ? 'platzierungen' : 'berichte'} onChange={(id) => setNav(id)} style={{ marginBottom: '18px' }} />
+      ? <A.Tabs tabs={[{ id: 'berichte', label: 'Performance' }, { id: 'platzierungen', label: 'Placements' }]} value={nav === 'platzierungen' ? 'platzierungen' : 'berichte'} onChange={(id) => setNav(id)} style={{ marginBottom: '18px' }} />
       : null;
   // The phone app bar is narrow: show only the per-view primary action there;
   // CoRecruiter stays a desktop topbar action so the bar never overflows.
@@ -690,9 +690,9 @@ function Workspace({ user, onLogout }) {
       <>
         {ws.status === 'error' && (
           <div role="alert" style={{ marginBottom: '14px', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--danger)', background: 'var(--danger-soft, rgba(200,50,50,0.08))', fontSize: '12.5px', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <span style={{ flex: 1 }}>Workspace-Einstellungen konnten nicht geladen werden.</span>
+            <span style={{ flex: 1 }}>Workspace settings could not be loaded.</span>
             <button type="button" onClick={() => window.WorkspaceSettings.refresh()} style={{ cursor: 'pointer', border: '1px solid var(--danger)', background: 'none', color: 'var(--danger)', borderRadius: 'var(--radius-pill)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '4px 12px' }}>
-              Erneut versuchen
+              Try again
             </button>
           </div>
         )}

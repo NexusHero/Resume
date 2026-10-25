@@ -6,15 +6,15 @@
 (function () {
   function toolLabel(name) {
     const labels = {
-      search_jobs: 'Stellen suchen',
-      save_job: 'Stelle speichern',
-      list_mandanten: 'Mandanten laden',
-      assess_fit: 'Passung prüfen',
-      create_application: 'Bewerbung anlegen',
-      list_applications: 'Bewerbungen laden',
-      generate_letter: 'Anschreiben erzeugen',
-      tailor_section: 'Abschnitt anpassen',
-      tailor_all: 'Alles anpassen',
+      search_jobs: 'Search jobs',
+      save_job: 'Save job',
+      list_mandanten: 'Load candidates',
+      assess_fit: 'Check fit',
+      create_application: 'Create application',
+      list_applications: 'Load applications',
+      generate_letter: 'Generate cover letter',
+      tailor_section: 'Tailor section',
+      tailor_all: 'Tailor everything',
     };
     return labels[name] || name;
   }
@@ -102,7 +102,7 @@
                 setLimit(ev.data);
                 break;
               case 'error':
-                setError(ev.data.detail || 'Unbekannter Fehler');
+                setError(ev.data.detail || 'Unknown error');
                 break;
               case 'done':
               case 'aborted':
@@ -117,9 +117,9 @@
         if (err && err.name === 'AbortError') {
           /* user-initiated abort — no error banner */
         } else if (err && err.code === 'ai-not-configured') {
-          setError('KI nicht eingerichtet — konfiguriere einen Server-Schlüssel.');
+          setError('AI not configured — set up a server key.');
         } else {
-          setError((err && err.message) || 'Der Agent-Lauf ist fehlgeschlagen.');
+          setError((err && err.message) || 'The agent run failed.');
         }
       } finally {
         patchLast((m) => (m.streaming ? { ...m, streaming: false } : m));
@@ -160,7 +160,7 @@
           setItems(mapped);
           setUsage(session.usage);
         })
-        .catch(() => setError('Verlauf konnte nicht geladen werden.'));
+        .catch(() => setError('Could not load history.'));
     };
 
     const removeSession = async (id) => {
@@ -211,7 +211,7 @@
                 <button
                   type="button"
                   data-testid="session-delete"
-                  aria-label={`Verlauf ${s.title || s.id} löschen`}
+                  aria-label={`Delete history ${s.title || s.id}`}
                   onClick={() => removeSession(s.id)}
                   style={{ cursor: 'pointer', background: 'none', border: 'none', color: 'var(--text-soft)', fontSize: '13px' }}
                 >
@@ -235,7 +235,7 @@
         >
           {items.length === 0 && !running && (
             <div style={{ fontSize: '13px', color: 'var(--text-soft)', textAlign: 'center', padding: '24px 8px' }}>
-              Frag den Agenten — er sucht Stellen, legt Bewerbungs-Entwürfe an und passt Anschreiben an.
+              Ask the agent — it searches jobs, creates application drafts and tailors cover letters.
             </div>
           )}
           {items.map((m, i) => (
@@ -301,7 +301,7 @@
                     textDecoration: 'underline',
                   }}
                 >
-                  Entwurf öffnen: {d.postingCompany} – {d.postingTitle}
+                  Open draft: {d.postingCompany} – {d.postingTitle}
                 </button>
               ))}
             </div>
@@ -341,7 +341,7 @@
             data-testid="gemini-hint"
             style={{ fontSize: '11.5px', color: 'var(--text-soft)', fontStyle: 'italic' }}
           >
-            Antwort erscheint pro Runde
+            Answer appears per round
           </div>
         )}
 
@@ -356,7 +356,7 @@
                 send();
               }
             }}
-            placeholder="Nachricht an den Agenten …"
+            placeholder="Message the agent …"
             disabled={running}
             style={{
               flex: 1,
@@ -383,7 +383,7 @@
                 fontSize: '13px',
               }}
             >
-              Abbrechen
+              Cancel
             </button>
           ) : (
             <button
@@ -400,7 +400,7 @@
                 fontSize: '13px',
               }}
             >
-              Senden
+              Send
             </button>
           )}
         </div>

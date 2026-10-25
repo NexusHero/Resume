@@ -66,7 +66,7 @@ describe('Dashboard — responsive', () => {
   });
 });
 
-describe('PlatzierungenView — responsive', () => {
+describe('PlacementsView — responsive', () => {
   const props = {
     kpis: [{ label: 'A' }, { label: 'B' }, { label: 'C' }, { label: 'D' }],
     placements: [

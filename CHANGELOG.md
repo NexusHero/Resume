@@ -620,6 +620,26 @@ AiRateLimitGuard` (no `VermittlungGuard`/`PlanGuard`).
   browse the contract. "Try it out" is disabled on this mirror; the
   interactive version that can execute real requests stays at `/api/v1/docs`.
 
+### Changed
+
+- **Phase 7 — English-only UI (ADR-0064).** The whole application surface is now
+  English, with no i18n infrastructure (no `locale`, no catalogues, no runtime
+  switch):
+  - **UI vocabulary** (`Candidate`/`Mandate`/`Job posting`/`Application`/`Agency`/
+    `Workspace`/`Dossier`/`Cover letter`) replaced the German copy across the
+    recruiting kit, including the previously-frozen agency views. The terminology
+    scanner now deny-lists the German UI word list (plus an umlaut/eszett
+    catch-all) and pins the English nav labels as an anti-regression guard.
+  - **Server `problem+json` details are English**, and the AI-consent detail now
+    has **one** canonical string across the server constants and the client
+    (`AI processing has not been approved for this workspace yet.`).
+  - **Document default is `en`** — `detectLanguage` fallbacks, the server
+    `emptyLetter` and the editor's letter defaults; CV section headings follow
+    the detected document language (EN/DE). Agent texts (`summarizeRun`, the fake
+    provider transcript) are fixed English.
+  - **README + screenshots** are English and re-captured from the English UI;
+    demo seed names are English-sounding (`Jamie Carter`, `Example Ltd.`).
+
 ## [2.0.0] - 2026-07-04
 
 A major version: the highest-consequence hand-rolled component — authentication

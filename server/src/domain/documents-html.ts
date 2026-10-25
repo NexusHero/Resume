@@ -1,5 +1,63 @@
 import type { TalentDocuments } from './talent-documents.js';
 import { DOCUMENT_FONT_FACE_CSS } from './document-fonts.js';
+import { detectLanguage, type OutputLang } from './language.js';
+
+/**
+ * Language-anchored CV section headings (Phase 7, ADR-0064 / OQ-2). A generated
+ * document (CV + cover letter) follows the job ad's language (FR-42), so the CV
+ * section headings follow the same detected language instead of being hard
+ * German. The letter is the language anchor — its salutation/closing are the
+ * clearest signal, and the resume is full of English tech terms even in German
+ * CVs, which would skew a whole-content detection.
+ */
+const HEADINGS: Record<
+  OutputLang,
+  {
+    profile: string;
+    experience: string;
+    education: string;
+    skills: string;
+    contact: string;
+    about: string;
+    career: string;
+    bildung: string;
+  }
+> = {
+  de: {
+    profile: 'Profil',
+    experience: 'Berufserfahrung',
+    education: 'Ausbildung',
+    skills: 'Kenntnisse',
+    contact: 'Kontakt',
+    about: 'Über mich',
+    career: 'Werdegang',
+    bildung: 'Bildung',
+  },
+  en: {
+    profile: 'Profile',
+    experience: 'Professional experience',
+    education: 'Education',
+    skills: 'Skills',
+    contact: 'Contact',
+    about: 'About me',
+    career: 'Career',
+    bildung: 'Education',
+  },
+};
+
+/** Detect the document language from the letter; an empty/short letter falls
+    back to English (Phase 7 default). */
+function documentLang(documents: TalentDocuments): OutputLang {
+  const text = [
+    documents.letter.anrede,
+    documents.letter.gruss,
+    documents.letter.betreff,
+    ...documents.letter.absaetze,
+  ]
+    .filter(Boolean)
+    .join(' ');
+  return detectLanguage(text);
+}
 
 /** Escape text for safe interpolation into HTML. */
 function esc(value: unknown): string {
@@ -62,11 +120,13 @@ export function documentsToHtml(
     ? style.template
     : 'classic';
   const isInk = template === 'ink';
+  const lang = documentLang(documents);
+  const h = HEADINGS[lang];
 
   // The ink template is a full portfolio-grade redesign (dark two-column CV +
   // clean cover letter). It owns its whole document, so it renders through a
   // dedicated builder rather than the shared classic/modern/compact base.
-  if (isInk) return inkDocument(documents, options);
+  if (isInk) return inkDocument(documents, options, lang);
 
   const photoOk =
     !!contact.photo && /^data:image\/[a-z+.-]+;base64,[A-Za-z0-9+/=]+$/.test(contact.photo);
@@ -124,10 +184,10 @@ export function documentsToHtml(
       .filter(Boolean)
       .map((c) => esc(c))
       .join('&nbsp;·&nbsp;')}</div>
-    ${resume.summary ? `<h2>Profil</h2><div class="summary">${esc(resume.summary)}</div>` : ''}
-    ${experience ? `<h2>Berufserfahrung</h2>${experience}` : ''}
-    ${education ? `<h2>Ausbildung</h2>${education}` : ''}
-    ${skillGroups ? `<h2>Kenntnisse</h2>${skillGroups}` : ''}
+    ${resume.summary ? `<h2>${h.profile}</h2><div class="summary">${esc(resume.summary)}</div>` : ''}
+    ${experience ? `<h2>${h.experience}</h2>${experience}` : ''}
+    ${education ? `<h2>${h.education}</h2>${education}` : ''}
+    ${skillGroups ? `<h2>${h.skills}</h2>${skillGroups}` : ''}
   </section>`;
 
   const letterInner = `
@@ -242,8 +302,13 @@ function inkIcon(name: string, size = 16): string {
  * editor preview and the exported PDF are byte-identical and typographically
  * exact with no network request or host-font dependency.
  */
-function inkDocument(documents: TalentDocuments, options: DocumentsHtmlOptions): string {
+function inkDocument(
+  documents: TalentDocuments,
+  options: DocumentsHtmlOptions,
+  lang: OutputLang,
+): string {
   const { contact, resume, letter, style } = documents;
+  const h = HEADINGS[lang];
   const accent = cssValue(style.accent) || '#2563eb';
   const accentStrong = cssValue(style.strong) || '#1d4ed8';
   const accentOnDark = cssValue(style.onDark) || '#60a5fa';
@@ -282,8 +347,8 @@ function inkDocument(documents: TalentDocuments, options: DocumentsHtmlOptions):
         <h1 class="ink-name">${esc(contact.name)}</h1>
         ${contact.role ? `<span class="ink-role">${esc(contact.role)}</span>` : ''}
       </div>
-      ${contactRows ? `<section class="ink-side-sec"><h2 class="ink-side-title">${inkIcon('user', 14)}Kontakt</h2><ul class="ink-contact-list">${contactRows}</ul></section>` : ''}
-      ${sideSkills ? `<section class="ink-side-sec"><h2 class="ink-side-title">${inkIcon('zap', 14)}Kenntnisse</h2>${sideSkills}</section>` : ''}
+      ${contactRows ? `<section class="ink-side-sec"><h2 class="ink-side-title">${inkIcon('user', 14)}${h.contact}</h2><ul class="ink-contact-list">${contactRows}</ul></section>` : ''}
+      ${sideSkills ? `<section class="ink-side-sec"><h2 class="ink-side-title">${inkIcon('zap', 14)}${h.skills}</h2>${sideSkills}</section>` : ''}
     </aside>`;
 
   // ---- Main column: eyebrow-labelled sections ----
@@ -322,9 +387,9 @@ function inkDocument(documents: TalentDocuments, options: DocumentsHtmlOptions):
     .join('');
 
   const mainCol = `<main class="ink-main">
-      ${resume.summary ? `<section class="ink-main-sec">${sectionHead('Über mich', 'user', 'Profil')}<p class="ink-summary">${esc(resume.summary)}</p></section>` : ''}
-      ${jobs ? `<section class="ink-main-sec">${sectionHead('Werdegang', 'briefcase', 'Berufserfahrung')}<div class="ink-timeline"><span class="ink-rail" aria-hidden="true"></span>${jobs}</div></section>` : ''}
-      ${edu ? `<section class="ink-main-sec">${sectionHead('Bildung', 'cap', 'Ausbildung')}<div class="ink-edu-list">${edu}</div></section>` : ''}
+      ${resume.summary ? `<section class="ink-main-sec">${sectionHead(h.about, 'user', h.profile)}<p class="ink-summary">${esc(resume.summary)}</p></section>` : ''}
+      ${jobs ? `<section class="ink-main-sec">${sectionHead(h.career, 'briefcase', h.experience)}<div class="ink-timeline"><span class="ink-rail" aria-hidden="true"></span>${jobs}</div></section>` : ''}
+      ${edu ? `<section class="ink-main-sec">${sectionHead(h.bildung, 'cap', h.education)}<div class="ink-edu-list">${edu}</div></section>` : ''}
     </main>`;
 
   // ---- Cover letter: clean sheet, accent-ruled name header (no dark band) ----

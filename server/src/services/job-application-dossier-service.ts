@@ -60,7 +60,7 @@ export class JobApplicationDossierService {
   }
 
   /**
-   * A streaming ZIP (OQ4): `Bewerbung.pdf` (the merged dossier, attachments
+   * A streaming ZIP (OQ4): `Application.pdf` (the merged dossier, attachments
    * included — OQ1) plus each selected attachment as its own file (original
    * name, deduplicated). Validation is eager — an unknown/frozen/foreign/
    * non-PDF attachment throws **before** `end()`, so the caller never sees a
@@ -79,7 +79,7 @@ export class JobApplicationDossierService {
     );
 
     const zip = new ZipFile();
-    zip.addBuffer(mergedPdf, 'Bewerbung.pdf');
+    zip.addBuffer(mergedPdf, 'Application.pdf');
     const names = new Set<string>();
     for (const { attachment, bytes } of blobs) {
       zip.addBuffer(bytes, this.dedupeName(attachment.name, names));
@@ -92,7 +92,7 @@ export class JobApplicationDossierService {
   private async requireApplication(scope: string, id: string): Promise<JobApplication> {
     const application = await this.repo.findById(scope, id);
     if (!application) throw new NotFoundError(`Job application ${id} not found`);
-    if (!application.documents) throw new NotFoundError('Bewerbungs-Kopie fehlt');
+    if (!application.documents) throw new NotFoundError('Application copy missing');
     return application;
   }
 
@@ -109,26 +109,26 @@ export class JobApplicationDossierService {
     for (const attachmentId of application.selectedAttachmentIds) {
       const blob = await this.attachments.get(scope, attachmentId);
       if (!blob || blob.attachment.talentId !== application.talentId) {
-        throw new NotFoundError(`Anhang ${attachmentId} nicht gefunden`);
+        throw new NotFoundError(`Attachment ${attachmentId} not found`);
       }
       if (blob.attachment.contentType !== 'application/pdf') {
-        throw new ValidationError('Nur PDF-Anhänge sind wählbar');
+        throw new ValidationError('Only PDF attachments can be selected');
       }
       blobs.push(blob);
     }
     return blobs;
   }
 
-  /** `Bewerbung_<Mandant>_<Firma>.<ext>` from the snapshots, slugified (Plan §5). */
+  /** `Application_<Candidate>_<Company>.<ext>` from the snapshots, slugified (Plan §5). */
   private filename(application: JobApplication, ext: 'pdf' | 'zip'): string {
-    const mandant = safeFilename(application.talentName, 'Mandant');
-    const firma = safeFilename(application.postingCompany, 'Firma');
-    return `Bewerbung_${mandant}_${firma}.${ext}`;
+    const candidate = safeFilename(application.talentName, 'Candidate');
+    const company = safeFilename(application.postingCompany, 'Company');
+    return `Application_${candidate}_${company}.${ext}`;
   }
 
   /** Keep each ZIP entry's original name unique (dedupe on collision). */
   private dedupeName(name: string, used: Set<string>): string {
-    const base = safeFilename(name, 'Anhang');
+    const base = safeFilename(name, 'Attachment');
     let candidate = base;
     let i = 2;
     while (used.has(candidate)) {

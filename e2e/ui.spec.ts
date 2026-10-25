@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('UI acceptance — the suite renders in German', () => {
+test.describe('UI acceptance — the suite renders in English', () => {
   // Phase 0 (ADR-0057): the intermediary features sit behind the workspace
   // switch. Keep it on for the agency-flow tests below; the fresh-workspace
   // tests override this route with `false`.
@@ -28,10 +28,10 @@ test.describe('UI acceptance — the suite renders in German', () => {
     await page.goto('/');
     await expect(page).toHaveURL(/\/design\/myjob\/ui_kits\/recruiting\/dist\/index\.html$/);
     // Not signed in → the branded Workspace login screen.
-    await expect(page.getByRole('heading', { name: 'Willkommen zurück' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
   });
 
-  test('Recruiting_Loads_NavigationIsGerman', async ({ page }) => {
+  test('Recruiting_Loads_NavigationIsEnglish', async ({ page }) => {
     await page.route('**/api/v1/auth/me', (route) =>
       route.fulfill({
         contentType: 'application/json',
@@ -44,22 +44,25 @@ test.describe('UI acceptance — the suite renders in German', () => {
     // With the intermediary switch on, the rail carries the application-first
     // destinations plus the agency ones (ADR-0057).
     await expect(nav).toContainText('Workspace');
-    await expect(nav).toContainText('Mandanten');
-    await expect(nav).toContainText('Stellen');
-    await expect(nav).toContainText('Bewerbungen');
-    await expect(nav).toContainText('Suchaufträge');
+    await expect(nav).toContainText('Candidates');
+    await expect(nav).toContainText('Jobs');
+    await expect(nav).toContainText('Applications');
+    await expect(nav).toContainText('Mandates');
     await expect(nav).toContainText('Performance');
-    await expect(nav).toContainText('Postfach');
+    await expect(nav).toContainText('Inbox');
     // Matching/Placements are sub-tabs; CoRecruiter is a topbar action; Settings
     // is the foot utility — none are rail nav items.
     await expect(nav).not.toContainText('CoRecruiter');
     await expect(nav).not.toContainText('Matching');
-    await expect(nav).not.toContainText('Platzierungen');
-    await expect(nav).not.toContainText('Einstellungen');
-    // No English (or old-IA) labels leaked into the navigation.
+    await expect(nav).not.toContainText('Placements');
+    await expect(nav).not.toContainText('Settings');
+    // No German (or old-IA) labels leaked into the navigation.
     await expect(nav).not.toContainText('Talent Pool');
-    await expect(nav).not.toContainText('Mandates');
-    await expect(nav).not.toContainText('Applications');
+    await expect(nav).not.toContainText('Mandanten');
+    await expect(nav).not.toContainText('Stellen');
+    await expect(nav).not.toContainText('Bewerbungen');
+    await expect(nav).not.toContainText('Suchaufträge');
+    await expect(nav).not.toContainText('Postfach');
     await expect(nav).not.toContainText('Reports');
   });
 
@@ -80,9 +83,9 @@ test.describe('UI acceptance — the suite renders in German', () => {
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     await page
       .locator('nav')
-      .getByRole('button', { name: /Mandanten/ })
+      .getByRole('button', { name: /Candidates/ })
       .click();
-    await expect(page.locator('main')).toContainText('Mandant hinzufügen');
+    await expect(page.locator('main')).toContainText('Add candidate');
     await expect(page.locator('main')).toContainText('Nora'); // session-derived "me"
   });
 
@@ -124,14 +127,14 @@ test.describe('UI acceptance — the suite renders in German', () => {
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     await page
       .locator('nav')
-      .getByRole('button', { name: /Suchaufträge/ })
+      .getByRole('button', { name: /Mandates/ })
       .click();
     const main = page.locator('main');
     // first load failed → error state, no fabricated sample client
-    await expect(main).toContainText('Etwas ist schiefgelaufen — erneut versuchen.');
+    await expect(main).toContainText('Something went wrong — try again.');
     await expect(main).not.toContainText('Aurora Systems GmbH');
     // retry succeeds → the real mandate renders
-    await page.getByRole('button', { name: 'Erneut versuchen' }).click();
+    await page.getByRole('button', { name: 'Try again' }).click();
     await expect(main).toContainText('Helio GmbH');
   });
 
@@ -164,13 +167,13 @@ test.describe('UI acceptance — the suite renders in German', () => {
       }),
     );
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
-    // Placements ("Platzierungen") folds under Performance — reach it via the
-    // Performance view's sub-tab (Performance | Platzierungen).
+    // Placements ("Placements") folds under Performance — reach it via the
+    // Performance view's sub-tab (Performance | Placements).
     await page
       .locator('nav')
       .getByRole('button', { name: /Performance/ })
       .click();
-    await page.getByRole('tab', { name: 'Platzierungen' }).click();
+    await page.getByRole('tab', { name: 'Placements' }).click();
     await expect(page.locator('main')).toContainText('Tobias Wirth');
     await expect(page.locator('main')).toContainText('Helio GmbH');
     // the offline sample is replaced by the API data
@@ -211,7 +214,7 @@ test.describe('UI acceptance — the suite renders in German', () => {
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     await page
       .locator('nav')
-      .getByRole('button', { name: /Mandanten/ })
+      .getByRole('button', { name: /Candidates/ })
       .click();
     await expect(page.locator('main')).toContainText('Tobias Wirth'); // from the API
     await expect(page.locator('main')).toContainText('Nora'); // session-derived "me"
@@ -291,11 +294,11 @@ test.describe('UI acceptance — the suite renders in German', () => {
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     await page
       .locator('nav')
-      .getByRole('button', { name: /Mandanten/ })
+      .getByRole('button', { name: /Candidates/ })
       .click();
     await page.getByText('Tobias Wirth').first().click({ force: true });
     await page
-      .getByRole('button', { name: /Lebenslauf anlegen|Lebenslauf bearbeiten/ })
+      .getByRole('button', { name: /Create CV|Edit CV/ })
       .first()
       .click();
     // opening the editor loads the stored documents
@@ -307,7 +310,7 @@ test.describe('UI acceptance — the suite renders in German', () => {
     // editing a field autosaves it (debounced) to the server
     const field = page.locator('main').getByRole('textbox').first();
     await field.fill('E2E-MARKER-NAME');
-    await expect(page.locator('main').getByRole('status')).toContainText('Gespeichert', {
+    await expect(page.locator('main').getByRole('status')).toContainText('Saved', {
       timeout: 10000,
     });
     expect(puts.some((b) => b.includes('E2E-MARKER-NAME'))).toBe(true);
@@ -348,7 +351,7 @@ test.describe('UI acceptance — the suite renders in German', () => {
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     await page
       .locator('nav')
-      .getByRole('button', { name: /Suchaufträge/ })
+      .getByRole('button', { name: /Mandates/ })
       .click();
     await expect(page.locator('main')).toContainText('Helio GmbH'); // client group header
     await expect(page.locator('main')).toContainText('Principal Platform Engineer'); // mandate row
@@ -397,18 +400,18 @@ test.describe('UI acceptance — the suite renders in German', () => {
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     await page
       .locator('nav')
-      .getByRole('button', { name: /Suchaufträge/ })
+      .getByRole('button', { name: /Mandates/ })
       .click();
-    await expect(page.locator('main')).toContainText('Noch keine Suchaufträge.');
+    await expect(page.locator('main')).toContainText('No mandates yet.');
 
-    await page.getByRole('button', { name: 'Neuer Suchauftrag' }).click();
-    await page.getByLabel('Klient', { exact: true }).fill('Helio GmbH');
-    await page.getByLabel('Rolle', { exact: true }).fill('Principal Platform Engineer');
-    await page.getByLabel('Standort', { exact: true }).fill('Hamburg · Remote');
-    await page.getByRole('button', { name: 'Suchauftrag anlegen' }).click();
+    await page.getByRole('button', { name: 'New mandate' }).click();
+    await page.getByLabel('Client', { exact: true }).fill('Helio GmbH');
+    await page.getByLabel('Role', { exact: true }).fill('Principal Platform Engineer');
+    await page.getByLabel('Location', { exact: true }).fill('Hamburg · Remote');
+    await page.getByRole('button', { name: 'Create mandate' }).click();
 
     // the form closed and the new mandate is listed
-    await expect(page.getByRole('button', { name: 'Suchauftrag anlegen' })).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Create mandate' })).toBeHidden();
     await expect(page.locator('main')).toContainText('Helio GmbH');
     await expect(page.locator('main')).toContainText('Principal Platform Engineer');
   });
@@ -451,19 +454,19 @@ test.describe('UI acceptance — the suite renders in German', () => {
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     await page
       .locator('nav')
-      .getByRole('button', { name: /Suchaufträge/ })
+      .getByRole('button', { name: /Mandates/ })
       .click();
     const main = page.locator('main');
     await expect(main).toContainText('active');
 
     // open the edit form pre-filled, change the status, save
     await main.getByText('Principal Platform Engineer').click();
-    await expect(page.getByText('Suchauftrag bearbeiten')).toBeVisible();
-    await expect(page.getByLabel('Klient', { exact: true })).toHaveValue('Helio GmbH');
+    await expect(page.getByText('Edit mandate')).toBeVisible();
+    await expect(page.getByLabel('Client', { exact: true })).toHaveValue('Helio GmbH');
     await page.getByLabel('Status', { exact: true }).selectOption('paused');
-    await page.getByRole('button', { name: 'Änderungen speichern' }).click();
+    await page.getByRole('button', { name: 'Save changes' }).click();
 
-    await expect(page.getByRole('button', { name: 'Änderungen speichern' })).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Save changes' })).toBeHidden();
     await expect(main).toContainText('paused');
   });
 
@@ -522,7 +525,7 @@ test.describe('UI acceptance — the suite renders in German', () => {
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     const main = page.locator('main');
     // greeting counts the live active mandates (exactly one)
-    await expect(main).toContainText('1 aktive Suchaufträge');
+    await expect(main).toContainText('1 active mandate');
     // the active-mandates card shows the live mandate's client and role
     await expect(main).toContainText('Helio GmbH');
     await expect(main).toContainText('Principal Platform Engineer');
@@ -548,12 +551,12 @@ test.describe('UI acceptance — the suite renders in German', () => {
       }),
     );
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
-    await expect(page.getByRole('heading', { name: 'Willkommen zurück' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
     await page.getByPlaceholder('you@example.com').fill('me@example.de');
     await page.getByPlaceholder('••••••••').fill('supersecret');
     await page.locator('button[type="submit"]').click();
     // signed in → the workspace navigation is shown
-    await expect(page.locator('nav').getByRole('button', { name: /Mandanten/ })).toBeVisible();
+    await expect(page.locator('nav').getByRole('button', { name: /Candidates/ })).toBeVisible();
   });
 
   test('Recruiting_PasswordReset_SetsNewPasswordFromTokenLink', async ({ page }) => {
@@ -573,14 +576,14 @@ test.describe('UI acceptance — the suite renders in German', () => {
       route.fulfill({ status: 204, body: '' });
     });
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html?reset_token=tok-from-email');
-    await expect(page.getByRole('heading', { name: 'Neues Passwort wählen' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Choose a new password' })).toBeVisible();
     const passwords = page.getByPlaceholder('••••••••');
     await passwords.nth(0).fill('brand-new-password');
     await passwords.nth(1).fill('brand-new-password');
     await page.locator('button[type="submit"]').click();
     // back to login with a success notice; the token was forwarded to the API
-    await expect(page.getByRole('heading', { name: 'Willkommen zurück' })).toBeVisible();
-    await expect(page.getByRole('status')).toContainText('zurückgesetzt');
+    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
+    await expect(page.getByRole('status')).toContainText('reset');
     expect(confirmBody).toEqual({ token: 'tok-from-email', password: 'brand-new-password' });
   });
 
@@ -604,12 +607,12 @@ test.describe('UI acceptance — the suite renders in German', () => {
       }),
     );
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
-    await page.getByRole('button', { name: /Einstellungen/ }).click();
-    await expect(page.locator('main')).toContainText('KI-Anbindung');
-    await expect(page.locator('main')).toContainText('KI eingerichtet');
+    await page.getByRole('button', { name: /Settings/ }).click();
+    await expect(page.locator('main')).toContainText('AI connection');
+    await expect(page.locator('main')).toContainText('AI configured');
     // The per-user key input is gone with the central-key model.
     await expect(page.locator('input[type="password"]')).toHaveCount(0);
-    await expect(page.getByText('Schlüssel speichern')).toHaveCount(0);
+    await expect(page.getByText('Save key')).toHaveCount(0);
   });
 
   test('Recruiting_Settings_ExportsAccountData', async ({ page }) => {
@@ -638,12 +641,12 @@ test.describe('UI acceptance — the suite renders in German', () => {
       }),
     );
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
-    await page.getByRole('button', { name: /Einstellungen/ }).click();
-    await expect(page.locator('main')).toContainText('Daten & Datenschutz');
+    await page.getByRole('button', { name: /Settings/ }).click();
+    await expect(page.locator('main')).toContainText('Data & privacy');
     // clicking Export triggers a JSON file download
     const [download] = await Promise.all([
       page.waitForEvent('download'),
-      page.getByRole('button', { name: 'Exportieren' }).click(),
+      page.getByRole('button', { name: 'Export' }).click(),
     ]);
     expect(download.suggestedFilename()).toBe('myjob-export.json');
   });
@@ -676,13 +679,13 @@ test.describe('UI acceptance — the suite renders in German', () => {
       return route.continue();
     });
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
-    await page.getByRole('button', { name: /Einstellungen/ }).click();
+    await page.getByRole('button', { name: /Settings/ }).click();
     // two-step confirm before the destructive call
-    await page.getByRole('button', { name: 'Konto löschen' }).click();
-    await page.getByRole('button', { name: 'Löschen bestätigen' }).click();
+    await page.getByRole('button', { name: 'Delete account' }).click();
+    await page.getByRole('button', { name: 'Confirm delete' }).click();
     // erasure ends the session → the app reloads to the login screen (the
     // reload re-fetches the bundle, so allow extra time for it to re-mount)
-    await expect(page.getByRole('heading', { name: 'Willkommen zurück' })).toBeVisible({
+    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible({
       timeout: 15000,
     });
   });
@@ -707,11 +710,11 @@ test.describe('UI acceptance — the suite renders in German', () => {
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     const nav = page.locator('nav');
     await expect(nav).toContainText('Workspace');
-    await expect(nav).toContainText('Mandanten');
-    await expect(nav).toContainText('Stellen');
-    await expect(nav).toContainText('Bewerbungen');
-    await expect(page.getByRole('button', { name: /Einstellungen/ })).toBeVisible();
-    for (const label of ['Suchaufträge', 'Performance', 'Postfach']) {
+    await expect(nav).toContainText('Candidates');
+    await expect(nav).toContainText('Jobs');
+    await expect(nav).toContainText('Applications');
+    await expect(page.getByRole('button', { name: /Settings/ })).toBeVisible();
+    for (const label of ['Mandates', 'Performance', 'Inbox']) {
       await expect(nav).not.toContainText(label);
     }
     await expect(page.getByRole('button', { name: /CoRecruiter/ })).toHaveCount(0);
@@ -726,9 +729,9 @@ test.describe('UI acceptance — the suite renders in German', () => {
     );
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     const nav = page.locator('nav');
-    await expect(nav).toContainText('Suchaufträge');
+    await expect(nav).toContainText('Mandates');
     await expect(nav).toContainText('Performance');
-    await expect(nav).toContainText('Postfach');
+    await expect(nav).toContainText('Inbox');
     await expect(page.getByRole('button', { name: /CoRecruiter/ })).toBeVisible();
   });
 
@@ -748,9 +751,9 @@ test.describe('UI acceptance — the suite renders in German', () => {
       }),
     );
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
-    await page.getByRole('button', { name: /Einstellungen/ }).click();
-    await expect(page.locator('main')).toContainText('KI-Anbindung');
-    await expect(page.getByLabel('Vermittlung aktivieren')).toHaveCount(0);
+    await page.getByRole('button', { name: /Settings/ }).click();
+    await expect(page.locator('main')).toContainText('AI connection');
+    await expect(page.getByLabel('Agency')).toHaveCount(0);
   });
 
   test('Settings_AsAdmin_ToggleTurnsOnAgency', async ({ page }) => {
@@ -771,10 +774,10 @@ test.describe('UI acceptance — the suite renders in German', () => {
       }),
     );
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
-    await page.getByRole('button', { name: /Einstellungen/ }).click();
-    await page.getByLabel('Vermittlung aktivieren').click();
+    await page.getByRole('button', { name: /Settings/ }).click();
+    await page.getByLabel('Agency').click();
     await expect.poll(() => vermittlung).toBe(true);
-    await expect(page.locator('nav')).toContainText('Suchaufträge');
+    await expect(page.locator('nav')).toContainText('Mandates');
   });
 
   test('AiButton_NoKey_ShowsNotConfiguredAndSendsNoRequest', async ({ page }) => {
@@ -861,27 +864,27 @@ test.describe('UI acceptance — the suite renders in German', () => {
     await page.goto('/design/myjob/ui_kits/recruiting/dist/index.html');
     await page
       .locator('nav')
-      .getByRole('button', { name: /Mandanten/ })
+      .getByRole('button', { name: /Candidates/ })
       .click();
     await page.getByText('Tobias Wirth').first().click({ force: true });
     await page
-      .getByRole('button', { name: /Lebenslauf anlegen|Lebenslauf bearbeiten/ })
+      .getByRole('button', { name: /Create CV|Edit CV/ })
       .first()
       .click();
 
-    await expect(page.locator('main')).toContainText('KI nicht eingerichtet');
+    await expect(page.locator('main')).toContainText('AI not configured');
     // The button is disabled, so the AI route is never hit.
-    await expect(page.getByRole('button', { name: /KI anpassen/ })).toBeDisabled();
+    await expect(page.getByRole('button', { name: /Adapt with AI/ })).toBeDisabled();
     expect(aiCalls).toBe(0);
 
     // AK-0.6: the hint is a real link that opens the settings page.
     const hint = page
       .locator('main')
-      .getByText(/KI nicht eingerichtet/)
+      .getByText(/AI not configured/)
       .first();
     await expect(hint).toBeVisible();
-    await page.locator('main').getByRole('button', { name: 'Einstellungen' }).first().click();
-    await expect(page.locator('main')).toContainText('KI-Anbindung');
+    await page.locator('main').getByRole('button', { name: 'Settings' }).first().click();
+    await expect(page.locator('main')).toContainText('AI connection');
   });
 });
 
@@ -976,11 +979,11 @@ test.describe('Phase 0 — central-key and vocabulary guarantees', () => {
     await page.goto(KIT);
     await page
       .locator('nav')
-      .getByRole('button', { name: /Mandanten/ })
+      .getByRole('button', { name: /Candidates/ })
       .click();
     await page.getByText('Tobias Wirth').first().click({ force: true });
     await page
-      .getByRole('button', { name: /Lebenslauf (anlegen|bearbeiten)/ })
+      .getByRole('button', { name: /(Create CV|Edit CV)/ })
       .first()
       .click({ force: true });
     await page.locator('[data-doc-hydrated="true"]').waitFor();
@@ -989,7 +992,7 @@ test.describe('Phase 0 — central-key and vocabulary guarantees', () => {
   test('LoginWithVermittlungOn_ShowsSuchauftraegeWithoutReload', async ({ page }) => {
     await mockShell(page, { vermittlung: true, aiConfigured: true });
     await page.goto(KIT);
-    await expect(page.locator('nav').getByRole('button', { name: /Suchaufträge/ })).toBeVisible();
+    await expect(page.locator('nav').getByRole('button', { name: /Mandates/ })).toBeVisible();
   });
 
   test('NoAiKey_HintLinkOpensSettingsEvenFromOpenEditor', async ({ page }) => {
@@ -997,11 +1000,11 @@ test.describe('Phase 0 — central-key and vocabulary guarantees', () => {
     await openEditor(page);
     const hint = page
       .locator('main')
-      .getByText(/KI nicht eingerichtet/)
+      .getByText(/AI not configured/)
       .first();
     await expect(hint).toBeVisible({ timeout: 10000 });
-    await page.locator('main').getByRole('button', { name: 'Einstellungen' }).first().click();
-    await expect(page.locator('main')).toContainText('KI-Anbindung');
+    await page.locator('main').getByRole('button', { name: 'Settings' }).first().click();
+    await expect(page.locator('main')).toContainText('AI connection');
   });
 
   test('NoAiKey_CvImportShowsTextImportNoticeAndImports', async ({ page }) => {
@@ -1009,23 +1012,23 @@ test.describe('Phase 0 — central-key and vocabulary guarantees', () => {
     await page.goto(KIT);
     await page
       .locator('nav')
-      .getByRole('button', { name: /Mandanten/ })
+      .getByRole('button', { name: /Candidates/ })
       .click();
     // The grid names the mode before any upload (no silent AI expectation).
     await expect(
-      page.getByRole('status').filter({ hasText: 'Text übernommen (ohne KI)' }),
+      page.getByRole('status').filter({ hasText: 'Text imported (without AI)' }),
     ).toBeVisible();
 
     await openEditor(page);
-    await page.getByRole('button', { name: /CV importieren/ }).click();
-    await expect(page.getByPlaceholder('CV-Text hier einfügen…')).toBeVisible();
+    await page.getByRole('button', { name: /Import CV/ }).click();
+    await expect(page.getByPlaceholder('Paste CV text here…')).toBeVisible();
     await expect(
-      page.getByRole('status').filter({ hasText: 'Text übernommen (ohne KI)' }),
+      page.getByRole('status').filter({ hasText: 'Text imported (without AI)' }),
     ).toBeVisible();
     // The text path is usable without a key: the action enables once text exists.
-    const analyze = page.getByRole('button', { name: 'Analysieren & übernehmen' });
+    const analyze = page.getByRole('button', { name: 'Analyze & apply' });
     await expect(analyze).toBeDisabled();
-    await page.getByPlaceholder('CV-Text hier einfügen…').fill('Voller CV-Text');
+    await page.getByPlaceholder('Paste CV text here…').fill('Voller CV-Text');
     await expect(analyze).toBeEnabled();
   });
 
@@ -1036,35 +1039,32 @@ test.describe('Phase 0 — central-key and vocabulary guarantees', () => {
       const suggestion =
         body.action === 'letter'
           ? { action: 'letter', paragraphs: ['Absatz eins.', 'Absatz zwei.'], provider: 'claude' }
-          : { action: 'summary', text: 'Zusammenfassung von der KI.', provider: 'claude' };
+          : { action: 'summary', text: 'Summary from the AI.', provider: 'claude' };
       return route.fulfill({
         contentType: 'application/json',
         body: JSON.stringify({ suggestion }),
       });
     });
     await openEditor(page);
-    await page.getByRole('button', { name: /KI anpassen/ }).click();
-    await expect(page.locator('main')).toContainText('Zusammenfassung von der KI.');
-    await page.getByRole('button', { name: 'Übernehmen' }).click();
-    await expect(page.locator('main')).toContainText('Zusammenfassung von der KI.');
+    await page.getByRole('button', { name: /Adapt with AI/ }).click();
+    await expect(page.locator('main')).toContainText('Summary from the AI.');
+    await page.getByRole('button', { name: 'Apply' }).click();
+    await expect(page.locator('main')).toContainText('Summary from the AI.');
   });
 
   test('AllViews_VermittlungOnAndOff_ContainNoForbiddenTerms', async ({ page }) => {
-    const forbidden = /(?<!\p{L})(Talent\w*|Mandat(?!ant)\w*)/u;
+    // Phase 7 (ADR-0064): the UI is English-only. The forbidden vocabulary is the
+    // German UI copy (Mandant/Stelle/Bewerbung/Suchauftrag/Vermittlung/Kandidat/
+    // Erneut) and the pre-ADR-0057 code names (Talent/talent pool). "Mandate" and
+    // "Pipeline" are now the correct English labels, so they are not forbidden.
+    const forbidden =
+      /(?<!\p{L})(Talent\w*|talent pool|Mandant\w*|Suchauftrag\w*|Stelle\w*|Bewerbung\w*|Vermittlung|Kandidat\w*|Erneut)/iu;
     for (const vermittlung of [false, true]) {
       await mockShell(page, { vermittlung, aiConfigured: true });
       await page.goto(KIT);
       const views = vermittlung
-        ? [
-            'Workspace',
-            'Mandanten',
-            'Stellen',
-            'Bewerbungen',
-            'Suchaufträge',
-            'Performance',
-            'Postfach',
-          ]
-        : ['Workspace', 'Mandanten', 'Stellen', 'Bewerbungen'];
+        ? ['Workspace', 'Candidates', 'Jobs', 'Applications', 'Mandates', 'Performance', 'Inbox']
+        : ['Workspace', 'Candidates', 'Jobs', 'Applications'];
       for (const label of views) {
         await page
           .locator('nav')
@@ -1075,7 +1075,7 @@ test.describe('Phase 0 — central-key and vocabulary guarantees', () => {
       }
       // Settings is the foot utility, not a rail entry.
       await page
-        .getByRole('button', { name: /Einstellungen/ })
+        .getByRole('button', { name: /Settings/ })
         .first()
         .click();
       expect(await page.locator('main').innerText()).not.toMatch(forbidden);
@@ -1083,7 +1083,7 @@ test.describe('Phase 0 — central-key and vocabulary guarantees', () => {
   });
 });
 
-test.describe('Fehler 1 — CV text import without a key', () => {
+test.describe('Error 1 — CV text import without a key', () => {
   const KIT = '/design/myjob/ui_kits/recruiting/dist/index.html';
   const TALENT = {
     id: 't-api-1',
@@ -1170,31 +1170,31 @@ test.describe('Fehler 1 — CV text import without a key', () => {
     await page.goto(KIT);
     await page
       .locator('nav')
-      .getByRole('button', { name: /Mandanten/ })
+      .getByRole('button', { name: /Candidates/ })
       .click();
     await page.getByText('Tobias Wirth').first().click({ force: true });
     await page
-      .getByRole('button', { name: /Lebenslauf (anlegen|bearbeiten)/ })
+      .getByRole('button', { name: /(Create CV|Edit CV)/ })
       .first()
       .click({ force: true });
     await page.locator('[data-doc-hydrated="true"]').waitFor();
 
-    await page.getByRole('button', { name: /CV importieren/ }).click();
-    await expect(page.getByText(/Text übernommen \(ohne KI\)/).first()).toBeVisible();
-    await page.getByPlaceholder('CV-Text hier einfügen…').fill('VOLLER CV TEXT');
-    await page.getByRole('button', { name: 'Analysieren & übernehmen' }).click();
+    await page.getByRole('button', { name: /Import CV/ }).click();
+    await expect(page.getByText(/Text imported \(without AI\)/).first()).toBeVisible();
+    await page.getByPlaceholder('Paste CV text here…').fill('VOLLER CV TEXT');
+    await page.getByRole('button', { name: 'Analyze & apply' }).click();
     await expect.poll(() => parsed).toBe(1);
-    await expect(page.getByText(/Text übernommen \(ohne KI\)/).first()).toBeVisible();
+    await expect(page.getByText(/Text imported \(without AI\)/).first()).toBeVisible();
 
-    await page.getByRole('button', { name: 'Übernehmen' }).click();
-    await expect(page.getByText('Importierter Text (ohne KI)')).toBeVisible();
+    await page.getByRole('button', { name: 'Apply' }).click();
+    await expect(page.getByText('Imported text (without AI)')).toBeVisible();
     // The existing station and profile are still in the form.
     await expect(page.locator('input[value="Senior Dev"]')).toBeVisible();
     expect(await page.locator('textarea').first().inputValue()).toContain('Bestehendes Profil');
   });
 });
 
-test.describe('Stellen (Phase 1)', () => {
+test.describe('Jobs (Phase 1)', () => {
   const KIT = '/design/myjob/ui_kits/recruiting/dist/index.html';
   const POSTING = {
     id: 'p1',
@@ -1258,7 +1258,7 @@ test.describe('Stellen (Phase 1)', () => {
     });
   }
 
-  test('StellenView_AdoptFromSearch_PersistsAndAppearsInList', async ({ page }) => {
+  test('JobsView_AdoptFromSearch_PersistsAndAppearsInList', async ({ page }) => {
     const postings: Record<string, unknown>[] = [];
     await mockSession(page);
     await page.route('**/api/v1/job-postings', (route) => {
@@ -1278,26 +1278,26 @@ test.describe('Stellen (Phase 1)', () => {
     await page.goto(KIT);
     await page
       .locator('nav')
-      .getByRole('button', { name: /^Stellen$/ })
+      .getByRole('button', { name: /^Jobs$/ })
       .click();
-    await expect(page.locator('main')).toContainText('Noch keine gespeicherten Stellen.');
+    await expect(page.locator('main')).toContainText('No saved job postings yet.');
 
-    await page.getByRole('tab', { name: 'Stellen finden' }).click();
-    await expect(page.getByRole('button', { name: 'Stelle übernehmen' })).toBeVisible();
-    await page.getByRole('button', { name: 'Stelle übernehmen' }).click();
-    await expect(page.getByRole('button', { name: 'Übernommen' })).toBeVisible();
+    await page.getByRole('tab', { name: 'Find jobs' }).click();
+    await expect(page.getByRole('button', { name: 'Adopt job' })).toBeVisible();
+    await page.getByRole('button', { name: 'Adopt job' }).click();
+    await expect(page.getByRole('button', { name: 'Adopted' })).toBeVisible();
 
     // Reload-proof (AK-1.1): back to the saved list, then a full page reload.
-    await page.getByRole('tab', { name: 'Gespeichert' }).click();
+    await page.getByRole('tab', { name: 'Saved' }).click();
     await page.reload();
     await page
       .locator('nav')
-      .getByRole('button', { name: /^Stellen$/ })
+      .getByRole('button', { name: /^Jobs$/ })
       .click();
     await expect(page.locator('main')).toContainText('Nordwind Logistik AG');
   });
 
-  test('StellenView_InsertByText_ExtractsAndSaves', async ({ page }) => {
+  test('JobsView_InsertByText_ExtractsAndSaves', async ({ page }) => {
     const postings: Record<string, unknown>[] = [];
     await mockSession(page);
     await page.route('**/api/v1/job-postings', (route) => {
@@ -1343,19 +1343,19 @@ test.describe('Stellen (Phase 1)', () => {
     await page.goto(KIT);
     await page
       .locator('nav')
-      .getByRole('button', { name: /^Stellen$/ })
+      .getByRole('button', { name: /^Jobs$/ })
       .click();
-    await page.getByRole('button', { name: 'Stelle einfügen' }).click();
-    await page.getByLabel('Anzeigentext').fill('React and TypeScript.');
-    await page.getByRole('button', { name: 'Felder extrahieren' }).click();
+    await page.getByRole('button', { name: 'Add job posting' }).click();
+    await page.getByLabel('Posting text').fill('React and TypeScript.');
+    await page.getByRole('button', { name: 'Extract fields' }).click();
 
-    await expect(page.getByLabel('Unternehmen')).toHaveValue('Acme Corp');
-    await page.getByRole('button', { name: 'Speichern' }).click();
+    await expect(page.getByLabel('Company')).toHaveValue('Acme Corp');
+    await page.getByRole('button', { name: 'Save' }).click();
 
     await expect(page.locator('main')).toContainText('Frontend Developer');
   });
 
-  test('StellenView_InsertByUrl_ExtractsAndSaves', async ({ page }) => {
+  test('JobsView_InsertByUrl_ExtractsAndSaves', async ({ page }) => {
     const postings: Record<string, unknown>[] = [];
     await mockSession(page);
     await page.route('**/api/v1/job-postings', (route) => {
@@ -1403,20 +1403,20 @@ test.describe('Stellen (Phase 1)', () => {
     await page.goto(KIT);
     await page
       .locator('nav')
-      .getByRole('button', { name: /^Stellen$/ })
+      .getByRole('button', { name: /^Jobs$/ })
       .click();
-    await page.getByRole('button', { name: 'Stelle einfügen' }).click();
-    await page.getByRole('button', { name: 'Von URL' }).click();
-    await page.getByLabel('URL der Stellenanzeige').fill('https://example.com/job/123');
-    await page.getByRole('button', { name: 'Felder extrahieren' }).click();
+    await page.getByRole('button', { name: 'Add job posting' }).click();
+    await page.getByRole('button', { name: 'From URL' }).click();
+    await page.getByLabel('Job posting URL').fill('https://example.com/job/123');
+    await page.getByRole('button', { name: 'Extract fields' }).click();
 
-    await expect(page.getByLabel('Unternehmen')).toHaveValue('Helio GmbH');
-    await page.getByRole('button', { name: 'Speichern' }).click();
+    await expect(page.getByLabel('Company')).toHaveValue('Helio GmbH');
+    await page.getByRole('button', { name: 'Save' }).click();
 
     await expect(page.locator('main')).toContainText('Backend Engineer');
   });
 
-  test('StellenView_DuplicateAdopt_ShowsBereitsGespeichert', async ({ page }) => {
+  test('JobsView_DuplicateAdopt_ShowsBereitsGespeichert', async ({ page }) => {
     await mockSession(page);
     await page.route('**/api/v1/job-postings', (route) => {
       if (route.request().method() !== 'GET') return route.continue();
@@ -1432,16 +1432,16 @@ test.describe('Stellen (Phase 1)', () => {
     await page.goto(KIT);
     await page
       .locator('nav')
-      .getByRole('button', { name: /^Stellen$/ })
+      .getByRole('button', { name: /^Jobs$/ })
       .click();
-    await page.getByRole('tab', { name: 'Stellen finden' }).click();
-    await expect(page.getByRole('button', { name: 'Stelle übernehmen' })).toBeVisible();
-    await page.getByRole('button', { name: 'Stelle übernehmen' }).click();
+    await page.getByRole('tab', { name: 'Find jobs' }).click();
+    await expect(page.getByRole('button', { name: 'Adopt job' })).toBeVisible();
+    await page.getByRole('button', { name: 'Adopt job' }).click();
 
-    await expect(page.getByRole('button', { name: 'Bereits gespeichert → öffnen' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Already saved → open' })).toBeVisible();
   });
 
-  test('StellenView_Delete_UndoRestores', async ({ page }) => {
+  test('JobsView_Delete_UndoRestores', async ({ page }) => {
     await mockSession(page);
     await page.route('**/api/v1/job-postings', (route) => {
       if (route.request().method() !== 'GET') return route.continue();
@@ -1451,22 +1451,22 @@ test.describe('Stellen (Phase 1)', () => {
     await page.goto(KIT);
     await page
       .locator('nav')
-      .getByRole('button', { name: /^Stellen$/ })
+      .getByRole('button', { name: /^Jobs$/ })
       .click();
     await expect(page.locator('main')).toContainText('Nordwind Logistik AG');
 
     // Open the detail, delete → the undo snackbar appears.
     await page.getByText('Nordwind Logistik AG').first().click();
-    await page.getByRole('button', { name: 'Löschen' }).click();
-    await expect(page.getByRole('status')).toContainText('entfernt');
+    await page.getByRole('button', { name: 'Delete' }).click();
+    await expect(page.getByRole('status')).toContainText('removed');
 
     // Undo restores it.
-    await page.getByRole('button', { name: 'Rückgängig' }).click();
+    await page.getByRole('button', { name: 'Undo' }).click();
     await expect(page.locator('main')).toContainText('Nordwind Logistik AG');
   });
 });
 
-test.describe('Bewerbungen (Phase 2)', () => {
+test.describe('Applications (Phase 2)', () => {
   const KIT = '/design/myjob/ui_kits/recruiting/dist/index.html';
 
   const POSTING = {
@@ -1560,11 +1560,11 @@ test.describe('Bewerbungen (Phase 2)', () => {
   });
 
   /**
-   * Mock the Bewerbungen flow with an in-memory store that survives page.reload()
+   * Mock the Applications flow with an in-memory store that survives page.reload()
    * (the closures outlive the navigation). `basePuts` records any write to the
    * talent's base documents so tests can assert the copy never touches the base.
    */
-  async function mockBewerbungen(
+  async function mockApplications(
     page: import('@playwright/test').Page,
     opts: { vermittlung: boolean },
   ) {
@@ -1666,7 +1666,7 @@ test.describe('Bewerbungen (Phase 2)', () => {
         ],
       };
       // Persist the change back into the in-memory store (which survives
-      // page.reload()) — otherwise the list re-renders the stale "Entwurf" after
+      // page.reload()) — otherwise the list re-renders the stale "Draft" after
       // the reload and the assertion can only check the company, not the status.
       const idx = state.applications.findIndex((a) => a.id === id);
       if (idx >= 0) state.applications[idx] = updated;
@@ -1752,53 +1752,53 @@ test.describe('Bewerbungen (Phase 2)', () => {
     await page.goto(KIT);
     await page
       .locator('nav')
-      .getByRole('button', { name: /^Stellen$/ })
+      .getByRole('button', { name: /^Jobs$/ })
       .click();
     await page.getByText('Nordwind Logistik AG').first().click();
   }
 
-  test('BewerbungenFlow_CreateFromPosting_OpensEditorWithCopy', async ({ page }) => {
-    const state = await mockBewerbungen(page, { vermittlung: true });
+  test('ApplicationsFlow_CreateFromPosting_OpensEditorWithCopy', async ({ page }) => {
+    const state = await mockApplications(page, { vermittlung: true });
     await openPosting(page);
 
-    await page.getByRole('button', { name: 'Bewerbung erstellen' }).click();
+    await page.getByRole('button', { name: 'Create application' }).click();
     await page.getByRole('button', { name: /Tobias Wirth/ }).click();
 
     // The Bewerbungs-Editor opened with the copy hydrated (AK-2.1).
     await expect(page.locator('[data-doc-hydrated="true"]')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Entwurf' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Draft' })).toBeVisible();
 
     // Reload, then the list shows exactly one application (AK-2.2).
     await page.reload();
     await page
       .locator('nav')
-      .getByRole('button', { name: /^Bewerbungen$/ })
+      .getByRole('button', { name: /^Applications$/ })
       .click();
     await expect(page.locator('main')).toContainText('Nordwind Logistik AG');
     await expect(page.locator('main')).toContainText('Backend Engineer');
     expect(state.applications).toHaveLength(1);
   });
 
-  test('BewerbungenFlow_DuplicateCreate_OpensExisting', async ({ page }) => {
-    const state = await mockBewerbungen(page, { vermittlung: true });
+  test('ApplicationsFlow_DuplicateCreate_OpensExisting', async ({ page }) => {
+    const state = await mockApplications(page, { vermittlung: true });
     await openPosting(page);
 
-    await page.getByRole('button', { name: 'Bewerbung erstellen' }).click();
+    await page.getByRole('button', { name: 'Create application' }).click();
     await page.getByRole('button', { name: /Tobias Wirth/ }).click();
     await expect(page.locator('[data-doc-hydrated="true"]')).toBeVisible();
 
     // Second attempt opens the existing application, no second record (AK-2.2).
     await openPosting(page);
-    await page.getByRole('button', { name: 'Bewerbung erstellen' }).click();
+    await page.getByRole('button', { name: 'Create application' }).click();
     await page.getByRole('button', { name: /Tobias Wirth/ }).click();
     await expect(page.locator('[data-doc-hydrated="true"]')).toBeVisible();
     expect(state.applications).toHaveLength(1);
   });
 
-  test('BewerbungenFlow_EditCopy_BaseUnchanged', async ({ page }) => {
-    const state = await mockBewerbungen(page, { vermittlung: true });
+  test('ApplicationsFlow_EditCopy_BaseUnchanged', async ({ page }) => {
+    const state = await mockApplications(page, { vermittlung: true });
     await openPosting(page);
-    await page.getByRole('button', { name: 'Bewerbung erstellen' }).click();
+    await page.getByRole('button', { name: 'Create application' }).click();
     await page.getByRole('button', { name: /Tobias Wirth/ }).click();
     await expect(page.locator('[data-doc-hydrated="true"]')).toBeVisible();
 
@@ -1809,53 +1809,53 @@ test.describe('Bewerbungen (Phase 2)', () => {
     await expect.poll(() => state.basePuts.length).toBe(0);
   });
 
-  test('BewerbungenFlow_GenerateLetter_MockProvider_ShowsStagedSuggestion', async ({ page }) => {
-    await mockBewerbungen(page, { vermittlung: true });
+  test('ApplicationsFlow_GenerateLetter_MockProvider_ShowsStagedSuggestion', async ({ page }) => {
+    await mockApplications(page, { vermittlung: true });
     await openPosting(page);
-    await page.getByRole('button', { name: 'Bewerbung erstellen' }).click();
+    await page.getByRole('button', { name: 'Create application' }).click();
     await page.getByRole('button', { name: /Tobias Wirth/ }).click();
     await expect(page.locator('[data-doc-hydrated="true"]')).toBeVisible();
 
-    await page.getByRole('button', { name: 'Anschreiben generieren' }).click();
-    await expect(page.getByText('Anschreiben-Vorschlag · noch nicht übernommen')).toBeVisible();
+    await page.getByRole('button', { name: 'Generate cover letter' }).click();
+    await expect(page.getByText('Cover letter suggestion · not applied yet')).toBeVisible();
     await expect(page.getByText(/distributed systems/)).toBeVisible();
   });
 
-  test('BewerbungenFlow_ChangeStatus_PersistsAfterReload', async ({ page }) => {
-    const state = await mockBewerbungen(page, { vermittlung: true });
+  test('ApplicationsFlow_ChangeStatus_PersistsAfterReload', async ({ page }) => {
+    const state = await mockApplications(page, { vermittlung: true });
     await openPosting(page);
-    await page.getByRole('button', { name: 'Bewerbung erstellen' }).click();
+    await page.getByRole('button', { name: 'Create application' }).click();
     await page.getByRole('button', { name: /Tobias Wirth/ }).click();
     await expect(page.locator('[data-doc-hydrated="true"]')).toBeVisible();
 
-    await page.getByRole('button', { name: 'Versendet' }).click();
+    await page.getByRole('button', { name: 'Sent' }).click();
     expect(state.applications[0]).toBeDefined();
 
     await page.reload();
     await page
       .locator('nav')
-      .getByRole('button', { name: /^Bewerbungen$/ })
+      .getByRole('button', { name: /^Applications$/ })
       .click();
     await expect(page.locator('main')).toContainText('Nordwind Logistik AG');
     // The changed status survived the reload (the mock persisted it) and the
-    // list badge shows "Versendet" rather than the initial "Entwurf".
-    await expect(page.locator('main')).toContainText('Versendet');
+    // list badge shows "Sent" rather than the initial "Draft".
+    await expect(page.locator('main')).toContainText('Sent');
   });
 
-  test('BewerbungenFlow_PipelineSubTab_OnlyVisibleWhenVermittlungOn', async ({ page }) => {
-    await mockBewerbungen(page, { vermittlung: false });
+  test('ApplicationsFlow_PipelineSubTab_OnlyVisibleWhenVermittlungOn', async ({ page }) => {
+    await mockApplications(page, { vermittlung: false });
     await page.goto(KIT);
     await page
       .locator('nav')
-      .getByRole('button', { name: /^Bewerbungen$/ })
+      .getByRole('button', { name: /^Applications$/ })
       .click();
     await expect(page.getByRole('tab', { name: 'Pipeline' })).toHaveCount(0);
 
-    await mockBewerbungen(page, { vermittlung: true });
+    await mockApplications(page, { vermittlung: true });
     await page.reload();
     await page
       .locator('nav')
-      .getByRole('button', { name: /^Bewerbungen$/ })
+      .getByRole('button', { name: /^Applications$/ })
       .click();
     await expect(page.getByRole('tab', { name: 'Pipeline' })).toBeVisible();
   });
@@ -1863,40 +1863,40 @@ test.describe('Bewerbungen (Phase 2)', () => {
   test.describe('Magic Pen (Phase 3)', () => {
     async function openApplication(page: import('@playwright/test').Page) {
       await openPosting(page);
-      await page.getByRole('button', { name: 'Bewerbung erstellen' }).click();
+      await page.getByRole('button', { name: 'Create application' }).click();
       await page.getByRole('button', { name: /Tobias Wirth/ }).click();
       await expect(page.locator('[data-doc-hydrated="true"]')).toBeVisible();
     }
 
     test('MagicPenFlow_PerSection_ShowsDiffAndAcceptWritesCopy', async ({ page }) => {
-      const state = await mockBewerbungen(page, { vermittlung: true });
+      const state = await mockApplications(page, { vermittlung: true });
       await openApplication(page);
 
       await page.getByTestId('pen-summary').click();
-      await expect(page.getByText('Vorschlag · noch nicht übernommen')).toBeVisible();
+      await expect(page.getByText('Suggestion · not applied yet')).toBeVisible();
       // The before/after diff marks the change (the browser-side jsdiff renderer).
       await expect(page.locator('[data-testid="editor-diff"] ins').first()).toBeVisible();
 
-      await page.getByRole('button', { name: 'Übernehmen' }).click();
+      await page.getByRole('button', { name: 'Apply' }).click();
       await expect.poll(() => state.copyPuts.length).toBeGreaterThan(0);
       // Accept writes only the copy, never the base CV (AK-2.3/3.1).
       expect(state.basePuts).toHaveLength(0);
     });
 
     test('MagicPenFlow_BaseUnchanged_AfterAccept', async ({ page }) => {
-      const state = await mockBewerbungen(page, { vermittlung: true });
+      const state = await mockApplications(page, { vermittlung: true });
       await openApplication(page);
 
       await page.getByTestId('pen-summary').click();
-      await expect(page.getByText('Vorschlag · noch nicht übernommen')).toBeVisible();
-      await page.getByRole('button', { name: 'Übernehmen' }).click();
+      await expect(page.getByText('Suggestion · not applied yet')).toBeVisible();
+      await page.getByRole('button', { name: 'Apply' }).click();
 
       // The base CV stays byte-identical: no write to the talent documents route.
       expect(state.basePuts).toHaveLength(0);
     });
 
     test('MagicPenFlow_GroundingWarning_BlocksUnreviewedAccept', async ({ page }) => {
-      await mockBewerbungen(page, { vermittlung: true });
+      await mockApplications(page, { vermittlung: true });
       await page.route('**/api/v1/job-applications/*/pen/summary', (route) =>
         route.fulfill({
           contentType: 'application/json',
@@ -1915,34 +1915,34 @@ test.describe('Bewerbungen (Phase 2)', () => {
       await openApplication(page);
 
       await page.getByTestId('pen-summary').click();
-      await expect(page.getByText(/nicht belegte Angabe/)).toBeVisible();
+      await expect(page.getByText(/unsupported claim/)).toBeVisible();
 
-      await page.getByRole('button', { name: 'Übernehmen' }).click();
-      // The explicit "Trotzdem übernehmen" confirm appears (AK-3.4).
-      await expect(page.getByRole('button', { name: 'Trotzdem übernehmen' })).toBeVisible();
+      await page.getByRole('button', { name: 'Apply' }).click();
+      // The explicit "Apply anyway" confirm appears (AK-3.4).
+      await expect(page.getByRole('button', { name: 'Apply anyway' })).toBeVisible();
     });
 
-    test('MagicPenFlow_AllesAnpassen_ShowsProgressAndAggregatedDiff', async ({ page }) => {
-      const state = await mockBewerbungen(page, { vermittlung: true });
+    test('MagicPenFlow_AdjustAllSections_ShowsProgressAndAggregatedDiff', async ({ page }) => {
+      const state = await mockApplications(page, { vermittlung: true });
       await openApplication(page);
 
-      await page.getByRole('button', { name: 'Alles für diese Stelle anpassen' }).click();
+      await page.getByRole('button', { name: 'Adjust everything for this job' }).click();
       // The aggregate tiles render with per-section accept buttons (AK-3.5).
-      await expect(page.getByText('Alles anpassen')).toBeVisible();
-      await expect(page.getByRole('button', { name: 'Übernehmen' }).first()).toBeVisible();
+      await expect(page.getByText('Adjust all sections')).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Apply' }).first()).toBeVisible();
 
       // Accept one section individually → the copy is written (never the base).
       // `.evaluate` bypasses the sticky app banner that can cover the tile row.
       await page
-        .getByRole('button', { name: 'Übernehmen' })
+        .getByRole('button', { name: 'Apply' })
         .first()
         .evaluate((el) => (el as HTMLButtonElement).click());
       await expect.poll(() => state.copyPuts.length).toBeGreaterThan(0);
       expect(state.basePuts).toHaveLength(0);
     });
 
-    test('MagicPenFlow_AllesAnpassen_TileGrounding_RequiresConfirm', async ({ page }) => {
-      await mockBewerbungen(page, { vermittlung: true });
+    test('MagicPenFlow_AdjustAllSections_TileGrounding_RequiresConfirm', async ({ page }) => {
+      await mockApplications(page, { vermittlung: true });
       // One fan-out section (Profil) violates grounding.
       await page.route('**/api/v1/job-applications/*/pen/summary', (route) =>
         route.fulfill({
@@ -1961,19 +1961,19 @@ test.describe('Bewerbungen (Phase 2)', () => {
       );
       await openApplication(page);
 
-      await page.getByRole('button', { name: 'Alles für diese Stelle anpassen' }).click();
-      await expect(page.getByText(/nicht belegte Angabe/)).toBeVisible();
+      await page.getByRole('button', { name: 'Adjust everything for this job' }).click();
+      await expect(page.getByText(/unsupported claim/)).toBeVisible();
 
       // The violating tile's accept requires the explicit confirm step (OQ6).
       await page
         .getByTestId('all-accept-summary')
         .evaluate((el) => (el as HTMLButtonElement).click());
-      await expect(page.getByText('Trotzdem übernehmen')).toBeVisible();
+      await expect(page.getByText('Apply anyway')).toBeVisible();
     });
   });
 });
 
-test.describe('Bewerbungen (Phase 4)', () => {
+test.describe('Applications (Phase 4)', () => {
   const KIT = '/design/myjob/ui_kits/recruiting/dist/index.html';
 
   const POSTING = {
@@ -2250,13 +2250,13 @@ test.describe('Bewerbungen (Phase 4)', () => {
     await page.goto(KIT);
     await page
       .locator('nav')
-      .getByRole('button', { name: /^Bewerbungen$/ })
+      .getByRole('button', { name: /^Applications$/ })
       .click();
     await page.getByText('Nordwind Logistik AG').first().click();
     await expect(page.locator('[data-doc-hydrated="true"]')).toBeVisible();
   }
 
-  test('BewerbungenFlow_SelectAttachments_DownloadMappe', async ({ page }) => {
+  test('ApplicationsFlow_SelectAttachments_DownloadMappe', async ({ page }) => {
     const state = await mockPhase4(page, [application('app-1')]);
     await openApplication(page);
 
@@ -2276,20 +2276,20 @@ test.describe('Bewerbungen (Phase 4)', () => {
     await expect.poll(() => state.dossierZipFetches).toBe(1);
   });
 
-  test('BewerbungenFlow_FilterByStatus_ShowsOnlySelected', async ({ page }) => {
+  test('ApplicationsFlow_FilterByStatus_ShowsOnlySelected', async ({ page }) => {
     const app1 = application('app-1', 'draft');
     const app2 = { ...application('app-2', 'sent'), postingTitle: 'Frontend Engineer' };
     await mockPhase4(page, [app1, app2]);
     await page.goto(KIT);
     await page
       .locator('nav')
-      .getByRole('button', { name: /^Bewerbungen$/ })
+      .getByRole('button', { name: /^Applications$/ })
       .click();
     await expect(page.locator('main')).toContainText('Backend Engineer');
     await expect(page.locator('main')).toContainText('Frontend Engineer');
 
-    // Server-side filter: only the "Versendet" application survives.
-    await page.getByTestId('status-filter-Versendet').click();
+    // Server-side filter: only the "Sent" application survives.
+    await page.getByTestId('status-filter-Sent').click();
     await expect(page.locator('main')).toContainText('Frontend Engineer');
     await expect(page.locator('main')).not.toContainText('Backend Engineer');
 
@@ -2297,18 +2297,18 @@ test.describe('Bewerbungen (Phase 4)', () => {
     await page.reload();
     await page
       .locator('nav')
-      .getByRole('button', { name: /^Bewerbungen$/ })
+      .getByRole('button', { name: /^Applications$/ })
       .click();
     await expect(page.locator('main')).toContainText('Frontend Engineer');
-    await expect(page.locator('main')).toContainText('Versendet');
+    await expect(page.locator('main')).toContainText('Sent');
   });
 
-  test('BewerbungenFlow_FrozenEdit_ConfirmsUnfreeze', async ({ page }) => {
+  test('ApplicationsFlow_FrozenEdit_ConfirmsUnfreeze', async ({ page }) => {
     const state = await mockPhase4(page, [application('app-1', 'sent')]);
     await openApplication(page);
 
     // Editing the frozen copy triggers a 409 → the freeze dialog appears.
-    await page.getByLabel('Name').fill('Tobias Wirth (geändert)');
+    await page.getByLabel('Name').fill('Tobias Wirth (changed)');
     await expect(page.getByTestId('unfreeze-confirm')).toBeVisible({ timeout: 5000 });
     await page.getByTestId('unfreeze-confirm').click();
 
@@ -2324,7 +2324,7 @@ test.describe('Chat-Agent (Phase 5)', () => {
     'data: {"sessionId":"s1"}',
     '',
     'event: text',
-    'data: {"delta":"Ich lege eine Bewerbung an."}',
+    'data: {"delta":"I am creating an application."}',
     '',
     'event: tool-call',
     'data: {"name":"create_application","args":{"jobPostingId":"p1","talentId":"t1"}}',
@@ -2390,11 +2390,11 @@ test.describe('Chat-Agent (Phase 5)', () => {
     // The Agent action is a main-path companion: visible even with vermittlung off.
     await page.getByRole('button', { name: 'Agent' }).click();
     await expect(page.getByTestId('chat-panel')).toBeVisible();
-    await page.getByTestId('chat-input').fill('Erstelle eine Bewerbung');
+    await page.getByTestId('chat-input').fill('Create an application');
     await page.getByTestId('chat-send').click();
 
-    await expect(page.getByTestId('chat-messages')).toContainText('Ich lege eine Bewerbung an.');
-    await expect(page.getByTestId('chat-messages')).toContainText('Bewerbung anlegen');
+    await expect(page.getByTestId('chat-messages')).toContainText('I am creating an application.');
+    await expect(page.getByTestId('chat-messages')).toContainText('Create application');
     await expect(page.getByTestId('usage-footer')).toBeVisible();
   });
 
@@ -2424,7 +2424,7 @@ test.describe('Chat-Agent (Phase 5)', () => {
 
     await page.goto(KIT);
     await page.getByRole('button', { name: 'Agent' }).click();
-    await page.getByTestId('chat-input').fill('Erstelle eine Bewerbung');
+    await page.getByTestId('chat-input').fill('Create an application');
     await page.getByTestId('chat-send').click();
 
     await expect(page.getByTestId('draft-link')).toBeVisible();

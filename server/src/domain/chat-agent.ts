@@ -119,12 +119,12 @@ export function draftTitleOf(firstMessage: string): string {
  */
 export function summarizeRun(drafts: DraftRef[]): string {
   if (drafts.length === 0) {
-    return 'Der Agent hat in diesem Lauf keine Bewerbungs-Entwürfe erstellt.';
+    return 'The agent did not create any application drafts in this run.';
   }
   const listing = drafts.map((d) => `${d.postingCompany} – ${d.postingTitle}`).join(', ');
   return drafts.length === 1
-    ? `1 Bewerbungs-Entwurf erstellt: ${listing}.`
-    : `${drafts.length} Bewerbungs-Entwürfe erstellt: ${listing}.`;
+    ? `1 application draft created: ${listing}.`
+    : `${drafts.length} application drafts created: ${listing}.`;
 }
 
 /**

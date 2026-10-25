@@ -1,4 +1,4 @@
-/* AK-2.8 / Q1 — the "Bewerbungen" nav shows the new list; the frozen Pipeline
+/* AK-2.8 / Q1 — the "Applications" nav shows the new list; the frozen Pipeline
    board is reachable only as a "Pipeline" sub-tab when Vermittlung is on. */
 import { describe, it, expect, beforeAll, afterEach, vi } from 'vitest';
 import { render, waitFor } from '@testing-library/react';
@@ -59,8 +59,8 @@ afterEach(() => {
   delete window.RecruitApi;
 });
 
-describe('Bewerbungen nav (AK-2.8 / Q1)', () => {
-  it('BewerbungenNav_VermittlungOff_ShowsOnlyNewList', async () => {
+describe('Applications nav (AK-2.8 / Q1)', () => {
+  it('ApplicationsNav_VermittlungOff_ShowsOnlyNewList', async () => {
     window.RecruitApi = emptyApi(false);
     window.WorkspaceSettings.reset();
     render(
@@ -69,7 +69,7 @@ describe('Bewerbungen nav (AK-2.8 / Q1)', () => {
     await waitFor(() => expect(window.RecruitApi.getWorkspaceSettings).toHaveBeenCalled());
 
     const bewerbungen = [...document.querySelectorAll('[data-nav]')].find(
-      (el) => el.textContent === 'Bewerbungen',
+      (el) => el.textContent === 'Applications',
     );
     await userEvent.click(bewerbungen);
 
@@ -77,7 +77,7 @@ describe('Bewerbungen nav (AK-2.8 / Q1)', () => {
     await waitFor(() => expect(document.querySelector('[data-tabs]')).toBeNull());
   });
 
-  it('BewerbungenNav_VermittlungOn_ShowsPipelineSubTab', async () => {
+  it('ApplicationsNav_VermittlungOn_ShowsPipelineSubTab', async () => {
     window.RecruitApi = emptyApi(true);
     window.WorkspaceSettings.reset();
     render(
@@ -86,11 +86,11 @@ describe('Bewerbungen nav (AK-2.8 / Q1)', () => {
     await waitFor(() => expect(window.RecruitApi.getWorkspaceSettings).toHaveBeenCalled());
 
     const bewerbungen = [...document.querySelectorAll('[data-nav]')].find(
-      (el) => el.textContent === 'Bewerbungen',
+      (el) => el.textContent === 'Applications',
     );
     await userEvent.click(bewerbungen);
 
     await waitFor(() => expect(document.querySelector('[data-tabs]')).toContainHTML('Pipeline'));
-    expect(document.querySelector('[data-tabs]')).toContainHTML('Bewerbungen');
+    expect(document.querySelector('[data-tabs]')).toContainHTML('Applications');
   });
 });

@@ -77,33 +77,33 @@ const DOCS = {
 
 /** Declarative audit map: view → button labels that act (the audit trusts them). */
 const AUDIT_MAP: Record<string, RegExp[]> = {
-  Workspace: [/Mandant hinzufügen/, /Neue Stelle/, /^Agent$/, /^Einstellungen$/],
-  Mandanten: [/Mandant hinzufügen/, /CVs importieren/],
+  Workspace: [/Add candidate/, /New job/, /^Agent$/, /^Settings$/],
+  Candidates: [/Add candidate/, /Import CVs/],
   TalentProfile: [
-    /Lebenslauf (anlegen|bearbeiten)/,
-    /Zurück/,
-    /^(Lebenslauf|Anhänge|Bewerbungen)$/,
-    /^(Alle|Entwurf|Versendet|Gespräch|Zusage|Absage)$/,
-    // "Hochladen" öffnet den OS-File-Chooser (Plan §11.2.1: Wirkung = File-Chooser,
-    // durch die bestehenden Anhang-Upload-e2e gedeckt) — nicht klicken (flaky).
-    /Hochladen/,
+    /(Create CV|Edit CV)/,
+    /Back/,
+    /^(CV|Attachments|Applications)$/,
+    /^(All|Draft|Sent|Interview|Offer|Rejected)$/,
+    // "Upload" opens the OS file chooser (plan §11.2.1: effect = file chooser,
+    // covered by the existing attachment-upload e2e) — don't click (flaky).
+    /Upload/,
   ],
-  Stellen: [/Stelle einfügen/, /Stellen finden/, /Gespeichert/, /^Stellen$/],
-  Bewerbungen: [
-    /Bewerbung erstellen/,
-    /^Bewerbungen$/,
-    /^(Alle|Entwurf|Versendet|Gespräch|Zusage|Absage)$/,
+  Jobs: [/Add job posting/, /Find jobs/, /Saved/, /^Jobs$/],
+  Applications: [
+    /Create application/,
+    /^Applications$/,
+    /^(All|Draft|Sent|Interview|Offer|Rejected)$/,
   ],
   BewerbungsEditor: [
-    /Anschreiben generieren/,
-    /Alles für diese Stelle anpassen/,
-    /Mappe als (PDF|ZIP)/,
-    /Anhänge speichern/,
-    /Zurück zu den Bewerbungen/,
-    /Entwurf|Versendet|Gespräch|Zusage|Absage/,
+    /Generate cover letter/,
+    /Adjust everything for this job/,
+    /Dossier as (PDF|ZIP)/,
+    /Save attachments/,
+    /Back to applications/,
+    /Draft|Sent|Interview|Offer|Rejected/,
   ],
-  Einstellungen: [/KI-Anbindung/, /^Workspace$/, /Daten & Datenschutz/, /^(Hell|Dunkel|System)$/],
-  ChatPanel: [/^Senden$/, /Abbrechen/],
+  Settings: [/AI connection/, /^Workspace$/, /Data & privacy/, /^(Light|Dark|System)$/],
+  ChatPanel: [/^Send$/, /Cancel/],
 };
 
 function auditMapFor(view: string): RegExp[] {
@@ -253,11 +253,11 @@ test.describe('Button audit (AK-6.2)', () => {
     });
   });
 
-  test('ButtonAudit_MandantenView_EveryButtonActsOrDisabled', async ({ page }) => {
-    await runView(page, 'Mandanten', async () => {
+  test('ButtonAudit_CandidatesView_EveryButtonActsOrDisabled', async ({ page }) => {
+    await runView(page, 'Candidates', async () => {
       await page
         .locator('nav')
-        .getByRole('button', { name: /Mandanten/ })
+        .getByRole('button', { name: /Candidates/ })
         .click();
     });
   });
@@ -266,26 +266,26 @@ test.describe('Button audit (AK-6.2)', () => {
     await runView(page, 'TalentProfile', async () => {
       await page
         .locator('nav')
-        .getByRole('button', { name: /Mandanten/ })
+        .getByRole('button', { name: /Candidates/ })
         .click();
       await page.getByText('Tobias Wirth').first().click({ force: true });
     });
   });
 
-  test('ButtonAudit_StellenView_EveryButtonActsOrDisabled', async ({ page }) => {
-    await runView(page, 'Stellen', async () => {
+  test('ButtonAudit_JobsView_EveryButtonActsOrDisabled', async ({ page }) => {
+    await runView(page, 'Jobs', async () => {
       await page
         .locator('nav')
-        .getByRole('button', { name: /^Stellen$/ })
+        .getByRole('button', { name: /^Jobs$/ })
         .click();
     });
   });
 
-  test('ButtonAudit_BewerbungenView_EveryButtonActsOrDisabled', async ({ page }) => {
-    await runView(page, 'Bewerbungen', async () => {
+  test('ButtonAudit_ApplicationsView_EveryButtonActsOrDisabled', async ({ page }) => {
+    await runView(page, 'Applications', async () => {
       await page
         .locator('nav')
-        .getByRole('button', { name: /^Bewerbungen$/ })
+        .getByRole('button', { name: /^Applications$/ })
         .click();
     });
   });
@@ -327,7 +327,7 @@ test.describe('Button audit (AK-6.2)', () => {
     await page.goto(KIT);
     await page
       .locator('nav')
-      .getByRole('button', { name: /^Bewerbungen$/ })
+      .getByRole('button', { name: /^Applications$/ })
       .click();
     await page.getByText('Nordwind Logistik AG').first().click();
     await page.locator('[data-doc-hydrated="true"]').waitFor();
@@ -337,10 +337,10 @@ test.describe('Button audit (AK-6.2)', () => {
     expect(errors).toEqual([]);
   });
 
-  test('ButtonAudit_EinstellungenView_EveryButtonActsOrDisabled', async ({ page }) => {
-    await runView(page, 'Einstellungen', async () => {
+  test('ButtonAudit_SettingsView_EveryButtonActsOrDisabled', async ({ page }) => {
+    await runView(page, 'Settings', async () => {
       await page
-        .getByRole('button', { name: /Einstellungen/ })
+        .getByRole('button', { name: /Settings/ })
         .first()
         .click();
     });
@@ -356,7 +356,7 @@ test.describe('Button audit (AK-6.2)', () => {
     const errors = collectErrors(page);
     await mockShell(page, { populated: true });
     await page.goto(KIT);
-    for (const view of ['Workspace', 'Mandanten', 'Stellen', 'Bewerbungen']) {
+    for (const view of ['Workspace', 'Candidates', 'Jobs', 'Applications']) {
       await page
         .locator('nav')
         .getByRole('button', { name: new RegExp(`^${view}$`) })
@@ -376,7 +376,7 @@ test.describe('Button audit (AK-6.2)', () => {
     await page.addInitScript({ content: axeSource });
     await mockShell(page, { populated: true });
     await page.goto(KIT);
-    for (const view of ['Workspace', 'Mandanten', 'Stellen', 'Bewerbungen']) {
+    for (const view of ['Workspace', 'Candidates', 'Jobs', 'Applications']) {
       await page
         .locator('nav')
         .getByRole('button', { name: new RegExp(`^${view}$`) })

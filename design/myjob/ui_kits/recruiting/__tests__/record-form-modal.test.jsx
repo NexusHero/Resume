@@ -72,7 +72,7 @@ describe('RecordFormModal — delete', () => {
       />,
     );
 
-    await userEvent.click(screen.getByText('Löschen'));
+    await userEvent.click(screen.getByText('Delete'));
 
     expect(confirmSpy).not.toHaveBeenCalled(); // no system dialog
     expect(onDelete).toHaveBeenCalledTimes(1);
@@ -82,7 +82,7 @@ describe('RecordFormModal — delete', () => {
 
   it('CreatePlacement_NoDelete_HidesDeleteButton', () => {
     render(<RecordFormModal kind="placement" onSubmit={vi.fn()} onClose={vi.fn()} />);
-    expect(screen.queryByText('Löschen')).not.toBeInTheDocument();
+    expect(screen.queryByText('Delete')).not.toBeInTheDocument();
   });
 });
 
@@ -98,10 +98,10 @@ describe('RecordFormModal — fee validation', () => {
       />,
     );
 
-    await userEvent.click(screen.getByText('Änderungen speichern'));
+    await userEvent.click(screen.getByText('Save changes'));
 
     expect(onSubmit).not.toHaveBeenCalled();
-    expect(screen.getByRole('alert')).toHaveTextContent('Bitte einen gültigen Betrag eingeben für: Honorar');
+    expect(screen.getByRole('alert')).toHaveTextContent('Please enter a valid amount for: Fee');
   });
 
   it('Placement_ValidFee_Submits', async () => {
@@ -110,7 +110,7 @@ describe('RecordFormModal — fee validation', () => {
       <RecordFormModal kind="placement" record={placement} onSubmit={onSubmit} onClose={vi.fn()} />,
     );
 
-    await userEvent.click(screen.getByText('Änderungen speichern'));
+    await userEvent.click(screen.getByText('Save changes'));
 
     expect(onSubmit).toHaveBeenCalledTimes(1);
     expect(onSubmit.mock.calls[0][0].fee).toBe('19.000 €');

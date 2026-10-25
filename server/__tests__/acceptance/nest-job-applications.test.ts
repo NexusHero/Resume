@@ -519,7 +519,7 @@ describe('JobApplications API (AK-2.1/2.2/2.3/2.4/2.5)', () => {
 
     const after = await agent.get(`/api/v1/job-applications/${application.id}`);
     const history = after.body.jobApplication.statusHistory;
-    expect(history[history.length - 1].note).toBe('Dokumente nach Einfrieren geändert');
+    expect(history[history.length - 1].note).toBe('Documents edited after freezing');
   });
 
   it('UpdateAttachments_Frozen_Returns409_AndUnfreezeAppendsHistory', async () => {
@@ -580,7 +580,7 @@ describe('JobApplications API (AK-2.1/2.2/2.3/2.4/2.5)', () => {
     const res = await agent.get(`/api/v1/job-applications/${application.id}/dossier/pdf`);
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toContain('application/pdf');
-    expect(res.headers['content-disposition']).toContain('Bewerbung_Ada_Lovelace_Acme_Corp.pdf');
+    expect(res.headers['content-disposition']).toContain('Application_Ada_Lovelace_Acme_Corp.pdf');
   });
 
   it('DossierPdf_EmptyFirma_FallsBackToPostingCompany', async () => {
@@ -641,10 +641,10 @@ describe('JobApplications API (AK-2.1/2.2/2.3/2.4/2.5)', () => {
       });
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toContain('application/zip');
-    expect(res.headers['content-disposition']).toContain('Bewerbung_Ada_Lovelace_Acme_Corp.zip');
+    expect(res.headers['content-disposition']).toContain('Application_Ada_Lovelace_Acme_Corp.zip');
     const zip = new AdmZip(res.body as Buffer);
     const names = zip.getEntries().map((e) => e.entryName);
-    expect(names).toEqual(['Bewerbung.pdf', 'Zeugnis.pdf']);
+    expect(names).toEqual(['Application.pdf', 'Zeugnis.pdf']);
   });
 
   it('DossierZip_NoContentLength_StreamsChunked', async () => {

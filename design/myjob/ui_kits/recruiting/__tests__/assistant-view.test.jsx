@@ -45,11 +45,11 @@ describe('AssistantView errors', () => {
     window.RecruitApi = api();
     window.RecruitApi.runAssistant.mockRejectedValue(aiError());
     render(<AssistantView />);
-    const run = await screen.findByRole('button', { name: /Jetzt ausführen/ });
+    const run = await screen.findByRole('button', { name: /Run now/ });
     fireEvent.click(run);
     const alert = await screen.findByRole('alert');
-    expect(alert).toHaveTextContent('KI nicht eingerichtet — richte einen Server-Key ein.');
-    expect(alert).toHaveTextContent('Einstellungen');
+    expect(alert).toHaveTextContent('AI not configured — set up a server key.');
+    expect(alert).toHaveTextContent('Settings');
   });
 
   it('AssistantView_PatchFails_ShowsTheError', async () => {
@@ -59,8 +59,8 @@ describe('AssistantView errors', () => {
     const select = await screen.findByRole('combobox');
     fireEvent.change(select, { target: { value: '15' } });
     const alert = await screen.findByRole('alert');
-    expect(alert).toHaveTextContent('KI nicht eingerichtet — richte einen Server-Key ein.');
-    expect(alert).toHaveTextContent('Einstellungen');
+    expect(alert).toHaveTextContent('AI not configured — set up a server key.');
+    expect(alert).toHaveTextContent('Settings');
   });
 
   it('AssistantView_Generic500_ShowsRawMessageWithoutSettingsLink', async () => {
@@ -69,10 +69,10 @@ describe('AssistantView errors', () => {
     boom.code = 'internal-error';
     window.RecruitApi.runAssistant.mockRejectedValue(boom);
     render(<AssistantView />);
-    fireEvent.click(await screen.findByRole('button', { name: /Jetzt ausführen/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Run now/ }));
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent('Unexpected server failure');
-    expect(alert).not.toHaveTextContent('Einstellungen');
+    expect(alert).not.toHaveTextContent('Settings');
   });
 
   it('AssistantView_AutopilotWithoutKey_DisablesEnableSwitchAndShowsHint', async () => {
@@ -84,9 +84,9 @@ describe('AssistantView errors', () => {
     // Observe the key status through the shared store (as the app does).
     await window.AiStatus.refresh();
     render(<AssistantView />);
-    const toggle = await screen.findByRole('button', { name: 'Einschalten' });
+    const toggle = await screen.findByRole('button', { name: 'Turn on' });
     expect(toggle).toBeDisabled();
-    expect(screen.getAllByText(/KI nicht eingerichtet/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/AI not configured/).length).toBeGreaterThan(0);
     fireEvent.click(toggle);
     expect(window.RecruitApi.updateAssistant).not.toHaveBeenCalled();
   });
@@ -104,8 +104,8 @@ describe('AssistantView errors', () => {
       },
     ]);
     render(<AssistantView />);
-    expect(await screen.findByText('Fehlgeschlagen')).toBeInTheDocument();
-    expect(await screen.findByText('Schließen')).toBeInTheDocument();
+    expect(await screen.findByText('Failed')).toBeInTheDocument();
+    expect(await screen.findByText('Close')).toBeInTheDocument();
     // An error hint has no meaningful "accept" action — only dismiss.
     expect(screen.queryByText('Annehmen')).not.toBeInTheDocument();
   });
@@ -114,7 +114,7 @@ describe('AssistantView errors', () => {
     window.RecruitApi = api();
     window.RecruitApi.runAssistant.mockResolvedValue({ proposed: 2, failures: 1, applied: 0 });
     render(<AssistantView />);
-    fireEvent.click(await screen.findByRole('button', { name: /Jetzt ausführen/ }));
-    expect(await screen.findByText(/1 fehlgeschlagen/)).toBeInTheDocument();
+    fireEvent.click(await screen.findByRole('button', { name: /Run now/ }));
+    expect(await screen.findByText(/1 failed/)).toBeInTheDocument();
   });
 });

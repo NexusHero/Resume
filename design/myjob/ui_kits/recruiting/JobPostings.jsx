@@ -57,13 +57,13 @@ function InsertDialog({ onClose, onSaved }) {
     try {
       // AK-0.6: refuse the AI call before it is sent when the server has no key.
       if (!(await window.RecruitApi.aiConfigured())) {
-        setError({ code: 'ai-not-configured', message: window.RecruitApi.AI_NOT_CONFIGURED || 'KI nicht eingerichtet.' });
+        setError({ code: 'ai-not-configured', message: window.RecruitApi.AI_NOT_CONFIGURED || 'AI not configured.' });
         return;
       }
       const d = await window.RecruitApi.extractJobPosting(mode === 'text' ? { text } : { url });
       setDraft({ company: d.company || '', title: d.title || '', location: d.location || '', country: d.country || '', requirements: Array.isArray(d.requirements) ? d.requirements : [], description: d.description || '', source: d.source || mode, url: d.url });
     } catch (err) {
-      setError({ code: err.code || 'unknown', message: err.message || 'Extraktion fehlgeschlagen.' });
+      setError({ code: err.code || 'unknown', message: err.message || 'Extraction failed.' });
     } finally {
       setBusy(false);
     }
@@ -82,7 +82,7 @@ function InsertDialog({ onClose, onSaved }) {
       }
       onClose();
     } catch (err) {
-      setError({ code: err.code || 'unknown', message: err.message || 'Speichern fehlgeschlagen.' });
+      setError({ code: err.code || 'unknown', message: err.message || 'Save failed.' });
     } finally {
       setBusy(false);
     }
@@ -90,9 +90,9 @@ function InsertDialog({ onClose, onSaved }) {
 
   const errorMessage = error
     ? error.code === 'ssrf-blocked'
-      ? 'Diese Adresse ist nicht erlaubt — die Seite zielt auf ein internes Netzwerk.'
+      ? 'This address is not allowed — the page targets an internal network.'
       : error.code === 'no-text'
-        ? 'Bitte Anzeigentext einfügen — auf dieser Seite war kein Anzeigentext zu finden.'
+        ? 'Please paste the posting text — no posting text was found on this page.'
         : error.message
     : null;
 
@@ -115,48 +115,48 @@ function InsertDialog({ onClose, onSaved }) {
         {consent.dialog}
         {consent.rejected && !consent.dialog && (
           <div role="status" style={{ marginBottom: '12px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '6px 12px' }}>
-            KI-Aktion abgebrochen — ohne Einwilligung wird nichts übermittelt.
+            AI action cancelled — nothing is sent without consent.
           </div>
         )}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '18px' }}>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>Stelle einfügen</h2>
-          <A.IconButton icon="x" label="Schließen" aria-label="Schließen" variant="ghost" size="sm" onClick={onClose} />
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>Add job posting</h2>
+          <A.IconButton icon="x" label="Close" aria-label="Close" variant="ghost" size="sm" onClick={onClose} />
         </div>
 
         <div style={{ display: 'flex', gap: '8px', marginBottom: '18px' }}>
-          <button type="button" onClick={() => setMode('text')} style={tabStyle('text')}>Text einfügen</button>
-          <button type="button" onClick={() => setMode('url')} style={tabStyle('url')}>Von URL</button>
+          <button type="button" onClick={() => setMode('text')} style={tabStyle('text')}>Paste text</button>
+          <button type="button" onClick={() => setMode('url')} style={tabStyle('url')}>From URL</button>
         </div>
 
         {!draft && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {mode === 'text' ? (
               <>
-                <FieldLabel>Anzeigentext</FieldLabel>
+                <FieldLabel>Posting text</FieldLabel>
                 <textarea
                   value={text}
                   onChange={(e) => setText(e.target.value)}
-                  placeholder="Anzeigentext hier einfügen …"
-                  aria-label="Anzeigentext"
+                  placeholder="Paste posting text here …"
+                  aria-label="Posting text"
                   rows={8}
                   style={{ ...FIELD, fontFamily: 'var(--font-mono)', fontSize: '12.5px', resize: 'vertical' }}
                 />
               </>
             ) : (
               <>
-                <FieldLabel>URL der Stellenanzeige</FieldLabel>
+                <FieldLabel>Job posting URL</FieldLabel>
                 <input
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   placeholder="https://example.com/job/123"
-                  aria-label="URL der Stellenanzeige"
+                  aria-label="Job posting URL"
                   style={FIELD}
                 />
               </>
             )}
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <A.Button variant="primary" size="sm" onClick={extract} disabled={busy}>
-                {busy ? 'Extrahiere …' : 'Felder extrahieren'}
+                {busy ? 'Extracting …' : 'Extract fields'}
               </A.Button>
             </div>
           </div>
@@ -164,22 +164,22 @@ function InsertDialog({ onClose, onSaved }) {
 
         {draft && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <FieldLabel>Extrahierte Felder (editierbar)</FieldLabel>
-            <input value={draft.company} onChange={(e) => setDraft((s) => ({ ...s, company: e.target.value }))} placeholder="Unternehmen" aria-label="Unternehmen" style={FIELD} />
-            <input value={draft.title} onChange={(e) => setDraft((s) => ({ ...s, title: e.target.value }))} placeholder="Stelle" aria-label="Stelle" style={FIELD} />
-            <input value={draft.location} onChange={(e) => setDraft((s) => ({ ...s, location: e.target.value }))} placeholder="Ort" aria-label="Ort" style={FIELD} />
-            <input value={draft.country} onChange={(e) => setDraft((s) => ({ ...s, country: e.target.value }))} placeholder="Land" aria-label="Land" style={FIELD} />
+            <FieldLabel>Extracted fields (editable)</FieldLabel>
+            <input value={draft.company} onChange={(e) => setDraft((s) => ({ ...s, company: e.target.value }))} placeholder="Company" aria-label="Company" style={FIELD} />
+            <input value={draft.title} onChange={(e) => setDraft((s) => ({ ...s, title: e.target.value }))} placeholder="Job title" aria-label="Job title" style={FIELD} />
+            <input value={draft.location} onChange={(e) => setDraft((s) => ({ ...s, location: e.target.value }))} placeholder="Location" aria-label="Location" style={FIELD} />
+            <input value={draft.country} onChange={(e) => setDraft((s) => ({ ...s, country: e.target.value }))} placeholder="Country" aria-label="Country" style={FIELD} />
             <input
               value={draft.requirements.join(', ')}
               onChange={(e) => setDraft((s) => ({ ...s, requirements: e.target.value.split(',').map((r) => r.trim()).filter(Boolean) }))}
-              placeholder="Anforderungen, kommasepariert"
-              aria-label="Anforderungen"
+              placeholder="Requirements, comma-separated"
+              aria-label="Requirements"
               style={FIELD}
             />
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <A.Button variant="ghost" size="sm" onClick={() => setDraft(null)}>Zurück</A.Button>
+              <A.Button variant="ghost" size="sm" onClick={() => setDraft(null)}>Back</A.Button>
               <A.Button variant="primary" size="sm" onClick={save} disabled={busy || !draft.title.trim() || !draft.company.trim()}>
-                {busy ? 'Speichere …' : 'Speichern'}
+                {busy ? 'Saving …' : 'Save'}
               </A.Button>
             </div>
           </div>
@@ -221,18 +221,18 @@ function MandantPicker({ posting, onClose, onOpenApplication }) {
       // New (alreadyExisting: false) or existing (true) → open the editor (AK-2.2).
       onOpenApplication(result.jobApplication);
     } catch (e) {
-      setError((e && e.message) || 'Die Bewerbung konnte nicht erstellt werden.');
+      setError((e && e.message) || 'The application could not be created.');
       setBusy(false);
     }
   };
 
   return (
-    <window.ModalShell title="Bewerbung erstellen" subtitle={`${posting.company} · ${posting.title} — Mandant:in wählen`} onClose={onClose}>
+    <window.ModalShell title="Create application" subtitle={`${posting.company} · ${posting.title} — choose a candidate`} onClose={onClose}>
       {talents === null ? (
-        <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-soft)' }}>Lade Mandanten…</div>
+        <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-soft)' }}>Loading candidates…</div>
       ) : talents.length === 0 ? (
         <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-soft)' }}>
-          Noch keine Mandanten angelegt. Lege zuerst unter „Mandanten“ einen Mandanten an.
+          No candidates yet. First add a candidate under "Candidates".
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -275,7 +275,7 @@ function Detail({ posting, onBack, onDeleted, onChanged, onOpenApplication }) {
     if (onDeleted) onDeleted(posting);
     else {
       window.UndoDelete.schedule({
-        label: `Stelle ${posting.title || ''} entfernt`,
+        label: `Job posting ${posting.title || ''} removed`,
         commit: () => window.RecruitApi.deleteJobPosting(posting.id).then(() => onChanged && onChanged()).catch(() => onChanged && onChanged()),
         restore: () => onChanged && onChanged(),
       });
@@ -286,9 +286,9 @@ function Detail({ posting, onBack, onDeleted, onChanged, onOpenApplication }) {
     <A.Card>
       <div style={{ padding: '22px 24px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px', marginBottom: '6px' }}>
-          <A.IconButton icon="arrowLeft" label="Zurück" aria-label="Zurück" variant="ghost" size="sm" onClick={onBack} />
+          <A.IconButton icon="arrowLeft" label="Back" aria-label="Back" variant="ghost" size="sm" onClick={onBack} />
           <div style={{ display: 'flex', gap: '8px' }}>
-            <A.IconButton icon="trash" label="Löschen" aria-label="Löschen" variant="ghost" size="sm" onClick={remove} />
+            <A.IconButton icon="trash" label="Delete" aria-label="Delete" variant="ghost" size="sm" onClick={remove} />
           </div>
         </div>
 
@@ -297,7 +297,7 @@ function Detail({ posting, onBack, onDeleted, onChanged, onOpenApplication }) {
 
         <div style={{ display: 'flex', gap: '8px', margin: '14px 0', flexWrap: 'wrap', alignItems: 'center' }}>
           <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="send" size={15} />} onClick={() => setPickingMandant(true)}>
-            Bewerbung erstellen
+            Create application
           </A.Button>
         </div>
 
@@ -316,25 +316,25 @@ function Detail({ posting, onBack, onDeleted, onChanged, onOpenApplication }) {
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
           {editing ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <FieldLabel>Anzeigentext</FieldLabel>
-              <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={10} aria-label="Anzeigentext" style={{ ...FIELD, resize: 'vertical' }} />
+              <FieldLabel>Posting text</FieldLabel>
+              <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={10} aria-label="Posting text" style={{ ...FIELD, resize: 'vertical' }} />
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                <A.Button variant="ghost" size="sm" onClick={() => setEditing(false)}>Abbrechen</A.Button>
-                <A.Button variant="primary" size="sm" onClick={saveText}>Speichern</A.Button>
+                <A.Button variant="ghost" size="sm" onClick={() => setEditing(false)}>Cancel</A.Button>
+                <A.Button variant="primary" size="sm" onClick={saveText}>Save</A.Button>
               </div>
             </div>
           ) : posting.description ? (
             <p style={{ fontSize: '13.5px', lineHeight: 1.7, color: 'var(--text-body)', whiteSpace: 'pre-wrap', margin: 0 }}>{posting.description}</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'flex-start' }}>
-              <div style={{ fontSize: '13px', color: 'var(--text-soft)' }}>Diese Quelle lieferte keinen vollständigen Anzeigentext.</div>
-              <A.Button variant="secondary" size="sm" onClick={() => setEditing(true)}>Text ergänzen</A.Button>
+              <div style={{ fontSize: '13px', color: 'var(--text-soft)' }}>This source did not provide the full posting text.</div>
+              <A.Button variant="secondary" size="sm" onClick={() => setEditing(true)}>Add text</A.Button>
             </div>
           )}
 
           {!editing && posting.description && posting.descriptionIncomplete && (
             <div style={{ marginTop: '12px' }}>
-              <A.Button variant="secondary" size="sm" onClick={() => setEditing(true)}>Text ergänzen</A.Button>
+              <A.Button variant="secondary" size="sm" onClick={() => setEditing(true)}>Add text</A.Button>
             </div>
           )}
         </div>
@@ -404,7 +404,7 @@ function JobPostings({ postings = [], onSearch, onChanged, focusId, onFocusConsu
           setHiddenIds((s) => new Set(s).add(posting.id));
           setSelectedId(null);
           window.UndoDelete.schedule({
-            label: `Stelle ${posting.title || ''} entfernt`,
+            label: `Job posting ${posting.title || ''} removed`,
             commit: () => window.RecruitApi.deleteJobPosting(posting.id).then(() => onChanged && onChanged()).catch(() => onChanged && onChanged()),
             restore: () => {
               setHiddenIds((s) => { const n = new Set(s); n.delete(posting.id); return n; });
@@ -421,17 +421,17 @@ function JobPostings({ postings = [], onSearch, onChanged, focusId, onFocusConsu
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface-card)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', padding: '0 12px', flex: 1, minWidth: 0 }}>
           <A.Icon name="search" size={15} style={{ color: 'var(--text-soft)' }} />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Gespeicherte Stellen durchsuchen …" aria-label="Stellen durchsuchen" style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-heading)', padding: '10px 0' }} />
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search saved job postings …" aria-label="Search jobs" style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-heading)', padding: '10px 0' }} />
         </label>
         {onSearch && (
-          <A.Button variant="ghost" size="sm" onClick={onSearch}>Stellen finden</A.Button>
+          <A.Button variant="ghost" size="sm" onClick={onSearch}>Find jobs</A.Button>
         )}
-        <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="plus" size={15} />} onClick={() => setInsertOpen(true)}>Stelle einfügen</A.Button>
+        <A.Button variant="primary" size="sm" iconLeft={<A.Icon name="plus" size={15} />} onClick={() => setInsertOpen(true)}>Add job posting</A.Button>
       </div>
 
       {visible.length === 0 ? (
         <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-soft)', border: '1px dashed var(--border-strong)', borderRadius: 'var(--radius-lg)' }}>
-          {postings.length === 0 ? 'Noch keine gespeicherten Stellen.' : 'Keine Treffer.'}
+          {postings.length === 0 ? 'No saved job postings yet.' : 'No matches.'}
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
@@ -442,13 +442,13 @@ function JobPostings({ postings = [], onSearch, onChanged, focusId, onFocusConsu
                   <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>{p.title}</h3>
                   <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '3px' }}>{p.company}</div>
                 </div>
-                {p.descriptionIncomplete && <A.Badge variant="outline" size="sm">Text ergänzen</A.Badge>}
+                {p.descriptionIncomplete && <A.Badge variant="outline" size="sm">Add text</A.Badge>}
               </div>
               <div style={{ display: 'flex', gap: '8px', margin: '14px 0', flexWrap: 'wrap' }}>
                 {p.location && <A.MetaPill icon="pin">{p.location}</A.MetaPill>}
                 <A.MetaPill icon="briefcase">{p.source}</A.MetaPill>
               </div>
-              <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.description || 'Kein Anzeigentext.'}</div>
+              <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.description || 'No posting text.'}</div>
             </A.Card>
           ))}
         </div>

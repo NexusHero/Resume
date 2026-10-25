@@ -102,7 +102,7 @@ function Matching({ talents, mandates = [], onCreateMandate, onOpenPosting, onAd
       {liveDown && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', color: 'var(--text-muted)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '8px 12px', marginBottom: '16px' }}>
           <MT.Icon name="info" size={14} style={{ flexShrink: 0 }} />
-          <span>Live-Stellenquellen sind gerade nicht erreichbar, daher konnten keine Stellen geladen werden. Prüfe die Netzwerk-/API-Schlüssel des Servers; die Suche erholt sich automatisch.</span>
+          <span>Live job sources are currently unreachable, so no jobs could be loaded. Check the server's network/API keys; the search recovers automatically.</span>
         </div>
       )}
       {/* Accumulated jobs across every API source, with a per-board breakdown. A
@@ -110,14 +110,14 @@ function Matching({ talents, mandates = [], onCreateMandate, onOpenPosting, onAd
       {srcCounts.length > 0 && (
         <div data-testid="source-counts" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '18px' }}>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600, color: 'var(--text-heading)' }}>
-            {total} {total === 1 ? 'Stelle' : 'Stellen'}
+            {total} {total === 1 ? 'job' : 'jobs'}
           </span>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>
-            aus {srcCounts.filter((s) => s.ok).length}/{srcCounts.length} Quellen
+            from {srcCounts.filter((s) => s.ok).length}/{srcCounts.length} sources
           </span>
           <span style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
             {srcCounts.map((s) => (
-              <span key={s.name} title={s.ok ? `${s.name}: ${s.count} Stellen` : `${s.name} ist nicht erreichbar`} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-mono)', fontSize: '11px', padding: '3px 9px', borderRadius: 'var(--radius-pill)', border: '1px solid var(--border)', background: 'var(--surface-card)', color: s.ok ? 'var(--text-muted)' : 'var(--text-soft)', textDecoration: s.ok ? 'none' : 'line-through', opacity: s.ok ? 1 : 0.6 }}>
+              <span key={s.name} title={s.ok ? `${s.name}: ${s.count} jobs` : `${s.name} is unreachable`} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-mono)', fontSize: '11px', padding: '3px 9px', borderRadius: 'var(--radius-pill)', border: '1px solid var(--border)', background: 'var(--surface-card)', color: s.ok ? 'var(--text-muted)' : 'var(--text-soft)', textDecoration: s.ok ? 'none' : 'line-through', opacity: s.ok ? 1 : 0.6 }}>
                 <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: s.ok ? 'var(--positive, #1F8A5B)' : 'var(--danger, #d64545)' }} />
                 {s.name} {s.ok ? s.count : '—'}
               </span>
@@ -127,19 +127,19 @@ function Matching({ talents, mandates = [], onCreateMandate, onOpenPosting, onAd
       )}
       {/* mode */}
       <div style={{ display: 'inline-flex', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '3px', gap: '3px', marginBottom: '20px' }}>
-        {[['auto', 'Auto · Skill-Match'], ['manual', 'Manuell']].map(([id, lbl]) => (
+        {[['auto', 'Auto · skill match'], ['manual', 'Manual']].map(([id, lbl]) => (
           <button key={id} onClick={() => setMode(id)} style={{ appearance: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: mode === id ? 600 : 500, padding: '8px 16px', borderRadius: 'var(--radius-sm)', background: mode === id ? 'var(--surface-card)' : 'transparent', color: mode === id ? 'var(--text-heading)' : 'var(--text-soft)', boxShadow: mode === id ? 'var(--shadow-sm)' : 'none' }}>{lbl}</button>
         ))}
       </div>
 
       {/* candidate switcher */}
-      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '9px' }}>Kandidat:in</div>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '9px' }}>Candidate</div>
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '18px' }}>
         {talents.map((t) => {
           const on = t.id === candId;
           return (
             <button key={t.id} onClick={() => setCandId(t.id)} style={{ appearance: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '4px 13px 4px 4px', borderRadius: 'var(--radius-pill)', border: `1px solid ${on ? 'var(--accent-border)' : 'var(--border-strong)'}`, background: on ? 'var(--accent-soft)' : 'var(--surface-card)', color: on ? 'var(--accent-strong)' : 'var(--text-muted)', fontSize: '13px', fontWeight: on ? 600 : 500 }}>
-              <MT.Avatar name={t.name} src={t.src} size="xs" />{t.name}{t.me ? ' · Ich' : ''}
+              <MT.Avatar name={t.name} src={t.src} size="xs" />{t.name}{t.me ? ' · Me' : ''}
             </button>
           );
         })}
@@ -149,10 +149,10 @@ function Matching({ talents, mandates = [], onCreateMandate, onOpenPosting, onAd
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '18px' }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface-card)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', padding: '0 12px' }}>
             <MT.Icon name="search" size={15} style={{ color: 'var(--text-soft)' }} />
-            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Stelle suchen: Titel, Unternehmen, Ort …" style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-heading)', padding: '10px 0' }} />
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search jobs: title, company, location …" style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-heading)', padding: '10px 0' }} />
           </label>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            {[['ALL', 'Alle Länder'], ['CH', '🇨🇭 Schweiz'], ['DE', '🇩🇪 Deutschland']].map(([k, l]) => chip(country === k, l, () => setCountry(k)))}
+            {[['ALL', 'All countries'], ['CH', '🇨🇭 Switzerland'], ['DE', '🇩🇪 Germany']].map(([k, l]) => chip(country === k, l, () => setCountry(k)))}
           </div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {sources.map((s) => chip(source === s, s, () => setSource(s)))}
@@ -161,7 +161,7 @@ function Matching({ talents, mandates = [], onCreateMandate, onOpenPosting, onAd
       )}
 
       {mode === 'auto' && (
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 16px' }}>Stellen passend zum <b style={{ color: 'var(--text-heading)' }}>Skill-Profil von {cand.name}</b> — beste Übereinstimmung zuerst.</p>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 16px' }}>Jobs matching the <b style={{ color: 'var(--text-heading)' }}>skill profile of {cand.name}</b> — best match first.</p>
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -174,7 +174,7 @@ function Matching({ talents, mandates = [], onCreateMandate, onOpenPosting, onAd
                 source={job.source} pensum={job.pensum} salary={job.salary} posted={job.posted}
                 match={mtScore(cand, job).pct}
                 skills={mtSkills(cand, job)}
-                applyLabel={job.url ? 'Stelle ansehen' : undefined}
+                applyLabel={job.url ? 'View job' : undefined}
                 onApply={open}
                 onView={open}
               />
@@ -184,16 +184,16 @@ function Matching({ talents, mandates = [], onCreateMandate, onOpenPosting, onAd
                     const st = adoptState[job.id];
                     const already = st === 'already';
                     const label =
-                      st === 'busy' ? 'Übernehme …'
-                      : st === 'done' ? 'Übernommen'
-                      : st === 'already' ? 'Bereits gespeichert → öffnen'
-                      : st === 'error' ? 'Erneut versuchen'
-                      : 'Stelle übernehmen';
+                      st === 'busy' ? 'Adopting…'
+                      : st === 'done' ? 'Adopted'
+                      : st === 'already' ? 'Already saved → open'
+                      : st === 'error' ? 'Try again'
+                      : 'Adopt job';
                     return (
                       <button
                         onClick={() => (already && onOpenPosting ? onOpenPosting(adoptSavedId[job.id]) : adopt(job))}
                         disabled={st === 'busy' || st === 'done'}
-                        title="Diese Stelle als gespeicherte Stelle übernehmen (ohne KI)"
+                        title="Adopt this job as a saved job posting (without AI)"
                         style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: st === 'busy' || st === 'done' ? 'default' : 'pointer', appearance: 'none', background: st === 'done' ? 'var(--surface-sunk)' : 'var(--surface-card)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', color: st === 'done' ? 'var(--text-soft)' : 'var(--text-heading)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '4px 11px' }}
                       >
                         <MT.Icon name={st === 'done' ? 'check' : 'bookmark'} size={12} /> {label}
@@ -203,10 +203,10 @@ function Matching({ talents, mandates = [], onCreateMandate, onOpenPosting, onAd
                   {onCreateMandate && (
                     <button
                       onClick={() => onCreateMandate(job)}
-                      title="Einen Klienten-Suchauftrag aus dieser Stelle entwerfen"
+                      title="Draft a client mandate from this job"
                       style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', appearance: 'none', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '11px', padding: '4px 11px' }}
                     >
-                      <MT.Icon name="briefcase" size={12} /> Suchauftrag anlegen
+                      <MT.Icon name="briefcase" size={12} /> Create mandate
                     </button>
                   )}
                 </div>
@@ -215,7 +215,7 @@ function Matching({ talents, mandates = [], onCreateMandate, onOpenPosting, onAd
           );
         })}
         {(mode === 'auto' ? jobs.length === 0 : manualJobs.length === 0) && (
-          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-soft)', border: '1px dashed var(--border-strong)', borderRadius: 'var(--radius-lg)' }}>Keine Treffer.</div>
+          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-soft)', border: '1px dashed var(--border-strong)', borderRadius: 'var(--radius-lg)' }}>No matches.</div>
         )}
       </div>
     </div>

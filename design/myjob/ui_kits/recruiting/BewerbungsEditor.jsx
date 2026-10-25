@@ -71,12 +71,16 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
 
   /* Magic Pen handlers (ADR-0060): passed to the Editor as its `pen` seam. Each
      calls the per-section route; acceptance happens inside the Editor's local
-     form state (→ the existing autosave on the copy). */
+     form state (→ the existing autosave on the copy). The consent gate lives
+     ONLY in the Editor's `runPen` (one source of truth) — wrapping these seam
+     functions here as well creates a stale `ws.aiConsent` closure after accept,
+     which made the inner guard return `undefined` and crash the render on
+     `penPending.suggestion.grounding`. */
   const pen = {
-    headline: consent.guard(() => window.RecruitApi.penHeadline(app.id)),
-    summary: consent.guard(() => window.RecruitApi.penSummary(app.id)),
-    experience: consent.guard((index) => window.RecruitApi.penExperience(app.id, index)),
-    skills: consent.guard(() => window.RecruitApi.penSkills(app.id)),
+    headline: () => window.RecruitApi.penHeadline(app.id),
+    summary: () => window.RecruitApi.penSummary(app.id),
+    experience: (index) => window.RecruitApi.penExperience(app.id, index),
+    skills: () => window.RecruitApi.penSkills(app.id),
   };
 
   /* "Alles anpassen" (AK-3.5): a client-side fan-out over the section routes so

@@ -35,12 +35,12 @@ export const DEFAULT_WORKSPACE_SETTINGS: WorkspaceSettings = {
 export const FEATURE_NOT_ENABLED_DETAIL = 'This feature is not enabled for this workspace.';
 
 /**
- * German detail for a missing AI consent (ADR-0063). Shown in the consent dialog
+ * English detail for a missing AI consent (ADR-0063). Shown in the consent dialog
  * and echoed verbatim by the 403 `ai-consent-required` problem+json, so the UI
  * can recognise it and re-open the consent flow.
  */
 export const AI_CONSENT_REQUIRED_DETAIL =
-  'AI-Verarbeitung wurde für diesen Workspace noch nicht freigegeben.';
+  'AI processing has not been approved for this workspace yet.';
 
 /** Merge a stored (possibly partial) settings object over the defaults. */
 export function withDefaults(

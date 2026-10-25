@@ -53,7 +53,7 @@ export class ApplicationLetterService {
 
     const posting = await this.postings.findById(scope, application.jobPostingId);
     const adText = posting?.description ?? '';
-    const lang = detectLanguage(adText, 'de');
+    const lang = detectLanguage(adText);
 
     const { content, provider, usage } = await this.runner.runFeature(
       userId,

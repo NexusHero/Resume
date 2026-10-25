@@ -139,17 +139,17 @@ describe('JobApplicationService.create', () => {
   it('JobApplicationService_Create_UnknownPosting_ThrowsNotFound', async () => {
     const { talents, service } = makeService();
     await talents.add(talent('t1'));
-    await expect(
-      service.create('team', { jobPostingId: 'nope', talentId: 't1' }),
-    ).rejects.toBeInstanceOf(NotFoundError);
+    await expect(service.create('team', { jobPostingId: 'nope', talentId: 't1' })).rejects.toThrow(
+      'Job posting not found',
+    );
   });
 
   it('JobApplicationService_Create_UnknownTalent_ThrowsNotFound', async () => {
     const { postings, service } = makeService();
     await postings.add(posting('p1'));
-    await expect(
-      service.create('team', { jobPostingId: 'p1', talentId: 'nope' }),
-    ).rejects.toBeInstanceOf(NotFoundError);
+    await expect(service.create('team', { jobPostingId: 'p1', talentId: 'nope' })).rejects.toThrow(
+      'Candidate not found',
+    );
   });
 
   it('JobApplicationService_Create_SamePostingAndTalent_ReturnsExistingWithAlreadyExisting', async () => {
@@ -365,7 +365,7 @@ describe('JobApplicationService freeze (AK-4.5)', () => {
     const after = await service.get('team', app.id);
     expect(after.statusHistory).toHaveLength(3);
     const last = after.statusHistory[after.statusHistory.length - 1];
-    expect(last.note).toBe('Dokumente nach Einfrieren geändert');
+    expect(last.note).toBe('Documents edited after freezing');
     expect(last.status).toBe('sent');
   });
 
@@ -411,10 +411,7 @@ describe('JobApplicationService freeze (AK-4.5)', () => {
     await service.saveAttachments('team', app.id, ['att1'], true);
     const after = await service.get('team', app.id);
     const notes = after.statusHistory.filter((e) => e.note).map((e) => e.note);
-    expect(notes).toEqual([
-      'Dokumente nach Einfrieren geändert',
-      'Anhänge nach Einfrieren geändert',
-    ]);
+    expect(notes).toEqual(['Documents edited after freezing', 'Attachments edited after freezing']);
   });
 
   it('JobApplicationService_SaveAttachments_UpdatesSelectionAndBumpsUpdatedAt', async () => {

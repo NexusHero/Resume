@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 
 let Editor;
 
-const ORIGINAL = 'Original-Lebenslauf (Import).pdf';
+const ORIGINAL = 'Original CV (import).pdf';
 
 const talent = {
   id: 't1',
@@ -75,22 +75,22 @@ const openEditor = async () => {
 describe('Editor text import (Fehler 1)', () => {
   it('ImportModal_NoAiKey_TextImportWorksAndShowsTextModeNotice', async () => {
     await openEditor();
-    await userEvent.click(screen.getByText('CV importieren'));
-    expect(screen.getAllByText(/Text übernommen \(ohne KI\)/).length).toBeGreaterThan(0);
-    await userEvent.type(screen.getByPlaceholderText('CV-Text hier einfügen…'), 'Mein CV');
-    await userEvent.click(screen.getByText('Analysieren & übernehmen'));
+    await userEvent.click(screen.getByText('Import CV'));
+    expect(screen.getAllByText(/Text imported \(without AI\)/).length).toBeGreaterThan(0);
+    await userEvent.type(screen.getByPlaceholderText('Paste CV text here…'), 'Mein CV');
+    await userEvent.click(screen.getByText('Analyze & apply'));
     await waitFor(() => expect(window.RecruitApi.parseDocument).toHaveBeenCalledWith('t1', 'Mein CV'));
-    expect(await screen.findByText(/Text übernommen \(ohne KI\)/)).toBeInTheDocument();
+    expect(await screen.findByText(/Text imported \(without AI\)/)).toBeInTheDocument();
   });
 
   it('EditorImport_TextMode_DoesNotClearExistingExperience', async () => {
     const { container } = await openEditor();
-    await userEvent.click(screen.getByText('CV importieren'));
-    await userEvent.type(screen.getByPlaceholderText('CV-Text hier einfügen…'), 'Mein CV');
-    await userEvent.click(screen.getByText('Analysieren & übernehmen'));
-    await userEvent.click(await screen.findByText('Übernehmen'));
+    await userEvent.click(screen.getByText('Import CV'));
+    await userEvent.type(screen.getByPlaceholderText('Paste CV text here…'), 'Mein CV');
+    await userEvent.click(screen.getByText('Analyze & apply'));
+    await userEvent.click(await screen.findByText('Apply'));
 
-    expect(await screen.findByText(/Importierter Text \(ohne KI\)/)).toBeInTheDocument();
+    expect(await screen.findByText(/Imported text \(without AI\)/)).toBeInTheDocument();
     await waitFor(
       () => {
         const last = window.RecruitApi.saveTalentDocuments.mock.calls.at(-1);
@@ -101,7 +101,7 @@ describe('Editor text import (Fehler 1)', () => {
       },
       { timeout: 3000 },
     );
-    expect(container.textContent).not.toContain('Senior Dev gelöscht');
+    expect(container.textContent).not.toContain('Senior Dev removed');
   });
 
   it('EditorImport_TruncatedText_ShowsTruncationNotice', async () => {
@@ -114,10 +114,10 @@ describe('Editor text import (Fehler 1)', () => {
       resume: { rawText: 'x'.repeat(50000) },
     });
     await openEditor();
-    await userEvent.click(screen.getByText('CV importieren'));
-    await userEvent.type(screen.getByPlaceholderText('CV-Text hier einfügen…'), 'Mein CV');
-    await userEvent.click(screen.getByText('Analysieren & übernehmen'));
-    expect(await screen.findByText('Text wurde bei 50.000 Zeichen gekürzt.')).toBeInTheDocument();
+    await userEvent.click(screen.getByText('Import CV'));
+    await userEvent.type(screen.getByPlaceholderText('Paste CV text here…'), 'Mein CV');
+    await userEvent.click(screen.getByText('Analyze & apply'));
+    expect(await screen.findByText('Text was truncated at 50,000 characters.')).toBeInTheDocument();
   });
 });
 
@@ -131,12 +131,12 @@ describe('Editor import attachment lifecycle (Fehler 2)', () => {
 
   it('EditorImport_TextMode_PdfUploadedOnlyOnAccept', async () => {
     const view = await openEditor();
-    await userEvent.click(screen.getByText('CV importieren'));
+    await userEvent.click(screen.getByText('Import CV'));
     await uploadPdf(view);
-    await screen.findByText('Übernehmen');
+    await screen.findByText('Apply');
     expect(window.RecruitApi.uploadAttachment).not.toHaveBeenCalled();
 
-    await userEvent.click(screen.getByText('Übernehmen'));
+    await userEvent.click(screen.getByText('Apply'));
     await waitFor(() =>
       expect(window.RecruitApi.uploadAttachment).toHaveBeenCalledWith(
         't1',
@@ -147,9 +147,9 @@ describe('Editor import attachment lifecycle (Fehler 2)', () => {
 
   it('EditorImport_TextMode_DiscardLeavesNoAttachment', async () => {
     const view = await openEditor();
-    await userEvent.click(screen.getByText('CV importieren'));
+    await userEvent.click(screen.getByText('Import CV'));
     await uploadPdf(view);
-    await userEvent.click(await screen.findByText('Verwerfen'));
+    await userEvent.click(await screen.findByText('Discard'));
     expect(window.RecruitApi.uploadAttachment).not.toHaveBeenCalled();
   });
 
@@ -158,9 +158,9 @@ describe('Editor import attachment lifecycle (Fehler 2)', () => {
       { id: 'a-old', name: ORIGINAL, size: 8, contentType: 'application/pdf' },
     ]);
     const view = await openEditor();
-    await userEvent.click(screen.getByText('CV importieren'));
+    await userEvent.click(screen.getByText('Import CV'));
     await uploadPdf(view);
-    await userEvent.click(await screen.findByText('Übernehmen'));
+    await userEvent.click(await screen.findByText('Apply'));
     await waitFor(() => expect(window.RecruitApi.uploadAttachment).toHaveBeenCalled());
     await waitFor(() => expect(window.RecruitApi.deleteAttachment).toHaveBeenCalledWith('a-old'));
   });

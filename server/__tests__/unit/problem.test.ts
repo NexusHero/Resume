@@ -180,7 +180,7 @@ describe('errorHandler', () => {
       type: 'about:blank#ai-consent-required',
       title: 'AiConsentRequired',
     });
-    expect(res.body.detail).toContain('AI-Verarbeitung');
+    expect(res.body.detail).toContain('AI processing');
   });
 
   it('Handler_HeadersAlreadySent_DelegatesToNext', () => {

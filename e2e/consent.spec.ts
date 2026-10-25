@@ -100,7 +100,7 @@ async function mockShell(page: Page, opts: { aiConsent: boolean }) {
     return route.fulfill({
       contentType: 'application/json',
       body: JSON.stringify({
-        suggestion: { action: 'summary', text: 'KI-Zusammenfassung.', provider: 'claude' },
+        suggestion: { action: 'summary', text: 'AI summary.', provider: 'claude' },
       }),
     });
   });
@@ -111,11 +111,11 @@ async function openEditor(page: Page) {
   await page.goto(KIT);
   await page
     .locator('nav')
-    .getByRole('button', { name: /Mandanten/ })
+    .getByRole('button', { name: /Candidates/ })
     .click();
   await page.getByText('Tobias Wirth').first().click({ force: true });
   await page
-    .getByRole('button', { name: /Lebenslauf (anlegen|bearbeiten)/ })
+    .getByRole('button', { name: /(Create CV|Edit CV)/ })
     .first()
     .click({ force: true });
   await page.locator('[data-doc-hydrated="true"]').waitFor();
@@ -127,7 +127,7 @@ test.describe('Consent flow (ADR-0063)', () => {
     await openEditor(page);
 
     // First AI action → the consent dialog appears, no request is sent.
-    await page.getByRole('button', { name: /KI anpassen/ }).click();
+    await page.getByRole('button', { name: /Adapt with AI/ }).click();
     await expect(page.getByTestId('ai-consent-dialog')).toBeVisible();
     await expect(page.getByText(/EU AI Act/)).toBeVisible();
     expect(ctx.suggestFetches()).toBe(0);
@@ -135,7 +135,7 @@ test.describe('Consent flow (ADR-0063)', () => {
     // Accept → PATCH aiConsent:true, then the action runs.
     await page.getByTestId('ai-consent-accept').click();
     await expect.poll(() => ctx.suggestFetches()).toBe(1);
-    await expect(page.locator('main')).toContainText('KI-Zusammenfassung.');
+    await expect(page.locator('main')).toContainText('AI summary.');
   });
 
   test('ConsentFlow_NoConsent_ServerReturns403', async ({ page }) => {
@@ -158,7 +158,7 @@ test.describe('Consent flow (ADR-0063)', () => {
     await page.setViewportSize({ width: 393, height: 851 });
     await mockShell(page, { aiConsent: false });
     await openEditor(page);
-    await page.getByRole('button', { name: /KI anpassen/ }).click();
+    await page.getByRole('button', { name: /Adapt with AI/ }).click();
     await expect(page.getByTestId('ai-consent-dialog')).toBeVisible();
     // No horizontal body scroll at 393px (AK-6.1 mobile reachability).
     const scrolls = await page.evaluate(

@@ -4,7 +4,7 @@
    unreachable. */
 const DST = window.MyJobDesignSystem_5611b7;
 
-function LoadingState({ label = 'Lädt…' }) {
+function LoadingState({ label = 'Loading…' }) {
   return (
     <div role="status" style={{ padding: '56px 24px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>
       {label}
@@ -12,13 +12,13 @@ function LoadingState({ label = 'Lädt…' }) {
   );
 }
 
-function ErrorState({ message = 'Etwas ist schiefgelaufen — erneut versuchen.', onRetry }) {
+function ErrorState({ message = 'Something went wrong — try again.', onRetry }) {
   return (
     <div role="alert" style={{ padding: '48px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
       <div style={{ fontSize: '13.5px', color: 'var(--text-soft)', maxWidth: '320px' }}>{message}</div>
       {onRetry && (
         <DST.Button size="sm" variant="outline" onClick={onRetry}>
-          Erneut versuchen
+          Try again
         </DST.Button>
       )}
     </div>

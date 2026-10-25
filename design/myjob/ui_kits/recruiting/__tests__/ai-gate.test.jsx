@@ -27,23 +27,23 @@ describe('AiGate (AK-0.6)', () => {
   it('AiButton_NotConfigured_ShowsHintWithSettingsLinkAndDoesNotCallHandler', async () => {
     await setStatus('not-configured');
     const handler = vi.fn();
-    render(<window.AiButton onClick={handler}>KI anpassen</window.AiButton>);
-    expect(screen.getByText('KI nicht eingerichtet', { exact: false })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /KI anpassen/ }));
+    render(<window.AiButton onClick={handler}>Adapt with AI</window.AiButton>);
+    expect(screen.getByText('AI not configured', { exact: false })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Adapt with AI/ }));
     expect(handler).not.toHaveBeenCalled();
   });
 
   it('AiButton_Configured_CallsHandlerOnClick', async () => {
     await setStatus('configured');
     const handler = vi.fn();
-    render(<window.AiButton onClick={handler}>KI anpassen</window.AiButton>);
-    fireEvent.click(screen.getByRole('button', { name: /KI anpassen/ }));
+    render(<window.AiButton onClick={handler}>Adapt with AI</window.AiButton>);
+    fireEvent.click(screen.getByRole('button', { name: /Adapt with AI/ }));
     expect(handler).toHaveBeenCalledTimes(1);
   });
 
   it('AiButton_StatusUnknown_IsDisabled', () => {
-    render(<window.AiButton onClick={vi.fn()}>KI anpassen</window.AiButton>);
-    expect(screen.getByRole('button', { name: /KI anpassen/ })).toBeDisabled();
+    render(<window.AiButton onClick={vi.fn()}>Adapt with AI</window.AiButton>);
+    expect(screen.getByRole('button', { name: /Adapt with AI/ })).toBeDisabled();
   });
 
   it('AiStatus_Response503AiNotConfigured_SetsNotConfiguredAndRefreshes', async () => {
@@ -59,9 +59,9 @@ describe('AiGate (AK-0.6)', () => {
     const onNavigate = vi.fn();
     window.addEventListener('myjob:navigate', onNavigate);
     render(
-      <window.AiButton onClick={vi.fn()}>KI anpassen</window.AiButton>,
+      <window.AiButton onClick={vi.fn()}>Adapt with AI</window.AiButton>,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Einstellungen' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
     await waitFor(() => expect(onNavigate).toHaveBeenCalled());
     window.removeEventListener('myjob:navigate', onNavigate);
   });

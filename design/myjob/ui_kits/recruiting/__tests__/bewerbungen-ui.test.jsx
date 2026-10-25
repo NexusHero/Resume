@@ -1,10 +1,10 @@
-/* Bewerbungen UI (AK-2.1/2.2/2.8) — list, the "Bewerbung erstellen" flow from a
+/* Applications UI (AK-2.1/2.2/2.8) — list, the "Create application" flow from a
    posting, and the Bewerbungs-Editor wrapper. */
 import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-let Bewerbungen;
+let Applications;
 let JobPostings;
 let BewerbungsEditor;
 
@@ -19,7 +19,7 @@ beforeAll(async () => {
   await import('../JobPostings.jsx');
   await import('../Editor.jsx');
   await import('../BewerbungsEditor.jsx');
-  Bewerbungen = window.Bewerbungen;
+  Applications = window.Bewerbungen;
   JobPostings = window.JobPostings;
   BewerbungsEditor = window.BewerbungsEditor;
 });
@@ -69,73 +69,73 @@ beforeEach(() => {
   window.UndoDelete = { schedule: vi.fn(), flush: vi.fn(), getPending: () => null };
 });
 
-describe('Bewerbungen — Liste', () => {
+describe('Applications — Liste', () => {
   beforeEach(() => {
     window.RecruitApi = { deleteJobApplication: vi.fn().mockResolvedValue(undefined) };
   });
 
-  it('BewerbungenList_Rendered_ShowsApplicationsWithStatus', () => {
+  it('ApplicationsList_Rendered_ShowsApplicationsWithStatus', () => {
     render(
-      <Bewerbungen
+      <Applications
         applications={[application(), application({ id: 'a2', status: 'sent', postingTitle: 'Backend Dev' })]}
       />,
     );
     expect(screen.getByText('Senior C++ Engineer')).toBeInTheDocument();
     expect(screen.getByText('Backend Dev')).toBeInTheDocument();
     // The status labels render both in the status filter and as card badges.
-    expect(screen.getAllByText('Entwurf').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Versendet').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Draft').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Sent').length).toBeGreaterThan(0);
   });
 
-  it('BewerbungenList_Search_FiltersClientSide', async () => {
+  it('ApplicationsList_Search_FiltersClientSide', async () => {
     render(
-      <Bewerbungen
+      <Applications
         applications={[application(), application({ id: 'a2', postingTitle: 'Frontend Dev', postingCompany: 'Globex' })]}
       />,
     );
-    await userEvent.type(screen.getByLabelText('Bewerbungen durchsuchen'), 'frontend');
+    await userEvent.type(screen.getByLabelText('Search applications'), 'frontend');
     expect(screen.queryByText('Senior C++ Engineer')).not.toBeInTheDocument();
     expect(screen.getByText('Frontend Dev')).toBeInTheDocument();
   });
 
-  it('BewerbungenList_Delete_ShowsUndoAndRestores', async () => {
+  it('ApplicationsList_Delete_ShowsUndoAndRestores', async () => {
     const onChanged = vi.fn();
-    render(<Bewerbungen applications={[application()]} onChanged={onChanged} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Löschen' }));
+    render(<Applications applications={[application()]} onChanged={onChanged} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Delete' }));
 
     expect(window.UndoDelete.schedule).toHaveBeenCalledTimes(1);
     const action = window.UndoDelete.schedule.mock.calls[0][0];
-    expect(action.label).toContain('entfernt');
+    expect(action.label).toContain('removed');
 
     action.restore();
     await waitFor(() => expect(onChanged).toHaveBeenCalled());
     expect(screen.getByText('Senior C++ Engineer')).toBeInTheDocument();
   });
 
-  it('BewerbungenList_RendersCompanyTitleAfterPostingDeleted', () => {
+  it('ApplicationsList_RendersCompanyTitleAfterPostingDeleted', () => {
     // No posting exists — the list reads the snapshots postingCompany/postingTitle.
-    render(<Bewerbungen applications={[application()]} />);
+    render(<Applications applications={[application()]} />);
     expect(screen.getByText('Aurora Systems')).toBeInTheDocument();
     expect(screen.getByText('Senior C++ Engineer')).toBeInTheDocument();
   });
 
-  it('BewerbungenList_StatusFilter_CallsOnStatusChange', async () => {
+  it('ApplicationsList_StatusFilter_CallsOnStatusChange', async () => {
     const onStatusChange = vi.fn();
-    render(<Bewerbungen applications={[]} onStatusChange={onStatusChange} />);
-    await userEvent.click(screen.getByTestId('status-filter-Versendet'));
+    render(<Applications applications={[]} onStatusChange={onStatusChange} />);
+    await userEvent.click(screen.getByTestId('status-filter-Sent'));
     expect(onStatusChange).toHaveBeenCalledWith('sent');
-    await userEvent.click(screen.getByTestId('status-filter-Alle'));
+    await userEvent.click(screen.getByTestId('status-filter-All'));
     expect(onStatusChange).toHaveBeenCalledWith(undefined);
   });
 
-  it('BewerbungenList_StatusFilter_ShowsOnlySelectedStatus', () => {
-    render(<Bewerbungen applications={[application()]} status="sent" />);
-    expect(screen.getByTestId('status-filter-Versendet').getAttribute('aria-pressed')).toBe('true');
-    expect(screen.getByTestId('status-filter-Entwurf').getAttribute('aria-pressed')).toBe('false');
+  it('ApplicationsList_StatusFilter_ShowsOnlySelectedStatus', () => {
+    render(<Applications applications={[application()]} status="sent" />);
+    expect(screen.getByTestId('status-filter-Sent').getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByTestId('status-filter-Draft').getAttribute('aria-pressed')).toBe('false');
   });
 });
 
-describe('JobPostings — Bewerbung erstellen', () => {
+describe('JobPostings — Create application', () => {
   beforeEach(() => {
     window.RecruitApi = {
       listTalents: vi.fn().mockResolvedValue([{ id: 't1', name: 'Ada Lovelace', role: 'Engineer' }]),
@@ -146,7 +146,7 @@ describe('JobPostings — Bewerbung erstellen', () => {
   it('JobPostingsDetail_CreateButton_OpensMandantPicker', async () => {
     render(<JobPostings postings={[posting()]} />);
     await userEvent.click(screen.getByText('Senior C++ Engineer'));
-    await userEvent.click(screen.getByText('Bewerbung erstellen'));
+    await userEvent.click(screen.getByText('Create application'));
 
     await waitFor(() => expect(screen.getByText('Ada Lovelace')).toBeInTheDocument());
   });
@@ -159,7 +159,7 @@ describe('JobPostings — Bewerbung erstellen', () => {
     const onOpenApplication = vi.fn();
     render(<JobPostings postings={[posting()]} onOpenApplication={onOpenApplication} />);
     await userEvent.click(screen.getByText('Senior C++ Engineer'));
-    await userEvent.click(screen.getByText('Bewerbung erstellen'));
+    await userEvent.click(screen.getByText('Create application'));
     await userEvent.click(await screen.findByText('Ada Lovelace'));
 
     await waitFor(() => expect(onOpenApplication).toHaveBeenCalledWith(expect.objectContaining({ id: 'existing' })));
@@ -186,7 +186,7 @@ describe('Bewerbungs-Editor', () => {
 
   it('BewerbungsEditor_StatusChange_CallsChangeJobApplicationStatus', async () => {
     render(<BewerbungsEditor application={application()} onClose={vi.fn()} />);
-    await userEvent.click(screen.getByText('Versendet'));
+    await userEvent.click(screen.getByText('Sent'));
     await waitFor(() =>
       expect(window.RecruitApi.changeJobApplicationStatus).toHaveBeenCalledWith('a1', 'sent'),
     );
@@ -195,25 +195,25 @@ describe('Bewerbungs-Editor', () => {
   it('BewerbungsEditor_Letter_NoAiKey_ShowsNotConfiguredAndSendsNoRequest', async () => {
     window.RecruitApi.aiConfigured.mockResolvedValue(false);
     render(<BewerbungsEditor application={application()} onClose={vi.fn()} />);
-    // Wait for the "KI nicht eingerichtet" hint (the AI status resolved to false).
-    await waitFor(() => expect(screen.getByText(/KI nicht eingerichtet/)).toBeInTheDocument());
-    await userEvent.click(screen.getByText('Anschreiben generieren'));
+    // Wait for the "AI not configured" hint (the AI status resolved to false).
+    await waitFor(() => expect(screen.getByText(/AI not configured/)).toBeInTheDocument());
+    await userEvent.click(screen.getByText('Generate cover letter'));
 
     expect(window.RecruitApi.generateJobApplicationLetter).not.toHaveBeenCalled();
   });
 
   it('BewerbungsEditor_BaseOnlyToolsHidden', async () => {
     render(<BewerbungsEditor application={application()} onClose={vi.fn()} />);
-    await waitFor(() => expect(screen.getByText('Anschreiben generieren')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Generate cover letter')).toBeInTheDocument());
     // The base-editor write surfaces are hidden from the application editor (AK-2.3).
-    expect(screen.queryByText('CV importieren')).not.toBeInTheDocument();
+    expect(screen.queryByText('Import CV')).not.toBeInTheDocument();
     expect(screen.queryByText('ATS-Check')).not.toBeInTheDocument();
     expect(screen.queryByText('Pitch')).not.toBeInTheDocument();
     expect(screen.queryByText('Ansprache')).not.toBeInTheDocument();
-    expect(screen.queryByText('Übersetzen')).not.toBeInTheDocument();
-    expect(screen.queryByText('KI anpassen')).not.toBeInTheDocument();
+    expect(screen.queryByText('Translate')).not.toBeInTheDocument();
+    expect(screen.queryByText('Adapt with AI')).not.toBeInTheDocument();
     // The Bewerbung-specific action is the editor's own, not a base tool.
-    expect(screen.getByText('Anschreiben generieren')).toBeInTheDocument();
+    expect(screen.getByText('Generate cover letter')).toBeInTheDocument();
   });
 
   it('BewerbungsEditor_Pdf_RendersCopyViaDossierPreview', async () => {
@@ -232,7 +232,7 @@ describe('Bewerbungs-Editor', () => {
   });
 });
 
-describe('Bewerbungs-Editor — Mappe & Anhänge (Phase 4)', () => {
+describe('Bewerbungs-Editor — Mappe & Attachments (Phase 4)', () => {
   const att = (id, name, contentType = 'application/pdf') => ({
     id,
     ownerId: 'team',
@@ -273,7 +273,7 @@ describe('Bewerbungs-Editor — Mappe & Anhänge (Phase 4)', () => {
 
   it('BewerbungsEditor_AttachmentSelection_ReferenceAttachment_ManuallySelectableNotPreselected', async () => {
     window.RecruitApi.listAttachments.mockResolvedValue([
-      att('ref1', 'Original-Lebenslauf (Import).pdf'),
+      att('ref1', 'Original CV (import).pdf'),
     ]);
     render(<BewerbungsEditor application={application()} onClose={vi.fn()} />);
     const checkbox = await screen.findByTestId('attachment-ref1');

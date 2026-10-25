@@ -33,7 +33,7 @@ describe('SettingsView — AI setup (AK-0.6)', () => {
   it('AiSetupCard_NoKey_ShowsNotConfiguredWithLink', async () => {
     window.RecruitApi = baseApi();
     const { findByText } = render(<SettingsView user={{ id: 'me' }} />);
-    await findByText(/KI nicht eingerichtet/);
+    await findByText(/AI not configured/);
     // The card points at the env var, which is the only place to configure it.
     await findByText(/ANTHROPIC_API_KEY/);
   });
@@ -41,7 +41,7 @@ describe('SettingsView — AI setup (AK-0.6)', () => {
   it('AiSetupCard_NoKey_NoKeyInputRendered', async () => {
     window.RecruitApi = baseApi();
     const { container, findByText, queryByText } = render(<SettingsView user={{ id: 'me' }} />);
-    await findByText(/KI nicht eingerichtet/);
+    await findByText(/AI not configured/);
     // The old per-user key input (type=password) and save button are gone.
     expect(container.querySelector('input[type="password"]')).toBeNull();
     expect(queryByText('Schlüssel speichern')).toBeNull();

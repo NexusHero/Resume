@@ -32,7 +32,7 @@ describe('SettingsView — Workspace switch (AK-0.3)', () => {
   it('SettingsToggle_AsAdmin_RendersAndToggles', async () => {
     window.RecruitApi = baseApi(['admin']);
     render(<SettingsView user={{ id: 'me' }} />);
-    const toggle = await screen.findByLabelText('Vermittlung aktivieren');
+    const toggle = await screen.findByLabelText('Agency');
     fireEvent.click(toggle);
     await waitFor(() =>
       expect(window.RecruitApi.updateWorkspaceSettings).toHaveBeenCalledWith({ vermittlung: true }),
@@ -42,8 +42,8 @@ describe('SettingsView — Workspace switch (AK-0.3)', () => {
   it('SettingsToggle_AsRecruiter_NotRendered', async () => {
     window.RecruitApi = baseApi(['recruiter']);
     render(<SettingsView user={{ id: 'me' }} />);
-    await screen.findByText('KI-Anbindung');
+    await screen.findByText('AI connection');
     await waitFor(() => expect(window.RecruitApi.authMe).toHaveBeenCalled());
-    expect(screen.queryByLabelText('Vermittlung aktivieren')).toBeNull();
+    expect(screen.queryByLabelText('Agency')).toBeNull();
   });
 });

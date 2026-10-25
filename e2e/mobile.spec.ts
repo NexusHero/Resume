@@ -148,24 +148,24 @@ test.describe('Mobile acceptance (#202)', () => {
     await page.goto(KIT);
     // Signed in → the Workspace shell with the bottom tab bar (first five
     // destinations). No off-canvas drawer in the Vivid AppShell tabs posture.
-    await expect(page.locator('nav').last().getByRole('button', { name: /Mehr/ })).toBeVisible();
+    await expect(page.locator('nav').last().getByRole('button', { name: /More/ })).toBeVisible();
     await expectNoHorizontalBodyScroll(page);
 
-    await navigate(page, /Mandanten/);
+    await navigate(page, /Candidates/);
     await expect(page.locator('main')).toBeVisible();
     await expectNoHorizontalBodyScroll(page);
 
-    await navigate(page, /Stellen/);
+    await navigate(page, /Jobs/);
     await expect(page.locator('main')).toBeVisible();
     await expectNoHorizontalBodyScroll(page);
 
-    await navigate(page, /Bewerbungen/);
+    await navigate(page, /Applications/);
     await expect(page.locator('main')).toBeVisible();
     await expectNoHorizontalBodyScroll(page);
 
-    await navigate(page, /Mehr/);
+    await navigate(page, /More/);
     await expect(page.locator('main')).toBeVisible();
-    await page.getByRole('button', { name: /Suchaufträge/ }).click();
+    await page.getByRole('button', { name: /Mandates/ }).click();
     await expect(page.locator('main')).toBeVisible();
     await expectNoHorizontalBodyScroll(page);
   });
@@ -173,10 +173,10 @@ test.describe('Mobile acceptance (#202)', () => {
   test('Mobile_OpenTalent_OpensEditor', async ({ page }) => {
     await mockSession(page);
     await page.goto(KIT);
-    await navigate(page, /Mandanten/);
+    await navigate(page, /Candidates/);
     await page.getByText('Tobias Wirth').first().click();
     await page
-      .getByRole('button', { name: /Lebenslauf (bearbeiten|anlegen)/ })
+      .getByRole('button', { name: /(Edit CV|Create CV)/ })
       .first()
       .click();
     // The editor mounted and hydrated the stored document.
@@ -187,7 +187,7 @@ test.describe('Mobile acceptance (#202)', () => {
   test('Mobile_ApplicationsBoard_ScrollsAndStageChanges', async ({ page }) => {
     const patched = await mockSession(page);
     await page.goto(KIT);
-    await navigate(page, /Bewerbungen/);
+    await navigate(page, /Applications/);
     // The frozen pipeline board is now a "Pipeline" sub-tab (Vermittlung on).
     await page.getByRole('tab', { name: 'Pipeline' }).click();
 
@@ -222,11 +222,11 @@ test('MobileNav_FreshWorkspace_ShowsOnlyFiveDestinations', async ({ page }) => {
   await page.goto(KIT);
   const nav = page.locator('nav').last();
   await expect(nav.getByRole('button', { name: /Workspace/ })).toBeVisible();
-  await expect(nav.getByRole('button', { name: /Mandanten/ })).toBeVisible();
-  await expect(nav.getByRole('button', { name: /Stellen/ })).toBeVisible();
-  await expect(nav.getByRole('button', { name: /Bewerbungen/ })).toBeVisible();
-  await expect(nav.getByRole('button', { name: /Einstellungen/ })).toBeVisible();
-  for (const label of ['Suchaufträge', 'Pipeline', 'Performance', 'Postfach', 'Mehr']) {
+  await expect(nav.getByRole('button', { name: /Candidates/ })).toBeVisible();
+  await expect(nav.getByRole('button', { name: /Jobs/ })).toBeVisible();
+  await expect(nav.getByRole('button', { name: /Applications/ })).toBeVisible();
+  await expect(nav.getByRole('button', { name: /Settings/ })).toBeVisible();
+  for (const label of ['Mandates', 'Pipeline', 'Performance', 'Inbox', 'More']) {
     await expect(nav.getByRole('button', { name: new RegExp(label) })).toHaveCount(0);
   }
   await expect(page.getByRole('button', { name: /CoRecruiter/ })).toHaveCount(0);
@@ -242,19 +242,19 @@ test('MobileAiButton_NoKey_ShowsNotConfigured', async ({ page }) => {
     }),
   );
   await page.goto(KIT);
-  await navigate(page, /Mandanten/);
+  await navigate(page, /Candidates/);
   await page.getByText('Tobias Wirth').first().click();
   await page
-    .getByRole('button', { name: /Lebenslauf (bearbeiten|anlegen)/ })
+    .getByRole('button', { name: /(Edit CV|Create CV)/ })
     .first()
     .click();
   await expect(page.locator('[data-doc-hydrated="true"]')).toBeVisible();
-  await expect(page.getByText('KI nicht eingerichtet')).toBeVisible();
-  await expect(page.getByRole('button', { name: /KI anpassen/ })).toBeDisabled();
+  await expect(page.getByText('AI not configured')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Adapt with AI/ })).toBeDisabled();
   await expectNoHorizontalBodyScroll(page);
 });
 
-test('StellenViewMobile_ListAndDetail_Reachable', async ({ page }) => {
+test('JobsViewMobile_ListAndDetail_Reachable', async ({ page }) => {
   await mockSession(page);
   await page.route('**/api/v1/job-postings', (route) => {
     if (route.request().method() !== 'GET') return route.continue();
@@ -278,14 +278,14 @@ test('StellenViewMobile_ListAndDetail_Reachable', async ({ page }) => {
     });
   });
   await page.goto(KIT);
-  await navigate(page, /Stellen/);
+  await navigate(page, /Jobs/);
   await expect(page.locator('main')).toContainText('Nordwind Logistik AG');
   await page.getByText('Nordwind Logistik AG').first().click();
   await expect(page.locator('main')).toContainText('Full ad text.');
   await expectNoHorizontalBodyScroll(page);
 });
 
-test('BewerbungenFlowMobile_ListAndEditor_Reachable', async ({ page }) => {
+test('ApplicationsFlowMobile_ListAndEditor_Reachable', async ({ page }) => {
   await mockSession(page);
   await page.route('**/api/v1/job-applications', (route) => {
     if (route.request().method() !== 'GET') return route.continue();
@@ -335,7 +335,7 @@ test('BewerbungenFlowMobile_ListAndEditor_Reachable', async ({ page }) => {
   );
 
   await page.goto(KIT);
-  await navigate(page, /Bewerbungen/);
+  await navigate(page, /Applications/);
   await expect(page.locator('main')).toContainText('Nordwind Logistik AG');
   await expectNoHorizontalBodyScroll(page);
 
@@ -416,7 +416,7 @@ test('MagicPenFlowMobile_PenReachable', async ({ page }) => {
   );
 
   await page.goto(KIT);
-  await navigate(page, /Bewerbungen/);
+  await navigate(page, /Applications/);
   await page.getByText('Nordwind Logistik AG').first().click();
   await expect(page.locator('[data-doc-hydrated="true"]')).toBeVisible();
 
@@ -425,10 +425,10 @@ test('MagicPenFlowMobile_PenReachable', async ({ page }) => {
   await expectNoHorizontalBodyScroll(page);
 
   await page.getByTestId('pen-summary').click();
-  await expect(page.getByText('Vorschlag · noch nicht übernommen')).toBeVisible();
+  await expect(page.getByText('Suggestion · not applied yet')).toBeVisible();
 });
 
-test('BewerbungenFlowMobile_MappeReachable', async ({ page }) => {
+test('ApplicationsFlowMobile_MappeReachable', async ({ page }) => {
   await mockSession(page);
   await page.route('**/api/v1/job-applications', (route) => {
     if (route.request().method() !== 'GET') return route.continue();
@@ -499,7 +499,7 @@ test('BewerbungenFlowMobile_MappeReachable', async ({ page }) => {
   );
 
   await page.goto(KIT);
-  await navigate(page, /Bewerbungen/);
+  await navigate(page, /Applications/);
   await page.getByText('Nordwind Logistik AG').first().click();
   await expect(page.locator('[data-doc-hydrated="true"]')).toBeVisible();
 

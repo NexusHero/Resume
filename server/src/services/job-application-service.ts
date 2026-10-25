@@ -87,9 +87,9 @@ export class JobApplicationService {
     input: CreateJobApplicationInput,
   ): Promise<JobApplicationCreateResult> {
     const posting = await this.postings.findById(ownerId, input.jobPostingId);
-    if (!posting) throw new NotFoundError('Stelle unbekannt');
+    if (!posting) throw new NotFoundError('Job posting not found');
     const talent = await this.talents.findById(ownerId, input.talentId);
-    if (!talent) throw new NotFoundError('Mandant unbekannt');
+    if (!talent) throw new NotFoundError('Candidate not found');
 
     const existing = await this.repo.findByPostingAndTalent(ownerId, posting.id, talent.id);
     if (existing) return { jobApplication: existing, alreadyExisting: true };
@@ -173,7 +173,7 @@ export class JobApplicationService {
     const next = this.withUnfreezeNote(
       { ...application, documents, updatedAt: now },
       now,
-      'Dokumente nach Einfrieren geändert',
+      'Documents edited after freezing',
     );
     await this.repo.update(next);
     return documents;
@@ -195,17 +195,17 @@ export class JobApplicationService {
     for (const attachmentId of attachmentIds) {
       const blob = await this.attachments.get(ownerId, attachmentId);
       if (!blob || blob.attachment.talentId !== application.talentId) {
-        throw new NotFoundError(`Anhang ${attachmentId} nicht gefunden`);
+        throw new NotFoundError(`Attachment ${attachmentId} not found`);
       }
       if (blob.attachment.contentType !== 'application/pdf') {
-        throw new ValidationError('Nur PDF-Anhänge sind wählbar');
+        throw new ValidationError('Only PDF attachments can be selected');
       }
     }
     const now = this.clock.isoNow();
     const next = this.withUnfreezeNote(
       { ...application, selectedAttachmentIds: attachmentIds, updatedAt: now },
       now,
-      'Anhänge nach Einfrieren geändert',
+      'Attachments edited after freezing',
     );
     await this.repo.update(next);
     return next;

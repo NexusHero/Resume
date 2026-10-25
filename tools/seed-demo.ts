@@ -43,17 +43,17 @@ try {
   );
 
   const c = result.created;
-  const already = (created) => (created ? 'angelegt' : 'bereits vorhanden');
-  console.log('\n✓ Demo-Seed abgeschlossen (synthetische Daten, kein echtes PII):');
-  console.log(`  Mandant   ${result.talent.id} „${result.talent.name}" — ${already(c.talent)}`);
-  console.log(`  Stelle    ${result.posting.id} „${result.posting.title}" — ${already(c.posting)}`);
+  const already = (created) => (created ? 'created' : 'already present');
+  console.log('\n✓ Demo seed complete (synthetic data, no real PII):');
+  console.log(`  Candidate   ${result.talent.id} "${result.talent.name}" — ${already(c.talent)}`);
+  console.log(`  Job posting ${result.posting.id} "${result.posting.title}" — ${already(c.posting)}`);
   console.log(
-    `  Bewerbung ${result.application.id} (draft) — ${already(c.application)}`,
+    `  Application ${result.application.id} (draft) — ${already(c.application)}`,
   );
   if (withConsent) {
     console.log('  aiConsent = true (--with-consent)');
   } else {
-    console.log('  aiConsent bleibt unset — die Einwilligung wird im Rundgang vorgeführt.');
+    console.log('  aiConsent stays unset — the consent is shown during the walkthrough.');
   }
   console.log('');
 } finally {

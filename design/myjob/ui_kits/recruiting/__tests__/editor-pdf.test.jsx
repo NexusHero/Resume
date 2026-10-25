@@ -54,7 +54,7 @@ describe('Editor — PDF export', () => {
     render(<Editor talent={talent} onClose={vi.fn()} onCreateMappe={vi.fn()} />);
     await userEvent.click(screen.getAllByText('PDF')[0]);
     const alert = await screen.findByRole('alert');
-    expect(alert).toHaveTextContent('Der PDF-Download ist fehlgeschlagen. Bitte versuche es erneut.');
+    expect(alert).toHaveTextContent('The PDF download failed. Please try again.');
   });
 
   it('Pdf_ExportPdfOverride_ReceivesCurrentDocumentsAndFilename', async () => {

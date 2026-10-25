@@ -29,7 +29,7 @@ function OfflineBanner() {
       }}
     >
       <span aria-hidden="true">●</span>
-      Du bist offline — deine zuletzt geladenen Daten werden angezeigt. Änderungen werden erst gespeichert, wenn du wieder online bist.
+      You are offline — your last loaded data is shown. Changes are only saved once you are back online.
     </div>
   );
 }

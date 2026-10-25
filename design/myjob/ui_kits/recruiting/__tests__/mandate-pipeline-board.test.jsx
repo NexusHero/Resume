@@ -97,12 +97,12 @@ describe('PipelineColumns', () => {
   it('Columns_EmptyStage_ShowsEmptyPlaceholder', () => {
     render(<PipelineColumns {...props({ cards: [] })} />);
     // Every one of the six columns is empty.
-    expect(screen.getAllByText('leer')).toHaveLength(6);
+    expect(screen.getAllByText('Empty')).toHaveLength(6);
   });
 
   it('Columns_HoveredDropTarget_ShowsDropHint', () => {
     render(<PipelineColumns {...props({ cards: [], dropStage: 'interview' })} />);
-    expect(screen.getByText('hierhin ziehen')).toBeInTheDocument();
-    expect(screen.getAllByText('leer')).toHaveLength(5);
+    expect(screen.getByText('Drag here')).toBeInTheDocument();
+    expect(screen.getAllByText('Empty')).toHaveLength(5);
   });
 });

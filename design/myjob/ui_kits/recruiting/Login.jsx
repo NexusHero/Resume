@@ -7,9 +7,9 @@
 const L = window.MyJobDesignSystem_5611b7;
 
 const POINTS = [
-  'Mandanten, Stellen und Bewerbungen in einem Workspace',
-  'Bewerbungen erstellen, Dokumente pro Stelle anpassen',
-  'Alles an einem Ort — ohne tote Buttons',
+  'Candidates, jobs and applications in one workspace',
+  'Create applications, tailor documents per job',
+  'Everything in one place — no dead buttons',
 ];
 
 function readQueryToken(name) {
@@ -83,7 +83,7 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
     try {
       if (isForgot) {
         await window.RecruitApi.requestPasswordReset(email);
-        setNotice('Falls diese E-Mail registriert ist, haben wir dir einen Reset-Link geschickt. Sieh in deinem Postfach nach.');
+        setNotice('If this email is registered, we have sent you a reset link. Check your inbox.');
       } else if (isReset) {
         await window.RecruitApi.confirmPasswordReset(initialToken, password);
         // Drop the token from the URL so a refresh doesn't reopen the reset form.
@@ -95,7 +95,7 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
         setPassword('');
         setConfirm('');
         setMode('login');
-        setNotice('Dein Passwort wurde zurückgesetzt. Bitte melde dich an.');
+        setNotice('Your password has been reset. Please sign in.');
       } else if (isInvite) {
         const user = await window.RecruitApi.acceptInvite(inviteToken, password);
         // Drop the token from the URL so a refresh doesn't reopen the accept form.
@@ -112,7 +112,7 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
         onAuthed(user);
       }
     } catch (err) {
-      setError((err && err.message) || 'Etwas ist schiefgelaufen');
+      setError((err && err.message) || 'Something went wrong');
     } finally {
       setLoading(false);
     }
@@ -133,32 +133,32 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
   };
 
   const title = isForgot
-    ? 'Passwort zurücksetzen'
+    ? 'Reset password'
     : isInvite
-      ? 'Einladung annehmen'
+      ? 'Accept invitation'
       : isReset
-        ? 'Neues Passwort wählen'
+        ? 'Choose a new password'
         : isRegister
-          ? 'Erstelle dein Konto'
-          : 'Willkommen zurück';
+          ? 'Create your account'
+          : 'Welcome back';
   const subtitle = isForgot
-    ? 'Gib deine E-Mail ein und wir schicken dir einen Reset-Link.'
+    ? 'Enter your email and we will send you a reset link.'
     : isInvite
-      ? 'Setze ein Passwort, um dem Workspace deines Teams beizutreten.'
+      ? 'Set a password to join your team workspace.'
       : isReset
-        ? 'Wähle ein neues Passwort für dein Konto.'
+        ? 'Choose a new password for your account.'
         : isRegister
-          ? 'Starte deinen Recruiting-Desk.'
-          : 'Mach dort weiter, wo du aufgehört hast.';
+          ? 'Start your recruiting desk.'
+          : 'Pick up where you left off.';
   const submitLabel = isForgot
-    ? 'Reset-Link senden'
+    ? 'Send reset link'
     : isInvite
-      ? 'Einladung annehmen'
+      ? 'Accept invitation'
       : isReset
-        ? 'Neues Passwort setzen'
+        ? 'Set new password'
         : isRegister
-          ? 'Konto erstellen'
-          : 'Anmelden';
+          ? 'Create account'
+          : 'Sign in';
 
   return (
     <div style={{ display: 'flex', minHeight: '100dvh', background: 'var(--app-bg)' }}>
@@ -181,17 +181,17 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
               <span style={{ color: '#fff' }}>my</span><span style={{ color: 'var(--live)' }}>Job</span>
             </div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.62)', marginTop: '3px' }}>
-              Vermittler-Workspace
+              Agency workspace
             </div>
           </div>
         </div>
 
         <div style={{ position: 'relative', marginTop: 'auto' }}>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '36px', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.08, margin: 0 }}>
-            Dein Recruiting-Desk — an einem Ort.
+            Your recruiting desk — in one place.
           </h1>
           <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.82)', marginTop: '14px', maxWidth: '38ch', lineHeight: 1.6 }}>
-            Mandanten, Stellen und Bewerbungen in einem ruhigen Workspace — von der ersten Idee bis zur fertigen Bewerbungsmappe.
+            Candidates, jobs and applications in one calm workspace — from the first idea to the finished application dossier.
           </p>
         </div>
 
@@ -207,7 +207,7 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
         </ul>
 
         <p style={{ position: 'relative', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.55)', marginTop: 'auto' }}>
-          Mandanten, Stellen und Bewerbungen — an einem Ort.
+          Candidates, jobs and applications — in one place.
         </p>
       </aside>
 
@@ -218,7 +218,7 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
         <form onSubmit={submit} aria-label={title} style={{ width: '100%', maxWidth: '380px' }}>
           {!isForgot && !passwordOnly && (
             <div style={{ display: 'flex', gap: '4px', padding: '4px', borderRadius: 'var(--radius-pill)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', marginBottom: '24px' }}>
-              {[['login', 'Anmelden'], ['register', 'Konto erstellen']].map(([m, label]) => (
+              {[['login', 'Sign in'], ['register', 'Create account']].map(([m, label]) => (
                 <button
                   key={m}
                   type="button"
@@ -252,14 +252,14 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
           {!isForgot && !passwordOnly && (providers.google || providers.linkedin) && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', marginBottom: '18px' }}>
               {providers.google && (
-                <SocialButton href="/api/v1/auth/google/login" mark="G">Weiter mit Google</SocialButton>
+                <SocialButton href="/api/v1/auth/google/login" mark="G">Continue with Google</SocialButton>
               )}
               {providers.linkedin && (
-                <SocialButton href="/api/v1/auth/linkedin/login" mark="in">Weiter mit LinkedIn</SocialButton>
+                <SocialButton href="/api/v1/auth/linkedin/login" mark="in">Continue with LinkedIn</SocialButton>
               )}
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '6px 0' }}>
                 <span style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-soft)' }}>oder</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-soft)' }}>or</span>
                 <span style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
               </div>
             </div>
@@ -267,14 +267,14 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
 
           {!passwordOnly && (
             <label style={labelStyle}>
-              <span style={labelText}>E-Mail</span>
+              <span style={labelText}>Email</span>
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" placeholder="you@example.com" style={fieldStyle} />
             </label>
           )}
 
           {!isForgot && (
             <label style={labelStyle}>
-              <span style={labelText}>{passwordOnly ? 'Neues Passwort' : 'Passwort'}</span>
+              <span style={labelText}>{passwordOnly ? 'New password' : 'Password'}</span>
               <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete={needsConfirm ? 'new-password' : 'current-password'} placeholder="••••••••" style={fieldStyle} />
             </label>
           )}
@@ -282,7 +282,7 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
           {needsConfirm && (
             <label style={labelStyle}>
               <span style={labelText}>
-                Passwort bestätigen {mismatch && <span style={{ color: 'var(--danger)' }}>— stimmt nicht überein</span>}
+                Confirm password {mismatch && <span style={{ color: 'var(--danger)' }}>— does not match</span>}
               </span>
               <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required autoComplete="new-password" placeholder="••••••••" style={fieldStyle} />
             </label>
@@ -291,7 +291,7 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
           {!isForgot && !passwordOnly && !isRegister && (
             <p style={{ textAlign: 'right', margin: '-6px 0 16px' }}>
               <button type="button" onClick={() => goMode('forgot')} style={linkButton}>
-                Passwort vergessen?
+                Forgot password?
               </button>
             </p>
           )}
@@ -311,22 +311,22 @@ function LoginScreen({ providers, onAuthed, initialNotice }) {
               background: 'var(--accent)', color: 'var(--accent-contrast)', opacity: canSubmit ? 1 : 0.55,
             }}
           >
-            {loading ? 'Bitte warten…' : submitLabel}
+            {loading ? 'Please wait…' : submitLabel}
           </button>
 
           {(isForgot || passwordOnly) && (
             <p style={{ fontSize: '13px', color: 'var(--text-soft)', textAlign: 'center', marginTop: '18px' }}>
               <button type="button" onClick={() => goMode('login')} style={linkButton}>
-                ← Zurück zur Anmeldung
+                ← Back to sign in
               </button>
             </p>
           )}
 
           {!isForgot && !passwordOnly && (
             <p style={{ fontSize: '13px', color: 'var(--text-soft)', textAlign: 'center', marginTop: '18px' }}>
-              {isRegister ? 'Schon ein Konto? ' : 'Neu bei myJob? '}
+              {isRegister ? 'Already have an account? ' : 'New to myJob? '}
               <button type="button" onClick={() => goMode(isRegister ? 'login' : 'register')} style={linkButton}>
-                {isRegister ? 'Anmelden' : 'Konto erstellen'}
+                {isRegister ? 'Sign in' : 'Create account'}
               </button>
             </p>
           )}

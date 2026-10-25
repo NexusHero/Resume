@@ -53,6 +53,6 @@ describe('workspace-settings domain', () => {
   });
 
   it('AiConsentRequiredDetail_NamesTheWorkspaceConsent', () => {
-    expect(AI_CONSENT_REQUIRED_DETAIL).toContain('AI-Verarbeitung');
+    expect(AI_CONSENT_REQUIRED_DETAIL).toContain('AI processing');
   });
 });

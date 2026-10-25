@@ -6,11 +6,11 @@
 const BE = window.MyJobDesignSystem_5611b7;
 
 const STATUS_LABELS = {
-  draft: 'Entwurf',
-  sent: 'Versendet',
-  interview: 'Gespräch',
-  offer: 'Zusage',
-  rejected: 'Absage',
+  draft: 'Draft',
+  sent: 'Sent',
+  interview: 'Interview',
+  offer: 'Offer',
+  rejected: 'Rejected',
 };
 
 const STATUS_ORDER = ['draft', 'sent', 'interview', 'offer', 'rejected'];
@@ -107,7 +107,7 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
 
   const runAll = consent.guard(async () => {
     if (aiReady === false) {
-      setLetterError('KI nicht eingerichtet — konfiguriere den zentralen Schlüssel in den Einstellungen.');
+      setLetterError('AI not configured — configure the central key in Settings.');
       return;
     }
     const controller = new AbortController();
@@ -116,8 +116,8 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
     const stations = (app.documents && app.documents.resume && app.documents.resume.experience) || [];
     const tiles = [
       { key: 'headline', label: 'Headline' },
-      { key: 'summary', label: 'Profil' },
-      ...stations.map((_, i) => ({ key: 'experience', index: i, label: `Station ${i + 1}` })),
+      { key: 'summary', label: 'Profile' },
+      ...stations.map((_, i) => ({ key: 'experience', index: i, label: `Role ${i + 1}` })),
       { key: 'skills', label: 'Skills' },
     ];
     setAllTiles(tiles.map((t) => ({ ...t, status: 'running' })));
@@ -143,7 +143,7 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
           (res) => res.status === 'fulfilled' && res.value.key === t.key && res.value.index === t.index,
         );
         if (r && r.value.suggestion) return { ...t, status: 'done', suggestion: r.value.suggestion };
-        const detail = r && r.value.error ? (r.value.error.message || 'Fehler') : 'Fehler';
+        const detail = r && r.value.error ? (r.value.error.message || 'Error') : 'Error';
         return { ...t, status: 'error', error: detail };
       }),
     );
@@ -176,7 +176,7 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
       setReloadToken((n) => n + 1);
       if (onChanged) onChanged();
     } catch {
-      setLetterError('Der Abschnitt konnte nicht übernommen werden.');
+      setLetterError('The section could not be applied.');
     }
   };
 
@@ -193,14 +193,14 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
   const allRunning = allTiles && allTiles.some((t) => t.status === 'running');
   const allStatusLabel = (status) =>
     status === 'running'
-      ? 'läuft …'
+      ? 'running…'
       : status === 'done'
-        ? 'fertig'
+        ? 'done'
         : status === 'applied'
-          ? 'übernommen'
+          ? 'applied'
           : status === 'aborted'
-            ? 'abgebrochen'
-            : 'fehler';
+            ? 'aborted'
+            : 'error';
 
   const changeStatus = async (status) => {
     if (statusBusy || status === app.status) return;
@@ -218,7 +218,7 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
 
   const generateLetter = consent.guard(async () => {
     if (aiReady === false) {
-      setLetterError('KI nicht eingerichtet — konfiguriere den zentralen Schlüssel in den Einstellungen.');
+      setLetterError('AI not configured — configure the central key in Settings.');
       return;
     }
     setLetterBusy(true);
@@ -230,8 +230,8 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
     } catch (e) {
       setLetterError(
         e && e.code === 'ai-not-configured'
-          ? 'KI nicht eingerichtet — konfiguriere den zentralen Schlüssel in den Einstellungen.'
-          : (e && e.message) || 'Das Anschreiben konnte nicht erstellt werden. Bitte versuche es erneut.',
+          ? 'AI not configured — configure the central key in Settings.'
+          : (e && e.message) || 'The cover letter could not be created. Please try again.',
       );
     } finally {
       setLetterBusy(false);
@@ -251,13 +251,13 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
       setReloadToken((n) => n + 1);
       if (onChanged) onChanged();
     } catch {
-      setLetterError('Das Anschreiben konnte nicht übernommen werden.');
+      setLetterError('The cover letter could not be applied.');
     }
   };
 
   const talent = {
     id: app.talentId,
-    name: app.talentName || (app.documents && app.documents.contact && app.documents.contact.name) || 'Mandant',
+    name: app.talentName || (app.documents && app.documents.contact && app.documents.contact.name) || 'Candidate',
     role: (app.documents && app.documents.contact && app.documents.contact.role) || '',
     headline: '',
     email: (app.documents && app.documents.contact && app.documents.contact.email) || '',
@@ -341,7 +341,7 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
       if (onChanged) onChanged();
     } catch (e) {
       if (e && e.code === 'frozen') handleFrozen('attachments', selectedIds);
-      else setAttachmentError((e && e.message) || 'Die Anhänge konnten nicht gespeichert werden.');
+      else setAttachmentError((e && e.message) || 'The attachments could not be saved.');
     } finally {
       setAttachmentsBusy(false);
     }
@@ -356,7 +356,7 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
       if (kind === 'pdf') await window.RecruitApi.downloadJobApplicationDossierPdf(app.id);
       else await window.RecruitApi.downloadJobApplicationDossierZip(app.id);
     } catch (e) {
-      setAttachmentError((e && e.message) || 'Die Mappe konnte nicht erstellt werden.');
+      setAttachmentError((e && e.message) || 'The dossier could not be created.');
     } finally {
       setDossierBusy(null);
     }
@@ -367,33 +367,33 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
       {consent.dialog}
       {consent.rejected && !consent.dialog && (
         <div role="status" style={{ alignSelf: 'flex-start', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '6px 12px' }}>
-          KI-Aktion abgebrochen — ohne Einwilligung wird nichts übermittelt.
+          AI action cancelled — nothing is sent without consent.
         </div>
       )}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
         <button onClick={onClose} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)', padding: 0 }}>
-          <BE.Icon name="arrowLeft" size={14} /> Zurück zu den Bewerbungen
+          <BE.Icon name="arrowLeft" size={14} /> Back to applications
         </button>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 700, color: 'var(--text-heading)' }}>
             {app.postingCompany} · {app.postingTitle}
           </div>
-          <div style={{ fontSize: '12.5px', color: 'var(--text-soft)' }}>für {app.talentName || talent.name}</div>
+          <div style={{ fontSize: '12.5px', color: 'var(--text-soft)' }}>for {app.talentName || talent.name}</div>
         </div>
-        <button onClick={generateLetter} disabled={letterBusy} title={aiReady === false ? 'KI nicht eingerichtet' : undefined} style={{ appearance: 'none', cursor: letterBusy ? 'default' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid var(--accent-border)', background: 'var(--accent-soft)', color: 'var(--accent-strong)', borderRadius: 'var(--radius-pill)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '6px 12px' }}>
-          <BE.Icon name="zap" size={13} /> {letterBusy ? 'Erstelle …' : 'Anschreiben generieren'}
+        <button onClick={generateLetter} disabled={letterBusy} title={aiReady === false ? 'AI not configured' : undefined} style={{ appearance: 'none', cursor: letterBusy ? 'default' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid var(--accent-border)', background: 'var(--accent-soft)', color: 'var(--accent-strong)', borderRadius: 'var(--radius-pill)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '6px 12px' }}>
+          <BE.Icon name="zap" size={13} /> {letterBusy ? 'Creating…' : 'Generate cover letter'}
         </button>
-        <button onClick={runAll} disabled={!!allRunning || aiReady === false} title={aiReady === false ? 'KI nicht eingerichtet' : 'Alle Abschnitte mit KI anpassen'} style={{ appearance: 'none', cursor: allRunning || aiReady === false ? 'default' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid var(--accent-border)', background: 'var(--accent-soft)', color: 'var(--accent-strong)', borderRadius: 'var(--radius-pill)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '6px 12px' }}>
-          <BE.Icon name="edit" size={13} /> {allRunning ? 'Passe an …' : 'Alles für diese Stelle anpassen'}
+        <button onClick={runAll} disabled={!!allRunning || aiReady === false} title={aiReady === false ? 'AI not configured' : 'Adjust all sections with AI'} style={{ appearance: 'none', cursor: allRunning || aiReady === false ? 'default' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid var(--accent-border)', background: 'var(--accent-soft)', color: 'var(--accent-strong)', borderRadius: 'var(--radius-pill)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '6px 12px' }}>
+          <BE.Icon name="edit" size={13} /> {allRunning ? 'Adjusting…' : 'Adjust everything for this job'}
         </button>
       </div>
 
       {allTiles && (
         <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', overflow: 'hidden', alignSelf: 'stretch' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '8px 12px', background: 'var(--accent-soft)', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 600, color: 'var(--accent-strong)' }}>
-            <BE.Icon name="edit" size={12} />Alles anpassen
+            <BE.Icon name="edit" size={12} />Adjust all sections
             {allRunning && (
-              <button onClick={abortAll} style={{ marginLeft: 'auto', appearance: 'none', cursor: 'pointer', border: '1px solid var(--border-strong)', background: 'transparent', color: 'var(--text-muted)', borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 500, padding: '3px 10px' }}>Abbrechen</button>
+              <button onClick={abortAll} style={{ marginLeft: 'auto', appearance: 'none', cursor: 'pointer', border: '1px solid var(--border-strong)', background: 'transparent', color: 'var(--text-muted)', borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 500, padding: '3px 10px' }}>Cancel</button>
             )}
           </div>
           {allTiles.map((t, i) => (
@@ -417,13 +417,13 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
                     {isConfirming(t) ? (
                       <>
                         <button data-testid={`all-confirm-${t.key}${t.index != null ? `-${t.index}` : ''}`} onClick={() => acceptAllTile(t)} style={{ appearance: 'none', cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-sm)', padding: '5px 11px' }}>
-                          <BE.Icon name="check" size={13} />Trotzdem übernehmen
+                          <BE.Icon name="check" size={13} />Apply anyway
                         </button>
-                        <button onClick={() => setConfirmingTile(null)} style={{ appearance: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-sm)', padding: '5px 11px' }}>Abbrechen</button>
+                        <button onClick={() => setConfirmingTile(null)} style={{ appearance: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-sm)', padding: '5px 11px' }}>Cancel</button>
                       </>
                     ) : (
                       <button data-testid={`all-accept-${t.key}${t.index != null ? `-${t.index}` : ''}`} onClick={() => handleTileAccept(t)} style={{ appearance: 'none', cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-sm)', padding: '5px 11px' }}>
-                        <BE.Icon name="check" size={13} />Übernehmen
+                        <BE.Icon name="check" size={13} />Apply
                       </button>
                     )}
                   </div>
@@ -436,7 +436,7 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
 
       {aiReady === false && (
         <div role="status" style={{ alignSelf: 'flex-start', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--danger)', background: 'var(--danger-soft)', border: '1px solid var(--danger)', borderRadius: 'var(--radius-md)', padding: '6px 12px' }}>
-          KI nicht eingerichtet — konfiguriere den zentralen Schlüssel in den Einstellungen.
+          AI not configured — configure the central key in Settings.
         </div>
       )}
 
@@ -469,21 +469,21 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
       {/* Bewerbungsmappe (ADR-0061): downloads + PDF-only attachment selection. */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignSelf: 'stretch', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '12px 13px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 600, color: 'var(--text-soft)' }}>Bewerbungsmappe</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 600, color: 'var(--text-soft)' }}>Application dossier</span>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <button onClick={() => downloadMappe('pdf')} disabled={dossierBusy !== null} data-testid="mappe-pdf" style={{ appearance: 'none', cursor: dossierBusy ? 'default' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid var(--accent-border)', background: 'var(--accent-soft)', color: 'var(--accent-strong)', borderRadius: 'var(--radius-pill)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '6px 12px', minHeight: isMobile ? '44px' : undefined }}>
-              <BE.Icon name="download" size={13} /> Mappe als PDF
+              <BE.Icon name="download" size={13} /> Dossier as PDF
             </button>
             <button onClick={() => downloadMappe('zip')} disabled={dossierBusy !== null} data-testid="mappe-zip" style={{ appearance: 'none', cursor: dossierBusy ? 'default' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid var(--accent-border)', background: 'var(--accent-soft)', color: 'var(--accent-strong)', borderRadius: 'var(--radius-pill)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '6px 12px', minHeight: isMobile ? '44px' : undefined }}>
-              <BE.Icon name="download" size={13} /> Mappe als ZIP
+              <BE.Icon name="download" size={13} /> Dossier as ZIP
             </button>
           </div>
         </div>
-        <div style={{ fontSize: '12.5px', color: 'var(--text-soft)' }}>Anhänge (nur PDF) für die Mappe auswählen:</div>
+        <div style={{ fontSize: '12.5px', color: 'var(--text-soft)' }}>Select attachments (PDF only) for the dossier:</div>
         {attachments === null ? (
-          <div style={{ fontSize: '12px', color: 'var(--text-soft)' }}>Lädt …</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-soft)' }}>Loading…</div>
         ) : attachments.length === 0 ? (
-          <div style={{ fontSize: '12px', color: 'var(--text-soft)' }}>Keine PDF-Anhänge vorhanden.</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-soft)' }}>No PDF attachments available.</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             {attachments.map((a) => {
@@ -497,12 +497,12 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
                     onChange={() => toggleAttachment(a.id)}
                   />
                   <span style={{ flex: 1 }}>{a.name}</span>
-                  {isReference && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-soft)' }}>Referenz</span>}
+                  {isReference && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-soft)' }}>Reference</span>}
                 </label>
               );
             })}
             <button onClick={saveAttachments} disabled={attachmentsBusy} data-testid="attachments-save" style={{ alignSelf: 'flex-start', appearance: 'none', cursor: attachmentsBusy ? 'default' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-sm)', padding: '5px 11px', minHeight: isMobile ? '44px' : undefined }}>
-              <BE.Icon name="check" size={13} />Anhänge speichern
+              <BE.Icon name="check" size={13} />Save attachments
             </button>
           </div>
         )}
@@ -515,15 +515,15 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
       )}
 
       {freezePrompt && (
-        <div role="dialog" aria-modal="true" aria-label="Eingefrorene Bewerbung ändern" style={{ alignSelf: 'stretch', border: '1px solid var(--warning-strong, #8a6d00)', borderRadius: 'var(--radius-md)', background: 'var(--warning-soft, #fff8e1)', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <div style={{ fontSize: '13px', color: 'var(--text-heading)', fontWeight: 600 }}>Diese Bewerbung ist versendet — wirklich ändern?</div>
-          <div style={{ fontSize: '12px', color: 'var(--text-soft)' }}>Die Änderung wird im Verlauf vermerkt.</div>
+        <div role="dialog" aria-modal="true" aria-label="Edit frozen application" style={{ alignSelf: 'stretch', border: '1px solid var(--warning-strong, #8a6d00)', borderRadius: 'var(--radius-md)', background: 'var(--warning-soft, #fff8e1)', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ fontSize: '13px', color: 'var(--text-heading)', fontWeight: 600 }}>This application is sent — really edit?</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-soft)' }}>The change is recorded in the history.</div>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button data-testid="unfreeze-confirm" onClick={confirmUnfreeze} style={{ appearance: 'none', cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-sm)', padding: '6px 12px', minHeight: isMobile ? '44px' : undefined }}>
-              <BE.Icon name="check" size={13} />Ändern
+              <BE.Icon name="check" size={13} />Edit
             </button>
             <button data-testid="unfreeze-cancel" onClick={rejectUnfreeze} style={{ appearance: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-sm)', padding: '6px 12px', minHeight: isMobile ? '44px' : undefined }}>
-              <BE.Icon name="x" size={13} />Abbrechen
+              <BE.Icon name="x" size={13} />Cancel
             </button>
           </div>
         </div>
@@ -538,7 +538,7 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
       {letterSuggestion && (
         <div style={{ border: '1px dashed var(--accent-border)', borderRadius: 'var(--radius-md)', overflow: 'hidden', alignSelf: 'stretch' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '8px 12px', background: 'var(--accent-soft)', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 600, color: 'var(--accent-strong)' }}>
-            <BE.Icon name="zap" size={12} />Anschreiben-Vorschlag · noch nicht übernommen
+            <BE.Icon name="zap" size={12} />Cover letter suggestion · not applied yet
             {letterSuggestion.provider && (
               <span style={{ marginLeft: 'auto' }}><window.ProviderBadge provider={letterSuggestion.provider} usage={letterSuggestion.usage} /></span>
             )}
@@ -552,8 +552,8 @@ function BewerbungsEditor({ application, onClose, onChanged }) {
             )}
           </div>
           <div style={{ display: 'flex', gap: '8px', padding: '10px 13px', borderTop: '1px solid var(--border)', background: 'var(--surface-subtle)' }}>
-            <button onClick={acceptLetter} style={{ appearance: 'none', cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-sm)', padding: '6px 12px' }}><BE.Icon name="check" size={13} />Übernehmen</button>
-            <button onClick={() => setLetterSuggestion(null)} style={{ appearance: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-sm)', padding: '6px 12px' }}><BE.Icon name="x" size={13} />Verwerfen</button>
+            <button onClick={acceptLetter} style={{ appearance: 'none', cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 600, color: 'var(--accent-contrast)', background: 'var(--accent)', borderRadius: 'var(--radius-sm)', padding: '6px 12px' }}><BE.Icon name="check" size={13} />Apply</button>
+            <button onClick={() => setLetterSuggestion(null)} style={{ appearance: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-sm)', padding: '6px 12px' }}><BE.Icon name="x" size={13} />Discard</button>
           </div>
         </div>
       )}

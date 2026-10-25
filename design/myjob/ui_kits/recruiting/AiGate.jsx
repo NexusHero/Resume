@@ -30,7 +30,7 @@
           color: 'var(--danger)',
         }}
       >
-        {compact ? 'KI nicht eingerichtet' : 'KI nicht eingerichtet — diese Aktion benötigt einen zentralen Server-Schlüssel.'}
+        {compact ? 'AI not configured' : 'AI not configured — this action requires a central server key.'}
         <button
           type="button"
           onClick={navigateSettings}
@@ -45,7 +45,7 @@
             textDecoration: 'underline',
           }}
         >
-          Einstellungen
+          Settings
         </button>
       </span>
     );
@@ -65,7 +65,7 @@
           {...rest}
           onClick={handle}
           disabled={disabled || loading || blocked}
-          title={blocked ? 'KI nicht eingerichtet — in den Einstellungen konfigurieren' : rest.title}
+          title={blocked ? 'AI not configured — configure it in Settings' : rest.title}
         >
           {children}
         </G.Button>
@@ -93,20 +93,19 @@
           lineHeight: 1.5,
         }}
       >
-        Text übernommen (ohne KI) — Stationen und Skills bitte manuell ergänzen oder KI in den
-        Einstellungen einrichten.
+        Text imported (without AI) — please add roles and skills manually or set up AI in
+        Settings.
       </div>
     );
   }
 
   const AI_CONSENT_BODY =
-    'Dein Workspace verwendet KI (Anthropic Claude bzw. Google Gemini), um den Lebenslauf des ' +
-    'Mandanten und den Text der Stellenanzeige zu verarbeiten. Die Inhalte werden dafür an den ' +
-    'konfigurierten Anbieter übermittelt. Diese Verarbeitung gilt nach dem EU AI Act (Anhang III) ' +
-    'als Hochrisiko-KI im Bereich Beschäftigung — sie dient nur der Unterstützung: Du prüfst jeden ' +
-    'Vorschlag und übernimmst ihn ausdrücklich selbst. Jede Übermittlung wird im KI-Audit-Trail ' +
-    '(Modell, Zeitpunkt, Kosten) protokolliert. Die Einwilligung gilt für diesen Workspace und kann ' +
-    'jederzeit in den Einstellungen widerrufen werden.';
+    'Your workspace uses AI (Anthropic Claude or Google Gemini) to process the candidate\u2019s ' +
+    'CV and the job posting text. The content is sent to the configured provider for that ' +
+    'purpose. Under the EU AI Act (Annex III) this processing counts as high-risk AI in the ' +
+    'area of employment — it only supports you: you review every suggestion and explicitly ' +
+    'apply it yourself. Every transmission is logged in the AI audit trail (model, time, cost). ' +
+    'The consent applies to this workspace and can be revoked at any time in Settings.';
 
   /* The one shared consent dialog before the first AI transmission (ADR-0063).
      Admin → "Zustimmen" (PATCH aiConsent:true); non-admin → "Frag deinen Admin". */
@@ -115,7 +114,7 @@
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="KI-Verarbeitung zustimmen"
+        aria-label="Approve AI processing"
         data-testid="ai-consent-dialog"
         style={{
           alignSelf: 'stretch',
@@ -137,14 +136,14 @@
             color: 'var(--text-heading)',
           }}
         >
-          KI-Verarbeitung zustimmen
+          Approve AI processing
         </div>
         <div style={{ fontSize: '12.5px', lineHeight: 1.6, color: 'var(--text-body)' }}>
           {AI_CONSENT_BODY}
         </div>
         {isAdmin === false ? (
           <div role="status" style={{ fontSize: '12.5px', color: 'var(--text-soft)' }}>
-            Bitte deinen Workspace-Admin um Freigabe (Einstellungen → KI-Anbindung).
+            Ask your workspace admin to approve (Settings → AI connection).
           </div>
         ) : (
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -165,7 +164,7 @@
                 padding: '6px 14px',
               }}
             >
-              Zustimmen
+              Approve
             </button>
             <button
               type="button"
@@ -182,7 +181,7 @@
                 padding: '6px 14px',
               }}
             >
-              Abbrechen
+              Cancel
             </button>
           </div>
         )}

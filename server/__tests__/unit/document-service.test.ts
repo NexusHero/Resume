@@ -105,7 +105,7 @@ describe('DocumentService', () => {
       linkedin: '',
     });
     expect(docs.resume.experience).toEqual([]);
-    expect(docs.letter.anrede).toBe('Sehr geehrte Damen und Herren,');
+    expect(docs.letter.anrede).toBe('Dear Sir or Madam,');
     expect(docs.style.accent).toBe('#2A6FDB');
   });
 

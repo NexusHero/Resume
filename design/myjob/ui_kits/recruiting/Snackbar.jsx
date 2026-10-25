@@ -50,7 +50,7 @@ function Snackbar() {
           borderRadius: 'var(--radius-sm)', padding: isMobile ? '11px 18px' : '6px 14px', minHeight: isMobile ? '44px' : undefined,
         }}
       >
-        Rückgängig
+        Undo
       </button>
     </div>
   );

@@ -60,11 +60,11 @@ describe('Workspace rail (AK-0.1)', () => {
     await waitFor(() => expect(window.RecruitApi.getWorkspaceSettings).toHaveBeenCalled());
     await waitFor(() => expect(navLabels(container).length).toBeGreaterThan(0));
 
-    expect(navLabels(container)).toEqual(['Workspace', 'Mandanten', 'Stellen', 'Bewerbungen']);
+    expect(navLabels(container)).toEqual(['Workspace', 'Candidates', 'Jobs', 'Applications']);
     // Settings is the foot utility — the fifth destination.
-    expect(container.querySelector('[data-settings]').textContent).toBe('Einstellungen');
+    expect(container.querySelector('[data-settings]').textContent).toBe('Settings');
     // No intermediary destinations.
-    for (const label of ['Suchaufträge', 'Performance', 'Postfach']) {
+    for (const label of ['Mandates', 'Performance', 'Inbox']) {
       expect(navLabels(container)).not.toContain(label);
     }
   });
@@ -73,15 +73,15 @@ describe('Workspace rail (AK-0.1)', () => {
     window.RecruitApi = emptyApi(true);
     window.WorkspaceSettings.reset();
     const { container } = render(<Workspace user={{ id: 'u1', email: 'u1@x.io', roles: ['admin'] }} onLogout={() => {}} />);
-    await waitFor(() => expect(navLabels(container)).toContain('Suchaufträge'));
+    await waitFor(() => expect(navLabels(container)).toContain('Mandates'));
     expect(navLabels(container)).toEqual([
       'Workspace',
-      'Mandanten',
-      'Stellen',
-      'Bewerbungen',
-      'Suchaufträge',
+      'Candidates',
+      'Jobs',
+      'Applications',
+      'Mandates',
       'Performance',
-      'Postfach',
+      'Inbox',
     ]);
   });
 });

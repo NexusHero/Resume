@@ -35,9 +35,9 @@ describe('SettingsView — super-admin console', () => {
   it('NonSuperAdmin_DoesNotSeeTheConsole', async () => {
     window.RecruitApi = { ...baseApi(false) };
     const { findByText, queryByText } = render(<SettingsView user={{ id: 'me' }} />);
-    await findByText('KI-Anbindung');
+    await findByText('AI connection');
     await waitFor(() => expect(window.RecruitApi.authMe).toHaveBeenCalled());
-    expect(queryByText('Plattform — alle Workspaces')).toBeNull();
+    expect(queryByText('Platform — all workspaces')).toBeNull();
   });
 
   it('SuperAdmin_ListsTenants_AndSuspends', async () => {
@@ -57,14 +57,14 @@ describe('SettingsView — super-admin console', () => {
       setTenantStatus,
     };
     const { findByText, getAllByRole } = render(<SettingsView user={{ id: 'me' }} />);
-    await findByText('Plattform — alle Workspaces');
+    await findByText('Platform — all workspaces');
     await findByText(/Acme/);
 
     // Suspend the first tenant (the default team's button is disabled).
-    const suspendBtn = getAllByRole('button', { name: 'Sperren' })[0];
+    const suspendBtn = getAllByRole('button', { name: 'Suspend' })[0];
     fireEvent.click(suspendBtn);
     await waitFor(() => expect(setTenantStatus).toHaveBeenCalledWith('t1', 'suspended'));
-    await findByText('Reaktivieren'); // row reflects the reloaded suspended status
+    await findByText('Reactivate'); // row reflects the reloaded suspended status
   });
 
   it('SuperAdmin_ExpandsTenant_AndRerolesAMember', async () => {
@@ -76,12 +76,12 @@ describe('SettingsView — super-admin console', () => {
       setTenantMemberRoles,
     };
     const { findByText, getByText, getByRole } = render(<SettingsView user={{ id: 'me' }} />);
-    await findByText('Plattform — alle Workspaces');
+    await findByText('Platform — all workspaces');
     fireEvent.click(getByText(/Acme/)); // expand the tenant row
     await findByText('a@acme.io');
 
     // Grant the 'admin' role to the member.
-    fireEvent.click(getByRole('checkbox', { name: 'Rolle admin für a@acme.io' }));
+    fireEvent.click(getByRole('checkbox', { name: 'Role admin for a@acme.io' }));
     await waitFor(() =>
       expect(setTenantMemberRoles).toHaveBeenCalledWith('t1', 'u1', ['recruiter', 'admin']),
     );

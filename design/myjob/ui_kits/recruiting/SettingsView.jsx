@@ -39,27 +39,27 @@ function AiSetupCard() {
           /* ignore */
         }
       })
-      .catch(() => setError('Der Anbieter konnte nicht gewechselt werden.'))
+      .catch(() => setError('The provider could not be switched.'))
       .finally(() => setBusy(false));
   };
 
   return (
     <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '22px 24px' }}>
-      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>KI-Anbindung</h2>
-      <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Ein zentraler Schlüssel pro Server. Ohne Schlüssel zeigt jeder KI-Knopf „KI nicht eingerichtet“ und sendet keine Anfrage.</div>
+      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>AI connection</h2>
+      <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>One central key per server. Without a key every AI button shows "AI not configured" and sends no request.</div>
       {state === null ? (
-        <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Wird geladen…</div>
+        <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Loading…</div>
       ) : state.error ? (
         <div role="alert" style={{ marginTop: '14px', padding: '12px 14px', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '12.5px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-          <span style={{ flex: 1 }}>Der KI-Status konnte nicht geladen werden. Ob ein Schlüssel gesetzt ist, lässt sich gerade nicht feststellen.</span>
+          <span style={{ flex: 1 }}>The AI status could not be loaded. Whether a key is set cannot be determined right now.</span>
           <button type="button" onClick={load} style={{ cursor: 'pointer', border: '1px solid var(--border-strong)', background: 'none', color: 'var(--text-heading)', borderRadius: 'var(--radius-pill)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '4px 12px' }}>
-            Erneut laden
+            Reload
           </button>
         </div>
       ) : state.configured ? (
         <div style={{ marginTop: '14px' }}>
           <div role="status" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--status-hired-strong)' }}>
-            <SV.Icon name="check" size={16} /> KI eingerichtet
+            <SV.Icon name="check" size={16} /> AI configured
             {state.current && (
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>
                 · {state.current}
@@ -68,7 +68,7 @@ function AiSetupCard() {
           </div>
           {state.providers.some((p) => p.available) && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Anbieter</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Provider</span>
               {state.providers.filter((p) => p.available).map((p) => (
                 <button
                   key={p.id}
@@ -88,7 +88,7 @@ function AiSetupCard() {
         <div role="alert" style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginTop: '14px', padding: '12px 14px', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
           <SV.Icon name="zap" size={16} style={{ color: 'var(--text-soft)', flexShrink: 0, marginTop: '2px' }} />
           <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-            <strong style={{ color: 'var(--text-heading)' }}>KI nicht eingerichtet.</strong> Setze <code>ANTHROPIC_API_KEY</code> (oder optional <code>GEMINI_API_KEY</code>) als Server-Umgebungsvariable und starte den Server neu.
+            <strong style={{ color: 'var(--text-heading)' }}>AI not configured.</strong> Set <code>ANTHROPIC_API_KEY</code> (or optionally <code>GEMINI_API_KEY</code>) as a server environment variable and restart the server.
           </div>
         </div>
       )}
@@ -138,7 +138,7 @@ function WorkspaceSettingsCard() {
         // immediately (no reload needed).
         if (window.WorkspaceSettings) window.WorkspaceSettings.refresh();
       })
-      .catch(() => setError('Der Schalter konnte nicht gespeichert werden. Bitte versuche es erneut.'))
+      .catch(() => setError('The switch could not be saved. Please try again.'))
       .finally(() => setBusy(false));
   };
 
@@ -151,7 +151,7 @@ function WorkspaceSettingsCard() {
         setAiConsent(!!(s && s.aiConsent));
         if (window.WorkspaceSettings) window.WorkspaceSettings.refresh();
       })
-      .catch(() => setError('Die Einwilligung konnte nicht widerrufen werden.'))
+      .catch(() => setError('The consent could not be revoked.'))
       .finally(() => setConsentBusy(false));
   };
 
@@ -160,23 +160,21 @@ function WorkspaceSettingsCard() {
   return (
     <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '22px 24px' }}>
       <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>Workspace</h2>
-      <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Der Bewerbungsservice ist der Hauptweg. Die Vermittler-Funktionen (Suchaufträge, Pipeline, Platzierungen, Performance, Postfach, CoRecruiter) sind standardmäßig aus. Ausschalten löscht keine Daten — sie sind nach dem Einschalten unverändert da.</div>
+      <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>The application service is the main path. The agency features (mandates, pipeline, placements, performance, inbox, CoRecruiter) are off by default. Turning it off deletes nothing — the data is still there unchanged after you turn it back on.</div>
       <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '16px', cursor: isAdmin ? 'pointer' : 'default', fontSize: '13.5px', color: 'var(--text-heading)' }}>
-        <input type="checkbox" checked={vermittlung} onChange={toggle} disabled={!isAdmin || busy} aria-label="Vermittlung aktivieren" />
-        Vermittlung aktivieren
+        <input type="checkbox" checked={vermittlung} onChange={toggle} disabled={!isAdmin || busy} aria-label="Agency" />
+        Agency
       </label>
 
       <div style={{ marginTop: '22px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 600, color: 'var(--text-soft)' }}>KI-Einwilligung (EU AI Act)</div>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 600, color: 'var(--text-soft)' }}>AI consent (EU AI Act)</div>
         <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '6px', lineHeight: 1.55 }}>
-          Die Einwilligung erlaubt die Übermittlung von Lebenslauf und Anzeigentext an den
-          konfigurierten KI-Anbieter. Sie gilt für diesen Workspace, wird im KI-Audit-Trail
-          protokolliert und kann hier jederzeit widerrufen werden.
+          The consent allows sending the CV and posting text to the configured AI provider. It applies to this workspace, is logged in the AI audit trail and can be revoked here at any time.
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
           <span role="status" data-testid="ai-consent-state" style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', fontSize: '13px', fontWeight: 600, color: aiConsent ? 'var(--positive, #1F8A5B)' : 'var(--text-muted)' }}>
             <SV.Icon name={aiConsent ? 'check' : 'x'} size={14} />
-            {aiConsent ? 'Einwilligung erteilt' : 'Keine Einwilligung'}
+            {aiConsent ? 'Consent granted' : 'No consent'}
           </span>
           {aiConsent && (
             <button
@@ -186,7 +184,7 @@ function WorkspaceSettingsCard() {
               disabled={consentBusy}
               style={{ cursor: consentBusy ? 'default' : 'pointer', border: '1px solid var(--danger)', background: 'none', color: 'var(--danger)', borderRadius: 'var(--radius-pill)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '4px 12px' }}
             >
-              {consentBusy ? 'Widerrufe …' : 'Einwilligung widerrufen'}
+              {consentBusy ? 'Revoking…' : 'Revoke consent'}
             </button>
           )}
         </div>
@@ -219,7 +217,7 @@ function DataPrivacyCard() {
         a.remove();
         URL.revokeObjectURL(url);
       })
-      .catch(() => setError('Deine Daten konnten nicht exportiert werden. Bitte versuche es erneut.'))
+      .catch(() => setError('Your data could not be exported. Please try again.'))
       .finally(() => setBusy(''));
   };
 
@@ -232,7 +230,7 @@ function DataPrivacyCard() {
         window.location.reload();
       })
       .catch(() => {
-        setError('Dein Konto konnte nicht gelöscht werden. Bitte versuche es erneut.');
+        setError('Your account could not be deleted. Please try again.');
         setBusy('');
         setConfirm(false);
       });
@@ -240,31 +238,31 @@ function DataPrivacyCard() {
 
   return (
     <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '22px 24px' }}>
-      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>Daten &amp; Datenschutz</h2>
-      <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Deine DSGVO-Rechte: Hol dir eine Kopie von allem, was du hier speicherst, oder lösche dein Konto endgültig.</div>
+      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>Data &amp; privacy</h2>
+      <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Your GDPR rights: get a copy of everything you store here, or permanently delete your account.</div>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', padding: '16px 0', borderBottom: '1px solid var(--border)', marginTop: '8px' }}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-heading)' }}>Meine Daten exportieren</div>
-          <div style={{ fontSize: '12px', color: 'var(--text-soft)', marginTop: '1px' }}>Lade dein Konto, Suchaufträge, Mandanten und Platzierungen als JSON herunter.</div>
+          <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-heading)' }}>Export my data</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-soft)', marginTop: '1px' }}>Download your account, mandates, candidates and placements as JSON.</div>
         </div>
         <SV.Button size="sm" variant="outline" disabled={busy !== ''} onClick={exportData}>
-          {busy === 'export' ? 'Wird vorbereitet…' : 'Exportieren'}
+          {busy === 'export' ? 'Preparing…' : 'Export'}
         </SV.Button>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', padding: '16px 0' }}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-heading)' }}>Mein Konto löschen</div>
-          <div style={{ fontSize: '12px', color: 'var(--text-soft)', marginTop: '1px' }}>Löscht dein Konto und alle Daten, die dir gehören, dauerhaft. Das kann nicht rückgängig gemacht werden.</div>
+          <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-heading)' }}>Delete my account</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-soft)', marginTop: '1px' }}>Permanently deletes your account and all data you own. This cannot be undone.</div>
         </div>
         {confirm ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-            <button type="button" onClick={() => setConfirm(false)} disabled={busy !== ''} style={{ cursor: 'pointer', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', color: 'var(--text-muted)', fontSize: '12.5px', padding: '7px 12px' }}>Abbrechen</button>
-            <button type="button" onClick={deleteAccount} disabled={busy !== ''} style={{ cursor: 'pointer', background: 'var(--danger)', border: '1px solid var(--danger)', borderRadius: 'var(--radius-md)', color: '#fff', fontWeight: 600, fontSize: '12.5px', padding: '7px 12px' }}>{busy === 'delete' ? 'Wird gelöscht…' : 'Löschen bestätigen'}</button>
+            <button type="button" onClick={() => setConfirm(false)} disabled={busy !== ''} style={{ cursor: 'pointer', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', color: 'var(--text-muted)', fontSize: '12.5px', padding: '7px 12px' }}>Cancel</button>
+            <button type="button" onClick={deleteAccount} disabled={busy !== ''} style={{ cursor: 'pointer', background: 'var(--danger)', border: '1px solid var(--danger)', borderRadius: 'var(--radius-md)', color: '#fff', fontWeight: 600, fontSize: '12.5px', padding: '7px 12px' }}>{busy === 'delete' ? 'Deleting…' : 'Confirm delete'}</button>
           </div>
         ) : (
-          <button type="button" onClick={() => setConfirm(true)} style={{ cursor: 'pointer', background: 'none', border: '1px solid var(--status-rejected-border)', borderRadius: 'var(--radius-md)', color: 'var(--danger)', fontWeight: 600, fontSize: '12.5px', padding: '7px 12px', flexShrink: 0 }}>Konto löschen</button>
+          <button type="button" onClick={() => setConfirm(true)} style={{ cursor: 'pointer', background: 'none', border: '1px solid var(--status-rejected-border)', borderRadius: 'var(--radius-md)', color: 'var(--danger)', fontWeight: 600, fontSize: '12.5px', padding: '7px 12px', flexShrink: 0 }}>Delete account</button>
         )}
       </div>
 
@@ -315,7 +313,7 @@ function TeamCard() {
       const updated = await window.RecruitApi.setMemberRoles(member.id, next);
       setMembers((ms) => ms.map((m) => (m.id === member.id ? updated : m)));
     } catch {
-      setNote('Rollen konnten nicht aktualisiert werden — das Team muss mindestens einen Admin behalten.');
+      setNote('Roles could not be updated — the team must keep at least one admin.');
       load();
     }
   };
@@ -324,10 +322,10 @@ function TeamCard() {
     <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '22px 24px' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
         <div style={{ flex: 1 }}>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>Team & Rollen</h2>
-          <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Alle in dieser Instanz teilen sich einen Workspace. {isAdmin ? 'Als Admin kannst du Rollen ändern.' : 'Nur Admins können Rollen ändern.'}</div>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>Team & roles</h2>
+          <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Everyone in this instance shares one workspace. {isAdmin ? 'As an admin you can change roles.' : 'Only admins can change roles.'}</div>
         </div>
-        {me && <span style={{ flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>Du: {(me.roles || []).join(', ')}</span>}
+        {me && <span style={{ flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>You: {(me.roles || []).join(', ')}</span>}
       </div>
 
       {isAdmin && members && members.length > 0 ? (
@@ -335,7 +333,7 @@ function TeamCard() {
           {members.map((m) => (
             <div key={m.id} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', gap: '14px', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-heading)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.email}{me && m.id === me.id && <span style={{ color: 'var(--text-soft)', fontWeight: 400 }}> (du)</span>}</div>
+                <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-heading)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.email}{me && m.id === me.id && <span style={{ color: 'var(--text-soft)', fontWeight: 400 }}> (you)</span>}</div>
               </div>
               <div style={{ display: 'flex', gap: '14px', justifyContent: 'flex-end' }}>
                 {TEAM_ROLES.map((role) => (
@@ -355,7 +353,7 @@ function TeamCard() {
               <span style={{ marginLeft: 'auto' }}>{(me.roles || []).map((r) => <RoleBadge key={r} role={r} />)}</span>
             </div>
           )}
-          {!isAdmin && <div style={{ fontSize: '12.5px', color: 'var(--text-soft)' }}>Wende dich an einen Admin, um Teamrollen zu ändern.</div>}
+          {!isAdmin && <div style={{ fontSize: '12.5px', color: 'var(--text-soft)' }}>Contact an admin to change team roles.</div>}
         </div>
       )}
 
@@ -414,7 +412,7 @@ function InvitesCard() {
       setEmail('');
       await reload();
     } catch (err) {
-      setError((err && err.message) || 'Die Einladung konnte nicht gesendet werden.');
+      setError((err && err.message) || 'The invitation could not be sent.');
     }
     setBusy(false);
   };
@@ -425,24 +423,24 @@ function InvitesCard() {
 
   return (
     <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '22px 24px' }}>
-      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>Kolleg:in einladen</h2>
-      <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Sende eine E-Mail-Einladung in diesen Workspace. Die Person legt ein Passwort fest und landet mit den von dir gewählten Rollen in deinem Team.</div>
+      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>Invite a colleague</h2>
+      <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Send an email invitation to this workspace. The person sets a password and joins your team with the roles you chose.</div>
 
       <form onSubmit={submit} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px', marginTop: '14px' }}>
-        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="kollegin@example.com" aria-label="E-Mail für Einladung" autoComplete="off" style={fieldStyle} />
+        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="colleague@example.com" aria-label="Email for invitation" autoComplete="off" style={fieldStyle} />
         {TEAM_ROLES.map((role) => (
           <label key={role} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', color: roles.includes(role) ? 'var(--text-heading)' : 'var(--text-soft)', cursor: 'pointer' }}>
             <input type="checkbox" checked={roles.includes(role)} onChange={() => toggleRole(role)} /> {role}
           </label>
         ))}
-        <SV.Button size="sm" disabled={busy || email.trim().length === 0} onClick={submit}>{busy ? 'Wird gesendet…' : 'Einladung senden'}</SV.Button>
+        <SV.Button size="sm" disabled={busy || email.trim().length === 0} onClick={submit}>{busy ? 'Sending…' : 'Send invitation'}</SV.Button>
       </form>
 
       {error && <div role="alert" style={{ fontSize: '12.5px', color: 'var(--danger)', marginTop: '10px' }}>{error}</div>}
       {lastLink && (
         <div style={{ marginTop: '12px', padding: '10px 12px', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
-          <div style={{ fontSize: '11.5px', color: 'var(--text-soft)', marginBottom: '4px' }}>Einladung gesendet. Falls keine E-Mail konfiguriert ist, teile diesen Link:</div>
-          <input readOnly value={lastLink} aria-label="Einladungslink" onFocus={(e) => e.target.select()} style={{ width: '100%', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-card)', fontFamily: 'var(--font-mono)', fontSize: '11.5px', color: 'var(--text-heading)', padding: '6px 8px' }} />
+          <div style={{ fontSize: '11.5px', color: 'var(--text-soft)', marginBottom: '4px' }}>Invitation sent. If no email is configured, share this link:</div>
+          <input readOnly value={lastLink} aria-label="Invitation link" onFocus={(e) => e.target.select()} style={{ width: '100%', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-card)', fontFamily: 'var(--font-mono)', fontSize: '11.5px', color: 'var(--text-heading)', padding: '6px 8px' }} />
         </div>
       )}
 
@@ -452,7 +450,7 @@ function InvitesCard() {
             <div key={i.email} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
               <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-heading)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{i.email}</span>
               <span style={{ marginLeft: 'auto', display: 'inline-flex', gap: '5px' }}>{(i.roles || []).map((r) => <RoleBadge key={r} role={r} />)}</span>
-              <span style={{ flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Ausstehend</span>
+              <span style={{ flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Pending</span>
             </div>
           ))}
         </div>
@@ -481,12 +479,12 @@ function TenantMembers({ tenantId }) {
       const updated = await window.RecruitApi.setTenantMemberRoles(tenantId, m.id, next);
       setMembers((ms) => ms.map((x) => (x.id === m.id ? updated : x)));
     } catch {
-      setNote('Rollen konnten nicht aktualisiert werden — der Workspace muss mindestens einen Admin behalten.');
+      setNote('Roles could not be updated — the workspace must keep at least one admin.');
       load();
     }
   };
 
-  if (members === null) return <div style={{ padding: '8px 0', fontSize: '12px', color: 'var(--text-soft)' }}>Mitglieder werden geladen…</div>;
+  if (members === null) return <div style={{ padding: '8px 0', fontSize: '12px', color: 'var(--text-soft)' }}>Loading members…</div>;
   return (
     <div style={{ padding: '4px 0 8px 12px' }}>
       {members.map((m) => (
@@ -495,7 +493,7 @@ function TenantMembers({ tenantId }) {
           <span style={{ marginLeft: 'auto', display: 'inline-flex', gap: '12px' }}>
             {TEAM_ROLES.map((role) => (
               <label key={role} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: m.roles.includes(role) ? 'var(--text-heading)' : 'var(--text-soft)', cursor: 'pointer' }}>
-                <input type="checkbox" aria-label={`Rolle ${role} für ${m.email}`} checked={m.roles.includes(role)} onChange={() => toggleRole(m, role)} /> {role}
+                <input type="checkbox" aria-label={`Role ${role} for ${m.email}`} checked={m.roles.includes(role)} onChange={() => toggleRole(m, role)} /> {role}
               </label>
             ))}
           </span>
@@ -551,16 +549,16 @@ function SuperAdminCard() {
     <div style={{ background: 'var(--surface-card)', border: '1px solid var(--accent-border, var(--border-strong))', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '22px 24px' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
         <div style={{ flex: 1 }}>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>Plattform — alle Workspaces</h2>
-          <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Instanz-Super-Admin. Jeder Workspace in diesem Deployment; sperre einen, um seine Mitglieder sofort auszusperren, oder ändere die Rollen eines Mitglieds.</div>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>Platform — all workspaces</h2>
+          <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Instance super admin. Every workspace in this deployment; suspend one to lock out its members immediately, or change a member's roles.</div>
         </div>
-        <span style={{ flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--accent-strong)', background: 'var(--accent-soft)', border: '1px solid var(--accent-border, var(--border))', borderRadius: 'var(--radius-pill)', padding: '3px 9px' }}>Super-Admin</span>
+        <span style={{ flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--accent-strong)', background: 'var(--accent-soft)', border: '1px solid var(--accent-border, var(--border))', borderRadius: 'var(--radius-pill)', padding: '3px 9px' }}>Super admin</span>
       </div>
 
       {tenants === null ? (
-        <div style={{ padding: '22px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Wird geladen…</div>
+        <div style={{ padding: '22px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Loading…</div>
       ) : tenants.length === 0 ? (
-        <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Noch keine Workspaces.</div>
+        <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>No workspaces yet.</div>
       ) : (
         <div style={{ marginTop: '12px' }}>
           {tenants.map((t) => {
@@ -572,9 +570,9 @@ function SuperAdminCard() {
                   <button type="button" onClick={() => setExpanded(open ? '' : t.id)} style={{ cursor: 'pointer', background: 'none', border: 'none', padding: 0, fontFamily: 'var(--font-display)', fontSize: '13.5px', fontWeight: 600, color: 'var(--text-heading)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'left' }}>
                     {open ? '▾ ' : '▸ '}{t.name}
                   </button>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>{t.memberCount} Mitglied{t.memberCount === 1 ? '' : 'er'}</span>
-                  <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.04em', textTransform: 'uppercase', color: suspended ? 'var(--danger)' : 'var(--status-hired-strong)', background: suspended ? 'var(--danger-soft, rgba(200,50,50,0.08))' : 'var(--status-hired-soft)', border: `1px solid ${suspended ? 'var(--danger)' : 'var(--status-hired-border)'}`, borderRadius: 'var(--radius-pill)', padding: '1px 8px' }}>{suspended ? 'Gesperrt' : 'Aktiv'}</span>
-                  <button type="button" disabled={busy === t.id || t.id === 'team'} title={t.id === 'team' ? 'Das Standardteam kann nicht gesperrt werden' : ''} onClick={() => setStatus(t, suspended ? 'active' : 'suspended')} style={{ cursor: busy === t.id || t.id === 'team' ? 'default' : 'pointer', border: `1px solid ${suspended ? 'var(--status-hired-border)' : 'var(--status-rejected-border)'}`, borderRadius: 'var(--radius-pill)', background: 'none', color: suspended ? 'var(--status-hired-strong)' : 'var(--danger)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '4px 12px', opacity: t.id === 'team' ? 0.4 : 1 }}>{busy === t.id ? '…' : suspended ? 'Reaktivieren' : 'Sperren'}</button>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>{t.memberCount} member{t.memberCount === 1 ? '' : 's'}</span>
+                  <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.04em', textTransform: 'uppercase', color: suspended ? 'var(--danger)' : 'var(--status-hired-strong)', background: suspended ? 'var(--danger-soft, rgba(200,50,50,0.08))' : 'var(--status-hired-soft)', border: `1px solid ${suspended ? 'var(--danger)' : 'var(--status-hired-border)'}`, borderRadius: 'var(--radius-pill)', padding: '1px 8px' }}>{suspended ? 'Suspended' : 'Active'}</span>
+                  <button type="button" disabled={busy === t.id || t.id === 'team'} title={t.id === 'team' ? 'The default team cannot be suspended' : ''} onClick={() => setStatus(t, suspended ? 'active' : 'suspended')} style={{ cursor: busy === t.id || t.id === 'team' ? 'default' : 'pointer', border: `1px solid ${suspended ? 'var(--status-hired-border)' : 'var(--status-rejected-border)'}`, borderRadius: 'var(--radius-pill)', background: 'none', color: suspended ? 'var(--status-hired-strong)' : 'var(--danger)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '4px 12px', opacity: t.id === 'team' ? 0.4 : 1 }}>{busy === t.id ? '…' : suspended ? 'Reactivate' : 'Suspend'}</button>
                 </div>
                 {open && <TenantMembers tenantId={t.id} />}
               </div>
@@ -629,16 +627,16 @@ function ComplianceCard() {
       await window.RecruitApi.anonymizeTalent(item.talentId);
       setItems((xs) => xs.filter((x) => x.talentId !== item.talentId));
     } catch {
-      window.showToast(`${item.name} konnte nicht anonymisiert werden. Bitte versuche es erneut.`, 'error');
+      window.showToast(`${item.name} could not be anonymized. Please try again.`, 'error');
     }
     setBusy('');
   };
   const anonymize = (item) => {
     if (busy) return;
     setConfirm({
-      title: `${item.name} anonymisieren?`,
-      message: 'Das löscht personenbezogene Daten und entfernt Anhänge. Das kann nicht rückgängig gemacht werden.',
-      confirmLabel: 'Anonymisieren',
+      title: `Anonymize ${item.name}?`,
+      message: 'This deletes personal data and removes attachments. This cannot be undone.',
+      confirmLabel: 'Anonymize',
       onConfirm: () => { setConfirm(null); runAnonymize(item); },
     });
   };
@@ -652,7 +650,7 @@ function ComplianceCard() {
       reload();
     } catch {
       setPolicy(prev); // roll the optimistic change back
-      window.showToast('Die Aufbewahrungsrichtlinie konnte nicht gespeichert werden. Bitte versuche es erneut.', 'error');
+      window.showToast('The retention policy could not be saved. Please try again.', 'error');
     }
   };
 
@@ -662,16 +660,16 @@ function ComplianceCard() {
       await window.RecruitApi.anonymizeOverdue();
       await reload();
     } catch {
-      window.showToast('Die überfälligen Kandidaten konnten nicht anonymisiert werden. Bitte versuche es erneut.', 'error');
+      window.showToast('The overdue candidates could not be anonymized. Please try again.', 'error');
     }
     setSweeping(false);
   };
   const sweepOverdue = () => {
     if (sweeping) return;
     setConfirm({
-      title: 'Alle überfälligen Kandidaten anonymisieren?',
-      message: 'Jeder Kandidat, dessen Löschfrist überschritten ist, wird anonymisiert. Das kann nicht rückgängig gemacht werden.',
-      confirmLabel: 'Alle anonymisieren',
+      title: 'Anonymize all overdue candidates?',
+      message: 'Every candidate whose deletion deadline has passed will be anonymized. This cannot be undone.',
+      confirmLabel: 'Anonymize all',
       onConfirm: () => { setConfirm(null); runSweepOverdue(); },
     });
   };
@@ -693,43 +691,43 @@ function ComplianceCard() {
       )}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
         <div style={{ flex: 1 }}>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>Datenaufbewahrung (DSGVO)</h2>
-          <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Kandidaten, die seit einer Weile keine aktive Pipeline mehr haben. Nach Ablauf der Löschfrist sind sie überfällig — anonymisiere sie bei der Prüfung, gesammelt, oder überlasse es dem automatischen Durchlauf.</div>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>Data retention (GDPR)</h2>
+          <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Candidates who have had no active pipeline for a while. After the deletion deadline they are overdue — anonymize them during review, in bulk, or leave it to the automatic run.</div>
         </div>
-        {items && <span style={{ flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '4px 10px' }}>{items.length} fällig{overdueCount > 0 ? ` · ${overdueCount} überfällig` : ''}</span>}
+        {items && <span style={{ flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '4px 10px' }}>{items.length} due{overdueCount > 0 ? ` · ${overdueCount} overdue` : ''}</span>}
       </div>
 
       {/* Löschfristen policy: review window, deletion deadline, auto-anonymize */}
       {policy && (
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px 18px', marginTop: '14px', padding: '12px 14px', background: 'var(--surface-sunk)', borderRadius: 'var(--radius-md)' }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '12px', color: 'var(--text-muted)' }}>
-            Prüfen nach
+            Review after
             <input type="number" min="1" max="3650" value={policy.reviewDays} onChange={(e) => setPolicy({ ...policy, reviewDays: Number(e.target.value) })} onBlur={(e) => savePolicy({ reviewDays: Number(e.target.value) })} style={{ width: '64px', padding: '4px 7px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-card)', color: 'var(--text-heading)', fontFamily: 'var(--font-mono)', fontSize: '12px' }} />
-            Tagen
+            days
           </label>
           <label style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '12px', color: 'var(--text-muted)' }}>
-            Löschen nach
+            Delete after
             <input type="number" min="1" max="3650" value={policy.deletionDays} onChange={(e) => setPolicy({ ...policy, deletionDays: Number(e.target.value) })} onBlur={(e) => savePolicy({ deletionDays: Number(e.target.value) })} style={{ width: '64px', padding: '4px 7px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-card)', color: 'var(--text-heading)', fontFamily: 'var(--font-mono)', fontSize: '12px' }} />
-            Tagen
+            days
           </label>
           <label style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '12px', color: 'var(--text-muted)', cursor: 'pointer' }}>
             <input type="checkbox" checked={policy.autoAnonymize} onChange={(e) => savePolicy({ autoAnonymize: e.target.checked })} />
-            Überfällige automatisch anonymisieren (läuft auf dem Server)
+            Automatically anonymize overdue (runs on the server)
           </label>
         </div>
       )}
 
       {overdueCount > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginTop: '12px', padding: '10px 14px', background: 'var(--danger-soft, rgba(200,50,50,0.08))', border: '1px solid var(--danger)', borderRadius: 'var(--radius-md)' }}>
-          <span style={{ fontSize: '12.5px', color: 'var(--danger)' }}>{overdueCount === 1 ? '1 Kandidat hat' : `${overdueCount} Kandidaten haben`} die Löschfrist überschritten.</span>
-          <button type="button" onClick={sweepOverdue} disabled={sweeping} style={{ cursor: sweeping ? 'default' : 'pointer', border: '1px solid var(--danger)', borderRadius: 'var(--radius-pill)', background: 'var(--danger)', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '5px 14px', whiteSpace: 'nowrap' }}>{sweeping ? 'Wird anonymisiert…' : `Alle überfälligen anonymisieren`}</button>
+          <span style={{ fontSize: '12.5px', color: 'var(--danger)' }}>{overdueCount === 1 ? '1 candidate has' : `${overdueCount} candidates have`} passed the deletion deadline.</span>
+          <button type="button" onClick={sweepOverdue} disabled={sweeping} style={{ cursor: sweeping ? 'default' : 'pointer', border: '1px solid var(--danger)', borderRadius: 'var(--radius-pill)', background: 'var(--danger)', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '5px 14px', whiteSpace: 'nowrap' }}>{sweeping ? 'Anonymizing…' : `Anonymize all overdue`}</button>
         </div>
       )}
 
       {items === null ? (
-        <div style={{ padding: '28px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Wird geladen…</div>
+        <div style={{ padding: '28px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Loading…</div>
       ) : items.length === 0 ? (
-        <div style={{ padding: '22px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Nichts zur Prüfung fällig.</div>
+        <div style={{ padding: '22px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Nothing due for review.</div>
       ) : (
         <div style={{ marginTop: '12px' }}>
           {items.map((it) => (
@@ -738,8 +736,8 @@ function ComplianceCard() {
                 <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-heading)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{it.name}</div>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>{it.role || '—'}</div>
               </div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11.5px', color: it.overdue ? 'var(--danger)' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>{it.inactiveDays}d inaktiv{it.overdue ? ' · überfällig' : ''}</div>
-              <button type="button" onClick={() => anonymize(it)} disabled={busy === it.talentId} style={{ cursor: busy ? 'default' : 'pointer', border: '1px solid var(--danger)', borderRadius: 'var(--radius-pill)', background: 'none', color: 'var(--danger)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '4px 12px' }}>{busy === it.talentId ? 'Wird anonymisiert…' : 'Anonymisieren'}</button>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11.5px', color: it.overdue ? 'var(--danger)' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>{it.inactiveDays}d inactive{it.overdue ? ' · overdue' : ''}</div>
+              <button type="button" onClick={() => anonymize(it)} disabled={busy === it.talentId} style={{ cursor: busy ? 'default' : 'pointer', border: '1px solid var(--danger)', borderRadius: 'var(--radius-pill)', background: 'none', color: 'var(--danger)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '4px 12px' }}>{busy === it.talentId ? 'Anonymizing…' : 'Anonymize'}</button>
             </div>
           ))}
         </div>
@@ -752,17 +750,17 @@ function ComplianceCard() {
    rough USD cost, with a per-feature breakdown. Usage is per user because API
    keys (and quota) are per user. */
 const USAGE_FEATURE_LABELS = {
-  suggest: 'Dokumenten-Assistenz',
-  tailor: 'Bewerbungsanpassung',
-  parse: 'Lebenslauf-Analyse',
-  ats: 'ATS-Bewertung',
-  pitch: 'Kandidaten-Pitch',
-  outreach: 'Ansprache',
-  coverLetter: 'Anschreiben',
-  matchExplain: 'Match-Erklärung',
-  interviewKit: 'Interview-Kit',
-  candidatePrep: 'Kandidaten-Vorbereitung',
-  translate: 'Übersetzung',
+  suggest: 'Document assistance',
+  tailor: 'Application tailoring',
+  parse: 'CV analysis',
+  ats: 'ATS scoring',
+  pitch: 'Candidate pitch',
+  outreach: 'Outreach',
+  coverLetter: 'Cover letter',
+  matchExplain: 'Match explanation',
+  interviewKit: 'Interview kit',
+  candidatePrep: 'Candidate prep',
+  translate: 'Translation',
 };
 
 function formatTokens(n) {
@@ -803,33 +801,33 @@ function UsageCard() {
     <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '22px 24px' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
         <div style={{ flex: 1 }}>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>KI-Nutzung</h2>
-          <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Was dein Konto bisher für KI ausgegeben hat. Die Kosten sind eine Schätzung anhand öffentlicher Listenpreise, keine Rechnung.</div>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>AI usage</h2>
+          <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>What your account has spent on AI so far. The costs are an estimate based on public list prices, not an invoice.</div>
         </div>
         {usage && usage.requests > 0 && (
-          <a href={window.RecruitApi.usageAuditCsvUrl()} download title="Das KI-Audit-Protokoll pro Aufruf herunterladen (CSV)" style={{ flexShrink: 0, textDecoration: 'none', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', padding: '5px 12px' }}>Audit-Protokoll (CSV)</a>
+          <a href={window.RecruitApi.usageAuditCsvUrl()} download title="Download the AI audit log per call (CSV)" style={{ flexShrink: 0, textDecoration: 'none', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', padding: '5px 12px' }}>Audit log (CSV)</a>
         )}
       </div>
 
       {error ? (
-        <div style={{ padding: '22px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Nutzung konnte nicht geladen werden.</div>
+        <div style={{ padding: '22px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Usage could not be loaded.</div>
       ) : usage === null ? (
-        <div style={{ padding: '28px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Wird geladen…</div>
+        <div style={{ padding: '28px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Loading…</div>
       ) : usage.requests === 0 ? (
-        <div style={{ padding: '22px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>Noch keine KI-Nutzung. Ein Pitch, ATS-Score oder Anschreiben taucht hier auf, sobald du eines erstellst.</div>
+        <div style={{ padding: '22px', textAlign: 'center', color: 'var(--text-soft)', fontSize: '13px' }}>No AI usage yet. A pitch, ATS score or cover letter shows up here once you create one.</div>
       ) : (
         <>
           <div style={{ display: 'flex', gap: '18px', marginTop: '16px', padding: '14px 16px', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
-            <UsageStat label="Anfragen" value={usage.requests} />
+            <UsageStat label="Requests" value={usage.requests} />
             <UsageStat label="Tokens" value={formatTokens(usage.totalTokens)} />
-            <UsageStat label="Gesch. Kosten" value={formatCost(usage.costUsd)} />
+            <UsageStat label="Est. cost" value={formatCost(usage.costUsd)} />
           </div>
 
           {usage.byProvider && usage.byProvider.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
               {usage.byProvider.map((p) => (
                 <span key={p.provider} style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-soft)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '3px 10px', whiteSpace: 'nowrap' }}>
-                  {p.provider} · {formatTokens(p.inputTokens)} Eingabe / {formatTokens(p.outputTokens)} Ausgabe · {formatCost(p.costUsd)}
+                  {p.provider} · {formatTokens(p.inputTokens)} in / {formatTokens(p.outputTokens)} out · {formatCost(p.costUsd)}
                 </span>
               ))}
             </div>
@@ -840,7 +838,7 @@ function UsageCard() {
               {usage.byFeature.map((f) => (
                 <div key={f.feature} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto auto', gap: '14px', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
                   <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-heading)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{USAGE_FEATURE_LABELS[f.feature] || f.feature}</div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11.5px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{f.requests}× · {formatTokens(f.totalTokens)} Tok</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11.5px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{f.requests}× · {formatTokens(f.totalTokens)} tok</div>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11.5px', color: 'var(--text-soft)', whiteSpace: 'nowrap', minWidth: '58px', textAlign: 'right' }}>{formatCost(f.costUsd)}</div>
                 </div>
               ))}
@@ -867,21 +865,21 @@ function EmailVerificationCard({ user }) {
       <SV.Icon name={verified ? 'check' : 'mail'} size={16} style={{ color: verified ? 'var(--status-hired-strong)' : 'var(--accent-strong)', flexShrink: 0 }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-heading)' }}>
-          {verified ? 'E-Mail-Adresse bestätigt' : 'Bestätige deine E-Mail-Adresse'}
+          {verified ? 'Email address confirmed' : 'Confirm your email address'}
         </div>
         <div style={{ fontSize: '12px', color: 'var(--text-soft)', marginTop: '1px' }}>
           {verified
-            ? `${user.email} ist bestätigt.`
+            ? `${user.email} is confirmed.`
             : state === 'sent'
-              ? `Gesendet — prüfe ${user.email} und klicke auf den Link.`
+              ? `Sent — check ${user.email} and click the link.`
               : state === 'error'
-                ? 'Die E-Mail konnte nicht gesendet werden. Bitte versuche es gleich erneut.'
-                : `Wir senden einen Bestätigungslink an ${user.email}. In der Zwischenzeit ist nichts gesperrt.`}
+                ? 'The email could not be sent. Please try again shortly.'
+                : `We will send a confirmation link to ${user.email}. Nothing is blocked in the meantime.`}
         </div>
       </div>
       {!verified && (
         <SV.Button variant="outline" size="sm" disabled={state === 'sending'} onClick={resend}>
-          {state === 'sending' ? 'Wird gesendet…' : state === 'sent' ? 'Erneut senden' : 'Link senden'}
+          {state === 'sending' ? 'Sending…' : state === 'sent' ? 'Resend' : 'Send link'}
         </SV.Button>
       )}
     </div>
@@ -910,26 +908,26 @@ function ProfileCard({ user }) {
       .then(() => setState('saved'))
       .catch(() => setState('error'));
   };
-  const label = { saving: 'Wird gespeichert…', saved: 'Gespeichert — sichtbar beim nächsten Laden', error: 'Konnte nicht gespeichert werden' };
+  const label = { saving: 'Saving…', saved: 'Saved — visible on next load', error: 'Could not save' };
   return (
     <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '22px 24px' }}>
-      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>Dein Name</h2>
-      <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px', marginBottom: '14px' }}>Wird in der Begrüßung und deinem angepinnten Profil angezeigt — leg ihn fest, damit die App dich mit Namen begrüßt, nicht mit deiner E-Mail.</div>
+      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>Your name</h2>
+      <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px', marginBottom: '14px' }}>Shown in the greeting and your pinned profile — set it so the app greets you by name, not by email.</div>
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
         <input
           value={name}
           onChange={(e) => { setName(e.target.value); setState('idle'); }}
-          placeholder={loaded ? 'z. B. Nora Kessler' : 'Wird geladen…'}
-          aria-label="Dein Name"
+          placeholder={loaded ? 'e.g. Nora Kessler' : 'Loading…'}
+          aria-label="Your name"
           style={{ flex: 1, minWidth: '200px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', background: 'var(--surface-card)', fontFamily: 'var(--font-body)', fontSize: '13.5px', color: 'var(--text-heading)', padding: '10px 12px', outline: 'none' }}
         />
         <SV.Button
           size="sm"
           disabled={!loaded || state === 'saving' || !name.trim()}
-          title={!loaded ? 'Wird geladen …' : !name.trim() ? 'Bitte zuerst einen Namen eingeben.' : undefined}
+          title={!loaded ? 'Loading…' : !name.trim() ? 'Please enter a name first.' : undefined}
           onClick={save}
         >
-          Speichern
+          Save
         </SV.Button>
         {state !== 'idle' && <span role="status" style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: state === 'error' ? 'var(--danger)' : 'var(--text-soft)' }}>{label[state]}</span>}
       </div>
@@ -971,18 +969,18 @@ function AppearanceCard() {
     else t.setMode(key);
   };
   const options = [
-    ['light', 'Hell'],
-    ['dark', 'Dunkel'],
+    ['light', 'Light'],
+    ['dark', 'Dark'],
     ['system', 'System'],
   ];
-  const modeLabel = mode === 'light' ? 'Hell „Vivid"' : mode === 'dark' ? 'Dunkel „Klassik"' : mode;
+  const modeLabel = mode === 'light' ? 'Light "Vivid"' : mode === 'dark' ? 'Dark "Classic"' : mode;
   return (
     <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '22px 24px' }}>
-      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>Darstellung</h2>
+      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>Appearance</h2>
       <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>
-        Wähle, wie myJob aussieht. Standardmäßig folgt es deiner Systemeinstellung. Hell ist „Vivid“ (Royal-Akzent), Dunkel ist „Klassik“ (Live-Orange).
+        Choose how myJob looks. By default it follows your system setting. Light is "Vivid" (royal accent), dark is "Classic" (live orange).
       </div>
-      <div role="group" aria-label="Darstellung" style={{ display: 'inline-flex', gap: '4px', marginTop: '14px', padding: '4px', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
+      <div role="group" aria-label="Appearance" style={{ display: 'inline-flex', gap: '4px', marginTop: '14px', padding: '4px', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
         {options.map(([key, label]) => {
           const on = active === key;
           return (
@@ -999,7 +997,7 @@ function AppearanceCard() {
         })}
       </div>
       <div style={{ marginTop: '10px', fontSize: '11.5px', color: 'var(--text-soft)' }}>
-        {choice ? `${modeLabel} aktiv — deine Auswahl ist für diesen Browser gespeichert.` : `Folgt deinem System (${modeLabel}).`}
+        {choice ? `${modeLabel} active — your choice is saved for this browser.` : `Follows your system (${modeLabel}).`}
       </div>
     </div>
   );
@@ -1014,10 +1012,10 @@ function SettingsView({ user, onLogout }) {
       {onLogout && (
         <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', padding: '18px 24px', display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div style={{ flex: 1 }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 700, color: 'var(--text-heading)', margin: 0 }}>Sitzung</h2>
-            <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Von diesem Gerät abmelden.</div>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 700, color: 'var(--text-heading)', margin: 0 }}>Session</h2>
+            <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginTop: '2px' }}>Sign out of this device.</div>
           </div>
-          <SV.Button variant="outline" size="sm" iconLeft={<SV.Icon name="logout" size={15} />} onClick={onLogout}>Abmelden</SV.Button>
+          <SV.Button variant="outline" size="sm" iconLeft={<SV.Icon name="logout" size={15} />} onClick={onLogout}>Sign out</SV.Button>
         </div>
       )}
       <AiSetupCard />

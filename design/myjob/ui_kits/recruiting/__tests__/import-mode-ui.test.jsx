@@ -50,7 +50,7 @@ describe('Text import (Q2)', () => {
 
   it('TextImport_Notice_NamesTheModeAndSaysStructureNeedsAi', () => {
     render(<window.TextImportNotice />);
-    expect(screen.getByRole('status')).toHaveTextContent('Text übernommen (ohne KI)');
-    expect(screen.getByRole('status')).toHaveTextContent('Stationen und Skills');
+    expect(screen.getByRole('status')).toHaveTextContent('Text imported (without AI)');
+    expect(screen.getByRole('status')).toHaveTextContent('roles and skills');
   });
 });

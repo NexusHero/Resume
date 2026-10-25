@@ -11,55 +11,55 @@ const MONEY_RE = /^[€$£\s]*\d[\d.,\s]*[€$£]?$/;
 
 const RECORD_FORMS = {
   mandate: {
-    title: 'Neuer Suchauftrag',
-    subtitle: 'Einen Suchauftrag für einen Klienten öffnen',
-    editTitle: 'Suchauftrag bearbeiten',
-    editSubmitLabel: 'Änderungen speichern',
+    title: 'New mandate',
+    subtitle: 'Open a mandate for a client',
+    editTitle: 'Edit mandate',
+    editSubmitLabel: 'Save changes',
     icon: 'briefcase',
-    submitLabel: 'Suchauftrag anlegen',
+    submitLabel: 'Create mandate',
     fields: [
-      { name: 'client', label: 'Klient', icon: 'building', required: true },
-      { name: 'role', label: 'Rolle', icon: 'briefcase', required: true },
-      { name: 'location', label: 'Standort', icon: 'pin', required: true },
-      { name: 'fee', label: 'Honorar', icon: 'trend', placeholder: 'z. B. 22 %' },
-      { name: 'feeValue', label: 'Honorarwert', placeholder: 'z. B. 17.160 €' },
-      { name: 'deadline', label: 'Frist', placeholder: 'JJJJ-MM-TT' },
-      { name: 'priority', label: 'Priorität', type: 'select', options: [{ value: 'high', label: 'hoch' }, { value: 'medium', label: 'mittel' }, { value: 'low', label: 'niedrig' }], default: 'medium' },
-      { name: 'status', label: 'Status', type: 'select', options: [{ value: 'active', label: 'aktiv' }, { value: 'paused', label: 'pausiert' }, { value: 'closed', label: 'geschlossen' }], default: 'active' },
-      { name: 'jobText', label: 'Stellenanzeige', type: 'textarea', full: true, rows: 5, placeholder: 'Stellenausschreibung einfügen — steuert Matching, ATS-Score, AGG-Check und Kandidat:innen-Vorbereitung' },
+      { name: 'client', label: 'Client', icon: 'building', required: true },
+      { name: 'role', label: 'Role', icon: 'briefcase', required: true },
+      { name: 'location', label: 'Location', icon: 'pin', required: true },
+      { name: 'fee', label: 'Fee', icon: 'trend', placeholder: 'e.g. 22 %' },
+      { name: 'feeValue', label: 'Fee value', placeholder: 'e.g. 17,160 €' },
+      { name: 'deadline', label: 'Deadline', placeholder: 'YYYY-MM-DD' },
+      { name: 'priority', label: 'Priority', type: 'select', options: [{ value: 'high', label: 'high' }, { value: 'medium', label: 'medium' }, { value: 'low', label: 'low' }], default: 'medium' },
+      { name: 'status', label: 'Status', type: 'select', options: [{ value: 'active', label: 'active' }, { value: 'paused', label: 'paused' }, { value: 'closed', label: 'closed' }], default: 'active' },
+      { name: 'jobText', label: 'Job posting', type: 'textarea', full: true, rows: 5, placeholder: 'Paste the job posting — drives matching, ATS score, AGG check and candidate preparation' },
     ],
   },
   talent: {
-    title: 'Mandant hinzufügen',
-    subtitle: 'Eine Person zum Pool hinzufügen',
+    title: 'Add candidate',
+    subtitle: 'Add a person to the pool',
     icon: 'user',
-    submitLabel: 'Mandant hinzufügen',
+    submitLabel: 'Add candidate',
     fields: [
       { name: 'name', label: 'Name', icon: 'user', required: true },
-      { name: 'role', label: 'Rolle', icon: 'briefcase' },
-      { name: 'headline', label: 'Kurzprofil' },
-      { name: 'location', label: 'Standort', icon: 'pin' },
-      { name: 'email', label: 'E-Mail', type: 'email' },
-      { name: 'phone', label: 'Telefon' },
-      { name: 'availability', label: 'Verfügbarkeit', placeholder: 'z. B. sofort' },
-      { name: 'salary', label: 'Gehaltsvorstellung' },
-      { name: 'skills', label: 'Skills', full: true, placeholder: 'Kommagetrennt, z. B. React, TypeScript — steuert Matching' },
+      { name: 'role', label: 'Role', icon: 'briefcase' },
+      { name: 'headline', label: 'Summary' },
+      { name: 'location', label: 'Location', icon: 'pin' },
+      { name: 'email', label: 'Email', type: 'email' },
+      { name: 'phone', label: 'Phone' },
+      { name: 'availability', label: 'Availability', placeholder: 'e.g. immediately' },
+      { name: 'salary', label: 'Salary expectation' },
+      { name: 'skills', label: 'Skills', full: true, placeholder: 'Comma-separated, e.g. React, TypeScript — drives matching' },
     ],
   },
   placement: {
-    title: 'Platzierung hinzufügen',
-    subtitle: 'Eine gebuchte Platzierung erfassen',
-    editTitle: 'Platzierung bearbeiten',
-    editSubmitLabel: 'Änderungen speichern',
+    title: 'Add placement',
+    subtitle: 'Record a booked placement',
+    editTitle: 'Edit placement',
+    editSubmitLabel: 'Save changes',
     icon: 'award',
-    submitLabel: 'Platzierung hinzufügen',
+    submitLabel: 'Add placement',
     fields: [
-      { name: 'candidateName', label: 'Kandidat:in', icon: 'user', required: true },
-      { name: 'candidateRole', label: 'Rolle', icon: 'briefcase' },
-      { name: 'client', label: 'Klient', icon: 'building', required: true },
-      { name: 'start', label: 'Start', placeholder: 'JJJJ-MM-TT' },
-      { name: 'fee', label: 'Honorar', placeholder: 'z. B. 19.000 €', money: true },
-      { name: 'status', label: 'Status', type: 'select', options: [{ value: 'probation', label: 'Probezeit' }, { value: 'invoiced', label: 'in Rechnung gestellt' }, { value: 'paid', label: 'bezahlt' }], default: 'probation' },
+      { name: 'candidateName', label: 'Candidate', icon: 'user', required: true },
+      { name: 'candidateRole', label: 'Role', icon: 'briefcase' },
+      { name: 'client', label: 'Client', icon: 'building', required: true },
+      { name: 'start', label: 'Start', placeholder: 'YYYY-MM-DD' },
+      { name: 'fee', label: 'Fee', placeholder: 'e.g. 19,000 €', money: true },
+      { name: 'status', label: 'Status', type: 'select', options: [{ value: 'probation', label: 'probation' }, { value: 'invoiced', label: 'invoiced' }, { value: 'paid', label: 'paid' }], default: 'probation' },
     ],
   },
 };
@@ -98,11 +98,11 @@ function RecordFormModal({ kind, record, prefill, onClose, onSubmit, onDelete })
   const submit = (e) => {
     e.preventDefault();
     if (missing.length) {
-      setError(`Bitte ausfüllen: ${missing.map((f) => f.label).join(', ')}`);
+      setError(`Please fill in: ${missing.map((f) => f.label).join(', ')}`);
       return;
     }
     if (badMoney.length) {
-      setError(`Bitte einen gültigen Betrag eingeben für: ${badMoney.map((f) => f.label).join(', ')}`);
+      setError(`Please enter a valid amount for: ${badMoney.map((f) => f.label).join(', ')}`);
       return;
     }
     setBusy(true);
@@ -110,7 +110,7 @@ function RecordFormModal({ kind, record, prefill, onClose, onSubmit, onDelete })
     Promise.resolve(onSubmit(values))
       .then(() => onClose())
       .catch(() => {
-        setError('Konnte nicht gespeichert werden. Bitte erneut versuchen.');
+        setError('Could not save. Please try again.');
         setBusy(false);
       });
   };
@@ -123,7 +123,7 @@ function RecordFormModal({ kind, record, prefill, onClose, onSubmit, onDelete })
     Promise.resolve(onDelete())
       .then(() => onClose())
       .catch(() => {
-        setError('Konnte nicht gelöscht werden. Bitte erneut versuchen.');
+        setError('Could not delete. Please try again.');
         setBusy(false);
       });
   };
@@ -138,7 +138,7 @@ function RecordFormModal({ kind, record, prefill, onClose, onSubmit, onDelete })
             <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)' }}>{editing ? form.editTitle : form.title}</div>
             <div style={{ fontSize: '12.5px', color: 'var(--text-soft)' }}>{form.subtitle}</div>
           </div>
-          <RF.IconButton icon="x" label="Schließen" variant="ghost" type="button" onClick={onClose} />
+          <RF.IconButton icon="x" label="Close" variant="ghost" type="button" onClick={onClose} />
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '20px 22px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '14px', alignItems: 'start' }}>
@@ -160,12 +160,12 @@ function RecordFormModal({ kind, record, prefill, onClose, onSubmit, onDelete })
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', padding: '14px 22px', borderTop: '1px solid var(--border)', background: 'var(--surface-subtle)' }}>
           <div>
             {editing && onDelete && (
-              <RF.Button variant="ghost" type="button" disabled={busy} onClick={remove} iconLeft={<RF.Icon name="trash" size={14} />} style={{ color: 'var(--danger)' }}>Löschen</RF.Button>
+              <RF.Button variant="ghost" type="button" disabled={busy} onClick={remove} iconLeft={<RF.Icon name="trash" size={14} />} style={{ color: 'var(--danger)' }}>Delete</RF.Button>
             )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <RF.Button variant="ghost" type="button" disabled={busy} onClick={onClose}>Abbrechen</RF.Button>
-            <RF.Button variant="primary" type="submit" disabled={busy}>{busy ? 'Speichere…' : editing ? form.editSubmitLabel : form.submitLabel}</RF.Button>
+            <RF.Button variant="ghost" type="button" disabled={busy} onClick={onClose}>Cancel</RF.Button>
+            <RF.Button variant="primary" type="submit" disabled={busy}>{busy ? 'Saving…' : editing ? form.editSubmitLabel : form.submitLabel}</RF.Button>
           </div>
         </div>
       </form>

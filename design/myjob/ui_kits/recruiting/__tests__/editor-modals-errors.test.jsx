@@ -24,31 +24,31 @@ describe('Editor modals — visible failures', () => {
   it('AtsModal_Failure_ShowsGenericError', async () => {
     render(<window.AtsModal talentId="t1" onClose={vi.fn()} />);
     await userEvent.type(
-      screen.getByPlaceholderText('Stellenbeschreibung einfügen…'),
+      screen.getByPlaceholderText('Paste job description…'),
       'React Engineer',
     );
-    await userEvent.click(screen.getByText('Analysieren'));
+    await userEvent.click(screen.getByText('Analyze'));
 
     const alert = await screen.findByRole('alert');
-    expect(alert).toHaveTextContent('Der ATS-Abgleich ist fehlgeschlagen');
+    expect(alert).toHaveTextContent('The ATS check failed');
     expect(window.RecruitApi.atsScore).toHaveBeenCalledWith('t1', 'React Engineer');
   });
 
   it('PitchModal_Failure_ShowsGenericError', async () => {
     render(<window.PitchModal talentId="t1" onClose={vi.fn()} />);
-    await userEvent.click(screen.getByText('Generieren'));
+    await userEvent.click(screen.getByText('Generate'));
 
     const alert = await screen.findByRole('alert');
-    expect(alert).toHaveTextContent('Der Pitch konnte nicht erstellt werden');
+    expect(alert).toHaveTextContent('The pitch could not be created');
     expect(window.RecruitApi.pitchCandidate).toHaveBeenCalledWith('t1', '');
   });
 
   it('OutreachModal_Failure_ShowsGenericError', async () => {
     render(<window.OutreachModal talentId="t1" onClose={vi.fn()} />);
-    await userEvent.click(screen.getByText('Generieren'));
+    await userEvent.click(screen.getByText('Generate'));
 
     const alert = await screen.findByRole('alert');
-    expect(alert).toHaveTextContent('Die Ansprache konnte nicht entworfen werden');
+    expect(alert).toHaveTextContent('The outreach message could not be drafted');
     expect(window.RecruitApi.outreachMessage).toHaveBeenCalled();
   });
 });

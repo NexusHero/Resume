@@ -19,13 +19,11 @@ describe('chat-agent domain helpers', () => {
       { jobApplicationId: 'a1', postingCompany: 'Acme', postingTitle: 'Engineer' },
       { jobApplicationId: 'a2', postingCompany: 'Globex', postingTitle: 'Lead' },
     ]);
-    expect(summary).toBe('2 Bewerbungs-Entwürfe erstellt: Acme – Engineer, Globex – Lead.');
+    expect(summary).toBe('2 application drafts created: Acme – Engineer, Globex – Lead.');
   });
 
   it('SummarizeRun_NoSteps_ReturnsHonestEmptySummary', () => {
-    expect(summarizeRun([])).toBe(
-      'Der Agent hat in diesem Lauf keine Bewerbungs-Entwürfe erstellt.',
-    );
+    expect(summarizeRun([])).toBe('The agent did not create any application drafts in this run.');
   });
 
   it('DraftTitleOf_FirstMessage_TruncatesToTitle', () => {

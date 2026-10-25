@@ -88,7 +88,7 @@ describe('Snackbar', () => {
 
     const bar = await screen.findByRole('status');
     expect(bar).toHaveTextContent('Placement removed');
-    const undoBtn = screen.getByRole('button', { name: 'Rückgängig' });
+    const undoBtn = screen.getByRole('button', { name: 'Undo' });
     // keyboard-reachable: it's a real button and can hold focus
     undoBtn.focus();
     expect(undoBtn).toHaveFocus();

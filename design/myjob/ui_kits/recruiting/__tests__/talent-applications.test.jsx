@@ -1,5 +1,5 @@
-/* Minor B — the talent profile's "Bewerbungen" tab shows the NEW job
-   applications (listJobApplications), and the "Neue Mappe" button is gone. */
+/* Minor B — the talent profile's "Applications" tab shows the NEW job
+   applications (listJobApplications), and the "New dossier" button is gone. */
 import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -62,7 +62,7 @@ beforeAll(async () => {
   TalentProfile = window.TalentProfile;
 });
 
-describe('Talent profile — Bewerbungen tab (Minor B)', () => {
+describe('Talent profile — Applications tab (Minor B)', () => {
   beforeEach(() => {
     window.RecruitApi = {
       getTalentDocuments: vi.fn().mockResolvedValue(null),
@@ -73,8 +73,8 @@ describe('Talent profile — Bewerbungen tab (Minor B)', () => {
 
   it('TalentApplications_ShowsNewJobApplications', async () => {
     render(<TalentProfile talent={talent} onBack={vi.fn()} onEdit={vi.fn()} />);
-    await waitFor(() => expect(screen.queryByText('Lädt…')).not.toBeInTheDocument());
-    await userEvent.click(screen.getByText('Bewerbungen'));
+    await waitFor(() => expect(screen.queryByText('Loading…')).not.toBeInTheDocument());
+    await userEvent.click(screen.getByText('Applications'));
 
     await waitFor(() => expect(window.RecruitApi.listJobApplications).toHaveBeenCalledWith(expect.objectContaining({ talentId: 't1' })));
     await waitFor(() => expect(screen.getByText('Aurora Systems')).toBeInTheDocument());
@@ -83,20 +83,20 @@ describe('Talent profile — Bewerbungen tab (Minor B)', () => {
 
   it('TalentApplications_NoNeueMappeButton', async () => {
     render(<TalentProfile talent={talent} onBack={vi.fn()} onEdit={vi.fn()} />);
-    await waitFor(() => expect(screen.queryByText('Lädt…')).not.toBeInTheDocument());
-    await userEvent.click(screen.getByText('Bewerbungen'));
+    await waitFor(() => expect(screen.queryByText('Loading…')).not.toBeInTheDocument());
+    await userEvent.click(screen.getByText('Applications'));
 
     await waitFor(() => expect(screen.getByText('Aurora Systems')).toBeInTheDocument());
-    expect(screen.queryByText('Neue Mappe')).not.toBeInTheDocument();
+    expect(screen.queryByText('New dossier')).not.toBeInTheDocument();
   });
 
   it('TalentApplications_StatusFilter_CallsListWithStatus', async () => {
     render(<TalentProfile talent={talent} onBack={vi.fn()} onEdit={vi.fn()} />);
-    await waitFor(() => expect(screen.queryByText('Lädt…')).not.toBeInTheDocument());
-    await userEvent.click(screen.getByText('Bewerbungen'));
+    await waitFor(() => expect(screen.queryByText('Loading…')).not.toBeInTheDocument());
+    await userEvent.click(screen.getByText('Applications'));
     await waitFor(() => expect(screen.getByText('Aurora Systems')).toBeInTheDocument());
 
-    await userEvent.click(screen.getByTestId('talent-status-filter-Versendet'));
+    await userEvent.click(screen.getByTestId('talent-status-filter-Sent'));
     await waitFor(() =>
       expect(window.RecruitApi.listJobApplications).toHaveBeenCalledWith(
         expect.objectContaining({ talentId: 't1', status: 'sent' }),
@@ -112,11 +112,11 @@ describe('Talent profile — Bewerbungen tab (Minor B)', () => {
       { id: 'att1', name: 'Zeugnis.pdf', contentType: 'application/pdf', size: 1024 },
     ]);
     render(<TalentProfile talent={talent} onBack={vi.fn()} onEdit={vi.fn()} />);
-    await waitFor(() => expect(screen.queryByText('Lädt…')).not.toBeInTheDocument());
-    await userEvent.click(screen.getByText('Anhänge'));
+    await waitFor(() => expect(screen.queryByText('Loading…')).not.toBeInTheDocument());
+    await userEvent.click(screen.getByText('Attachments'));
 
     await waitFor(() =>
-      expect(screen.getByText(/verknüpft mit Aurora Systems · Senior C\+\+ Engineer/)).toBeInTheDocument(),
+      expect(screen.getByText(/linked to Aurora Systems · Senior C\+\+ Engineer/)).toBeInTheDocument(),
     );
   });
 
@@ -131,8 +131,8 @@ describe('Talent profile — Bewerbungen tab (Minor B)', () => {
     render(
       <TalentProfile talent={talent} onBack={vi.fn()} onEdit={vi.fn()} onOpenApplication={onOpenApplication} />,
     );
-    await waitFor(() => expect(screen.queryByText('Lädt…')).not.toBeInTheDocument());
-    await userEvent.click(screen.getByText('Anhänge'));
+    await waitFor(() => expect(screen.queryByText('Loading…')).not.toBeInTheDocument());
+    await userEvent.click(screen.getByText('Attachments'));
 
     await userEvent.click(await screen.findByTestId('attachment-link-att1'));
     await waitFor(() => expect(onOpenApplication).toHaveBeenCalled());

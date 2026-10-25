@@ -5,19 +5,19 @@ const WS = window.MyJobDesignSystem_5611b7;
 function OnboardingCard({ onNav, vermittlung }) {
   const steps = vermittlung
     ? [
-        { icon: 'users', nav: 'pool', title: 'Mandant hinzufügen', desc: 'Eine Person anlegen oder CVs importieren.' },
-        { icon: 'briefcase', nav: 'mandate', title: 'Suchauftrag anlegen', desc: 'Einen Suchauftrag öffnen und seine Pipeline verfolgen.' },
-        { icon: 'search', nav: 'matching', title: 'Stellen finden', desc: 'Mandanten auf passende Stellen matchen und bewerben.' },
+        { icon: 'users', nav: 'pool', title: 'Add candidate', desc: 'Add a person or import CVs.' },
+        { icon: 'briefcase', nav: 'mandate', title: 'Create a mandate', desc: 'Open a mandate and track its pipeline.' },
+        { icon: 'search', nav: 'matching', title: 'Find jobs', desc: 'Match candidates to fitting jobs and apply.' },
       ]
     : [
-        { icon: 'users', nav: 'pool', title: 'Mandant hinzufügen', desc: 'Eine Person anlegen oder CVs importieren.' },
-        { icon: 'briefcase', nav: 'stellen', title: 'Stellen sammeln', desc: 'Stellen aus der Suche übernehmen oder einfügen.' },
-        { icon: 'columns', nav: 'bewerbungen', title: 'Bewerbungen', desc: 'Bewerbungen pro Mandant und Stelle im Blick behalten.' },
+        { icon: 'users', nav: 'pool', title: 'Add candidate', desc: 'Add a person or import CVs.' },
+        { icon: 'briefcase', nav: 'stellen', title: 'Collect jobs', desc: 'Adopt jobs from search or paste them.' },
+        { icon: 'columns', nav: 'bewerbungen', title: 'Applications', desc: 'Keep track of applications per candidate and job.' },
       ];
   return (
     <WS.Card>
-      <div style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 700, color: 'var(--text-heading)' }}>Leg mit deinem Desk los</div>
-      <div style={{ fontSize: '13px', color: 'var(--text-soft)', marginTop: '3px', marginBottom: '16px' }}>Drei schnelle Einstiege — wähl einen.</div>
+      <div style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 700, color: 'var(--text-heading)' }}>Get started with your desk</div>
+      <div style={{ fontSize: '13px', color: 'var(--text-soft)', marginTop: '3px', marginBottom: '16px' }}>Three quick entry points — pick one.</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
         {steps.map((s) => (
           <button
@@ -51,8 +51,8 @@ function Dashboard({ me, apps, vkpis, clients, mandates, talentCount, vermittlun
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
       {/* greeting — quiet, no dark bar; profile lives bottom-left in the rail */}
       <div>
-        <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-heading)' }}>Hallo, {me.name.split(' ')[0]}.</div>
-        <div style={{ fontSize: '13px', color: 'var(--text-soft)', marginTop: '3px' }}>{vermittlung ? `${mandates.filter((m) => m.status === 'active').length} aktive Suchaufträge · ${nextSteps.length} ${nextSteps.length === 1 ? 'Bewerbung' : 'Bewerbungen'} in Interview oder Angebot.` : 'Willkommen bei myJob — dein Bewerbungsservice.'}</div>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-heading)' }}>Hello, {me.name.split(' ')[0]}.</div>
+        <div style={{ fontSize: '13px', color: 'var(--text-soft)', marginTop: '3px' }}>{vermittlung ? `${mandates.filter((m) => m.status === 'active').length} active mandate${mandates.filter((m) => m.status === 'active').length === 1 ? '' : 's'} · ${nextSteps.length} ${nextSteps.length === 1 ? 'application' : 'applications'} in interview or offer.` : 'Welcome to myJob — your application service.'}</div>
       </div>
 
       {firstRun && onNav && <OnboardingCard onNav={onNav} vermittlung={vermittlung} />}
@@ -74,25 +74,25 @@ function Dashboard({ me, apps, vkpis, clients, mandates, talentCount, vermittlun
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px', alignItems: 'start' }}>
         {/* active mandates */}
-        <WS.Card title="Aktive Suchaufträge" subtitle="Suchaufträge mit Frist"
-          action={<WS.Button size="sm" variant="ghost" iconRight={<WS.Icon name="arrowRight" size={14} />} onClick={onOpenMandate}>Alle</WS.Button>} pad={false}>
+        <WS.Card title="Active mandates" subtitle="Mandates with a deadline"
+          action={<WS.Button size="sm" variant="ghost" iconRight={<WS.Icon name="arrowRight" size={14} />} onClick={onOpenMandate}>All</WS.Button>} pad={false}>
           {topMandates.map((m) => (
             <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '13px', padding: '13px 18px', borderBottom: '1px solid var(--border)' }}>
               <span style={{ width: '38px', height: '38px', borderRadius: 'var(--radius-md)', background: 'var(--accent-soft)', color: 'var(--accent-strong)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><WS.Icon name="briefcase" size={17} /></span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-heading)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.role}</div>
-                <div style={{ fontSize: '11.5px', color: 'var(--text-soft)', marginTop: '1px' }}>{clientName(m)} · {m.submitted} vorgeschlagen</div>
+                <div style={{ fontSize: '11.5px', color: 'var(--text-soft)', marginTop: '1px' }}>{clientName(m)} · {m.submitted} proposed</div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 600, color: 'var(--accent-strong)' }}>{m.fee}</div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-soft)' }}>bis {m.deadline}</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--text-soft)' }}>by {m.deadline}</div>
               </div>
             </div>
           ))}
         </WS.Card>
 
         {/* applications to progress across the desk */}
-        <WS.Card title="Bewerbungen im Fortschritt" subtitle="Interview & Angebot"
+        <WS.Card title="Applications in progress" subtitle="Interview & offer"
           action={<WS.Button size="sm" variant="ghost" iconRight={<WS.Icon name="arrowRight" size={14} />} onClick={onOpenPipeline}>Pipeline</WS.Button>} pad={false}>
           {nextSteps.map((a) => (
             <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '13px', padding: '13px 18px', borderBottom: '1px solid var(--border)' }}>
@@ -104,7 +104,7 @@ function Dashboard({ me, apps, vkpis, clients, mandates, talentCount, vermittlun
               <WS.StatusBadge status={a.status} size="sm" />
             </div>
           ))}
-          {nextSteps.length === 0 && <div style={{ padding: '30px', textAlign: 'center', fontSize: '13px', color: 'var(--text-soft)' }}>Noch keine Bewerbungen in Interview oder Angebot.</div>}
+          {nextSteps.length === 0 && <div style={{ padding: '30px', textAlign: 'center', fontSize: '13px', color: 'var(--text-soft)' }}>No applications in interview or offer yet.</div>}
         </WS.Card>
       </div>
       </>
@@ -124,15 +124,15 @@ function TalentGrid({ talents, apps, onOpen, onAdd, onImport, importing }) {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>{talents.length} {talents.length === 1 ? 'Mandant' : 'Mandanten'}</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>{talents.length} {talents.length === 1 ? 'candidate' : 'candidates'}</span>
         <span style={{ flex: 1 }} />
         {onImport && (
           <>
             <input ref={fileRef} type="file" accept=".pdf,application/pdf" multiple style={{ display: 'none' }} onChange={pickFiles} />
-            <WS.Button size="sm" variant="outline" iconLeft={<WS.Icon name="upload" size={14} />} onClick={() => fileRef.current && fileRef.current.click()} disabled={importing}>{importing ? 'Importiere…' : 'CVs importieren'}</WS.Button>
+            <WS.Button size="sm" variant="outline" iconLeft={<WS.Icon name="upload" size={14} />} onClick={() => fileRef.current && fileRef.current.click()} disabled={importing}>{importing ? 'Importing…' : 'Import CVs'}</WS.Button>
           </>
         )}
-        <WS.Button size="sm" variant="outline" iconLeft={<WS.Icon name="plus" size={14} />} onClick={onAdd}>Mandant hinzufügen</WS.Button>
+        <WS.Button size="sm" variant="outline" iconLeft={<WS.Icon name="plus" size={14} />} onClick={onAdd}>Add candidate</WS.Button>
       </div>
       {window.useAiStatus && window.useAiStatus().status === 'not-configured' && window.TextImportNotice && (
         <window.TextImportNotice />
@@ -157,7 +157,7 @@ function TalentGrid({ talents, apps, onOpen, onAdd, onImport, importing }) {
                 {t.skills.length > 3 && <WS.Badge variant="subtle" size="sm">+{t.skills.length - 3}</WS.Badge>}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '12px', borderTop: '1px solid var(--border)' }}>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}><WS.Icon name="send" size={12} />{n} {n === 1 ? 'Bewerbung' : 'Bewerbungen'}</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}><WS.Icon name="send" size={12} />{n} {n === 1 ? 'application' : 'applications'}</span>
                 {t.score != null ? <WS.MatchIndicator value={t.score} variant="chip" size="sm" /> : <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: 'var(--text-muted)' }}>—</span>}
               </div>
             </WS.Card>
@@ -200,11 +200,11 @@ function Inbox({ messages, apps, talents, onOpenTalent }) {
    the settings surface stay reachable on a phone when the switch is on. */
 function MoreView({ onNavigate }) {
   const entries = [
-    { id: 'mandate', label: 'Suchaufträge', desc: 'Suchaufträge und ihre Pipelines' },
-    { id: 'berichte', label: 'Performance', desc: 'Honorare, Funnel und Auslastung' },
-    { id: 'postfach', label: 'Postfach', desc: 'Nachrichten von Klienten und Unternehmen' },
-    { id: 'assistant', label: 'CoRecruiter', desc: 'Der KI-Assistent für den Desk' },
-    { id: 'einstellungen', label: 'Einstellungen', desc: 'Darstellung, KI-Anbindung und Workspace' },
+    { id: 'mandate', label: 'Mandates', desc: 'Mandates and their pipelines' },
+    { id: 'berichte', label: 'Performance', desc: 'Fees, funnel and utilization' },
+    { id: 'postfach', label: 'Inbox', desc: 'Messages from clients and companies' },
+    { id: 'assistant', label: 'CoRecruiter', desc: 'The AI assistant for the desk' },
+    { id: 'einstellungen', label: 'Settings', desc: 'Appearance, AI connection and workspace' },
   ];
   return (
     <WS.Card pad={false}>

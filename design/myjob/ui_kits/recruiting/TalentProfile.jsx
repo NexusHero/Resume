@@ -3,20 +3,20 @@
 const TP = window.MyJobDesignSystem_5611b7;
 
 const APP_STATUS_META = {
-  draft: { label: 'Entwurf', color: 'var(--text-soft)' },
-  sent: { label: 'Versendet', color: 'var(--accent-strong)' },
-  interview: { label: 'Gespräch', color: 'var(--warning-strong, #8a6d00)' },
-  offer: { label: 'Zusage', color: 'var(--positive, #1F8A5B)' },
-  rejected: { label: 'Absage', color: 'var(--danger)' },
+  draft: { label: 'Draft', color: 'var(--text-soft)' },
+  sent: { label: 'Sent', color: 'var(--accent-strong)' },
+  interview: { label: 'Interview', color: 'var(--warning-strong, #8a6d00)' },
+  offer: { label: 'Offer', color: 'var(--positive, #1F8A5B)' },
+  rejected: { label: 'Rejected', color: 'var(--danger)' },
 };
 
 const TALENT_STATUS_FILTERS = [
-  { value: undefined, label: 'Alle' },
-  { value: 'draft', label: 'Entwurf' },
-  { value: 'sent', label: 'Versendet' },
-  { value: 'interview', label: 'Gespräch' },
-  { value: 'offer', label: 'Zusage' },
-  { value: 'rejected', label: 'Absage' },
+  { value: undefined, label: 'All' },
+  { value: 'draft', label: 'Draft' },
+  { value: 'sent', label: 'Sent' },
+  { value: 'interview', label: 'Interview' },
+  { value: 'offer', label: 'Offer' },
+  { value: 'rejected', label: 'Rejected' },
 ];
 
 /* A titled block in the dark CV sidebar. */
@@ -53,7 +53,7 @@ function CvMainHeading({ icon, title, onEdit }) {
       <span style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
       {onEdit && (
         <span style={{ opacity: hover ? 1 : 0, transition: 'opacity var(--dur-fast)' }}>
-          <TP.IconButton icon="edit" label="Bearbeiten" variant="ghost" size="sm" onClick={onEdit} />
+          <TP.IconButton icon="edit" label="Edit" variant="ghost" size="sm" onClick={onEdit} />
         </span>
       )}
     </div>
@@ -68,9 +68,9 @@ function ResumeTab({ talent, onEdit }) {
     return (
       <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-soft)' }}>
         <TP.Icon name="fileText" size={28} style={{ color: 'var(--border-strong)', margin: '0 auto 12px' }} />
-        <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-muted)' }}>Noch kein Lebenslauf hinterlegt</div>
-        <div style={{ fontSize: '13px', marginTop: '4px', marginBottom: '16px' }}>Lebenslauf für {talent.name.split(' ')[0]} anlegen.</div>
-        <TP.Button variant="primary" size="sm" iconLeft={<TP.Icon name="plus" size={15} />} onClick={onEdit}>Lebenslauf anlegen</TP.Button>
+        <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-muted)' }}>No CV recorded yet</div>
+        <div style={{ fontSize: '13px', marginTop: '4px', marginBottom: '16px' }}>Create a CV for {talent.name.split(' ')[0]}.</div>
+        <TP.Button variant="primary" size="sm" iconLeft={<TP.Icon name="plus" size={15} />} onClick={onEdit}>Create CV</TP.Button>
       </div>
     );
   }
@@ -91,7 +91,7 @@ function ResumeTab({ talent, onEdit }) {
               </div>
             </div>
 
-            <CvSideSection title="Kontakt">
+            <CvSideSection title="Contact">
               <CvContact icon="pin" value={talent.location} />
               <CvContact icon="mail" value={talent.email} />
               <CvContact icon={null} value={talent.phone} />
@@ -114,7 +114,7 @@ function ResumeTab({ talent, onEdit }) {
               </div>
             </CvSideSection>
 
-            <CvSideSection title="Ausbildung">
+            <CvSideSection title="Education">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '13px' }}>
                 {r.education.map((e, i) => (
                   <div key={i}>
@@ -130,12 +130,12 @@ function ResumeTab({ talent, onEdit }) {
           {/* paper main — summary & experience */}
           <div style={{ background: 'var(--surface-card)', padding: '32px 34px' }}>
             <section style={{ marginBottom: '26px' }}>
-              <CvMainHeading icon="user" title="Profil" onEdit={onEdit} />
+              <CvMainHeading icon="user" title="Profile" onEdit={onEdit} />
               <p style={{ fontSize: '14.5px', lineHeight: 1.65, color: 'var(--text-body)', margin: 0 }}>{r.summary}</p>
             </section>
 
             <section>
-              <CvMainHeading icon="briefcase" title="Berufserfahrung" onEdit={onEdit} />
+              <CvMainHeading icon="briefcase" title="Professional experience" onEdit={onEdit} />
               <div style={{ position: 'relative', paddingLeft: '22px' }}>
                 <span style={{ position: 'absolute', left: '5px', top: '6px', bottom: '6px', width: '1.5px', background: 'var(--border-strong)' }} />
                 {r.experience.map((e, i) => (
@@ -163,15 +163,15 @@ function ResumeTab({ talent, onEdit }) {
       {/* side rail: actions + linked attachments */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', position: 'sticky', top: 0 }}>
         <TP.Card>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '10px' }}>Lebenslauf</div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-soft)', marginBottom: '10px' }}>CV</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <TP.Button variant="outline" block iconLeft={<TP.Icon name="edit" size={15} />} onClick={onEdit}>Lebenslauf bearbeiten</TP.Button>
-            <TP.Button variant="ghost" block iconLeft={<TP.Icon name="download" size={15} />}>Als PDF exportieren</TP.Button>
+            <TP.Button variant="outline" block iconLeft={<TP.Icon name="edit" size={15} />} onClick={onEdit}>Edit CV</TP.Button>
+            <TP.Button variant="ghost" block iconLeft={<TP.Icon name="download" size={15} />}>Export as PDF</TP.Button>
           </div>
         </TP.Card>
         <TP.Card>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Verknüpfte Anhänge</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-soft)' }}>Linked attachments</span>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)' }}>{talent.attachments.length}</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
@@ -209,22 +209,22 @@ function AttachmentsTab({ talent, onUploaded, links = {}, onOpenApplication }) {
         dataBase64,
       })
         .then(() => onUploaded && onUploaded())
-        .catch((e) => setError((e && e.message) || 'Upload fehlgeschlagen.'))
+        .catch((e) => setError((e && e.message) || 'Upload failed.'))
         .finally(() => setUploading(false));
     };
-    reader.onerror = () => { setUploading(false); setError('Datei konnte nicht gelesen werden.'); };
+    reader.onerror = () => { setUploading(false); setError('The file could not be read.'); };
     reader.readAsDataURL(file);
   };
   return (
     <TP.Card pad={false}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--border)' }}>
         <div>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: '15px', fontWeight: 700, color: 'var(--text-heading)' }}>Dokumente & Anhänge</div>
-          <div style={{ fontSize: '12px', color: 'var(--text-soft)', marginTop: '1px' }}>Einmal hochladen, mit jeder Bewerbung verknüpfen</div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: '15px', fontWeight: 700, color: 'var(--text-heading)' }}>Documents & attachments</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-soft)', marginTop: '1px' }}>Upload once, link to any application</div>
         </div>
         <label style={{ cursor: 'pointer' }}>
           <TP.Button variant="ink" size="sm" iconLeft={<TP.Icon name="upload" size={14} />} disabled={uploading} style={{ pointerEvents: 'none' }}>
-            {uploading ? 'Wird hochgeladen…' : 'Hochladen'}
+            {uploading ? 'Uploading…' : 'Upload'}
           </TP.Button>
           <input type="file" style={{ display: 'none' }} onChange={(e) => upload(e.target.files[0])} />
         </label>
@@ -233,7 +233,7 @@ function AttachmentsTab({ talent, onUploaded, links = {}, onOpenApplication }) {
         <div style={{ padding: '10px 18px', fontSize: '12.5px', color: 'var(--danger)', borderBottom: '1px solid var(--border)' }}>{error}</div>
       )}
       {talent.attachments.length === 0 && (
-        <div style={{ padding: '40px', textAlign: 'center', fontSize: '13px', color: 'var(--text-soft)' }}>Noch keine Anhänge.</div>
+        <div style={{ padding: '40px', textAlign: 'center', fontSize: '13px', color: 'var(--text-soft)' }}>No attachments yet.</div>
       )}
       {talent.attachments.map((a) => {
         const linked = links[a.id] || [];
@@ -250,11 +250,11 @@ function AttachmentsTab({ talent, onUploaded, links = {}, onOpenApplication }) {
                   onClick={() => onOpenApplication && onOpenApplication(app)}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', marginTop: '6px', appearance: 'none', cursor: onOpenApplication ? 'pointer' : 'default', border: '1px solid var(--border)', background: 'var(--surface-sunk)', color: 'var(--accent-strong)', borderRadius: 'var(--radius-pill)', fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 600, padding: '3px 9px' }}
                 >
-                  verknüpft mit {app.postingCompany}{app.postingTitle ? ` · ${app.postingTitle}` : ''}
+                  linked to {app.postingCompany}{app.postingTitle ? ` · ${app.postingTitle}` : ''}
                 </button>
               ))}
             </div>
-            <TP.IconButton icon="more" label="Mehr" variant="ghost" size="sm" />
+            <TP.IconButton icon="more" label="More" variant="ghost" size="sm" />
           </div>
         );
       })}
@@ -286,7 +286,7 @@ function TalentApplications({ talentId, onOpenApplication }) {
   if (error) return <window.ErrorState onRetry={load} />;
 
   return (
-    <TP.Card pad={false} title="Bewerbungen" subtitle="Alle Bewerbungen dieses Mandanten">
+    <TP.Card pad={false} title="Applications" subtitle="All applications of this candidate">
       <div style={{ display: 'flex', gap: '4px', padding: '10px 14px', flexWrap: 'wrap', borderBottom: '1px solid var(--border)' }}>
         {TALENT_STATUS_FILTERS.map((f) => (
           <button
@@ -311,7 +311,7 @@ function TalentApplications({ talentId, onOpenApplication }) {
         ))}
       </div>
       {apps.length === 0 && (
-        <div style={{ padding: '40px', textAlign: 'center', fontSize: '13px', color: 'var(--text-soft)' }}>Noch keine Bewerbungen.</div>
+        <div style={{ padding: '40px', textAlign: 'center', fontSize: '13px', color: 'var(--text-soft)' }}>No applications yet.</div>
       )}
       {apps.map((a) => {
         const meta = APP_STATUS_META[a.status] || APP_STATUS_META.draft;
@@ -395,14 +395,14 @@ function TalentProfile({ talent, onBack, onEdit, onOpenApplication }) {
   }
 
   const tabs = [
-    { id: 'lebenslauf', label: 'Lebenslauf' },
-    { id: 'anhaenge', label: 'Anhänge', count: view.attachments.length },
-    { id: 'bewerbungen', label: 'Bewerbungen' },
+    { id: 'lebenslauf', label: 'CV' },
+    { id: 'anhaenge', label: 'Attachments', count: view.attachments.length },
+    { id: 'bewerbungen', label: 'Applications' },
   ];
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
       <button onClick={onBack} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', alignSelf: 'flex-start', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)', padding: 0 }}>
-        <TP.Icon name="arrowLeft" size={14} /> Zurück
+        <TP.Icon name="arrowLeft" size={14} /> Back
       </button>
 
       {/* identity header */}
@@ -411,7 +411,7 @@ function TalentProfile({ talent, onBack, onEdit, onOpenApplication }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '26px', fontWeight: 700, letterSpacing: '-0.025em', margin: 0 }}>{talent.name}</h2>
-            {talent.me && <TP.Badge variant="light" size="sm">Ich</TP.Badge>}
+            {talent.me && <TP.Badge variant="light" size="sm">Me</TP.Badge>}
           </div>
           <div style={{ fontSize: '14px', color: 'var(--sidebar-muted)', marginTop: '3px' }}>{[talent.role, talent.headline].filter(Boolean).join(' · ')}</div>
           <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
@@ -422,7 +422,7 @@ function TalentProfile({ talent, onBack, onEdit, onOpenApplication }) {
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: '30px', fontWeight: 700, color: 'var(--accent-on-dark)', lineHeight: 1 }}>{talent.score != null ? `${talent.score}%` : '—'}</div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--sidebar-soft)', marginTop: '4px' }}>Profilstärke</div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--sidebar-soft)', marginTop: '4px' }}>Profile strength</div>
         </div>
       </div>
 

@@ -243,8 +243,8 @@ describe('FsEmailVerificationTokenStore', () => {
 describe('FsWorkspaceSettingsStore', () => {
   it('SetGet_RoundTrip', async () => {
     const store = new FsWorkspaceSettingsStore({ config: tmpConfig() });
-    await store.set('owner1', { vermittlung: true });
-    expect(await store.get('owner1')).toEqual({ vermittlung: true });
+    await store.set('owner1', { vermittlung: true, aiConsent: false });
+    expect(await store.get('owner1')).toEqual({ vermittlung: true, aiConsent: false });
   });
 
   it('GetMissingOwner_ReturnsNull', async () => {

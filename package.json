@@ -13,6 +13,7 @@
     "build": "tsc -p tsconfig.json",
     "pdf": "node tools/generate-pdf.cjs",
     "sent": "node tools/log-application.cjs",
+    "seed:demo": "node --import @swc-node/register/esm-register tools/seed-demo.ts",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

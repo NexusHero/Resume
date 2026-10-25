@@ -593,6 +593,7 @@ paths:
                 properties:
                   suggestion: { $ref: '#/components/schemas/AiSuggestion' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/AiConsentRequired' }
         '404': { $ref: '#/components/responses/NotFound' }
         '502': { $ref: '#/components/responses/UpstreamProblem' }
 
@@ -690,6 +691,7 @@ paths:
                 properties:
                   ats: { $ref: '#/components/schemas/AtsScore' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/AiConsentRequired' }
         '404': { $ref: '#/components/responses/NotFound' }
         '502': { $ref: '#/components/responses/UpstreamProblem' }
 
@@ -807,6 +809,7 @@ paths:
                   usage: { $ref: '#/components/schemas/CallUsage' }
         '400': { $ref: '#/components/responses/ValidationProblem' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/AiConsentRequired' }
         '404': { $ref: '#/components/responses/NotFound' }
         '502': { $ref: '#/components/responses/UpstreamProblem' }
 
@@ -1048,6 +1051,7 @@ paths:
                   provider: { $ref: '#/components/schemas/ProviderId' }
                   usage: { $ref: '#/components/schemas/CallUsage' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/AiConsentRequired' }
         '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
         '502': { $ref: '#/components/responses/UpstreamProblem' }
 
@@ -1082,6 +1086,7 @@ paths:
                   provider: { $ref: '#/components/schemas/ProviderId' }
                   usage: { $ref: '#/components/schemas/CallUsage' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/AiConsentRequired' }
         '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
         '502': { $ref: '#/components/responses/UpstreamProblem' }
 
@@ -1110,6 +1115,7 @@ paths:
                 properties:
                   prep: { $ref: '#/components/schemas/CandidatePrep' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/AiConsentRequired' }
         '404': { $ref: '#/components/responses/NotFoundOrNotEnabled' }
         '502': { $ref: '#/components/responses/UpstreamProblem' }
 
@@ -1654,6 +1660,7 @@ paths:
           oneOf:
             - $ref: '#/components/responses/PostingFetch'
             - $ref: '#/components/responses/UpstreamProvider'
+        '403': { $ref: '#/components/responses/AiConsentRequired' }
         '503': { $ref: '#/components/responses/AiNotConfigured' }
 
   /job-postings/{id}:
@@ -1934,6 +1941,7 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
         '502': { $ref: '#/components/responses/UpstreamProvider' }
+        '403': { $ref: '#/components/responses/AiConsentRequired' }
         '503': { $ref: '#/components/responses/AiNotConfigured' }
 
   /job-applications/{id}/pen/headline:
@@ -1956,6 +1964,7 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
         '502': { $ref: '#/components/responses/UpstreamProvider' }
+        '403': { $ref: '#/components/responses/AiConsentRequired' }
         '503': { $ref: '#/components/responses/AiNotConfigured' }
 
   /job-applications/{id}/pen/summary:
@@ -1978,6 +1987,7 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
         '502': { $ref: '#/components/responses/UpstreamProvider' }
+        '403': { $ref: '#/components/responses/AiConsentRequired' }
         '503': { $ref: '#/components/responses/AiNotConfigured' }
 
   /job-applications/{id}/pen/experience:
@@ -2006,6 +2016,7 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
         '502': { $ref: '#/components/responses/UpstreamProvider' }
+        '403': { $ref: '#/components/responses/AiConsentRequired' }
         '503': { $ref: '#/components/responses/AiNotConfigured' }
 
   /job-applications/{id}/pen/skills:
@@ -2028,6 +2039,7 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
         '502': { $ref: '#/components/responses/UpstreamProvider' }
+        '403': { $ref: '#/components/responses/AiConsentRequired' }
         '503': { $ref: '#/components/responses/AiNotConfigured' }
 
   /job-applications/{id}/pen/all:
@@ -2052,6 +2064,7 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
         '502': { $ref: '#/components/responses/UpstreamProvider' }
+        '403': { $ref: '#/components/responses/AiConsentRequired' }
         '503': { $ref: '#/components/responses/AiNotConfigured' }
 
   /job-applications/{id}/status:
@@ -3041,6 +3054,7 @@ paths:
                   provider: { $ref: '#/components/schemas/ProviderId' }
         '400': { $ref: '#/components/responses/ValidationProblem' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/AiConsentRequired' }
         '503': { $ref: '#/components/responses/AiNotConfigured' }
         '502': { $ref: '#/components/responses/UpstreamProblem' }
 
@@ -3076,6 +3090,7 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
         '429': { $ref: '#/components/responses/RateLimited' }
+        '403': { $ref: '#/components/responses/AiConsentRequired' }
         '503': { $ref: '#/components/responses/AiNotConfigured' }
     get:
       tags: [Agent]
@@ -3249,6 +3264,20 @@ components:
             title: AI not configured
             status: 503
             detail: No AI provider is configured on this server. Set ANTHROPIC_API_KEY or GEMINI_API_KEY.
+
+    AiConsentRequired:
+      description: >-
+        The workspace operator has not yet granted the AI consent (ADR-0063), so
+        CV/ad text may not be sent to the provider. A workspace admin consents in
+        the settings; the generative routes answer 403 until then.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+          example:
+            type: about:blank#ai-consent-required
+            title: AiConsentRequired
+            status: 403
+            detail: AI-Verarbeitung wurde für diesen Workspace noch nicht freigegeben.
 
     NoTextLayer:
       description: The uploaded PDF has no readable text layer (e.g. a scan or protected file).
@@ -4064,8 +4093,8 @@ components:
 
     WorkspaceSettings:
       type: object
-      description: Per-workspace feature flags (ADR-0057).
-      required: [vermittlung]
+      description: Per-workspace feature flags (ADR-0057, ADR-0063).
+      required: [vermittlung, aiConsent]
       properties:
         vermittlung:
           type: boolean
@@ -4073,6 +4102,13 @@ components:
             When true, the intermediary features (Suchaufträge, Pipeline,
             Platzierungen, Performance, Postfach, CoRecruiter) are reachable;
             when false (the default) their routes answer 404.
+        aiConsent:
+          type: boolean
+          description: >-
+            When true, the workspace operator has consented (ADR-0063) to CV and
+            ad text being sent to the configured AI provider. Default false; only
+            a workspace admin may change it. Without it the generative routes
+            answer 403 ai-consent-required.
 
     UsageBucket:
       type: object

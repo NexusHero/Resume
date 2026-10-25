@@ -11,6 +11,7 @@ left to right direction
 package "HTTP" {
   [create-app + routes] as App
   [controllers\n(auth, talent, mandate, candidacy,\nplacement, document, match, match-ai,\nllm, usage, members, account, ...)] as Ctrl
+  [Nest guards\n(AuthGuard, VermittlungGuard,\nAiConfiguredGuard,\nAiConsentGuard (ADR-0063),\nAiRateLimitGuard, PlanGuard)] as Guards
   [problem mapper\n(RFC 9457)] as Problem
   [security\n(CORS, headers, CSP)] as Security
   [api-docs\n(OpenAPI + Swagger UI)] as Docs
@@ -59,6 +60,7 @@ App --> Ctrl
 App ..> Security
 App ..> Docs
 Ctrl ..> Problem
+Ctrl --> Guards
 Ctrl --> AiSvc
 Ctrl --> RecSvc
 Ctrl --> AuthSvc

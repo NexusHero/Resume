@@ -142,6 +142,22 @@ async function requireAi() {
   throw new Error(AI_NOT_CONFIGURED);
 }
 
+/* AI consent (ADR-0063). The workspace operator must consent before CV/ad text
+   leaves the workspace. The UI dialog gates before the first request; this is
+   the defense-in-depth client check (the server 403 is the real gate). */
+const AI_CONSENT_REQUIRED = 'KI-Verarbeitung wurde für diesen Workspace noch nicht freigegeben.';
+function aiConsentGranted() {
+  const ws = window.WorkspaceSettings ? window.WorkspaceSettings.get() : { aiConsent: false };
+  // Unknown/error state: do not hard-block — the server decides 403/200.
+  return ws.status === 'loaded' ? !!ws.aiConsent : true;
+}
+async function requireAiConsent() {
+  if (aiConsentGranted()) return;
+  const err = new Error(AI_CONSENT_REQUIRED);
+  err.code = 'ai-consent-required';
+  throw err;
+}
+
 /* Backend Application → the shape PipelineBoard renders. `talentId`/`talentName`
    are present when the application was filed on a candidate's behalf (Matching);
    `role` is the applied-for position. */
@@ -643,6 +659,9 @@ const RecruitApi = {
   },
   // Extract fields from pasted text or a URL (SSRF-guarded). Returns a draft.
   async extractJobPosting(input) {
+    // K12 is a generative route (ADR-0063): the UI gate shows the consent dialog
+    // first; this is the defense-in-depth backstop (server 403 is the real gate).
+    await requireAiConsent();
     return _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/job-postings/extract`, {
         method: 'POST',
@@ -751,6 +770,7 @@ const RecruitApi = {
   },
   async generateJobApplicationLetter(id) {
     await requireAi();
+    await requireAiConsent();
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/job-applications/${encodeURIComponent(id)}/letter`, {
         method: 'POST',
@@ -760,6 +780,7 @@ const RecruitApi = {
   },
   async penHeadline(id, signal) {
     await requireAi();
+    await requireAiConsent();
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/job-applications/${encodeURIComponent(id)}/pen/headline`, {
         method: 'POST',
@@ -770,6 +791,7 @@ const RecruitApi = {
   },
   async penSummary(id, signal) {
     await requireAi();
+    await requireAiConsent();
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/job-applications/${encodeURIComponent(id)}/pen/summary`, {
         method: 'POST',
@@ -780,6 +802,7 @@ const RecruitApi = {
   },
   async penExperience(id, experienceIndex, signal) {
     await requireAi();
+    await requireAiConsent();
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/job-applications/${encodeURIComponent(id)}/pen/experience`, {
         method: 'POST',
@@ -792,6 +815,7 @@ const RecruitApi = {
   },
   async penSkills(id, signal) {
     await requireAi();
+    await requireAiConsent();
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/job-applications/${encodeURIComponent(id)}/pen/skills`, {
         method: 'POST',
@@ -804,6 +828,7 @@ const RecruitApi = {
   // UI fächert clientseitig auf und ruft diese Methode nicht auf.
   async penAll(id, signal) {
     await requireAi();
+    await requireAiConsent();
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/job-applications/${encodeURIComponent(id)}/pen/all`, {
         method: 'POST',
@@ -835,6 +860,7 @@ const RecruitApi = {
   // limit/drafts/done/error/aborted. The `signal` aborts the underlying fetch.
   async agentChat({ sessionId, message }, onEvent, signal) {
     await requireAi();
+    await requireAiConsent();
     const res = await fetch(`${RECRUIT_API_BASE}/agent/chat`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -936,6 +962,7 @@ const RecruitApi = {
   },
   async explainMatch(mandateId, talentId) {
     await requireAi();
+    await requireAiConsent();
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/mandates/${mandateId}/candidates/${talentId}/explain`, {
         method: 'POST',
@@ -947,6 +974,7 @@ const RecruitApi = {
   },
   async interviewKit(mandateId, talentId) {
     await requireAi();
+    await requireAiConsent();
     const data = await _jsonOrThrow(
       await fetch(
         `${RECRUIT_API_BASE}/mandates/${mandateId}/candidates/${talentId}/interview-kit`,
@@ -961,6 +989,7 @@ const RecruitApi = {
   },
   async candidatePrep(mandateId, talentId) {
     await requireAi();
+    await requireAiConsent();
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/mandates/${mandateId}/candidates/${talentId}/prep`, {
         method: 'POST',
@@ -1206,6 +1235,7 @@ const RecruitApi = {
   },
   async suggestDocument(talentId, action, target = {}) {
     await requireAi();
+    await requireAiConsent();
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/documents/ai`, {
         method: 'POST',
@@ -1240,6 +1270,7 @@ const RecruitApi = {
   },
   async atsScore(talentId, jobText) {
     await requireAi();
+    await requireAiConsent();
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/documents/ats`, {
         method: 'POST',
@@ -1251,6 +1282,7 @@ const RecruitApi = {
   },
   async pitchCandidate(talentId, mandateContext = '') {
     await requireAi();
+    await requireAiConsent();
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/documents/pitch`, {
         method: 'POST',
@@ -1262,6 +1294,7 @@ const RecruitApi = {
   },
   async outreachMessage(talentId, opts = {}) {
     await requireAi();
+    await requireAiConsent();
     const data = await _jsonOrThrow(
       await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/documents/outreach`, {
         method: 'POST',
@@ -1273,6 +1306,7 @@ const RecruitApi = {
   },
   async translateDocuments(talentId, targetLang) {
     await requireAi();
+    await requireAiConsent();
     const res = await fetch(`${RECRUIT_API_BASE}/talents/${talentId}/documents/translate`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },

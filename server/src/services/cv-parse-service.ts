@@ -10,7 +10,12 @@ import {
   type ResumeContent,
   saveDocumentsSchema,
 } from '../domain/talent-documents.js';
-import { InternalError, NoTextLayerError, UpstreamProviderError } from '../domain/errors.js';
+import {
+  InternalError,
+  NoTextLayerError,
+  UpstreamProviderError,
+  AiConsentRequiredError,
+} from '../domain/errors.js';
 import type { LlmProviderId } from '../ports/llm-provider.js';
 import type { PdfTextExtractor } from '../ports/pdf-text-extractor.js';
 import { ZodError } from 'zod';
@@ -19,6 +24,7 @@ import { type CallUsage } from '../domain/usage.js';
 import { MAX_TOKENS, errMessage, type LlmFeatureRunner } from './llm-feature-runner.js';
 import type { LlmService } from './llm-service.js';
 import type { DocumentService } from './document-service.js';
+import type { WorkspaceSettingsService } from './workspace-settings-service.js';
 
 /** Minimum non-whitespace characters for a PDF to count as having a text layer. */
 export const MIN_TEXT_LAYER_CHARS = 20;
@@ -48,6 +54,8 @@ export interface CvParseServiceDeps {
   documentService: DocumentService;
   pdfTextExtractor: PdfTextExtractor;
   logger: Logger;
+  /** Consent check (ADR-0063): only the AI mode (key set) may be gated. */
+  workspaceSettings: Pick<WorkspaceSettingsService, 'isAiConsentGranted'>;
 }
 
 /** Parse a CV (pasted text or an uploaded PDF) into the structured document model. */
@@ -57,6 +65,7 @@ export class CvParseService {
   private readonly documents: DocumentService;
   private readonly pdfText: PdfTextExtractor;
   private readonly logger: Logger;
+  private readonly settings: CvParseServiceDeps['workspaceSettings'];
 
   constructor(deps: CvParseServiceDeps) {
     this.runner = deps.llmFeatureRunner;
@@ -64,6 +73,7 @@ export class CvParseService {
     this.documents = deps.documentService;
     this.pdfText = deps.pdfTextExtractor;
     this.logger = deps.logger;
+    this.settings = deps.workspaceSettings;
   }
 
   /**
@@ -88,6 +98,13 @@ export class CvParseService {
         mode: 'text',
         ...(taken.truncated ? { truncated: true } : {}),
       };
+    }
+
+    // Conditional consent (ADR-0063 §Decision 4): only the AI mode transmits the
+    // CV to a provider, so only then is consent required. Without a key the
+    // named text take-over above already returned — no transmission, no consent.
+    if (!(await this.settings.isAiConsentGranted(scope))) {
+      throw new AiConsentRequiredError();
     }
 
     const res = await this.runner.run(

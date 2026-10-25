@@ -32,6 +32,8 @@ export function buildDocumentAiService(deps: {
   idGenerator: IdGenerator;
   clock: Clock;
   logger: Logger;
+  /** Consent gate (ADR-0063); defaults to granted so AI-mode tests stay green. */
+  workspaceSettings?: { isAiConsentGranted(scope: string): Promise<boolean> };
 }): DocumentAiService {
   const runner = new LlmFeatureRunner({
     llmService: deps.llmService,
@@ -52,6 +54,7 @@ export function buildDocumentAiService(deps: {
       documentService: deps.documentService,
       pdfTextExtractor: deps.pdfTextExtractor,
       logger: deps.logger,
+      workspaceSettings: deps.workspaceSettings ?? { isAiConsentGranted: async () => true },
     }),
     atsAiService: new AtsAiService({
       llmFeatureRunner: runner,

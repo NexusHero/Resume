@@ -20,6 +20,7 @@ import type { Logger } from '../../ports/logger.js';
 import type { CandidateIdentity } from '../../domain/cover-letter.js';
 import { DocumentsModule } from '../documents/documents.module.js';
 import { DocumentsAiController } from './documents-ai.controller.js';
+import type { WorkspaceSettingsService } from '../../services/workspace-settings-service.js';
 import {
   LLM_FEATURE_RUNNER,
   DOCUMENT_ASSIST_SERVICE,
@@ -40,6 +41,7 @@ import {
   CLOCK,
   ID_GENERATOR,
   LOGGER,
+  WORKSPACE_SETTINGS_SERVICE,
 } from '../tokens.js';
 
 /**
@@ -89,6 +91,7 @@ import {
         documentService: DocumentService,
         pdfTextExtractor: PdfTextExtractor,
         logger: Logger,
+        workspaceSettings: WorkspaceSettingsService,
       ) =>
         new CvParseService({
           llmFeatureRunner,
@@ -96,8 +99,16 @@ import {
           documentService,
           pdfTextExtractor,
           logger,
+          workspaceSettings,
         }),
-      inject: [LLM_FEATURE_RUNNER, LLM_SERVICE, DOCUMENT_SERVICE, PDF_TEXT_EXTRACTOR, LOGGER],
+      inject: [
+        LLM_FEATURE_RUNNER,
+        LLM_SERVICE,
+        DOCUMENT_SERVICE,
+        PDF_TEXT_EXTRACTOR,
+        LOGGER,
+        WORKSPACE_SETTINGS_SERVICE,
+      ],
     },
     {
       provide: ATS_AI_SERVICE,

@@ -1,0 +1,36 @@
+@startuml 06_seq_button_audit
+title Klick-Audit je Ansicht — deklarative Audit-Map (AK-6.2, FR-108)
+
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+autonumber
+
+actor "Playwright\n(button-audit.spec.ts)" as Audit
+participant "View (Vermittlung aus)" as View
+participant "Audit-Map\n(deklarativ)" as Map
+participant "Axe / Console\nCollector" as A11y
+
+loop for each of the 8 main-path views
+  Audit -> View : enumerate visible button / [role=button]
+  alt disabled
+    View --> Audit : title / aria-label vorhanden?
+    Audit -> Audit : sonst → Audit-Fehler (disabled ohne Grund)
+  else declared in audit map
+    Audit -> Map : label matcht deklarierte Wirkung?
+    Map --> Audit : bekannt mit Wirkung X (kein Klick nötig)
+  else click
+    Audit -> View : click + Escape
+    View --> Audit : sichtbare Wirkung?\n(Navigation, Dialog, Toast,\nStatus-/DOM-Änderung, Download, Fetch)
+    Audit -> Audit : keine Wirkung → Audit-Fehler (toter Button)
+  end
+  Audit -> A11y : axe.run(view) + console/pageerror
+  A11y --> Audit : violations / errors
+  Audit -> Audit : violations/errors → Audit-Fehler
+end
+
+note over Audit, A11y
+  Die Audit-Map ist die deklarative Drift-Schranke: ein neuer Button ohne
+  deklarierte Wirkung (und ohne disabled+title) lässt den Test rot werden.
+end note
+
+@enduml

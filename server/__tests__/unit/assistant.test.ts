@@ -221,6 +221,7 @@ function ctx(hasProvider = true, opts: { llmProvider?: LlmProvider; logger?: Log
     idGenerator: assistantIds,
     logger,
     llm: { hasAvailableProvider: () => hasProvider },
+    workspaceSettings: { isAiConsentGranted: async () => true },
   });
   return {
     service,

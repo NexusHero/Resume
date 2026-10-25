@@ -4,11 +4,14 @@ import { GUARDS_METADATA, METHOD_METADATA, PATH_METADATA } from '@nestjs/common/
 import { FEATURE_MODULES } from '../../src/nest/app.module.js';
 import { AuthGuard } from '../../src/nest/auth.guard.js';
 import { AiConfiguredGuard, REQUIRES_AI } from '../../src/nest/ai-configured.guard.js';
+import { AiConsentGuard, REQUIRES_AI_CONSENT } from '../../src/nest/ai-consent.guard.js';
 import { VermittlungGuard, REQUIRES_VERMITTLUNG } from '../../src/nest/vermittlung.guard.js';
 import { AiRateLimitGuard } from '../../src/nest/ai-rate-limit.guard.js';
 import { PlanGuard } from '../../src/nest/plan.guard.js';
 import {
   AI_ROUTES,
+  AI_CONSENT_ROUTES,
+  AI_CONSENT_CONDITIONAL,
   METHOD_RATE_LIMIT_EXCEPTIONS,
   TEXT_IMPORT_ROUTES,
   VERMITTLER_ROUTES,
@@ -24,6 +27,7 @@ interface ActualRoute {
   methodGuards: unknown[];
   requiresVermittlung: boolean;
   requiresAi: boolean;
+  requiresAiConsent: boolean;
 }
 
 const METHOD_NAME: Record<number, HttpMethod> = {
@@ -76,6 +80,10 @@ function collectRoutes(): ActualRoute[] {
               requiresAi:
                 Reflect.getMetadata(REQUIRES_AI, handler) ??
                 Reflect.getMetadata(REQUIRES_AI, controller) ??
+                false,
+              requiresAiConsent:
+                Reflect.getMetadata(REQUIRES_AI_CONSENT, handler) ??
+                Reflect.getMetadata(REQUIRES_AI_CONSENT, controller) ??
                 false,
             });
           }
@@ -175,5 +183,47 @@ describe('Route inventory drift guard (plan §5.3/§6.1)', () => {
         AiRateLimitGuard,
       ]);
     }
+  });
+
+  it('AiConsentRoutes_CoversEveryAiRoute', () => {
+    const missing = AI_ROUTES.filter((r) => !AI_CONSENT_ROUTES.includes(r.id)).map((r) => r.id);
+    expect(missing).toEqual([]);
+  });
+
+  it('AiConsentRoutes_DisjointFromConditional', () => {
+    const overlap = AI_CONSENT_ROUTES.filter((id) => AI_CONSENT_CONDITIONAL.includes(id));
+    expect(overlap).toEqual([]);
+  });
+
+  it('RouteInventory_EveryNonConditionalAiRoute_CarriesTheConsentMarker', () => {
+    const problems: string[] = [];
+    for (const spec of AI_ROUTES) {
+      const route = findRoute(spec);
+      if (!route) {
+        problems.push(`${spec.id} ${spec.path} (missing)`);
+        continue;
+      }
+      if (!spec.conditional && !route.requiresAiConsent) {
+        problems.push(`${spec.id} ${spec.path} (no consent marker)`);
+      }
+    }
+    expect(problems).toEqual([]);
+  });
+
+  it('RouteInventory_ConsentGuardRunsAfterAiConfiguredGuard', () => {
+    const problems: string[] = [];
+    for (const route of ROUTES) {
+      if (!route.requiresAiConsent) continue;
+      const guards = [...route.classGuards, ...route.methodGuards];
+      const label = `${route.method} ${route.path}`;
+      const ai = guards.indexOf(AiConfiguredGuard);
+      const consent = guards.indexOf(AiConsentGuard);
+      if (consent === -1) problems.push(`${label}: AiConsentGuard missing`);
+      if (ai === -1) problems.push(`${label}: AiConfiguredGuard missing`);
+      if (ai !== -1 && consent !== -1 && consent < ai) {
+        problems.push(`${label}: AiConsentGuard runs before AiConfiguredGuard`);
+      }
+    }
+    expect(problems).toEqual([]);
   });
 });

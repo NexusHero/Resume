@@ -15,6 +15,7 @@ import { ValidationError } from '../../domain/errors.js';
 import type { LlmProviderId } from '../../ports/llm-provider.js';
 import type { UserRepository } from '../../ports/user-repository.js';
 import { AiConfiguredGuard, RequiresAi } from '../ai-configured.guard.js';
+import { AiConsentGuard, RequiresAiConsent } from '../ai-consent.guard.js';
 import { AuthGuard, OptionalAuthGuard } from '../auth.guard.js';
 import { AiRateLimitGuard } from '../ai-rate-limit.guard.js';
 import { PlanGuard, RequiresPlan } from '../plan.guard.js';
@@ -65,8 +66,9 @@ export class LlmController {
 
   @Post('cover-letter')
   @HttpCode(200)
-  @UseGuards(AuthGuard, AiConfiguredGuard, AiRateLimitGuard, PlanGuard)
+  @UseGuards(AuthGuard, AiConfiguredGuard, AiConsentGuard, AiRateLimitGuard, PlanGuard)
   @RequiresAi()
+  @RequiresAiConsent()
   @RequiresPlan('pro')
   async generateCoverLetter(
     @OptionalUserId() userId: string,

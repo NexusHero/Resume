@@ -21,6 +21,7 @@ import {
   RATE_LIMITER,
   CANDIDATE,
   USER_REPOSITORY,
+  WORKSPACE_SETTINGS_SERVICE,
 } from '../../src/nest/tokens.js';
 import { LlmService } from '../../src/services/llm-service.js';
 import { CoverLetterService } from '../../src/services/cover-letter-service.js';
@@ -76,6 +77,10 @@ async function makeApp(configured: boolean): Promise<INestApplication> {
     { provide: RATE_LIMITER, useValue: new InMemoryRateLimiter() },
     { provide: CANDIDATE, useValue: { name: 'Test Person', title: 'Engineer' } },
     { provide: USER_REPOSITORY, useValue: users },
+    {
+      provide: WORKSPACE_SETTINGS_SERVICE,
+      useValue: { isAiConsentGranted: async () => true, get: async () => ({ aiConsent: true }) },
+    },
   ];
   @Global()
   @Module({ providers: fakes, exports: fakes.map((p) => (p as { provide: symbol }).provide) })

@@ -140,6 +140,12 @@ export interface NestTestAppOptions {
    * default). Agency-slice tests opt in with `{ vermittlung: true }`.
    */
   vermittlung?: boolean;
+  /**
+   * Seed the workspace's AI consent (ADR-0063). Defaults to **true** (granted)
+   * so the existing AI-route tests keep testing key/provider behaviour rather
+   * than consent; consent-specific tests pass `false` and grant via PATCH.
+   */
+  aiConsent?: boolean;
   /** Override the PageFetcher (default: a fake that returns empty text). */
   pageFetcher?: PageFetcher;
   /** Override the job source (default: FakeJobSource). */
@@ -179,7 +185,10 @@ export async function makeNestApp(
       logger: noopLogger,
     });
 
-  const workspaceSettings = fakeWorkspaceSettings({ vermittlung: opts.vermittlung ?? false });
+  const workspaceSettings = fakeWorkspaceSettings({
+    vermittlung: opts.vermittlung ?? false,
+    aiConsent: opts.aiConsent ?? true,
+  });
   const assistantSettingsStore = new InMemoryAssistantSettingsStore();
   if (opts.assistantSettings) {
     await assistantSettingsStore.set('team', {

@@ -98,6 +98,23 @@ Recommended production checklist:
 4. TLS terminated at the proxy; `NODE_ENV=production` (auto-enables Secure cookies).
 5. `CORS_ORIGINS` set only if the browser app is served from a different origin.
 
+### „Vorzeigbar" checklist (Phase 6, AK-6.5/6.7)
+
+Für die vorzeigbare Live-Instanz gilt zusätzlich:
+
+| Muss gesetzt sein (`NODE_ENV=production` bootet sonst nicht) | Warum                                                                                           |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| `STORE=sql` + `DATABASE_URL`                                 | Der Dateisystem-Store ist single-instance und verliert Daten bei Redeploy (ADR-0029).           |
+| `APP_SECRET` (stark, stabil)                                 | Signiert/verschlüsselt den Auth-Store; der Dev-Default ist öffentlich.                          |
+| `ANTHROPIC_API_KEY` (oder `GEMINI_API_KEY`)                  | Echter Key für den Golden-Path-Live-Lauf; ohne Key antworten KI-Routen 503 `ai-not-configured`. |
+| `NODE_ENV=production`                                        | Secure-Cookies, Fail-fast-Readiness, keine Dev-Fakes (`AGENT_FAKE` gesperrt).                   |
+
+Empfohlen: `MAIL_TRANSPORT=smtp` + `SMTP_*` + öffentliches `APP_BASE_URL` (sonst loggt der
+Console-Transport Reset-/Verifizierungs-Links nur); TLS am Reverse-Proxy terminiert;
+`CORS_ORIGINS` nur bei anderem Origin; Volume für `/app/archive` (PDF-Archiv ist file-backed)
+bzw. `PDF_ARCHIVE=s3`. Nach dem ersten Login einmal **einwilligen** (der KI-Einwilligungs-Dialog
+erscheint bei der ersten KI-Aktion, ADR-0063) — danach läuft der Goldene Pfad in unter 5 Minuten.
+
 ### Running more than one instance
 
 With Postgres (required in production) the app tier is stateless and

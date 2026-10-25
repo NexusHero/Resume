@@ -374,5 +374,38 @@ export const TEXT_IMPORT_ROUTES: RouteSpec[] = [
   },
 ];
 
+/**
+ * The 19 generative routes (K01–K19), every one consent-gated (ADR-0063). This
+ * list is kept **independent** of {@link AI_ROUTES} so the drift guard fails if
+ * an AI route is added without also consent-gating it.
+ */
+export const AI_CONSENT_ROUTES: string[] = [
+  'K01',
+  'K02',
+  'K03',
+  'K04',
+  'K05',
+  'K06',
+  'K07',
+  'K08',
+  'K09',
+  'K10',
+  'K11',
+  'K12',
+  'K13',
+  'K14',
+  'K15',
+  'K16',
+  'K17',
+  'K18',
+  'K19',
+];
+
+/**
+ * CV-import routes gated **conditionally** (only the AI mode transmits) — they
+ * are deliberately **not** in {@link AI_CONSENT_ROUTES} (disjoint, verbatim).
+ */
+export const AI_CONSENT_CONDITIONAL: string[] = ['T01', 'T02', 'T03'];
+
 /** Documented method-level rate-limit exceptions (plan §3.5/§5.3). */
 export const METHOD_RATE_LIMIT_EXCEPTIONS = new Set(['R33', 'R37']);

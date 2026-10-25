@@ -221,7 +221,10 @@
   --rail-border:        var(--neutral-200);
   --rail-text:          var(--neutral-900);
   --rail-muted:         var(--neutral-600);
-  --rail-soft:          #74809a;
+  /* Same WCAG-AA-clearing value as --text-soft (4.5:1 on the sunk grey
+     #f1f5f9), so the small account-chip meta in the rail passes axe
+     (AK-6.2/6.4). */
+  --rail-soft:          #616f86;
   --rail-glass:         var(--neutral-100);
   --rail-glass-strong:  var(--neutral-200);
 

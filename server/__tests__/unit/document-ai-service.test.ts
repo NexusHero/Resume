@@ -3,6 +3,7 @@ import {
   NotFoundError,
   NoTextLayerError,
   AiNotConfiguredError,
+  AiConsentRequiredError,
   UpstreamProviderError,
   ValidationError,
 } from '../../src/domain/errors.js';
@@ -52,7 +53,12 @@ interface ProviderStub {
   generate?: (input: LlmGenerateInput) => Promise<string>;
 }
 
-function ctx(stub: ProviderStub = {}, pdfText: string | Error = '', logger = noopLogger) {
+function ctx(
+  stub: ProviderStub = {},
+  pdfText: string | Error = '',
+  logger = noopLogger,
+  workspaceSettings?: { isAiConsentGranted(scope: string): Promise<boolean> },
+) {
   const talents = new InMemoryTalentRepository();
   const documents = new InMemoryDocumentRepository();
   const users = new InMemoryUserRepository();
@@ -98,6 +104,7 @@ function ctx(stub: ProviderStub = {}, pdfText: string | Error = '', logger = noo
     idGenerator: new SequenceIdGenerator('art'),
     clock: new FixedClock(),
     logger,
+    ...(workspaceSettings ? { workspaceSettings } : {}),
   });
   return {
     service,
@@ -276,6 +283,39 @@ describe('DocumentAiService.parse', () => {
     expect(parsed.provider).toBeUndefined();
     expect(parsed.resume.rawText).toBe('My whole CV as text');
     expect(parsed.resume.summary).toBe('');
+  });
+
+  it('ParseService_NoKey_TextModeSucceedsWithoutConsent', async () => {
+    // No key → the named text take-over runs and never transmits (ADR-0063
+    // §Decision 4): consent is not required, and no consent check may fire.
+    const c = ctx({}, '', noopLogger, { isAiConsentGranted: async () => false });
+    await c.talents.add(talent('t1'));
+    const parsed = await c.service.parse(OWNER, OWNER, 't1', 'My whole CV as text');
+    expect(parsed.mode).toBe('text');
+    expect(parsed.resume.rawText).toBe('My whole CV as text');
+  });
+
+  it('ParseService_WithKey_NoConsent_ThrowsAiConsentRequired', async () => {
+    const c = ctx({ available: true }, '', noopLogger, {
+      isAiConsentGranted: async () => false,
+    });
+    await c.talents.add(talent('t1'));
+    await expect(c.service.parse(OWNER, OWNER, 't1', 'raw cv text')).rejects.toBeInstanceOf(
+      AiConsentRequiredError,
+    );
+  });
+
+  it('ParseService_WithKey_WithConsent_UsesAiMode', async () => {
+    const c = ctx(
+      { available: true, generate: async () => '```json\n' + RESUME_JSON + '\n```' },
+      '',
+      noopLogger,
+      { isAiConsentGranted: async () => true },
+    );
+    await c.talents.add(talent('t1'));
+    const parsed = await c.service.parse(OWNER, OWNER, 't1', 'raw cv text');
+    expect(parsed.mode).toBe('ai');
+    expect(parsed.provider).toBe('claude');
   });
 
   it('Parse_MalformedJson_ThrowsUpstreamProvider', async () => {

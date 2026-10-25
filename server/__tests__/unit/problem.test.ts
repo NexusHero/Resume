@@ -5,6 +5,7 @@ import { errorHandler, notFound, sendProblem } from '../../src/http/problem.js';
 import { ProblemJsonFilter } from '../../src/nest/problem-json.filter.js';
 import {
   AiNotConfiguredError,
+  AiConsentRequiredError,
   FrozenError,
   InternalError,
   NoTextError,
@@ -167,6 +168,19 @@ describe('errorHandler', () => {
     run(new FrozenError(), res);
     expect(res.statusCode).toBe(409);
     expect(res.body).toMatchObject({ status: 409, type: 'about:blank#frozen', title: 'Frozen' });
+  });
+
+  it('MapErrorToProblem_AiConsentRequired_403AiConsentRequired', () => {
+    const res = mockRes();
+    run(new AiConsentRequiredError(), res);
+    expect(res.statusCode).toBe(403);
+    expect(res.contentType).toBe('application/problem+json');
+    expect(res.body).toMatchObject({
+      status: 403,
+      type: 'about:blank#ai-consent-required',
+      title: 'AiConsentRequired',
+    });
+    expect(res.body.detail).toContain('AI-Verarbeitung');
   });
 
   it('Handler_HeadersAlreadySent_DelegatesToNext', () => {

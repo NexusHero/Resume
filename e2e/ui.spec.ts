@@ -8,7 +8,7 @@ test.describe('UI acceptance — the suite renders in German', () => {
     await page.route('**/api/v1/settings/workspace', (route) =>
       route.fulfill({
         contentType: 'application/json',
-        body: JSON.stringify({ vermittlung: true }),
+        body: JSON.stringify({ vermittlung: true, aiConsent: true }),
       }),
     );
   });
@@ -693,7 +693,7 @@ test.describe('UI acceptance — the suite renders in German', () => {
     await page.route('**/api/v1/settings/workspace', (route) =>
       route.fulfill({
         contentType: 'application/json',
-        body: JSON.stringify({ vermittlung: false }),
+        body: JSON.stringify({ vermittlung: false, aiConsent: true }),
       }),
     );
     await page.route('**/api/v1/auth/me', (route) =>
@@ -736,7 +736,7 @@ test.describe('UI acceptance — the suite renders in German', () => {
     await page.route('**/api/v1/settings/workspace', (route) =>
       route.fulfill({
         contentType: 'application/json',
-        body: JSON.stringify({ vermittlung: false }),
+        body: JSON.stringify({ vermittlung: false, aiConsent: true }),
       }),
     );
     await page.route('**/api/v1/auth/me', (route) =>
@@ -761,7 +761,7 @@ test.describe('UI acceptance — the suite renders in German', () => {
       }
       return route.fulfill({
         contentType: 'application/json',
-        body: JSON.stringify({ vermittlung }),
+        body: JSON.stringify({ vermittlung, aiConsent: true }),
       });
     });
     await page.route('**/api/v1/auth/me', (route) =>
@@ -782,7 +782,7 @@ test.describe('UI acceptance — the suite renders in German', () => {
     await page.route('**/api/v1/settings/workspace', (route) =>
       route.fulfill({
         contentType: 'application/json',
-        body: JSON.stringify({ vermittlung: false }),
+        body: JSON.stringify({ vermittlung: false, aiConsent: true }),
       }),
     );
     await page.route('**/api/v1/settings/llm', (route) =>
@@ -940,7 +940,7 @@ test.describe('Phase 0 — central-key and vocabulary guarantees', () => {
     await page.route('**/api/v1/settings/workspace', (route) =>
       route.fulfill({
         contentType: 'application/json',
-        body: JSON.stringify({ vermittlung: opts.vermittlung }),
+        body: JSON.stringify({ vermittlung: opts.vermittlung, aiConsent: true }),
       }),
     );
     await page.route('**/api/v1/settings/llm', (route) =>
@@ -1143,7 +1143,9 @@ test.describe('Fehler 1 — CV text import without a key', () => {
   test('NoAiKey_CvTextImport_ShowsNoticeKeepsExistingStationAndFillsRawText', async ({ page }) => {
     const json = (route, body, status = 200) =>
       route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
-    await page.route('**/api/v1/settings/workspace', (r) => json(r, { vermittlung: false }));
+    await page.route('**/api/v1/settings/workspace', (r) =>
+      json(r, { vermittlung: false, aiConsent: true }),
+    );
     await page.route('**/api/v1/settings/llm', (r) =>
       json(r, { configured: false, current: null, providers: [] }),
     );
@@ -1214,7 +1216,7 @@ test.describe('Stellen (Phase 1)', () => {
     await page.route('**/api/v1/settings/workspace', (route) =>
       route.fulfill({
         contentType: 'application/json',
-        body: JSON.stringify({ vermittlung: true }),
+        body: JSON.stringify({ vermittlung: true, aiConsent: true }),
       }),
     );
     await page.route('**/api/v1/settings/llm', (route) =>
@@ -1574,7 +1576,7 @@ test.describe('Bewerbungen (Phase 2)', () => {
     await page.route('**/api/v1/settings/workspace', (route) =>
       route.fulfill({
         contentType: 'application/json',
-        body: JSON.stringify({ vermittlung: opts.vermittlung }),
+        body: JSON.stringify({ vermittlung: opts.vermittlung, aiConsent: true }),
       }),
     );
     await page.route('**/api/v1/settings/llm', (route) =>
@@ -2090,7 +2092,7 @@ test.describe('Bewerbungen (Phase 4)', () => {
     await page.route('**/api/v1/settings/workspace', (route) =>
       route.fulfill({
         contentType: 'application/json',
-        body: JSON.stringify({ vermittlung: true }),
+        body: JSON.stringify({ vermittlung: true, aiConsent: true }),
       }),
     );
     await page.route('**/api/v1/settings/llm', (route) =>
@@ -2347,7 +2349,7 @@ test.describe('Chat-Agent (Phase 5)', () => {
     await page.route('**/api/v1/settings/workspace', (route) =>
       route.fulfill({
         contentType: 'application/json',
-        body: JSON.stringify({ vermittlung: opts.vermittlung ?? false }),
+        body: JSON.stringify({ vermittlung: opts.vermittlung ?? false, aiConsent: true }),
       }),
     );
     await page.route('**/api/v1/settings/llm', (route) =>

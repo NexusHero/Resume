@@ -132,6 +132,29 @@ offer / rejected`, any transition allowed).
     `AGENT_MAX_TIME_MS`) mit deterministischer Zusammenfassung; Metering
     `agentChat` je Provider-Runde. Dev-only `FakeAgentLlmProvider` nur hinter
     `AGENT_FAKE=1` **und** `NODE_ENV!=='production'`.
+- **Phase 6 — Vorzeigbar (ADR-0063): KI-Einwilligung, Goldener-Pfad-e2e,
+  Klick-Audit, Demo-Seed.**
+  - **Workspace-KI-Einwilligung**: neues `WorkspaceSettings.aiConsent` (Default
+    `false`, **kein Backfill**), admin-only über `PATCH /api/v1/settings/workspace`.
+    Ein marker-basierter `AiConsentGuard` erzwingt **403 `ai-consent-required`**
+    auf allen 19 generativen Routen (K01–K19) bis ein Admin einwilligt; die
+    Guard-Reihenfolge ist `Auth → [Vermittlung 404] → AiConfigured 503 → AiConsent
+403 → RateLimit 429 → Plan 402`. Der **CV-Import (T01–T03) ist konditional**
+    gesperrt (nur der AI-Modus übermittelt). Die UI zeigt **einen** deutschen,
+    EU-AI-Act-konformen Einwilligungs-Dialog vor der ersten Übermittlung
+    (Bewerbungs-Editor inkl. Magic Pen, Basis-Editor, Chat-Panel), mit „Frag
+    deinen Admin"-Hinweis für Nicht-Admins und Widerruf in den Einstellungen.
+  - **Goldener-Pfad-e2e** (`e2e/golden-path.spec.ts`): der §1.8-Ablauf in einem
+    Playwright-Flow, LLM gemockt, Desktop **und** Mobil (393 px), plus eine
+    Agent-Variante (skriptetes SSE) mit demselben `draft`-Endzustand.
+  - **Klick-Audit** (`e2e/button-audit.spec.ts`): deklarative Button-Audit-Map +
+    View-Enumeration (8 Ansichten, Vermittlung aus), Axe-Scan je Ansicht,
+    Console-Error-Sammler; jeder Button wirkt oder ist `disabled` mit
+    `title`/`aria-label`-Begründung.
+  - **Demo-Seed** (`npm run seed:demo`): legt idempotent einen Demo-Mandanten,
+    eine Demo-Stelle und eine Demo-Bewerbung aus **synthetischen** Daten an
+    (kein echtes PII), `aiConsent` unset (`--with-consent` überschreibt).
+  - **README „Vorzeigbar in 10 Minuten"** + Deployment-Checkliste (§7.1).
 
 ### Changed (breaking)
 
@@ -164,6 +187,11 @@ offer / rejected`, any transition allowed).
 
 ### Changed
 
+- **`WorkspaceSettings` gained `aiConsent` (ADR-0063).** Bestehende Workspaces
+  erben `false` (kein Backfill): Nach dem Update muss ein Admin einmal einwilligen,
+  bevor KI wieder läuft (rechtlich ehrlicher Default, wie `vermittlung` default
+  off). `GET`/`PATCH /api/v1/settings/workspace` reichen das Feld durch; die
+  Settings-UI zeigt den Zustand im Abschnitt „Workspace" mit Widerruf.
 - **The AI-route drift guard now counts 19 routes** (K19 added: `POST /agent/chat`).
   `A02`–`A05` (`GET`/`DELETE`/`abort` on `/agent/chat`) are deterministic and not in
   `AI_ROUTES`. The guard order for A01 is `AuthGuard → AiConfiguredGuard →

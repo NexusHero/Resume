@@ -47,8 +47,11 @@ function InsertDialog({ onClose, onSaved }) {
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState(null); // { code, message }
   const [draft, setDraft] = React.useState(null); // editable extract preview
+  const consent = window.useAiConsent
+    ? window.useAiConsent()
+    : { guard: (f) => f, dialog: null, rejected: false };
 
-  const extract = async () => {
+  const extract = consent.guard(async () => {
     setError(null);
     setBusy(true);
     try {
@@ -64,7 +67,7 @@ function InsertDialog({ onClose, onSaved }) {
     } finally {
       setBusy(false);
     }
-  };
+  });
 
   const save = async () => {
     setError(null);
@@ -109,6 +112,12 @@ function InsertDialog({ onClose, onSaved }) {
   return (
     <A.Card>
       <div style={{ padding: '22px 24px' }}>
+        {consent.dialog}
+        {consent.rejected && !consent.dialog && (
+          <div role="status" style={{ marginBottom: '12px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '6px 12px' }}>
+            KI-Aktion abgebrochen — ohne Einwilligung wird nichts übermittelt.
+          </div>
+        )}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '18px' }}>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.01em' }}>Stelle einfügen</h2>
           <A.IconButton icon="x" label="Schließen" aria-label="Schließen" variant="ghost" size="sm" onClick={onClose} />

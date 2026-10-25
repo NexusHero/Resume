@@ -99,9 +99,160 @@
     );
   }
 
+  const AI_CONSENT_BODY =
+    'Dein Workspace verwendet KI (Anthropic Claude bzw. Google Gemini), um den Lebenslauf des ' +
+    'Mandanten und den Text der Stellenanzeige zu verarbeiten. Die Inhalte werden dafür an den ' +
+    'konfigurierten Anbieter übermittelt. Diese Verarbeitung gilt nach dem EU AI Act (Anhang III) ' +
+    'als Hochrisiko-KI im Bereich Beschäftigung — sie dient nur der Unterstützung: Du prüfst jeden ' +
+    'Vorschlag und übernimmst ihn ausdrücklich selbst. Jede Übermittlung wird im KI-Audit-Trail ' +
+    '(Modell, Zeitpunkt, Kosten) protokolliert. Die Einwilligung gilt für diesen Workspace und kann ' +
+    'jederzeit in den Einstellungen widerrufen werden.';
+
+  /* The one shared consent dialog before the first AI transmission (ADR-0063).
+     Admin → "Zustimmen" (PATCH aiConsent:true); non-admin → "Frag deinen Admin". */
+  function AiConsentDialog({ isAdmin, onAccept, onCancel, busy }) {
+    return (
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="KI-Verarbeitung zustimmen"
+        data-testid="ai-consent-dialog"
+        style={{
+          alignSelf: 'stretch',
+          border: '1px solid var(--border-strong)',
+          borderRadius: 'var(--radius-lg)',
+          background: 'var(--surface-card)',
+          boxShadow: 'var(--shadow-md)',
+          padding: '18px 20px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px',
+        }}
+      >
+        <div
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: '15px',
+            fontWeight: 700,
+            color: 'var(--text-heading)',
+          }}
+        >
+          KI-Verarbeitung zustimmen
+        </div>
+        <div style={{ fontSize: '12.5px', lineHeight: 1.6, color: 'var(--text-body)' }}>
+          {AI_CONSENT_BODY}
+        </div>
+        {isAdmin === false ? (
+          <div role="status" style={{ fontSize: '12.5px', color: 'var(--text-soft)' }}>
+            Bitte deinen Workspace-Admin um Freigabe (Einstellungen → KI-Anbindung).
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              data-testid="ai-consent-accept"
+              onClick={onAccept}
+              disabled={busy}
+              style={{
+                cursor: busy ? 'default' : 'pointer',
+                border: 'none',
+                background: 'var(--accent)',
+                color: 'var(--accent-contrast)',
+                borderRadius: 'var(--radius-sm)',
+                fontFamily: 'var(--font-body)',
+                fontSize: '12.5px',
+                fontWeight: 600,
+                padding: '6px 14px',
+              }}
+            >
+              Zustimmen
+            </button>
+            <button
+              type="button"
+              data-testid="ai-consent-cancel"
+              onClick={onCancel}
+              style={{
+                cursor: 'pointer',
+                border: '1px solid var(--border-strong)',
+                background: 'transparent',
+                color: 'var(--text-muted)',
+                borderRadius: 'var(--radius-sm)',
+                fontFamily: 'var(--font-body)',
+                fontSize: '12.5px',
+                padding: '6px 14px',
+              }}
+            >
+              Abbrechen
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  /* React hook: a `guard` wrapper that runs the action only once `aiConsent` is
+     granted; otherwise it shows the dialog and runs the action on accept. */
+  function useAiConsent() {
+    const ws = window.useWorkspaceSettings ? window.useWorkspaceSettings() : { aiConsent: false };
+    const [open, setOpen] = React.useState(false);
+    const [busy, setBusy] = React.useState(false);
+    const [rejected, setRejected] = React.useState(false);
+    const [isAdmin, setIsAdmin] = React.useState(null);
+    const pendingRef = React.useRef(null);
+    React.useEffect(() => {
+      let alive = true;
+      const p =
+        window.RecruitApi && window.RecruitApi.authMe
+          ? window.RecruitApi.authMe()
+          : Promise.resolve(null);
+      p.then((me) => {
+          if (alive) setIsAdmin(!!(me && me.roles && me.roles.includes('admin')));
+        }).catch(() => {
+          if (alive) setIsAdmin(false);
+        });
+      return () => {
+        alive = false;
+      };
+    }, []);
+
+    const guard = (fn) => (...args) => {
+      if (ws.aiConsent === true) {
+        return fn(...args);
+      }
+      setRejected(false);
+      pendingRef.current = { fn, args };
+      setOpen(true);
+      return undefined;
+    };
+    const accept = () => {
+      setBusy(true);
+      window.RecruitApi.updateWorkspaceSettings({ aiConsent: true })
+        .then(() => (window.WorkspaceSettings ? window.WorkspaceSettings.refresh() : null))
+        .then(() => {
+          setBusy(false);
+          setOpen(false);
+          const p = pendingRef.current;
+          pendingRef.current = null;
+          if (p) p.fn(...p.args);
+        })
+        .catch(() => setBusy(false));
+    };
+    const cancel = () => {
+      setOpen(false);
+      setRejected(true);
+      pendingRef.current = null;
+    };
+    const dialog = open
+      ? React.createElement(AiConsentDialog, { isAdmin, onAccept: accept, onCancel: cancel, busy })
+      : null;
+    return { guard, dialog, rejected, consentGranted: ws.aiConsent === true };
+  }
+
   window.aiGateBlocked = () => !!(window.AiStatus && window.AiStatus.get().status === 'not-configured');
   window.AiNotConfiguredHint = AiNotConfiguredHint;
   window.AiButton = AiButton;
   window.TextImportNotice = TextImportNotice;
   window.AiNavigateSettings = navigateSettings;
+  window.AiConsentDialog = AiConsentDialog;
+  window.useAiConsent = useAiConsent;
 })();

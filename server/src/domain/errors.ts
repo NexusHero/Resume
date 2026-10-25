@@ -130,6 +130,22 @@ export class AiNotConfiguredError extends DomainError {
 }
 
 /**
+ * The workspace has not granted the AI consent (403, ADR-0063): CV and ad text
+ * may not be sent to the configured provider until an admin consents. 403 —
+ * not 409 or 404 — because the caller is authenticated but not (yet) allowed
+ * for this action, and the route exists but is not released.
+ */
+export class AiConsentRequiredError extends DomainError {
+  readonly status = 403;
+  readonly type = 'ai-consent-required';
+
+  constructor(message = 'AI-Verarbeitung wurde für diesen Workspace noch nicht freigegeben.') {
+    super(message);
+    this.name = 'AiConsentRequired';
+  }
+}
+
+/**
  * The uploaded PDF has no usable text layer (422). Scanned/protected files
  * cannot be imported; the UI asks the user to paste the text instead.
  */

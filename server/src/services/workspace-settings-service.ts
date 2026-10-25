@@ -43,6 +43,21 @@ export class WorkspaceSettingsService {
     return (await this.get(scope)).vermittlung;
   }
 
+  /** Whether the workspace operator has granted the AI consent (ADR-0063). */
+  async isAiConsentGranted(scope: string): Promise<boolean> {
+    return (await this.get(scope)).aiConsent;
+  }
+
+  /** Grant the AI consent (admin-only at the HTTP edge; the service is neutral). */
+  async grantAiConsent(scope: string): Promise<WorkspaceSettings> {
+    return this.update(scope, { aiConsent: true });
+  }
+
+  /** Revoke the AI consent; generative routes answer 403 again immediately. */
+  async revokeAiConsent(scope: string): Promise<WorkspaceSettings> {
+    return this.update(scope, { aiConsent: false });
+  }
+
   /** The subset of `scopes` whose workspace has the intermediary features on. */
   async filterVermittlungEnabled(scopes: string[]): Promise<string[]> {
     const enabled: string[] = [];

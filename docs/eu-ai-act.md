@@ -18,15 +18,16 @@ human control from the start.
 
 ## How myJob supports the obligations
 
-| EU AI Act expectation (high-risk / transparency)                        | What myJob provides                                                                                                                                                                                                   | Where              |
-| ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| **Human oversight** (Art. 14) — a person can review and override the AI | Every AI output is **staged for a recruiter to accept, edit or dismiss**; the CoRecruiter agent never sends anything outward on its own, and its top "autopilot" gear only _proposes_ a packet for one-click approval | ADR-0013, ADR-0019 |
-| **Transparency & record-keeping / logging** (Art. 12, 13)               | A per-call **KI-Audit-Trail**: which model, for which feature, when, and at what token cost — exportable as CSV                                                                                                       | ADR-0018           |
-| **Accuracy & robustness** (Art. 15)                                     | A deterministic **grounding self-check** flags any generated claim the candidate's CV and the job ad do not support, before a human acts on it                                                                        | ADR-0009           |
-| **Graceful degradation / no silent dependence on a model**              | **No template fallback**: without a central key every generative route answers `503 ai-not-configured` and the UI says "KI nicht eingerichtet"; deterministic helpers (matching, AGG, ATS-gap) stay offline           | ADR-0057           |
-| **Data governance** (Art. 10) & **GDPR** (Art. 5, 15, 17)               | **First-party data only** — no scraping of third-party profiles; DSGVO export, erasure, anonymisation and **automatic retention deadlines** are first-class flows                                                     | ADR-0006, ADR-0018 |
-| **Data minimisation / locality**                                        | Matching runs on **local embeddings, fully offline** by default (optionally a **local Ollama** neural model — still first-party); fonts and UI assets are self-hosted, so no third-party request leaves the browser   | ADR-0017, ADR-0020 |
-| **Cost & processing transparency to the operator**                      | Each AI response shows its **token count and estimated cost**; settings aggregate spend per provider and per feature                                                                                                  | —                  |
+| EU AI Act expectation (high-risk / transparency)                        | What myJob provides                                                                                                                                                                                                                                                                     | Where              |
+| ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| **Human oversight** (Art. 14) — a person can review and override the AI | Every AI output is **staged for a recruiter to accept, edit or dismiss**; the CoRecruiter agent never sends anything outward on its own, and its top "autopilot" gear only _proposes_ a packet for one-click approval                                                                   | ADR-0013, ADR-0019 |
+| **Transparency & record-keeping / logging** (Art. 12, 13)               | A per-call **KI-Audit-Trail**: which model, for which feature, when, and at what token cost — exportable as CSV                                                                                                                                                                         | ADR-0018           |
+| **Informed consent before the first transmission** (Art. 13, 14)        | A workspace-level **AI consent** (`aiConsent`, default off): the UI shows one German, EU-AI-Act-compliant consent dialog before the first time CV/ad text leaves the workspace, and the server enforces it (`403 ai-consent-required`) on every generative route; revocable in settings | ADR-0063           |
+| **Accuracy & robustness** (Art. 15)                                     | A deterministic **grounding self-check** flags any generated claim the candidate's CV and the job ad do not support, before a human acts on it                                                                                                                                          | ADR-0009           |
+| **Graceful degradation / no silent dependence on a model**              | **No template fallback**: without a central key every generative route answers `503 ai-not-configured` and the UI says "KI nicht eingerichtet"; deterministic helpers (matching, AGG, ATS-gap) stay offline                                                                             | ADR-0057           |
+| **Data governance** (Art. 10) & **GDPR** (Art. 5, 15, 17)               | **First-party data only** — no scraping of third-party profiles; DSGVO export, erasure, anonymisation and **automatic retention deadlines** are first-class flows                                                                                                                       | ADR-0006, ADR-0018 |
+| **Data minimisation / locality**                                        | Matching runs on **local embeddings, fully offline** by default (optionally a **local Ollama** neural model — still first-party); fonts and UI assets are self-hosted, so no third-party request leaves the browser                                                                     | ADR-0017, ADR-0020 |
+| **Cost & processing transparency to the operator**                      | Each AI response shows its **token count and estimated cost**; settings aggregate spend per provider and per feature                                                                                                                                                                    | —                  |
 
 ## What this means in practice
 
@@ -34,7 +35,10 @@ human control from the start.
   which model produced it, what it cost, and which claims are unverified — and
   can override it before it has any effect.
 - **The AI is assistive, not autonomous.** myJob stages suggestions; a human
-  approves outcomes. Even the autopilot stops at "ready to send."
+  approves outcomes. Even the autopilot stops at "ready to send." The first
+  hurdle is the **informed consent**: nothing is transmitted to the provider
+  until the workspace operator consents (ADR-0063), and the consent is revocable
+  at any time.
 - **It works without AI.** Turning the AI off degrades to deterministic
   templates rather than breaking — useful for the most conservative buyers.
 

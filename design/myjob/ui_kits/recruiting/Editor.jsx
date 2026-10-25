@@ -208,6 +208,13 @@ function Editor({ talent, onClose, onOpenSettings, getDocuments, saveDocuments, 
     setPenConfirm(false);
     try {
       const suggestion = await pen[key](index);
+      // Defensive guard: a seam that resolved without a usable suggestion (or
+      // without an `after` value) must surface an error instead of staging a
+      // broken `penPending` whose render would dereference `suggestion.grounding`.
+      if (!suggestion || suggestion.after == null) {
+        setPenError('Dieser Abschnitt konnte nicht angepasst werden. Bitte versuche es erneut.');
+        return;
+      }
       setPenPending({ key, index, suggestion });
     } catch (e) {
       setPenError(

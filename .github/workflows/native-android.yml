@@ -34,7 +34,11 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        # Lifecycle scripts are disabled for supply-chain safety; only the
+        # packages that need theirs (native/binary deps) are rebuilt explicitly.
+        run: |
+          npm ci --ignore-scripts
+          npm rebuild better-sqlite3 esbuild @swc/core unrs-resolver puppeteer
 
       - name: Build the web bundle Capacitor wraps
         run: npm run build:web
@@ -47,13 +51,14 @@ jobs:
           # source release: 21" on JDK 17) — verified against a real build.
           java-version: '21'
 
-      - uses: android-actions/setup-android@v4
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
 
       - name: Generate the Android platform project
         run: npm run cap:add:android
 
       - name: Sync the web build + plugins into the native project
-        run: npx cap sync android
+        # Local, lockfile-pinned Capacitor CLI — never resolved on demand by npx.
+        run: ./node_modules/.bin/cap sync android
 
       - name: Build the debug APK
         working-directory: android

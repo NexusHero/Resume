@@ -30,7 +30,11 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        # Lifecycle scripts are disabled for supply-chain safety; only the
+        # packages that need theirs (native/binary deps) are rebuilt explicitly.
+        run: |
+          npm ci --ignore-scripts
+          npm rebuild better-sqlite3 esbuild @swc/core unrs-resolver puppeteer
 
       - name: Format check
         run: npm run format:check
@@ -62,10 +66,15 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        # Lifecycle scripts are disabled for supply-chain safety; only the
+        # packages that need theirs (native/binary deps) are rebuilt explicitly.
+        run: |
+          npm ci --ignore-scripts
+          npm rebuild better-sqlite3 esbuild @swc/core unrs-resolver puppeteer
 
       - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
+        # Local, lockfile-pinned binary — never resolved on demand by npx.
+        run: ./node_modules/.bin/playwright install --with-deps chromium
 
       - name: Run UI acceptance tests
         run: npm run test:e2e
@@ -99,7 +108,11 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        # Lifecycle scripts are disabled for supply-chain safety; only the
+        # packages that need theirs (native/binary deps) are rebuilt explicitly.
+        run: |
+          npm ci --ignore-scripts
+          npm rebuild better-sqlite3 esbuild @swc/core unrs-resolver puppeteer
 
       - name: Run SQL integration tests
         # Uses the npm script so Jest is launched with --experimental-vm-modules

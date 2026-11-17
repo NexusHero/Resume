@@ -8,23 +8,30 @@
 import { chromium } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { randomBytes } from 'node:crypto';
+import process from 'node:process';
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.resolve(dir, '..', 'docs', 'images');
 const BASE = 'http://127.0.0.1:4188';
+// Throwaway account for the local screenshot server: override via env, otherwise
+// a fresh random credential per run (never a password literal in the repo).
+const SHOT_EMAIL = process.env.SCREENSHOTS_EMAIL || `screenshots+${Date.now()}@example.com`;
+const SHOT_PASSWORD =
+  process.env.SCREENSHOTS_PASSWORD || `Shots-${randomBytes(12).toString('hex')}!`;
 const APP = `${BASE}/design/myjob/ui_kits/recruiting/dist/index.html`;
 
 async function register() {
   const res = await fetch(`${BASE}/api/v1/auth/register`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ email: 'screenshots@example.com', password: 'Screenshots123!' }),
+    body: JSON.stringify({ email: SHOT_EMAIL, password: SHOT_PASSWORD }),
   });
   if (res.status >= 400) {
     const login = await fetch(`${BASE}/api/v1/auth/login`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email: 'screenshots@example.com', password: 'Screenshots123!' }),
+      body: JSON.stringify({ email: SHOT_EMAIL, password: SHOT_PASSWORD }),
     });
     if (login.status >= 400) throw new Error(`auth failed: ${login.status}`);
     return login.headers.getSetCookie().map((c) => c.split(';')[0]);

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { stripTrailingSlashes } from './strings.js';
 import { roleSchema, type Role } from './user.js';
 
 /**
@@ -57,7 +58,7 @@ export type AcceptInviteInput = z.infer<typeof acceptInviteSchema>;
  * follow-up UI slice — the link and token are stable regardless).
  */
 export function tenantInviteUrl(baseUrl: string, token: string): string {
-  const base = baseUrl.replace(/\/+$/, '');
+  const base = stripTrailingSlashes(baseUrl);
   return `${base}/design/myjob/ui_kits/recruiting/dist/index.html?invite_token=${encodeURIComponent(
     token,
   )}`;

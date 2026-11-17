@@ -22,7 +22,7 @@ export const STAGE_WIN_PROBABILITY: Record<CandidacyStage, number> = {
 
 /** "17.160 €" → 17160 (digits only; German thousands dots dropped). */
 export function parseFeeValue(s: string): number {
-  return parseInt(String(s == null ? '' : s).replace(/[^0-9]/g, ''), 10) || 0;
+  return Number.parseInt(String(s == null ? '' : s).replace(/[^0-9]/g, ''), 10) || 0;
 }
 
 export interface MandateForecast {

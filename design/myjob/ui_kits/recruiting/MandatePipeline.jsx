@@ -104,7 +104,7 @@ function MandatePipeline({ mandate, onBack, onOpenTalent }) {
     setDropStage(null);
     const id = e.dataTransfer.getData('text/plain');
     const card = (cards || []).find((c) => c.id === id);
-    if (card && card.stage !== stage) moveCard(card, stage);
+    if (card && card.stage !== stage) void moveCard(card, stage); // moveCard rolls back on its own errors
   };
   // Remove from the pipeline — Undo over silent-delete (#200). Optimistically
   // drop the card, send the DELETE only when the snackbar times out; "Undo"

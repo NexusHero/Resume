@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { stripTrailingSlashes } from './domain/strings.js';
 import type { CandidateProfile } from './domain/skill.js';
 import type { CandidateIdentity } from './domain/cover-letter.js';
 import type { LlmProviderId } from './ports/llm-provider.js';
@@ -372,13 +373,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
             ? 'openai'
             : 'hashed',
       ollama: {
-        url: (env.OLLAMA_URL ?? 'http://localhost:11434').replace(/\/+$/, ''),
+        url: stripTrailingSlashes(env.OLLAMA_URL ?? 'http://localhost:11434'),
         model: env.OLLAMA_EMBED_MODEL ?? 'nomic-embed-text',
       },
       openai: {
         apiKey: env.OPENAI_API_KEY ?? '',
         model: env.OPENAI_EMBED_MODEL ?? 'text-embedding-3-small',
-        baseUrl: (env.OPENAI_BASE_URL ?? 'https://api.openai.com/v1').replace(/\/+$/, ''),
+        baseUrl: stripTrailingSlashes(env.OPENAI_BASE_URL ?? 'https://api.openai.com/v1'),
       },
       timeoutMs: Number(env.EMBEDDING_TIMEOUT_MS) || 10_000,
     },
@@ -434,7 +435,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       s3: {
         bucket: env.S3_BUCKET ?? '',
         region: env.S3_REGION ?? 'us-east-1',
-        endpoint: (env.S3_ENDPOINT ?? '').replace(/\/+$/, ''),
+        endpoint: stripTrailingSlashes(env.S3_ENDPOINT ?? ''),
         prefix: env.S3_PREFIX ?? 'pdf-archive',
         accessKeyId: env.S3_ACCESS_KEY_ID ?? '',
         secretAccessKey: env.S3_SECRET_ACCESS_KEY ?? '',
@@ -468,7 +469,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       transport: env.MAIL_TRANSPORT === 'smtp' ? 'smtp' : 'console',
       from: env.MAIL_FROM ?? 'myJob <no-reply@myjob.local>',
       // Public origin the app is reached at; drives the link inside reset emails.
-      appBaseUrl: (env.APP_BASE_URL ?? `http://localhost:${port}`).replace(/\/+$/, ''),
+      appBaseUrl: stripTrailingSlashes(env.APP_BASE_URL ?? `http://localhost:${port}`),
       resetTokenTtlMs: (Number(env.RESET_TOKEN_TTL_MINUTES) || 60) * 60 * 1000,
       inviteTtlMs: (Number(env.INVITE_TTL_DAYS) || 7) * 24 * 60 * 60 * 1000,
       smtp: {

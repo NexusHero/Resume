@@ -37,7 +37,8 @@ function readHistory() {
 function slug(s) {
   return String(s || '').trim().toLowerCase()
     .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
-    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'bewerbung';
+    .replace(/[^a-z0-9]+/g, '-')
+    .split('-').filter(Boolean).join('-') || 'bewerbung';
 }
 
 // Commit ONLY our own files so unrelated working changes are never touched.

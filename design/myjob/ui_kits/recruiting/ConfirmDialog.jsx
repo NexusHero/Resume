@@ -15,7 +15,8 @@ function ConfirmDialog({ title, message, confirmLabel = 'Confirm', cancelLabel =
   const accent = danger ? 'var(--danger)' : 'var(--accent)';
   return (
     <>
-      <div onClick={onCancel} style={{ position: 'fixed', inset: 0, background: 'rgba(8,11,18,0.45)', backdropFilter: 'blur(2px)', zIndex: 70, animation: 'fadeIn .2s ease' }} />
+      {/* Mouse-only backdrop; Escape (via useDialog) is the keyboard equivalent. */}
+      <div role="presentation" onClick={onCancel} style={{ position: 'fixed', inset: 0, background: 'rgba(8,11,18,0.45)', backdropFilter: 'blur(2px)', zIndex: 70, animation: 'fadeIn .2s ease' }} />
       <div
         ref={dialogRef}
         role="dialog"

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { stripTrailingSlashes } from './strings.js';
 
 const email = z
   .string()
@@ -29,7 +30,7 @@ export interface PasswordResetToken {
  * the recruiting kit reads `reset_token` on load to show the new-password form.
  */
 export function passwordResetUrl(baseUrl: string, token: string): string {
-  const base = baseUrl.replace(/\/+$/, '');
+  const base = stripTrailingSlashes(baseUrl);
   return `${base}/design/myjob/ui_kits/recruiting/dist/index.html?reset_token=${encodeURIComponent(
     token,
   )}`;

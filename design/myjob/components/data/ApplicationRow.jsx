@@ -1,4 +1,5 @@
 import React from 'react';
+import { clickableRow } from './clickable-row.js';
 import { Icon } from '../core/Icon.jsx';
 import { EntityTile } from '../core/EntityTile.jsx';
 import { StatusBadge } from './StatusBadge.jsx';
@@ -33,12 +34,15 @@ export function ApplicationRow({
   ...rest
 }) {
   const [hover, setHover] = React.useState(false);
+  const { Row, type, reset } = clickableRow(onClick);
   return (
-    <div
+    <Row
+      type={type}
       onClick={onClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
+        ...reset,
         display: 'flex',
         alignItems: 'center',
         gap: '14px',
@@ -93,6 +97,6 @@ export function ApplicationRow({
           </span>
         )}
       </div>
-    </div>
+    </Row>
   );
 }

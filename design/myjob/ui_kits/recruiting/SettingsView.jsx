@@ -637,7 +637,7 @@ function ComplianceCard() {
       title: `Anonymize ${item.name}?`,
       message: 'This deletes personal data and removes attachments. This cannot be undone.',
       confirmLabel: 'Anonymize',
-      onConfirm: () => { setConfirm(null); runAnonymize(item); },
+      onConfirm: () => { setConfirm(null); void runAnonymize(item); }, // runAnonymize handles its own errors
     });
   };
 
@@ -670,7 +670,7 @@ function ComplianceCard() {
       title: 'Anonymize all overdue candidates?',
       message: 'Every candidate whose deletion deadline has passed will be anonymized. This cannot be undone.',
       confirmLabel: 'Anonymize all',
-      onConfirm: () => { setConfirm(null); runSweepOverdue(); },
+      onConfirm: () => { setConfirm(null); void runSweepOverdue(); }, // runSweepOverdue handles its own errors
     });
   };
 

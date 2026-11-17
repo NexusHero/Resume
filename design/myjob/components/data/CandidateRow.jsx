@@ -1,4 +1,5 @@
 import React from 'react';
+import { clickableRow } from './clickable-row.js';
 import { Avatar } from '../core/Avatar.jsx';
 import { Icon } from '../core/Icon.jsx';
 import { StatusBadge } from './StatusBadge.jsx';
@@ -10,12 +11,15 @@ import { StatusBadge } from './StatusBadge.jsx';
  */
 export function CandidateRow({ name, role, position, src, status = 'new', score, when, selected = false, onClick, style = {}, ...rest }) {
   const [hover, setHover] = React.useState(false);
+  const { Row, type, reset } = clickableRow(onClick);
   return (
-    <div
+    <Row
+      type={type}
       onClick={onClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
+        ...reset,
         display: 'grid',
         gridTemplateColumns: 'minmax(0,1.6fr) minmax(0,1.2fr) 78px 116px 96px',
         alignItems: 'center',
@@ -85,6 +89,6 @@ export function CandidateRow({ name, role, position, src, status = 'new', score,
         <Icon name="clock" size={12} />
         {when}
       </div>
-    </div>
+    </Row>
   );
 }

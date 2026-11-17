@@ -6,7 +6,10 @@ WORKDIR /app
 # The build never renders PDFs, so don't let Puppeteer download Chromium here.
 ENV PUPPETEER_SKIP_DOWNLOAD=1
 COPY package.json package-lock.json ./
-RUN npm ci
+# Lifecycle scripts off for supply-chain safety; rebuild only the packages whose
+# install step the build needs (native/binary deps).
+RUN npm ci --ignore-scripts \
+  && npm rebuild better-sqlite3 esbuild @swc/core unrs-resolver
 COPY . .
 RUN npm run build && npm run build:web
 
@@ -25,7 +28,11 @@ RUN apt-get update \
      chromium fonts-liberation fonts-noto-color-emoji ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+# Lifecycle scripts off; only the native SQLite driver needs its install step at
+# runtime (Puppeteer uses the system Chromium above, no browser download).
+RUN npm ci --omit=dev --ignore-scripts \
+  && npm rebuild better-sqlite3 \
+  && npm cache clean --force
 # Compiled server
 COPY --from=build /app/server/dist ./server/dist
 # Static UIs are served from the repo root (config.staticDir). There is no root
@@ -35,7 +42,9 @@ COPY --from=build /app/assets ./assets
 # OpenAPI contract behind /api/v1/openapi.yaml and the self-hosted Swagger UI.
 COPY --from=build /app/server/openapi.yaml ./server/openapi.yaml
 # The file-backed user/session store and PDF archive live here; mount a volume.
-RUN mkdir -p archive
+# Owned by the unprivileged `node` user the process runs as (no root at runtime).
+RUN mkdir -p archive && chown node:node archive
+USER node
 EXPOSE 4178
 # Let the orchestrator (docker/compose/k8s) detect an unhealthy instance and
 # gate rolling deploys on the new instance actually serving traffic. Uses

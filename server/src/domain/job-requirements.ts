@@ -20,7 +20,7 @@ const CUES = {
     /von vorteil|wünschenswert|idealerweise|nice ?to ?have|\bplus\b|bonus|gerne|optional|erwünscht/i,
   obligation:
     /zertifikat|führerschein|reisebereit|schicht|verhandlungssicher|sprachniveau|\b[abc][12]\b|gehaltsvorstellung|eintrittstermin|nachweis|approbation|sicherheitsüberpr|umzug|relocat|bereitschaft/i,
-  must: /erforderlich|zwingend|voraussetzung|setzen wir voraus|müssen|\bmuss\b|\brequired\b|must[- ]?have|mindestens \d+ jahr|\d+\+? *jahre? (?:berufs)?erfahrung|abgeschlossenes? studium/i,
+  must: /erforderlich|zwingend|voraussetzung|setzen wir voraus|müssen|\bmuss\b|\brequired\b|must[- ]?have|mindestens \d+ jahr|(?<!\d)\d+\+? *jahre? (?:berufs)?erfahrung|abgeschlossenes? studium/i,
 };
 
 /** Break the ad into candidate items: lines and bullet points, cleaned. */

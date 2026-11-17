@@ -1,4 +1,5 @@
 import type { PdfArchive } from '../ports/pdf-archive.js';
+import { trimChar } from '../domain/strings.js';
 
 /**
  * The one object-storage operation the archive needs. Keeping it a tiny
@@ -23,7 +24,7 @@ export class S3PdfArchive implements PdfArchive {
   constructor(deps: { putter: ObjectPutter; prefix?: string }) {
     this.putter = deps.putter;
     // Normalise to at most one trailing slash, no leading slash.
-    this.prefix = (deps.prefix ?? '').replace(/^\/+/, '').replace(/\/+$/, '');
+    this.prefix = trimChar(deps.prefix ?? '', '/');
   }
 
   async save(filenameHint: string, bytes: Buffer): Promise<string> {

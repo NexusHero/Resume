@@ -1,13 +1,19 @@
 import React from 'react';
 
+/** Hides the native control visually while keeping it focusable and announced. */
+const VISUALLY_HIDDEN = { position: 'absolute', width: '1px', height: '1px', margin: '-1px', padding: 0, border: 0, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' };
+
 /**
  * On/off switch. Controlled via `checked` + `onChange`. Track fills with the
- * accent when on.
+ * accent when on. A visually hidden native checkbox with role="switch" carries
+ * keyboard, focus and screen reader semantics; the track is decoration only.
  */
 export function Switch({ label, checked = false, onChange, disabled = false, style = {}, ...rest }) {
+  const [focus, setFocus] = React.useState(false);
   return (
     <label
       style={{
+        position: 'relative',
         display: 'inline-flex',
         alignItems: 'center',
         gap: '10px',
@@ -17,8 +23,18 @@ export function Switch({ label, checked = false, onChange, disabled = false, sty
       }}
       {...rest}
     >
+      <input
+        type="checkbox"
+        role="switch"
+        checked={checked}
+        disabled={disabled}
+        onChange={(e) => onChange && onChange(e.target.checked)}
+        onFocus={() => setFocus(true)}
+        onBlur={() => setFocus(false)}
+        style={VISUALLY_HIDDEN}
+      />
       <span
-        onClick={() => !disabled && onChange && onChange(!checked)}
+        aria-hidden="true"
         style={{
           position: 'relative',
           width: '38px',
@@ -26,6 +42,7 @@ export function Switch({ label, checked = false, onChange, disabled = false, sty
           flexShrink: 0,
           borderRadius: 'var(--radius-pill)',
           background: checked ? 'var(--accent)' : 'var(--border-strong)',
+          boxShadow: focus ? '0 0 0 3px var(--accent-soft)' : 'none',
           transition: 'background var(--dur-med) var(--ease-out)',
         }}
       >

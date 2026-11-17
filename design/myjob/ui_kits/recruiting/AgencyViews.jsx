@@ -269,7 +269,7 @@ function ForecastCard() {
 
 function ReportsView({ clients, mandates, placements, apps, kpis }) {
   const { isMobile } = window.useViewport ? window.useViewport() : { isMobile: false };
-  const feeNum = (s) => parseInt(String(s).replace(/[^0-9]/g, ''), 10) || 0;
+  const feeNum = (s) => Number.parseInt(String(s).replace(/[^0-9]/g, ''), 10) || 0;
   const perClient = clients.map((k) => ({
     name: k.name,
     sum: placements.filter((p) => p.client === k.name).reduce((a, p) => a + feeNum(p.fee), 0),

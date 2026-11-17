@@ -20,6 +20,54 @@
     ...args
   ));
 
+  // Origin of the embedding host (the parent frame). The host is usually a
+  // different origin than this page, so it is read from ancestorOrigins
+  // (Chromium/WebKit) or the document referrer. Resolves to null when it
+  // cannot be determined, or when it is opaque ("null", e.g. file:// or a
+  // sandboxed host).
+  function resolveParentOrigin() {
+    try {
+      const ao = window.location.ancestorOrigins;
+      if (ao && ao.length && ao[0] && ao[0] !== "null") return ao[0];
+    } catch {
+    }
+    try {
+      if (document.referrer) {
+        const o = new URL(document.referrer).origin;
+        if (o && o !== "null") return o;
+      }
+    } catch {
+    }
+    return null;
+  }
+  var PARENT_ORIGIN = window.parent !== window ? resolveParentOrigin() : null;
+  // targetOrigin for messages to the parent. Falls back to "*" only when the
+  // parent's origin is unknown or opaque (file:// previews, sandboxed or
+  // no-referrer hosts): postMessage cannot address an opaque origin, and the
+  // payloads sent this way are non-sensitive status notices (design mode /
+  // boot metadata), so the fallback keeps local previews working.
+  function parentTargetOrigin() {
+    return PARENT_ORIGIN || "*";
+  }
+  // Split `str` on {{ ... }} interpolations, returning the same array as
+  // str.split(/\{\{([\s\S]+?)\}\}/g) (odd indices are the captured
+  // expressions) but in linear time, without regex backtracking.
+  function splitInterpolations(str) {
+    const out = [];
+    let last = 0;
+    let from = 0;
+    for (; ; ) {
+      const open = str.indexOf("{{", from);
+      if (open < 0) break;
+      const close = str.indexOf("}}", open + 3);
+      if (close < 0) break;
+      out.push(str.slice(last, open), str.slice(open + 2, close));
+      last = from = close + 2;
+    }
+    out.push(str.slice(last));
+    return out;
+  }
+
   // src/parse.ts
   function parseDcDocument(doc) {
     const dc = doc.querySelector("x-dc");
@@ -156,7 +204,12 @@
     runtime.setRootName(rootName);
     runtime.adoptParsed(rootName, parsed);
     if (!window.__resources) {
-      fetch(location.href).then((res) => res.ok ? res.text() : "").then((t) => {
+      // Re-fetch this page's own source only: resolve the URL and require it
+      // to stay on this document's origin over http(s)/file before fetching.
+      const selfUrl = new URL(location.href, document.baseURI);
+      selfUrl.hash = "";
+      const selfOk = selfUrl.origin === location.origin && /^(https?|file):$/.test(selfUrl.protocol);
+      (selfOk ? fetch(selfUrl.href) : Promise.reject(new Error("dc-runtime: refusing cross-origin self-fetch"))).then((res) => res.ok ? res.text() : "").then((t) => {
         const raw = t ? parseDcText(t) : null;
         if (raw?.template) runtime.updateHtml(rootName, raw.template);
       }).catch(() => {
@@ -405,7 +458,7 @@
       return (vals) => resolve(vals, path);
     }
     if (raw.includes("{{")) {
-      const parts = raw.split(/\{\{([\s\S]+?)\}\}/g);
+      const parts = splitInterpolations(raw);
       return (vals) => parts.map((s, i) => i & 1 ? resolve(vals, s) ?? "" : s).join("");
     }
     return () => raw;
@@ -508,7 +561,7 @@
       if (!txt.trim() && !txt.includes(" ")) return null;
       return () => txt;
     }
-    const parts = txt.split(/\{\{([\s\S]+?)\}\}/g);
+    const parts = splitInterpolations(txt);
     return (vals, ctx, key) => h(
       getReact().Fragment,
       { key },
@@ -547,7 +600,7 @@
   function walkFor(el, host) {
     const listGet = compileAttr(el.getAttribute("list") || "");
     const asName = el.getAttribute("as") || "item";
-    const hintN = parseInt(el.getAttribute("hint-placeholder-count") || "0", 10);
+    const hintN = Number.parseInt(el.getAttribute("hint-placeholder-count") || "0", 10);
     const kids = walkChildren(el, host);
     const listSrc = el.getAttribute("list") || "";
     return (vals, ctx, key) => {
@@ -707,7 +760,7 @@
     }
     const s = clone.innerHTML;
     let h2 = 5381;
-    for (let i = 0; i < s.length; i++) h2 = (h2 << 5) + h2 + s.charCodeAt(i) | 0;
+    for (let i = 0; i < s.length; i++) h2 = (h2 << 5) + h2 + s.charCodeAt(i) >>> 0;
     return s.length + "." + (h2 >>> 0).toString(36);
   }
   var NEVER_CONTENT_KEYED = new Set(
@@ -1314,7 +1367,7 @@
     function postDesignMode(mode) {
       if (window.parent === window) return;
       try {
-        window.parent.postMessage({ type: "__dc_design_mode", mode }, "*");
+        window.parent.postMessage({ type: "__dc_design_mode", mode }, parentTargetOrigin());
       } catch {
       }
     }
@@ -1335,6 +1388,11 @@
       }
     }
     window.addEventListener("message", (e) => {
+      // Only the embedding host may drive theme / probe: require the message
+      // to come from the parent frame and, when the parent's origin is known,
+      // from that origin (opaque/unknown origins rely on the source check).
+      if (window.parent === window || e.source !== window.parent) return;
+      if (PARENT_ORIGIN && e.origin !== PARENT_ORIGIN) return;
       const type = e.data && e.data.type;
       if (type === "__dc_theme") {
         const t = e.data.theme;
@@ -1719,7 +1777,7 @@
             propsMeta: r && r.propsMeta || null,
             preview: r && r.preview || null
           },
-          "*"
+          parentTargetOrigin()
         );
       } catch {
       }

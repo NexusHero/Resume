@@ -4,7 +4,7 @@
  * as "text" (a login/SPA page full of script must read as empty, AK-1.5).
  */
 export function stripHtml(input: string): string {
-  return (
+  return replaceTags(
     input
       // Remove `<script>…</script>` and `<style>…</style>` blocks **first**, before
       // the generic tag strip, so inline JS/CSS never counts as "text" (AK-1.5).
@@ -13,12 +13,31 @@ export function stripHtml(input: string): string {
       // the tag name and `>` (`</script\t\nbar>`); the lazy body also matches empty
       // `<script></script>` blocks.
       .replace(/<script\b[^>]*>[\s\S]*?<\/script[^>]*>/gi, ' ')
-      .replace(/<style\b[^>]*>[\s\S]*?<\/style[^>]*>/gi, ' ')
-      .replace(/<[^>]*>/g, ' ')
-      .replace(/&[a-z]+;/gi, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-  );
+      .replace(/<style\b[^>]*>[\s\S]*?<\/style[^>]*>/gi, ' '),
+  )
+    .replace(/&[a-z]+;/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Replace every `<…>` tag with a single space — the linear-time equivalent of
+ * `s.replace(/<[^>]*>/g, ' ')` (that regex backtracks quadratically on input
+ * with many unclosed `<`). A `<` with no later `>` is left as is, exactly like
+ * the regex.
+ */
+function replaceTags(input: string): string {
+  let out = '';
+  let i = 0;
+  while (i < input.length) {
+    const lt = input.indexOf('<', i);
+    if (lt === -1) break;
+    const gt = input.indexOf('>', lt + 1);
+    if (gt === -1) break;
+    out += `${input.slice(i, lt)} `;
+    i = gt + 1;
+  }
+  return out + input.slice(i);
 }
 
 /**

@@ -34,7 +34,11 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        # Lifecycle scripts are disabled for supply-chain safety; only the
+        # packages that need theirs (native/binary deps) are rebuilt explicitly.
+        run: |
+          npm ci --ignore-scripts
+          npm rebuild better-sqlite3 esbuild @swc/core unrs-resolver puppeteer
 
       - name: Build downloadable, runnable artifact
         run: npm run package
@@ -57,7 +61,7 @@ jobs:
           path: artifacts
 
       - name: Publish release with all platform assets
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
         with:
           tag_name: ${{ inputs.tag || github.ref_name }}
           files: artifacts/**/*

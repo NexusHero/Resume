@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Render *.puml to *.svg (top-level + per-use-case)
-        uses: docker://plantuml/plantuml:latest
+        uses: docker://plantuml/plantuml:1.2026.10@sha256:2cf2f097652701319e29b9e6a809e68d4ddb06fbeeb696705c097da8fa6d0507
         with:
           args: -tsvg -nometadata docs/umls docs/umls/usecases
 

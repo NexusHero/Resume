@@ -178,7 +178,7 @@ function Inbox({ messages, apps, talents, onOpenTalent }) {
         const app = appById[m.appId];
         const tal = app && talById[app.talentId];
         return (
-          <div key={m.id} onClick={() => tal && onOpenTalent(tal.id)} style={{ display: 'flex', alignItems: 'center', gap: '13px', padding: '14px 18px', borderBottom: '1px solid var(--border)', cursor: 'pointer', background: m.unread ? 'var(--accent-soft)' : 'transparent' }}>
+          <button key={m.id} type="button" onClick={() => tal && onOpenTalent(tal.id)} style={{ appearance: 'none', width: '100%', margin: 0, textAlign: 'left', font: 'inherit', color: 'inherit', borderTop: 'none', borderLeft: 'none', borderRight: 'none', display: 'flex', alignItems: 'center', gap: '13px', padding: '14px 18px', borderBottom: '1px solid var(--border)', cursor: 'pointer', background: m.unread ? 'var(--accent-soft)' : 'transparent' }}>
             <WS.EntityTile type="company" name={m.from} size="md" />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -189,7 +189,7 @@ function Inbox({ messages, apps, talents, onOpenTalent }) {
               <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.text}</div>
             </div>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-soft)', flexShrink: 0 }}>{m.when}</span>
-          </div>
+          </button>
         );
       })}
     </WS.Card>

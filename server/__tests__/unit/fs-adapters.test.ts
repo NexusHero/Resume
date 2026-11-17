@@ -98,7 +98,7 @@ function tmpConfig(): AppConfig {
       from: 'myJob <no-reply@test.local>',
       appBaseUrl: 'http://localhost:0',
       resetTokenTtlMs: 60 * 60 * 1000,
-      smtp: { host: '', port: 587, secure: false, user: '', pass: '' },
+      smtp: { host: '', port: 587, secure: false, requireTls: true, user: '', pass: '' },
       imap: { host: '', port: 993, secure: true, user: '', pass: '', pollMinutes: 15 },
     },
   };

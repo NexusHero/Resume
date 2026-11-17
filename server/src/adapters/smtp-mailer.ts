@@ -14,6 +14,7 @@ export class SmtpMailer implements Mailer {
     host: string;
     port: number;
     secure: boolean;
+    requireTLS: boolean;
     auth?: { user: string; pass: string };
   };
   private transporter: Transporter | null = null;
@@ -25,6 +26,9 @@ export class SmtpMailer implements Mailer {
       host: smtp.host,
       port: smtp.port,
       secure: smtp.secure,
+      // Implicit TLS (465) or a mandatory STARTTLS upgrade — never cleartext,
+      // unless SMTP_REQUIRE_TLS=false explicitly allows a trusted local relay.
+      requireTLS: smtp.secure || smtp.requireTls,
       // Only authenticate when credentials are configured (some relays are open
       // on a trusted network).
       ...(smtp.user || smtp.pass ? { auth: { user: smtp.user, pass: smtp.pass } } : {}),

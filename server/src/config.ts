@@ -127,7 +127,15 @@ export interface MailConfig {
   /** Lifetime of a tenant invitation in milliseconds (ADR-0035). */
   inviteTtlMs: number;
   /** SMTP relay settings, used when transport === 'smtp'. */
-  smtp: { host: string; port: number; secure: boolean; user: string; pass: string };
+  smtp: {
+    host: string;
+    port: number;
+    secure: boolean;
+    /** Refuse to send unless STARTTLS upgrades a plain connection (default on). */
+    requireTls: boolean;
+    user: string;
+    pass: string;
+  };
   /**
    * IMAP mailbox settings for reply detection (the outcome loop's automatic
    * signal). Reply sync is enabled iff `host` is set.
@@ -477,6 +485,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
         port: Number(env.SMTP_PORT) || 587,
         // Implicit TLS (port 465) → secure; STARTTLS (587) negotiates from plain.
         secure: env.SMTP_SECURE === 'true' || Number(env.SMTP_PORT) === 465,
+        // Never fall back to cleartext SMTP: a non-implicit-TLS connection must
+        // upgrade via STARTTLS. Opt out only for a trusted local relay.
+        requireTls: env.SMTP_REQUIRE_TLS !== 'false',
         user: env.SMTP_USER ?? '',
         pass: env.SMTP_PASS ?? '',
       },

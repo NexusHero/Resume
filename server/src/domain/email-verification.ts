@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { stripTrailingSlashes } from './strings.js';
 
 /**
  * Soft email verification: prove the address behind an account is real.
@@ -25,7 +26,7 @@ export interface EmailVerificationToken {
  * recruiting kit reads `verify_token` on load and confirms it.
  */
 export function emailVerificationUrl(baseUrl: string, token: string): string {
-  const base = baseUrl.replace(/\/+$/, '');
+  const base = stripTrailingSlashes(baseUrl);
   return `${base}/design/myjob/ui_kits/recruiting/dist/index.html?verify_token=${encodeURIComponent(
     token,
   )}`;

@@ -48,6 +48,11 @@ describe('snippetFrom', () => {
     expect(snippetFrom(undefined)).toBe('');
     expect(snippetFrom(null)).toBe('');
   });
+  it('StripHtml_UnclosedAngleBrackets_KeptAsTextLikeTheRegex', () => {
+    expect(stripHtml('a <b>bold</b> c < d')).toBe('a bold c < d');
+    expect(stripHtml('x<<y>z')).toBe('x z');
+    expect(stripHtml('<'.repeat(50_000))).toBe('<'.repeat(50_000));
+  });
   it('SnippetFrom_StripsThenTruncates', () => {
     expect(snippetFrom('<p>one two three four</p>', 7)).toBe('one…');
   });

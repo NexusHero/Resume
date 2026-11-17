@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { TalentDocuments } from './talent-documents.js';
+import { trimEndChar } from './strings.js';
 
 /** POST /api/v1/talents/:id/documents/ats */
 export const atsRequestSchema = z.object({
@@ -60,7 +61,7 @@ export function tokenize(text: string): Set<string> {
       .toLowerCase()
       .split(/[^a-zäöüß0-9+#.]+/)
       // keep internal dots (.NET, node.js) but drop trailing sentence dots
-      .map((t) => t.replace(/\.+$/, '').trim())
+      .map((t) => trimEndChar(t, '.').trim())
       .filter((t) => t.length >= 3),
   );
 }

@@ -79,8 +79,8 @@ export function classifyAddresses(addresses: string[]): boolean {
  * decimal. Returns `null` for anything else.
  */
 function parseOctet(part: string): number | null {
-  if (/^0[0-7]*$/.test(part)) return parseInt(part, 8);
-  if (/^\d+$/.test(part)) return parseInt(part, 10);
+  if (/^0[0-7]*$/.test(part)) return Number.parseInt(part, 8);
+  if (/^\d+$/.test(part)) return Number.parseInt(part, 10);
   return null;
 }
 
@@ -102,7 +102,7 @@ export function normalizeSpecialHost(host: string): string | null {
 
   // Hexadecimal (0x7f000001).
   if (/^0x[0-9a-f]+$/i.test(h)) {
-    const n = parseInt(h.slice(2), 16);
+    const n = Number.parseInt(h.slice(2), 16);
     return Number.isNaN(n) || n < 0 || n > 0xffffffff ? null : intToQuad(n);
   }
 

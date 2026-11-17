@@ -81,8 +81,11 @@ export function buildRetentionReport(
     if (t.anonymizedAt) continue; // already handled
     const cands = candidaciesByTalent.get(t.id) ?? [];
     if (cands.some((c) => ACTIVE_STAGES.has(c.stage))) continue; // still in play
-    const lastActivity =
-      [t.updatedAt, ...cands.map((c) => c.updatedAt)].sort().at(-1) ?? t.updatedAt;
+    // ISO-8601 timestamps order lexicographically, so the max string is the latest.
+    const lastActivity = cands.reduce(
+      (latest, c) => (c.updatedAt > latest ? c.updatedAt : latest),
+      t.updatedAt,
+    );
     const inactiveDays = Math.max(0, Math.floor((nowMs - Date.parse(lastActivity)) / MS_PER_DAY));
     if (inactiveDays < reviewDays) continue;
     items.push({

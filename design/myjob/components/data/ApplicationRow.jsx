@@ -1,4 +1,5 @@
 import React from 'react';
+import { clickableRow } from './clickable-row.js';
 import { Icon } from '../core/Icon.jsx';
 import { EntityTile } from '../core/EntityTile.jsx';
 import { StatusBadge } from './StatusBadge.jsx';
@@ -33,20 +34,15 @@ export function ApplicationRow({
   ...rest
 }) {
   const [hover, setHover] = React.useState(false);
-  // A native button when the row is clickable (keyboard + screen reader for free);
-  // the resets keep it looking exactly like the plain row.
-  const Row = onClick ? 'button' : 'div';
-  const buttonReset = onClick
-    ? { appearance: 'none', width: '100%', margin: 0, textAlign: 'left', font: 'inherit', color: 'inherit', borderTop: 'none', borderRight: 'none' }
-    : {};
+  const { Row, type, reset } = clickableRow(onClick);
   return (
     <Row
-      type={onClick ? 'button' : undefined}
+      type={type}
       onClick={onClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
-        ...buttonReset,
+        ...reset,
         display: 'flex',
         alignItems: 'center',
         gap: '14px',

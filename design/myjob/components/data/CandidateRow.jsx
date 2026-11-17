@@ -1,4 +1,5 @@
 import React from 'react';
+import { clickableRow } from './clickable-row.js';
 import { Avatar } from '../core/Avatar.jsx';
 import { Icon } from '../core/Icon.jsx';
 import { StatusBadge } from './StatusBadge.jsx';
@@ -10,20 +11,15 @@ import { StatusBadge } from './StatusBadge.jsx';
  */
 export function CandidateRow({ name, role, position, src, status = 'new', score, when, selected = false, onClick, style = {}, ...rest }) {
   const [hover, setHover] = React.useState(false);
-  // A native button when the row is clickable (keyboard + screen reader for free);
-  // the resets keep it looking exactly like the plain row.
-  const Row = onClick ? 'button' : 'div';
-  const buttonReset = onClick
-    ? { appearance: 'none', width: '100%', margin: 0, textAlign: 'left', font: 'inherit', color: 'inherit', borderTop: 'none', borderRight: 'none' }
-    : {};
+  const { Row, type, reset } = clickableRow(onClick);
   return (
     <Row
-      type={onClick ? 'button' : undefined}
+      type={type}
       onClick={onClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
-        ...buttonReset,
+        ...reset,
         display: 'grid',
         gridTemplateColumns: 'minmax(0,1.6fr) minmax(0,1.2fr) 78px 116px 96px',
         alignItems: 'center',

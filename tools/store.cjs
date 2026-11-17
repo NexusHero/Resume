@@ -12,6 +12,21 @@ const fs = require('fs');
 const path = require('path');
 const cp = require('child_process');
 
+// Absolute path to git, so commits never run whatever "git" a writable PATH
+// entry happens to provide. Override with GIT_BIN; otherwise the usual fixed
+// install locations are probed, falling back to plain "git" (PATH lookup) only
+// when none exists.
+const GIT = (() => {
+  if (process.env.GIT_BIN) return process.env.GIT_BIN;
+  const candidates = [
+    '/usr/bin/git',
+    '/usr/local/bin/git',
+    '/opt/homebrew/bin/git',
+    'C:\\Program Files\\Git\\cmd\\git.exe',
+  ];
+  return candidates.find((p) => fs.existsSync(p)) || 'git';
+})();
+
 const ROOT = path.join(__dirname, '..');
 const DIR = path.join(ROOT, 'archive', 'bewerbungen');
 const LOG = path.join(DIR, 'log.json');
@@ -44,14 +59,14 @@ function slug(s) {
 // Commit ONLY our own files so unrelated working changes are never touched.
 function gitCommit(message, files) {
   try {
-    cp.execFileSync('git', ['rev-parse', '--is-inside-work-tree'], { cwd: ROOT, stdio: 'ignore' });
+    cp.execFileSync(GIT, ['rev-parse', '--is-inside-work-tree'], { cwd: ROOT, stdio: 'ignore' });
   } catch (_) { return null; }
   try {
     const existing = files.filter((f) => fs.existsSync(path.join(ROOT, f)));
     if (!existing.length) return null;
-    cp.execFileSync('git', ['add', '--', ...existing], { cwd: ROOT, stdio: 'ignore' });
-    cp.execFileSync('git', ['commit', '-m', message, '--', ...existing], { cwd: ROOT, stdio: 'ignore' });
-    const hash = cp.execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: ROOT }).toString().trim();
+    cp.execFileSync(GIT, ['add', '--', ...existing], { cwd: ROOT, stdio: 'ignore' });
+    cp.execFileSync(GIT, ['commit', '-m', message, '--', ...existing], { cwd: ROOT, stdio: 'ignore' });
+    const hash = cp.execFileSync(GIT, ['rev-parse', '--short', 'HEAD'], { cwd: ROOT }).toString().trim();
     return hash;
   } catch (_) { return null; } // e.g. nothing changed / git not configured
 }

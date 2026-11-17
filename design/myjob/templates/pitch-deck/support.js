@@ -823,14 +823,16 @@
     }
   };
   function evalDcLogic(src) {
+    // Reviewed (SonarCloud S1523): compiles the template's own authored
+    // <script data-dc-script> logic — this runtime's core; no external input.
     //! nosemgrep: eval-and-function-constructor
-    const fn = new Function(
+    const fn = new Function( // NOSONAR
       "DCLogic",
       "StreamableLogic",
       "React",
       src + '\n;return (typeof Component!=="undefined"&&Component)||undefined;'
     );
-    return fn(StreamableLogic, StreamableLogic, getReact());
+    return fn(StreamableLogic, StreamableLogic, getReact()); // NOSONAR
   }
 
   // src/component.ts
@@ -1197,8 +1199,10 @@
         }).code : src;
         const module = { exports: {} };
         const before = new Set(Object.keys(window));
+        // Reviewed (SonarCloud S1523): evaluates a component module the
+        // template itself imports (x-import) — this runtime's core loader.
         //! nosemgrep: eval-and-function-constructor
-        new Function("React", "module", "exports", "require", code)(
+        new Function("React", "module", "exports", "require", code)( // NOSONAR
           getReact(),
           module,
           module.exports,

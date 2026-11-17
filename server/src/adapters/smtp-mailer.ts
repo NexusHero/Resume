@@ -36,7 +36,10 @@ export class SmtpMailer implements Mailer {
   }
 
   private get tx(): Transporter {
-    if (!this.transporter) this.transporter = nodemailer.createTransport(this.options);
+    // Reviewed (SonarCloud S5332): `options` always sets implicit TLS (`secure`)
+    // or a mandatory STARTTLS upgrade (`requireTLS`); cleartext only when the
+    // operator sets SMTP_REQUIRE_TLS=false for a trusted local relay.
+    if (!this.transporter) this.transporter = nodemailer.createTransport(this.options); // NOSONAR
     return this.transporter;
   }
 

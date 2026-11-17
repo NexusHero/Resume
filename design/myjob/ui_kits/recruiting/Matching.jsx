@@ -178,39 +178,37 @@ function Matching({ talents, mandates = [], onCreateMandate, onOpenPosting, onAd
                 onApply={open}
                 onView={open}
               />
-              {true && (
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '6px' }}>
-                  {(() => {
-                    const st = adoptState[job.id];
-                    const already = st === 'already';
-                    const label =
-                      st === 'busy' ? 'Adopting…'
-                      : st === 'done' ? 'Adopted'
-                      : st === 'already' ? 'Already saved → open'
-                      : st === 'error' ? 'Try again'
-                      : 'Adopt job';
-                    return (
-                      <button
-                        onClick={() => (already && onOpenPosting ? onOpenPosting(adoptSavedId[job.id]) : adopt(job))}
-                        disabled={st === 'busy' || st === 'done'}
-                        title="Adopt this job as a saved job posting (without AI)"
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: st === 'busy' || st === 'done' ? 'default' : 'pointer', appearance: 'none', background: st === 'done' ? 'var(--surface-sunk)' : 'var(--surface-card)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', color: st === 'done' ? 'var(--text-soft)' : 'var(--text-heading)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '4px 11px' }}
-                      >
-                        <MT.Icon name={st === 'done' ? 'check' : 'bookmark'} size={12} /> {label}
-                      </button>
-                    );
-                  })()}
-                  {onCreateMandate && (
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '6px' }}>
+                {(() => {
+                  const st = adoptState[job.id];
+                  const already = st === 'already';
+                  const label =
+                    st === 'busy' ? 'Adopting…'
+                    : st === 'done' ? 'Adopted'
+                    : st === 'already' ? 'Already saved → open'
+                    : st === 'error' ? 'Try again'
+                    : 'Adopt job';
+                  return (
                     <button
-                      onClick={() => onCreateMandate(job)}
-                      title="Draft a client mandate from this job"
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', appearance: 'none', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '11px', padding: '4px 11px' }}
+                      onClick={() => (already && onOpenPosting ? onOpenPosting(adoptSavedId[job.id]) : adopt(job))}
+                      disabled={st === 'busy' || st === 'done'}
+                      title="Adopt this job as a saved job posting (without AI)"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: st === 'busy' || st === 'done' ? 'default' : 'pointer', appearance: 'none', background: st === 'done' ? 'var(--surface-sunk)' : 'var(--surface-card)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', color: st === 'done' ? 'var(--text-soft)' : 'var(--text-heading)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, padding: '4px 11px' }}
                     >
-                      <MT.Icon name="briefcase" size={12} /> Create mandate
+                      <MT.Icon name={st === 'done' ? 'check' : 'bookmark'} size={12} /> {label}
                     </button>
-                  )}
-                </div>
-              )}
+                  );
+                })()}
+                {onCreateMandate && (
+                  <button
+                    onClick={() => onCreateMandate(job)}
+                    title="Draft a client mandate from this job"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', appearance: 'none', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-pill)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '11px', padding: '4px 11px' }}
+                  >
+                    <MT.Icon name="briefcase" size={12} /> Create mandate
+                  </button>
+                )}
+              </div>
             </div>
           );
         })}

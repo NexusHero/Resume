@@ -108,9 +108,26 @@ export function PositionCard({
 }) {
   const [hover, setHover] = React.useState(false);
   const matched = match != null;
+  // The card wraps its own action buttons, so it cannot itself be a <button>.
+  // When clickable it becomes a focusable role="button" that also answers
+  // Enter/Space; keys pressed on the inner buttons are left to them.
+  const interactive = onClick
+    ? {
+        role: 'button',
+        tabIndex: 0,
+        onClick,
+        onKeyDown: (e) => {
+          if (e.target !== e.currentTarget) return;
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onClick(e);
+          }
+        },
+      }
+    : {};
   return (
     <div
-      onClick={onClick}
+      {...interactive}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{

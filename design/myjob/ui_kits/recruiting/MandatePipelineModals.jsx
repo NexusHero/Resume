@@ -21,9 +21,17 @@ const MP_FORMATS = [
    used the same fixed-overlay pattern inline; centralizing it removes the
    repetition without changing the rendered markup. */
 function ModalOverlay({ onClose, zIndex = 60, width, maxHeight = '80vh', flexColumn, backdrop = 'rgba(8,11,18,0.5)', children }) {
+  // The backdrop is mouse-only (role="presentation"); Escape is the keyboard
+  // equivalent of clicking it.
+  React.useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
   return (
     <>
       <div
+        role="presentation"
         onClick={onClose}
         style={{ position: 'fixed', inset: 0, background: backdrop, backdropFilter: 'blur(2px)', zIndex }}
       />
@@ -57,7 +65,8 @@ function AddCandidateModal({ mandate, excludeTalentIds, onClose, onAdded }) {
   const [pool, setPool] = React.useState([]);
   React.useEffect(() => {
     let live = true;
-    (async () => {
+    // Fire-and-forget: the IIFE catches every failure itself.
+    void (async () => {
       try {
         const list = await window.RecruitApi.listTalents();
         if (live) setPool(list);

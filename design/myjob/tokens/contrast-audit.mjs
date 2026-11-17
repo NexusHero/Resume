@@ -7,6 +7,31 @@
  * #196) is just another override map layered on the base — see auditPairs().
  */
 
+const isNameChar = (c) => /[\w-]/.test(c);
+const isSpace = (c) => /\s/.test(c);
+
+/** Find the first `--name : value` in a declaration, matching what
+ *  /(--[\w-]+)\s*:\s*(.+)\s*$/s did (value trimmed), but with a linear scan
+ *  instead of a backtracking regex. Returns [name, value] or null. */
+function matchDecl(decl) {
+  let i = decl.indexOf('--');
+  while (i >= 0) {
+    let j = i + 2;
+    while (j < decl.length && isNameChar(decl[j])) j++;
+    if (j > i + 2) {
+      let k = j;
+      while (k < decl.length && isSpace(decl[k])) k++;
+      if (decl[k] === ':' && k + 1 < decl.length) {
+        return [decl.slice(i, j), decl.slice(k + 1).trim()];
+      }
+    }
+    // Any later start inside this name run ends at the same j and fails the
+    // same way, so resume the search after it.
+    i = decl.indexOf('--', Math.max(j, i + 1));
+  }
+  return null;
+}
+
 /** Parse `--name: value;` declarations from CSS blocks whose selector matches
  *  `selectorRe` (default: every `:root { … }` block). */
 export function parseTokens(cssText, selectorRe = /:root\s*\{([^}]*)\}/gs) {
@@ -15,8 +40,8 @@ export function parseTokens(cssText, selectorRe = /:root\s*\{([^}]*)\}/gs) {
   for (const block of blocks) {
     const body = block.replace(/^[^{]*\{/, '').replace(/\}$/, '');
     for (const decl of body.split(';')) {
-      const m = decl.match(/(--[\w-]+)\s*:\s*(.+)\s*$/s);
-      if (m) map.set(m[1].trim(), m[2].trim());
+      const m = matchDecl(decl);
+      if (m) map.set(m[0], m[1]);
     }
   }
   return map;
@@ -35,7 +60,7 @@ export function resolveColor(value, map, seen = new Set()) {
   v = v.replace(/\/\*.*?\*\//gs, '').trim();
   // a bare token name (`--x`) is shorthand for `var(--x)`
   if (/^--[\w-]+$/.test(v)) v = `var(${v})`;
-  const varMatch = v.match(/^var\(\s*(--[\w-]+)\s*(?:,\s*(.+))?\)$/s);
+  const varMatch = v.match(/^var\(\s*(--[\w-]+)\s*(?:,(.+))?\)$/s);
   if (varMatch) {
     const name = varMatch[1];
     if (seen.has(name)) return null;
@@ -53,7 +78,7 @@ export function resolveColor(value, map, seen = new Set()) {
 export function hexToRgb(hex) {
   let h = hex.replace('#', '');
   if (h.length === 3) h = h.split('').map((c) => c + c).join('');
-  return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
+  return [0, 2, 4].map((i) => Number.parseInt(h.slice(i, i + 2), 16));
 }
 
 /** WCAG relative luminance of an #rrggbb colour. */

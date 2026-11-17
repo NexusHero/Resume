@@ -180,6 +180,13 @@ function Workspace({ user, onLogout }) {
   const [bewerbungenSub, setBewerbungenSub] = React.useState('bewerbungen');
   // The Chat-Agent panel (ADR-0062) — a slide-over/sheet, not a nav destination.
   const [agentOpen, setAgentOpen] = React.useState(false);
+  // Escape closes the agent panel — the keyboard equivalent of a backdrop click.
+  React.useEffect(() => {
+    if (!agentOpen) return undefined;
+    const onKey = (e) => { if (e.key === 'Escape') setAgentOpen(false); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [agentOpen]);
   // Server-side status filter (AK-4.6); re-fetch on change.
   const [applicationStatus, setApplicationStatus] = React.useState(undefined);
   // Live data sources. Each tracks loading/error and never falls back to
@@ -726,10 +733,12 @@ function Workspace({ user, onLogout }) {
               display: 'flex',
               justifyContent: isMobile ? 'stretch' : 'flex-end',
             }}
-            onClick={() => setAgentOpen(false)}
+            role="presentation"
+            // Only a click on the dimmed backdrop itself closes the panel; clicks
+            // inside the panel bubble up with a different target.
+            onClick={(e) => { if (e.target === e.currentTarget) setAgentOpen(false); }}
           >
             <div
-              onClick={(e) => e.stopPropagation()}
               style={{
                 width: isMobile ? '100%' : '420px',
                 height: '100%',

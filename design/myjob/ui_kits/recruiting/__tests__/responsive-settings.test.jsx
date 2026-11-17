@@ -55,14 +55,14 @@ describe('SettingsView — responsive cards', () => {
   it('AiSetupAndWorkspaceCards_Desktop_Render', async () => {
     stubMatchMedia(false);
     const { findByText, findByLabelText } = render(<SettingsView user={user} />);
-    await findByText('AI connection');
-    await findByLabelText('Agency');
+    expect(await findByText('AI connection')).toBeInTheDocument();
+    expect(await findByLabelText('Agency')).toBeInTheDocument();
   });
 
   it('AiSetupAndWorkspaceCards_Mobile_Render', async () => {
     stubMatchMedia(true);
     const { findByText, findByLabelText } = render(<SettingsView user={user} />);
-    await findByText('AI connection');
-    await findByLabelText('Agency');
+    expect(await findByText('AI connection')).toBeInTheDocument();
+    expect(await findByLabelText('Agency')).toBeInTheDocument();
   });
 });

@@ -26,9 +26,16 @@ function PillButton({ icon, children, onClick, disabled, title, style }) {
    max-height/overflow pair (the import modal is the one that never scrolls);
    `subtitleGap` keeps the outreach modal's slightly larger 14px gap intact. */
 function ModalShell({ title, subtitle, onClose, width, scroll = true, subtitleGap = '12px', children }) {
+  // The backdrop is mouse-only (role="presentation"); Escape is the keyboard
+  // equivalent of clicking it.
+  React.useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
   return (
     <>
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(8,11,18,0.45)', backdropFilter: 'blur(2px)', zIndex: 60 }} />
+      <div role="presentation" onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(8,11,18,0.45)', backdropFilter: 'blur(2px)', zIndex: 60 }} />
       <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 61, width: width || 'min(680px, 92vw)', ...(scroll ? { maxHeight: '88vh', overflowY: 'auto' } : {}), background: 'var(--surface-card)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-lg)', padding: '22px' }}>
         <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, color: 'var(--text-heading)', marginBottom: '4px' }}>{title}</div>
         {subtitle && <div style={{ fontSize: '12.5px', color: 'var(--text-soft)', marginBottom: subtitleGap }}>{subtitle}</div>}

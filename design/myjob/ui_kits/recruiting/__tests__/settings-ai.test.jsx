@@ -33,9 +33,9 @@ describe('SettingsView — AI setup (AK-0.6)', () => {
   it('AiSetupCard_NoKey_ShowsNotConfiguredWithLink', async () => {
     window.RecruitApi = baseApi();
     const { findByText } = render(<SettingsView user={{ id: 'me' }} />);
-    await findByText(/AI not configured/);
+    expect(await findByText(/AI not configured/)).toBeInTheDocument();
     // The card points at the env var, which is the only place to configure it.
-    await findByText(/ANTHROPIC_API_KEY/);
+    expect(await findByText(/ANTHROPIC_API_KEY/)).toBeInTheDocument();
   });
 
   it('AiSetupCard_NoKey_NoKeyInputRendered', async () => {

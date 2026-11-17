@@ -828,7 +828,7 @@ function Editor({ talent, onClose, onOpenSettings, getDocuments, saveDocuments, 
               ))}
             </div>
             <div style={{ display: 'flex', gap: isMobile ? '10px' : '6px' }}>
-              {ED_ACCENTS.map((a, i) => <span key={i} role="button" aria-label={`Accent ${i + 1}`} onClick={() => setCfg((c) => ({ ...c, accent: a.accent, strong: a.strong, onDark: a.onDark }))} style={{ width: isMobile ? '34px' : '22px', height: isMobile ? '34px' : '22px', borderRadius: '6px', cursor: 'pointer', background: a.accent, border: `2px solid ${cfg.accent === a.accent ? 'var(--text-heading)' : 'transparent'}` }} />)}
+              {ED_ACCENTS.map((a, i) => <button key={i} type="button" aria-label={`Accent ${i + 1}`} aria-pressed={cfg.accent === a.accent} onClick={() => setCfg((c) => ({ ...c, accent: a.accent, strong: a.strong, onDark: a.onDark }))} style={{ appearance: 'none', padding: 0, display: 'inline-block', width: isMobile ? '34px' : '22px', height: isMobile ? '34px' : '22px', borderRadius: '6px', cursor: 'pointer', background: a.accent, border: `2px solid ${cfg.accent === a.accent ? 'var(--text-heading)' : 'transparent'}` }} />)}
             </div>
             <select value={cfg.font} onChange={(e) => setCfg((c) => ({ ...c, font: e.target.value }))} style={{ padding: isMobile ? '10px 10px' : '5px 9px', minHeight: isMobile ? '44px' : undefined, borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-strong)', background: 'var(--surface-card)', fontFamily: 'var(--font-body)', fontSize: isMobile ? '13px' : '12px', color: 'var(--text-heading)' }}>
               <option value="var(--font-display)">Space Grotesk</option>

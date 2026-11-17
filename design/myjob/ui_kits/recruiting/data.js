@@ -1363,7 +1363,7 @@ const RecruitApi = {
 
 /** "19.000 €" / "24%" → 19000 / 24 (digits only; German thousands dot dropped). */
 function parseFeeAmount(s) {
-  return parseInt(String(s == null ? '' : s).replace(/[^0-9]/g, ''), 10) || 0;
+  return Number.parseInt(String(s == null ? '' : s).replace(/[^0-9]/g, ''), 10) || 0;
 }
 
 /** Sum of placement fees, formatted compactly: 128450 → "128 T€", 540 → "540 €". */

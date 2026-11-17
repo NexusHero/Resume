@@ -315,8 +315,15 @@ function TalentApplications({ talentId, onOpenApplication }) {
       )}
       {apps.map((a) => {
         const meta = APP_STATUS_META[a.status] || APP_STATUS_META.draft;
+        const rowStyle = { display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 18px', borderBottom: '1px solid var(--border)', cursor: onOpenApplication ? 'pointer' : 'default' };
+        // A native button when the row opens the application (keyboard + screen
+        // reader for free); a plain row otherwise. The resets keep the look.
+        const Row = onOpenApplication ? 'button' : 'div';
+        const rowProps = onOpenApplication
+          ? { type: 'button', onClick: () => onOpenApplication(a), style: { ...rowStyle, appearance: 'none', width: '100%', margin: 0, textAlign: 'left', font: 'inherit', color: 'inherit', background: 'transparent', borderTop: 'none', borderLeft: 'none', borderRight: 'none' } }
+          : { style: rowStyle };
         return (
-          <div key={a.id} onClick={() => onOpenApplication && onOpenApplication(a)} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 18px', borderBottom: '1px solid var(--border)', cursor: onOpenApplication ? 'pointer' : 'default' }}>
+          <Row key={a.id} {...rowProps}>
             <TP.EntityTile type="company" name={a.postingCompany} size="md" />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontFamily: 'var(--font-display)', fontSize: '14.5px', fontWeight: 700, color: 'var(--text-heading)' }}>{a.postingCompany}</div>
@@ -325,7 +332,7 @@ function TalentApplications({ talentId, onOpenApplication }) {
             <span style={{ display: 'inline-block', fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: meta.color, background: 'var(--surface-sunk)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '3px 9px' }}>
               {meta.label}
             </span>
-          </div>
+          </Row>
         );
       })}
     </TP.Card>
@@ -364,9 +371,15 @@ function TalentProfile({ talent, onBack, onEdit, onOpenApplication }) {
       window.RecruitApi.listAttachments(talent.id).catch(() => []),
       // The applications of this talent also feed the attachment-link map (OQ5).
       window.RecruitApi.listJobApplications({ talentId: talent.id }).catch(() => []),
-    ]).then(([docs, attachments, applications]) => {
-      if (alive) setLoaded({ docs, attachments, applications });
-    });
+    ])
+      .then(([docs, attachments, applications]) => {
+        if (alive) setLoaded({ docs, attachments, applications });
+      })
+      .catch(() => {
+        // Each fetch already falls back on its own; this only guards against an
+        // unexpected throw so the profile never stays stuck on "loading".
+        if (alive) setLoaded({ docs: null, attachments: [], applications: [] });
+      });
     return () => {
       alive = false;
     };

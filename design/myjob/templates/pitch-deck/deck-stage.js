@@ -123,6 +123,12 @@
 
 (() => {
   const DESIGN_W_DEFAULT = 1920;
+  // The slide-change broadcast is posted to this same window (listeners live
+  // in this document or in a same-origin host reading contentWindow), so the
+  // page's own origin is the correct target. Under file:// the origin is the
+  // opaque string "null", which postMessage rejects as a targetOrigin — only
+  // in that case fall back to '*' so local previews keep working.
+  const SELF_TARGET_ORIGIN = window.location.origin === 'null' ? '*' : window.location.origin;
   const DESIGN_H_DEFAULT = 1080;
   const OVERLAY_HIDE_MS = 1800;
   const VALIDATE_ATTR = 'no_overflowing_text,no_overlapping_text,slide_sized_text';
@@ -633,10 +639,10 @@
     }
 
     get designWidth() {
-      return parseInt(this.getAttribute('width'), 10) || DESIGN_W_DEFAULT;
+      return Number.parseInt(this.getAttribute('width'), 10) || DESIGN_W_DEFAULT;
     }
     get designHeight() {
-      return parseInt(this.getAttribute('height'), 10) || DESIGN_H_DEFAULT;
+      return Number.parseInt(this.getAttribute('height'), 10) || DESIGN_H_DEFAULT;
     }
 
     connectedCallback() {
@@ -740,7 +746,7 @@
               else this._thumbs[i].thumb.removeAttribute('data-skip');
             }
             this._markLastVisible();
-            try { window.postMessage({ slideIndexChanged: this._index, deckTotal: this._slides.length, deckSkipped: this._skippedIndices() }, '*'); } catch (e) {}
+            try { window.postMessage({ slideIndexChanged: this._index, deckTotal: this._slides.length, deckSkipped: this._skippedIndices() }, SELF_TARGET_ORIGIN); } catch (e) {}
           }
         }
         if (this._liveDirty.size && !this._liveTimer) {
@@ -1094,7 +1100,7 @@
       let rw = 188;
       try {
         const s = localStorage.getItem('deck-stage.railWidth');
-        if (s) rw = parseInt(s, 10) || rw;
+        if (s) rw = Number.parseInt(s, 10) || rw;
       } catch (err) {}
       this._setRailWidth(rw);
       this._syncRailHidden();
@@ -1263,7 +1269,7 @@
       // state across loads.
       const h = (location.hash || '').match(/^#(\d+)$/);
       if (h) {
-        const n = parseInt(h[1], 10) - 1;
+        const n = Number.parseInt(h[1], 10) - 1;
         if (n >= 0 && n < this._slides.length) this._index = n;
       }
     }
@@ -1290,7 +1296,7 @@
 
       if (broadcast) {
         // (1) Legacy: host-window postMessage for speaker-notes renderers.
-        try { window.postMessage({ slideIndexChanged: curr, deckTotal: this._slides.length, deckSkipped: this._skippedIndices() }, '*'); } catch (e) {}
+        try { window.postMessage({ slideIndexChanged: curr, deckTotal: this._slides.length, deckSkipped: this._skippedIndices() }, SELF_TARGET_ORIGIN); } catch (e) {}
 
         // (2) In-page CustomEvent on the <deck-stage> element itself.
         //     Bubbles and composes out of shadow DOM so slide code can listen:
@@ -1530,7 +1536,7 @@
         this._go(0, 'keyboard');
       } else if (/^[0-9]$/.test(key)) {
         // 1..9 jump to that slide; 0 jumps to 10.
-        const n = key === '0' ? 9 : parseInt(key, 10) - 1;
+        const n = key === '0' ? 9 : Number.parseInt(key, 10) - 1;
         if (n < this._slides.length) this._go(n, 'keyboard');
       } else {
         handled = false;
@@ -2287,7 +2293,7 @@
       // own stamp when directly templated).
       const host = this.closest('[data-dc-tpl]');
       const tid = host && host.getAttribute('data-dc-tpl');
-      op.mount = { tid: tid !== null ? parseInt(tid, 10) : null, tag: 'deck-stage' };
+      op.mount = { tid: tid !== null ? Number.parseInt(tid, 10) : null, tag: 'deck-stage' };
       op.emitOnly = !!window.__dcUpdate;
       if (op.emitOnly) {
         if (lock) this._railLock = true;

@@ -1,13 +1,20 @@
 import React from 'react';
 import { Icon } from '../core/Icon.jsx';
 
+/** Hides the native control visually while keeping it focusable and announced. */
+const VISUALLY_HIDDEN = { position: 'absolute', width: '1px', height: '1px', margin: '-1px', padding: 0, border: 0, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' };
+
 /**
- * Checkbox with a label. Controlled via `checked` + `onChange`.
+ * Checkbox with a label. Controlled via `checked` + `onChange`. A visually
+ * hidden native <input type="checkbox"> carries keyboard, focus and screen
+ * reader semantics; the styled box is decoration only.
  */
 export function Checkbox({ label, checked = false, onChange, disabled = false, style = {}, ...rest }) {
+  const [focus, setFocus] = React.useState(false);
   return (
     <label
       style={{
+        position: 'relative',
         display: 'inline-flex',
         alignItems: 'center',
         gap: '10px',
@@ -17,8 +24,17 @@ export function Checkbox({ label, checked = false, onChange, disabled = false, s
       }}
       {...rest}
     >
+      <input
+        type="checkbox"
+        checked={checked}
+        disabled={disabled}
+        onChange={(e) => onChange && onChange(e.target.checked)}
+        onFocus={() => setFocus(true)}
+        onBlur={() => setFocus(false)}
+        style={VISUALLY_HIDDEN}
+      />
       <span
-        onClick={() => !disabled && onChange && onChange(!checked)}
+        aria-hidden="true"
         style={{
           width: '18px',
           height: '18px',
@@ -30,6 +46,7 @@ export function Checkbox({ label, checked = false, onChange, disabled = false, s
           border: `1.5px solid ${checked ? 'var(--accent)' : 'var(--border-strong)'}`,
           background: checked ? 'var(--accent)' : 'var(--surface-card)',
           color: 'var(--accent-contrast)',
+          boxShadow: focus ? '0 0 0 3px var(--accent-soft)' : 'none',
           transition: 'background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out)',
         }}
       >
